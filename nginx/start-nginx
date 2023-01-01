@@ -1,0 +1,2 @@
+#!/bin/sh
+exec sudo ./nginx -p . -c nginx.conf

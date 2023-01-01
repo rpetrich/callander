@@ -1,0 +1,5 @@
+In one shell:
+run_make_in_golang_container.sh && gmake container && docker build -f Dockerfile.alpine-sample . -t stealthy-alpine && docker run -it stealthy-alpine axon sh
+
+In another:
+docker exec -it `docker ps -q` /target

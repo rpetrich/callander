@@ -1,0 +1,104 @@
+callander: permitted syscalls: read(any u32, any, any u32) @ /usr/lib/snapd/snapctl:0x45b822
+read(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+read(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+write(2, any, any u32) @ /usr/lib/snapd/snapctl:0x45b7f3
+write(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+write(any, any, non-NULL) @ /usr/lib/snapd/snapctl:0x4ae269
+close(any u32) @ /usr/lib/snapd/snapctl:0x45b7c9
+close(any) @ /usr/lib/snapd/snapctl:0x4ae17e
+close(any) @ /usr/lib/snapd/snapctl:0x4ae269
+fstat(any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+lseek(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+mmap(any, any, any u32, any u32, any u32, any u32) @ /usr/lib/snapd/snapctl:0x45bcd2
+mmap(any, any, any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+munmap(any, any) @ /usr/lib/snapd/snapctl:0x45bd71
+munmap(any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+rt_sigaction(any u32, any, any, 8) @ /usr/lib/snapd/snapctl:0x45baf9
+rt_sigprocmask(0x1-0x2, any, any, 8) @ /usr/lib/snapd/snapctl:0x45bac8
+rt_sigreturn(any) @ /usr/lib/snapd/snapctl:0x45bca7
+ioctl(0, 0x5422, 0) @ /usr/lib/snapd/snapctl:0x4ae269
+ioctl(any, 0x540e, 1) @ /usr/lib/snapd/snapctl:0x4ae269
+pread64(any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+pipe(any) @ /usr/lib/snapd/snapctl:0x4ae269
+sched_yield() @ /usr/lib/snapd/snapctl:0x45bf35
+madvise(any, any, any u32) @ /usr/lib/snapd/snapctl:0x45bde5
+dup2(any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+nanosleep(any, 0) @ /usr/lib/snapd/snapctl:0x45b87b
+setitimer(2, any, 0) @ /usr/lib/snapd/snapctl:0x45b903
+getpid() @ /usr/lib/snapd/snapctl:0x45b8a5
+getpid() @ /usr/lib/snapd/snapctl:0x45b8d5
+getpid() @ /usr/lib/snapd/snapctl:0x4ae399
+socket(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+connect(any, any, any u32) @ /usr/lib/snapd/snapctl:0x4ae17e
+accept(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+sendto(any, any, any, any, any, any u32) @ /usr/lib/snapd/snapctl:0x4ae1f8
+recvfrom(any, any, any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+sendmsg(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+recvmsg(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+bind(any, any, any u32) @ /usr/lib/snapd/snapctl:0x4ae17e
+listen(any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+getsockname(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+getpeername(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+setsockopt(any, any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+getsockopt(any, any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+clone(0x50f00, any, 0, 0, any) @ /usr/lib/snapd/snapctl:0x45be4b
+clone(any u32, 0, 0, any, any) @ /usr/lib/snapd/snapctl:0x4ae2d3
+clone(any u32, 0, 0, 0, 0) @ /usr/lib/snapd/snapctl:0x4ae33f
+exit(0) @ /usr/lib/snapd/snapctl:0x45b785
+exit(111) @ /usr/lib/snapd/snapctl:0x45be9d
+exit(253) @ /usr/lib/snapd/snapctl:0x4ae269
+wait4(any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+kill(any u32, 3) @ /usr/lib/snapd/snapctl:0x45b8e2
+kill(any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+uname(any) @ /usr/lib/snapd/snapctl:0x4ae269
+fcntl(any, 2, 1) @ /usr/lib/snapd/snapctl:0x4ae17e
+fcntl(any, 3, 0) @ /usr/lib/snapd/snapctl:0x4ae17e
+fcntl(any, 4, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+fcntl(any, 2, NULL-0x1) @ /usr/lib/snapd/snapctl:0x4ae269
+chdir(non-NULL) @ /usr/lib/snapd/snapctl:0x4ae269
+fchown(any, any u32, any u32) @ /usr/lib/snapd/snapctl:0x4ae17e
+ptrace(0, 0, 0, 0) @ /usr/lib/snapd/snapctl:0x4ae269
+getuid() @ /usr/lib/snapd/snapctl:0x4ae399
+getgid() @ /usr/lib/snapd/snapctl:0x4ae399
+setuid(any u32)
+setgid(any u32)
+setpgid(0)
+getppid() @ /usr/lib/snapd/snapctl:0x4ae399
+setsid()
+setgroups(0, 0)
+setgroups(non-NULL, any)
+capget(any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+capset(any, any) @ /usr/lib/snapd/snapctl:0x4ae269
+sigaltstack(0, any) @ /usr/lib/snapd/snapctl:0x45bec1
+sigaltstack(any, 0) @ /usr/lib/snapd/snapctl:0x45bec1
+statfs(any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+prctl(1, non-NULL, 0, 0, any) @ /usr/lib/snapd/snapctl:0x4ae2d3
+prctl(8, 1, 0, 0, any) @ /usr/lib/snapd/snapctl:0x4ae2d3
+prctl(47, 2, any, 0, 0) @ /usr/lib/snapd/snapctl:0x4ae2d3
+arch_prctl(0x1002, any, 0) @ /usr/lib/snapd/snapctl:0x45bf03
+arch_prctl(0x1002, /usr/lib/snapd/snapctl:0xc66210, any u32) @ /usr/lib/snapd/snapctl:0x45bf03
+chroot(non-NULL) @ /usr/lib/snapd/snapctl:0x4ae269
+mount(any, /usr/lib/snapd/snapctl:0xc1d03a, 0, 0x44000, 0) @ /usr/lib/snapd/snapctl:0x4ae2d3
+gettid() @ /usr/lib/snapd/snapctl:0x45b895
+gettid() @ /usr/lib/snapd/snapctl:0x45b8af
+gettid() @ /usr/lib/snapd/snapctl:0x45be6c
+futex(any, 0x80-0x81, NULL-0x2, any, 0, 0)
+sched_getaffinity(0, 0x2000, any) @ /usr/lib/snapd/snapctl:0x45bf54
+getdents64(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+restart_syscall()
+clock_gettime(any, any)
+exit_group(any u32) @ /usr/lib/snapd/snapctl:0x45b769
+epoll_ctl(any u32, 0x1-0x2, any u32, any) @ /usr/lib/snapd/snapctl:0x45bf96
+tgkill(any u32, any u32, any u32) @ /usr/lib/snapd/snapctl:0x45b8bf
+waitid(1, any, any, 0x1000004, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+openat(AT_FDCWD, any, 0, any u32) @ /usr/lib/snapd/snapctl:0x45b7a8
+openat(any, any, any, any u32) @ /usr/lib/snapd/snapctl:0x4ae1f8
+openat(0xffffffffffffff9c, any, 1, 0) @ /usr/lib/snapd/snapctl:0x4ae2d3
+newfstatat(any, any, any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+unlinkat(any, any, any) @ /usr/lib/snapd/snapctl:0x4ae17e
+unshare(non-NULL) @ /usr/lib/snapd/snapctl:0x4ae269
+epoll_pwait(any u32, any, 128, any u32, 0) @ /usr/lib/snapd/snapctl:0x45bfbe
+accept4(any, any) @ /usr/lib/snapd/snapctl:0x4ae1f8
+epoll_create1(0x80000) @ /usr/lib/snapd/snapctl:0x45bf79
+pipe2(any, 0x80000) @ /usr/lib/snapd/snapctl:0x4ae269
+getrandom(any, any, 0) @ /usr/lib/snapd/snapctl:0x4ae17e

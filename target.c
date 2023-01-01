@@ -1,0 +1,325 @@
+#define _GNU_SOURCE
+#define FS_INLINE_SYSCALL
+#define FS_INLINE_MUTEX_SLOW_PATH
+#include "freestanding.h"
+
+#include "axon.h"
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sched.h>
+#include <stdnoreturn.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <errno.h>
+
+#include "target.h"
+
+#if 0
+
+#define WRITE_LITERAL(fd, lit) fs_write(fd, lit, sizeof(lit)-1)
+
+static inline void print_with_int(const char *message, size_t message_len, int value) {
+	fs_write(2, message, message_len);
+	char buf[21];
+	int len = fs_itoa(value, buf);
+	buf[len] = '\n';
+	fs_write(2, buf, len + 1);
+}
+
+#define PRINT_WITH_INT(message, value) print_with_int(message ": ", sizeof(message)+1, value)
+
+noreturn static void exit_from_errno(const char *message, size_t message_len, int result) {
+	print_with_int(message, message_len, -result);
+	fs_exit(1);
+	__builtin_unreachable();
+}
+
+#define EXIT_FROM_ERRNO(message, err) exit_from_errno(message ": ", sizeof(message)+1, err)
+#else
+#define EXIT_FROM_ERRNO(message, err) fs_exit(1)
+#endif
+
+typedef struct {
+	int argc;
+	const char *argv[];
+} aux_t;
+
+#ifdef __linux__
+__attribute__((always_inline))
+static inline intptr_t fs_clone(unsigned long flags, void *child_stack, void *ptid, void *ctid, void *regs, void *fn)
+{
+	intptr_t result;
+	register void *r10 asm("r10") = ctid;
+	register void *r8 asm("r8") = regs;
+	register void *r9 asm("r9") = fn;
+	asm __volatile__ (
+		FS_CALL_SYSCALL ";"
+		"test %%eax,%%eax;"
+		"jnz 1f;"
+		"xor %%ebp,%%ebp;"
+		"mov %%r8,%%rdi;"
+		"jmp *%%r9;"
+		"1:"
+		: "=a"(result)
+		: "a"(__NR_clone), "D"(flags), "S"(child_stack), "d"(ptid), "r"(r10), "r"(r8), "r"(r9)
+		: "memory", "cc", "rcx", "r11"
+	);
+	return result;
+}
+#endif
+
+noreturn static void process_data(void);
+
+#ifdef SYS_futex
+static struct fs_mutex read_mutex __attribute__((aligned(64)));
+#endif
+static int sockfd;
+#ifdef SYS_futex
+static struct fs_mutex write_mutex __attribute__((aligned(64)));
+#endif
+
+#ifdef __linux__
+__attribute__((used)) __attribute__((aligned(4)))
+noreturn void release(__attribute__((unused)) uint32_t expected_addr, __attribute__((unused)) uint32_t expected_port)
+#else
+int main(void)
+#endif
+{
+	intptr_t result;
+#if 1
+	int fd = 0;
+	for (;;) {
+		struct sockaddr_in sa;
+		socklen_t len = sizeof(sa);
+		intptr_t result = FS_SYSCALL(SYS_getpeername, fd, (intptr_t)&sa, (intptr_t)&len);
+		if (result == 0 && sa.sin_family == AF_INET && sa.sin_addr.s_addr == expected_addr && sa.sin_port == expected_port) {
+			break;
+		}
+		fd++;
+	}
+	(void)fs_fcntl(fd, F_SETFL, O_RDWR);
+	(void)fs_fcntl(fd, F_SETFD, 0);
+#else
+	int fd = fs_socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		EXIT_FROM_ERRNO("Failed to open socket", fd);
+	}
+
+	struct sockaddr_in addr = { 0 };
+	// addr.sin_len = sizeof(addr);
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = fs_htonl((127 << 24) | 1);
+	addr.sin_port = fs_htons(8484);
+
+	result = fs_connect(fd, &addr, sizeof(addr));
+	if (result < 0) {
+		EXIT_FROM_ERRNO("Failed to connect socket", result);
+	}
+
+	int flags = 1;
+	result = fs_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
+	if (result < 0) {
+		EXIT_FROM_ERRNO("Failed to disable nagle on socket", result);
+	}
+#endif
+	result = fs_fork();
+	if (result != 0) {
+		fs_exit(0);
+	}
+
+	hello_message hello;
+#ifdef __linux__
+	hello.target_platform = TARGET_PLATFORM_LINUX;
+#else
+	hello.target_platform = TARGET_PLATFORM_DARWIN;
+#endif
+	hello.server_fd = sockfd = fd;
+	result = fs_write(fd, (const char *)&hello, sizeof(hello));
+	if (result < 0) {
+		EXIT_FROM_ERRNO("Failed to write startup message", result);
+	}
+
+	read_mutex = (struct fs_mutex){ 0 };
+	write_mutex = (struct fs_mutex){ 0 };
+	process_data();
+#ifndef __linux__
+	return 0;
+#endif
+}
+
+noreturn static void process_data(void)
+{
+	char buf[512 * 1024];
+	int sockfd_local = sockfd;
+	for (;;) {
+		// read header
+		union {
+			char buf[sizeof(request_message)];
+			request_message message;
+		} request;
+		uint32_t bytes_read = 0;
+#ifdef SYS_futex
+		fs_mutex_lock(&read_mutex);
+#endif
+		do {
+			int result = fs_read(sockfd_local, &request.buf[bytes_read], sizeof(request.buf) - bytes_read);
+			if (result <= 0) {
+				if (result == -EINTR) {
+					continue;
+				}
+				if (result == 0) {
+					fs_exit(0);
+				}
+				EXIT_FROM_ERRNO("Failed to read from socket", result);
+			}
+			bytes_read += result;
+		} while(bytes_read != sizeof(request));
+		// interpret request
+		response_message response;
+		struct iovec vec[7];
+		vec[0].iov_base = &response;
+		vec[0].iov_len = sizeof(response);
+		size_t io_count = 1;
+		switch (request.message.template.nr) {
+			case TARGET_NR_PEEK:
+				// peek at local memory, writing the current data to the socket
+#ifdef SYS_futex
+				fs_mutex_unlock(&read_mutex);
+#endif
+				vec[io_count].iov_base = (void *)request.message.values[0];
+				vec[io_count].iov_len = request.message.values[1];
+				io_count++;
+				response.result = 0;
+				break;
+			case TARGET_NR_POKE:
+				// poke at local memory, reading the new data from the socket
+				bytes_read = 0;
+				char *addr = (char *)request.message.values[0];
+				size_t trailer_bytes = request.message.values[1];
+				while (trailer_bytes != bytes_read) {
+					int result = fs_read(sockfd_local, addr + bytes_read, trailer_bytes - bytes_read);
+					if (result <= 0) {
+						if (result == -EINTR) {
+							continue;
+						}
+						if (result == 0) {
+							fs_exit(0);
+						}
+						EXIT_FROM_ERRNO("Failed to read from socket", result);
+					}
+					bytes_read += result;
+				}
+#ifdef SYS_futex
+				fs_mutex_unlock(&read_mutex);
+#endif
+				break;
+			case TARGET_NR_GET_PROCESS_DATA_ADDRESS:
+				// get the address of the worker process
+#ifdef SYS_futex
+				fs_mutex_unlock(&read_mutex);
+#endif
+				response.result = (intptr_t)&process_data;
+				break;
+			default: {
+				size_t trailer_bytes = 0;
+				intptr_t index = 0;
+				uint64_t values[6];
+				for (int i = 0; i < 6; i++) {
+					if (request.message.template.is_in & (1 << i)) {
+						trailer_bytes += request.message.values[i];
+						if (request.message.template.is_out & (1 << i)) {
+							vec[io_count].iov_base = &buf[index];
+							vec[io_count].iov_len = request.message.values[i];
+							io_count++;
+						}
+						values[i] = (intptr_t)&buf[index];
+						index += request.message.values[i];
+					} else if (request.message.template.is_out & (1 << i)) {
+					} else {
+						values[i] = request.message.values[i];
+					}
+				}
+				for (int i = 0; i < 6; i++) {
+					if (request.message.template.is_in & (1 << i)) {
+						if (request.message.template.is_out & (1 << i)) {
+						}
+					} else if (request.message.template.is_out & (1 << i)) {
+						vec[io_count].iov_base = &buf[index];
+						vec[io_count].iov_len = request.message.values[i];
+						io_count++;
+						values[i] = (intptr_t)&buf[index];
+						index += request.message.values[i];
+					}
+				}
+				// read trailer
+				bytes_read = 0;
+				while (trailer_bytes != bytes_read) {
+					int result = fs_read(sockfd_local, &buf[bytes_read], sizeof(buf) - bytes_read);
+					if (result <= 0) {
+						if (result == -EINTR) {
+							continue;
+						}
+						if (result == 0) {
+							fs_exit(0);
+						}
+						EXIT_FROM_ERRNO("Failed to read from socket", result);
+					}
+					bytes_read += result;
+				}
+#ifdef SYS_futex
+				fs_mutex_unlock(&read_mutex);
+#endif
+				// perform syscall
+				int syscall = request.message.template.nr & ~TARGET_NO_RESPONSE;
+				if (syscall == TARGET_NR_CALL) {
+					intptr_t (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
+					response.result = target(values[1], values[2], values[3], values[4], values[5]);
+#ifdef __NR_clone
+				} else if (syscall == __NR_clone) {
+					response.result = fs_clone(values[0], (void *)values[1], (void *)values[2], (void *)values[3], (void *)values[4], (void *)values[5]);
+#endif
+				} else {
+					response.result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
+				}
+				break;
+			}
+		}
+		if ((request.message.template.nr & TARGET_NO_RESPONSE) == 0) {
+			// write result
+			response.id = request.message.id;
+			size_t io_start = 0;
+#ifdef SYS_futex
+			fs_mutex_lock(&write_mutex);
+#endif
+			for (;;) {
+				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count-io_start);
+				if (result <= 0) {
+					if (result == -EINTR) {
+						continue;
+					}
+					if (result == 0) {
+						fs_exit(0);
+					}
+					EXIT_FROM_ERRNO("Failed to write to socket", result);
+				}
+				while ((uintptr_t)result >= vec[io_start].iov_len) {
+					result -= vec[io_start].iov_len;
+					if (++io_start == io_count) {
+						goto unlock;
+					}
+				}
+				vec[io_start].iov_base += result;
+				vec[io_start].iov_len -= result;
+			}
+	unlock:
+#ifdef SYS_futex
+			fs_mutex_unlock(&write_mutex);
+#else
+			;
+#endif
+		}
+	}
+	__builtin_unreachable();
+}

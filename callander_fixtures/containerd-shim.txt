@@ -1,0 +1,18 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/containerd-shim:0x403583
+/usr/bin/containerd-shim:0x4317e2 (call)
+/usr/bin/containerd-shim:0x431723 (conditional jump)
+/usr/bin/containerd-shim:0x448ee5 (call)
+/usr/bin/containerd-shim:0x448a6a (conditional jump)
+/usr/bin/containerd-shim:0x448a55 (jump)
+/usr/bin/containerd-shim:0x448a44 (conditional continue)
+/usr/bin/containerd-shim:0x448a38 (conditional continue)
+/usr/bin/containerd-shim:0x448a2c (conditional continue)
+/usr/bin/containerd-shim:0x448a17 (jump)
+/usr/bin/containerd-shim:0x448a06 (conditional continue)
+/usr/bin/containerd-shim:0x4489ef (conditional continue)
+/usr/bin/containerd-shim:0x4489e3 (conditional continue)
+/usr/bin/containerd-shim:0x4489c3 (conditional continue)
+/usr/bin/containerd-shim:0x448989 (conditional continue)
+/usr/bin/containerd-shim:0x44815d (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function
