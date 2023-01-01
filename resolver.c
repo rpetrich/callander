@@ -81,17 +81,17 @@ static int dns_resolver_address(struct resolver_funcs funcs, struct sockaddr_in 
 {
 	uint32_t result = atomic_load_explicit(&funcs.config_cache->address, memory_order_relaxed);
 	if (result == 0) {
-		int remote_fd = funcs.openat(AT_FDCWD, "/etc/resolv.conf", O_RDONLY, 0);
-		if (remote_fd < 0) {
-			return remote_fd;
+		int fd = funcs.openat(AT_FDCWD, "/etc/resolv.conf", O_RDONLY, 0);
+		if (fd < 0) {
+			return fd;
 		}
 		char buf[1024];
 		int cursor = 0;
 		for (;;) {
 			const char *line_start = buf;
-			int read = funcs.read(remote_fd, &buf[cursor], sizeof(buf) - cursor);
+			int read = funcs.read(fd, &buf[cursor], sizeof(buf) - cursor);
 			if (read < 0) {
-				funcs.close(remote_fd);
+				funcs.close(fd);
 				return read;
 			}
 			cursor += read;
@@ -109,7 +109,7 @@ static int dns_resolver_address(struct resolver_funcs funcs, struct sockaddr_in 
 						nameserver_buf[addr_size] = '\0';
 						struct in_addr addr;
 						if (inet_aton_simple(nameserver_buf, &addr) == 0) {
-							funcs.close(remote_fd);
+							funcs.close(fd);
 							return -EINVAL;
 						}
 						result = addr.s_addr;
@@ -129,7 +129,7 @@ static int dns_resolver_address(struct resolver_funcs funcs, struct sockaddr_in 
 				cursor -= offset;
 			}
 		}
-		funcs.close(remote_fd);
+		funcs.close(fd);
 		if (result == 0) {
 			return -EINVAL;
 		}
@@ -333,9 +333,9 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 		*funcs.errno_location = -result;
 		return EAI_SYSTEM;
 	}
-	int remote_fd = funcs.socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (remote_fd < 0) {
-		*funcs.errno_location = -remote_fd;
+	int fd = funcs.socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (fd < 0) {
+		*funcs.errno_location = -fd;
 		return EAI_SYSTEM;
 	}
 	struct {
@@ -354,14 +354,14 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 	query->qtype = hton_16(T_A);
 	query->qclass = hton_16(1);
 	size_t request_len = sizeof(struct dns_header) + name_len + sizeof(struct dns_query);
-	result = funcs.sendto(remote_fd, (const void *)&request, request_len, 0, (const struct sockaddr *)&nameserver, sizeof(nameserver));
+	result = funcs.sendto(fd, (const void *)&request, request_len, 0, (const struct sockaddr *)&nameserver, sizeof(nameserver));
 	if (result < 0) {
-		funcs.close(remote_fd);
+		funcs.close(fd);
 		*funcs.errno_location = -result;
 		return EAI_SYSTEM;
 	}
-	int response_size = funcs.recvfrom(remote_fd, (void *)&request, sizeof(request), 0, NULL, 0);
-	funcs.close(remote_fd);
+	int response_size = funcs.recvfrom(fd, (void *)&request, sizeof(request), 0, NULL, 0);
+	funcs.close(fd);
 	if (response_size < 0) {
 		*funcs.errno_location = -response_size;
 		return EAI_SYSTEM;
