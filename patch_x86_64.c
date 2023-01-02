@@ -559,35 +559,51 @@ tail_call:
 	const uint8_t *jump;
 	const uint8_t *ins = search.addr;
 	bool has_instruction = instruction == ins;
+	PATCH_LOG("searching for", (uintptr_t)instruction);
+	PATCH_LOG("processing", (uintptr_t)ins);
 	while (!x86_is_return_instruction(ins)) {
-		// Examine jumps
-		switch (x86_jump_addresses_at_instruction(ins, &jump)) {
-			case X86_JUMPS_NEVER:
-				break;
-			case X86_JUMPS_ALWAYS:
-				search.addr = jump;
-				goto tail_call;
-			case X86_JUMPS_OR_CONTINUES: {
-				bool result = find_basic_block(thread, (struct instruction_search){
-					.addr = jump,
-					.searched = search.searched,
-				}, instruction, out_block);
-				if (!result) {
-					return false;
-				}
-				break;
-			}
-		}
 		int length = InstructionSize_x86_64(ins, 0xf);
 		if (length == INSTRUCTION_INVALID) {
 			// Be conservative and assume the range was jumped to
 			PATCH_LOG("found invalid instruction", (uintptr_t)ins);
 			return false;
 		}
+		// Examine jumps
+		switch (x86_jump_addresses_at_instruction(ins, &jump)) {
+			case X86_JUMPS_NEVER:
+				break;
+			case X86_JUMPS_ALWAYS:
+				if (has_instruction) {
+					if ((uintptr_t)search.addr > (uintptr_t)out_block->start) {
+						out_block->start = search.addr;
+					}
+					out_block->end = ins + length;
+				}
+				search.addr = jump;
+				goto tail_call;
+			case X86_JUMPS_OR_CONTINUES: {
+				bool jumped_result = find_basic_block(thread, (struct instruction_search){
+					.addr = jump,
+					.searched = search.searched,
+				}, instruction, out_block);
+				if (!jumped_result) {
+					return false;
+				}
+				bool continued_result = find_basic_block(thread, (struct instruction_search){
+					.addr = ins + length,
+					.searched = search.searched,
+				}, instruction, out_block);
+				if (!continued_result) {
+					return false;
+				}
+				break;
+			}
+		}
 		ins += length;
 		if (ins == instruction) {
 			has_instruction = true;
 		}
+		PATCH_LOG("processing", (uintptr_t)ins);
 	}
 	ins += InstructionSize_x86_64(ins, 0xf);
 	// Search for trailing nops
@@ -785,6 +801,9 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
 	// Find the patch target
+	if (x86_is_endbr64_instruction((const uint8_t *)instruction)) {
+		instruction += 4;
+	}
 	struct instruction_range patch_target;
 	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, &patch_target)) {
 		PATCH_LOG("unable to find patch target");
@@ -938,6 +957,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		}
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
+	PATCH_LOG("finished patch");
 	return true;
 }
 
