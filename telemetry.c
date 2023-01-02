@@ -276,15 +276,11 @@ void send_bpf_attempt_event(struct thread_storage *thread, int cmd, union bpf_at
 	}
 }
 
-void send_tracepoint_result_event(struct thread_storage *thread, enum EVENT_TYPE filter_id, intptr_t result)
-{
-	if (UNLIKELY(enabled_telemetry & TELEMETRY_TYPE_PRETTY_PRINT)) {
-	}
-}
-
 void send_brk_result_event(struct thread_storage *thread, int result)
 {
-	send_tracepoint_result_event(thread, SYSCALL_BRK_EXIT, result);
+	if (UNLIKELY(enabled_telemetry & TELEMETRY_TYPE_PRETTY_PRINT)) {
+		WRITE_LITERAL(TELEMETRY_FD, "Traced brk\n");
+	}
 }
 
 void send_ioctl_attempt_event(struct thread_storage *thread, int fd, unsigned long request, uintptr_t arg3)
