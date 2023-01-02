@@ -3,7 +3,6 @@
 
 #define NDEBUG
 #include <assert.h>
-#include "events.h"
 #include "attempt.h"
 #include "exec.h"
 #include "freestanding.h"
