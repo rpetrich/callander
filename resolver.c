@@ -206,7 +206,7 @@ static int populate_addrinfo(struct sockaddr *addr, struct resolver_funcs funcs,
 	result->ai_addrlen = sizeof(struct sockaddr_in6);
 	result->ai_addr = (struct sockaddr *)addr;
 	result->ai_canonname = NULL;
-	result->ai_next = NULL;
+	result->ai_next = *res;
 	*res = result;
 	return 0;
 }
@@ -318,7 +318,7 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 	}
 	struct {
 		struct dns_header header;
-		char data[256];
+		char data[65536-sizeof(struct dns_header)];
 	} request = { 0 };
 	request.header.id = 2048;
 	request.header.rd = 1;
@@ -347,21 +347,33 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 	if (hton_16(request.header.ans_count) == 0) {
 		return EAI_NONAME;
 	}
-	int record_pos = decode_qname_length(request.data, sizeof(request.data)) + sizeof(*query) + 2;
+	int record_pos = decode_qname_length(request.data, sizeof(request.data)) + sizeof(*query);
 	// int record_pos = request_len - sizeof(struct dns_header);
-	while (record_pos + sizeof(struct dns_record) <= response_size - sizeof(request.header)) {
+	struct addrinfo *records = NULL;
+	while (record_pos + sizeof(struct dns_record) <= (uintptr_t)response_size) {
+		record_pos += decode_qname_length(&request.data[record_pos], sizeof(request.data) - record_pos);
 		const struct dns_record *record = (const struct dns_record *)&request.data[record_pos];
 		size_t data_len = hton_16(record->data_len);
-		if (record_pos + data_len > response_size - sizeof(request.header)) {
+		if (record_pos + data_len + sizeof(request.header) > (size_t)response_size) {
 			break;
 		}
 		// use 10 instead of sizeof(struct dns_record) because of padding
 		if (record->type == hton_16(T_A) && data_len == 4) {
 			struct in_addr addr;
 			fs_memcpy(&addr, &request.data[record_pos + 10], 4);
-			return populate_addrinfo((struct sockaddr *)make_sockaddr_in(addr, parsed_service, funcs), funcs, res);
+			result = populate_addrinfo((struct sockaddr *)make_sockaddr_in(addr, parsed_service, funcs), funcs, &records);
+			if (result != 0) {
+				if (records == NULL) {
+					return result;
+				}
+				break;
+			}
 		}
 		record_pos += 10 + data_len;
+	}
+	if (records != NULL) {
+		*res = records;
+		return 0;
 	}
 	return EAI_NONAME;
 }
