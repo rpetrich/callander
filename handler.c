@@ -1646,7 +1646,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_epoll_create: {
-			return install_local_fd(FS_SYSCALL(syscall), 0);
+			return install_local_fd(FS_SYSCALL(syscall, arg1), 0);
 		}
 		case __NR_epoll_create1: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
