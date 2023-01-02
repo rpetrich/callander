@@ -25,4 +25,9 @@ struct resolver_funcs {
 // getaddrinfo_custom loads addresses over a custom tunneled network
 int getaddrinfo_custom(const char *node, const char *service, __attribute__((unused)) const struct addrinfo *hints, struct resolver_funcs funcs, struct addrinfo **res);
 
+static inline uint16_t hton_16(uint16_t value)
+{
+	return value << 8 | value >> 8;
+}
+
 #endif

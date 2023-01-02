@@ -1103,6 +1103,21 @@ static inline int fs_itoa(intptr_t value, char buffer[])
 	return fs_utoa((unsigned long long)value, buffer);
 }
 
+// fs_utoah_noprefix formats an integer as hexadecimal into buffer, which must
+// hold enough space for the largest formatted number to be written
+__attribute__((nonnull(2)))
+static inline int fs_utoah_noprefix(uintptr_t value, char buffer[])
+{
+	int i = 0;
+	do {
+		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0xf];
+		value = value >> 4;
+	} while(value);
+	buffer[i] = '\0';
+	fs_reverse(buffer, i);
+	return i;
+}
+
 // fs_utoah formats an integer as hexadecimal into buffer, which must hold
 // enough space for the largest formatted number to be written
 __attribute__((nonnull(2)))

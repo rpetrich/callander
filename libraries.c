@@ -35,7 +35,7 @@ static struct library_info *inferior_errno_location_library;
 
 static int remote_getaddrinfo(const char *node, const char *service, __attribute__((unused)) const struct addrinfo *hints, struct addrinfo **res)
 {
-	return getaddrinfo_custom(node, service, hints, (struct resolver_funcs){
+	int result = getaddrinfo_custom(node, service, hints, (struct resolver_funcs){
 		.malloc = inferior_malloc,
 		.free = inferior_free,
 		.openat = remote_openat,
@@ -47,6 +47,43 @@ static int remote_getaddrinfo(const char *node, const char *service, __attribute
 		.config_cache = get_resolver_config_cache(),
 		.errno_location = inferior_errno_location(),
 	}, res);
+	if (result == 0) {
+		for (struct addrinfo *result = *res; result != NULL; result = result->ai_next) {
+			switch (result->ai_addr->sa_family) {
+				case AF_INET: {
+					struct sockaddr_in6 *wrapped_addr = inferior_malloc(sizeof(struct sockaddr_in6));
+					wrapped_addr->sin6_family = AF_INET6;
+					wrapped_addr->sin6_port = ((struct sockaddr_in *)result->ai_addr)->sin_port;
+					wrapped_addr->sin6_flowinfo = 0;
+					wrapped_addr->sin6_scope_id = 0;
+					// first two bytes indicate invalid multicast address
+					wrapped_addr->sin6_addr.s6_addr[0] = 0xff;
+					wrapped_addr->sin6_addr.s6_addr[1] = 0xff;
+					wrapped_addr->sin6_addr.s6_addr[2] = 0;
+					wrapped_addr->sin6_addr.s6_addr[3] = 0;
+					wrapped_addr->sin6_addr.s6_addr[4] = 0;
+					wrapped_addr->sin6_addr.s6_addr[5] = 0;
+					wrapped_addr->sin6_addr.s6_addr[6] = 0;
+					wrapped_addr->sin6_addr.s6_addr[7] = 0;
+					wrapped_addr->sin6_addr.s6_addr[8] = 0;
+					wrapped_addr->sin6_addr.s6_addr[9] = 0;
+					wrapped_addr->sin6_addr.s6_addr[10] = 0;
+					wrapped_addr->sin6_addr.s6_addr[11] = 0;
+					// low bytes indicate the IPv4 address
+					fs_memcpy(&wrapped_addr->sin6_addr.s6_addr[12], &((struct sockaddr_in *)result->ai_addr)->sin_addr, sizeof(struct in_addr));
+					inferior_free(result->ai_addr);
+					result->ai_addr = (struct sockaddr *)wrapped_addr;
+					result->ai_family = AF_INET6;
+					break;
+				}
+				case AF_INET6:
+					// ~0 scope id indicates target address
+					((struct sockaddr_in6 *)result->ai_addr)->sin6_scope_id = ~(uint32_t)0;
+					break;
+			}
+		}
+	}
+	return result;
 }
 
 static intptr_t new_getaddrinfo(__attribute__((unused)) uintptr_t *arguments, __attribute__((unused)) intptr_t original) {

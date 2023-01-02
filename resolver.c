@@ -40,11 +40,6 @@ static in_port_t parse_service(const char *service)
 	return (in_port_t)result;
 }
 
-static uint16_t hton_16(uint16_t value)
-{
-	return value << 8 | value >> 8;
-}
-
 static int inet_aton_simple(const char *buf, struct in_addr *out_addr)
 {
 	// not a full implementation of inet_aton
@@ -197,65 +192,48 @@ struct dns_record {
     unsigned short data_len;
 };
 
-static int populate_addrinfo(struct sockaddr_in6 addr, struct resolver_funcs funcs, struct addrinfo **res)
+static int populate_addrinfo(struct sockaddr *addr, struct resolver_funcs funcs, struct addrinfo **res)
 {
-	struct sockaddr_in6 *sa = funcs.malloc(sizeof(struct sockaddr_in6));
-	if (sa == NULL) {
-		return EAI_MEMORY;
-	}
-	*sa = addr;
 	struct addrinfo *result = funcs.malloc(sizeof(struct addrinfo));
 	if (result == NULL) {
-		funcs.free(sa);
+		funcs.free(addr);
 		return EAI_MEMORY;
 	}
 	result->ai_flags = 0;
-	result->ai_family = AF_INET6;
+	result->ai_family = addr->sa_family;
 	result->ai_socktype = SOCK_STREAM;
 	result->ai_protocol = IPPROTO_TCP;
 	result->ai_addrlen = sizeof(struct sockaddr_in6);
-	result->ai_addr = (struct sockaddr *)sa;
+	result->ai_addr = (struct sockaddr *)addr;
 	result->ai_canonname = NULL;
 	result->ai_next = NULL;
 	*res = result;
 	return 0;
 }
 
-static struct sockaddr_in6 remote_v4_sockaddr(struct in_addr addr, in_port_t port)
+static struct sockaddr_in6 *make_sockaddr_in6(struct in6_addr addr, in_port_t port, struct resolver_funcs funcs)
 {
-	struct sockaddr_in6 result;
-	result.sin6_family = AF_INET6;
-	result.sin6_port = hton_16(port);
-	result.sin6_flowinfo = 0;
-	result.sin6_scope_id = 0;
-	// first two bytes indicate invalid multicast address
-	result.sin6_addr.s6_addr[0] = 0xff;
-	result.sin6_addr.s6_addr[1] = 0xff;
-	result.sin6_addr.s6_addr[2] = 0;
-	result.sin6_addr.s6_addr[3] = 0;
-	result.sin6_addr.s6_addr[4] = 0;
-	result.sin6_addr.s6_addr[5] = 0;
-	result.sin6_addr.s6_addr[6] = 0;
-	result.sin6_addr.s6_addr[7] = 0;
-	result.sin6_addr.s6_addr[8] = 0;
-	result.sin6_addr.s6_addr[9] = 0;
-	result.sin6_addr.s6_addr[10] = 0;
-	result.sin6_addr.s6_addr[11] = 0;
-	// low bytes indicate the IPv4 address
-	fs_memcpy(&result.sin6_addr.s6_addr[12], &addr, 4);
+	struct sockaddr_in6 *result = funcs.malloc(sizeof(struct sockaddr_in6));
+	if (result == NULL) {
+		return NULL;
+	}
+	result->sin6_family = AF_INET6;
+	result->sin6_port = hton_16(port);
+	result->sin6_flowinfo = 0;
+	result->sin6_scope_id = 0;
+	result->sin6_addr = addr;
 	return result;
 }
 
-static struct sockaddr_in6 remote_v6_sockaddr(struct in6_addr addr, in_port_t port)
+static struct sockaddr_in *make_sockaddr_in(struct in_addr addr, in_port_t port, struct resolver_funcs funcs)
 {
-	struct sockaddr_in6 result;
-	result.sin6_family = AF_INET6;
-	result.sin6_port = hton_16(port);
-	result.sin6_flowinfo = 0;
-	// ~0 scope id indicates target address
-	result.sin6_scope_id = ~(uint32_t)0;
-	// address is copied as-is
-	result.sin6_addr = addr;
+	struct sockaddr_in *result = funcs.malloc(sizeof(struct sockaddr_in));
+	if (result == NULL) {
+		return NULL;
+	}
+	result->sin_family = AF_INET;
+	result->sin_port = hton_16(port);
+	result->sin_addr = addr;
 	return result;
 }
 
@@ -305,7 +283,7 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 		return EAI_SERVICE;
 	}
 	if (fs_strcmp(node, "localhost") == 0) {
-		return populate_addrinfo(remote_v4_sockaddr((struct in_addr) { 127 | (1 << 24) }, parsed_service), funcs, res);
+		return populate_addrinfo((struct sockaddr *)make_sockaddr_in((struct in_addr) { 127 | (1 << 24) }, parsed_service, funcs), funcs, res);
 	}
 	if (fs_strcmp(node, "ip6-localhost") == 0 || fs_strcmp(node, "ip6-loopback") == 0) {
 		struct in6_addr addr;
@@ -325,7 +303,7 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 		addr.s6_addr[13] = 0;
 		addr.s6_addr[14] = 0;
 		addr.s6_addr[15] = 1;
-		return populate_addrinfo(remote_v6_sockaddr(addr, parsed_service), funcs, res);
+		return populate_addrinfo((struct sockaddr *)make_sockaddr_in6(addr, parsed_service, funcs), funcs, res);
 	}
 	struct sockaddr_in nameserver;
 	int result = dns_resolver_address(funcs, &nameserver);
@@ -381,7 +359,7 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 		if (record->type == hton_16(T_A) && data_len == 4) {
 			struct in_addr addr;
 			fs_memcpy(&addr, &request.data[record_pos + 10], 4);
-			return populate_addrinfo(remote_v4_sockaddr(addr, parsed_service), funcs, res);
+			return populate_addrinfo((struct sockaddr *)make_sockaddr_in(addr, parsed_service, funcs), funcs, res);
 		}
 		record_pos += 10 + data_len;
 	}

@@ -73,18 +73,41 @@ int main(__attribute__((unused)) int argc, const char **argv)
 			case 0: {
 				while (results != NULL) {
 					struct addrinfo *next = results->ai_next;
-					struct sockaddr_in6 *addr = (struct sockaddr_in6 *)results->ai_addr;
-					char buffer[16];
-					int offset = 0;
-					offset += fs_utoa(addr->sin6_addr.s6_addr[12], &buffer[offset]);
-					buffer[offset++] = '.';
-					offset += fs_utoa(addr->sin6_addr.s6_addr[13], &buffer[offset]);
-					buffer[offset++] = '.';
-					offset += fs_utoa(addr->sin6_addr.s6_addr[14], &buffer[offset]);
-					buffer[offset++] = '.';
-					offset += fs_utoa(addr->sin6_addr.s6_addr[15], &buffer[offset]);
-					ERROR("result", &buffer[0]);
-					free(addr);
+					switch (results->ai_addr->sa_family) {
+						case AF_INET: {
+							struct sockaddr_in *addr = (struct sockaddr_in *)results->ai_addr;
+							char buffer[16];
+							uint8_t addr_bytes[4];
+							memcpy(&addr_bytes, &addr->sin_addr.s_addr, 4);
+							int offset = 0;
+							offset += fs_utoa(addr_bytes[0], &buffer[offset]);
+							buffer[offset++] = '.';
+							offset += fs_utoa(addr_bytes[1], &buffer[offset]);
+							buffer[offset++] = '.';
+							offset += fs_utoa(addr_bytes[2], &buffer[offset]);
+							buffer[offset++] = '.';
+							offset += fs_utoa(addr_bytes[3], &buffer[offset]);
+							ERROR("result", &buffer[0]);
+							break;
+						}
+						case AF_INET6: {
+							struct sockaddr_in6 *addr = (struct sockaddr_in6 *)results->ai_addr;
+							char buffer[INET6_ADDRSTRLEN];
+							int offset = 0;
+							for (int i = 0; i < 8; i++) {
+								if (i != 0) {
+									buffer[offset++] = ':';
+								}
+								offset += fs_utoah_noprefix(((uintptr_t)addr->sin6_addr.s6_addr[i*2] << 8) | addr->sin6_addr.s6_addr[i*2+1], &buffer[offset]);
+							}
+							ERROR("result", &buffer[0]);
+							break;
+						}
+						default:
+							ERROR("result with unknown address type", (uintptr_t)results->ai_addr->sa_family);
+							break;
+					}
+					free(results->ai_addr);
 					free(results);
 					results = next;
 				}
