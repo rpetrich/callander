@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-intptr_t remote_openat(int dirfd, const char *path, int flags, int mode)
+intptr_t remote_openat(int dirfd, const char *path, int flags, mode_t mode)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:

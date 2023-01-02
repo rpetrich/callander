@@ -12,7 +12,7 @@ struct resolver_config_cache {
 struct resolver_funcs {
 	void *(*malloc)(size_t);
 	void (*free)(void *);
-	intptr_t (*openat)(int dirfd, const char *path, int flags, int mode);
+	intptr_t (*openat)(int dirfd, const char *path, int flags, mode_t mode);
 	intptr_t (*read)(int fd, char *buf, size_t bufsz);
 	void (*close)(int fd);
 	intptr_t (*socket)(int domain, int type, int protocol);

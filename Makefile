@@ -81,11 +81,13 @@ TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o
+LOOKUP_OBJECTS := defaultlibs.o loader.o lookup_main.o resolver.o
 ifeq ($(STANDALONE),1)
 	CFLAGS += -DSTANDALONE=1
 	OBJECTS += malloc.o
 	TEXEC_OBJECTS += malloc.o
 	COMMON_CALLANDER_OBJECTS += malloc.o
+	LOOKUP_OBJECTS += malloc.o
 endif
 
 CALLANDER_OBJECTS := $(COMMON_CALLANDER_OBJECTS) callander_main.o
@@ -95,7 +97,7 @@ objdir = .objs-$(TARGETMACHINE)
 
 .PHONY: all test test-debug test-trace clean install
 
-all: axon tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault target texec callander
+all: axon tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault target target2 texec callander lookup
 
 .PHONY: axon
 axon: $(objdir)/axon
@@ -121,7 +123,7 @@ test-trace: all
 	strace -f ./axon tests/sample_fs
 
 clean:
-	rm -f axon texec target callander *.debug *.o *.gcno *.gcov *.gcda tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault
+	rm -f axon texec target target2 callander lookup *.debug *.o *.gcno *.gcov *.gcda tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault
 	rm -rf "$(objdir)"
 
 $(objdir)/%.o: %.c *.h Makefile
@@ -147,6 +149,16 @@ install: axon libaxon.so ld.so.preload
 	cp -a axon /bin/
 	mkdir -p /etc
 	cp -a ld.so.preload /etc/
+
+lookup: $(foreach obj,$(LOOKUP_OBJECTS),$(objdir)/$(obj))
+ifeq ($(STANDALONE),1)
+	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+else
+	$(CC) $(LDFLAGS) -g -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+endif
+	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
+	$(STRIP) -s -R .comment -D "$@"
+	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 tests/sample: tests/sample.c *.h Makefile
 	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"

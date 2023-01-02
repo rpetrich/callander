@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-intptr_t remote_openat(int dirfd, const char *path, int flags, int mode);
+intptr_t remote_openat(int dirfd, const char *path, int flags, mode_t mode);
 intptr_t remote_truncate(const char *path, off_t length);
 
 intptr_t remote_read(int fd, char *buf, size_t bufsz);
