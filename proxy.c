@@ -525,7 +525,7 @@ void install_proxy(int fd)
 
 	int flags = 1;
 	int result = fs_setsockopt(fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
-	if (result < 0) {
+	if (result < 0 && (result != -ENOTSOCK)) {
 		DIE("Failed to disable nagle on socket", fs_strerror(result));
 	}
 
