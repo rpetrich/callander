@@ -943,12 +943,19 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					if ((flags & (MAP_PRIVATE | MAP_SHARED | MAP_SHARED_VALIDATE)) != MAP_PRIVATE) {
 						return -EINVAL;
 					}
-					void *result = fs_mmap(addr, len, prot, flags | MAP_ANONYMOUS, -1, 0);
+					void *result = fs_mmap(addr, len, PROT_READ | PROT_WRITE, flags | MAP_ANONYMOUS, -1, 0);
 					if (!fs_is_map_failed(result)) {
 						intptr_t read_result = remote_pread(remote_fd, result, len, off);
 						if (read_result < 0) {
 							fs_munmap(result, len);
 							return read_result;
+						}
+						if (prot != (PROT_READ | PROT_WRITE)) {
+							int prot_result = fs_mprotect(result, len, prot);
+							if (prot_result < 0) {
+								fs_munmap(result, len);
+								return prot_result;
+							}
 						}
 					}
 					return (intptr_t)result;
