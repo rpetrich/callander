@@ -62,6 +62,7 @@ static inline intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int f
 	if (fs_is_map_failed((void *)addr)) {
 		return addr;
 	}
+#if 0
 	// read bytes that would be mapped and poke into the mapping
 	char buf[1024 * 1024];
 	size_t cur = 0;
@@ -79,6 +80,15 @@ static inline intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int f
 		proxy_poke(addr + cur, result, buf);
 		cur += result;
 	} while(cur != length);
+#else
+	void *buf = fs_mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, offset);
+	if (fs_is_map_failed(buf)) {
+		remote_munmap(addr, length);
+		return (intptr_t)buf;
+	}
+	proxy_poke(addr, length, buf);
+	fs_munmap(buf, length);
+#endif
 	// set the memory protection as requested, if different
 	if (prot != (PROT_READ | PROT_WRITE)) {
 		int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot));
