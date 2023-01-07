@@ -722,6 +722,9 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 		current_aux++;
 	}
 	const char *executable_path = argv[1];
+	if (executable_path == NULL) {
+		DIE("expected a program to run");
+	}
 	// figure out comm
 	const char *comm = executable_path;
 	const char *comm_attempt = comm;
