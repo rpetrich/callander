@@ -136,7 +136,10 @@ static void setup_shared(void)
 {
 	void *mapped = fs_mmap(NULL, (sizeof(shared_page) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1), PROT_READ | PROT_WRITE, MAP_SHARED, SHARED_PAGE_FD, 0);
 	if (fs_is_map_failed(mapped)) {
-		DIE("mmap failed");
+		if ((intptr_t)mapped == -EBADF) {
+			DIE("not connected to a target");
+		}
+		DIE("mmap of shared page failed", fs_strerror((intptr_t)mapped));
 	}
 	shared_page *expected = NULL;
 	if (!atomic_compare_exchange_strong(&shared, &expected, (shared_page *)mapped)) {
