@@ -11,4 +11,8 @@ struct thread_func_args {
 	intptr_t arg3;
 };
 
+noreturn void thread_func(const struct thread_func_args *args);
+
+void thread_receive_syscall(intptr_t data[7]);
+
 #endif

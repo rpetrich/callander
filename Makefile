@@ -29,8 +29,8 @@ CFLAGS += -flto -fvisibility=hidden
 LDFLAGS += -flto -fvisibility=hidden
 
 # record stack usage to objs-*/*.su
-CFLAGS += -fstack-usage
-LDFLAGS += -fstack-usage
+# CFLAGS += -fstack-usage
+# LDFLAGS += -fstack-usage
 
 CFLAGS += -fomit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -fcf-protection=none
 ifeq ($(CC),gcc)
@@ -77,7 +77,8 @@ OBJECTS := attempt.o axon.o coverage.o darwin.o debugger.o defaultlibs.o \
 			telemetry.o time.o tls.o x86.o x86_64_length_disassembler.o
 TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    loader.o proxy.o qsort.o remote.o search.o seccomp.o \
-		    stack.o texec.o thread_func.o time.o tls.o x86.o
+		    stack.o texec.o thread_func.o time.o tls.o x86.o \
+		    callander.o patch_x86_64.o x86_64_length_disassembler.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o
@@ -98,11 +99,6 @@ objdir = .objs-$(TARGETMACHINE)
 .PHONY: all test test-debug test-trace clean install
 
 all: axon tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault target target2 texec callander lookup
-
-.PHONY: axon
-axon: $(objdir)/axon
-	ln -sf $(objdir)/axon axon
-	ln -sf $(objdir)/axon.debug axon.debug
 
 test: all
 	./compare.sh tests/sigsys_receive || exit 1
@@ -127,7 +123,7 @@ clean:
 	rm -rf "$(objdir)"
 
 $(objdir)/%.o: %.c *.h Makefile
-	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu11 -g -Os -o "$@" -c "$<"
+	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -fstack-usage -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu11 -g -Os -o "$@" -c "$<"
 
 $(objdir)/callander.o: callander.c *.h Makefile
 	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu11 -g -O2 -ftree-vectorize -o "$@" -c "$<"
@@ -138,7 +134,10 @@ $(objdir)/target.o: callander.c *.h Makefile
 $(objdir)/malloc.o: malloc.c *.h Makefile
 	$(CC) $(CFLAGS) -fPIC -ffreestanding -std=gnu11 -g -Os -DHAVE_MORECORE=0 -DHAVE_MMAP=1 -DUSE_DL_PREFIX=1 -DNO_MALLOC_STATS=1 -DUSE_LOCKS=0 '-DMALLOC_FAILURE_ACTION=abort();' -DLACKS_TIME_H -DHAVE_MREMAP=0 '-DDLMALLOC_EXPORT=__attribute__((visibility("hidden")))' -include axon.h -Dmalloc_getpagesize=PAGE_SIZE -o "$@" -c "$<"
 
-$(objdir)/axon: $(foreach obj,$(OBJECTS),$(objdir)/$(obj))
+$(objdir)/thread_func.o: thread_func.c *.h Makefile
+	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu11 -g -Os -o "$@" -c "$<"
+
+axon: $(foreach obj,$(OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) -Wno-lto-type-mismatch -Wl,--exclude-libs,ALL -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"

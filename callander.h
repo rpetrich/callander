@@ -350,6 +350,7 @@ void cleanup_searched_instructions(struct searched_instructions *search);
 struct recorded_syscall {
 	uintptr_t nr;
 	const uint8_t *ins;
+	const uint8_t *entry;
 	struct registers registers;
 };
 

@@ -413,7 +413,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		DIE("executable is setuid and not currently running as uid", loaded->uid);
 	}
 	if (UNLIKELY(loaded->mode & S_ISGID) && loaded->gid != analysis->loader.gid) {
-		DIE("executable is setuid and not currently running as gid", loaded->gid);
+		DIE("executable is setgid and not currently running as gid", loaded->gid);
 	}
 
 	// load LD_PRELOAD libraries

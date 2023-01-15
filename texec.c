@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#define PATCH_EXPOSE_INTERNALS
 #include "freestanding.h"
 
 #include "axon.h"
@@ -13,12 +14,93 @@ AXON_BOOTSTRAP_ASM
 #include <string.h>
 #include <sys/prctl.h>
 
+#include "callander.h"
 #include "exec.h"
 #include "loader.h"
+#include "patch_x86_64.h"
 #include "proxy.h"
 #include "search.h"
 #include "thread_func.h"
 #include "time.h"
+#include "x86_64_length_disassembler.h"
+
+__attribute__((used)) __attribute__((visibility("hidden")))
+void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
+{
+	struct loaded_binary *loaded;
+	int result = load_binary_into_analysis(analysis, executable_path, fd, NULL, &loaded);
+	if (result != 0) {
+		DIE("failed to load main binary", fs_strerror(result));
+	}
+	if (UNLIKELY(loaded->mode & S_ISUID)) {
+		DIE("executable is setuid");
+	}
+	if (UNLIKELY(loaded->mode & S_ISGID) && loaded->gid != analysis->loader.gid) {
+		DIE("executable is setgid");
+	}
+
+	// TODO: load LD_PRELOAD binaries
+
+	// finish loading the main binary
+	result = finish_loading_binary(analysis, loaded, EFFECT_NONE, false);
+	if (result != 0) {
+		DIE("failed to finish loading main binary", fs_strerror(result));
+	}
+	analysis->main = (uintptr_t)loaded->info.entrypoint;
+
+	// analyze the program
+	record_syscall(analysis, SYS_clock_gettime, (struct analysis_frame){
+		.current = { .address = NULL, .description = "vDSO", .next = NULL },
+		.current_state = empty_registers,
+		.entry = NULL,
+		.entry_state = &empty_registers,
+		.token = { 0 },
+	}, EFFECT_AFTER_STARTUP);
+
+	LOG("base", (uintptr_t)loaded->info.base);
+	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
+	LOG("size", (uintptr_t)loaded->info.size);
+	struct analysis_frame new_caller = { .current = { .address = loaded->info.base, .description = "entrypoint", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+	analyze_instructions(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
+
+	// interpreter entrypoint
+	struct loaded_binary *interpreter = analysis->loader.interpreter;
+	if (interpreter != NULL) {
+		LOG("assuming interpreter can run after startup");
+		struct analysis_frame new_caller = { .current = { .address = interpreter->info.base, .description = "interpreter", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller, true);
+	} else {
+		LOG("no interpreter for this binary");
+	}
+
+	LOG("finished initial pass, dequeuing instructions");
+	ERROR_FLUSH();
+	finish_analysis(analysis);
+
+	ERROR("syscalls", temp_str(copy_used_syscalls(&analysis->loader, &analysis->syscalls, false, true, true)));
+}
+
+#pragma GCC push_options
+#pragma GCC optimize ("-fomit-frame-pointer")
+__attribute__((noinline))
+static void analyze_binary(struct program_state *analysis, const char *executable_path, int fd)
+{
+	// allocate a temporary stack
+	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+	if (fs_is_map_failed(stack)) {
+		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
+	}
+
+	// apply the guard page
+	intptr_t result = fs_mprotect(stack, STACK_GUARD_SIZE, PROT_NONE);
+	if (result != 0) {
+		DIE("failed to protect stack guard", fs_strerror(result));
+	}
+	CALL_ON_ALTERNATE_STACK_WITH_ARG(perform_analysis, analysis, executable_path, fd, (char *)stack + ALT_STACK_SIZE + STACK_GUARD_SIZE);
+	// unmap the temporary stack
+	fs_munmap(stack, ALT_STACK_SIZE + STACK_GUARD_SIZE);
+}
+#pragma GCC pop_options
 
 static inline size_t ceil_to_page(size_t size)
 {
@@ -126,7 +208,7 @@ static int find_texec_section(const char *name, void **out_address, size_t *out_
 	}
 	const ElfW(Ehdr) *header = mapped;
 	const ElfW(Shdr) *strtabsh = (const ElfW(Shdr) *)((char *)mapped + header->e_shoff + header->e_shentsize * header->e_shstrndx);
-	const char *strtab = (const char *)(base_address + strtabsh->sh_offset);
+	const char *strtab = (const char *)(mapped + strtabsh->sh_offset);
 	for (int i = 0; i < header->e_shnum; i++) {
 		const ElfW(Shdr) *sh = (const ElfW(Shdr) *)((char *)mapped + header->e_shoff + header->e_shentsize * i);
 		if (fs_strcmp(&strtab[sh->sh_name], name) == 0) {
@@ -145,28 +227,23 @@ static int find_texec_section(const char *name, void **out_address, size_t *out_
 	return -ENOEXEC;
 }
 
-static int map_thread_func(intptr_t *out_thread_func_addr, size_t *out_size) {
-	void *thread_func;
-	size_t size;
-	int result = find_texec_section(THREAD_FUNC_SECTION, &thread_func, &size);
-	if (result < 0) {
-		return result;
-	}
+static int copy_buffer_remotely(void *buf, size_t size, int prot, intptr_t *out_remote_addr) {
 	size_t page_size = ceil_to_page(size);
-	intptr_t thread_func_addr = remote_mmap(0, page_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (fs_is_map_failed((void *)thread_func_addr)) {
-		ERROR("creating thread_func failed", fs_strerror(thread_func_addr));
-		return (int)thread_func_addr;
+	intptr_t remote_addr = remote_mmap(0, page_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (fs_is_map_failed((void *)remote_addr)) {
+		ERROR("creating remote failed", fs_strerror(remote_addr));
+		return (int)remote_addr;
 	}
-	proxy_poke(thread_func_addr, size, thread_func);
-	int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(thread_func_addr), proxy_value(page_size), proxy_value(PROT_READ | PROT_EXEC));
-	if (protect_result < 0) {
-		// unmap since the requested protection was invalid
-		remote_munmap(thread_func_addr, page_size);
-		return protect_result;
+	proxy_poke(remote_addr, size, buf);
+	if (prot != (PROT_READ | PROT_WRITE)) {
+		int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(remote_addr), proxy_value(page_size), proxy_value(prot));
+		if (protect_result < 0) {
+			// unmap since the requested protection was invalid
+			remote_munmap(remote_addr, page_size);
+			return protect_result;
+		}
 	}
-	*out_thread_func_addr = thread_func_addr;
-	*out_size = size;
+	*out_remote_addr = remote_addr;
 	return 0;
 }
 
@@ -412,17 +489,81 @@ int remote_exec_fd(int fd, const char *named_path, const char *const *argv, cons
 	return -ENOEXEC;
 }
 
+static bool should_try_to_patch_remotely(const struct recorded_syscall *syscall)
+{
+	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->ins != NULL;
+}
+
+static bool find_remote_patch_target(const struct recorded_syscall *syscall, struct instruction_range *out_result)
+{
+	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins + 2 };
+	// advance one. this isn't technically right, but getting something working
+	int next_length = InstructionSize_x86_64(basic_block.end, 15);
+	if (next_length != INSTRUCTION_INVALID) {
+		basic_block.end += next_length;
+	}
+	return find_patch_target(basic_block, syscall->ins, 5, 5, out_result);
+}
+
+static inline bool addresses_are_within_s32(intptr_t addr1, intptr_t addr2)
+{
+	intptr_t delta = addr1 - addr2;
+	return (delta < (intptr_t)0x70000000) && (delta > -(intptr_t)0x70000000);
+}
+
+static intptr_t alloc_remote_page_near_address(intptr_t address, size_t size, int prot)
+{
+	intptr_t attempt_low = address & -PAGE_SIZE;
+	intptr_t attempt_high = attempt_low;
+	size_t increment = PAGE_SIZE * 1024;
+	for (;;) {
+		attempt_low -= increment;
+		intptr_t result = remote_mmap(attempt_low, size, prot, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+		if (!fs_is_map_failed((void *)result)) {
+			if (addresses_are_within_s32(result, address)) {
+				return result;
+			}
+			remote_munmap(result, size);
+		}
+		attempt_high += increment;
+		result = remote_mmap(attempt_high, size, prot, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+		if (!fs_is_map_failed((void *)result)) {
+			if (addresses_are_within_s32(result, address)) {
+				return result;
+			}
+			remote_munmap(result, size);
+		}
+	}
+}
+
 #define STACK_SIZE (2 * 1024 * 1024)
 
 // remote_exec_fd_elf executes an elf binary from an open file
 static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const *argv, __attribute__((unused)) const char *const *envp, __attribute__((unused)) const ElfW(auxv_t) *aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path)
 {
+	// analyze the program
+	struct program_state analysis = { 0 };
+	init_searched_instructions(&analysis.search);
+	analyze_binary(&analysis, exec_path, fd);
+	// check if all instructions are patchable
+	for (int i = 0; i < analysis.syscalls.count; i++) {
+		if (should_try_to_patch_remotely(&analysis.syscalls.list[i])) {
+			struct instruction_range patch_target;
+			if (!find_remote_patch_target(&analysis.syscalls.list[i], &patch_target)) {
+				DIE("instruction is not patchable", temp_str(copy_address_description(&analysis.loader, analysis.syscalls.list[i].ins)));
+			}
+		}
+	}
 	// load the main binary
 	struct binary_info main_info = { 0 };
 	int result = remote_load_binary(fd, &main_info);
 	if (result < 0) {
+		cleanup_searched_instructions(&analysis.search);
 		return result;
 	}
+	ERROR("mapped main", exec_path);
+	ERROR("at", (uintptr_t)main_info.base);
+	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
 	struct binary_info interpreter_info = { 0 };
 	if (main_info.interpreter != NULL) {
@@ -430,12 +571,14 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		size_t length = proxy_peek_string((intptr_t)main_info.interpreter, PATH_MAX, buf);
 		if (length == PATH_MAX) {
 			remote_unload_binary(&main_info);
+			cleanup_searched_instructions(&analysis.search);
 			ERROR("interpreter is too long", length);
 			return -ENOEXEC;
 		}
 		int interpreter_fd = fs_openat(AT_FDCWD, buf, O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
 			remote_unload_binary(&main_info);
+			cleanup_searched_instructions(&analysis.search);
 			ERROR("unable to open ELF interpreter", fs_strerror(interpreter_fd));
 			return interpreter_fd;
 		}
@@ -444,6 +587,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		if (UNLIKELY(result < 0)) {
 			remote_unload_binary(&main_info);
 			fs_close(interpreter_fd);
+			cleanup_searched_instructions(&analysis.search);
 			ERROR("ELF interpreter is not executable", fs_strerror(result));
 			return result;
 		}
@@ -451,27 +595,43 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		fs_close(interpreter_fd);
 		if (UNLIKELY(result != 0)) {
 			remote_unload_binary(&main_info);
+			cleanup_searched_instructions(&analysis.search);
 			DIE("unable to load ELF interpreter", fs_strerror(result));
 			return result;
 		}
+		ERROR("mapped interpreter", &buf[0]);
+		ERROR("at", (uintptr_t)interpreter_info.base);
+		if (analysis.loader.interpreter != NULL) {
+			analysis.loader.interpreter->child_base = (uintptr_t)interpreter_info.base;
+		} else {
+			DIE("could not find interpreter to set base");
+		}
 	}
 	// map in thread function
-	intptr_t thread_func_addr;
+	void *thread_func_section;
 	size_t thread_func_size;
-	result = map_thread_func(&thread_func_addr, &thread_func_size);
+	result = find_texec_section(THREAD_FUNC_SECTION, &thread_func_section, &thread_func_size);
+	if (result < 0) {
+		return result;
+	}
+	intptr_t thread_func_addr;
+	result = copy_buffer_remotely(thread_func_section, thread_func_size, PROT_READ | PROT_EXEC, &thread_func_addr);
 	if (result < 0) {
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
 		return result;
 	}
+	ERROR("thread_func_addr", (uintptr_t)thread_func_addr);
 	// create thread stack
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
+		cleanup_searched_instructions(&analysis.search);
 		ERROR("creating stack failed", fs_strerror(stack));
 		return (int)stack;
 	}
+	ERROR("stack", (uintptr_t)stack);
 	// prepare thread args and dynv
 	size_t string_size = sizeof("x86_64") + 16;
 	size_t argc = count_args(argv, &string_size);
@@ -562,6 +722,11 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 				break;
 			case AT_SYSINFO_EHDR:
 				// TODO: system address page
+				aux_buf->a_un.a_val = 0;
+				aux_buf++;
+				break;
+			default:
+				ERROR("unknown auxv type", (intptr_t)aux_buf->a_type);
 				break;
 		}
 		++aux;
@@ -574,7 +739,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	args->arg2 = 0;
 	args->arg3 = 0;
 	proxy_poke(dynv_base, dynv_size, dynv_buf);
-	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(int32_t));
+	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
 	// Set comm so that pgrep, for example, will work
 	if (comm != NULL) {
 		int prctl_result = fs_prctl(PR_SET_NAME, (uintptr_t)comm, 0, 0, 0);
@@ -583,32 +748,135 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 			remote_munmap(stack, STACK_SIZE);
 			remote_unload_binary(&interpreter_info);
 			remote_unload_binary(&main_info);
+			cleanup_searched_instructions(&analysis.search);
 			ERROR("failed to set name", fs_strerror(prctl_result));
 			return prctl_result;
 		}
 	}
+	// check that all libraries have a child address
+	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
+		if (binary->child_base == 0) {
+			ERROR("found library without child base", binary->path);
+		}
+	}
+	// poke in breakpoints/patches
+	for (int i = 0; i < analysis.syscalls.count; i++) {
+		if (should_try_to_patch_remotely(&analysis.syscalls.list[i])) {
+			const uint8_t *addr = analysis.syscalls.list[i].ins;
+			uintptr_t child_addr = translate_analysis_address_to_child(&analysis.loader, addr);
+			if (child_addr != 0) {
+				// TODO: reprotect with correct protection
+#if 0
+				ERROR("mprotect", (uintptr_t)addr & -PAGE_SIZE);
+				ERROR("mprotect", child_addr & -PAGE_SIZE);
+				ERROR("size", PAGE_SIZE);
+				ERROR("prot", PROT_READ | PROT_WRITE | PROT_EXEC);
+				int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(child_addr & -PAGE_SIZE), proxy_value(PAGE_SIZE), proxy_value(PROT_READ | PROT_WRITE | PROT_EXEC));
+				if (protect_result < 0) {
+					DIE("failed to remote mprotect", fs_strerror(protect_result));
+					return protect_result;
+				}
+				char breakpoint = 0xcc;
+				proxy_poke(child_addr, 1, &breakpoint);
+#else
+				struct instruction_range patch_target;
+				if (!find_remote_patch_target(&analysis.syscalls.list[i], &patch_target)) {
+					DIE("instruction is not patchable", temp_str(copy_address_description(&analysis.loader, analysis.syscalls.list[i].ins)));
+				}
+				uintptr_t child_patch_start = translate_analysis_address_to_child(&analysis.loader, patch_target.start);
+				uintptr_t child_patch_end = translate_analysis_address_to_child(&analysis.loader, patch_target.end);
+				uintptr_t child_page_start = child_patch_start & -PAGE_SIZE;
+				uintptr_t child_page_end = (child_patch_end + (PAGE_SIZE-1)) & -PAGE_SIZE;
+				int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(child_page_start), proxy_value(child_page_end - child_page_start), proxy_value(PROT_READ | PROT_WRITE | PROT_EXEC));
+				if (protect_result < 0) {
+					DIE("failed to remote mprotect", fs_strerror(protect_result));
+					return protect_result;
+				}
+				// allocate a trampoline page
+				uintptr_t remote_trampoline_page = (uintptr_t)alloc_remote_page_near_address((intptr_t)child_patch_start, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+				// prepare and poke the trampoline
+				uint8_t trampoline_buf[PAGE_SIZE];
+				size_t cur = 0;
+				{
+					// // temporary breakpoint
+					// trampoline_buf[cur++] = 0xcc;
+					// copy the prefix of the syscall instruction that is overwritten by the patch
+					if (!migrate_instructions(&trampoline_buf[cur], patch_target.start, (uintptr_t)patch_target.start - (uintptr_t)&trampoline_buf[cur], addr - patch_target.start)) {
+						DIE("failed to migrate prefix");
+					}
+					cur += addr - patch_target.start;
+					// copy the prefix part of the trampoline
+					memcpy(&trampoline_buf[cur], trampoline_call_handler_start, (uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start);
+					cur += (uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start;
+					// // move address of remote handler function into rcx
+					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_0;
+					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_1;
+					uintptr_t thread_receive_syscall_remote = thread_func_addr + (intptr_t)&thread_receive_syscall - (intptr_t)thread_func_section;
+					trampoline_buf[cur++] = thread_receive_syscall_remote;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 8;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 16;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 24;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 32;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 40;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 48;
+					trampoline_buf[cur++] = thread_receive_syscall_remote >> 56;
+					// copy the suffix part of the trampoline
+					memcpy(&trampoline_buf[cur], trampoline_call_handler_call, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call);
+					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call;
+					// copy the suffix of the syscall instruction that is overwritten by the patch
+					for (const uint8_t *ins = addr + 2; ins < patch_target.end; ins++) {
+						trampoline_buf[cur++] = *ins;
+					}
+					// jump back to the resume point in the function
+					int32_t resume_relative_offset = child_patch_end - (remote_trampoline_page + cur + PCREL_JUMP_SIZE);
+					trampoline_buf[cur++] = INS_JMP_32_IMM;
+					trampoline_buf[cur++] = resume_relative_offset;
+					trampoline_buf[cur++] = resume_relative_offset >> 8;
+					trampoline_buf[cur++] = resume_relative_offset >> 16;
+					trampoline_buf[cur++] = resume_relative_offset >> 24;
+				}
+				proxy_poke(remote_trampoline_page, cur, trampoline_buf);
+				// patch the original code to jump to the trampoline page
+				int32_t detour_relative_offset = remote_trampoline_page - (child_patch_start + 5);
+				uint8_t jump_buf[PCREL_JUMP_SIZE];
+				jump_buf[0] = INS_JMP_32_IMM;
+				jump_buf[1] = detour_relative_offset;
+				jump_buf[2] = detour_relative_offset >> 8;
+				jump_buf[3] = detour_relative_offset >> 16;
+				jump_buf[4] = detour_relative_offset >> 24;
+				proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
+#endif
+			}
+		}
+	}
+	char buf;
+	if (fs_read(0, &buf, 1) != 1) {
+		DIE("exiting");
+	}
 	// spawn remote thread
-	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thread_func_addr));
+	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thread_func_addr + (intptr_t)&thread_func - (intptr_t)thread_func_section));
 	// intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(0), proxy_value((intptr_t)args->pc));
 	if (clone_result < 0) {
 		remote_munmap(thread_func_addr, thread_func_size);
 		remote_munmap(stack, STACK_SIZE);
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
+		cleanup_searched_instructions(&analysis.search);
 		ERROR("clone_result", fs_strerror(clone_result));
 		return clone_result;
 	}
 	// wait for remote thread
-	int tid;
+	pid_t tid;
 	do {
 		PROXY_CALL(__NR_futex, proxy_value(tid_ptr), proxy_value(FUTEX_WAIT), proxy_value(clone_result));
-		proxy_peek(tid_ptr, sizeof(int), &tid);
+		proxy_peek(tid_ptr, sizeof(pid_t), &tid);
 	} while (tid == clone_result);
 	// cleanup
 	remote_munmap(thread_func_addr, thread_func_size);
 	remote_munmap(stack, STACK_SIZE);
 	remote_unload_binary(&interpreter_info);
 	remote_unload_binary(&main_info);
+	cleanup_searched_instructions(&analysis.search);
 	return 0;
 }
 
@@ -718,6 +986,9 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 	while (current_aux->a_type != AT_NULL) {
 		if (current_aux->a_type == AT_PHDR) {
 			base_address = (uintptr_t)current_aux->a_un.a_val & (uintptr_t)-PAGE_SIZE;
+			struct binary_info self_info;
+			load_existing(&self_info, base_address);
+			relocate_binary(&self_info);
 		}
 		current_aux++;
 	}

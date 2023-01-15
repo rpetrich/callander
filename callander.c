@@ -2865,6 +2865,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		syscalls->list[index] = (struct recorded_syscall){
 			.nr = nr,
 			.ins = self.current.address,
+			.entry = self.entry,
 			.registers = self.current_state,
 		};
 		if (argc & SYSCALL_IS_RESTARTABLE) {
@@ -2874,6 +2875,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 			syscalls->list[index] = (struct recorded_syscall){
 				.nr = __NR_restart_syscall,
 				.ins = self.current.address,
+				.entry = self.entry,
 				.registers = restart,
 			};
 		}
@@ -8527,7 +8529,7 @@ static int protection_for_address(const struct loader_context *context, const vo
 	return 0;
 }
 
-static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr)
+struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr)
 {
 	if ((uintptr_t)addr < PAGE_SIZE) {
 		return NULL;
@@ -8600,6 +8602,9 @@ uintptr_t translate_analysis_address_to_child(struct loader_context *loader, con
 {
 	struct loaded_binary *binary = binary_for_address(loader, addr);
 	if (binary == NULL) {
+		return 0;
+	}
+	if (binary->child_base == 0) {
 		return 0;
 	}
 	return (uintptr_t)addr - (uintptr_t)binary->info.base + binary->child_base;
