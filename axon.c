@@ -38,7 +38,8 @@ typedef struct {
 	const char *exec_path;
 	struct r_debug *debug;
 	void (*debug_update)(void);
-	bool patch_syscalls;
+	bool patch_syscalls: 1;
+	bool intercept: 1;
 } bind_data;
 
 static void bind_axon(const bind_data data);
@@ -63,6 +64,7 @@ noreturn void release(size_t *sp)
 		.debug = NULL,
 		.debug_update = &_dl_debug_state,
 		.patch_syscalls = true,
+		.intercept = true,
 	};
 	// Skip over arguments
 	char **argv = (void *)(sp+1);
@@ -99,6 +101,8 @@ noreturn void release(size_t *sp)
 			} else if (fs_strncmp(*envp, "AXON_PATCH_SYSCALLS=false", sizeof("AXON_PATCH_SYSCALLS=false")) == 0) {
 				data.patch_syscalls = false;
 				*envp_copy++ = *envp;
+			} else if (fs_strncmp(*envp, "AXON_INTERCEPT=false", sizeof("AXON_INTERCEPT=false")-1) == 0) {
+				data.intercept = false;
 			}
 		} else {
 			*envp_copy++ = *envp;
@@ -313,28 +317,42 @@ noreturn static void bind_axon(bind_data data)
 	char filename[PATH_MAX+1];
 	if (data.comm == NULL) {
 		// Setup a seccomp policy so that syscalls will fault to userspace
-		result = apply_seccomp();
-		if (UNLIKELY(result != 0)) {
-			DIE("failed to apply seccomp filter", fs_strerror(result));
-		}
-		// Send initial working directory
-		if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_WORKING_DIR) {
-			int result = fs_getcwd(filename, PATH_MAX);
-			if (UNLIKELY(result < 0)) {
-				DIE("unable to read working directory", fs_strerror(result));
+		if (data.intercept) {
+			result = apply_seccomp();
+			if (UNLIKELY(result != 0)) {
+				DIE("failed to apply seccomp filter", fs_strerror(result));
 			}
-			send_update_working_dir_event(get_thread_storage(), filename, result - 1);
+			// Send initial working directory
+			if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_WORKING_DIR) {
+				int result = fs_getcwd(filename, PATH_MAX);
+				if (UNLIKELY(result < 0)) {
+					DIE("unable to read working directory", fs_strerror(result));
+				}
+				send_update_working_dir_event(get_thread_storage(), filename, result - 1);
+			}
 		}
 		// Install the proxy page
 		install_proxy(proxy_fd);
-		// Initialize the fd table
-		initialize_fd_table();
+		if (data.intercept) {
+			// Initialize the fd table
+			initialize_fd_table();
+		}
 		// Find the executable to exec
 		int fd = open_executable_in_paths(argv[data.interpreter_base == 0], path, true, startup_euid, startup_egid);
 		if (UNLIKELY(fd < 0)) {
 			DIE("could not find main executable", argv[1]);
 		}
-		result = exec_fd(fd, NULL, argv + (data.interpreter_base == 0), envp, argv[1], 0);
+		if (data.intercept) {
+			result = exec_fd(fd, NULL, argv + (data.interpreter_base == 0), envp, argv[1], 0);
+		} else {
+			char buf[PATH_MAX];
+			intptr_t count = fs_readlink_fd(fd, buf, sizeof(buf)-1);
+			if (count < 0) {
+				DIE("unable to read exec path", fs_strerror(count));
+			}
+			buf[count] = '\0';
+			result = fs_execve(buf, (char * const *)(argv + (data.interpreter_base == 0)), (char * const *)envp);
+		}
 		if (UNLIKELY(result < 0)) {
 			DIE("unable to exec", fs_strerror(result));
 		}

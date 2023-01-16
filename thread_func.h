@@ -11,8 +11,10 @@ struct thread_func_args {
 	intptr_t arg3;
 };
 
+ __attribute__((visibility("default")))
 noreturn void thread_func(const struct thread_func_args *args);
 
+ __attribute__((visibility("default")))
 void thread_receive_syscall(intptr_t data[7]);
 
 #endif

@@ -186,67 +186,6 @@ static inline intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int f
 
 static uintptr_t base_address;
 
-static int find_texec_section(const char *name, void **out_address, size_t *out_size)
-{
-	int self_fd = fs_open("/proc/self/exe", O_RDONLY, 0);
-	if (self_fd < 0) {
-		ERROR("could not open self");
-		return self_fd;
-	}
-	struct fs_stat stat;
-	int result = fs_fstat(self_fd, &stat);
-	if (result < 0) {
-		ERROR("could not stat self");
-		fs_close(self_fd);
-		return result;
-	}
-	void *mapped = fs_mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, self_fd, 0);
-	fs_close(self_fd);
-	if (fs_is_map_failed(mapped)) {
-		ERROR("could not map self");
-		return (intptr_t)mapped;
-	}
-	const ElfW(Ehdr) *header = mapped;
-	const ElfW(Shdr) *strtabsh = (const ElfW(Shdr) *)((char *)mapped + header->e_shoff + header->e_shentsize * header->e_shstrndx);
-	const char *strtab = (const char *)(mapped + strtabsh->sh_offset);
-	for (int i = 0; i < header->e_shnum; i++) {
-		const ElfW(Shdr) *sh = (const ElfW(Shdr) *)((char *)mapped + header->e_shoff + header->e_shentsize * i);
-		if (fs_strcmp(&strtab[sh->sh_name], name) == 0) {
-			if (sh->sh_addr != 0) {
-				*out_address = (void *)(base_address + sh->sh_addr);
-				*out_size = sh->sh_size;
-				fs_munmap(mapped, stat.st_size);
-				return 0;
-			}
-			ERROR("not mapped");
-			return -ENOEXEC;
-		}
-	}
-	fs_munmap(mapped, stat.st_size);
-	ERROR("section not found");
-	return -ENOEXEC;
-}
-
-static int copy_buffer_remotely(void *buf, size_t size, int prot, intptr_t *out_remote_addr) {
-	size_t page_size = ceil_to_page(size);
-	intptr_t remote_addr = remote_mmap(0, page_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (fs_is_map_failed((void *)remote_addr)) {
-		ERROR("creating remote failed", fs_strerror(remote_addr));
-		return (int)remote_addr;
-	}
-	proxy_poke(remote_addr, size, buf);
-	if (prot != (PROT_READ | PROT_WRITE)) {
-		int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(remote_addr), proxy_value(page_size), proxy_value(prot));
-		if (protect_result < 0) {
-			// unmap since the requested protection was invalid
-			remote_munmap(remote_addr, page_size);
-			return protect_result;
-		}
-	}
-	*out_remote_addr = remote_addr;
-	return 0;
-}
-
 static int remote_load_binary(int fd, struct binary_info *out_info)
 {
 	const ElfW(Ehdr) header;
@@ -608,18 +547,48 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		}
 	}
 	// map in thread function
-	void *thread_func_section;
-	size_t thread_func_size;
-	result = find_texec_section(THREAD_FUNC_SECTION, &thread_func_section, &thread_func_size);
-	if (result < 0) {
-		return result;
+	char thandler_buf[PATH_MAX];
+	ssize_t thandler_char_count = fs_readlink("/proc/self/exe", thandler_buf, sizeof(thandler_buf));
+	while(thandler_buf[thandler_char_count-1] != '/') {
+		thandler_char_count--;
 	}
-	intptr_t thread_func_addr;
-	result = copy_buffer_remotely(thread_func_section, thread_func_size, PROT_READ | PROT_EXEC, &thread_func_addr);
+	fs_memcpy(&thandler_buf[thandler_char_count], "thandler", sizeof("thandler"));
+	int thandler_fd = fs_open(thandler_buf, O_RDONLY|O_CLOEXEC, 0);
+	struct binary_info thandler_info;
+	result = remote_load_binary(thandler_fd, &thandler_info);
 	if (result < 0) {
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
+		fs_close(thandler_fd);
 		return result;
+	}
+	ERROR("mapped thandler", &thandler_buf[0]);
+	ERROR("at", (uintptr_t)thandler_info.base);
+	struct binary_info thandler_local_info;
+	result = load_binary(thandler_fd, &thandler_local_info, 0, false);
+	if (result < 0) {
+		remote_unload_binary(&interpreter_info);
+		remote_unload_binary(&main_info);
+		remote_unload_binary(&thandler_info);
+		fs_close(thandler_fd);
+		return result;
+	}
+	struct symbol_info thandler_symbols;
+	result = load_dynamic_symbols(thandler_fd, &thandler_local_info, &thandler_symbols);
+	fs_close(thandler_fd);
+	if (result < 0) {
+		remote_unload_binary(&interpreter_info);
+		remote_unload_binary(&main_info);
+		remote_unload_binary(&thandler_info);
+		unload_binary(&thandler_local_info);
+		fs_close(thandler_fd);
+		return result;
+	}
+	intptr_t thread_func_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "thread_func", NULL, NULL);
+	intptr_t thread_receive_syscall_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "thread_receive_syscall", NULL, NULL);
+	free_symbols(&thandler_symbols);
+	if (thread_func_addr == 0 || thread_receive_syscall_addr == 0) {
+		ERROR("missing symbols");
 	}
 	ERROR("thread_func_addr", (uintptr_t)thread_func_addr);
 	// create thread stack
@@ -627,6 +596,8 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	if (fs_is_map_failed((void *)stack)) {
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
+		remote_unload_binary(&thandler_info);
+		unload_binary(&thandler_local_info);
 		cleanup_searched_instructions(&analysis.search);
 		ERROR("creating stack failed", fs_strerror(stack));
 		return (int)stack;
@@ -744,10 +715,10 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	if (comm != NULL) {
 		int prctl_result = fs_prctl(PR_SET_NAME, (uintptr_t)comm, 0, 0, 0);
 		if (prctl_result < 0) {
-			remote_munmap(thread_func_addr, thread_func_size);
 			remote_munmap(stack, STACK_SIZE);
 			remote_unload_binary(&interpreter_info);
 			remote_unload_binary(&main_info);
+			remote_unload_binary(&thandler_info);
 			cleanup_searched_instructions(&analysis.search);
 			ERROR("failed to set name", fs_strerror(prctl_result));
 			return prctl_result;
@@ -811,7 +782,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 					// // move address of remote handler function into rcx
 					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_0;
 					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_1;
-					uintptr_t thread_receive_syscall_remote = thread_func_addr + (intptr_t)&thread_receive_syscall - (intptr_t)thread_func_section;
+					uintptr_t thread_receive_syscall_remote = (intptr_t)thread_receive_syscall_addr;
 					trampoline_buf[cur++] = thread_receive_syscall_remote;
 					trampoline_buf[cur++] = thread_receive_syscall_remote >> 8;
 					trampoline_buf[cur++] = thread_receive_syscall_remote >> 16;
@@ -850,17 +821,18 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		}
 	}
 	char buf;
+	ERROR("press enter to continue");
 	if (fs_read(0, &buf, 1) != 1) {
 		DIE("exiting");
 	}
 	// spawn remote thread
-	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thread_func_addr + (intptr_t)&thread_func - (intptr_t)thread_func_section));
+	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thread_func_addr));
 	// intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(0), proxy_value((intptr_t)args->pc));
 	if (clone_result < 0) {
-		remote_munmap(thread_func_addr, thread_func_size);
 		remote_munmap(stack, STACK_SIZE);
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
+		remote_unload_binary(&thandler_info);
 		cleanup_searched_instructions(&analysis.search);
 		ERROR("clone_result", fs_strerror(clone_result));
 		return clone_result;
@@ -872,10 +844,10 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		proxy_peek(tid_ptr, sizeof(pid_t), &tid);
 	} while (tid == clone_result);
 	// cleanup
-	remote_munmap(thread_func_addr, thread_func_size);
 	remote_munmap(stack, STACK_SIZE);
 	remote_unload_binary(&interpreter_info);
 	remote_unload_binary(&main_info);
+	remote_unload_binary(&thandler_info);
 	cleanup_searched_instructions(&analysis.search);
 	return 0;
 }

@@ -77,8 +77,9 @@ OBJECTS := attempt.o axon.o coverage.o darwin.o debugger.o defaultlibs.o \
 			telemetry.o time.o tls.o x86.o x86_64_length_disassembler.o
 TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    loader.o proxy.o qsort.o remote.o search.o seccomp.o \
-		    stack.o texec.o thread_func.o time.o tls.o x86.o \
+		    stack.o texec.o time.o tls.o x86.o \
 		    callander.o patch_x86_64.o x86_64_length_disassembler.o
+THANDLER_OBJECTS := thread_func.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o
@@ -98,7 +99,7 @@ objdir = .objs-$(TARGETMACHINE)
 
 .PHONY: all test test-debug test-trace clean install
 
-all: axon tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault target target2 texec callander lookup
+all: axon tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault target target2 texec thandler callander lookup
 
 test: all
 	./compare.sh tests/sigsys_receive || exit 1
@@ -119,7 +120,7 @@ test-trace: all
 	strace -f ./axon tests/sample_fs
 
 clean:
-	rm -f axon texec target target2 callander lookup *.debug *.o *.gcno *.gcov *.gcda tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault
+	rm -f axon texec thandler target target2 callander lookup *.debug *.o *.gcno *.gcov *.gcda tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault
 	rm -rf "$(objdir)"
 
 $(objdir)/%.o: %.c *.h Makefile
@@ -183,6 +184,7 @@ tests/fault: tests/fault.c *.h Makefile
 tests/segfault: tests/segfault.c *.h Makefile
 	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"
 
+# full axon target payload
 target: target.c *.h Makefile
 ifeq ($(TARGETOS),linux)
 	$(CC) $(LDFLAGS) -g -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
@@ -193,6 +195,7 @@ else
 	$(CC) $(LDFLAGS) -g -o "$@" "$<"
 endif
 
+# basic remote shell payload
 target2: target2.c *.h Makefile
 ifeq ($(TARGETOS),linux)
 	$(CC) $(LDFLAGS) -g -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
@@ -203,8 +206,16 @@ else
 	$(CC) $(LDFLAGS) -g -o "$@" "$<"
 endif
 
+# executes binaries remotely
 texec: $(foreach obj,$(TEXEC_OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
+	$(STRIP) -s -R .comment -D "$@"
+	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
+
+# payload for executing binaries remotely
+thandler: $(foreach obj,$(THANDLER_OBJECTS),$(objdir)/$(obj))
+	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
