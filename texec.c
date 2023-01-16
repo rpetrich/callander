@@ -27,6 +27,9 @@ AXON_BOOTSTRAP_ASM
 __attribute__((used)) __attribute__((visibility("hidden")))
 void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
 {
+	// skip gconv. if something is using gconv, it can fail
+	analysis->loader.loaded_gconv_libraries = true;
+	// load the main executable
 	struct loaded_binary *loaded;
 	int result = load_binary_into_analysis(analysis, executable_path, fd, NULL, &loaded);
 	if (result != 0) {

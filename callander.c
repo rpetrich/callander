@@ -2115,10 +2115,6 @@ static void handle_dlopen(struct program_state *analysis, struct registers *stat
 static void handle_gconv_find_shlib(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered gconv_find_shlib call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
-	if (analysis->loader.loaded_gconv_libraries) {
-		return;
-	}
-	analysis->loader.loaded_gconv_libraries = true;
 	struct analysis_frame self = {
 		.current = {
 			.description = NULL,
@@ -2130,6 +2126,10 @@ static void handle_gconv_find_shlib(struct program_state *analysis, struct regis
 	};
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
 	*token = self.token;
+	if (analysis->loader.loaded_gconv_libraries) {
+		return;
+	}
+	analysis->loader.loaded_gconv_libraries = true;
 	int dirfd = fs_open("/usr/lib/x86_64-linux-gnu/gconv/", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (dirfd < 0) {
 		DIE("failed to open gconv library path", fs_strerror(dirfd));
