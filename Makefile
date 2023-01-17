@@ -71,15 +71,17 @@ endif
 STANDALONE ?= 1
 
 OBJECTS := attempt.o axon.o coverage.o darwin.o debugger.o defaultlibs.o \
-			exec.o fd_table.o install.o intercept.o handler.o libraries.o \
-			loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o preload.o \
-			proxy.o qsort.o remote.o resolver.o search.o seccomp.o stack.o \
-			telemetry.o time.o tls.o x86.o x86_64_length_disassembler.o
+			exec.o fd_table.o fork.o install.o intercept.o handler.o libraries.o \
+			loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o paths.o \
+			preload.o proxy.o qsort.o remote.o resolver.o search.o seccomp.o \
+			stack.o telemetry.o time.o tls.o x86.o x86_64_length_disassembler.o
 TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    loader.o proxy.o qsort.o remote.o search.o seccomp.o \
 		    stack.o texec.o time.o tls.o x86.o \
 		    callander.o patch_x86_64.o x86_64_length_disassembler.o
-THANDLER_OBJECTS := thread_func.o
+THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table.o \
+			fork_target.o handler.o intercept_target.o malloc.o paths.o proxy_target.o \
+			remote.o stack.o telemetry.o thread_func.o tls.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o

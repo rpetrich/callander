@@ -193,6 +193,7 @@ void clear_fd_table(void)
 	fs_mutex_unlock(&table_lock);
 }
 
+__attribute__((warn_unused_result))
 int install_local_fd(int fd, int flags)
 {
 	if (fd < MAX_TABLE_SIZE && fd >= 0) {
@@ -203,6 +204,7 @@ int install_local_fd(int fd, int flags)
 	return fd;
 }
 
+__attribute__((warn_unused_result))
 int install_remote_fd(int remote_fd, int flags)
 {
 	if (remote_fd < 0) {
@@ -260,19 +262,19 @@ int become_remote_fd(int fd, int remote_fd) {
 	return 0;
 }
 
-bool lookup_remote_fd(int fd, int *out_remote_fd)
+__attribute__((warn_unused_result))
+bool lookup_real_fd(int fd, int *out_real_fd)
 {
 	if (fd < MAX_TABLE_SIZE && fd >= 0) {
 		fs_mutex_lock(&table_lock);
 		if (table[fd] & HAS_REMOTE_FD) {
-			if (out_remote_fd != NULL) {
-				*out_remote_fd = table[fd] >> USED_BITS;
-			}
+			*out_real_fd = table[fd] >> USED_BITS;
 			fs_mutex_unlock(&table_lock);
 			return true;
 		}
 		fs_mutex_unlock(&table_lock);
 	}
+	*out_real_fd = fd;
 	return false;
 }
 
@@ -300,6 +302,7 @@ int perform_close(int fd)
 	return fs_close(fd);
 }
 
+__attribute__((warn_unused_result))
 int perform_dup(int oldfd, int flags)
 {
 	if (oldfd < MAX_TABLE_SIZE && oldfd >= 0) {
@@ -330,6 +333,7 @@ int perform_dup(int oldfd, int flags)
 	return fs_dup(oldfd);
 }
 
+__attribute__((warn_unused_result))
 int perform_dup3(int oldfd, int newfd, int flags)
 {
 	if (oldfd < MAX_TABLE_SIZE && oldfd >= 0) {
@@ -375,4 +379,10 @@ int perform_set_fd_flags(int fd, int flags)
 		return result;
 	}
 	return FS_SYSCALL(__NR_fcntl, fd, F_SETFD, flags);
+}
+
+__attribute__((warn_unused_result))
+int perform_get_fd_flags(int fd)
+{
+	return FS_SYSCALL(__NR_fcntl, fd, F_GETFD);
 }

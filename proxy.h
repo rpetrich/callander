@@ -76,7 +76,14 @@ intptr_t proxy_call(int syscall, proxy_arg args[6]);
 intptr_t proxy_send(int syscall, proxy_arg args[6]);
 intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6]);
 
+#ifdef PROXY_SUPPORT_DARWIN
 enum target_platform proxy_get_target_platform(void);
+#else
+__attribute__((always_inline))
+static inline enum target_platform proxy_get_target_platform(void) {
+	return TARGET_PLATFORM_LINUX;
+}
+#endif
 
 #define PROXY_ARGS_(_1, _2, _3, _4, _5, N, ...) N
 #define PROXY_ARGS(...) (proxy_arg[6]){ \

@@ -368,6 +368,8 @@ intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6])
 	return result;
 }
 
+#ifdef PROXY_SUPPORT_DARWIN
+
 enum target_platform proxy_get_target_platform(void)
 {
 	if (shared == NULL) {
@@ -375,6 +377,8 @@ enum target_platform proxy_get_target_platform(void)
 	}
 	return (enum target_platform)shared->hello.target_platform;
 }
+
+#endif
 
 void proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {

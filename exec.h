@@ -16,10 +16,8 @@ extern gid_t startup_egid;
 // axon_stat is a cached copy of stat for the main axon
 extern struct fs_stat axon_stat;
 
-__attribute__((always_inline))
-static inline bool is_axon(const struct fs_stat *stat) {
-	return stat->st_dev == axon_stat.st_dev && stat->st_ino == axon_stat.st_ino;
-}
+__attribute__((warn_unused_result))
+bool is_axon(const struct fs_stat *stat);
 
 // get_self_pid returns the current process' PID
 pid_t get_self_pid(void);
@@ -30,5 +28,11 @@ void invalidate_self_pid(void);
 // exec_fd executes an open file via the axon bootstrap, handling native-arch ELF and #! programs only
 __attribute__((warn_unused_result))
 int exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth);
+
+struct thread_storage;
+
+// wrapped_execveat executes a program via the axon bootstrap, handling native-arch ELF and #! programs only
+__attribute__((warn_unused_result))
+int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filename, const char *const *argv, const char *const *envp, int flags);
 
 #endif

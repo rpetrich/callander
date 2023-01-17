@@ -8,6 +8,7 @@
 #include "fd_table.h"
 #include "freestanding.h"
 #include "loader.h"
+#include "paths.h"
 #include "seccomp.h"
 #include "telemetry.h"
 
@@ -39,6 +40,12 @@ pid_t get_self_pid(void)
 void invalidate_self_pid(void)
 {
 	atomic_store(&pid, 0);
+}
+
+__attribute__((warn_unused_result))
+bool is_axon(const struct fs_stat *stat)
+{
+	return stat->st_dev == axon_stat.st_dev && stat->st_ino == axon_stat.st_ino;
 }
 
 // count_args counts the number of arguments in an argv array
@@ -261,3 +268,65 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 	fs_close(fd);
 	return result;
 }
+
+// wrapped_execveat handles exec syscalls
+__attribute__((warn_unused_result))
+int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filename, const char *const *argv, const char *const *envp, int flags)
+{
+	// open file to exec
+	int fd;
+	if (dfd != AT_FDCWD && (flags & AT_EMPTY_PATH) && (filename == NULL || *filename == '\0')) {
+		fd = fs_dup(dfd);
+	} else {
+		fd = fs_openat(dfd, filename, flags & AT_SYMLINK_NOFOLLOW ? O_RDONLY | O_NOFOLLOW : O_RDONLY, 0);
+	}
+	int result;
+	if (fd < 0) {
+		result = fd;
+		goto error;
+	}
+	struct attempt_cleanup_state state;
+	attempt_push_close(thread, &state, fd);
+	// check that we're allowed to exec
+	struct fs_stat stat;
+	result = verify_allowed_to_exec(fd, &stat, startup_euid, startup_egid);
+	if (result != 0) {
+		goto close_and_error;
+	}
+	// if executing axon, change to the main fd and check again
+	if (special_path_type(filename) == SPECIAL_PATH_TYPE_EXE && is_axon(&stat)) {
+		result = fixup_exe_open(dfd, filename, O_RDONLY);
+		if (result < 0) {
+			goto close_and_error;
+		}
+		attempt_pop_close(&state);
+		fd = result;
+		attempt_push_close(thread, &state, fd);
+		result = verify_allowed_to_exec(fd, &stat, startup_euid, startup_egid);
+		if (result != 0) {
+			goto close_and_error;
+		}
+	}
+	// send the open read only telemetry event, if necessary
+	if (enabled_telemetry & TELEMETRY_TYPE_OPEN_READ_ONLY) {
+		char path[PATH_MAX];
+		int len = fs_readlink_fd(fd, path, sizeof(path));
+		if (len > 0) {
+			send_open_read_only_event(thread, path, len, O_RDONLY);
+		} else {
+			result = -EACCES;
+			goto close_and_error;
+		}
+	}
+	// actually exec
+	result = exec_fd(fd, dfd == AT_FDCWD ? filename : NULL, argv, envp, filename, 0);
+close_and_error:
+	attempt_pop_close(&state);
+error:
+	// send the exec event, if failed
+	if (enabled_telemetry & TELEMETRY_TYPE_EXEC) {
+		send_exec_event(thread, filename, fs_strlen(filename), argv, result);
+	}
+	return result;
+}
+

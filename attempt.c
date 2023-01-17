@@ -58,8 +58,7 @@ noreturn void attempt_cancel(struct thread_storage *thread)
 	__builtin_unreachable();
 }
 
-// attempt_exit runs all of the cleanups in the current attempt, destroys tls
-// and calls exit
+// attempt_exit runs all of the cleanups in the current attempt and destroys tls
 __attribute__((noinline))
 void attempt_exit(struct thread_storage *thread)
 {
