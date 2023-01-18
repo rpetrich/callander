@@ -2149,30 +2149,17 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const char *path = (const char *)arg1;
 			path_info real;
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				int real_fd = remote_openat(real.fd, real.path, O_PATH, 0);
+				int real_fd = remote_openat(real.fd, real.path, O_PATH|O_DIRECTORY, 0);
 				if (real_fd < 0) {
 					return real_fd;
 				}
-				struct fs_stat stat;
-				int result = remote_fstat(real_fd, &stat);
-				if (result < 0) {
-					return result;
-				}
-				if (!S_ISDIR(stat.st_mode)) {
-					return -ENOTDIR;
-				}
-				result = chdir_become_remote_fd(real_fd);
-				if (result < 0) {
-					remote_close(real_fd);
-				}
-				return 0;
+				return chdir_become_remote_fd(real_fd);
 			}
 			if (real.fd != AT_FDCWD) {
 				return -EINVAL;
 			}
-			intptr_t result = fs_chdir(real.path);
+			int result = chdir_become_local_path(real.path);
 			if (result == 0) {
-				result = chdir_become_local();
 				working_dir_changed(thread);
 			}
 			return result;
@@ -2188,11 +2175,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				if (!S_ISDIR(stat.st_mode)) {
 					return -ENOTDIR;
 				}
-				return chdir_become_remote_fd(real_fd);
+				// TODO: do this without a remote dup
+				int new_remote_fd = PROXY_CALL(__NR_dup, proxy_value(real_fd));
+				if (new_remote_fd < 0) {
+					return new_remote_fd;
+				}
+				return chdir_become_remote_fd(new_remote_fd);
 			}
-			intptr_t result = fs_fchdir(real_fd);
+			int result = chdir_become_local_fd(real_fd);
 			if (result == 0) {
-				result = chdir_become_local();
 				working_dir_changed(thread);
 			}
 			return result;
@@ -2454,6 +2445,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 #endif
 		case __NR_dup3: {
+			if (arg1 == arg2) {
+				return -EINVAL;
+			}
 			if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
 				send_dup3_attempt_event(thread, arg1, arg2, arg3);
 			}

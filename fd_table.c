@@ -12,7 +12,6 @@
 #define HAS_LOCAL_FD 2
 #define HAS_CLOEXEC 4
 #define USED_BITS 3
-#define MAX_TABLE_SIZE 1024
 
 static int table[MAX_TABLE_SIZE];
 static struct fs_mutex table_lock;
@@ -214,6 +213,7 @@ int install_remote_fd(int remote_fd, int flags)
 	int result = fs_fcntl(DEAD_FD, flags & O_CLOEXEC ? F_DUPFD_CLOEXEC : F_DUPFD, 0);
 	if (result >= 0) {
 		if (result >= MAX_TABLE_SIZE) {
+			fs_mutex_unlock(&table_lock);
 			remote_close(remote_fd);
 			fs_close(result);
 			return -EMFILE;
@@ -221,8 +221,11 @@ int install_remote_fd(int remote_fd, int flags)
 		table[result] = (remote_fd << USED_BITS) | HAS_REMOTE_FD | (flags & O_CLOEXEC ? HAS_CLOEXEC : 0);
 		int *counts = get_fd_counts();
 		atomic_fetch_add_explicit(&counts[remote_fd], 1, memory_order_relaxed);
+		fs_mutex_unlock(&table_lock);
+	} else {
+		fs_mutex_unlock(&table_lock);
+		remote_close(remote_fd);
 	}
-	fs_mutex_unlock(&table_lock);
 	return result;
 }
 
@@ -231,12 +234,14 @@ int become_remote_fd(int fd, int remote_fd) {
 		return remote_fd;
 	}
 	if (fd > MAX_TABLE_SIZE || fd < 0) {
+		remote_close(remote_fd);
 		return -EMFILE;
 	}
 	fs_mutex_lock(&table_lock);
 	int existing = table[fd];
 	if (existing == 0) {
 		fs_mutex_unlock(&table_lock);
+		remote_close(remote_fd);
 		return -EINVAL;
 	}
 	int *counts = get_fd_counts();
@@ -253,6 +258,7 @@ int become_remote_fd(int fd, int remote_fd) {
 		int result = fs_dup3(DEAD_FD, fd, (existing & HAS_CLOEXEC) ? O_CLOEXEC : 0);
 		if (result < 0) {
 			fs_mutex_unlock(&table_lock);
+			remote_close(remote_fd);
 			return -EINVAL;
 		}
 	}
@@ -419,3 +425,24 @@ int chdir_become_local(void)
 	}
 	return result;
 }
+
+__attribute__((warn_unused_result))
+int chdir_become_local_path(const char *path)
+{
+	int result = fs_chdir(path);
+	if (result == 0) {
+		result = chdir_become_local();
+	}
+	return result;
+}
+
+__attribute__((warn_unused_result))
+int chdir_become_local_fd(int local_fd)
+{
+	int result = fs_fchdir(local_fd);
+	if (result == 0) {
+		result = chdir_become_local();
+	}
+	return result;
+}
+
