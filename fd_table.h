@@ -32,4 +32,13 @@ int perform_set_fd_flags(int fd, int flags);
 __attribute__((warn_unused_result))
 int perform_get_fd_flags(int fd);
 
+__attribute__((warn_unused_result))
+int chdir_become_local(void);
+
+__attribute__((warn_unused_result))
+static inline int chdir_become_remote_fd(int remote_fd)
+{
+	return become_remote_fd(CWD_FD, remote_fd);
+}
+
 #endif

@@ -347,6 +347,12 @@ static inline int fs_open(const char *path, int flags, mode_t mode)
 }
 
 __attribute__((warn_unused_result))
+static inline int fs_openat(int fd, const char *path, int flags, mode_t mode)
+{
+	return FS_SYSCALL(SYS_openat, fd, (intptr_t)path, flags, mode);
+}
+
+__attribute__((warn_unused_result))
 static inline int fs_mkdir(const char *path, mode_t mode)
 {
 #ifdef SYS_mkdir
@@ -357,9 +363,9 @@ static inline int fs_mkdir(const char *path, mode_t mode)
 }
 
 __attribute__((warn_unused_result))
-static inline int fs_openat(int fd, const char *path, int flags, mode_t mode)
+static inline int fs_mkdirat(int dirfd, const char *path, mode_t mode)
 {
-	return FS_SYSCALL(SYS_openat, fd, (intptr_t)path, flags, mode);
+	return FS_SYSCALL(SYS_mkdirat, dirfd, (intptr_t)path, mode);
 }
 
 __attribute__((warn_unused_result))

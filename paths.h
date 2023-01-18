@@ -59,6 +59,6 @@ typedef struct {
 } path_info;
 
 __attribute__((warn_unused_result))
-bool extract_remote_path(int fd, const char *path, path_info *out_path);
+bool lookup_real_path(int fd, const char *path, path_info *out_path);
 
 #endif

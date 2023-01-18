@@ -7,7 +7,7 @@
 #include <fcntl.h>
 
 __attribute__((warn_unused_result))
-bool extract_remote_path(int fd, const char *path, path_info *out_path)
+bool lookup_real_path(int fd, const char *path, path_info *out_path)
 {
 	if (path != NULL) {
 		if (path[0] == '/') {
@@ -34,7 +34,14 @@ bool extract_remote_path(int fd, const char *path, path_info *out_path)
 			return false;
 		}
 		out_path->path = path;
-		return lookup_real_fd(fd == AT_FDCWD ? CWD_FD : fd, &out_path->fd);
+		if (fd == AT_FDCWD) {
+			if (lookup_real_fd(CWD_FD, &out_path->fd)) {
+				return true;
+			}
+			out_path->fd = AT_FDCWD;
+			return false;
+		}
+		return lookup_real_fd(fd, &out_path->fd);
 	}
 	out_path->path = NULL;
 	return lookup_real_fd(fd, &out_path->fd);

@@ -393,3 +393,29 @@ int perform_get_fd_flags(int fd)
 {
 	return FS_SYSCALL(__NR_fcntl, fd, F_GETFD);
 }
+
+__attribute__((warn_unused_result))
+int chdir_become_local(void)
+{
+	fs_mutex_lock(&table_lock);
+	int value = table[CWD_FD];
+	if (value & HAS_LOCAL_FD) {
+		fs_mutex_unlock(&table_lock);
+		return 0;
+	}
+	int result = fs_dup3(DEAD_FD, CWD_FD, 0);
+	if (result < 0) {
+		fs_mutex_unlock(&table_lock);
+		return result;
+	}
+	table[CWD_FD] = HAS_LOCAL_FD;
+	fs_mutex_unlock(&table_lock);
+	if (value & HAS_REMOTE_FD) {
+		int remote_fd = value >> USED_BITS;
+		int *counts = get_fd_counts();
+		if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+			remote_close(remote_fd);
+		}
+	}
+	return result;
+}
