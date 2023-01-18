@@ -353,10 +353,17 @@ int perform_dup3(int oldfd, int newfd, int flags)
 			fs_mutex_unlock(&table_lock);
 			return result;
 		}
+		int old_table_value = table[result];
 		table[result] = (old & ~HAS_CLOEXEC) | (flags & O_CLOEXEC ? HAS_CLOEXEC : 0);
+		int *counts = get_fd_counts();
 		if (old & HAS_REMOTE_FD) {
-			int *counts = get_fd_counts();
 			atomic_fetch_add_explicit(&counts[old >> USED_BITS], 1, memory_order_relaxed);
+		}
+		if (old_table_value & HAS_REMOTE_FD) {
+			int remote_fd = old_table_value >> USED_BITS;
+			if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+				remote_close(remote_fd);
+			}
 		}
 		fs_mutex_unlock(&table_lock);
 		return result;
