@@ -20,7 +20,7 @@ AXON_BOOTSTRAP_ASM
 #include "patch_x86_64.h"
 #include "proxy.h"
 #include "search.h"
-#include "thread_func.h"
+#include "thandler.h"
 #include "time.h"
 #include "x86_64_length_disassembler.h"
 
@@ -587,13 +587,13 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		fs_close(thandler_fd);
 		return result;
 	}
-	intptr_t thread_func_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "thread_func", NULL, NULL);
-	intptr_t thread_receive_syscall_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "thread_receive_syscall", NULL, NULL);
+	intptr_t start_thread_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "start_thread", NULL, NULL);
+	intptr_t receive_syscall_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "receive_syscall", NULL, NULL);
 	free_symbols(&thandler_symbols);
-	if (thread_func_addr == 0 || thread_receive_syscall_addr == 0) {
+	if (start_thread_addr == 0 || receive_syscall_addr == 0) {
 		ERROR("missing symbols");
 	}
-	ERROR("thread_func_addr", (uintptr_t)thread_func_addr);
+	ERROR("start_thread_addr", (uintptr_t)start_thread_addr);
 	// create thread stack
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
@@ -610,7 +610,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	size_t string_size = sizeof("x86_64") + 16;
 	size_t argc = count_args(argv, &string_size);
 	size_t envc = count_args(envp, &string_size);
-	size_t header_size = sizeof(struct thread_func_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
+	size_t header_size = sizeof(struct start_thread_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
 	size_t dynv_size = ((string_size + header_size + (0xf + 8)) & ~0xf) - 8;
 	intptr_t dynv_base = (stack + (STACK_SIZE - dynv_size - sizeof(uint32_t))) & ~0xf;
 	char dynv_buf[dynv_size];
@@ -706,7 +706,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		++aux;
 	}
 	*aux_buf++ = *aux;
-	struct thread_func_args *args = (struct thread_func_args *)aux_buf;
+	struct start_thread_args *args = (struct start_thread_args *)aux_buf;
 	args->pc = main_info.interpreter != NULL ? interpreter_info.entrypoint : main_info.entrypoint;
 	args->sp = dynv_base;
 	args->arg1 = 0;
@@ -785,15 +785,15 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 					// // move address of remote handler function into rcx
 					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_0;
 					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_1;
-					uintptr_t thread_receive_syscall_remote = (intptr_t)thread_receive_syscall_addr;
-					trampoline_buf[cur++] = thread_receive_syscall_remote;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 8;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 16;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 24;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 32;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 40;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 48;
-					trampoline_buf[cur++] = thread_receive_syscall_remote >> 56;
+					uintptr_t receive_syscall_remote = (intptr_t)receive_syscall_addr;
+					trampoline_buf[cur++] = receive_syscall_remote;
+					trampoline_buf[cur++] = receive_syscall_remote >> 8;
+					trampoline_buf[cur++] = receive_syscall_remote >> 16;
+					trampoline_buf[cur++] = receive_syscall_remote >> 24;
+					trampoline_buf[cur++] = receive_syscall_remote >> 32;
+					trampoline_buf[cur++] = receive_syscall_remote >> 40;
+					trampoline_buf[cur++] = receive_syscall_remote >> 48;
+					trampoline_buf[cur++] = receive_syscall_remote >> 56;
 					// copy the suffix part of the trampoline
 					memcpy(&trampoline_buf[cur], trampoline_call_handler_call, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call);
 					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call;
@@ -829,7 +829,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		DIE("exiting");
 	}
 	// spawn remote thread
-	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thread_func_addr));
+	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(start_thread_addr));
 	// intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(0), proxy_value((intptr_t)args->pc));
 	if (clone_result < 0) {
 		remote_munmap(stack, STACK_SIZE);

@@ -81,7 +81,7 @@ TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    callander.o patch_x86_64.o x86_64_length_disassembler.o
 THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table.o \
 			fork_target.o handler.o intercept_target.o malloc.o paths.o proxy_target.o \
-			remote.o stack.o telemetry.o thread_func.o tls.o
+			remote.o stack.o telemetry.o thandler.o tls.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o
@@ -136,9 +136,6 @@ $(objdir)/target.o: callander.c *.h Makefile
 
 $(objdir)/malloc.o: malloc.c *.h Makefile
 	$(CC) $(CFLAGS) -fPIC -ffreestanding -std=gnu11 -g -Os -DHAVE_MORECORE=0 -DHAVE_MMAP=1 -DUSE_DL_PREFIX=1 -DNO_MALLOC_STATS=1 -DUSE_LOCKS=0 '-DMALLOC_FAILURE_ACTION=abort();' -DLACKS_TIME_H -DHAVE_MREMAP=0 '-DDLMALLOC_EXPORT=__attribute__((visibility("hidden")))' -include axon.h -Dmalloc_getpagesize=PAGE_SIZE -o "$@" -c "$<"
-
-$(objdir)/thread_func.o: thread_func.c *.h Makefile
-	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu11 -g -Os -o "$@" -c "$<"
 
 axon: $(foreach obj,$(OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) -Wno-lto-type-mismatch -Wl,--exclude-libs,ALL -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
