@@ -425,6 +425,7 @@ static int wrapped_chownat(struct thread_storage *thread, int dirfd, const char 
 		if (result == 0) {
 			send_attribute_change_event(thread, buffer, length);
 		}
+		return result;
 	}
 	// open the file
 	int fd;
