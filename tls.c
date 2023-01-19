@@ -76,7 +76,7 @@ struct thread_storage *get_thread_storage(void)
 				}
 			}
 			// failed to use an empty slot, allocate a new one
-			struct thread_data *new_thread = fs_mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FILE, SELF_FD, 0);
+			struct thread_data *new_thread = fs_mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 			new_thread->id = thread_id;
 			new_thread->zero1 = 0;
 			new_thread->zero2 = 0;

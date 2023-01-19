@@ -1,6 +1,8 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+#include "axon.h"
+
 #ifdef ENABLE_TELEMETRY
 
 #include "tls.h"
