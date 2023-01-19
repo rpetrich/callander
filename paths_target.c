@@ -7,6 +7,16 @@
 #include <fcntl.h>
 
 __attribute__((warn_unused_result))
+int fixup_exe_open(int dfd, const char *filename, int flags)
+{
+	// TODO: fixup /proc/self/exe for target opens
+	(void)dfd;
+	(void)filename;
+	(void)flags;
+	return -EACCES;
+}
+
+__attribute__((warn_unused_result))
 bool lookup_real_path(int fd, const char *path, path_info *out_path)
 {
 	if (path != NULL) {
