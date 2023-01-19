@@ -26,7 +26,9 @@ struct fs_stat axon_stat;
 
 static int pid;
 
+#ifdef ENABLE_TELEMETRY
 uint32_t enabled_telemetry;
+#endif
 
 pid_t get_self_pid(void)
 {
@@ -178,6 +180,8 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 		if (fs_strncmp(envp[i], AXON_TELE, sizeof(AXON_TELE) - 1) != 0) {
 			new_envp[j++] = envp[i];
 		}
+#else
+		new_envp[j++] = envp[i];
 #endif
 	}
 	new_envp[j] = NULL;

@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include "axon.h"
 #include "exec.h"
 
 #include "proxy_target.h"
@@ -12,7 +13,9 @@
 uid_t startup_euid;
 gid_t startup_egid;
 
+#ifdef ENABLE_TELEMETRY
 uint32_t enabled_telemetry;
+#endif
 
 pid_t get_self_pid(void)
 {
