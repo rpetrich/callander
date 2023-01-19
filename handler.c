@@ -1648,13 +1648,22 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg1);
 		}
 		case __NR_fanotify_mark: {
-			// TODO: handle fanotify_mark
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			int fanotify_fd = arg1;
+			unsigned int flags = arg2;
+			uint64_t mask = arg3;
+			int dirfd = arg4;
+			const char *pathname = (const char *)arg5;
+			int real_fanotify_fd;
+			bool fanotify_fd_is_remote = lookup_real_fd(fd, &fanotify_fd);
+			path_info real;
+			bool path_is_remote = lookup_real_path(dirfd, pathname, &real);
+			if (fanotify_fd_is_remote != path_is_remote) {
 				return -EINVAL;
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			if (fanotify_fd_is_remote) {
+				return PROXY_CALL(syscall, proxy_value(real_fanotify_fd), proxy_value(flags), proxy_value(mask), proxy_value(real.fd), proxy_string(real.path));
+			}
+			return FS_SYSCALL(syscall, real_fanotify_fd, flags, mask, real.fd, (intptr_t)real.path);
 		}
 		case __NR_name_to_handle_at: {
 			// TODO: handle name_to_handle_at
