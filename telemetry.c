@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include "telemetry.h"
 
+#ifdef ENABLE_TELEMETRY
+
 #define NDEBUG
 #include <assert.h>
 #include "attempt.h"
@@ -396,3 +398,5 @@ void install_telemetry_client(uint32_t *enabled_telemetry, char **envp)
 }
 
 #pragma GCC diagnostic pop
+
+#endif

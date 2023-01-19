@@ -63,6 +63,7 @@ static inline int translate_openat(int dirfd, const char *path, int flags, mode_
 __attribute__((warn_unused_result))
 static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *path, int flags, mode_t mode)
 {
+#ifdef ENABLE_TELEMETRY
 	bool send_create;
 	int fd;
 	if (UNLIKELY(flags & O_CREAT) && UNLIKELY(enabled_telemetry & TELEMETRY_TYPE_CREATE)) {
@@ -75,6 +76,9 @@ static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *
 		fd = translate_openat(dirfd, path, flags, mode);
 		send_create = false;
 	}
+#else
+	int fd = translate_openat(dirfd, path, flags, mode);
+#endif
 	if (fd >= 0) {
 		struct attempt_cleanup_state state;
 		attempt_push_close(thread, &state, fd);
@@ -95,6 +99,7 @@ static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *
 				attempt_push_close(thread, &state, fd);
 			}
 		}
+#ifdef ENABLE_TELEMETRY
 		uint32_t mask = (flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY ? TELEMETRY_TYPE_OPEN_FOR_MODIFY : TELEMETRY_TYPE_OPEN_READ_ONLY;
 		if (send_create) {
 			mask |= TELEMETRY_TYPE_CREATE;
@@ -141,6 +146,7 @@ static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *
 				}
 			}
 		}
+#endif
 		attempt_pop_and_skip_cleanup(&state);
 	}
 	return fd;
@@ -176,6 +182,7 @@ static int wrapped_readlinkat(struct thread_storage *thread, int dirfd, const ch
 	return result;
 }
 
+#ifdef ENABLE_TELEMETRY
 static int resolve_path_operation(struct thread_storage *thread, int dirfd, const char *path, char buffer[PATH_MAX], const char **out_filename, int *out_length)
 {
 	if (path == NULL) {
@@ -224,10 +231,12 @@ static int resolve_path_operation(struct thread_storage *thread, int dirfd, cons
 	attempt_pop_and_skip_cleanup(&state);
 	return new_dirfd;
 }
+#endif
 
 __attribute__((warn_unused_result))
 static int wrapped_unlinkat(struct thread_storage *thread, int dirfd, const char *path, int flags)
 {
+#ifdef ENABLE_TELEMETRY
 	if (enabled_telemetry & TELEMETRY_TYPE_DELETE) {
 		// resolve path
 		char buffer[PATH_MAX];
@@ -245,12 +254,16 @@ static int wrapped_unlinkat(struct thread_storage *thread, int dirfd, const char
 		}
 		return result;
 	}
+#else
+	(void)thread;
+#endif
 	return fs_unlinkat(dirfd, path, flags);
 }
 
 __attribute__((warn_unused_result))
 static int wrapped_renameat(struct thread_storage *thread, int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
 {
+#ifdef ENABLE_TELEMETRY
 	if (enabled_telemetry & TELEMETRY_TYPE_RENAME) {
 		// resolve old path
 		char old_buffer[PATH_MAX];
@@ -288,6 +301,9 @@ static int wrapped_renameat(struct thread_storage *thread, int old_dirfd, const 
 		}
 		return result;
 	}
+#else
+	(void)thread;
+#endif
 	if (flags == 0) {
 		return fs_renameat(old_dirfd, old_path, new_dirfd, new_path);
 	}
@@ -297,6 +313,7 @@ static int wrapped_renameat(struct thread_storage *thread, int old_dirfd, const 
 __attribute__((warn_unused_result))
 static int wrapped_linkat(struct thread_storage *thread, int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
 {
+#ifdef ENABLE_TELEMETRY
 	if (enabled_telemetry & TELEMETRY_TYPE_HARDLINK) {
 		// resolve old path
 		char old_buffer[PATH_MAX];
@@ -325,12 +342,16 @@ static int wrapped_linkat(struct thread_storage *thread, int old_dirfd, const ch
 		}
 		return result;
 	}
+#else
+	(void)thread;
+#endif
 	return fs_linkat(old_dirfd, old_path, new_dirfd, new_path, flags);
 }
 
 __attribute__((warn_unused_result))
 static int wrapped_symlinkat(struct thread_storage *thread, const char *old_path, int new_dirfd, const char *new_path)
 {
+#ifdef ENABLE_TELEMETRY
 	if (enabled_telemetry & TELEMETRY_TYPE_SYMLINK) {
 		// resolve path
 		char buffer[PATH_MAX];
@@ -348,8 +369,13 @@ static int wrapped_symlinkat(struct thread_storage *thread, const char *old_path
 		}
 		return result;
 	}
+#else
+	(void)thread;
+#endif
 	return fs_symlinkat(old_path, new_dirfd, new_path);
 }
+
+#ifdef ENABLE_TELEMETRY
 
 __attribute__((warn_unused_result))
 static int wrapped_chmodat(struct thread_storage *thread, int dirfd, const char *path, mode_t mode)
@@ -462,6 +488,7 @@ static bool decode_sockaddr(struct telemetry_sockaddr *out, const union copied_s
 		}
 	}
 }
+#endif
 
 static int assemble_remote_path(int real_fd, const char *path, char buf[PATH_MAX], const char **out_path)
 {
@@ -843,9 +870,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
 				return PROXY_CALL(__NR_fchmodat, proxy_value(real.fd), proxy_string(real.path), proxy_value(mode), proxy_value(0));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & (TELEMETRY_TYPE_ATTRIBUTE_CHANGE | TELEMETRY_TYPE_CHMOD)) {
-				return wrapped_chmodat(thread, AT_FDCWD, path, mode);
+				return wrapped_chmodat(thread, real.fd, real.path, mode);
 			}
+#endif
 			if (real.fd != AT_FDCWD) {
 				return FS_SYSCALL(__NR_fchmodat, real.fd, (intptr_t)real.path, arg2, 0);
 			}
@@ -870,9 +899,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(fd, &real_fd)) {
 				return PROXY_CALL(__NR_fchmod, proxy_value(real_fd), proxy_value(mode));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & (TELEMETRY_TYPE_ATTRIBUTE_CHANGE | TELEMETRY_TYPE_CHMOD)) {
 				return wrapped_chmodat(thread, real_fd, NULL, mode);
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
 #ifdef __NR_chown
@@ -884,9 +915,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
 				return PROXY_CALL(__NR_fchownat, proxy_value(real.fd), proxy_string(real.path), proxy_value(owner), proxy_value(group), proxy_value(0));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, AT_FDCWD, path, owner, group, 0);
+				return wrapped_chownat(thread, real.fd, real.path, owner, group, 0);
 			}
+#endif
 			if (real.fd != AT_FDCWD) {
 				return FS_SYSCALL(__NR_fchownat, real.fd, (intptr_t)real.path, arg2, arg3, 0);
 			}
@@ -901,9 +934,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(fd, &real_fd)) {
 				return PROXY_CALL(__NR_fchown, proxy_value(real_fd), proxy_value(owner), proxy_value(group));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
 				return wrapped_chownat(thread, real_fd, NULL, owner, group, 0);
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
 #ifdef __NR_lchown
@@ -915,9 +950,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
 				return PROXY_CALL(__NR_fchownat, proxy_value(real.fd), proxy_string(real.path), proxy_value(owner), proxy_value(group), proxy_value(AT_SYMLINK_NOFOLLOW));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, AT_FDCWD, path, owner, group, AT_SYMLINK_NOFOLLOW);
+				return wrapped_chownat(thread, real.fd, real.path, owner, group, AT_SYMLINK_NOFOLLOW);
 			}
+#endif
 			if (real.fd != AT_FDCWD) {
 				return FS_SYSCALL(__NR_fchownat, real.fd, (intptr_t)real.path, arg2, arg3, AT_SYMLINK_NOFOLLOW);
 			}
@@ -934,9 +971,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(fd, path, &real)) {
 				return PROXY_CALL(__NR_fchownat, proxy_value(real.fd), proxy_string(real.path), proxy_value(owner), proxy_value(group), proxy_value(flags));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, fd, path, owner, group, flags);
+				return wrapped_chownat(thread, real.fd, real.path, owner, group, flags);
 			}
+#endif
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
 		}
 		case __NR_select: {
@@ -1654,7 +1693,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int dirfd = arg4;
 			const char *pathname = (const char *)arg5;
 			int real_fanotify_fd;
-			bool fanotify_fd_is_remote = lookup_real_fd(fd, &fanotify_fd);
+			bool fanotify_fd_is_remote = lookup_real_fd(fanotify_fd, &real_fanotify_fd);
 			path_info real;
 			bool path_is_remote = lookup_real_path(dirfd, pathname, &real);
 			if (fanotify_fd_is_remote != path_is_remote) {
@@ -1943,9 +1982,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(fd, path, &real)) {
 				return PROXY_CALL(__NR_fchmodat, proxy_value(real.fd), proxy_string(real.path), proxy_value(mode));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & (TELEMETRY_TYPE_ATTRIBUTE_CHANGE | TELEMETRY_TYPE_CHMOD)) {
 				return wrapped_chmodat(thread, real.fd, real.path, mode);
 			}
+#endif
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3);
 		}
 		case __NR_rt_sigaction: {
@@ -2069,9 +2110,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			// see musl's __pthread_exit function and the associated __unmapself helper
 			intptr_t sp = context != NULL ? (intptr_t)context->uc_mcontext.REG_SP : (intptr_t)&sp;
 			if (sp >= arg1 && sp <= arg1 + arg2) {
+#ifdef ENABLE_TELEMETRY
 				if (enabled_telemetry & TELEMETRY_TYPE_EXIT && fs_gettid() == get_self_pid()) {
 					send_exit_event(thread, arg1);
 				}
+#endif
 #ifdef COVERAGE
 				if (fs_gettid() == get_self_pid()) {
 					coverage_flush();
@@ -2086,9 +2129,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(__NR_munmap, arg1, arg2);
 		}
 		case __NR_exit:
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_EXIT && fs_gettid() == get_self_pid()) {
 				send_exit_event(thread, arg1);
 			}
+#endif
 #ifdef COVERAGE
 			if (fs_gettid() == get_self_pid()) {
 				coverage_flush();
@@ -2103,9 +2148,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			fs_exitthread(arg1);
 			__builtin_unreachable();
 		case __NR_exit_group:
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_EXIT) {
 				send_exit_event(thread, arg1);
 			}
+#endif
 #ifdef COVERAGE
 			coverage_flush();
 #endif
@@ -2125,9 +2172,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return -EINVAL;
 			}
 			int result = chdir_become_local_path(real.path);
+#ifdef ENABLE_TELEMETRY
 			if (result == 0) {
 				working_dir_changed(thread);
 			}
+#endif
 			return result;
 		}
 		case __NR_fchdir: {
@@ -2149,9 +2198,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return chdir_become_remote_fd(new_remote_fd);
 			}
 			int result = chdir_become_local_fd(real_fd);
+#ifdef ENABLE_TELEMETRY
 			if (result == 0) {
 				working_dir_changed(thread);
 			}
+#endif
 			return result;
 		}
 		case __NR_getcwd: {
@@ -2165,21 +2216,27 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_ptrace: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_PTRACE) {
 				send_ptrace_attempt_event(thread, (int)arg1, (pid_t)arg2, (void *)arg3, (void *)arg4);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
 		case __NR_process_vm_readv: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_PTRACE) {
 				send_process_vm_readv_attempt_event(thread, (pid_t)arg1, (const struct iovec *)arg2, (unsigned long)arg3, (const struct iovec *)arg4, (unsigned long)arg5, (unsigned long)arg6);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
 		case __NR_process_vm_writev: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_PTRACE) {
 				send_process_vm_writev_attempt_event(thread, (pid_t)arg1, (const struct iovec *)arg2, (unsigned long)arg3, (const struct iovec *)arg4, (unsigned long)arg5, (unsigned long)arg6);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
 		case __NR_socket: {
@@ -2206,6 +2263,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (result < 0) {
 				return result;
 			}
+#ifdef ENABLE_TELEMETRY
 			struct telemetry_sockaddr telemetry;
 			memset(&telemetry, 0, sizeof(struct telemetry_sockaddr));
 			if (enabled_telemetry & (TELEMETRY_TYPE_CONNECT | TELEMETRY_TYPE_CONNECT_CLOUD | TELEMETRY_TYPE_CONNECT_UNIX) && decode_sockaddr(&telemetry, &copied, size)) {
@@ -2229,12 +2287,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				return result;
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
 		case __NR_bpf: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_BPF) {
 				send_bpf_attempt_event(thread, arg1, (union bpf_attr *)arg2, (unsigned int)arg3);
 			}
+#endif
 			switch (arg1) {
 				case BPF_PROG_LOAD:
 				case BPF_MAP_CREATE:
@@ -2250,15 +2311,19 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case __NR_brk: {
 			intptr_t result = FS_SYSCALL(syscall, arg1);
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_BRK) {
 				send_brk_result_event(thread, result);
 			}
+#endif
 			return result;
 		}
 		case __NR_ioctl: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_IOCTL) {
 				send_ioctl_attempt_event(thread, (int)arg1, (unsigned long)arg2, arg3);
 			}
+#endif
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
 				switch (arg2) {
@@ -2351,12 +2416,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(arg1, &real_fd)) {
 				return PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(arg2));
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_LISTEN) {
 				send_listen_attempt_event(thread, arg1, arg2);
-				intptr_t result = FS_SYSCALL(syscall, arg1, arg2);
+				intptr_t result = FS_SYSCALL(syscall, real_fd, arg2);
 				send_listen_result_event(thread, result);
 				return result;
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
 		case __NR_bind: {
@@ -2380,6 +2447,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (result < 0) {
 				return result;
 			}
+#ifdef ENABLE_TELEMETRY
 			struct telemetry_sockaddr telemetry;
 			if (enabled_telemetry & TELEMETRY_TYPE_BIND && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&telemetry, &copied, size)) {
 				send_bind_attempt_event(thread, arg1, telemetry);
@@ -2387,23 +2455,28 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				send_bind_result_event(thread, result);
 				return result;
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
 		case __NR_dup: {
 			intptr_t result = perform_dup(arg1, 0);
+#ifdef ENABLE_TELEMETRY
 			if (result >= 0) {
 				if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
 					// emulate a dup3
 					send_dup3_attempt_event(thread, arg1, result, 0);
 				}
 			}
+#endif
 			return result;
 		}
 #ifdef __NR_dup2
 		case __NR_dup2: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
 				send_dup3_attempt_event(thread, arg1, arg2, 0);
 			}
+#endif
 			if (arg1 == arg2) {
 				return arg1;
 			}
@@ -2414,9 +2487,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (arg1 == arg2) {
 				return -EINVAL;
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
 				send_dup3_attempt_event(thread, arg1, arg2, arg3);
 			}
+#endif
 			return perform_dup3(arg1, arg2, arg3);
 		}
 		case __NR_fcntl: {
@@ -2424,18 +2499,22 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			switch (arg2) {
 				case F_DUPFD: {
 					intptr_t result = perform_dup(arg1, 0);
+#ifdef ENABLE_TELEMETRY
 					if ((enabled_telemetry & TELEMETRY_TYPE_DUP) && result >= 0) {
 						// emulate a dup3
 						send_dup3_attempt_event(thread, arg1, result, arg2 == F_DUPFD_CLOEXEC ? O_CLOEXEC : 0);
 					}
+#endif
 					return result;
 				}
 				case F_DUPFD_CLOEXEC: {
 					intptr_t result = perform_dup(arg1, O_CLOEXEC);
+#ifdef ENABLE_TELEMETRY
 					if ((enabled_telemetry & TELEMETRY_TYPE_DUP) && result >= 0) {
 						// emulate a dup3
 						send_dup3_attempt_event(thread, arg1, result, arg2 == F_DUPFD_CLOEXEC ? O_CLOEXEC : 0);
 					}
+#endif
 					return result;
 				}
 				case F_SETFD:
@@ -2477,6 +2556,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
 		case __NR_setrlimit: {
+#ifdef ENABLE_TELEMETRY
 			if (arg1 == RLIMIT_STACK && (enabled_telemetry & TELEMETRY_TYPE_RLIMIT) && arg2) {
 				struct rlimit newlimit = *(const struct rlimit *)arg2;
 				if (newlimit.rlim_cur == 18446744073709551615ull) {
@@ -2484,9 +2564,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				return FS_SYSCALL(syscall, arg1, (intptr_t)&newlimit);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_prlimit64: {
+#ifdef ENABLE_TELEMETRY
 			if (arg2 == RLIMIT_STACK && (enabled_telemetry & TELEMETRY_TYPE_RLIMIT) && arg3) {
 				struct rlimit newlimit = *(const struct rlimit *)arg3;
 				if (newlimit.rlim_cur == 18446744073709551615ull) {
@@ -2494,66 +2576,85 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				return FS_SYSCALL(syscall, arg1, arg2, (intptr_t)&newlimit, arg4);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4);
 		}
 		case __NR_userfaultfd: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_USER_FAULT) {
 				send_userfaultfd_attempt_event(thread, arg1);
 			}
+#endif
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}
 		case __NR_setuid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
 				send_setuid_attempt_event(thread, arg1);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_setreuid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
 				send_setreuid_attempt_event(thread, arg1, arg2);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_setresuid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
 				uid_t *ruid = (uid_t *)arg1;
 				uid_t *euid = (uid_t *)arg2;
 				uid_t *suid = (uid_t *)arg3;
 				send_setresuid_attempt_event(thread, ruid ? *ruid : (uid_t)-1, euid ? *euid : (uid_t)-1, suid ? *suid : (uid_t)-1);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
 		case __NR_setfsuid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
 				send_setfsuid_attempt_event(thread, arg1);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_setgid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
 				send_setgid_attempt_event(thread, arg1);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_setregid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
 				send_setregid_attempt_event(thread, arg1, arg2);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_setresgid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
 				gid_t *rgid = (gid_t *)arg1;
 				gid_t *egid = (gid_t *)arg2;
 				gid_t *sgid = (gid_t *)arg3;
 				send_setresgid_attempt_event(thread, rgid ? *rgid : (gid_t)-1, egid ? *egid : (gid_t)-1, sgid ? *sgid : (gid_t)-1);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
 		case __NR_setfsgid: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
 				send_setfsgid_attempt_event(thread, arg1);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_sendto: {
@@ -2561,6 +2662,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(arg1, &real_fd)) {
 				return remote_sendto(real_fd, (const void *)arg2, arg3, arg4, (const struct sockaddr *)arg5, arg6);
 			}
+#ifdef ENABLE_TELEMETRY
 			struct sockaddr *addr = (struct sockaddr *)arg5;
 			union copied_sockaddr copied;
 			size_t size = (uintptr_t)arg6;
@@ -2575,12 +2677,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				send_sendto_result_event(thread, result);
 				return result;
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5, arg6);
 		}
 		case __NR_mprotect: {
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_MEMORY_PROTECTION && arg3 & PROT_EXEC) {
 				send_mprotect_attempt_event(thread, (void *)arg1, arg2, arg3);
 			}
+#endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
 #ifdef __NR_accept4
@@ -2591,12 +2696,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				socklen_t *len = (socklen_t *)arg3;
 				return install_remote_fd(PROXY_CALL(__NR_accept4, proxy_value(real_fd), proxy_out(addr, len ? *len : 0), proxy_inout(len, sizeof(*len)), proxy_value(arg4 | O_CLOEXEC)), (arg4 & SOCK_CLOEXEC) ? O_CLOEXEC : 0);
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_ACCEPT) {
 				send_accept_attempt_event(thread, arg1);
 				int result = FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 				send_accept_result_event(thread, result);
 				return result;
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
 #endif
@@ -2607,12 +2714,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				socklen_t *len = (socklen_t *)arg3;
 				return install_remote_fd(PROXY_CALL(__NR_accept, proxy_value(real_fd), proxy_out(addr, len ? *len : 0), proxy_inout(len, sizeof(*len))), 0);
 			}
+#ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_ACCEPT) {
 				send_accept_attempt_event(thread, arg1);
 				int result = FS_SYSCALL(syscall, real_fd, arg2, arg3);
 				send_accept_result_event(thread, result);
 				return result;
 			}
+#endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
 		case __NR_read: {

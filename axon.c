@@ -33,7 +33,9 @@ typedef struct {
 	uintptr_t old_base_address;
 	size_t self_size;
 	size_t *sp;
+#ifdef ENABLE_TELEMETRY
 	uint32_t telemetry;
+#endif
 	const char *comm;
 	const char *exec_path;
 	struct r_debug *debug;
@@ -60,7 +62,9 @@ noreturn void release(size_t *sp)
 		.sp = sp,
 		.comm = NULL,
 		.exec_path = NULL,
+#ifdef ENABLE_TELEMETRY
 		.telemetry = TELEMETRY_TYPE_PRETTY_PRINT,
+#endif
 		.debug = NULL,
 		.debug_update = &_dl_debug_state,
 		.patch_syscalls = true,
@@ -77,7 +81,7 @@ noreturn void release(size_t *sp)
 	char **envp = argv+1;
 	char **envp_copy = envp;
 	while (*envp != NULL) {
-		if (fs_strncmp(*envp, AXON_TELE, sizeof("AXON_") - 1) == 0) {
+		if (fs_strncmp(*envp, AXON_ADDR, sizeof("AXON_") - 1) == 0) {
 			if (fs_strncmp(*envp, AXON_ADDR, sizeof(AXON_ADDR) - 1) == 0) {
 				char *address_str = &(*envp)[sizeof(AXON_ADDR) - 1];
 				if (UNLIKELY(fs_scanu(address_str, &data.base_address) == NULL)) {
@@ -90,6 +94,7 @@ noreturn void release(size_t *sp)
 				data.comm = &(*envp)[sizeof(AXON_COMM) - 1];
 			} else if (fs_strncmp(*envp, AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0) {
 				data.exec_path = &(*envp)[sizeof(AXON_EXEC) - 1];
+#ifdef ENABLE_TELEMETRY
 			} else if (fs_strncmp(*envp, AXON_TELE, sizeof(AXON_TELE) - 1) == 0) {
 				const char *telemetry_str = &(*envp)[sizeof(AXON_TELE) - 1];
 				uintptr_t telemetry;
@@ -98,6 +103,7 @@ noreturn void release(size_t *sp)
 				}
 				data.telemetry = (uint32_t)telemetry;
 				*envp_copy++ = *envp;
+#endif
 			} else if (fs_strncmp(*envp, "AXON_PATCH_SYSCALLS=false", sizeof("AXON_PATCH_SYSCALLS=false")) == 0) {
 				data.patch_syscalls = false;
 				*envp_copy++ = *envp;
@@ -138,7 +144,9 @@ noreturn void release(size_t *sp)
 			install();
 			fs_exit(0);
 		}
+#ifdef ENABLE_TELEMETRY
 		install_telemetry_client(&data.telemetry, argv+1);
+#endif
 		// Prefer /proc/self/exe, if it exists
 		int self_fd;
 		if (data.interpreter_base != 0) {
@@ -231,7 +239,9 @@ noreturn static void bind_axon(bind_data data)
 	}
 #endif
 	// Set globals
+#ifdef ENABLE_TELEMETRY
 	enabled_telemetry = data.telemetry;
+#endif
 	int stat_result = fs_fstat(SELF_FD, &axon_stat);
 	if (UNLIKELY(stat_result != 0)) {
 		DIE("unable to stat axon binary", fs_strerror(stat_result));
@@ -314,7 +324,9 @@ noreturn static void bind_axon(bind_data data)
 	clock_load(vdso);
 
 	// Setup seccomp and reexec if missing
+#ifdef ENABLE_TELEMETRY
 	char filename[PATH_MAX+1];
+#endif
 	if (data.comm == NULL) {
 		// Setup a seccomp policy so that syscalls will fault to userspace
 		if (data.intercept) {
@@ -322,6 +334,7 @@ noreturn static void bind_axon(bind_data data)
 			if (UNLIKELY(result != 0)) {
 				DIE("failed to apply seccomp filter", fs_strerror(result));
 			}
+#ifdef ENABLE_TELEMETRY
 			// Send initial working directory
 			if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_WORKING_DIR) {
 				int result = fs_getcwd(filename, PATH_MAX);
@@ -330,6 +343,7 @@ noreturn static void bind_axon(bind_data data)
 				}
 				send_update_working_dir_event(get_thread_storage(), filename, result - 1);
 			}
+#endif
 		}
 		// Install the proxy page
 		install_proxy(proxy_fd);
@@ -410,6 +424,7 @@ noreturn static void bind_axon(bind_data data)
 	resurrect_fd_table();
 
 	// Send exec telemetry
+#ifdef ENABLE_TELEMETRY
 	if (enabled_telemetry & TELEMETRY_TYPE_EXEC) {
 		struct fs_stat main_stat;
 		int result = fs_fstat(MAIN_FD, &main_stat);
@@ -436,6 +451,7 @@ noreturn static void bind_axon(bind_data data)
 	if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_CREDENTIALS) {
 		send_update_credentials_event(get_thread_storage(), startup_euid, startup_egid);
 	}
+#endif
 
 	// Always use alternate stacks if a go program
 #ifdef USE_PROGRAM_STACK

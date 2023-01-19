@@ -11,6 +11,7 @@
 #include "paths.h"
 #include "seccomp.h"
 #include "telemetry.h"
+#include "tls.h"
 
 #include <errno.h>
 #include <linux/binfmts.h>
@@ -151,13 +152,17 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 		memcpy(&comm_buf[sizeof(AXON_COMM) - 1], comm, comm_len);
 	}
 	comm_buf[sizeof(AXON_COMM) - 1 + comm_len] = '\0';
+#ifdef ENABLE_TELEMETRY
 	char tele_buf[64];
 	memcpy(tele_buf, AXON_TELE, sizeof(AXON_TELE) - 1);
 	fs_utoah(enabled_telemetry, &tele_buf[sizeof(AXON_TELE) - 1]);
+#endif
 	int j = 0;
 	new_envp[j++] = addr_buf;
 	new_envp[j++] = comm_buf;
+#ifdef ENABLE_TELEMETRY
 	new_envp[j++] = tele_buf;
+#endif
 	new_envp[j++] = exec_path_buf;
 	for (int i = 0; i < envc; i++) {
 		if (fs_strncmp(envp[i], AXON_ADDR, sizeof(AXON_ADDR) - 1) == 0 ||
@@ -169,9 +174,11 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 			attempt_pop_free(&exec_path_buf_cleanup);
 			return -EINVAL;
 		}
+#ifdef ENABLE_TELEMETRY
 		if (fs_strncmp(envp[i], AXON_TELE, sizeof(AXON_TELE) - 1) != 0) {
 			new_envp[j++] = envp[i];
 		}
+#endif
 	}
 	new_envp[j] = NULL;
 	int result = fs_dup2(fd, MAIN_FD);
@@ -307,6 +314,7 @@ int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filenam
 			goto close_and_error;
 		}
 	}
+#ifdef ENABLE_TELEMETRY
 	// send the open read only telemetry event, if necessary
 	if (enabled_telemetry & TELEMETRY_TYPE_OPEN_READ_ONLY) {
 		char path[PATH_MAX];
@@ -318,15 +326,18 @@ int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filenam
 			goto close_and_error;
 		}
 	}
+#endif
 	// actually exec
 	result = exec_fd(fd, dfd == AT_FDCWD ? filename : NULL, argv, envp, filename, 0);
 close_and_error:
 	attempt_pop_close(&state);
 error:
+#ifdef ENABLE_TELEMETRY
 	// send the exec event, if failed
 	if (enabled_telemetry & TELEMETRY_TYPE_EXEC) {
 		send_exec_event(thread, filename, fs_strlen(filename), argv, result);
 	}
+#endif
 	return result;
 }
 

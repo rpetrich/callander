@@ -1,6 +1,8 @@
 #ifndef TELEMETRY_H
 #define TELEMETRY_H
 
+#ifdef ENABLE_TELEMETRY
+
 #include "tls.h"
 
 #include <linux/bpf.h>
@@ -171,5 +173,7 @@ void send_connect_unix_attempt_event(struct thread_storage *thread, const uint64
 // install_telemetry_client sets up the telemetry FD and starts writing events to
 // standard error. This must be called before the seccomp filter is put in place
 void install_telemetry_client(uint32_t *enabled_telemetry, char **envp);
+
+#endif
 
 #endif

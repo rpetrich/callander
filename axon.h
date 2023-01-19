@@ -44,9 +44,12 @@
 // exec path value. This is used for tracing the intended program path in
 // telemetry
 #define AXON_EXEC "AXON_EXEC="
+
+#ifdef ENABLE_TELEMETRY
 // AXON_TELE is an environment variable containing the telemetry to intercept
 // and report to standard error.
 #define AXON_TELE "AXON_TELE="
+#endif
 
 #if 0
 // ERROR_WRITE_LITERAL is a helper that writes a literal constant string
