@@ -1725,7 +1725,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int out_real_fd;
 			bool out_is_remote = lookup_real_fd(arg3, &out_real_fd);
 			if (in_is_remote != out_is_remote) {
-				return -EINVAL;
+				return -EXDEV;
 			}
 			if (in_is_remote) {
 				return PROXY_CALL(__NR_copy_file_range, proxy_value(in_real_fd), proxy_inout((void *)arg2, sizeof(off_t)), proxy_value(out_real_fd), proxy_inout((void *)arg4, sizeof(off_t)), proxy_value(arg5), proxy_value(arg6));
