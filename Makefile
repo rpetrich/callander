@@ -80,7 +80,7 @@ TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    stack.o texec.o time.o tls.o x86.o \
 		    callander.o patch_x86_64.o x86_64_length_disassembler.o
 THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table_target.o \
-			fork_target.o handler.o intercept_target.o malloc.o paths.o proxy_target.o \
+			fork_target.o handler.o intercept_target.o malloc.o paths_target.o proxy_target.o \
 			remote.o stack.o telemetry.o thandler.o tls.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \

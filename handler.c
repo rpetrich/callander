@@ -833,7 +833,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			} else {
 				real_fd = -1;
 			}
-			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, fd, arg6);
+			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, real_fd, arg6);
 		}
 		case __NR_pread64: {
 			int real_fd;
