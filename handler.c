@@ -12,6 +12,7 @@
 #include "paths.h"
 #include "proxy.h"
 #include "remote.h"
+#include "sockets.h"
 #include "target.h"
 #include "telemetry.h"
 #include "tls.h"
@@ -25,7 +26,6 @@
 #include <linux/limits.h>
 #include <linux/mount.h>
 #include <linux/perf_event.h>
-#include <netinet/in.h>
 #include <poll.h>
 #include <sched.h>
 #include <stdio.h>
@@ -36,7 +36,6 @@
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/shm.h>
-#include <sys/un.h>
 #include <termios.h>
 
 #ifndef RENAME_EXCHANGE
@@ -433,48 +432,6 @@ static void working_dir_changed(struct thread_storage *thread)
 			send_update_working_dir_event(thread, path, result - 1);
 		}
 	}
-}
-
-union copied_sockaddr {
-	struct sockaddr addr;
-	struct sockaddr_in in;
-	struct sockaddr_in6 in6;
-	struct sockaddr_un un;
-};
-
-bool decode_target_addr(union copied_sockaddr *u, size_t *size)
-{
-	if (u->addr.sa_family == AF_INET6 && *size >= sizeof(struct sockaddr_in6)) {
-		if (u->in6.sin6_scope_id == ~(uint32_t)0) {
-			// IPv6 rerouted by scope
-			u->in6.sin6_scope_id = 0;
-			return true;
-		}
-		if (u->in6.sin6_addr.s6_addr[0] == 0xff && u->in6.sin6_addr.s6_addr[1] == 0xff) {
-			// IPv4 address embedded in IPv6
-			struct sockaddr_in in;
-			in.sin_family = AF_INET;
-			in.sin_addr.s_addr = *(const unsigned long *)&u->in6.sin6_addr.s6_addr[12];
-			in.sin_port = u->in6.sin6_port;
-			u->in = in;
-			*size = sizeof(struct sockaddr_in);
-			return true;
-		}
-	}
-	path_info real;
-	// TODO: support rewriting of local paths
-	if (u->addr.sa_family == AF_UNIX) {
-		if (lookup_real_path(AT_FDCWD, u->un.sun_path, &real)) {
-			if (real.fd == AT_FDCWD) {
-				size_t len = fs_strlen(real.path);
-				if (len < 108) {
-					fs_memcpy(&u->un.sun_path[0], real.path, len + 1);
-				}
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 static bool decode_sockaddr(struct telemetry_sockaddr *out, const union copied_sockaddr *data, size_t size) {
@@ -2227,7 +2184,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				size = sizeof(copied);
 			}
 			memcpy(&copied, addr, size);
-			if (decode_target_addr(&copied, &size)) {
+			if (decode_remote_addr(&copied, &size)) {
 				int real_fd;
 				int result = become_remote_socket(arg1, copied.addr.sa_family, &real_fd);
 				if (result < 0) {
@@ -2401,7 +2358,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				size = sizeof(copied);
 			}
 			memcpy(&copied, addr, size);
-			if (decode_target_addr(&copied, &size)) {
+			if (decode_remote_addr(&copied, &size)) {
 				int real_fd;
 				int result = become_remote_socket(arg1, copied.addr.sa_family, &real_fd);
 				if (result < 0) {
