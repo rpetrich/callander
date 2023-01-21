@@ -7,6 +7,13 @@
 
 #include <string.h>
 
+static inline void trim_size(size_t *size)
+{
+	if (UNLIKELY(*size >= 256 * 1024)) {
+		*size = 256 * 1024;
+	}
+}
+
 intptr_t remote_openat(int dirfd, const char *path, int flags, mode_t mode)
 {
 	switch (proxy_get_target_platform()) {
@@ -33,6 +40,7 @@ intptr_t remote_truncate(const char *path, off_t length)
 
 intptr_t remote_read(int fd, char *buf, size_t bufsz)
 {
+	trim_size(&bufsz);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_read, proxy_value(fd), proxy_out(buf, bufsz), proxy_value(bufsz));
@@ -45,6 +53,7 @@ intptr_t remote_read(int fd, char *buf, size_t bufsz)
 
 intptr_t remote_write(int fd, const char *buf, size_t bufsz)
 {
+	trim_size(&bufsz);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_write, proxy_value(fd), proxy_in(buf, bufsz), proxy_value(bufsz));
@@ -57,6 +66,7 @@ intptr_t remote_write(int fd, const char *buf, size_t bufsz)
 
 intptr_t remote_recvfrom(int fd, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
 {
+	trim_size(&bufsz);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_recvfrom, proxy_value(fd), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_value(flags), src_addr ? proxy_out(src_addr, *addrlen) : proxy_value(0), proxy_inout(addrlen, sizeof(*addrlen)));
@@ -70,6 +80,7 @@ intptr_t remote_recvfrom(int fd, char *buf, size_t bufsz, int flags, struct sock
 
 intptr_t remote_sendto(int fd, const char *buf, size_t bufsz, int flags, const struct sockaddr *dest_addr, socklen_t dest_len)
 {
+	trim_size(&bufsz);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_sendto, proxy_value(fd), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_value(flags), proxy_in(dest_addr, dest_len), proxy_value(dest_len));
@@ -119,6 +130,7 @@ intptr_t remote_readahead(int fd, off_t offset, size_t count)
 
 intptr_t remote_pread(int fd, void *buf, size_t count, off_t offset)
 {
+	trim_size(&count);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_pread64, proxy_value(fd), proxy_out(buf, count), proxy_value(count), proxy_value(offset));
@@ -131,6 +143,7 @@ intptr_t remote_pread(int fd, void *buf, size_t count, off_t offset)
 
 intptr_t remote_pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
+	trim_size(&count);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_pwrite64, proxy_value(fd), proxy_in(buf, count), proxy_value(count), proxy_value(offset));
@@ -193,10 +206,10 @@ void remote_close(int fd)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			PROXY_SEND(__NR_close | PROXY_NO_RESPONSE, proxy_value(fd));
+			PROXY_CALL(__NR_close | PROXY_NO_RESPONSE, proxy_value(fd));
 			break;
 		case TARGET_PLATFORM_DARWIN:
-			PROXY_SEND(DARWIN_SYS_close | PROXY_NO_RESPONSE, proxy_value(fd));
+			PROXY_CALL(DARWIN_SYS_close | PROXY_NO_RESPONSE, proxy_value(fd));
 			break;
 		default:
 			unknown_target();
@@ -346,6 +359,7 @@ intptr_t remote_readlink_fd(int fd, char *buf, size_t size)
 
 intptr_t remote_getdents64(int fd, char *buf, size_t size)
 {
+	trim_size(&size);
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_getdents64, proxy_value(fd), proxy_out(buf, size), proxy_value(size));

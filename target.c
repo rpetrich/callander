@@ -15,6 +15,7 @@
 #include <errno.h>
 
 #include "target.h"
+#include "proxy.h"
 
 #if 0
 
@@ -72,13 +73,7 @@ static inline intptr_t fs_clone(unsigned long flags, void *child_stack, void *pt
 
 noreturn static void process_data(void);
 
-#ifdef SYS_futex
-static struct fs_mutex read_mutex __attribute__((aligned(64)));
-#endif
-static int sockfd;
-#ifdef SYS_futex
-static struct fs_mutex write_mutex __attribute__((aligned(64)));
-#endif
+static target_state state;
 
 #ifdef __linux__
 __attribute__((used)) __attribute__((aligned(4)))
@@ -128,6 +123,8 @@ int main(void)
 	if (result != 0) {
 		fs_exit(0);
 	}
+	state.read_mutex = (struct fs_mutex){ 0 };
+	state.write_mutex = (struct fs_mutex){ 0 };
 
 	hello_message hello;
 #ifdef __linux__
@@ -135,14 +132,14 @@ int main(void)
 #else
 	hello.target_platform = TARGET_PLATFORM_DARWIN;
 #endif
-	hello.server_fd = sockfd = fd;
+	hello.process_data = process_data;
+	state.sockfd = fd;
+	hello.state = &state;
 	result = fs_write(fd, (const char *)&hello, sizeof(hello));
 	if (result < 0) {
 		EXIT_FROM_ERRNO("Failed to write startup message", result);
 	}
 
-	read_mutex = (struct fs_mutex){ 0 };
-	write_mutex = (struct fs_mutex){ 0 };
 	process_data();
 #ifndef __linux__
 	return 0;
@@ -152,7 +149,7 @@ int main(void)
 noreturn static void process_data(void)
 {
 	char buf[512 * 1024];
-	int sockfd_local = sockfd;
+	int sockfd_local = state.sockfd;
 	for (;;) {
 		// read header
 		union {
@@ -161,7 +158,7 @@ noreturn static void process_data(void)
 		} request;
 		uint32_t bytes_read = 0;
 #ifdef SYS_futex
-		fs_mutex_lock(&read_mutex);
+		fs_mutex_lock(&state.read_mutex);
 #endif
 		do {
 			int result = fs_read(sockfd_local, &request.buf[bytes_read], sizeof(request.buf) - bytes_read);
@@ -186,7 +183,7 @@ noreturn static void process_data(void)
 			case TARGET_NR_PEEK:
 				// peek at local memory, writing the current data to the socket
 #ifdef SYS_futex
-				fs_mutex_unlock(&read_mutex);
+				fs_mutex_unlock(&state.read_mutex);
 #endif
 				vec[io_count].iov_base = (void *)request.message.values[0];
 				vec[io_count].iov_len = request.message.values[1];
@@ -212,21 +209,14 @@ noreturn static void process_data(void)
 					bytes_read += result;
 				}
 #ifdef SYS_futex
-				fs_mutex_unlock(&read_mutex);
+				fs_mutex_unlock(&state.read_mutex);
 #endif
-				break;
-			case TARGET_NR_GET_PROCESS_DATA_ADDRESS:
-				// get the address of the worker process
-#ifdef SYS_futex
-				fs_mutex_unlock(&read_mutex);
-#endif
-				response.result = (intptr_t)&process_data;
 				break;
 			default: {
 				size_t trailer_bytes = 0;
 				intptr_t index = 0;
-				uint64_t values[6];
-				for (int i = 0; i < 6; i++) {
+				uint64_t values[PROXY_ARGUMENT_COUNT];
+				for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
 					if (request.message.template.is_in & (1 << i)) {
 						trailer_bytes += request.message.values[i];
 						if (request.message.template.is_out & (1 << i)) {
@@ -241,7 +231,7 @@ noreturn static void process_data(void)
 						values[i] = request.message.values[i];
 					}
 				}
-				for (int i = 0; i < 6; i++) {
+				for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
 					if (request.message.template.is_in & (1 << i)) {
 						if (request.message.template.is_out & (1 << i)) {
 						}
@@ -269,7 +259,7 @@ noreturn static void process_data(void)
 					bytes_read += result;
 				}
 #ifdef SYS_futex
-				fs_mutex_unlock(&read_mutex);
+				fs_mutex_unlock(&state.read_mutex);
 #endif
 				// perform syscall
 				int syscall = request.message.template.nr & ~TARGET_NO_RESPONSE;
@@ -291,7 +281,7 @@ noreturn static void process_data(void)
 			response.id = request.message.id;
 			size_t io_start = 0;
 #ifdef SYS_futex
-			fs_mutex_lock(&write_mutex);
+			fs_mutex_lock(&state.write_mutex);
 #endif
 			for (;;) {
 				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count-io_start);
@@ -315,7 +305,7 @@ noreturn static void process_data(void)
 			}
 	unlock:
 #ifdef SYS_futex
-			fs_mutex_unlock(&write_mutex);
+			fs_mutex_unlock(&state.write_mutex);
 #else
 			;
 #endif

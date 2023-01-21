@@ -4,6 +4,7 @@
 #include "axon.h"
 #include "darwin.h"
 #include "freestanding.h"
+#include "shared_mutex.h"
 #include "resolver.h"
 #include "telemetry.h"
 
@@ -12,102 +13,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sched.h>
-
-struct shared_mutex {
-	atomic_int state;
-};
-
-static inline void shared_mutex_lock_slow_path(struct shared_mutex *mutex, int state)
-{
-	do {
-		if (state == 2 || fs_cmpxchg(&mutex->state, 1, 2) != 0) {
-			fs_futex((int *)&mutex->state, FUTEX_WAIT, 2, NULL);
-		}
-		state = fs_cmpxchg(&mutex->state, 0, 2);
-	} while(state);
-}
-
-__attribute__((always_inline))
-__attribute__((nonnull(1)))
-static inline void shared_mutex_lock(struct shared_mutex *mutex)
-{
-	int state = fs_cmpxchg(&mutex->state, 0, 1);
-	if (__builtin_expect(state, 0)) {
-		shared_mutex_lock_slow_path(mutex, state);
-	}
-}
-
-static inline void shared_mutex_unlock_slow_path(struct shared_mutex *mutex)
-{
-	atomic_store_explicit(&mutex->state, 0, memory_order_relaxed);
-	fs_futex((int *)&mutex->state, FUTEX_WAKE, 1, NULL);
-}
-
-static inline void shared_mutex_unlock(struct shared_mutex *mutex)
-{
-	int state = atomic_fetch_sub(&mutex->state, 1);
-	if (state != 1) {
-		shared_mutex_unlock_slow_path(mutex);
-	}
-}
-
-static inline uint32_t bitset_for_id(uint32_t id)
-{
-	return 1 << (id & 0x1f);
-}
-
-static inline void shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, uint32_t id, int state)
-{
-	do {
-		intptr_t result;
-		if (state == 2) {
-			result = FS_SYSCALL(__NR_futex, (intptr_t)&mutex->state, FUTEX_WAIT_BITSET, 2, 0, 0, bitset_for_id(id));
-		} else if (state == 1) {
-			if (fs_cmpxchg(&mutex->state, 1, 2) != 0) {
-				result = FS_SYSCALL(__NR_futex, (intptr_t)&mutex->state, FUTEX_WAIT_BITSET, 2, 0, 0, bitset_for_id(id));
-			} else {
-				result = 0;
-			}
-		} else if (state > 2) {
-			if (state == (int)((id & ~(1 << 31)) + 3)) {
-				atomic_store_explicit(&mutex->state, 2, memory_order_relaxed);
-				return;
-			}
-			result = FS_SYSCALL(__NR_futex, (intptr_t)&mutex->state, FUTEX_WAIT_BITSET, state, 0, 0, bitset_for_id(id));
-		} else {
-			result = 0;
-		}
-		if (result < 0) {
-			switch (result) {
-				case -EINTR:
-				case -EAGAIN:
-					break;
-				default:
-					DIE("futex wait bitset failed", fs_strerror(result));
-			}
-		}
-		state = fs_cmpxchg(&mutex->state, 0, 2);
-	} while(state);
-}
-
-__attribute__((always_inline))
-__attribute__((nonnull(1)))
-static inline void shared_mutex_lock_id(struct shared_mutex *mutex, uint32_t id)
-{
-	int state = fs_cmpxchg(&mutex->state, 0, 1);
-	if (__builtin_expect(state, 0)) {
-		shared_mutex_lock_id_slow_path(mutex, id, state);
-	}
-}
-
-static inline bool shared_mutex_unlock_handoff(struct shared_mutex *mutex, uint32_t id)
-{
-	int state = atomic_exchange(&mutex->state, (id & ~(1 << 31)) + 3);
-	if (state == 1) {
-		return false;
-	}
-	return FS_SYSCALL(__NR_futex, (intptr_t)&mutex->state, FUTEX_WAKE_BITSET, INT_MAX, 0, 0, bitset_for_id(id)) > 0;
-}
 
 #define REUSED_PAGE_COUNT 1024
 
@@ -185,7 +90,10 @@ static void read_until_response(intptr_t id)
 	}
 }
 
-intptr_t proxy_call(int syscall, proxy_arg args[6])
+intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
+intptr_t proxy_wait(intptr_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT]);
+
+intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	intptr_t send_id = proxy_send(syscall, args);
 	if (syscall & TARGET_NO_RESPONSE) {
@@ -234,7 +142,7 @@ static void spawn_worker(void)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX: {
-			intptr_t worker_func_addr = simple_locked_call(TARGET_NR_GET_PROCESS_DATA_ADDRESS, 0, 0, 0, 0, 0, 0);
+			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
 			intptr_t stack_addr = simple_locked_call(__NR_mmap, 0, WORKER_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 			if (fs_is_map_failed((void *)stack_addr)) {
 				DIE("unable to map a worker stack", fs_strerror(stack_addr));
@@ -251,39 +159,17 @@ static void spawn_worker(void)
 	}
 }
 
-intptr_t proxy_send(int syscall, proxy_arg args[6])
+intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	if (shared == NULL) {
 		setup_shared();
 	}
 	// prepare request
 	request_message request;
-	request.template.nr = syscall;
-	request.template.is_in = 0;
-	request.template.is_out = 0;
 	struct iovec iov[7];
 	iov[0].iov_base = &request;
 	iov[0].iov_len = sizeof(request);
-	int vec_index = 1;
-	for (int i = 0; i < 6; i++) {
-		intptr_t value = args[i].value;
-		intptr_t size = args[i].size;
-		if (value && size) {
-			intptr_t masked_size = size & ~PROXY_ARGUMENT_MASK;
-			request.values[i] = masked_size;
-			if (size & PROXY_ARGUMENT_INPUT) {
-				request.template.is_in |= 1 << i;
-				iov[vec_index].iov_base = (void *)value;
-				iov[vec_index].iov_len = masked_size;
-				vec_index++;
-			}
-			if (size & PROXY_ARGUMENT_OUTPUT) {
-				request.template.is_out |= 1 << i;
-			}
-		} else {
-			request.values[i] = value;
-		}
-	}
+	int arg_vec_count = proxy_fill_request_message(&request, &iov[1], syscall, args);
 	if ((shared->hello.target_platform == TARGET_PLATFORM_DARWIN) != ((syscall & DARWIN_SYSCALL_BASE) == DARWIN_SYSCALL_BASE)) {
 		switch (syscall & ~PROXY_NO_WORKER) {
 			case TARGET_NR_PEEK:
@@ -291,8 +177,6 @@ intptr_t proxy_send(int syscall, proxy_arg args[6])
 			case TARGET_NR_POKE:
 				break;
 			case TARGET_NR_CALL:
-				break;
-			case TARGET_NR_GET_PROCESS_DATA_ADDRESS:
 				break;
 			default:
 				if (shared->hello.target_platform == TARGET_PLATFORM_DARWIN) {
@@ -311,7 +195,7 @@ intptr_t proxy_send(int syscall, proxy_arg args[6])
 	}
 	request.id = shared->current_id++;
 	// write request
-	int result = fs_writev_all(PROXY_FD, iov, vec_index);
+	int result = fs_writev_all(PROXY_FD, iov, 1 + arg_vec_count);
 	shared_mutex_unlock(&shared->write_lock);
 	if (result <= 0) {
 		if (result == 0) {
@@ -325,12 +209,12 @@ intptr_t proxy_send(int syscall, proxy_arg args[6])
 	return request.id;
 }
 
-intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6])
+intptr_t proxy_wait(intptr_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	// prepare to read response data
-	struct iovec iov[6];
+	struct iovec iov[PROXY_ARGUMENT_COUNT];
 	int vec_index = 0;
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
 		intptr_t value = args[i].value;
 		intptr_t size = args[i].size;
 		if ((size & PROXY_ARGUMENT_MASK) == PROXY_ARGUMENT_MASK && value) {
@@ -339,7 +223,7 @@ intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6])
 			vec_index++;
 		}
 	}
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
 		intptr_t value = args[i].value;
 		intptr_t size = args[i].size;
 		if ((size & PROXY_ARGUMENT_MASK) == PROXY_ARGUMENT_OUTPUT && value) {
@@ -368,6 +252,41 @@ intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6])
 	return result;
 }
 
+uint32_t proxy_generate_stream_id(void)
+{
+	if (shared == NULL) {
+		setup_shared();
+	}
+	shared_mutex_lock(&shared->write_lock);
+	uint32_t result = shared->current_id++;	
+	shared_mutex_unlock(&shared->write_lock);
+	return result;
+}
+
+intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message)
+{
+	// read response
+	shared_mutex_lock_id(&shared->read_lock, stream_id);
+	read_until_response(stream_id);
+	intptr_t result = fs_read_all(PROXY_FD, (char *)message, sizeof(*message));
+	if (result < 0) {
+		DIE("failed to read stream message", fs_strerror(result));
+	}
+	return shared->response_buffer.message.result;
+}
+
+int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size)
+{
+	(void)stream_id;
+	return fs_read(PROXY_FD, buffer, size);
+}
+
+void proxy_read_stream_message_finish(uint32_t stream_id)
+{
+	(void)stream_id;
+	shared_mutex_unlock(&shared->read_lock);
+}
+
 #ifdef PROXY_SUPPORT_DARWIN
 
 enum target_platform proxy_get_target_platform(void)
@@ -379,6 +298,14 @@ enum target_platform proxy_get_target_platform(void)
 }
 
 #endif
+
+hello_message *proxy_get_hello_message(void)
+{
+	if (shared == NULL) {
+		setup_shared();
+	}
+	return &shared->hello;
+}
 
 void proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
@@ -409,7 +336,7 @@ size_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 
 void proxy_poke(intptr_t addr, size_t size, const void *buffer)
 {
-	PROXY_SEND(TARGET_NR_POKE | PROXY_NO_WORKER, proxy_value(addr), proxy_in(buffer, size));
+	PROXY_CALL(TARGET_NR_POKE | PROXY_NO_WORKER | PROXY_NO_RESPONSE, proxy_value(addr), proxy_in(buffer, size));
 }
 
 static inline int page_count(size_t size)
@@ -465,7 +392,7 @@ static void page_free(intptr_t addr, int page_count)
 	if (shared->next_page == REUSED_PAGE_COUNT) {
 		shared_mutex_unlock(&shared->pages_lock);
 		// unmap the page
-		PROXY_SEND(__NR_munmap | PROXY_NO_RESPONSE, proxy_value(addr), proxy_value(page_count * PAGE_SIZE));
+		PROXY_CALL(__NR_munmap | PROXY_NO_RESPONSE, proxy_value(addr), proxy_value(page_count * PAGE_SIZE));
 		return;
 	}
 	int index = shared->next_page++;

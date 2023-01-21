@@ -14,7 +14,7 @@ void serialize_fd_table_for_exec(void);
 void serialize_fd_table_for_fork(void);
 void finish_fd_table_fork(void);
 void resurrect_fd_table(void);
-void clear_fd_table(void);
+void clear_fd_table_for_exit(void);
 
 // install_local_fd takes ownership of local_fd
 __attribute__((warn_unused_result))

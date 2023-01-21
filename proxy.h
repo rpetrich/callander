@@ -21,6 +21,8 @@
 
 #define PROXY_NO_WORKER (1 << 31)
 
+#define PROXY_ARGUMENT_COUNT 6
+
 typedef struct {
 	intptr_t value;
 	intptr_t size;
@@ -72,9 +74,36 @@ static inline proxy_arg proxy_inout(void *address, size_t size) {
 	};
 }
 
-intptr_t proxy_call(int syscall, proxy_arg args[6]);
-intptr_t proxy_send(int syscall, proxy_arg args[6]);
-intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6]);
+__attribute__((always_inline))
+static inline int proxy_fill_request_message(request_message *request, struct iovec iov[PROXY_ARGUMENT_COUNT], int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
+{
+	request->template.nr = syscall;
+	request->template.is_in = 0;
+	request->template.is_out = 0;
+	int vec_index = 0;
+	for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
+		intptr_t value = args[i].value;
+		intptr_t size = args[i].size;
+		if (value && size) {
+			intptr_t masked_size = size & ~PROXY_ARGUMENT_MASK;
+			request->values[i] = masked_size;
+			if (size & PROXY_ARGUMENT_INPUT) {
+				request->template.is_in |= 1 << i;
+				iov[vec_index].iov_base = (void *)value;
+				iov[vec_index].iov_len = masked_size;
+				vec_index++;
+			}
+			if (size & PROXY_ARGUMENT_OUTPUT) {
+				request->template.is_out |= 1 << i;
+			}
+		} else {
+			request->values[i] = value;
+		}
+	}
+	return vec_index;
+}
+
+intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
 
 #ifdef PROXY_SUPPORT_DARWIN
 enum target_platform proxy_get_target_platform(void);
@@ -85,8 +114,10 @@ static inline enum target_platform proxy_get_target_platform(void) {
 }
 #endif
 
+hello_message *proxy_get_hello_message(void);
+
 #define PROXY_ARGS_(_1, _2, _3, _4, _5, N, ...) N
-#define PROXY_ARGS(...) (proxy_arg[6]){ \
+#define PROXY_ARGS(...) (proxy_arg[PROXY_ARGUMENT_COUNT]){ \
 	PROXY_ARGS_(0, 0, 0, 0, 0, ##__VA_ARGS__, proxy_value(0)), \
 	PROXY_ARGS_(0, 0, 0, 0, ##__VA_ARGS__, proxy_value(0), proxy_value(0)), \
 	PROXY_ARGS_(0, 0, 0, ##__VA_ARGS__, proxy_value(0), proxy_value(0), proxy_value(0)), \
@@ -95,8 +126,6 @@ static inline enum target_platform proxy_get_target_platform(void) {
 	PROXY_ARGS_(__VA_ARGS__, proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(0)) \
 }
 #define PROXY_CALL(syscall, ...) proxy_call(syscall, PROXY_ARGS(__VA_ARGS__))
-#define PROXY_SEND(syscall, ...) proxy_send(syscall, PROXY_ARGS(__VA_ARGS__))
-#define PROXY_WAIT(send_id, ...) proxy_wait(send_id, PROXY_ARGS(__VA_ARGS__))
 
 void proxy_peek(intptr_t addr, size_t size, void *out_buffer);
 size_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer);
@@ -104,6 +133,11 @@ void proxy_poke(intptr_t addr, size_t size, const void *buffer);
 
 intptr_t proxy_alloc(size_t size);
 void proxy_free(intptr_t mem, size_t size);
+
+uint32_t proxy_generate_stream_id(void);
+intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message);
+int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size);
+void proxy_read_stream_message_finish(uint32_t stream_id);
 
 void install_proxy(int fd);
 

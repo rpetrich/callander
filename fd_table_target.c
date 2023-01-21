@@ -16,8 +16,9 @@
 static int fd_table[MAX_TABLE_SIZE];
 static struct fs_mutex table_lock;
 
-void clear_fd_table(void)
+void clear_fd_table_for_exit(void)
 {
+	PROXY_CALL(__NR_exit_group | PROXY_NO_RESPONSE);
 }
 
 static int find_unused_slot(void)

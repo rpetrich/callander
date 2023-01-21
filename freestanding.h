@@ -1272,7 +1272,7 @@ __attribute__((nonnull(1)))
 static inline void fs_mutex_unlock(struct fs_mutex *mutex)
 {
 	int state = atomic_fetch_sub(&mutex->state, 1);
-	if (state != 1) {
+	if (__builtin_expect(state != 1, 0)) {
 		fs_mutex_unlock_slow_path(mutex);
 	}
 }

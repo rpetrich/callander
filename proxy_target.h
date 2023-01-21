@@ -4,8 +4,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "target.h"
+
 struct proxy_target_state {
 	pid_t self_pid;
+	uint32_t stream_id;
+	target_state *target_state;
 	int fd_counts[4096];
 };
 

@@ -172,7 +172,7 @@ void resurrect_fd_table(void)
 	}
 }
 
-void clear_fd_table(void)
+void clear_fd_table_for_exit(void)
 {
 	int *counts = get_fd_counts();
 	fs_mutex_lock(&table_lock);

@@ -798,13 +798,17 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					if ((flags & (MAP_PRIVATE | MAP_SHARED | MAP_SHARED_VALIDATE)) != MAP_PRIVATE) {
 						return -EINVAL;
 					}
-					void *result = fs_mmap(addr, len, PROT_READ | PROT_WRITE, flags | MAP_ANONYMOUS, -1, 0);
+					void *result = fs_mmap(addr, len, PROT_READ | PROT_WRITE, (flags & ~MAP_FILE) | MAP_ANONYMOUS, -1, 0);
 					if (!fs_is_map_failed(result)) {
-						intptr_t read_result = remote_pread(real_fd, result, len, off);
-						if (read_result < 0) {
-							fs_munmap(result, len);
-							return read_result;
-						}
+						size_t successful_reads = 0;
+						do {
+							intptr_t read_result = remote_pread(real_fd, result + successful_reads, len - successful_reads, off + successful_reads);
+							if (read_result < 0) {
+								fs_munmap(result, len);
+								return read_result;
+							}
+							successful_reads += read_result;
+						} while (successful_reads < len);
 						if (prot != (PROT_READ | PROT_WRITE)) {
 							int prot_result = fs_mprotect(result, len, prot);
 							if (prot_result < 0) {
@@ -1308,7 +1312,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int fd = arg3;
 			struct epoll_event *event = (struct epoll_event *)arg4;
 			int real_epfd;
-			bool epfd_is_remote = lookup_real_fd(fd, &real_epfd);
+			bool epfd_is_remote = lookup_real_fd(epfd, &real_epfd);
 			int real_fd;
 			bool fd_is_remote = lookup_real_fd(fd, &real_fd);
 			if (fd_is_remote) {
@@ -2122,7 +2126,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 #endif
 				if (fs_gettid() == get_self_pid()) {
-					clear_fd_table();
+					clear_fd_table_for_exit();
 				}
 				attempt_exit(thread);
 				call_on_alternate_stack(thread, unmap_and_exit_thread, (void *)arg1, (void *)arg2);
@@ -2141,7 +2145,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 #endif
 			if (fs_gettid() == get_self_pid()) {
-				clear_fd_table();
+				clear_fd_table_for_exit();
 			}
 			attempt_exit(thread);
 			atomic_intptr_t *thread_id = clear_thread_storage();
@@ -2157,7 +2161,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #ifdef COVERAGE
 			coverage_flush();
 #endif
-			clear_fd_table();
+			clear_fd_table_for_exit();
 			return FS_SYSCALL(__NR_exit_group, arg1);
 		case __NR_chdir: {
 			const char *path = (const char *)arg1;

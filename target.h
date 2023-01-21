@@ -3,6 +3,14 @@
 
 #include <stdint.h>
 
+#include "freestanding.h"
+
+typedef struct {
+	struct fs_mutex read_mutex __attribute__((aligned(64)));
+	struct fs_mutex write_mutex __attribute__((aligned(64)));
+	int sockfd __attribute__((aligned(64)));
+} target_state;
+
 typedef struct {
 	uint16_t nr;
 	uint8_t is_in;
@@ -13,7 +21,6 @@ typedef struct {
 #define TARGET_NR_PEEK (TARGET_NO_RESPONSE-1)
 #define TARGET_NR_POKE (TARGET_NO_RESPONSE | TARGET_NR_PEEK)
 #define TARGET_NR_CALL (TARGET_NO_RESPONSE-2)
-#define TARGET_NR_GET_PROCESS_DATA_ADDRESS (TARGET_NO_RESPONSE-3)
 
 typedef struct {
 	syscall_template template;
@@ -28,14 +35,20 @@ typedef struct {
 	char address_data[0];
 } __attribute__((packed)) response_message;
 
+typedef struct {
+	response_message header;
+	request_message request;
+} __attribute__((packed)) client_request;
+
 enum target_platform {
 	TARGET_PLATFORM_LINUX,
 	TARGET_PLATFORM_DARWIN,
 };
 
 typedef struct {
-	uint32_t server_fd;
 	uint8_t target_platform;
+	target_state *state;
+	void (*process_data)(void);
 } __attribute__((packed)) hello_message;
 
 #endif

@@ -7,27 +7,74 @@
 __attribute__((visibility("default")))
 struct proxy_target_state proxy_state;
 
-intptr_t proxy_send(int syscall, proxy_arg args[6])
+struct remote_result_future {
+	struct fs_mutex mutex;
+	intptr_t result;
+	proxy_arg *args;
+};
+
+__attribute__((visibility("default")))
+void receive_response(struct remote_result_future *response, intptr_t result, void *buffer)
 {
-	(void)syscall;
-	(void)args;
-	return 0;
+	// copy in/out arguments
+	for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
+		intptr_t value = response->args[i].value;
+		intptr_t size = response->args[i].size;
+		if ((size & PROXY_ARGUMENT_MASK) == PROXY_ARGUMENT_MASK && value) {
+			fs_memcpy((void *)value, buffer, size & ~PROXY_ARGUMENT_MASK);
+			buffer += size & ~PROXY_ARGUMENT_MASK;
+		}
+	}
+	// copy out arguments
+	for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
+		intptr_t value = response->args[i].value;
+		intptr_t size = response->args[i].size;
+		if ((size & PROXY_ARGUMENT_MASK) == PROXY_ARGUMENT_OUTPUT && value) {
+			fs_memcpy((void *)value, buffer, size & ~PROXY_ARGUMENT_MASK);
+			buffer += size & ~PROXY_ARGUMENT_MASK;
+		}
+	}
+	// assign response
+	response->result = result;
+	// wake up waiting thread
+	fs_mutex_unlock(&response->mutex);
 }
 
-intptr_t proxy_wait(intptr_t send_id, proxy_arg args[6])
+intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
-	(void)send_id;
-	(void)args;
-	return -ENOSYS;
-}
-
-intptr_t proxy_call(int syscall, proxy_arg args[6])
-{
-	intptr_t send_id = proxy_send(syscall, args);
+	// prepare a response future
+	struct remote_result_future response = { 0 };
+	fs_mutex_lock(&response.mutex);
+	response.args = args;
+	// prepare a client request
+	client_request message;
+	if (syscall & TARGET_NO_RESPONSE) {
+		message.header.result = 0;
+	} else {
+		message.header.result = (intptr_t)&response;
+	}
+	message.header.id = proxy_state.stream_id;
+	struct iovec iov[PROXY_ARGUMENT_COUNT+1];
+	iov[0].iov_base = &message;
+	iov[0].iov_len = sizeof(message);
+	// fill the request details
+	int arg_vec_count = proxy_fill_request_message(&message.request, &iov[1], syscall, args);
+	message.request.id = 0;
+	// send the request
+	fs_mutex_lock(&proxy_state.target_state->write_mutex);
+	int result = fs_writev_all(proxy_state.target_state->sockfd, iov, 1 + arg_vec_count);
+	if (result < 0) {
+		fs_mutex_unlock(&proxy_state.target_state->write_mutex);
+		DIE("failed to proxy send", fs_strerror(result));
+	}
+	fs_mutex_unlock(&proxy_state.target_state->write_mutex);
+	// exit if no response is expected
 	if (syscall & TARGET_NO_RESPONSE) {
 		return 0;
 	}
-	return proxy_wait(send_id, args);
+	// wait for response
+	fs_mutex_lock(&response.mutex);
+	return response.result;
 }
 
 void proxy_peek(intptr_t addr, size_t size, void *out_buffer)

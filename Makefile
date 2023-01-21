@@ -172,7 +172,7 @@ tests/sample_fs_pie: tests/sample_fs.c *.h Makefile
 	$(CC) $(LDFLAGS) -g -nostdlib -pie -fPIC -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
 
 tests/sample_write: tests/sample_write.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -nostdlib -pie -fPIC -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
+	$(CC) $(LDFLAGS) -g -nostdlib -fPIC -O2  -nostdlib -shared -nostartfiles -ffreestanding -Wl,-e,impulse -o "$@" "$<"
 
 tests/sigsys_receive: tests/sigsys_receive.c Makefile
 	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"
