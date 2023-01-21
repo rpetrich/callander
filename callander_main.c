@@ -473,6 +473,10 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	} else {
 		struct analysis_frame new_caller = { .current = { .address = loaded->info.base, .description = "entrypoint", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		analyze_instructions(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
+		if (analysis->main == (uintptr_t)loaded->info.entrypoint) {
+			// reanalyze, since we didn't find a main
+			analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
+		}
 	}
 	// interpreter entrypoint
 	struct loaded_binary *interpreter = analysis->loader.interpreter;

@@ -65,7 +65,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
 	LOG("size", (uintptr_t)loaded->info.size);
 	struct analysis_frame new_caller = { .current = { .address = loaded->info.base, .description = "entrypoint", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-	analyze_instructions(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
+	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
 
 	// interpreter entrypoint
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
