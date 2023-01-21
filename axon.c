@@ -262,7 +262,7 @@ noreturn static void bind_axon(bind_data data)
 	debug_init(data.debug, data.debug_update);
 
 	// Unmap the old binary
-	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.base_address;
+	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
 	if (old_base_address != data.base_address) {
 		debug_register_relocated_self((void *)data.base_address);
 		// result = fs_munmap((void *)old_base_address, data.self_size);

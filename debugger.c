@@ -19,9 +19,11 @@ static struct link_map maps[4];
 static size_t next_map;
 static struct fs_mutex link_lock;
 
+__attribute__((visibility("default")))
 struct r_debug _r_debug;
 static struct r_debug *debug;
 
+__attribute__((visibility("default")))
 __attribute__((noinline))
 void _dl_debug_state(void)
 {

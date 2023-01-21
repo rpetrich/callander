@@ -5,11 +5,13 @@
 
 #include <link.h>
 
+__attribute__((visibility("default")))
 extern struct r_debug _r_debug;
 
 // _dl_debug_state is a function that is called whenever the link map changes.
 // Debuggers know this function by name and will set a breakpoint on it to
 // detect when the link map changes
+__attribute__((visibility("default")))
 void _dl_debug_state(void);
 
 // debug_field_for_self returns the address of the DT_DEBUG field
