@@ -525,7 +525,6 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader)
 	intptr_t result;
 	for (;;) {
 		struct mapping mapping;
-		bool populated = false;
 		result = read_next_mapping_from_file(fd, &file, &mapping);
 		if (result != 1) {
 			break;
@@ -538,13 +537,24 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader)
 						LOG("populated child address", &mapping.path[0]);
 						binary->child_base = (uintptr_t)mapping.start - mapping.offset;
 					}
-					populated = true;
+					goto next_mapping;
 				}
 			}
-			if (!populated) {
-				DIE("found unexpected binary", &mapping.path[0]);
+			// fallback that ignores device
+			// workaround for lack of overlayfs virtualization of mount id in /proc/.../maps: https://github.com/moby/moby/issues/43512
+			for (struct loaded_binary *binary = loader->binaries; binary != NULL; binary = binary->next) {
+				if (binary->inode == mapping.inode) {
+					if (binary->child_base == 0) {
+						LOG("populated child address", &mapping.path[0]);
+						binary->child_base = (uintptr_t)mapping.start - mapping.offset;
+					}
+					goto next_mapping;
+				}
 			}
+			DIE("found unexpected binary", &mapping.path[0]);
 		}
+	next_mapping:
+		;
 	}
 	fs_close(fd);
 	return result;
