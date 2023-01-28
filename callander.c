@@ -4298,7 +4298,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								continue_state.registers[target_register].max = self.current_state.compare_state.value.value - 1;
 							}
 						}
-						if (x86_is_jae_instruction(ins)) {
+						if (x86_is_je_instruction(ins)) {
 							LOG("found je comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
