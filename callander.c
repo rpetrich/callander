@@ -8290,16 +8290,18 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_MAIN) {
 		if (new_binary->info.interpreter) {
-			struct loaded_binary *interpreter = find_loaded_binary(&analysis->loader, new_binary->info.interpreter);
-			if (interpreter != NULL) {
-				int result = finish_loading_binary(analysis, interpreter, effects, skip_analysis);
-				if (result != 0) {
-					return result;
+			bool found_interpreter = false;
+			for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
+				if (other->special_binary_flags & BINARY_IS_INTERPRETER) {
+					found_interpreter = true;
+					int result = finish_loading_binary(analysis, other, effects, skip_analysis);
+					if (result != 0) {
+						return result;
+					}
 				}
-				// if (effects & EFFECT_AFTER_STARTUP) {
-				// 	struct analysis_frame new_caller = { .current = { .address = analysis->loader.interpreter->info.base, .description = "interpreter", .next = NULL }, .current_state = empty_registers, .entry = analysis->loader.interpreter->info.base, .entry_state = &empty_registers, .token = { 0 } };
-				// 	analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, registers, analysis->loader.interpreter->info.entrypoint, &new_caller, true);
-				// }
+			}
+			if (!found_interpreter) {
+				DIE("could not find interpreter");
 			}
 		}
 	}
