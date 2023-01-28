@@ -2070,11 +2070,43 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 	return binary;
 }
 
+static void handle_gconv_find_shlib(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data);
+
+static const uint8_t *find_function_entry(struct loader_context *loader, const uint8_t *ins)
+{
+	const struct loaded_binary *binary = binary_for_address(loader, ins);
+	if (binary != NULL) {
+		if (binary->has_frame_info) {
+			struct frame_details result;
+			if (find_containing_frame_info(&binary->frame_info, ins, &result)) {
+				return result.address;
+			}
+		}
+	}
+	return NULL;
+}
+
 static void handle_dlopen(struct program_state *analysis, struct registers *state, __attribute__((unused)) const uint8_t *ins, struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered dlopen call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	struct register_state *first_arg = &state->registers[sysv_argument_abi_register_indexes[0]];
 	if (!register_is_exactly_known(first_arg)) {
+		// check if we're searching for gconv and if so attach handle_gconv_find_shlib as callback
+		if (analysis->loader.searching_gconv_dlopen) {
+			struct analysis_frame self = {
+				.current = {
+					.description = NULL,
+					.next = &caller->current,
+				},
+				.entry = ins,
+				.entry_state = state,
+				.token = *token,
+			};
+			vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED, SHOULD_LOG);
+			find_and_add_callback(analysis, find_function_entry(&analysis->loader, caller->entry) ?: caller->entry, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
+			analysis->loader.searching_gconv_dlopen = false;
+			return;
+		}
 		if (analysis->loader.ignore_dlopen) {
 			LOG("dlopen with indeterminate value", temp_str(copy_register_state_description(&analysis->loader, *first_arg)));
 			LOG("dlopen call stack", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
@@ -2123,7 +2155,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, struct regis
 		.entry_state = state,
 		.token = *token,
 	};
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_RETURNS);
 	*token = self.token;
 	if (analysis->loader.loaded_gconv_libraries) {
 		return;
@@ -2419,10 +2451,15 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		find_and_add_callback(analysis, dlopen, (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_dlopen, NULL);
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_LIBC) {
-		// assume that gconv isn't needed
-		const uint8_t *gconv_find_shlib = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__gconv_find_shlib", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
-		if (gconv_find_shlib) {
-			find_and_add_callback(analysis, gconv_find_shlib, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
+		// detect gconv and load libraries upfront via LD_PRELOAD
+		const uint8_t *gconv_open = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__gconv_open", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (gconv_open) {
+			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
+			struct registers registers = empty_registers;
+			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "__gconv_open", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			analysis->loader.searching_gconv_dlopen = true;
+			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, gconv_open, &new_caller, true);
+			analysis->loader.searching_gconv_dlopen = false;
 		}
 		// update_known_function(analysis, new_binary, &known_symbols->gconv_find_shlib, "__gconv_find_shlib", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_RETURNS | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT);
 		// load nss libraries if an nss function is used
