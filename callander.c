@@ -2147,26 +2147,28 @@ static void handle_gconv_find_shlib(struct program_state *analysis, struct regis
 			const struct fs_dirent *ent = (const struct fs_dirent *)&buf[offset];
 			const char *name = ent->d_name;
 			const char *needle = ".so";
-			for (const char *haystack = name;;) {
-				if (*haystack == *needle) {
-					if (*needle == '\0') {
-						size_t suffix_len = haystack - name;
-						char *path = malloc(sizeof("/usr/lib/x86_64-linux-gnu/gconv/") + suffix_len);
-						char *buf = path;
-						fs_memcpy(buf, "/usr/lib/x86_64-linux-gnu/gconv/", sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1);
-						buf += sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1;
-						fs_memcpy(buf, name, suffix_len + 1);
-						LOG("found gconv library", path);
-						register_dlopen_file(analysis, path, caller, true);
+			if (name[0] != 'l' || name[1] != 'i' || name[2] != 'b') {
+				for (const char *haystack = name;;) {
+					if (*haystack == *needle) {
+						if (*needle == '\0') {
+							size_t suffix_len = haystack - name;
+							char *path = malloc(sizeof("/usr/lib/x86_64-linux-gnu/gconv/") + suffix_len);
+							char *buf = path;
+							fs_memcpy(buf, "/usr/lib/x86_64-linux-gnu/gconv/", sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1);
+							buf += sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1;
+							fs_memcpy(buf, name, suffix_len + 1);
+							LOG("found gconv library", path);
+							register_dlopen_file(analysis, path, caller, true);
+						}
+						needle++;
+					} else {
+						needle = ".so";
 					}
-					needle++;
-				} else {
-					needle = ".so";
+					if (*haystack == '\0') {
+						break;
+					}
+					haystack++;
 				}
-				if (*haystack == '\0') {
-					break;
-				}
-				haystack++;
 			}
 			offset += ent->d_reclen;
 		}
