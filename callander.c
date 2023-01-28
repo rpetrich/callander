@@ -4548,7 +4548,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					} else {
 						LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
 						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-						self.current.description = "conditional continue";
+						self.current.description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
 						continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, &self, true);
 						LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					}
@@ -4567,7 +4567,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					jump_effects = EFFECT_EXITS | EFFECT_RETURNS;
 				} else {
 					LOG("taking jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
-					self.current.description = "conditional jump";
+					self.current.description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
 					jump_effects = analyze_instructions(analysis, required_effects, &jump_state, jump_target, &self, true);
 				}
 				if (continue_first) {
@@ -4578,7 +4578,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					} else {
 						LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
 						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-						self.current.description = "conditional continue";
+						self.current.description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
 						continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, &self, true);
 						LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					}
