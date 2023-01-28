@@ -292,13 +292,16 @@ static inline intptr_t fs_pread_all(int fd, char *buffer, size_t length, uint64_
 			if (result == -EINTR) {
 				continue;
 			}
+			if (result == 0) {
+				return length - remaining;
+			}
 			return result;
 		}
 		offset += result;
 		buffer += result;
 		remaining -= result;
 	}
-	return length - remaining;
+	return length;
 }
 
 __attribute__((warn_unused_result))
