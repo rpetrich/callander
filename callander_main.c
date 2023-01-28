@@ -444,7 +444,11 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	// finish loading the main binary
 	result = finish_loading_binary(analysis, loaded, EFFECT_NONE, false);
 	if (result != 0) {
-		DIE("failed to finish loading main binary", fs_strerror(result));
+		if (result == -ENOENT) {
+			ERROR_FLUSH();
+			fs_exit(1);
+		}
+		DIE("failed to finish loading", fs_strerror(result));
 	}
 	analysis->main = (uintptr_t)loaded->info.entrypoint;
 

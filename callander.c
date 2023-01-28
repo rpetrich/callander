@@ -7897,15 +7897,16 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	if (analysis->loader.binaries == NULL) {
 		new_binary->special_binary_flags |= BINARY_IS_MAIN;
 	}
-	if (new_binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_LIBC | BINARY_IS_CRYPTO | BINARY_IS_LIBSTDCPP | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
+	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_CRYPTO | BINARY_IS_LIBSTDCPP | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
 		int result = load_debuglink(&analysis->loader, new_binary, false);
-		if (result < 0 && (result != -EEXIST || (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_CRYPTO | BINARY_IS_LIBSTDCPP | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)))) {
-			if (result == -EEXIST) {
+		if (result < 0) {
+			if (result == -ENOENT || result == -ENOEXEC) {
 				print_debug_symbol_requirement(new_binary);
 			} else {
 				ERROR("failed to load debug symbols for", new_binary->path);
 				ERROR("error was", fs_strerror(result));
 			}
+			free(new_binary);
 			return result;
 		}
 	}
@@ -8157,22 +8158,21 @@ static int relocate_loaded_library(struct program_state *analysis, struct loaded
 	return 0;
 }
 
-static void load_all_needed_and_relocate(struct program_state *analysis)
+static int load_all_needed_and_relocate(struct program_state *analysis)
 {
 	for (struct loaded_binary *b = analysis->loader.last; b != NULL; b = b->previous) {
 		int result = load_needed_libraries(analysis, b);
 		if (result < 0) {
-			ERROR("unable to load needed libraries", b->path);
-			DIE("error was", fs_strerror(result));
+			return result;
 		}
 	}
 	for (struct loaded_binary *b = analysis->loader.last; b != NULL; b = b->previous) {
 		int result = relocate_loaded_library(analysis, b);
 		if (result < 0) {
-			ERROR("unable relocate library", b->path);
-			DIE("error was", fs_strerror(result));
+			return result;
 		}
 	}
+	return 0;
 }
 
 static const ElfW(Sym) *find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address)
@@ -8280,10 +8280,13 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 		return 0;
 	}
 	new_binary->has_finished_loading = true;
-	load_all_needed_and_relocate(analysis);
+	int result = load_all_needed_and_relocate(analysis);
+	if (result < 0) {
+		return result;
+	}
 	LOG("finishing", new_binary->path);
 	update_known_symbols(analysis, new_binary);
-	int result = apply_postrelocation_readonly(&new_binary->info);
+	result = apply_postrelocation_readonly(&new_binary->info);
 	if (result < 0) {
 		return result;
 	}

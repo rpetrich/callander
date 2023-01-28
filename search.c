@@ -66,7 +66,7 @@ int open_executable_in_paths(const char *name, const char *paths, bool require_e
 			}
 		}
 		if (*next_path == '\0') {
-			return -EEXIST;
+			return -ENOEXEC;
 		}
 		path = &next_path[1];
 	}
