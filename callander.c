@@ -2411,7 +2411,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 				continue;
 			}
 			blocked_symbols[i].value = value;
-			find_and_add_callback(analysis, value, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS, blocked_function_called, (void *)blocked_symbols[i].name);
+			find_and_add_callback(analysis, value, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS, blocked_function_called, (void *)blocked_symbols[i].name);
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
