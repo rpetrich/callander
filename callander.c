@@ -2414,10 +2414,6 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
-	if (new_binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_LIBC)) {
-		// libc expression parser, doesn't issue syscalls and has a fucky jump table
-		update_known_function(analysis, new_binary, "parse_expression", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_RETURNS | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT);
-	}
 	const uint8_t *dlopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__libc_dlopen_mode", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL) ?: resolve_binary_loaded_symbol(&analysis->loader, new_binary, "dlopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 	if (dlopen) {
 		find_and_add_callback(analysis, dlopen, (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_dlopen, NULL);
