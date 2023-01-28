@@ -7792,6 +7792,12 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	if (result < 0) {
 		return result;
 	}
+	for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
+		if (other->inode == stat.st_ino && other->device == stat.st_dev) {
+			*out_binary = other;
+			return 0;
+		}
+	}
 	if (existing_base_address != NULL) {
 		load_existing(&info, (uintptr_t)existing_base_address);
 	} else {
