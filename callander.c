@@ -7852,7 +7852,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 					if (debuglink == NULL) {
 						if (fs_strcmp(name, ".gnu_debuglink") == 0) {
 							debuglink = malloc(section->sh_size);
-							int result = fs_pread(fd, debuglink, section->sh_size, section->sh_offset);
+							int result = fs_pread_all(fd, debuglink, section->sh_size, section->sh_offset);
 							if (result != (int)section->sh_size) {
 								if (result >= 0) {
 									result = -EINVAL;
@@ -7868,7 +7868,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 						const char *name = &new_binary->sections.strings[section->sh_name];
 						if (fs_strcmp(name, ".note.gnu.build-id") == 0) {
 							build_id = malloc(section->sh_size);
-							int result = fs_pread(fd, build_id, section->sh_size, section->sh_offset);
+							int result = fs_pread_all(fd, build_id, section->sh_size, section->sh_offset);
 							if (result != (int)section->sh_size) {
 								free(build_id);
 								if (result >= 0) {

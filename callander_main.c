@@ -958,7 +958,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 	char *loaded_executable_path = NULL;
 	do {
 		char header[BINPRM_BUF_SIZE + 1];
-		size_t header_size = fs_pread(fd, header, BINPRM_BUF_SIZE, 0);
+		size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
 		if (header_size <= 0) {
 			if (header_size == 0) {
 				DIE("could not read executable header");

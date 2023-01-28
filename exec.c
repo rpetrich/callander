@@ -92,7 +92,7 @@ int exec_fd(int fd, const char *named_path, const char *const *argv, const char 
 	}
 	// read the header like the linux kernel does
 	char header[BINPRM_BUF_SIZE + 1];
-	size_t header_size = fs_pread(fd, header, BINPRM_BUF_SIZE, 0);
+	size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
 	if ((int)header_size < 0) {
 		fs_close(fd);
 		return -ENOEXEC;

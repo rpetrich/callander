@@ -47,10 +47,7 @@ static int protection_for_pflags(int pflags)
 int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bool force_relocation)
 {
 	const ElfW(Ehdr) header;
-	int read_bytes;
-	do {
-		read_bytes = fs_pread(fd, (char *)&header, sizeof(header), 0);
-	} while(read_bytes == -EINTR);
+	int read_bytes = fs_pread_all(fd, (char *)&header, sizeof(header), 0);
 	if (read_bytes < 0) {
 		ERROR("unable to read ELF header", fs_strerror(read_bytes));
 		return -ENOEXEC;
@@ -107,10 +104,7 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	out_info->header_entry_count = header.e_phnum;
 	char *phbuffer = malloc(phsize);
 	out_info->phbuffer = phbuffer;
-	int l;
-	do {
-		l = fs_pread(fd, phbuffer, phsize, header.e_phoff);
-	} while (l == -EINTR);
+	int l = fs_pread_all(fd, phbuffer, phsize, header.e_phoff);
 	if (l != (int)phsize) {
 		free(phbuffer);
 		if (l < 0) {
@@ -1033,7 +1027,7 @@ int load_section_info(int fd, const struct binary_info *info, struct section_inf
 	if (buffer == NULL) {
 		return -EINVAL;
 	}
-	int result = fs_pread(fd, buffer, size, info->section_offset);
+	int result = fs_pread_all(fd, buffer, size, info->section_offset);
 	if (result != size) {
 		free(buffer);
 		if (result >= 0) {
@@ -1048,7 +1042,7 @@ int load_section_info(int fd, const struct binary_info *info, struct section_inf
 		free(buffer);
 		return -ENOMEM;
 	}
-	result = fs_pread(fd, str_buffer, str_size, strtab->sh_offset);
+	result = fs_pread_all(fd, str_buffer, str_size, strtab->sh_offset);
 	if (result != str_size) {
 		free(buffer);
 		if (result >= 0) {

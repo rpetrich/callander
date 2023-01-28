@@ -283,6 +283,25 @@ static inline intptr_t fs_pread(int fd, char *buffer, size_t length, uint64_t of
 }
 
 __attribute__((warn_unused_result))
+static inline intptr_t fs_pread_all(int fd, char *buffer, size_t length, uint64_t offset)
+{
+	size_t remaining = length;
+	while (remaining != 0) {
+		intptr_t result = fs_pread(fd, buffer, remaining, offset);
+		if (result <= 0) {
+			if (result == -EINTR) {
+				continue;
+			}
+			return result;
+		}
+		offset += result;
+		buffer += result;
+		remaining -= result;
+	}
+	return length - remaining;
+}
+
+__attribute__((warn_unused_result))
 static inline intptr_t fs_lseek(int fd, off_t offset, int origin)
 {
 	return FS_SYSCALL(SYS_lseek, fd, (intptr_t)offset, (intptr_t)origin);

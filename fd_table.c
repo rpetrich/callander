@@ -162,7 +162,7 @@ void finish_fd_table_fork(void)
 
 void resurrect_fd_table(void)
 {
-	int result = fs_pread(TABLE_FD, (char *)&table, sizeof(table), 0);
+	int result = fs_pread_all(TABLE_FD, (char *)&table, sizeof(table), 0);
 	if (result <= 0) {
 		DIE("error reading fd table", fs_strerror(result));
 	}

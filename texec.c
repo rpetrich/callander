@@ -193,10 +193,7 @@ static uintptr_t base_address;
 static int remote_load_binary(int fd, struct binary_info *out_info)
 {
 	const ElfW(Ehdr) header;
-	int read_bytes;
-	do {
-		read_bytes = fs_pread(fd, (char *)&header, sizeof(header), 0);
-	} while(read_bytes == -EINTR);
+	int read_bytes = fs_pread_all(fd, (char *)&header, sizeof(header), 0);
 	if (read_bytes < 0) {
 		ERROR("unable to read ELF header", fs_strerror(read_bytes));
 		return -ENOEXEC;
@@ -252,10 +249,7 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 	out_info->header_entry_size = header.e_phentsize;
 	out_info->header_entry_count = header.e_phnum;
 	char phbuffer[phsize];
-	int l;
-	do {
-		l = fs_pread(fd, phbuffer, phsize, header.e_phoff);
-	} while (l == -EINTR);
+	int l = fs_pread_all(fd, phbuffer, phsize, header.e_phoff);
 	if (l != (int)phsize) {
 		if (l < 0) {
 			ERROR("unable to read phbuffer", fs_strerror(l));
@@ -410,7 +404,7 @@ static size_t count_args(const char *const *argv, size_t *out_total_bytes) {
 int remote_exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth)
 {
 	char header[BINPRM_BUF_SIZE + 1];
-	size_t header_size = fs_pread(fd, header, BINPRM_BUF_SIZE, 0);
+	size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
 	if ((int)header_size < 0) {
 		fs_close(fd);
 		ERROR("unable to read header", fs_strerror(header_size));
