@@ -157,4 +157,21 @@ extern ElfW(Dyn) _DYNAMIC[] __attribute__((visibility("hidden")));
 __attribute__((warn_unused_result))
 int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid);
 
+struct frame_info {
+	void *data;
+	size_t size;
+	uintptr_t data_base_address;
+	uintptr_t text_base_address;
+};
+
+__attribute__((warn_unused_result))
+int load_frame_info(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info);
+void free_frame_info(struct frame_info *info);
+
+struct frame_details {
+	const void *address;
+	size_t size;
+};
+bool find_containing_frame_info(const struct frame_info *info, const void *address, struct frame_details *out_frame);
+
 #endif

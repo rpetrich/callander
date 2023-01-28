@@ -10,6 +10,24 @@
 
 #define INDEX_SYMBOLS
 
+#define DW_EH_PE_omit	0xff
+#define DW_EH_PE_ptr	0x00
+
+#define DW_EH_PE_uleb128	0x01
+#define DW_EH_PE_udata2	0x02
+#define DW_EH_PE_udata4	0x03
+#define DW_EH_PE_udata8	0x04
+#define DW_EH_PE_sleb128	0x09
+#define DW_EH_PE_sdata2	0x0a
+#define DW_EH_PE_sdata4	0x0b
+#define DW_EH_PE_sdata8	0x0c
+#define DW_EH_PE_signed	0x09
+
+#define DW_EH_PE_absptr 0x00
+#define DW_EH_PE_pcrel	0x10
+#define DW_EH_PE_textrel	0x20
+#define DW_EH_PE_datarel	0x30
+
 static int protection_for_pflags(int pflags)
 {
 	int protection = 0;
@@ -1089,4 +1107,205 @@ int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid) {
 		return 0;
 	}
 	return -EACCES;
+}
+
+static inline uintptr_t read_uleb128(void **cursor)
+{
+	uintptr_t result = 0;
+	int shift = 0;
+	for (;;) {
+		unsigned char val = *(char *)*cursor;
+		(*cursor)++;
+		result |= (val & 0x7f) << shift;
+		if ((val & 0x80) == 0) {
+			return result;
+		}
+		shift += 7;
+	}
+}
+
+static inline intptr_t read_sleb128(void **cursor)
+{
+	intptr_t result = 0;
+	int shift = 0;
+	for (;;) {
+		unsigned char val = *(char *)*cursor;
+		(*cursor)++;
+		result |= (val & 0x7f) << shift;
+		if ((val & 0x80) == 0) {
+			if (shift < 64 && ((val & 0x40) != 0)) {
+			    // sign extend the result
+			    result |= ~(uintptr_t)0 << shift;
+			}
+			return result;
+		}
+		shift += 7;
+	}
+}
+
+static uintptr_t read_offset_and_advance(void **cursor, uintptr_t format)
+{
+	switch (format & 0xf) {
+		case DW_EH_PE_uleb128:
+			return read_uleb128(cursor);
+		case DW_EH_PE_udata2: {
+			uintptr_t result = *(const uint16_t *)*cursor;
+			*cursor += sizeof(uint16_t);
+			return result;
+		}
+		case DW_EH_PE_udata4: {
+			uintptr_t result = *(const uint32_t *)*cursor;
+			*cursor += sizeof(uint32_t);
+			return result;
+		}
+		case DW_EH_PE_udata8: {
+			uintptr_t result = *(const uint64_t *)*cursor;
+			*cursor += sizeof(uint64_t);
+			return result;
+		}
+		case DW_EH_PE_sleb128:
+			return read_sleb128(cursor);
+		case DW_EH_PE_sdata2: {
+			uintptr_t result = *(const int16_t *)*cursor;
+			*cursor += sizeof(int16_t);
+			return result;
+		}
+		case DW_EH_PE_sdata4: {
+			uintptr_t result = *(const int32_t *)*cursor;
+			*cursor += sizeof(int32_t);
+			return result;
+		}
+		case DW_EH_PE_sdata8: {
+			uintptr_t result = *(const int64_t *)*cursor;
+			*cursor += sizeof(int64_t);
+			return result;
+		}
+		default:
+			DIE("unknown format", format & 0xf);
+			return 0;
+	}
+}
+
+static uintptr_t read_pointer_and_advance(const struct frame_info *frame_info, void **cursor, uintptr_t format)
+{
+	if (format == DW_EH_PE_omit) {
+		return 0;
+	}
+	if (format == DW_EH_PE_ptr) {
+		uintptr_t result = *(const uintptr_t *)*cursor;
+		*cursor += sizeof(uintptr_t);
+		return result;
+	}
+	switch (format & 0xf0) {
+		case DW_EH_PE_absptr:
+			return read_offset_and_advance(cursor, format);
+		case DW_EH_PE_pcrel: {
+			uintptr_t base = (uintptr_t)*cursor;
+			return base + read_offset_and_advance(cursor, format);
+		}
+		case DW_EH_PE_datarel:
+			return frame_info->data_base_address + read_offset_and_advance(cursor, format);
+		case DW_EH_PE_textrel:
+			return frame_info->text_base_address + read_offset_and_advance(cursor, format);
+		default:
+			DIE("unknown format", format & 0xf0);
+	}
+}
+
+int load_frame_info(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info)
+{
+	(void)fd;
+	const ElfW(Shdr) *section = find_section(binary, section_info, ".eh_frame");
+	if (section == NULL) {
+		return -ENOENT;
+	}
+	void *data = (void *)apply_base_address(binary, section->sh_addr);
+	uintptr_t data_base_address = 0;
+	const ElfW(Shdr) *header_section = find_section(binary, section_info, ".eh_frame_hdr");
+	if (header_section != NULL) {
+		data_base_address = apply_base_address(binary, header_section->sh_addr);
+	}
+	uintptr_t text_base_address = 0;
+	const ElfW(Shdr) *text_section = find_section(binary, section_info, ".text");
+	if (text_section != NULL) {
+		text_base_address = apply_base_address(binary, text_section->sh_addr);
+	}
+	*out_info = (struct frame_info) {
+		.data = data,
+		.size = section->sh_size,
+		.data_base_address = data_base_address,
+		.text_base_address = text_base_address,
+	};
+	return 0;
+}
+
+void free_frame_info(struct frame_info *info)
+{
+	(void)info;
+}
+
+bool find_containing_frame_info(const struct frame_info *info, const void *address, struct frame_details *out_frame)
+{
+	size_t size = info->size;
+	void *data = info->data;
+	uintptr_t pointer_format = DW_EH_PE_ptr;
+	for (uintptr_t cie_offset = 0; cie_offset < size;) {
+		void *current = data + cie_offset;
+		// read length
+		uint32_t length = *(const uint32_t *)current;
+		current += sizeof(uint32_t);
+		// read cie_id
+		uint32_t cie_id = *(const uint32_t *)current;
+		current += sizeof(uint32_t);
+		if (cie_id == 0) {
+			// CIE
+			// skip version
+			current++;
+			// skip augmentation
+			bool has_pointer_format = false;
+			for (;;) {
+				char c = *(const char *)current++;
+				if (c == '\0') {
+					break;
+				}
+				if (c == 'R') {
+					has_pointer_format = true;
+				}
+			}
+			// skip code alignment factor
+			read_uleb128(&current);
+			// skip data alignment factor
+			read_sleb128(&current);
+			// skip return address register
+			read_uleb128(&current);
+			// read augmentation length
+			if (has_pointer_format) {
+				uintptr_t augmentation_length = read_uleb128(&current);
+				// read pointer format
+				pointer_format = ((const uint8_t *)current)[augmentation_length-1];
+			} else {
+				pointer_format = DW_EH_PE_ptr;
+			}
+		} else {
+			// FDE
+			// ERROR("FDE", cie_offset);
+			// start
+			uintptr_t location = read_pointer_and_advance(info, &current, pointer_format);
+			// ERROR("location", location);
+			uintptr_t size = read_offset_and_advance(&current, pointer_format);
+			// ERROR("size", size);
+			if (location <= (uintptr_t)address) {
+				// size
+				if (location + size > (uintptr_t)address) {
+					*out_frame = (struct frame_details){
+						.address = (const void *)location,
+						.size = size,
+					};
+					return true;
+				}
+			}
+		}
+		cie_offset += sizeof(uint32_t) + length;
+	}
+	return false;
 }

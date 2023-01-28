@@ -91,10 +91,12 @@ struct loaded_binary {
 	bool has_loaded_needed_libraries:1;
 	bool has_applied_relocation:1;
 	bool has_finished_loading:1;
+	bool has_frame_info:1;
 	bool owns_binary_info:1;
 	struct symbol_info symbols;
 	struct symbol_info linker_symbols;
 	struct section_info sections;
+	struct frame_info frame_info;
 	struct loaded_binary *next;
 	struct loaded_binary *previous;
 	dev_t device;

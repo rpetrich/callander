@@ -4088,9 +4088,11 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 	return 0;
 }
 
-static bool lookup_table_jump_is_valid(const struct loaded_binary *binary, const ElfW(Sym) *function_symbol, const uint8_t *jump)
+static bool lookup_table_jump_is_valid(const struct loaded_binary *binary, const struct frame_details *frame_details, const ElfW(Sym) *function_symbol, const uint8_t *jump)
 {
-	if (function_symbol != NULL) {
+	if (frame_details != NULL) {
+		return (frame_details->address <= (const void *)jump) && ((const void *)jump < frame_details->address + frame_details->size);
+	} else if (function_symbol != NULL) {
 		return (binary->info.base + function_symbol->st_value <= (const void *)jump) && ((const void *)jump < binary->info.base + function_symbol->st_value + function_symbol->st_size);
 	} else {
 		return (binary->info.base <= (const void *)jump) && ((const void *)jump < binary->info.base + binary->info.size);
@@ -6098,13 +6100,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										goto update_and_return;
 									}
 								}
+								struct frame_details frame_details = { 0 };
+								bool has_frame_details = binary->has_frame_info ? find_containing_frame_info(&binary->frame_info, ins, &frame_details) : false;
 								const ElfW(Sym) *function_symbol = NULL;
-								uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)base_addr, ins, (max - value > MAX_LOOKUP_TABLE_SIZE) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
+								uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)base_addr, ins, (max - value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
 								if (override_size != 0) {
 									max = override_size - 1;
 									LOG("overwrote maximum of signed lookup table to", max);
 								}
-								if ((max - value > MAX_LOOKUP_TABLE_SIZE) && (function_symbol == NULL)) {
+								if ((max - value > MAX_LOOKUP_TABLE_SIZE) && !has_frame_details && (function_symbol == NULL)) {
 									LOG("signed lookup table rejected because range of index is too large", max - value);
 									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << base) | ((register_mask)1 << index));
 									LOG("trace", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
@@ -6123,7 +6127,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										LOG("processing table value", (intptr_t)relative);
 										const uint8_t *jump_addr = (const uint8_t *)base_addr + relative;
 										LOG("processing table target (if jump table)", temp_str(copy_address_description(&analysis->loader, jump_addr)));
-										if (!lookup_table_jump_is_valid(binary, function_symbol, jump_addr)) {
+										if (!lookup_table_jump_is_valid(binary, has_frame_details ? &frame_details : NULL, function_symbol, jump_addr)) {
 											LOG("detected jump table beyond bounds, truncating", i);
 											break;
 										}
@@ -7823,6 +7827,9 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	new_binary->has_applied_relocation = false;
 	new_binary->has_finished_loading = false;
 	new_binary->has_sections = load_section_info(fd, &new_binary->info, &new_binary->sections) == 0;
+	if (new_binary->has_sections) {
+		new_binary->has_frame_info = load_frame_info(fd, &new_binary->info, &new_binary->sections, &new_binary->frame_info) == 0;
+	}
 	new_binary->owns_binary_info = existing_base_address == NULL;
 	new_binary->device = stat.st_dev;
 	new_binary->inode = stat.st_ino;
