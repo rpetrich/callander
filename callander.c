@@ -3692,8 +3692,15 @@ static void basic_op_or(struct register_state *dest, const struct register_state
 
 static void basic_op_adc(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
 {
+	if (__builtin_add_overflow(dest->max, source->max, &dest->max)) {
+		clear_register(dest);
+		return;
+	}
+	if (__builtin_add_overflow(dest->max, 1, &dest->max)) {
+		clear_register(dest);
+		return;
+	}
 	dest->value += source->value;
-	dest->max += source->max + 1;
 }
 
 static void basic_op_and(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
