@@ -2027,7 +2027,7 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
 	if (binary == NULL) {
-		int needed_fd = open_executable_in_paths(path, "/lib:/lib/x86_64-linux-gnu", false, analysis->loader.uid, analysis->loader.gid);
+		int needed_fd = open_executable_in_paths(path, "/lib/x86_64-linux-gnu:/lib:/usr/lib", false, analysis->loader.uid, analysis->loader.gid);
 		if (needed_fd < 0) {
 			LOG("failed to find dlopen'ed path, assuming it will fail at runtime", path);
 			return NULL;
@@ -7909,13 +7909,14 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 	if (debuglink == NULL) {
 		return 0;
 	}
-#define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/lib/x86_64-linux-gnu"
+#define DEBUGLINK_ARCH_SEARCH_PATH "/usr/lib/debug/lib/x86_64-linux-gnu"
+#define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/lib"
 #define DEBUGLINK_BUILD_ID_SEARCH_PATH "/usr/lib/debug/.build-id/XX"
-	const char *debuglink_search_paths = DEBUGLINK_BASE_SEARCH_PATH;
-	char buf[sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH)];
+	const char *debuglink_search_paths = DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH;
+	char buf[sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH)];
 	const char *build_id = binary->build_id;
 	if (build_id != NULL) {
-		memcpy(buf, DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH, sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH));
+		memcpy(buf, DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH, sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH));
 		buf[sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH)-3] = "0123456789abcdef"[(uint8_t)build_id[16] >> 4];
 		buf[sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH)-2] = "0123456789abcdef"[(uint8_t)build_id[16] & 0xf];
 		debuglink_search_paths = buf;
@@ -7998,8 +7999,8 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					break;
 			}
 		}
-		const char *standard_run_path = "/lib:/lib/x86_64-linux-gnu";
-		size_t standard_run_path_sizeof = sizeof("/lib:/lib/x86_64-linux-gnu");
+		const char *standard_run_path = "/lib/x86_64-linux-gnu:/lib:/usr/lib";
+		size_t standard_run_path_sizeof = sizeof("/lib/x86_64-linux-gnu:/lib:/usr/lib");
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
 			if (fs_strcmp(additional_run_path, "$ORIGIN") == 0) {
