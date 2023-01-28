@@ -1445,15 +1445,27 @@ skip_analysis:
 			args[4] = "-f";
 			args[5] = NULL;
 		} else {
-			path = "/usr/bin/sudo";
-			args[0] = "sudo";
-			args[1] = "gdb";
-			args[2] = "--pid";
-			args[3] = pid_buf;
-			args[4] = "--eval-command=signal SIGCONT";
-			args[5] = "--eval-command=handle SIGSTOP nostop noprint";
-			// args[6] = "--eval-command=continue";
-			args[6] = NULL;
+			struct fs_stat sudo_stat;
+			if (fs_stat("/usr/bin/sudo", &sudo_stat) == 0) {
+				path = "/usr/bin/sudo";
+				args[0] = "sudo";
+				args[1] = "gdb";
+				args[2] = "--pid";
+				args[3] = pid_buf;
+				args[4] = "--eval-command=signal SIGCONT";
+				args[5] = "--eval-command=handle SIGSTOP nostop noprint";
+				// args[6] = "--eval-command=continue";
+				args[6] = NULL;
+			} else {
+				path = "/usr/bin/gdb";
+				args[0] = "gdb";
+				args[1] = "--pid";
+				args[2] = pid_buf;
+				args[3] = "--eval-command=signal SIGCONT";
+				args[4] = "--eval-command=handle SIGSTOP nostop noprint";
+				// args[5] = "--eval-command=continue";
+				args[5] = NULL;
+			}
 		}
 		result = fs_execve(path, (void *)args, (char * const *)envp);
 		if (result < 0) {
