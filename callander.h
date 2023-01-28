@@ -94,6 +94,7 @@ struct loaded_binary {
 	bool has_finished_loading:1;
 	bool has_frame_info:1;
 	bool owns_binary_info:1;
+	int id;
 	struct symbol_info symbols;
 	struct symbol_info linker_symbols;
 	struct section_info sections;
@@ -131,6 +132,7 @@ struct loader_context {
 	bool loaded_gconv_libraries:1;
 	bool ignore_dlopen:1;
 	struct loaded_binary *last_used;
+	int binary_count;
 };
 
 char *copy_used_binaries(const struct loader_context *loader);

@@ -7813,6 +7813,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	struct loaded_binary *new_binary = malloc(sizeof(struct loaded_binary) + resolved_path_len + 1);
 	*new_binary = (struct loaded_binary){ 0 };
 	fs_memcpy(new_binary->loaded_path, resolved_path, resolved_path_len + 1);
+	new_binary->id = analysis->loader.binary_count++;
 	new_binary->path = path;
 	new_binary->path_hash = hash;
 	new_binary->info = info;
@@ -8664,17 +8665,17 @@ static int compare_found_syscalls(const void *a, const void *b, void *data)
 	}
 	int argc = argc_for_syscall(syscalla->nr);
 	if ((argc & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
-		const uint8_t *ins_a = syscalla->ins;
-		const uint8_t *ins_b = syscallb->ins;
+		uintptr_t ins_a = (uintptr_t)syscalla->ins;
+		uintptr_t ins_b = (uintptr_t)syscallb->ins;
 		if (data != NULL) {
 			struct loader_context *loader = data;
-			uintptr_t child_a = translate_analysis_address_to_child(loader, ins_a);
-			if (child_a) {
-				ins_a = (const uint8_t *)child_a;
+			struct loaded_binary *binary_a = binary_for_address(loader, syscalla->ins);
+			if (binary_a != NULL) {
+				ins_a += ((uintptr_t)binary_a->id << 48) - (uintptr_t)binary_a->info.base;
 			}
-			uintptr_t child_b = translate_analysis_address_to_child(loader, ins_b);
-			if (child_b) {
-				ins_b = (const uint8_t *)child_b;
+			struct loaded_binary *binary_b = binary_for_address(loader, syscallb->ins);
+			if (binary_b != NULL) {
+				ins_b += ((uintptr_t)binary_b->id << 48) - (uintptr_t)binary_b->info.base;
 			}
 		}
 		if (ins_a < ins_b) {
