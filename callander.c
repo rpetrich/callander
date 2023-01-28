@@ -2046,14 +2046,13 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 			return NULL;
 		}
 		binary = new_binary;
-	} else if (binary->special_binary_flags & BINARY_IS_LOADED_VIA_DLOPEN) {
+	} else if (binary->special_binary_flags & BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED) {
 		return binary;
-	} else {
-		binary->special_binary_flags |= BINARY_IS_LOADED_VIA_DLOPEN;
 	}
 	if (skip_analysis) {
 		LOG("skipping analysis for", path);
 	} else {
+		binary->special_binary_flags |= BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED;
 		struct analysis_frame dlopen_caller = { .current = { .address = binary->info.base, .description = "dlopen", .next = &caller->current }, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		if (binary->has_symbols) {
 			LOG("analyzing symbols for", path);
