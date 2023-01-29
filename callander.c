@@ -2484,6 +2484,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		update_known_function(analysis, new_binary, "__libc_fatal", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "__assert_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "__libc_longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "abort", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		if (analysis->ld_profile == NULL) {
