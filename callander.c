@@ -3256,6 +3256,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 						set_register(out_state, value);
 					}
 					LOG("loaded memory constant", temp_str(copy_register_state_description(loader, (struct register_state){ .value = value, .max = value })));
+					LOG("from", temp_str(copy_address_description(loader, (const void *)addr)));
 					return REGISTER_INVALID;
 				}
 				LOG("clearing old mem r/m", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
@@ -3265,6 +3266,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 				set_register(&regs->registers[REGISTER_MEM], value);
 				regs->sources[REGISTER_MEM] = sources;
 				LOG("loaded memory constant", temp_str(copy_register_state_description(loader, regs->registers[REGISTER_MEM])));
+				LOG("from", temp_str(copy_address_description(loader, (const void *)addr)));
 				clear_match(loader, regs, REGISTER_MEM, *ins_modrm);
 				goto return_result;
 			}
