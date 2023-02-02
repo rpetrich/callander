@@ -2428,6 +2428,23 @@ static void blocked_function_called(__attribute__((unused)) struct program_state
 	LOG("stack", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 }
 
+static void force_protection_for_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *symbol_name, int symbol_types, int prot)
+{
+	const ElfW(Sym) *symbol;
+	void *address = resolve_binary_loaded_symbol(loader, binary, symbol_name, NULL, symbol_types, &symbol);
+	if (address != NULL) {
+		for (int i = 0; i < OVERRIDE_ACCESS_SLOT_COUNT; i++) {
+			if (binary->override_access_starts[i] == 0) {
+				binary->override_access_starts[i] = (uintptr_t)address;
+				binary->override_access_ends[i] = (uintptr_t)address + symbol->st_size;
+				binary->override_access_permissions[i] = prot;
+				return;
+			}
+		}
+		DIE("too many override access symbols in", binary->path);
+	}
+}
+
 static void update_known_symbols(struct program_state *analysis, struct loaded_binary *new_binary)
 {
 	struct known_symbols *known_symbols = &analysis->known_symbols;
@@ -2477,6 +2494,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		}
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
+		force_protection_for_symbol(&analysis->loader, new_binary, "_rtld_global_ro", NORMAL_SYMBOL | LINKER_SYMBOL, 0);
 		// libc exit functions
 		update_known_function(analysis, new_binary, "_dl_signal_error", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "__fortify_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
@@ -8509,11 +8527,15 @@ static int protection_for_address_in_binary(const struct loaded_binary *binary, 
 					if (flags & SHF_ALLOC) {
 						const char *section_name = &binary->sections.strings[section->sh_name];
 						LOG("found address in section", section_name);
+						LOG("of", binary->path);
 						if (out_section != NULL) {
 							*out_section = section;
 						}
-						if (UNLIKELY(addr == binary->override_read_addresses[0] || addr == binary->override_read_addresses[1] || addr == binary->override_read_addresses[2])) {
-							return PROT_READ;
+						for (int j = 0; j < OVERRIDE_ACCESS_SLOT_COUNT; j++) {
+							if (UNLIKELY(addr >= binary->override_access_starts[j] && addr < binary->override_access_ends[j])) {
+								LOG("using override", j);
+								return binary->override_access_permissions[j];
+							}
 						}
 						int result = PROT_READ;
 						if (flags & SHF_EXECINSTR) {

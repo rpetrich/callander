@@ -79,6 +79,10 @@ enum {
 	BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED = 1 << 15,
 };
 
+enum {
+	OVERRIDE_ACCESS_SLOT_COUNT = 3,
+};
+
 struct loaded_binary {
 	const char *path;
 	unsigned long path_hash;
@@ -114,7 +118,9 @@ struct loaded_binary {
 	char *build_id;
 	size_t build_id_size;
 	int debuglink_error;
-	uintptr_t override_read_addresses[3];
+	uintptr_t override_access_starts[OVERRIDE_ACCESS_SLOT_COUNT];
+	uintptr_t override_access_ends[OVERRIDE_ACCESS_SLOT_COUNT];
+	int override_access_permissions[OVERRIDE_ACCESS_SLOT_COUNT];
 	char loaded_path[];
 };
 
