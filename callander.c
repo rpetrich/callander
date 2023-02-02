@@ -2485,18 +2485,9 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		if (forkAndExecInChild1 != NULL) {
 			find_and_add_callback(analysis, forkAndExecInChild1, 0, EFFECT_NONE, handle_forkAndExecInChild1, NULL);
 		}
-		void *unixFcntlSyscall = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "internal/syscall/unix.FcntlSyscall", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-		if (unixFcntlSyscall) {
-			new_binary->override_read_addresses[0] = (uintptr_t)unixFcntlSyscall;
-		}
-		void *syscallFcntlSyscall = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "syscall.fcntl64Syscall", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-		if (syscallFcntlSyscall) {
-			new_binary->override_read_addresses[1] = (uintptr_t)syscallFcntlSyscall;
-		}
-		void *vendoredFcntlSyscall = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "github.com/docker/docker/vendor/golang.org/x/sys/unix.fcntl64Syscall", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-		if (vendoredFcntlSyscall) {
-			new_binary->override_read_addresses[2] = (uintptr_t)vendoredFcntlSyscall;
-		}
+		force_protection_for_symbol(&analysis->loader, new_binary, "internal/syscall/unix.FcntlSyscall", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
+		force_protection_for_symbol(&analysis->loader, new_binary, "syscall.fcntl64Syscall", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
+		force_protection_for_symbol(&analysis->loader, new_binary, "github.com/docker/docker/vendor/golang.org/x/sys/unix.fcntl64Syscall", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
 		void *unixSchedAffinity = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "github.com/docker/docker/vendor/golang.org/x/sys/unix.schedAffinity", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (unixSchedAffinity) {
 			find_and_add_callback(analysis, unixSchedAffinity, (register_mask)1 << REGISTER_STACK_4, EFFECT_NONE, handle_golang_unix_sched_affinity, NULL);
