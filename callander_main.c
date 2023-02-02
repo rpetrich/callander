@@ -1118,10 +1118,10 @@ int main(__attribute__((unused)) int argc, const char **argv)
 			DIE("failed to fork", fs_strerror(result));
 		}
 		if (result == 0) {
-			const char **new_envp = malloc((envp_count + 2) * sizeof(*envp));
+			const char **new_envp = malloc((envp_count + 3) * sizeof(*envp));
 			const char **d = new_envp;
 			for (const char **s = envp; *s != NULL; s++) {
-				if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) != 0) {
+				if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) != 0 && fs_strncmp(*s, "LD_BIND_NOW=1", sizeof("LD_BIND_NOW=")-1) != 0) {
 					*d++ = *s;
 				}
 			}
@@ -1152,6 +1152,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 			if (*new_ld_preload != '\0') {
 				*d++ = new_ld_preload;
 			}
+			*d++ = "LD_BIND_NOW=1";
 			*d = NULL;
 
 			// ask to be traced
