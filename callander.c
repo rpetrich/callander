@@ -2824,7 +2824,8 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	int argc = argc_for_syscall(nr);
 	// debug logging
 	LOG("syscall is", temp_str(copy_call_description(&analysis->loader, name_for_syscall(nr), self.current_state, syscall_argument_abi_register_indexes, argc & SYSCALL_ARGC_MASK, true)));
-	if (((config & SYSCALL_CONFIG_BLOCK) == 0) && (effects & EFFECT_AFTER_STARTUP)) {
+	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == __NR_exit || nr == __NR_exit_group);
+	if (should_record) {
 		LOG("recorded syscall");
 		int index = syscalls->count++;
 		if (syscalls->list == NULL) {
@@ -2859,7 +2860,11 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		}
 	}
 	if (config & SYSCALL_CONFIG_DEBUG) {
-		ERROR("found syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
+		if (should_record) {
+			ERROR("found syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
+		} else {
+			ERROR("found startup syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
+		}
 		for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
 			int reg = syscall_argument_abi_register_indexes[i];
 			for (int j = 0; j < REGISTER_COUNT; j++) {
