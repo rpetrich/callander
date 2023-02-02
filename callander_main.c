@@ -17,6 +17,7 @@
 #include "axon.h"
 #include "loader.h"
 #include "mapped.h"
+#include "qsort.h"
 #include "search.h"
 
 #ifdef STANDALONE
@@ -706,6 +707,92 @@ static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_st
 	free(progs[0].filter);
 	free(progs[1].filter);
 }
+
+#if BREAK_ON_UNREACHABLES
+static int compare_addresses(const void *left, const void *right, __attribute__((unused)) void *data)
+{
+	const uint8_t *const *left_address = left;
+	const uint8_t *const *right_address = right;
+	if ((uintptr_t)*left_address < (uintptr_t)*right_address) {
+		return -1;
+	}
+	if ((uintptr_t)*left_address > (uintptr_t)*right_address) {
+		return 1;
+	}
+	return 0;
+}
+
+static int compare_reachable_regions(const void *left, const void *right, __attribute__((unused)) void *data)
+{
+	const struct reachable_region *left_region = left;
+	const struct reachable_region *right_region = right;
+	if ((uintptr_t)left_region->exit < (uintptr_t)right_region->exit) {
+		return -1;
+	}
+	if ((uintptr_t)left_region->exit > (uintptr_t)right_region->exit) {
+		return 1;
+	}
+	if ((uintptr_t)left_region->entry < (uintptr_t)right_region->entry) {
+		return -1;
+	}
+	if ((uintptr_t)left_region->entry > (uintptr_t)right_region->entry) {
+		return 1;
+	}
+	return 0;
+}
+
+static void prune_unreachable_instructions(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) struct loader_context *loader)
+{
+	size_t breakpoint_count = unreachables->breakpoint_count;
+	qsort_r(unreachables->breakpoints, breakpoint_count, sizeof(*unreachables->breakpoints), compare_addresses, NULL);
+	for (size_t i = 1; i < breakpoint_count; i++) {
+		if (unreachables->breakpoints[i] < unreachables->breakpoints[i-1]) {
+			DIE("sorting breakpoints failed");
+		}
+	}
+	size_t reachable_region_count = unreachables->reachable_region_count;
+	if (UNLIKELY(reachable_region_count == 0)) {
+		return;
+	}
+	qsort_r(unreachables->reachable_regions, reachable_region_count, sizeof(*unreachables->reachable_regions), compare_reachable_regions, NULL);
+	for (size_t i = 1; i < reachable_region_count; i++) {
+		if (unreachables->reachable_regions[i].exit < unreachables->reachable_regions[i-1].exit) {
+			DIE("sorting reachable regions failed");
+		}
+		if (unreachables->reachable_regions[i].exit == unreachables->reachable_regions[i-1].exit) {
+			if (unreachables->reachable_regions[i].entry < unreachables->reachable_regions[i-1].entry) {
+				DIE("sorting reachable regions failed");
+			}
+		}
+	}
+	size_t j = 0;
+	const uint8_t *last_breakpoint = NULL;
+	for (size_t i = 0; i < breakpoint_count; i++) {
+		const uint8_t *breakpoint = unreachables->breakpoints[i];
+		if (breakpoint == last_breakpoint) {
+			// prune duplicates
+			unreachables->breakpoints[i] = NULL;
+		} else {
+			last_breakpoint = breakpoint;
+			// prune breakpoints that were marked as reachable
+			while ((uintptr_t)breakpoint >= (uintptr_t)unreachables->reachable_regions[j].exit) {
+				j++;
+				if (UNLIKELY(j == reachable_region_count)) {
+					return;
+				}
+				LOG("advancing to entry", temp_str(copy_address_description(loader, unreachables->reachable_regions[j].entry)));
+				LOG("advancing to exit", temp_str(copy_address_description(loader, unreachables->reachable_regions[j].exit)));
+			}
+			if ((uintptr_t)unreachables->reachable_regions[j].entry <= (uintptr_t)breakpoint) {
+				unreachables->breakpoints[i] = NULL;
+				LOG("pruning unreachable instruction that was later discovered to be reachable", temp_str(copy_address_description(loader, breakpoint)));
+			} else {
+				LOG("keeping unreachable instruction", temp_str(copy_address_description(loader, breakpoint)));
+			}
+		}
+	}
+}
+#endif
 
 
 void __restore();

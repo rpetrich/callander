@@ -425,14 +425,19 @@ struct dlopen_path {
 	const char *path;
 };
 
-struct reachable_region;
+struct reachable_region {
+	const uint8_t *entry;
+	const uint8_t *exit;
+};
 
 struct unreachable_instructions {
 #if BREAK_ON_UNREACHABLES
 	const uint8_t **breakpoints;
 	size_t breakpoint_count;
+	size_t breakpoint_buffer_size;
 	struct reachable_region *reachable_regions;
 	size_t reachable_region_count;
+	size_t reachable_region_buffer_size;
 #endif
 };
 

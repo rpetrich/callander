@@ -1065,113 +1065,36 @@ struct loader_stub {
 	struct loader_stub *next;
 };
 
-struct reachable_region {
-	const uint8_t *entry;
-	const uint8_t *exit;
-};
-
 __attribute__((always_inline))
 static inline void push_unreachable_breakpoint(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) const uint8_t *breakpoint)
 {
 #if BREAK_ON_UNREACHABLES
 	size_t old_count = unreachables->breakpoint_count;
 	size_t new_count = old_count + 1;
-	unreachables->breakpoints = realloc(unreachables->breakpoints, new_count * sizeof(*unreachables->breakpoints));
+	if (new_count > unreachables->breakpoint_buffer_size) {
+		unreachables->breakpoint_buffer_size = (new_count * 2);
+		unreachables->breakpoints = realloc(unreachables->breakpoints, unreachables->breakpoint_buffer_size * sizeof(*unreachables->breakpoints));
+	}
 	unreachables->breakpoints[old_count] = breakpoint;
 	unreachables->breakpoint_count = new_count;
 #endif
 }
 
-__attribute__((always_inline))
-static inline void push_reachable_region(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) const uint8_t *entry, __attribute__((unused)) const uint8_t *exit)
-{
 #if BREAK_ON_UNREACHABLES
+__attribute__((always_inline))
+static inline void push_reachable_region(const struct loader_context *loader, struct unreachable_instructions *unreachables, const uint8_t *entry, const uint8_t *exit)
+{
+	LOG("reachable entry", temp_str(copy_address_description(loader, entry)));
+	LOG("reachable exit", temp_str(copy_address_description(loader, exit)));
 	size_t old_count = unreachables->reachable_region_count;
 	size_t new_count = old_count + 1;
-	unreachables->reachable_regions = realloc(unreachables->reachable_regions, new_count * sizeof(*unreachables->reachable_regions));
+	if (new_count > unreachables->reachable_region_buffer_size) {
+		unreachables->reachable_region_buffer_size = (new_count * 2);
+		unreachables->reachable_regions = realloc(unreachables->reachable_regions, unreachables->reachable_region_buffer_size * sizeof(*unreachables->reachable_regions));
+	}
 	unreachables->reachable_regions[old_count].entry = entry;
 	unreachables->reachable_regions[old_count].exit = exit;
 	unreachables->reachable_region_count = new_count;
-#endif
-}
-
-#if BREAK_ON_UNREACHABLES
-static int compare_addresses(const void *left, const void *right, __attribute__((unused)) void *data)
-{
-	const uint8_t *const *left_address = left;
-	const uint8_t *const *right_address = right;
-	if ((uintptr_t)*left_address < (uintptr_t)*right_address) {
-		return -1;
-	}
-	if ((uintptr_t)*left_address > (uintptr_t)*right_address) {
-		return 1;
-	}
-	return 0;
-}
-static int compare_reachable_regions(const void *left, const void *right, __attribute__((unused)) void *data)
-{
-	const struct reachable_region *left_region = left;
-	const struct reachable_region *right_region = right;
-	if ((uintptr_t)left_region->entry < (uintptr_t)right_region->entry) {
-		return -1;
-	}
-	if ((uintptr_t)left_region->entry > (uintptr_t)right_region->entry) {
-		return 1;
-	}
-	if ((uintptr_t)left_region->exit > (uintptr_t)right_region->exit) {
-		return -1;
-	}
-	if ((uintptr_t)left_region->exit < (uintptr_t)right_region->exit) {
-		return 1;
-	}
-	return 0;
-}
-#endif
-
-#if BREAK_ON_UNREACHABLES
-static void prune_unreachable_instructions(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) struct loader_context *loader)
-{
-	size_t breakpoint_count = unreachables->breakpoint_count;
-	qsort_r(unreachables->breakpoints, breakpoint_count, sizeof(*unreachables->breakpoints), compare_addresses, NULL);
-	for (size_t i = 1; i < breakpoint_count; i++) {
-		if (unreachables->breakpoints[i] < unreachables->breakpoints[i-1]) {
-			DIE("sorting breakpoints failed");
-		}
-	}
-	size_t reachable_region_count = unreachables->reachable_region_count;
-	if (UNLIKELY(reachable_region_count == 0)) {
-		return;
-	}
-	qsort_r(unreachables->reachable_regions, reachable_region_count, sizeof(*unreachables->reachable_regions), compare_reachable_regions, NULL);
-	for (size_t i = 1; i < reachable_region_count; i++) {
-		if (unreachables->reachable_regions[i].entry < unreachables->reachable_regions[i-1].entry) {
-			DIE("sorting reachable regions failed");
-		}
-	}
-	size_t j = 0;
-	const uint8_t *last_breakpoint = NULL;
-	for (size_t i = 0; i < breakpoint_count; i++) {
-		const uint8_t *breakpoint = unreachables->breakpoints[i];
-		if (breakpoint == last_breakpoint) {
-			// prune duplicates
-			unreachables->breakpoints[i] = NULL;
-		} else {
-			last_breakpoint = breakpoint;
-			// prune breakpoints that were marked as reachable
-			while ((uintptr_t)breakpoint >= (uintptr_t)unreachables->reachable_regions[j].exit) {
-				j++;
-				if (UNLIKELY(j == reachable_region_count)) {
-					return;
-				}
-			}
-			if (((uintptr_t)unreachables->reachable_regions[j].entry <= (uintptr_t)breakpoint) && ((uintptr_t)breakpoint < (uintptr_t)unreachables->reachable_regions[j].exit)) {
-				unreachables->breakpoints[i] = NULL;
-				LOG("pruning unreachable instruction that was later discovered to be reachable", temp_str(copy_address_description(loader, breakpoint)));
-			} else {
-				LOG("keeping unreachable instruction", temp_str(copy_address_description(loader, breakpoint)));
-			}
-		}
-	}
 }
 #endif
 
@@ -4177,6 +4100,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			break;
 		}
 		if (protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) {
+#if BREAK_ON_UNREACHABLES
+			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, ins + InstructionSize_x86_64(ins, 0xf));
+#endif
 			ins = jump_target;
 		} else {
 			break;
@@ -7555,7 +7481,12 @@ update_and_return:
 		set_effects(&analysis->search, self.entry, &self.token, effects);
 		effects &= ~EFFECT_STICKY_EXITS;
 	}
-	push_reachable_region(&analysis->unreachables, self.entry, ins + length);
+	if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
+		LOG("exit-only block", temp_str(copy_address_description(&analysis->loader, self.entry)));
+	}
+#if BREAK_ON_UNREACHABLES
+	push_reachable_region(&analysis->loader, &analysis->unreachables, self.entry, ins + length);
+#endif
 	return effects;
 }
 
