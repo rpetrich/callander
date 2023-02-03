@@ -135,6 +135,7 @@ struct loader_context {
 	bool loaded_nss_libraries:1;
 	bool loaded_gconv_libraries:1;
 	bool ignore_dlopen:1;
+	bool searching_gconv_dlopen:1;
 	struct loaded_binary *last_used;
 	int binary_count;
 };
