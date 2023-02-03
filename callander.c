@@ -7696,21 +7696,21 @@ static int special_binary_flags_for_path(const char *path)
 			if (path[4] == '.') { // libc.
 				result |= BINARY_IS_LIBC | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'r' && path[5] == 'y' && path[6] == 'p' && path[7] == 't' && path[8] == 'o' && path[9] == '.') { // libcrypto.
-				result |= BINARY_IS_CRYPTO | BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'a' && path[5] == 'p' && path[6] == '.') {
 				result |= BINARY_IS_LIBCAP;
 			}
 		} else if (path[3] == 'g') {
 			if (path[4] == 'n' && path[5] == 'u' && path[6] == 't' && path[7] == 'l' && path[8] == 's' && path[9] == '.') { // libgnutls.
-				result |= BINARY_IS_CRYPTO | BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == '.') { // libgcrypt.
-				result |= BINARY_IS_CRYPTO | BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'm' && path[5] == 'p' && path[6] == '.') { // libgmp.
 				result |= BINARY_IGNORES_SIGNEDNESS;
 			}
 		} else if (path[3] == 'h') {
 			if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == 'o' && path[10] == '.') { // libhcrypto.
-				result |= BINARY_IS_CRYPTO | BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			}
 		} else if (path[3] == 'p') {
 			if (path[4] == 't' && path[5] == 'h' && path[6] == 'r' && path[7] == 'e' && path[8] == 'a' && path[9] == 'd' && path[10] == '.') { // libpthread.
@@ -7719,9 +7719,7 @@ static int special_binary_flags_for_path(const char *path)
 		} else if (path[3] == 'r' && path[4] == 'e' && path[5] == 'a' && path[6] == 'd') {
 			result |= BINARY_IS_LIBREADLINE;
 		} else if (path[3] == 's') {
-			if (path[4] == 't' && path[5] == 'd' && path[6] == 'c' && path[7] == '+' && path[8] == '+' && path[9] == '.') { // libc++.
-				result |= BINARY_IS_LIBSTDCPP;
-			} else if (path[4] == 'e' && path[5] == 'c' && path[6] == 'c' && path[7] == 'o' && path[8] == 'm' && path[9] == 'p' && path[10] == '.') { // libseccomp.
+			if (path[4] == 'e' && path[5] == 'c' && path[6] == 'c' && path[7] == 'o' && path[8] == 'm' && path[9] == 'p' && path[10] == '.') { // libseccomp.
 				result |= BINARY_IS_SECCOMP;
 			}
 		} else if (path[3] == 'n') {
@@ -7858,7 +7856,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	if (analysis->loader.binaries == NULL) {
 		new_binary->special_binary_flags |= BINARY_IS_MAIN;
 	}
-	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_CRYPTO | BINARY_IS_LIBSTDCPP | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
+	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
 		int result = load_debuglink(&analysis->loader, new_binary, false);
 		if (result < 0) {
 			if (result == -ENOENT || result == -ENOEXEC) {
