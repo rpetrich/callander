@@ -323,7 +323,6 @@ const struct registers empty_registers = {
 	.mem_rm = invalid_decoded_rm,
 	.compare_state = { 0 },
 	.stack_address_taken = NULL,
-	.has_compare = false,
 };
 
 static inline bool registers_are_subset_of_registers(const struct register_state potential_subset[REGISTER_COUNT], const struct register_state potential_superset[REGISTER_COUNT], register_mask valid_registers)
@@ -359,16 +358,16 @@ static void register_changed(struct registers *regs, int register_index, __attri
 #if STORE_LAST_MODIFIED
 	regs->last_modify_ins[register_index] = ins;
 #endif
-	if (regs->has_compare) {
+	if (regs->compare_state.validity != COMPARISON_IS_INVALID) {
 		int compare_register = regs->compare_state.target_register;
 		if (UNLIKELY(compare_register == register_index)) {
 			if (compare_register != REGISTER_MEM || decoded_rm_equal(&regs->mem_rm, &regs->compare_state.mem_rm)) {
 				LOG("clearing comparison since register changed", name_for_register(register_index));
-				regs->has_compare = false;
+				regs->compare_state.validity = COMPARISON_IS_INVALID;
 			}
 		} else if (decoded_rm_references_register(&regs->compare_state.mem_rm, register_index)) {
 			LOG("clearing comparison since referenced register changed", name_for_register(register_index));
-			regs->has_compare = false;
+			regs->compare_state.validity = COMPARISON_IS_INVALID;
 		}
 	}
 	if (LIKELY(register_index != REGISTER_MEM)) {
@@ -521,7 +520,7 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	clear_match(loader, regs, REGISTER_R10, ins);
 	clear_match(loader, regs, REGISTER_R11, ins);
 	clear_match(loader, regs, REGISTER_MEM, ins);
-	regs->has_compare = false;
+	regs->compare_state.validity = COMPARISON_IS_INVALID;
 	regs->mem_rm = invalid_decoded_rm;
 }
 
@@ -624,7 +623,7 @@ static inline struct registers copy_call_argument_registers(const struct loader_
 #endif
 	result.mem_rm = invalid_decoded_rm;
 	result.stack_address_taken = NULL;
-	result.has_compare = false;
+	result.compare_state.validity = COMPARISON_IS_INVALID;
 	return result;
 }
 
@@ -1278,7 +1277,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 	if (widenable_registers != 0) {
 		LOG("loop heuristics");
 		dump_registers(loader, registers, widenable_registers);
-		candidate.has_compare = false;
+		candidate.compare_state.validity = COMPARISON_IS_INVALID;
 		for (size_t offset = 0; offset < end_offset; ) {
 			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&data->entries[offset];
 			if ((entry->effects & required_effects) != required_effects) {
@@ -1299,7 +1298,6 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			// candidate.mem_rm = registers->mem_rm;
 			// candidate.stack_address_taken = registers->stack_address_taken;
 			// candidate.compare_state = registers->compare_state;
-			// candidate.has_compare = registers->has_compare;
 			register_mask widened = 0;
 			for (int r = 0; r < REGISTER_COUNT; r++) {
 				if (relevant_registers & ((register_mask)1 << r)) {
@@ -1585,7 +1583,6 @@ static inline register_mask add_relevant_registers(struct searched_instructions 
 		copy.mem_rm = registers->mem_rm;
 		copy.compare_state = registers->compare_state;
 		copy.stack_address_taken = registers->stack_address_taken;
-		copy.has_compare = registers->has_compare;
 		queue_instruction(&search->queue, addr, required_effects, copy, addr, "varying ancestors");
 	}
 	return result;
@@ -3388,6 +3385,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 				.mask = 0xff,
 				.mem_rm = state->mem_rm,
 				.sources = state->sources[reg],
+				.validity = COMPARISON_SUPPORTS_ANY,
 			};
 			return SUPPORTED_COMPARISON;
 		}
@@ -3406,6 +3404,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 				.mask = mask,
 				.mem_rm = state->mem_rm,
 				.sources = state->sources[reg],
+				.validity = COMPARISON_SUPPORTS_ANY,
 			};
 			return SUPPORTED_COMPARISON;
 		}
@@ -3429,6 +3428,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 				.mask = 0xff,
 				.mem_rm = state->mem_rm,
 				.sources = state->sources[rm],
+				.validity = COMPARISON_SUPPORTS_ANY,
 			};
 			return SUPPORTED_COMPARISON;
 		}
@@ -3447,6 +3447,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 				.mask = mask,
 				.mem_rm = state->mem_rm,
 				.sources = state->sources[rm],
+				.validity = COMPARISON_SUPPORTS_ANY,
 			};
 			return SUPPORTED_COMPARISON;
 		}
@@ -3460,6 +3461,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 				.mask = 0xff,
 				.mem_rm = state->mem_rm,
 				.sources = 0,
+				.validity = COMPARISON_SUPPORTS_ANY,
 			};
 			return SUPPORTED_COMPARISON;
 		}
@@ -3479,6 +3481,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 				.mask = mask,
 				.mem_rm = state->mem_rm,
 				.sources = 0,
+				.validity = COMPARISON_SUPPORTS_ANY,
 			};
 			return SUPPORTED_COMPARISON;
 		}
@@ -3498,6 +3501,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 					.mask = 0xff,
 					.mem_rm = state->mem_rm,
 					.sources = 0,
+					.validity = COMPARISON_SUPPORTS_ANY,
 				};
 				return SUPPORTED_COMPARISON;
 			}
@@ -3518,6 +3522,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 						.mask = mask,
 						.mem_rm = state->mem_rm,
 						.sources = 0,
+						.validity = COMPARISON_SUPPORTS_ANY,
 					};
 				} else {
 					int rm = read_rm_ref(loader, rex, &remaining, sizeof(int32_t), state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
@@ -3529,6 +3534,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 						.mask = mask,
 						.mem_rm = state->mem_rm,
 						.sources = 0,
+						.validity = COMPARISON_SUPPORTS_ANY,
 					};
 				}
 				return SUPPORTED_COMPARISON;
@@ -3549,6 +3555,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 					.mask = mask,
 					.mem_rm = state->mem_rm,
 					.sources = 0,
+					.validity = COMPARISON_SUPPORTS_ANY,
 				};
 				return SUPPORTED_COMPARISON;
 			}
@@ -3571,6 +3578,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 					.mask = 0xff,
 					.mem_rm = state->mem_rm,
 					.sources = 0,
+					.validity = COMPARISON_SUPPORTS_EQUALITY,
 				};
 				return SUPPORTED_COMPARISON;
 			}
@@ -3590,6 +3598,7 @@ static inline int decode_x86_comparisons(struct x86_ins_prefixes rex, const uint
 					.mask = mask_for_size_prefixes(rex),
 					.mem_rm = state->mem_rm,
 					.sources = 0,
+					.validity = COMPARISON_SUPPORTS_EQUALITY,
 				};
 				return SUPPORTED_COMPARISON;
 			}
@@ -3972,13 +3981,13 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 
 static void set_compare_from_operation(struct registers *regs, int reg, uintptr_t mask)
 {
-	regs->has_compare = true;
 	regs->compare_state = (struct x86_comparison){
 		.target_register = reg,
 		.value = 0,
 		.mask = mask,
 		.mem_rm = regs->mem_rm,
 		.sources = 0,
+		.validity = COMPARISON_SUPPORTS_EQUALITY,
 	};
 }
 
@@ -4200,7 +4209,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("found conditional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
 				struct loaded_binary *jump_binary = NULL;
 				int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
-				if (self.current_state.has_compare && register_is_exactly_known(&self.current_state.compare_state.value)) {
+				if ((self.current_state.compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&self.current_state.compare_state.value)) {
 					// include matching registers
 					if (jump_state.compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
 						LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.mem_rm)));
@@ -4239,7 +4248,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							continue_state.registers[target_register].value &= compare_mask;
 							continue_state.registers[target_register].max &= compare_mask;
 						}
-						if (x86_is_jb_instruction(ins)) {
+						if (x86_is_jb_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jb comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4257,7 +4266,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								continue_state.registers[target_register].value = self.current_state.compare_state.value.value;
 							}
 						}
-						if (x86_is_jae_instruction(ins)) {
+						if (x86_is_jae_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jae comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4275,7 +4284,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								continue_state.registers[target_register].max = self.current_state.compare_state.value.value - 1;
 							}
 						}
-						if (x86_is_je_instruction(ins)) {
+						if (x86_is_je_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
 							LOG("found je comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4299,7 +4308,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
 							}
 						}
-						if (x86_is_jne_instruction(ins)) {
+						if (x86_is_jne_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
 							LOG("found jne comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4323,7 +4332,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
 							}
 						}
-						if (x86_is_jbe_instruction(ins)) {
+						if (x86_is_jbe_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jbe comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4341,7 +4350,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								continue_state.registers[target_register].value = self.current_state.compare_state.value.value + 1;
 							}
 						}
-						if (x86_is_ja_instruction(ins)) {
+						if (x86_is_ja_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found ja comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4359,7 +4368,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								continue_state.registers[target_register].max = self.current_state.compare_state.value.value;
 							}
 						}
-						if (x86_is_js_instruction(ins)) {
+						if (x86_is_js_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found js comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4380,7 +4389,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-						if (x86_is_jns_instruction(ins)) {
+						if (x86_is_jns_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jns comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4401,7 +4410,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-						if (x86_is_jl_instruction(ins)) {
+						if (x86_is_jl_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jl comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4423,7 +4432,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-						if (x86_is_jge_instruction(ins)) {
+						if (x86_is_jge_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jge comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4445,7 +4454,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-						if (x86_is_jg_instruction(ins)) {
+						if (x86_is_jg_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 							LOG("found jg comparing", name_for_register(target_register));
 							dump_register(&analysis->loader, continue_state.registers[target_register]);
 							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
@@ -4576,13 +4585,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		struct x86_ins_prefixes rex = decode_x86_ins_prefixes(&unprefixed);
 		switch (decode_x86_comparisons(rex, unprefixed, &self.current_state, &analysis->loader, &self.current_state.compare_state)) {
 			case INVALID_COMPARISON:
-				if (self.current_state.has_compare) {
-					self.current_state.has_compare = false;
+				if (self.current_state.compare_state.validity != COMPARISON_IS_INVALID) {
+					self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 					LOG("clearing comparison");
 				}
 				break;
 			case SUPPORTED_COMPARISON:
-				self.current_state.has_compare = true;
 				LOG("comparing", name_for_register(self.current_state.compare_state.target_register));
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
 				break;
@@ -4593,7 +4601,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (required_effects & EFFECT_ENTRY_POINT) {
 					required_effects |= EFFECT_AFTER_STARTUP;
 				}
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				LOG("found call*");
 				if (modrm_is_direct(modrm)) {
 					int reg = read_rm(modrm, rex);
@@ -4791,27 +4799,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		switch (*unprefixed) {
 			case 0x00: // add r/m8, r8
 				perform_basic_op_rm_r_8("add", basic_op_add, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x01: // add r/m, r
 				perform_basic_op_rm_r("add", basic_op_add, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x02: // add r8, r/m8
 				perform_basic_op_r_rm_8("add", basic_op_add, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x03: // add r, r/m
 				perform_basic_op_r_rm("add", basic_op_add, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x04: // add al, imm8
 				perform_basic_op_al_imm8("add", basic_op_add, &analysis->loader, &self.current_state, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x05: // add *ax, imm
 				perform_basic_op_imm("add", basic_op_add, &analysis->loader, &self.current_state, rex, REGISTER_RAX, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x06:
 				LOG("invalid opcode", (uintptr_t)*unprefixed);
@@ -4821,27 +4829,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x08: // or r/m8, r8
 				perform_basic_op_rm_r_8("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x09: // or r/m, r
 				perform_basic_op_rm_r("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x0a: // or r8, r/m8
 				perform_basic_op_r_rm_8("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x0b: // or r, r/m
 				perform_basic_op_r_rm("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x0c: // or al, imm8
 				perform_basic_op_al_imm8("or", basic_op_or, &analysis->loader, &self.current_state, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x0d: // or *ax, imm
 				perform_basic_op_imm("or", basic_op_or, &analysis->loader, &self.current_state, rex, REGISTER_RAX, &unprefixed[1]);
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x0e:
 				LOG("invalid opcode", (uintptr_t)*unprefixed);
@@ -4868,10 +4876,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case 3: // ltr r/m16
 								break;
 							case 4: // verr r/m16
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								break;
 							case 5: // verw r/m16
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								break;
 							default:
 								LOG("invalid opcode extension for 0x0f00", (int)modrm.reg);
@@ -5033,11 +5041,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0x2e: { // ucomiss xmm, xmm/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						break;
 					}
 					case 0x2f: { // comiss xmm, xmm/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						break;
 					}
 					case 0x31: // rdtsc
@@ -5123,7 +5131,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								break;
 							}
 							case 0x60: { // pcmpestrm
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								break;
 							}
 							case 0x61: { // pcmpestri xmm1, xmm2/m128, imm8
@@ -5131,11 +5139,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								truncate_to_32bit(&self.current_state.registers[REGISTER_RCX]);
 								self.current_state.sources[REGISTER_RCX] = 0;
 								clear_match(&analysis->loader, &self.current_state, REGISTER_RCX, ins);
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								break;
 							}
 							case 0x62: { // pcmpistrm
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								break;
 							}
 							case 0x63: { // pcmpistri xmm1, xmm2/m128, imm8
@@ -5143,7 +5151,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								truncate_to_32bit(&self.current_state.registers[REGISTER_RCX]);
 								self.current_state.sources[REGISTER_RCX] = 0;
 								clear_match(&analysis->loader, &self.current_state, REGISTER_RCX, ins);
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								break;
 							}
 						}
@@ -5304,11 +5312,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xa3: { // bt r/m, r
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						break;
 					}
 					case 0xa4: { // shld r/m, r, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 						if (rm != REGISTER_INVALID) {
@@ -5320,7 +5328,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xa5: { // shld r/m, r, cl
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 						if (rm != REGISTER_INVALID) {
@@ -5342,7 +5350,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xab: { // bts r/m, r
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 						if (rm != REGISTER_INVALID) {
@@ -5354,7 +5362,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xac: { // shrd r/m, r, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 						if (rm != REGISTER_INVALID) {
@@ -5366,7 +5374,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xad: { // shrd r/m, r, cl
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 						if (rm != REGISTER_INVALID) {
@@ -5378,7 +5386,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xaf: { // imul r, r/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						mod_rm_t modrm = read_modrm(&unprefixed[2]);
 						int reg = read_reg(modrm, rex);
 						clear_register(&self.current_state.registers[reg]);
@@ -5388,7 +5396,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xb0: { // cmpxchg r/m8, r8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						clear_register(&self.current_state.registers[REGISTER_RAX]);
 						truncate_to_8bit(&self.current_state.registers[REGISTER_RAX]);
 						self.current_state.sources[REGISTER_RAX] = 0;
@@ -5411,7 +5419,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xb1: { // cmpxchg r/m, r
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						clear_register(&self.current_state.registers[REGISTER_RAX]);
 						truncate_to_size_prefixes(&self.current_state.registers[REGISTER_RAX], rex);
 						self.current_state.sources[REGISTER_RAX] = 0;
@@ -5431,7 +5439,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xb3: { // btr r/m, r
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						clear_register(&self.current_state.registers[rm]);
@@ -5523,7 +5531,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xb8: { // popcnt r, r/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						mod_rm_t modrm = read_modrm(&unprefixed[2]);
 						int reg = read_reg(modrm, rex);
 						self.current_state.registers[reg].value = 0;
@@ -5549,7 +5557,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case 5: // bts r/m, imm8
 							case 6: // btr r/m, imm8
 							case 7: { // btc r/m, imm8
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								const uint8_t *remaining = &unprefixed[2];
 								int rm = read_rm_ref(&analysis->loader, rex, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 								if (rm != REGISTER_INVALID) {
@@ -5564,7 +5572,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xbb: { // btc r/m, r
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 						if (rm != REGISTER_INVALID) {
@@ -5586,7 +5594,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						} else {
 							LOG("bsr");
 						}
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						mod_rm_t modrm = read_modrm(&unprefixed[2]);
 						int reg = read_reg(modrm, rex);
 						clear_register(&self.current_state.registers[reg]);
@@ -5642,7 +5650,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xc0: { // xadd r/m8, r8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_8BIT, READ_RM_REPLACE_MEM, NULL);
 						mod_rm_t modrm = read_modrm(&unprefixed[2]);
@@ -5662,7 +5670,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xc1: { // xadd r/m, r
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						mod_rm_t modrm = read_modrm(&unprefixed[2]);
@@ -5690,7 +5698,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						mod_rm_t modrm = read_modrm(&unprefixed[2]);
 						switch (modrm.reg) {
 							case 1: // cmpxchg8/16b m64
-								self.current_state.has_compare = false;
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 								clear_register(&self.current_state.registers[REGISTER_RAX]);
 								if (!rex.has_w) {
 									truncate_to_32bit(&self.current_state.registers[REGISTER_RAX]);
@@ -5744,27 +5752,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				break;
 			case 0x10: // adc r/m8, r8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r_8("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x11: // adc r/m, r
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x12: // adc r8, r/m8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm_8("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x13: // adc r, r/m
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x14: // adc al, imm8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_al_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, &unprefixed[1]);
 				break;
 			case 0x15: // adc *ax, imm
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, REGISTER_RAX, &unprefixed[1]);
 				break;
 			case 0x16:
@@ -5774,27 +5782,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("invalid opcode", (uintptr_t)*unprefixed);
 				break;
 			case 0x18: // sbb r/m8, r8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x19: // sbb r/m, r
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x1a: // sbb r8, r/m8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x1b: // sbb r, r/m
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x1c: // sbb al, imm8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_al_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, &unprefixed[1]);
 				break;
 			case 0x1d: // sbb *ax, imm
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, REGISTER_RAX, &unprefixed[1]);
 				break;
 			case 0x1e:
@@ -5804,27 +5812,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("invalid opcode", (uintptr_t)*unprefixed);
 				break;
 			case 0x20: // and r/m8, r8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r_8("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x21: // and r/m, r
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x22: // and r8, r/m8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm_8("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x23: // and r, r/m
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x24: // and al, imm8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_al_imm8("and", basic_op_and, &analysis->loader, &self.current_state, &unprefixed[1]);
 				break;
 			case 0x25: // and *ax, imm
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_imm("and", basic_op_and, &analysis->loader, &self.current_state, rex, REGISTER_RAX, &unprefixed[1]);
 				break;
 			case 0x26:
@@ -5876,11 +5884,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("invalid opcode", (uintptr_t)*unprefixed);
 				break;
 			case 0x30: // xor r/m8, r8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_rm_r_8("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x31: { // xor r/m, r
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				int reg = read_reg(modrm, rex);
 				if (modrm_is_direct(modrm) && reg == read_rm(modrm, rex)) {
@@ -5894,19 +5902,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0x32: // xor r8, r/m8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm_8("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x33: // xor r, r/m
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 				break;
 			case 0x34: // xor al, imm8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_al_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, &unprefixed[1]);
 				break;
 			case 0x35: // xor *ax, imm
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, REGISTER_RAX, &unprefixed[1]);
 				break;
 			case 0x36: // null prefix
@@ -6168,7 +6176,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x68: // push imm
 				break;
 			case 0x69: { // imul r, r/m, imm
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				int reg = read_reg(modrm, rex);
 				LOG("imul dest", name_for_register(reg));
@@ -6180,7 +6188,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x6a: // push imm8
 				break;
 			case 0x6b: { // imul r, r/m, imm8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				int reg = read_reg(modrm, rex);
 				LOG("imul dest", name_for_register(reg));
@@ -6233,23 +6241,23 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 0: // add r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm8_imm8("add", basic_op_add, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 1: // or r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm8_imm8("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 2: // adc r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm8_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 3: // sbb r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm8_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 4: // and r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm8_imm8("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 5: { // sub r/m, imm8
@@ -6258,7 +6266,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 6: // xor r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm8_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 7: // cmp r/m, imm8
@@ -6271,33 +6279,33 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 0: // add r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm("add", basic_op_add, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 1: // or r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 2: // adc r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 3: // sbb r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 4: // and r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 5: { // sub r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						int rm = perform_basic_op_rm_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(rex));
 						break;
 					}
 					case 6: // xor r/m, imm
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 7: // cmp r/m, imm
@@ -6313,7 +6321,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 0: { // add r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						mod_rm_t modrm = read_modrm(&unprefixed[1]);
 						if (rex.has_w && modrm.mod == 0x3 && read_rm(modrm, rex) == REGISTER_RSP) {
 							// handle stack operations
@@ -6336,23 +6344,23 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 1: // or r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm8("or", basic_op_or, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 2: // adc r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 3: // sbb r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 4: // and r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm8("and", basic_op_and, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 5: { // sub r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						mod_rm_t modrm = read_modrm(&unprefixed[1]);
 						if (rex.has_w && modrm.mod == 0x3 && read_rm(modrm, rex) == REGISTER_RSP) {
 							// handle stack operations
@@ -6376,7 +6384,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 6: // xor r/m, imm8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						perform_basic_op_rm_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, rex, &unprefixed[1]);
 						break;
 					case 7: // cmp r/m, imm8
@@ -6392,7 +6400,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				// TODO: handle test
 				break;
 			case 0x86: { // xchg r8, r/m8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				int reg = read_reg(modrm, rex);
 				bool reg_is_legacy = register_is_legacy_8bit_high(rex, &reg);
@@ -6426,7 +6434,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0x87: { // xchg r, r/m
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				int reg = read_reg(modrm, rex);
 				struct register_state dest = self.current_state.registers[reg];
@@ -6782,7 +6790,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x9d: // popf
 				break;
 			case 0x9e: // sahf 
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0x9f: // lahf
 				clear_register(&self.current_state.registers[REGISTER_RAX]);
@@ -6810,10 +6818,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xa5: // movs m, m
 				break;
 			case 0xa6: // cmps m8, m8
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xa7: // cmps m, m
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xa8: // test al, imm8
 				// TODO: implement test
@@ -6838,10 +6846,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
 				break;
 			case 0xae: // scas m8, al
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xaf: // scas m, *ax
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xb0: // mov r8, imm8
 			case 0xb1:
@@ -6890,7 +6898,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0xc0: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, imm8
 				// TODO: read reg to know which in the family to dispatch
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 4:
@@ -6910,7 +6918,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0xc1: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, imm8
 				// TODO: read reg to know which in the family to dispatch
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 4:
@@ -7016,7 +7024,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xcf: // iret
 				break;
 			case 0xd0: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, 1
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				const uint8_t *remaining = &unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_8BIT, READ_RM_KEEP_MEM, NULL);
 				if (rm != REGISTER_INVALID) {
@@ -7032,7 +7040,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0xd1: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, 1
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				const uint8_t *remaining = &unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 				if (rm != REGISTER_INVALID) {
@@ -7044,7 +7052,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0xd2: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, cl
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				const uint8_t *remaining = &unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_8BIT, READ_RM_KEEP_MEM, NULL);
 				if (rm != REGISTER_INVALID) {
@@ -7060,7 +7068,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0xd3: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, cl
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				const uint8_t *remaining = &unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
 				if (rm != REGISTER_INVALID) {
@@ -7126,7 +7134,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xe7: // out eax, imm8
 				break;
 			case 0xe8: { // call
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				uintptr_t dest = (uintptr_t)unprefixed + 5 + *(const x86_int32 *)&unprefixed[1];
 				LOG("found call", temp_str(copy_function_call_description(&analysis->loader, (void *)dest, self.current_state)));
 				if (dest == 0) {
@@ -7232,7 +7240,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 3: { // neg r/m8, imm8
 						// TODO: implement neg
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						int rm = read_rm(modrm, rex);
 						if (register_is_legacy_8bit_high(rex, &rm)) {
 							clear_register(&self.current_state.registers[rm]);
@@ -7246,7 +7254,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 4: // mul ax, al, r/m8
 					case 5: { // imul ax, al, r/m8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						clear_register(&self.current_state.registers[REGISTER_RAX]);
 						truncate_to_16bit(&self.current_state.registers[REGISTER_RAX]);
 						self.current_state.sources[REGISTER_RAX] = 0;
@@ -7255,7 +7263,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 6: // div al, ah, al, r/m8
 					case 7: { // idiv al, ah, al, r/m8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						clear_register(&self.current_state.registers[REGISTER_RAX]);
 						truncate_to_16bit(&self.current_state.registers[REGISTER_RAX]);
 						self.current_state.sources[REGISTER_RAX] = 0;
@@ -7283,7 +7291,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 3: { // neg r/m, imm
 						// TODO: implement neg
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						int rm = read_rm(modrm, rex);
 						clear_register(&self.current_state.registers[rm]);
 						truncate_to_size_prefixes(&self.current_state.registers[rm], rex);
@@ -7293,7 +7301,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 4: // mul *dx, *ax, r/m
 					case 5: { // imul *dx, *ax, r/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						clear_register(&self.current_state.registers[REGISTER_RAX]);
 						clear_register(&self.current_state.registers[REGISTER_RDX]);
 						self.current_state.sources[REGISTER_RAX] = 0;
@@ -7304,7 +7312,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 6: // div al, ah, al, r/m8
 					case 7: { // idiv al, ah, al, r/m8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						clear_register(&self.current_state.registers[REGISTER_RAX]);
 						clear_register(&self.current_state.registers[REGISTER_RDX]);
 						self.current_state.sources[REGISTER_RAX] = 0;
@@ -7317,28 +7325,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0xf8: // clc
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xf9: // stc
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xfa: // cli
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xfb: // sti
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xfc: // cld
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xfd: // std
-				self.current_state.has_compare = false;
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xfe: {
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 0: { // inc r/m8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[1];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_8BIT, READ_RM_REPLACE_MEM, NULL);
 						struct register_state state = self.current_state.registers[rm];
@@ -7354,7 +7362,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 1: { // dec r/m8
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[1];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						if (register_is_legacy_8bit_high(rex, &rm)) {
@@ -7379,7 +7387,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				mod_rm_t modrm = read_modrm(&unprefixed[1]);
 				switch (modrm.reg) {
 					case 0: { // inc r/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[1];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						struct register_state state = self.current_state.registers[rm];
@@ -7391,7 +7399,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 1: { // dec r/m
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						const uint8_t *remaining = &unprefixed[1];
 						int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						struct register_state state = self.current_state.registers[rm];
@@ -7403,11 +7411,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 2: // call
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						// TODO: implement call
 						break;
 					case 3: // callf
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						// TODO: implement callf
 						break;
 					case 4: // jmp

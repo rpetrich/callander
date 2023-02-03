@@ -304,12 +304,22 @@ struct decoded_rm {
 	uint8_t scale:2;
 };
 
+enum {
+	COMPARISON_IS_INVALID = 0,
+	COMPARISON_SUPPORTS_EQUALITY = 1,
+	COMPARISON_SUPPORTS_RANGE = 2,
+	COMPARISON_SUPPORTS_ANY = COMPARISON_SUPPORTS_EQUALITY | COMPARISON_SUPPORTS_RANGE,
+};
+
+typedef uint8_t comparison_validity;
+
 struct x86_comparison {
 	struct register_state value;
 	uintptr_t mask;
 	struct decoded_rm mem_rm;
 	register_mask sources;
 	uint8_t target_register;
+	comparison_validity validity;
 };
 
 struct registers {
@@ -322,7 +332,6 @@ struct registers {
 	struct decoded_rm mem_rm;
 	struct x86_comparison compare_state;
 	const uint8_t *stack_address_taken;
-	bool has_compare;
 };
 
 const struct registers empty_registers;
