@@ -6658,7 +6658,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
 									struct registers empty = empty_registers;
-									queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, empty, self.current.address, "lea");
+									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), empty, self.current.address, "lea");
 									//analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self, true);
 								}
 							}
