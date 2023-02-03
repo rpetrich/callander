@@ -2490,31 +2490,6 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			find_and_add_callback(analysis, unixSchedAffinity, (register_mask)1 << REGISTER_STACK_4, EFFECT_NONE, handle_golang_unix_sched_affinity, NULL);
 		}
 	}
-	// stdc++
-	if (new_binary->special_binary_flags & BINARY_IS_LIBSTDCPP) {
-		update_known_function(analysis, new_binary, "_ZNSt13__facet_shims10__time_getIcEESt19istreambuf_iteratorIT_St11char_traitsIS2_EESt17integral_constantIbLb1EEPKNSt6locale5facetES5_S5_RSt8ios_baseRSt12_Ios_IostateP2tmc", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "_ZNSt13__facet_shims10__time_getIwEESt19istreambuf_iteratorIT_St11char_traitsIS2_EESt17integral_constantIbLb1EEPKNSt6locale5facetES5_S5_RSt8ios_baseRSt12_Ios_IostateP2tmc", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "_ZNSt13__facet_shims10__time_getIcEESt19istreambuf_iteratorIT_St11char_traitsIS2_EESt17integral_constantIbLb0EEPKNSt6locale5facetES5_S5_RSt8ios_baseRSt12_Ios_IostateP2tmc", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "_ZNSt13__facet_shims10__time_getIwEESt19istreambuf_iteratorIT_St11char_traitsIS2_EESt17integral_constantIbLb0EEPKNSt6locale5facetES5_S5_RSt8ios_baseRSt12_Ios_IostateP2tmc", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-	}
-	// wtf openssl
-	if (new_binary->special_binary_flags & BINARY_IS_CRYPTO) {
-		skip_lea_on_known_symbol(analysis, new_binary, "Lbswap_mask", 16 + 4*4 + 4*4 + 4*4 + 16 + 4*4 + 4*4 + 4*4 + 4*4); // https://github.com/openssl/openssl/blob/master/crypto/aes/asm/aesni-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "Linc", 4*4*2); // https://github.com/openssl/openssl/blob/master/crypto/bn/asm/x86_64-mont5.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "Lpoly", 4*8 + 4*8 + 8*4*3 + 4*8 + 4*8 + 8); // https://github.com/openssl/openssl/blob/master/crypto/ec/asm/ecp_nistz256-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "ecp_nistz256_precomputed", 3600*4); // https://github.com/openssl/openssl/blob/master/crypto/ec/asm/ecp_nistz256-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "Lbswap_mask", 16 + 16 + 4*4 + 4*4 + 4*4*4 + 8*2*32); // https://github.com/openssl/openssl/blob/master/crypto/modes/asm/ghash-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "K_XX_XX", 80+16); // https://github.com/openssl/openssl/blob/master/crypto/aes/asm/aesni-sha1-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "K256", 256); // https://github.com/openssl/openssl/blob/master/crypto/sha/asm/sha512-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "K512", 640); // https://github.com/openssl/openssl/blob/master/crypto/sha/asm/sha512-x86_64.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "_vpaes_consts", 48*4*4); // https://boringssl.googlesource.com/boringssl/+/master/crypto/fipsmodule/aes/asm/vpaes-x86.pl
-		skip_lea_on_known_symbol(analysis, new_binary, "_aes_consts", 48*4*4);
-		update_known_function(analysis, new_binary, "Camellia_Ekeygen", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "Camellia_cbc_encrypt", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "_gcry_twofish_avx2_cfb_dec", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "_gcry_twofish_avx2_ocb_auth", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-		update_known_function(analysis, new_binary, "_gcry_twofish_avx2_ocb_enc", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
-	}
 	if ((new_binary->special_binary_flags & BINARY_IS_SECCOMP) && new_binary->has_symbols) {
 		intercept_jump_slot(analysis, new_binary, "syscall", &handle_libseccomp_syscall);
 	}
