@@ -959,10 +959,10 @@ static const OPERAND_ENCODING PrefixThreeByteOpcode1OperandEncoding[0x1ff] = {
     kOperandEncodingInvalid, //0x5d
     kOperandEncodingInvalid, //0x5e
     kOperandEncodingInvalid, //0x5f
-    kOperandEncodingRM, //0x60 pcmpestrm
-    kOperandEncodingRM, //0x61 pcmpestri
-    kOperandEncodingRM, //0x62 pcmpistrm
-    kOperandEncodingRM, //0x63 pcmpistri
+    kOperandEncodingRMI8, //0x60 pcmpestrm
+    kOperandEncodingRMI8, //0x61 pcmpestri
+    kOperandEncodingRMI8, //0x62 pcmpistrm
+    kOperandEncodingRMI8, //0x63 pcmpistri
     kOperandEncodingInvalid, //0x64
     kOperandEncodingInvalid, //0x65
     kOperandEncodingInvalid, //0x66
