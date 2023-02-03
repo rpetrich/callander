@@ -486,9 +486,9 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	// interpreter entrypoint
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
-		LOG("assuming interpreter can run after startup");
+		// LOG("assuming interpreter can run after startup");
 		struct analysis_frame new_caller = { .current = { .address = interpreter->info.base, .description = "interpreter", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller, true);
+		analyze_instructions(analysis, EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller, true);
 	} else {
 		LOG("no interpreter for this binary");
 	}
