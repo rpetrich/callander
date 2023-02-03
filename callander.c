@@ -8560,10 +8560,18 @@ char *copy_address_details(const struct loader_context *context, const void *add
 	size_t path_len = fs_strlen(binary->path);
 	const struct symbol_info *symbols;
 	const ElfW(Sym) *symbol;
-	void *start = include_symbol && addr > binary->info.base ? find_any_symbol_by_address(context, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, &symbols, &symbol) : NULL;
+	void *start = NULL;
+	bool add_star = false;
+	if (include_symbol && addr > binary->info.base) {
+		start = find_any_symbol_by_address(context, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol);
+		if (start == NULL) {
+			start = find_any_symbol_by_address(context, binary, addr, DEBUG_SYMBOL_FORCING_LOAD, &symbols, &symbol);
+			add_star = start != NULL;
+		}
+	}
 	const char *name = start ? symbol_name(symbols, symbol) : NULL;
 	size_t name_len = name ? fs_strlen(name) : 0;
-	char *result = malloc(path_len + name_len + 60);
+	char *result = malloc(path_len + name_len + add_star + 60);
 	char *dest = result;
 	fs_memcpy(dest, binary->path, path_len);
 	dest += path_len;
@@ -8578,6 +8586,9 @@ char *copy_address_details(const struct loader_context *context, const void *add
 		*dest++ = '(';
 		memcpy(dest, name, name_len);
 		dest += name_len;
+		if (add_star) {
+			*dest++ = '*';
+		}
 		if (addr != start) {
 			*dest++ = '+';
 			dest += fs_utoa((uintptr_t)addr - (uintptr_t)start, dest);
