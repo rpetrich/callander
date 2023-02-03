@@ -4882,19 +4882,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0x05: { // syscall
-						self.current_state.has_compare = false;
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						if (register_is_exactly_known(&self.current_state.registers[REGISTER_RAX])) {
 							uintptr_t value = self.current_state.registers[REGISTER_RAX].value;
 							LOG("found syscall with known number", (int)value);
 							LOG("syscall name is", name_for_syscall(value));
-							// if (required_effects & EFFECT_AFTER_STARTUP) {
-								self.current.description = NULL;
-								LOG("syscall address", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
-								self.current.description = "syscall";
-								record_syscall(analysis, value, self, required_effects);
-							// } else {
-							// 	LOG("not after startup, ignoring syscall", name_for_effect(required_effects));
-							// }
+							self.current.description = NULL;
+							LOG("syscall address", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
+							self.current.description = "syscall";
+							record_syscall(analysis, value, self, required_effects);
 							// syscalls always clear RAX and R11
 							clear_register(&self.current_state.registers[REGISTER_RAX]);
 							self.current_state.sources[REGISTER_RAX] = 0;
