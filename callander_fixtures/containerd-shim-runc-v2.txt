@@ -1,18 +1,10 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/containerd-shim-runc-v2:0x403583
-/usr/bin/containerd-shim-runc-v2:0x431862 (call)
-/usr/bin/containerd-shim-runc-v2:0x4317a3 (conditional jump)
-/usr/bin/containerd-shim-runc-v2:0x448f65 (call)
-/usr/bin/containerd-shim-runc-v2:0x448aea (conditional jump)
-/usr/bin/containerd-shim-runc-v2:0x448ad5 (jump)
-/usr/bin/containerd-shim-runc-v2:0x448ac4 (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448ab8 (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448aac (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448a97 (jump)
-/usr/bin/containerd-shim-runc-v2:0x448a86 (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448a6f (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448a63 (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448a43 (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x448a09 (conditional continue)
-/usr/bin/containerd-shim-runc-v2:0x4481dd (lea)
+callander: full call stack: /usr/bin/containerd-shim-runc-v2:0x47a0f9
+/usr/bin/containerd-shim-runc-v2:0x4cd70f (call)
+/usr/bin/containerd-shim-runc-v2:0x4cd6f1 (conditional continue)
+/usr/bin/containerd-shim-runc-v2:0x4cd6e3 (conditional continue)
+/usr/bin/containerd-shim-runc-v2:0x4cd6c4 (conditional continue)
+/usr/bin/containerd-shim-runc-v2:0x5acc80 (call)
+/usr/bin/containerd-shim-runc-v2:0x5acc64 (conditional continue)
+/usr/bin/containerd-shim-runc-v2:0x965638 (.rodata)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

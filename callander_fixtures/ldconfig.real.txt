@@ -11,15 +11,16 @@ stat(any, any) @ /usr/sbin/ldconfig.real+0x72fc8
 fstat(any u32, any) @ /usr/sbin/ldconfig.real+0x73027
 lstat(any, any) @ /usr/sbin/ldconfig.real+0x73088
 poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xc3b45
-poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xc3b7d
+poll(any, any, any u32) @ /usr/sbin/ldconfig.real+0xc3b7d
 lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x733a9
 mmap(0, any, 1, 0x1-0x2, any u32, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, any, 3, 34, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, 0x8000000, 0, 0x4022, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
-mmap(any, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
+mmap(NULL-0xfffffffffffffffe, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 2050, any u32, any) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 2066, any u32, any) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, 0x4000000, 0, 0x4022, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
+mmap(non-NULL, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, any, any u32, 0x32-0x72, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, any u32, 0x40-0x852, any u32, any) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, 1, 0x1-0x42, any u32, 0) @ /usr/sbin/ldconfig.real+0x7437e
@@ -28,7 +29,8 @@ mmap(0, 0x4000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74
 mmap(0, 0x8000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x743f9
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x743c9
-brk(NULL-0xfffffffffffffffe) @ /usr/sbin/ldconfig.real+0xa76f9
+brk(0) @ /usr/sbin/ldconfig.real+0xa76f9
+brk(0x1-0xfffffffffffffffe) @ /usr/sbin/ldconfig.real+0xa76f9
 rt_sigaction(any, any, any, 8) @ /usr/sbin/ldconfig.real+0x8ac54
 rt_sigprocmask(0, any, any, 8) @ /usr/sbin/ldconfig.real+0x208a8
 rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig.real+0x208e9
@@ -37,7 +39,7 @@ rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab87
 ioctl(any u32, 0x5401, any) @ /usr/sbin/ldconfig.real+0xa7648
 pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
 writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740a5
-writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740db
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x740db
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xb637f
 access(/usr/sbin/ldconfig.real+0xd3042, 0) @ /usr/sbin/ldconfig.real+0xa6f39
 access(/usr/sbin/ldconfig.real+0xd3051, 0) @ /usr/sbin/ldconfig.real+0xa6f39
@@ -49,24 +51,22 @@ alarm(0x1-0xffffffff) @ /usr/sbin/ldconfig.real+0xa6d39
 getpid() @ /usr/sbin/ldconfig.real+0x208b1
 getpid() @ /usr/sbin/ldconfig.real+0xc18e9
 socket(1, 0x80801, 0) @ /usr/sbin/ldconfig.real+0xc3e79
-connect(NULL-0x7fffffff, any, 110) @ /usr/sbin/ldconfig.real+0xc3c85
-connect(NULL-0x7fffffff, any, 110) @ /usr/sbin/ldconfig.real+0xc3cb9
-sendto(NULL-0x7fffffff, NULL-0xfffffffffffffff0, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig.real+0xc3dce
-sendto(NULL-0x7fffffff, any, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig.real+0xc3e1a
-recvmsg(NULL-0x7fffffff, any, 0x40000000) @ /usr/sbin/ldconfig.real+0xc3d25
-recvmsg(NULL-0x7fffffff, any, 0x40000000) @ /usr/sbin/ldconfig.real+0xc3d5b
+connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xc3c85
+connect(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xc3cb9
+sendto(any u32, NULL-0xfffffffffffffff0, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig.real+0xc3dce
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig.real+0xc3e1a
+recvmsg(any u32, any, 0x40000000) @ /usr/sbin/ldconfig.real+0xc3d25
+recvmsg(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xc3d5b
 uname(any) @ /usr/sbin/ldconfig.real+0xa6d09
-fcntl(NULL-0x7fffffff, 2, 1) @ /usr/sbin/ldconfig.real+0x73d03
-fcntl(NULL-0x7fffffff, 3, any) @ /usr/sbin/ldconfig.real+0x73d03
+fcntl(any u32, 2, 1) @ /usr/sbin/ldconfig.real+0x73d03
+fcntl(any u32, 3, any) @ /usr/sbin/ldconfig.real+0x73d03
 fcntl(any u32, 7, any) @ /usr/sbin/ldconfig.real+0x73d03
-fcntl(any u32, 16, any) @ /usr/sbin/ldconfig.real+0x73d37
 fcntl(any, any u32, any) @ /usr/sbin/ldconfig.real+0x73d92
 fcntl(any, 16, any) @ /usr/sbin/ldconfig.real+0x73dc5
-fsync(NULL-0x7fffffff) @ /usr/sbin/ldconfig.real+0x74205
-fsync(NULL-0x7fffffff) @ /usr/sbin/ldconfig.real+0x74229
-fdatasync(NULL-0x7fffffff) @ /usr/sbin/ldconfig.real+0x74295
-fdatasync(NULL-0x7fffffff) @ /usr/sbin/ldconfig.real+0x742b9
-getcwd(any, non-NULL) @ /usr/sbin/ldconfig.real+0x73510
+fsync(any u32) @ /usr/sbin/ldconfig.real+0x74205
+fsync(any u32) @ /usr/sbin/ldconfig.real+0x74229
+fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x74295
+fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x742b9
 getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x73510
 chdir(/usr/sbin/ldconfig.real+0xcd2b2) @ /usr/sbin/ldconfig.real+0x73469
 rename(any, any) @ /usr/sbin/ldconfig.real+0x22499
@@ -74,11 +74,11 @@ mkdir(any, 448) @ /usr/sbin/ldconfig.real+0x73109
 unlink(any) @ /usr/sbin/ldconfig.real+0x73c69
 symlink(any, any) @ /usr/sbin/ldconfig.real+0x73c09
 readlink(any, NULL-0xfffffffffffffff0, 4095) @ /usr/sbin/ldconfig.real+0x73c39
-readlink(any, any, 511) @ /usr/sbin/ldconfig.real+0x73c39
+readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73c39
 readlink(/usr/sbin/ldconfig.real+0xe63e3, any, 0x1000) @ /usr/sbin/ldconfig.real+0xb7fe1
 chmod(any, 420) @ /usr/sbin/ldconfig.real+0x730d9
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x772d9
-arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60, NULL-0x1) @ /usr/sbin/ldconfig.real+0xc7a79
+arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60, 1) @ /usr/sbin/ldconfig.real+0xc7a79
 arch_prctl(0x3002, NULL-0x2, any u32) @ /usr/sbin/ldconfig.real+0xc7abf
 chroot(any) @ /usr/sbin/ldconfig.real+0x741c9
 gettid() @ /usr/sbin/ldconfig.real+0x208bb
@@ -89,9 +89,7 @@ getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xa6439
 restart_syscall()
 clock_gettime(any, any)
 clock_nanosleep(0, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1702
-clock_nanosleep(0xfffffffa, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1702
-clock_nanosleep(0, 0, any, any) @ /usr/sbin/ldconfig.real+0xc178d
-clock_nanosleep(0xfffffffa, 0, any, any) @ /usr/sbin/ldconfig.real+0xc178d
+clock_nanosleep(any u32, 0, any, any) @ /usr/sbin/ldconfig.real+0xc178d
 clock_nanosleep(1, 0, any, any) @ /usr/sbin/ldconfig.real+0xc17d8
 clock_nanosleep(1, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1849
 clock_nanosleep(1, 0, any, any) @ /usr/sbin/ldconfig.real+0xc186f
@@ -103,7 +101,5 @@ openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x73189
 openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x73202
 openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x73e4a
 openat(any, any, any, any u32) @ /usr/sbin/ldconfig.real+0x73ee8
-newfstatat(NULL-0x7fffffff, any, any, 256) @ /usr/sbin/ldconfig.real+0xa6eed
-prlimit64(0, 3, 0, any) @ /usr/sbin/ldconfig.real+0x73fc2
+newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig.real+0xa6eed
 prlimit64(0, 7, 0, any) @ /usr/sbin/ldconfig.real+0x73fc2
-prlimit64(0, 11, 0, any) @ /usr/sbin/ldconfig.real+0x73fc2

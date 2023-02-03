@@ -1,6 +1,6 @@
-callander: permitted syscalls: read(any, any, any) @ /usr/bin/docker-init:0x44ddc0
+callander: permitted syscalls: read(any u32, any, any) @ /usr/bin/docker-init:0x44ddc0
 read(any u32, any, any) @ /usr/bin/docker-init:0x44ddfa
-read(any, any, any) @ /usr/bin/docker-init:0x44e956
+read(any u32, any, any) @ /usr/bin/docker-init:0x44e956
 write(any u32, any, any) @ /usr/bin/docker-init:0x44de65
 write(any u32, any, any) @ /usr/bin/docker-init:0x44de9d
 write(any u32, any, any) @ /usr/bin/docker-init:0x44e989
@@ -9,11 +9,23 @@ fstat(any u32, any) @ /usr/bin/docker-init:0x44dc37
 lstat(/usr/bin/docker-init:0x49e8dd, any) @ /usr/bin/docker-init:0x476fc8
 lstat(/usr/bin/docker-init:0x4a02fc, any) @ /usr/bin/docker-init:0x476fc8
 lseek(any u32, any, any) @ /usr/bin/docker-init:0x44def9
-mmap(any, any, any, any u32, any, any) @ /usr/bin/docker-init:0x44eba4
-mmap(0, any, any, any u32, any, any) @ /usr/bin/docker-init:0x44ebee
+mmap(0, any, 3, 34, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
+mmap(0, non-NULL, 1, 0x1-0x2, any u32, 0) @ /usr/bin/docker-init:0x44eba4
+mmap(0, 0x8000000, 0, 0x4022, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
+mmap(any, any, any u32, 50, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
+mmap(any, any, any u32, 2050, any u32, any) @ /usr/bin/docker-init:0x44eba4
+mmap(any, any, any u32, 2066, any u32, any) @ /usr/bin/docker-init:0x44eba4
+mmap(any, 0x4000000, 0, 0x4022, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
+mmap(0, any, any u32, 0x32-0x72, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
+mmap(0, any, any u32, 0x40-0x852, any u32, any) @ /usr/bin/docker-init:0x44ebee
+mmap(0, any, 3, 0x22-0x62, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
+mmap(0, non-NULL, 1, 0x1-0x42, any u32, 0) @ /usr/bin/docker-init:0x44ebee
+mmap(0, 0x4000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
+mmap(0, 0x8000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
 mprotect(any, any, any u32) @ /usr/bin/docker-init:0x44ec69
 munmap(any, any) @ /usr/bin/docker-init:0x44ec39
-brk(any) @ /usr/bin/docker-init:0x477199
+brk(0) @ /usr/bin/docker-init:0x477199
+brk(0x1-0xfffffffffffffffe) @ /usr/bin/docker-init:0x477199
 rt_sigaction(any, any, any, 8) @ /usr/bin/docker-init:0x410ce4
 rt_sigprocmask(0, any, any, 8) @ /usr/bin/docker-init:0x410b78
 rt_sigprocmask(2, any, 0, 8) @ /usr/bin/docker-init:0x410bb9
@@ -21,7 +33,9 @@ rt_sigprocmask(0x1-0x2, any, any, 8) @ /usr/bin/docker-init:0x410e89
 rt_sigreturn(any) @ /usr/bin/docker-init:0x410c17
 ioctl(0, 0x5410, any) @ /usr/bin/docker-init:0x44eac9
 ioctl(any u32, 0x5401, any) @ /usr/bin/docker-init:0x4770e8
-pread64(any u32, any, any, any) @ /usr/bin/docker-init:0x48accc
+pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/bin/docker-init:0x48accc
+pread64(NULL-0xfffffffe, non-NULL, any, any) @ /usr/bin/docker-init:0x48accc
+pread64(any u32, any, 0x10000-0xffffffffffffffff, any) @ /usr/bin/docker-init:0x48accc
 writev(2, NULL-0xfffffffffffffff0, 1) @ /usr/bin/docker-init:0x415f78
 writev(2, NULL-0xfffffffffffffff0, any) @ /usr/bin/docker-init:0x4161f3
 writev(any u32, any, any) @ /usr/bin/docker-init:0x47fc1f
@@ -32,26 +46,21 @@ getpid() @ /usr/bin/docker-init:0x410b81
 getpid() @ /usr/bin/docker-init:0x44b3a9
 clone(0x1200011, 0, 0, any, 0) @ /usr/bin/docker-init:0x44a98d
 wait4(any, any, any, 0) @ /usr/bin/docker-init:0x44a8a8
-wait4(any u32, any, any u32, 0) @ /usr/bin/docker-init:0x44a8ed
+wait4(any u32, any, any u32, any) @ /usr/bin/docker-init:0x44a8ed
 kill(any, any) @ /usr/bin/docker-init:0x410f59
-uname(any) @ /usr/bin/docker-init:0x476f19
-fcntl(NULL-0x7fffffff, 2, 1) @ /usr/bin/docker-init:0x44e703
-fcntl(NULL-0x7fffffff, 3, any) @ /usr/bin/docker-init:0x44e703
-fcntl(NULL-0x7fffffff, 16, any) @ /usr/bin/docker-init:0x44e737
-fcntl(any, any u32, any) @ /usr/bin/docker-init:0x44e792
-fcntl(any, 16, any) @ /usr/bin/docker-init:0x44e7c5
-getcwd(any, non-NULL) @ /usr/bin/docker-init:0x44dfa0
+fcntl(any u32, 2, 1) @ /usr/bin/docker-init:0x44e703
+fcntl(any u32, 3, any) @ /usr/bin/docker-init:0x44e703
 getcwd(non-NULL, any) @ /usr/bin/docker-init:0x44dfa0
 readlink(/usr/bin/docker-init:0x4b1563, any, 0x1000) @ /usr/bin/docker-init:0x481881
 sysinfo(any) @ /usr/bin/docker-init:0x451459
 setpgid(0)
 getpgrp() @ /usr/bin/docker-init:0x44b3e9
 rt_sigtimedwait(any, any, /usr/bin/docker-init:0x4c7100, 8) @ /usr/bin/docker-init:0x4110ad
-rt_sigtimedwait(any, any, /usr/bin/docker-init:0x4c7100, 8) @ /usr/bin/docker-init:0x411120
-prctl(1, any u32, any, any, any) @ /usr/bin/docker-init:0x45142c
+rt_sigtimedwait(any, any, any, 8) @ /usr/bin/docker-init:0x411120
+prctl(1, 0x1-0xffffffff, any, any, any) @ /usr/bin/docker-init:0x45142c
 prctl(36, 1, any, any, any) @ /usr/bin/docker-init:0x45142c
 prctl(37, any, any, any, any) @ /usr/bin/docker-init:0x45142c
-arch_prctl(0x3005, /usr/bin/docker-init:0x4cb560, NULL-0x1) @ /usr/bin/docker-init:0x48ded9
+arch_prctl(0x3005, /usr/bin/docker-init:0x4cb560, 1) @ /usr/bin/docker-init:0x48ded9
 arch_prctl(0x3002, NULL-0x2, any u32) @ /usr/bin/docker-init:0x48df1f
 gettid() @ /usr/bin/docker-init:0x410b8b
 futex(any, 128, 2, 0, any, any)
@@ -65,11 +74,8 @@ tgkill(any, any u32, 6) @ /usr/bin/docker-init:0x410b97
 tgkill(any, any u32, 8) @ /usr/bin/docker-init:0x410b97
 openat(AT_FDCWD, any, any u32, NULL-0x40) @ /usr/bin/docker-init:0x44dcd9
 openat(AT_FDCWD, any, any u32, 438) @ /usr/bin/docker-init:0x44dcd9
-openat(AT_FDCWD, any, any u32, NULL-0x40) @ /usr/bin/docker-init:0x44dd52
-openat(AT_FDCWD, any, any u32, 438) @ /usr/bin/docker-init:0x44dd52
+openat(AT_FDCWD, any, any u32, any u32) @ /usr/bin/docker-init:0x44dd52
 openat(AT_FDCWD, any, any u32, any u32) @ /usr/bin/docker-init:0x44e84a
-openat(any, any, any, any u32) @ /usr/bin/docker-init:0x44e8e8
-newfstatat(NULL-0x7fffffff, any, any, 256) @ /usr/bin/docker-init:0x47702d
-prlimit64(0, 3, 0, any) @ /usr/bin/docker-init:0x44e9f2
+openat(any u32, /usr/bin/docker-init:0x49e8dc, 0x80000, any u32) @ /usr/bin/docker-init:0x44e8e8
+newfstatat(any u32, any, any, 256) @ /usr/bin/docker-init:0x47702d
 prlimit64(0, 7, 0, any) @ /usr/bin/docker-init:0x44e9f2
-prlimit64(0, 11, 0, any) @ /usr/bin/docker-init:0x44e9f2
