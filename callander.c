@@ -7151,7 +7151,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					self.current_state.stack_address_taken = NULL;
 				}
 				// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-				goto skip_stack_clear;
+				// ugh, skipping the stack clear doesn't work
+				// goto skip_stack_clear;
+				break;
 			}
 			case 0xe9: // jmp rel
 				break;
