@@ -1,6 +1,18 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/containerd-shim:0x483808
-/usr/bin/containerd-shim:0x6ae760 (call)
-/usr/bin/containerd-shim:0x6ae724 (conditional continue)
-/usr/bin/containerd-shim:0x820118 (.rodata)
+callander: full call stack: /usr/bin/containerd-shim:0x403583
+/usr/bin/containerd-shim:0x431802 (call)
+/usr/bin/containerd-shim:0x431743 (conditional jump)
+/usr/bin/containerd-shim:0x448f05 (call)
+/usr/bin/containerd-shim:0x448a8a (conditional jump)
+/usr/bin/containerd-shim:0x448a75 (jump)
+/usr/bin/containerd-shim:0x448a64 (conditional continue)
+/usr/bin/containerd-shim:0x448a58 (conditional continue)
+/usr/bin/containerd-shim:0x448a4c (conditional continue)
+/usr/bin/containerd-shim:0x448a37 (jump)
+/usr/bin/containerd-shim:0x448a26 (conditional continue)
+/usr/bin/containerd-shim:0x448a0f (conditional continue)
+/usr/bin/containerd-shim:0x448a03 (conditional continue)
+/usr/bin/containerd-shim:0x4489e3 (conditional continue)
+/usr/bin/containerd-shim:0x4489a9 (conditional continue)
+/usr/bin/containerd-shim:0x44817d (lea)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

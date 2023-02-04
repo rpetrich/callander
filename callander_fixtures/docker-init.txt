@@ -72,10 +72,9 @@ clock_gettime(any, any)
 exit_group(127) @ /usr/bin/docker-init:0x44ab24
 tgkill(any, any u32, 6) @ /usr/bin/docker-init:0x410b97
 tgkill(any, any u32, 8) @ /usr/bin/docker-init:0x410b97
-openat(AT_FDCWD, any, any u32, NULL-0x40) @ /usr/bin/docker-init:0x44dcd9
-openat(AT_FDCWD, any, any u32, 438) @ /usr/bin/docker-init:0x44dcd9
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/bin/docker-init:0x44dd52
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/bin/docker-init:0x44e84a
-openat(any u32, /usr/bin/docker-init:0x49e8dc, 0x80000, any u32) @ /usr/bin/docker-init:0x44e8e8
+openat(AT_FDCWD, any, any u32, any) @ /usr/bin/docker-init:0x44dcd9
+openat(AT_FDCWD, any, any u32, any) @ /usr/bin/docker-init:0x44dd52
+openat(AT_FDCWD, any, any u32, any) @ /usr/bin/docker-init:0x44e84a
+openat(any u32, /usr/bin/docker-init:0x49e8dc, 0x80000, any) @ /usr/bin/docker-init:0x44e8e8
 newfstatat(any u32, any, any, 256) @ /usr/bin/docker-init:0x47702d
 prlimit64(0, 7, 0, any) @ /usr/bin/docker-init:0x44e9f2

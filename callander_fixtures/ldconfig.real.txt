@@ -97,9 +97,9 @@ clock_nanosleep(1, 0, any, any) @ /usr/sbin/ldconfig.real+0xc18c2
 exit_group(any u32) @ /usr/sbin/ldconfig.real+0x6c024
 tgkill(any, any u32, 6) @ /usr/sbin/ldconfig.real+0x208c7
 tgkill(any, any u32, 8) @ /usr/sbin/ldconfig.real+0x208c7
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x73189
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x73202
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x73e4a
-openat(any, any, any, any u32) @ /usr/sbin/ldconfig.real+0x73ee8
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x73189
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x73202
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x73e4a
+openat(any, any, any, any) @ /usr/sbin/ldconfig.real+0x73ee8
 newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig.real+0xa6eed
 prlimit64(0, 7, 0, any) @ /usr/sbin/ldconfig.real+0x73fc2

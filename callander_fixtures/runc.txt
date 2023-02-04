@@ -1,10 +1,18 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/runc+0x197cf9
-/usr/bin/runc+0x1ae76f (call)
-/usr/bin/runc+0x1ae751 (conditional continue)
-/usr/bin/runc+0x1ae743 (conditional continue)
-/usr/bin/runc+0x1ae724 (conditional continue)
-/usr/bin/runc+0x322ba0 (call)
-/usr/bin/runc+0x322b84 (conditional continue)
-/usr/bin/runc+0x65c678 (.data.rel.ro)
+callander: full call stack: /usr/bin/runc+0xeaf03
+/usr/bin/runc+0x11a242 (call)
+/usr/bin/runc+0x11a183 (conditional jump)
+/usr/bin/runc+0x131c25 (call)
+/usr/bin/runc+0x1317aa (conditional jump)
+/usr/bin/runc+0x131795 (jump)
+/usr/bin/runc+0x131784 (conditional continue)
+/usr/bin/runc+0x131778 (conditional continue)
+/usr/bin/runc+0x13176c (conditional continue)
+/usr/bin/runc+0x131757 (jump)
+/usr/bin/runc+0x131746 (conditional continue)
+/usr/bin/runc+0x13172f (conditional continue)
+/usr/bin/runc+0x131723 (conditional continue)
+/usr/bin/runc+0x131703 (conditional continue)
+/usr/bin/runc+0x1316c9 (conditional continue)
+/usr/bin/runc+0x130e7d (lea)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function
