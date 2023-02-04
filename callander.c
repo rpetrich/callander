@@ -34,6 +34,7 @@ bool should_log;
 #define SYSCALL_DEF(name, argc, flags) {#name, (argc) | (flags)},
 #define SYSCALL_ARG_IS_ADDRESS(arg) (SYSCALL_ARG_IS_ADDRESS_BASE << (arg))
 #define SYSCALL_ARG_IS_PRESERVED(arg) (SYSCALL_ARG_IS_PRESERVED_BASE << (arg))
+#define SYSCALL_ARG_IS_MODEFLAGS(arg) (SYSCALL_ARG_IS_MODEFLAGS_BASE << (arg))
 #define SYSCALL_DEF_EMPTY() {NULL, 6},
 struct syscall_decl const syscall_list[] = {
 #include "syscall_defs_x86_64.h"
@@ -41,6 +42,7 @@ struct syscall_decl const syscall_list[] = {
 #undef SYSCALL_DEF
 #undef SYSCALL_ARG_IS_ADDRESS
 #undef SYSCALL_ARG_IS_PRESERVED
+#undef SYSCALL_ARG_IS_MODEFLAGS
 #undef SYSCALL_DEF_EMPTY
 
 const char *name_for_syscall(uintptr_t nr) {
@@ -2794,6 +2796,21 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	struct recorded_syscalls *syscalls = &analysis->syscalls;
 	uint8_t config = nr < SYSCALL_COUNT ? syscalls->config[nr] : 0;
 	int argc = argc_for_syscall(nr);
+	for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
+		if (argc & (SYSCALL_ARG_IS_MODEFLAGS_BASE << i)) {
+			// argument is flags, next is mode. check if mode is used and if not, convert to any
+			const struct register_state *arg = &self.current_state.registers[syscall_argument_abi_register_indexes[i]];
+			if (register_is_exactly_known(arg)) {
+				if ((arg->value & O_TMPFILE) == O_TMPFILE) {
+					continue;
+				}
+				if ((arg->value & O_CREAT) == O_CREAT) {
+					continue;
+				}
+			}
+			clear_register(&self.current_state.registers[syscall_argument_abi_register_indexes[i+1]]);
+		}
+	}
 	// debug logging
 	LOG("syscall is", temp_str(copy_call_description(&analysis->loader, name_for_syscall(nr), self.current_state, syscall_argument_abi_register_indexes, argc & SYSCALL_ARGC_MASK, true)));
 	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == __NR_exit || nr == __NR_exit_group);
