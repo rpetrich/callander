@@ -7108,9 +7108,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				uintptr_t dest = (uintptr_t)unprefixed + 5 + *(const x86_int32 *)&unprefixed[1];
 				LOG("found call", temp_str(copy_function_call_description(&analysis->loader, (void *)dest, self.current_state)));
+				struct loaded_binary *binary = NULL;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
-				} else if ((protection_for_address(&analysis->loader, (void *)dest, NULL, NULL) & PROT_EXEC) == 0) {
+				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 					ERROR("found call to non-executable address at", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
 					LOG("call is to", temp_str(copy_address_description(&analysis->loader, (void *)dest)));
@@ -7143,16 +7144,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("function may return, proceeding", name_for_effect(more_effects));
 				}
 				clear_call_dirtied_registers(&analysis->loader, &self.current_state, ins);
-				struct loaded_binary *binary = binary_for_address(&analysis->loader, (void *)dest);
-				if (!binary_has_flags(binary, BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK)) {
-					pending_stack_clear = STACK_REGISTERS;
-				} else {
-					LOG("assuming call preserves stack", temp_str(copy_address_description(&analysis->loader, ins)));
+				pending_stack_clear = STACK_REGISTERS;
+				if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
+					// we should be able to track dirtied slots, but for now assume golang preserves
+					// the stack that's read immediately after the call
+					LOG("assuming golang call preserves stack", temp_str(copy_address_description(&analysis->loader, ins)));
 					self.current_state.stack_address_taken = NULL;
+					goto skip_stack_clear;
 				}
-				// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-				// ugh, skipping the stack clear doesn't work
-				// goto skip_stack_clear;
 				break;
 			}
 			case 0xe9: // jmp rel
@@ -7813,7 +7812,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 				case SHT_PROGBITS: {
 					const char *name = &new_binary->sections.strings[section->sh_name];
 					if (fs_strcmp(name, ".go.buildinfo") == 0) {
-						new_binary->special_binary_flags |= BINARY_IS_GOLANG;
+						new_binary->special_binary_flags |= BINARY_IS_GOLANG | BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK;
 					}
 					if (debuglink == NULL) {
 						if (fs_strcmp(name, ".gnu_debuglink") == 0) {
