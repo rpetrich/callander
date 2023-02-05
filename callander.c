@@ -7170,6 +7170,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						goto update_and_return;
 					}
 					LOG("function may return, proceeding", name_for_effect(more_effects));
+					struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
+					if (caller_binary != NULL) {
+						struct frame_details frame;
+						if (find_containing_frame_info(&caller_binary->frame_info, ins, &frame)) {
+							if ((uintptr_t)frame.address + frame.size <= (uintptr_t)ins + length) {
+								LOG("found call to exit-only function not marked exit-only", temp_str(copy_address_description(&analysis->loader, ins)));
+								goto update_and_return;
+							}
+						}
+					}
 				}
 				clear_call_dirtied_registers(&analysis->loader, &self.current_state, ins);
 				pending_stack_clear = STACK_REGISTERS;
