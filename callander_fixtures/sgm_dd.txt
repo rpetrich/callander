@@ -49,7 +49,7 @@ writev(2, NULL-0xfffffffffffffff0, 1) @ libc.so.6+0x8cf58(__libc_message.constpr
 writev(2, NULL-0xfffffffffffffff0, any) @ libc.so.6+0x8d1d3(__libc_message*+515)
 sched_yield() @ libc.so.6+0x102719(sched_yield+9)
 mremap(any, any, any, 1, any) @ libc.so.6+0x11fcac(mremap+12)
-madvise(any, any, 4) @ libc.so.6+0x118a79(__madvise+9)
+madvise(NULL-0xfffffffffffffffe, any, 4) @ libc.so.6+0x118a79(__madvise+9)
 dup(NULL-0xfffffffe) @ libc.so.6+0x10e899(dup+9)
 getpid() @ ld-linux-x86-64.so.2+0x1f2e9(__GI___getpid*+9)
 getpid() @ libc.so.6+0x42fd1(raise+145)
