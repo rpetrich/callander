@@ -353,6 +353,15 @@ static inline bool registers_are_subset_of_registers(const struct register_state
 	return true;
 }
 
+static inline register_mask matching_registers(const struct register_state a[REGISTER_COUNT], const struct register_state b[REGISTER_COUNT])
+{
+	register_mask result = 0;
+	for (int i = 0; i < REGISTER_COUNT; i++) {
+		result |= (register_mask)((a[i].value == b[i].value) && (a[i].max == b[i].max)) << i;
+	}
+	return result;
+}
+
 static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm *r);
 
 static void register_changed(struct registers *regs, int register_index, __attribute__((unused)) const uint8_t *ins)
@@ -8710,6 +8719,35 @@ static int compare_found_syscalls(const void *a, const void *b, void *data)
 	return 0;
 }
 
+static bool merge_recorded_syscall(const struct recorded_syscall *source, struct recorded_syscall *target, register_mask relevant_registers)
+{
+	if (registers_are_subset_of_registers(source->registers.registers, target->registers.registers, relevant_registers)) {
+		// source is already a subset of target
+		return true;
+	}
+	if (registers_are_subset_of_registers(target->registers.registers, source->registers.registers, relevant_registers)) {
+		// target is a subset of source
+		target->registers = source->registers;
+		return true;
+	}
+	register_mask mismatched = ~matching_registers(source->registers.registers, target->registers.registers) & relevant_registers;
+	if ((mismatched != 0) && ((mismatched & -mismatched) == mismatched)) {
+		// source and target differ by only a single register
+		int i = __builtin_ctzl(mismatched);
+		if ((source->registers.registers[i].value <= target->registers.registers[i].max + 1) && (target->registers.registers[i].max + 1 != 0) && (source->registers.registers[i].max > target->registers.registers[i].max)) {
+			// source expands the end of target's range
+			target->registers.registers[i].max = source->registers.registers[i].max;
+			return true;
+		}
+		if ((source->registers.registers[i].max >= target->registers.registers[i].value - 1) && (target->registers.registers[i].value != 0) && (source->registers.registers[i].value < target->registers.registers[i].value)) {
+			// source expands the start of target's range
+			target->registers.registers[i].value = source->registers.registers[i].value;
+			return true;
+		}
+	}
+	return false;
+}
+
 void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader)
 {
 	int count = syscalls->count;
@@ -8731,24 +8769,21 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 					break;
 				}
 			}
-			if (registers_are_subset_of_registers(earlier->registers.registers, later->registers.registers, relevant_registers)) {
-				earlier->registers = later->registers;
-			} else if (!registers_are_subset_of_registers(later->registers.registers, earlier->registers.registers, relevant_registers)) {
-				// later registers are not a subset of earlier registers
-				LOG("skipping coalescing", temp_str(copy_syscall_description(loader, later->nr, later->registers, true)));
-				LOG("into", temp_str(copy_syscall_description(loader, earlier->nr, earlier->registers, true)));
-				LOG("at", temp_str(copy_address_description(loader, earlier->ins)));
-				continue;
-			}
-			LOG("coalescing", temp_str(copy_syscall_description(loader, later->nr, later->registers, true)));
+			LOG("testing coalescing", temp_str(copy_syscall_description(loader, later->nr, later->registers, true)));
 			LOG("into", temp_str(copy_syscall_description(loader, earlier->nr, earlier->registers, true)));
 			LOG("at", temp_str(copy_address_description(loader, earlier->ins)));
-			// found a match. merge!
-			for (int i = 0; i < count - j; i++) {
-				later[i] = later[i+1];
+			if (merge_recorded_syscall(later, earlier, relevant_registers)) {
+				LOG("coalesced into", temp_str(copy_syscall_description(loader, earlier->nr, earlier->registers, true)));
+				// found a match. merge!
+				for (int i = 0; i < count - j; i++) {
+					later[i] = later[i+1];
+				}
+				count--;
+				goto next_i;
 			}
-			count--;
-			goto next_i;
+			// registers are disjoint
+			LOG("skipping coalescing because not compatible");
+			continue;
 		}
 		i++;
 	next_i:
