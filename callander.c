@@ -2005,7 +2005,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, struct regis
 
 static const uint8_t *find_function_entry(struct loader_context *loader, const uint8_t *ins)
 {
-	const struct loaded_binary *binary = binary_for_address(loader, ins);
+	struct loaded_binary *binary = binary_for_address(loader, ins);
 	if (binary != NULL) {
 		if (binary->has_frame_info) {
 			struct frame_details result;

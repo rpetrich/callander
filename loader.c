@@ -1005,6 +1005,9 @@ void *find_symbol_by_address(const struct binary_info *info, const struct symbol
 			}
 			return (void *)((uintptr_t)info->base + symbol->st_value - (uintptr_t)info->default_base);
 		}
+		if (ordered[i-1] < (value << SYMBOL_INDEX_BITS)) {
+			break;
+		}
 	}
 #else
 	for (size_t i = 0; i < count; i++, symbol_addr += stride) {
@@ -1137,7 +1140,8 @@ static inline intptr_t read_sleb128(void **cursor)
 	}
 }
 
-static uintptr_t read_offset_and_advance(void **cursor, uintptr_t format)
+__attribute__((always_inline))
+static inline uintptr_t read_offset_and_advance(void **cursor, uintptr_t format)
 {
 	switch (format & 0xf) {
 		case DW_EH_PE_uleb128:
@@ -1236,70 +1240,113 @@ int load_frame_info(int fd, const struct binary_info *binary, const struct secti
 void free_frame_info(struct frame_info *info)
 {
 	(void)info;
+#ifdef INDEX_FRAMES
+	if (info->entries != NULL) {
+		free(info->entries);
+	}
+#endif
 }
 
-bool find_containing_frame_info(const struct frame_info *info, const void *address, struct frame_details *out_frame)
+bool find_containing_frame_info(struct frame_info *info, const void *address, struct frame_details *out_frame)
 {
 	size_t size = info->size;
 	void *data = info->data;
 	uintptr_t pointer_format = DW_EH_PE_ptr;
-	for (uintptr_t cie_offset = 0; cie_offset < size;) {
-		void *current = data + cie_offset;
-		// read length
-		uint32_t length = *(const uint32_t *)current;
-		current += sizeof(uint32_t);
-		// read cie_id
-		uint32_t cie_id = *(const uint32_t *)current;
-		current += sizeof(uint32_t);
-		if (cie_id == 0) {
-			// CIE
-			// skip version
-			current++;
-			// skip augmentation
-			bool has_pointer_format = false;
-			for (;;) {
-				char c = *(const char *)current++;
-				if (c == '\0') {
-					break;
+#ifdef INDEX_FRAMES
+	uint64_t *entries = info->entries;
+	uint64_t fde_count = info->entry_count;
+	if (entries == NULL) {
+		void *eh_frame_hdr = info->data_base_address;
+		eh_frame_hdr++;
+		uint8_t eh_frame_ptr_enc = *(const uint8_t *)eh_frame_hdr;
+		eh_frame_hdr++;
+		uint8_t fde_count_enc = *(const uint8_t *)eh_frame_hdr;
+		eh_frame_hdr += 2;
+		read_offset_and_advance(&eh_frame_hdr, eh_frame_ptr_enc);
+		fde_count = info->fde_count = read_offset_and_advance(&eh_frame_hdr, fde_count);
+		entries = info->entries = malloc(entry_count * sizeof(*entries));
+		int i = 0;
+#endif
+		for (uintptr_t cie_offset = 0; cie_offset < size;) {
+			void *current = data + cie_offset;
+			// read length
+			uint32_t length = *(const uint32_t *)current;
+			current += sizeof(uint32_t);
+			// read cie_id
+			uint32_t cie_id = *(const uint32_t *)current;
+			current += sizeof(uint32_t);
+			if (cie_id == 0) {
+				// CIE
+				// skip version
+				current++;
+				// skip augmentation
+				bool has_pointer_format = false;
+				for (;;) {
+					char c = *(const char *)current++;
+					if (c == '\0') {
+						break;
+					}
+					if (c == 'R') {
+						has_pointer_format = true;
+					}
 				}
-				if (c == 'R') {
-					has_pointer_format = true;
+				// skip code alignment factor
+				read_uleb128(&current);
+				// skip data alignment factor
+				read_sleb128(&current);
+				// skip return address register
+				read_uleb128(&current);
+				// read augmentation length
+				if (has_pointer_format) {
+					uintptr_t augmentation_length = read_uleb128(&current);
+					// read pointer format
+					pointer_format = ((const uint8_t *)current)[augmentation_length-1];
+				} else {
+					pointer_format = DW_EH_PE_ptr;
 				}
-			}
-			// skip code alignment factor
-			read_uleb128(&current);
-			// skip data alignment factor
-			read_sleb128(&current);
-			// skip return address register
-			read_uleb128(&current);
-			// read augmentation length
-			if (has_pointer_format) {
-				uintptr_t augmentation_length = read_uleb128(&current);
-				// read pointer format
-				pointer_format = ((const uint8_t *)current)[augmentation_length-1];
 			} else {
-				pointer_format = DW_EH_PE_ptr;
-			}
-		} else {
-			// FDE
-			// ERROR("FDE", cie_offset);
-			// start
-			uintptr_t location = read_pointer_and_advance(info, &current, pointer_format);
-			// ERROR("location", location);
-			uintptr_t size = read_offset_and_advance(&current, pointer_format);
-			// ERROR("size", size);
-			if (location <= (uintptr_t)address) {
-				// size
-				if (location + size > (uintptr_t)address) {
-					*out_frame = (struct frame_details){
-						.address = (const void *)location,
-						.size = size,
-					};
-					return true;
+				// FDE
+				// ERROR("FDE", cie_offset);
+				// start
+				uintptr_t location = read_pointer_and_advance(info, &current, pointer_format);
+				// ERROR("location", location);
+				uintptr_t size = read_offset_and_advance(&current, pointer_format);
+				// ERROR("size", size);
+#ifdef INDEX_FRAMES
+				entries[i++] = address << SYMBOL_INDEX_BITS + size;
+#else
+				if (location <= (uintptr_t)address) {
+					if (location + size > (uintptr_t)address) {
+						*out_frame = (struct frame_details){
+							.address = (const void *)location,
+							.size = size,
+						};
+						return true;
+					}
 				}
+#endif
+			}
+			cie_offset += sizeof(uint32_t) + length;
+		}
+#ifdef INDEX_FRAMES
+		qsort_r(entries, fde_count, sizeof(uint64_t), compare_uint64_t, NULL);
+	}
+	uint64_t search_value = ((uintptr_t)address + 1) << SYMBOL_INDEX_BITS;
+	int i = bsearch_bool(fde_count, (void *)search_value, entries, bsearch_symbol_by_address_callback);
+	if (i != 0) {
+		uint64_t entry = entries[i-1];
+		uintptr_t location = (uintptr_t)((intptr_t)entry >> SYMBOL_INDEX_BITS);
+		uintptr_t size = entry ~(~0ull << SYMBOL_INDEX_BITS);
+		if (location <= (uintptr_t)address) {
+			if (location + size > (uintptr_t)address) {
+				*out_frame = (struct frame_details){
+					.address = (const void *)location,
+					.size = size,
+				};
+				return true;
 			}
 		}
-		cie_offset += sizeof(uint32_t) + length;
 	}
+#endif
 	return false;
 }

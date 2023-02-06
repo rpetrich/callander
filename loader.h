@@ -162,6 +162,10 @@ struct frame_info {
 	size_t size;
 	uintptr_t data_base_address;
 	uintptr_t text_base_address;
+#ifdef INDEX_FRAMES
+	uint64_t *entries;
+	size_t entry_count;
+#endif
 };
 
 __attribute__((warn_unused_result))
@@ -172,6 +176,6 @@ struct frame_details {
 	const void *address;
 	size_t size;
 };
-bool find_containing_frame_info(const struct frame_info *info, const void *address, struct frame_details *out_frame);
+bool find_containing_frame_info(struct frame_info *info, const void *address, struct frame_details *out_frame);
 
 #endif
