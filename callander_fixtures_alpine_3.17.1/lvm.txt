@@ -1,0 +1,4 @@
+callander: symbol is in another castle: io_getevents
+callander: version: LIBAIO_0.4
+callander: in library: libaio.so.1
+callander: from: /sbin/lvm

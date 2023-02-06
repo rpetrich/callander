@@ -1,0 +1,4 @@
+callander: symbol is in another castle: dm_task_get_info
+callander: version: DM_1_02_97
+callander: in library: libdevmapper.so.1.02
+callander: from: libcryptsetup.so.12
