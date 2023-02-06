@@ -16,11 +16,10 @@ lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x733a9
 mmap(0, any, 3, 34, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, any, 1, 0x1-0x2, any u32, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, 0x8000000, 0, 0x4022, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
-mmap(NULL-0xfffffffffffffffe, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
+mmap(any, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 2050, any u32, any) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 2066, any u32, any) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, 0x4000000, 0, 0x4022, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
-mmap(non-NULL, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, any, 3, 0x22-0x62, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, any u32, 0x32-0x72, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, any u32, 0x40-0x852, any u32, any) @ /usr/sbin/ldconfig.real+0x7437e
@@ -29,8 +28,7 @@ mmap(0, 0x4000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74
 mmap(0, 0x8000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x743f9
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x743c9
-brk(0) @ /usr/sbin/ldconfig.real+0xa76f9
-brk(0x1-0xfffffffffffffffe) @ /usr/sbin/ldconfig.real+0xa76f9
+brk(NULL-0xfffffffffffffffe) @ /usr/sbin/ldconfig.real+0xa76f9
 rt_sigaction(6, any, any, 8) @ /usr/sbin/ldconfig.real+0x8ac54
 rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig.real+0x8ac54
 rt_sigprocmask(0, any, any, 8) @ /usr/sbin/ldconfig.real+0x208a8
@@ -38,8 +36,8 @@ rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig.real+0x208e9
 rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8adf9
 rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab87
 ioctl(any u32, 0x5401, any) @ /usr/sbin/ldconfig.real+0xa7648
+pread64(NULL-0xfffffffe, any, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
-pread64(NULL-0xfffffffe, non-NULL, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
 pread64(any u32, any, 384, any) @ /usr/sbin/ldconfig.real+0xa75ec
 pread64(any u32, any, 0x10000-0xffffffffffffffff, any) @ /usr/sbin/ldconfig.real+0xa75ec
 writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740a5
@@ -50,8 +48,7 @@ access(/usr/sbin/ldconfig.real+0xd3051, 0) @ /usr/sbin/ldconfig.real+0xa6f39
 sched_yield() @ /usr/sbin/ldconfig.real+0x72f29
 mremap(any, any, any, 1, any) @ /usr/sbin/ldconfig.real+0x772ac
 madvise(NULL-0xfffffffffffffffe, any, 4) @ /usr/sbin/ldconfig.real+0x74429
-alarm(0) @ /usr/sbin/ldconfig.real+0xa6d39
-alarm(0x1-0xffffffff) @ /usr/sbin/ldconfig.real+0xa6d39
+alarm(any u32) @ /usr/sbin/ldconfig.real+0xa6d39
 getpid() @ /usr/sbin/ldconfig.real+0x208b1
 getpid() @ /usr/sbin/ldconfig.real+0xc18e9
 socket(1, 0x80801, 0) @ /usr/sbin/ldconfig.real+0xc3e79

@@ -12,11 +12,10 @@ lseek(any u32, any, any) @ /usr/bin/docker-init:0x44def9
 mmap(0, any, 3, 34, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
 mmap(0, non-NULL, 1, 0x1-0x2, any u32, 0) @ /usr/bin/docker-init:0x44eba4
 mmap(0, 0x8000000, 0, 0x4022, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
-mmap(NULL-0xfffffffffffffffe, any, any u32, 50, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
+mmap(any, any, any u32, 50, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
 mmap(any, any, any u32, 2050, any u32, any) @ /usr/bin/docker-init:0x44eba4
 mmap(any, any, any u32, 2066, any u32, any) @ /usr/bin/docker-init:0x44eba4
 mmap(any, 0x4000000, 0, 0x4022, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
-mmap(non-NULL, any, any u32, 50, 0xffffffff, 0) @ /usr/bin/docker-init:0x44eba4
 mmap(0, any, any u32, 0x32-0x72, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
 mmap(0, any, any u32, 0x40-0x852, any u32, any) @ /usr/bin/docker-init:0x44ebee
 mmap(0, any, 3, 0x22-0x62, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
@@ -25,8 +24,7 @@ mmap(0, 0x4000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebe
 mmap(0, 0x8000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/bin/docker-init:0x44ebee
 mprotect(any, any, any u32) @ /usr/bin/docker-init:0x44ec69
 munmap(any, any) @ /usr/bin/docker-init:0x44ec39
-brk(0) @ /usr/bin/docker-init:0x477199
-brk(0x1-0xfffffffffffffffe) @ /usr/bin/docker-init:0x477199
+brk(NULL-0xfffffffffffffffe) @ /usr/bin/docker-init:0x477199
 rt_sigaction(6, any, any, 8) @ /usr/bin/docker-init:0x410ce4
 rt_sigaction(0x15-0x16, any, any, 8) @ /usr/bin/docker-init:0x410ce4
 rt_sigprocmask(0, any, any, 8) @ /usr/bin/docker-init:0x410b78
@@ -35,8 +33,8 @@ rt_sigprocmask(0x1-0x2, any, any, 8) @ /usr/bin/docker-init:0x410e89
 rt_sigreturn(any) @ /usr/bin/docker-init:0x410c17
 ioctl(0, 0x5410, any) @ /usr/bin/docker-init:0x44eac9
 ioctl(any u32, 0x5401, any) @ /usr/bin/docker-init:0x4770e8
+pread64(NULL-0xfffffffe, any, any, any) @ /usr/bin/docker-init:0x48accc
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/bin/docker-init:0x48accc
-pread64(NULL-0xfffffffe, non-NULL, any, any) @ /usr/bin/docker-init:0x48accc
 pread64(any u32, any, 0x10000-0xffffffffffffffff, any) @ /usr/bin/docker-init:0x48accc
 writev(2, NULL-0xfffffffffffffff0, 1) @ /usr/bin/docker-init:0x415f78
 writev(2, NULL-0xfffffffffffffff0, any) @ /usr/bin/docker-init:0x4161f3
