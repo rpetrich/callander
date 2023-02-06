@@ -8214,6 +8214,14 @@ static const ElfW(Sym) *find_skipped_symbol_for_address(struct loader_context *l
 			LOG("skipping svcudp_op, since it's assumed that svcudp_bufcreate won't be called");
 			return symbol;
 		}
+		if (fs_strcmp(name, "svcunix_op") == 0) {
+			LOG("skipping svcunix_op, since it's assumed that svcunixfd_create/svcunix_create won't be called");
+			return symbol;
+		}
+		if (fs_strcmp(name, "svctcp_op") == 0) {
+			LOG("skipping svctcp_op, since it's assumed that svcfd_create/svctcp_create won't be called");
+			return symbol;
+		}
 		if (fs_strcmp(name, "argp_default_argp") == 0) {
 			LOG("skipping argp_default_argp, since it's assumed that argp_parse won't be called");
 			return symbol;
