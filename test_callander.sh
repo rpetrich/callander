@@ -5,6 +5,14 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source /etc/os-release
 FIXTURE_PATH="$SCRIPT_DIR/callander_fixtures_"$ID"_"$VERSION_ID
 
+if [ "$ID" = alpine ]; then
+	lib_path=/usr/lib
+	ruby_version="3.1.0"
+else
+	lib_path=/usr/lib/x86_64-linux-gnu
+	ruby_version="2.7.0"
+fi
+
 declare -A program_args=(
 	# perl
 	["aclocal-1.16"]="--block-function Perl_pp_syscall"
@@ -24,6 +32,7 @@ declare -A program_args=(
 	["callgrind_control"]="--block-function Perl_pp_syscall"
 	["cg_annotate"]="--block-function Perl_pp_syscall"
 	["cg_diff"]="--block-function Perl_pp_syscall"
+	["checkbandwidth"]="--block-debug-function Perl_pp_syscall"
 	["chronic"]="--block-debug-function Perl_pp_syscall"
 	["ckbcomp"]="--block-function Perl_pp_syscall"
 	["combine"]="--block-debug-function Perl_pp_syscall"
@@ -77,6 +86,7 @@ declare -A program_args=(
 	["ifnames"]="--block-function Perl_pp_syscall"
 	["instmodsh"]="--block-function Perl_pp_syscall"
 	["json_pp"]="--block-function Perl_pp_syscall"
+	["keytab-lilo"]="--block-function Perl_pp_syscall"
 	["libnetcfg"]="--block-function Perl_pp_syscall"
 	["linux-check-removal"]="--block-function Perl_pp_syscall"
 	["linux-update-symlinks"]="--block-function Perl_pp_syscall"
@@ -87,10 +97,13 @@ declare -A program_args=(
 	["mtrace"]="--block-function Perl_pp_syscall"
 	["pam-auth-update"]="--block-function Perl_pp_syscall"
 	["pam_getenv"]="--block-function Perl_pp_syscall"
+	["parcat"]="--block-function Perl_pp_syscall"
+	["parsort"]="--block-function Perl_pp_syscall"
 	["perl"]="--block-function Perl_pp_syscall"
 	["perl5.30.0"]="--block-function Perl_pp_syscall"
 	["perl5.30-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
 	["perlbug"]="--block-function Perl_pp_syscall"
+	["perldoc"]="--block-function Perl_pp_syscall"
 	["perlivp"]="--block-function Perl_pp_syscall"
 	["perlthanks"]="--block-function Perl_pp_syscall"
 	["piconv"]="--block-function Perl_pp_syscall"
@@ -102,17 +115,21 @@ declare -A program_args=(
 	["podchecker"]="--block-function Perl_pp_syscall"
 	["podselect"]="--block-function Perl_pp_syscall"
 	["popularity-contest"]="--block-function Perl_pp_syscall"
+	["ppmtolss16"]="--block-function Perl_pp_syscall"
 	["print"]="--block-function Perl_pp_syscall"
 	["prove"]="--block-function Perl_pp_syscall"
 	["ptar"]="--block-function Perl_pp_syscall"
 	["ptardiff"]="--block-function Perl_pp_syscall"
 	["ptargrep"]="--block-function Perl_pp_syscall"
+	["pxelinux-options"]="--block-function Perl_pp_syscall"
 	["regexp-assemble"]="--block-function Perl_pp_syscall"
 	["rrsync"]="--block-function Perl_pp_syscall"
 	["run-mailcap"]="--block-function Perl_pp_syscall"
 	["see"]="--block-function Perl_pp_syscall"
 	["shasum"]="--block-function Perl_pp_syscall"
 	["splain"]="--block-function Perl_pp_syscall"
+	["sql"]="--block-function Perl_pp_syscall"
+	["syslinux2ansi"]="--block-function Perl_pp_syscall"
 	["tasksel"]="--block-function Perl_pp_syscall"
 	["ts"]="--block-function Perl_pp_syscall"
 	["ucfq"]="--block-function Perl_pp_syscall"
@@ -144,8 +161,8 @@ declare -A program_args=(
 	["rdoc2.7"]="--block-debug-function rb_f_syscall"
 	["ri"]="--block-debug-function rb_f_syscall"
 	["ri2.7"]="--block-debug-function rb_f_syscall"
-	["ruby"]="--block-debug-function rb_f_syscall --dlopen /usr/lib/x86_64-linux-gnu/ruby/2.7.0/enc/encdb.so --dlopen /usr/lib/x86_64-linux-gnu/ruby/2.7.0/enc/trans/transdb.so --dlopen /usr/lib/x86_64-linux-gnu/ruby/2.7.0/monitor.so"
-	["ruby2.7"]="--block-debug-function rb_f_syscall --dlopen /usr/lib/x86_64-linux-gnu/ruby/2.7.0/enc/encdb.so --dlopen /usr/lib/x86_64-linux-gnu/ruby/2.7.0/enc/trans/transdb.so --dlopen /usr/lib/x86_64-linux-gnu/ruby/2.7.0/monitor.so"
+	["ruby"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
+	["ruby2.7"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
 	["y2racc2.7"]="--block-debug-function rb_f_syscall"
 	# both
 	["ex"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
@@ -157,8 +174,8 @@ declare -A program_args=(
 	["vimdiff"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
 	["vim.nox"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
 	# python
-	["landscape-sysinfo"]="--dlopen /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-38-x86_64-linux-gnu.so"
-	["netplan"]="--dlopen /usr/lib/x86_64-linux-gnu/libnetplan.so.0.0 --dlopen /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/_yaml.cpython-38-x86_64-linux-gnu.so"
+	["landscape-sysinfo"]="--dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-38-x86_64-linux-gnu.so"
+	["netplan"]="--dlopen $lib_path/libnetplan.so.0.0 --dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/_yaml.cpython-38-x86_64-linux-gnu.so"
 	# nm
 	["nm"]="--dlopen /usr/bin/../bin/../lib/bfd-plugins/liblto_plugin.so"
 )
@@ -350,7 +367,11 @@ else
 
 	# exit 0
 	mkdir -p "$FIXTURE_PATH"
-	find /bin/ /sbin/ -executable -type f | grep -v callander | parallel "$0"
+	paths="/usr/bin/ /sbin/"
+	if [ `readlink -f /bin` == "/bin" ]; then
+		paths="$paths /bin"
+	fi
+	find $paths -executable -type f | grep -v callander | parallel "$0"
 	echo $(grep -R -e 'permitted syscalls' -- "$FIXTURE_PATH" | wc -l)/$(ls "$FIXTURE_PATH" | wc -l) binaries successfully processed
 	echo failing tests:
 	grep -R -e 'callander: ' -- "$FIXTURE_PATH" | grep -v 'permitted' | cut -d ':' -f 1 | uniq

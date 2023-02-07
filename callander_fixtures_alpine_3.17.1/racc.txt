@@ -1,0 +1,5 @@
+callander: failed to load debug symbols for: libruby.so.3.1
+callander: install debug symbols using your system's package manager or rebuild with debug symbols if this is software you compiled yourself
+callander: on debian-based systems find-dbgsym-packages can help you discover debug symbol packages
+callander: failed to load: libruby.so.3.1
+callander: failed to finish loading: ENOEXEC

@@ -1,0 +1,4 @@
+callander: symbol is in another castle: pci_filter_init
+callander: version: LIBPCI_3.8
+callander: in library: libpci.so.3
+callander: from: /usr/bin/lspci
