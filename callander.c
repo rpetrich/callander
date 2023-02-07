@@ -2092,9 +2092,14 @@ static void handle_gconv_find_shlib(struct program_state *analysis, struct regis
 		return;
 	}
 	analysis->loader.loaded_gconv_libraries = true;
-	int dirfd = fs_open("/usr/lib/x86_64-linux-gnu/gconv/", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+	int dirfd = fs_open("/usr/lib/x86_64-linux-gnu/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (dirfd < 0) {
-		DIE("failed to open gconv library path", fs_strerror(dirfd));
+		if (dirfd == -ENOENT) {
+			dirfd = fs_open("/lib64/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+		}
+		if (dirfd < 0) {
+			DIE("failed to open gconv library path", fs_strerror(dirfd));
+		}
 	}
 	for (;;) {
 		char buf[8192];
@@ -2483,7 +2488,8 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		update_known_function(analysis, new_binary, "cancel_handler", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 	}
 	// setxid signal handler callbacks
-	if (new_binary->special_binary_flags & BINARY_IS_PTHREAD) {
+	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
+		update_known_function(analysis, new_binary, "__GI___nptl_setxid_sighandler", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		update_known_function(analysis, new_binary, "sighandler_setxid", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		update_known_function(analysis, new_binary, "__nptl_setxid", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		// assume new libraries won't be loaded after startup
@@ -7935,7 +7941,7 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 		return 0;
 	}
 #define DEBUGLINK_ARCH_SEARCH_PATH "/usr/lib/debug/lib/x86_64-linux-gnu"
-#define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/lib"
+#define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/lib:/lib/debug/usr/lib64"
 #define DEBUGLINK_BUILD_ID_SEARCH_PATH "/usr/lib/debug/.build-id/XX"
 	const char *debuglink_search_paths = DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH;
 	char buf[sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH)];
@@ -8024,8 +8030,8 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					break;
 			}
 		}
-		const char *standard_run_path = "/lib/x86_64-linux-gnu:/lib:/usr/lib";
-		size_t standard_run_path_sizeof = sizeof("/lib/x86_64-linux-gnu:/lib:/usr/lib");
+		const char *standard_run_path = "/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib/perl5/core_perl/CORE";
+		size_t standard_run_path_sizeof = sizeof("/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib/perl5/core_perl/CORE");
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
 			if (fs_strcmp(additional_run_path, "$ORIGIN") == 0) {
@@ -8367,7 +8373,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 		for (size_t i = 0; i < init_array_count; i++) {
 			LOG("analyzing initializer function", i);
 			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "init", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)inits[i], &new_caller, true);
+			analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)(inits[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, inits[i]) : inits[i]), &new_caller, true);
 		}
 	}
 	if (init != 0) {
@@ -8377,18 +8383,18 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 		analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, init_function, &new_caller, true);
 	}
 	if (fini_array_ptr != 0) {
-		const uintptr_t *inits = (const uintptr_t *)apply_base_address(&new_binary->info, fini_array_ptr);
+		const uintptr_t *finis = (const uintptr_t *)apply_base_address(&new_binary->info, fini_array_ptr);
 		for (size_t i = 0; i < fini_array_count; i++) {
 			LOG("analyzing finalizer function", i);
 			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "fini", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)inits[i], &new_caller, true);
+			analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)(finis[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, finis[i]) : finis[i]), &new_caller, true);
 		}
 	}
 	if (fini != 0) {
 		LOG("analyzing finalizer function");
-		const uint8_t *init_function = (const uint8_t *)apply_base_address(&new_binary->info, fini);
+		const uint8_t *fini_function = (const uint8_t *)apply_base_address(&new_binary->info, fini);
 		struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "fini", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, init_function, &new_caller, true);
+		analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, fini_function, &new_caller, true);
 	}
 	void *golangInitTask = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "main..inittask", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 	if (golangInitTask) {
