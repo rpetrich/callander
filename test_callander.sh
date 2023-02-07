@@ -95,13 +95,16 @@ declare -A program_args=(
 	["make-first-existing-target"]="--block-function Perl_pp_syscall"
 	["ms_print"]="--block-function Perl_pp_syscall"
 	["mtrace"]="--block-function Perl_pp_syscall"
+	["niceload"]="--block-function Perl_pp_syscall"
 	["pam-auth-update"]="--block-function Perl_pp_syscall"
 	["pam_getenv"]="--block-function Perl_pp_syscall"
+	["parallel"]="--block-function Perl_pp_syscall"
 	["parcat"]="--block-function Perl_pp_syscall"
 	["parsort"]="--block-function Perl_pp_syscall"
 	["perl"]="--block-function Perl_pp_syscall"
 	["perl5.30.0"]="--block-function Perl_pp_syscall"
 	["perl5.30-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
+	["perl5.36.0"]="--block-function Perl_pp_syscall"
 	["perlbug"]="--block-function Perl_pp_syscall"
 	["perldoc"]="--block-function Perl_pp_syscall"
 	["perlivp"]="--block-function Perl_pp_syscall"
@@ -186,7 +189,7 @@ test_program () {
 	local flags="${program_args[$filename]} "
 	filename="${prog##*/}"
 	if [ -g "$prog" -o -u "$prog" ]; then
-		rm "$FIXTURE_PATH/$filename.txt"
+		rm -f "$FIXTURE_PATH/$filename.txt"
 	else
 		if [ "/sbin/$filename" = "$prog" -a -e "/bin/$filename" ]; then
 			# skipping since duplicate binary in /sbin

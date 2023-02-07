@@ -1,0 +1,5 @@
+FROM fedora:38
+RUN dnf -y install gdb binutils less parallel expect git @cloud-server-environment
+RUN dnf -y update
+RUN dnf -y debuginfo-install glibc-common glibc glibc-minimal-langpack libgcrypt readline krb5-libs gnutls
+COPY callander callander.debug /bin/

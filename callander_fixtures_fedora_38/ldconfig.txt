@@ -1,0 +1,108 @@
+callander: permitted syscalls: read(any, any, any) @ /usr/sbin/ldconfig+0x5192f
+read(any u32, any, any) @ /usr/sbin/ldconfig+0x51968
+read(any u32, any, any) @ /usr/sbin/ldconfig+0x526a6
+write(any u32, any, any) @ /usr/sbin/ldconfig+0x519d2
+write(any u32, any, any) @ /usr/sbin/ldconfig+0x51a0b
+close(any u32) @ /usr/sbin/ldconfig+0x51aa2
+close(any u32) @ /usr/sbin/ldconfig+0x51aca
+close(any u32) @ /usr/sbin/ldconfig+0x52429
+poll(any, 1, any u32) @ /usr/sbin/ldconfig+0xacd02
+poll(any, any, any u32) @ /usr/sbin/ldconfig+0xacd3b
+lseek(any u32, any u32, 0) @ /usr/sbin/ldconfig+0x51a69
+mmap(any, any, any, any u32, any, any) @ /usr/sbin/ldconfig+0x52aa5
+mmap(any, any, 0, any, 0xffffffff, 0) @ /usr/sbin/ldconfig+0x52aa5
+mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x52b29
+munmap(any, any) @ /usr/sbin/ldconfig+0x52af9
+brk(any) @ /usr/sbin/ldconfig+0x52749
+rt_sigaction(6, any, any, 8) @ /usr/sbin/ldconfig+0x670f8
+rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig+0x670f8
+rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig+0x15d1
+rt_sigprocmask(0, /usr/sbin/ldconfig+0xb71d8, any, 8) @ /usr/sbin/ldconfig+0x212ee
+rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig+0x21339
+rt_sigreturn(any) @ /usr/sbin/ldconfig+0x67017
+ioctl(0, 0x5401, any) @ /usr/sbin/ldconfig+0x7dd8c
+ioctl(any u32, 0x541b, any) @ /usr/sbin/ldconfig+0xa3adb
+ioctl(any u32, 0x8933, any) @ /usr/sbin/ldconfig+0xa3adb
+pread64(any u32, any, any, any) @ /usr/sbin/ldconfig+0x7dd2c
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52822
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52859
+writev(any u32, any, any) @ /usr/sbin/ldconfig+0x8e861
+access(/usr/sbin/ldconfig+0xb984d, 0) @ /usr/sbin/ldconfig+0x7d709
+access(/usr/sbin/ldconfig+0xb985c, 0) @ /usr/sbin/ldconfig+0x7d709
+sched_yield() @ /usr/sbin/ldconfig+0x51659
+mremap(any, NULL-0xfffffffffffffff7, any, 1, any) @ /usr/sbin/ldconfig+0x5436f
+madvise(NULL-0xfffffffffffffffe, any, 4) @ /usr/sbin/ldconfig+0x52b59
+madvise(any, any, 14) @ /usr/sbin/ldconfig+0x52b59
+alarm(any u32) @ /usr/sbin/ldconfig+0x7d359
+getpid() @ /usr/sbin/ldconfig+0x4a2e9
+socket(any u16, 0x80001-0x80002, 0) @ /usr/sbin/ldconfig+0xa3b29
+socket(2, 0x80802, 0) @ /usr/sbin/ldconfig+0xa3b29
+socket(10, 0x80802, 0) @ /usr/sbin/ldconfig+0xa3b29
+connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig+0xacda2
+connect(any u32, any, any u32) @ /usr/sbin/ldconfig+0xacdd9
+sendto(any u32, any, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig+0xacf3b
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig+0xacf88
+recvfrom(any u32, any, any, 0, any, any) @ /usr/sbin/ldconfig+0xace75
+recvfrom(any u32, any, any, any u32, any, any) @ /usr/sbin/ldconfig+0xacec2
+getpeername(any u32, any, any) @ /usr/sbin/ldconfig+0xace39
+setsockopt(any u32, 0, 11, any, 4) @ /usr/sbin/ldconfig+0xb03ec
+setsockopt(any u32, 41, 25, any, 4) @ /usr/sbin/ldconfig+0xb03ec
+uname(any) @ /usr/sbin/ldconfig+0xb0e99
+fcntl(any u32, 2, 1) @ /usr/sbin/ldconfig+0x52490
+fcntl(any u32, 3, any) @ /usr/sbin/ldconfig+0x52490
+fcntl(any u32, 7, any) @ /usr/sbin/ldconfig+0x52490
+fsync(any u32) @ /usr/sbin/ldconfig+0x52982
+fsync(any u32) @ /usr/sbin/ldconfig+0x529aa
+fdatasync(any u32) @ /usr/sbin/ldconfig+0x52a12
+fdatasync(any u32) @ /usr/sbin/ldconfig+0x52a3a
+getcwd(non-NULL, any) @ /usr/sbin/ldconfig+0x51bd9
+chdir(/usr/sbin/ldconfig+0xb425f) @ /usr/sbin/ldconfig+0x51b29
+rename(any, any) @ /usr/sbin/ldconfig+0x13a49
+mkdir(any, 448) @ /usr/sbin/ldconfig+0x517d9
+unlink(any) @ /usr/sbin/ldconfig+0x523f9
+symlink(any, NULL-0xfffffffffffffff0) @ /usr/sbin/ldconfig+0x52399
+readlink(any, any, 4095) @ /usr/sbin/ldconfig+0x523c9
+readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig+0x523c9
+chmod(any, 420) @ /usr/sbin/ldconfig+0x517a9
+sysinfo(any) @ /usr/sbin/ldconfig+0x543d9
+sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x7d4c9
+sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x7d4f9
+sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x7d529
+sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x7d559
+sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x7d589
+arch_prctl(0x3002, any u8, any u8) @ /usr/sbin/ldconfig+0xa26f9
+chroot(non-NULL) @ /usr/sbin/ldconfig+0x52949
+gettid() @ /usr/sbin/ldconfig+0x21395
+futex(any, 0, 0x1-0xffffffff, 0, any, any u32)
+futex(any, NULL-0x80, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
+futex(any, any u8, NULL-0x1, 0, any, any)
+futex(any, any u8, 2, 0, NULL-0x80, any)
+futex(any, any u8, 0x7fffffff, 0, any u32, any)
+futex(any, any u8, 0x7fffffff, 0, any, any u32)
+futex(any, any u32, any u32, 0, 0, 0xffffffff)
+futex(any, 128, any u32, 0, 202, any)
+futex(any, 128, 2, 0, any, any)
+futex(any, 129, 0x7fffffff, 0, any, any)
+futex(/usr/sbin/ldconfig+0xef7ec, 128, any u32, 0, NULL-0x1, any)
+futex(/usr/sbin/ldconfig+0xefb6c, 128, any u32, 0, any, any)
+sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x53ffa
+getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x7cd25
+restart_syscall()
+clock_gettime(any, any)
+exit_group(any u32) @ /usr/sbin/ldconfig+0x4a2cb
+tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig+0x21377
+tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig+0x21377
+tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig+0x213aa
+tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig+0x213aa
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x51853
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x518c3
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x525b2
+openat(any u32, /usr/sbin/ldconfig+0xb93d0, 0, any) @ /usr/sbin/ldconfig+0x7d630
+openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x7d6a5
+newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x5176c
+newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig+0x5176c
+newfstatat(any u32, /usr/sbin/ldconfig+0xc9089, any, 0x1000) @ /usr/sbin/ldconfig+0x5176c
+readlinkat(AT_FDCWD, /usr/sbin/ldconfig+0xcd198, any, 0x1000) @ /usr/sbin/ldconfig+0x8e61e
+sendmmsg(any u32, any, 2, 0x4000) @ /usr/sbin/ldconfig+0xad055
+sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig+0xad090
+getrandom(/usr/sbin/ldconfig+0xef210, 8, 1) @ /usr/sbin/ldconfig+0x22a87
