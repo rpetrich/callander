@@ -1620,12 +1620,14 @@ static uint16_t index_for_callback_and_data(struct searched_instructions *search
 	return count;
 }
 
-static void find_and_add_callback(struct program_state *analysis, const uint8_t *addr, register_mask relevant_registers, function_effects additional_effects, instruction_reached_callback callback, void *callback_data)
+static void find_and_add_callback(struct program_state *analysis, const uint8_t *addr, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects additional_effects, instruction_reached_callback callback, void *callback_data)
 {
 	struct effect_token token;
 	struct searched_instruction_entry *table_entry = find_searched_instruction_table_entry(&analysis->search, addr, &token);
 	table_entry->data->sticky_effects |= additional_effects & ~EFFECT_PROCESSING;
 	table_entry->data->relevant_registers |= relevant_registers;
+	table_entry->data->preserved_registers |= preserved_registers;
+	table_entry->data->preserved_and_kept_registers |= preserved_and_kept_registers;
 	table_entry->data->callback_index = index_for_callback_and_data(&analysis->search, callback, callback_data);
 }
 
@@ -2026,6 +2028,7 @@ static void handle_dlopen(struct program_state *analysis, struct registers *stat
 		if (analysis->loader.searching_gconv_dlopen) {
 			struct analysis_frame self = {
 				.current = {
+					.address = ins,
 					.description = NULL,
 					.next = &caller->current,
 				},
@@ -2034,8 +2037,9 @@ static void handle_dlopen(struct program_state *analysis, struct registers *stat
 				.token = *token,
 			};
 			vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED, SHOULD_LOG);
-			find_and_add_callback(analysis, find_function_entry(&analysis->loader, caller->entry) ?: caller->entry, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
+			find_and_add_callback(analysis, find_function_entry(&analysis->loader, caller->entry) ?: caller->entry, 0, 0, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
 			analysis->loader.searching_gconv_dlopen = false;
+			analysis->loader.gconv_dlopen = ins;
 			return;
 		}
 		if (analysis->loader.ignore_dlopen) {
@@ -2350,7 +2354,7 @@ static void intercept_jump_slot(struct program_state *analysis, struct loaded_bi
 					stub->next = analysis->loader.stubs;
 					analysis->loader.stubs = stub;
 					*target = (uintptr_t)stub;
-					find_and_add_callback(analysis, (const uint8_t *)stub, 0, EFFECT_NONE, callback, (void *)old_value);
+					find_and_add_callback(analysis, (const uint8_t *)stub, 0, 0, 0, EFFECT_NONE, callback, (void *)old_value);
 					break;
 				}
 			}
@@ -2395,13 +2399,14 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 				continue;
 			}
 			blocked_symbols[i].value = value;
-			find_and_add_callback(analysis, value, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS, blocked_function_called, (void *)blocked_symbols[i].name);
+			find_and_add_callback(analysis, value, 0, 0, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS, blocked_function_called, (void *)blocked_symbols[i].name);
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
 	const uint8_t *dlopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__libc_dlopen_mode", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL) ?: resolve_binary_loaded_symbol(&analysis->loader, new_binary, "dlopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 	if (dlopen) {
-		find_and_add_callback(analysis, dlopen, (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_dlopen, NULL);
+		register_mask arg0 = (register_mask)1 << sysv_argument_abi_register_indexes[0];
+		find_and_add_callback(analysis, dlopen, arg0, arg0, arg0, EFFECT_NONE, handle_dlopen, NULL);
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_LIBC) {
 		// detect gconv and load libraries upfront via LD_PRELOAD
@@ -2412,21 +2417,37 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "__gconv_open", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analysis->loader.searching_gconv_dlopen = true;
 			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, gconv_open, &new_caller, true);
+			if (analysis->loader.gconv_dlopen != NULL) {
+				struct registers state = empty_registers;
+				clear_register(&state.registers[sysv_argument_abi_register_indexes[0]]);
+				struct analysis_frame self = {
+					.current = {
+						.address = analysis->loader.gconv_dlopen,
+						.description = NULL,
+						.next = NULL,
+					},
+					.entry = analysis->loader.gconv_dlopen,
+					.entry_state = &state,
+					.token = { 0 },
+				};
+				analysis->loader.searching_gconv_dlopen = true;
+				*get_or_populate_effects(analysis, analysis->loader.gconv_dlopen, &state, EFFECT_NONE, &self, &self.token) = EFFECT_NONE;
+			}
 			analysis->loader.searching_gconv_dlopen = false;
 		}
 		// update_known_function(analysis, new_binary, &known_symbols->gconv_find_shlib, "__gconv_find_shlib", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_RETURNS | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT);
 		// load nss libraries if an nss function is used
 		const uint8_t *nss_lookup_function = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup_function", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (nss_lookup_function) {
-			find_and_add_callback(analysis, nss_lookup_function, 0, EFFECT_NONE, handle_nss_usage, NULL);
+			find_and_add_callback(analysis, nss_lookup_function, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
 		}
 		const uint8_t *nss_lookup = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (nss_lookup) {
-			find_and_add_callback(analysis, nss_lookup, 0, EFFECT_NONE, handle_nss_usage, NULL);
+			find_and_add_callback(analysis, nss_lookup, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
 		}
 		const uint8_t *nss_next2 = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_next2", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (nss_next2) {
-			find_and_add_callback(analysis, nss_next2, 0, EFFECT_NONE, handle_nss_usage, NULL);
+			find_and_add_callback(analysis, nss_next2, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
 		}
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
@@ -2499,14 +2520,15 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		update_known_function(analysis, new_binary, "runtime.runPerThreadSyscall", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
 		void *forkAndExecInChild1 = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "syscall.forkAndExecInChild1", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (forkAndExecInChild1 != NULL) {
-			find_and_add_callback(analysis, forkAndExecInChild1, 0, EFFECT_NONE, handle_forkAndExecInChild1, NULL);
+			find_and_add_callback(analysis, forkAndExecInChild1, 0, 0, 0, EFFECT_NONE, handle_forkAndExecInChild1, NULL);
 		}
 		force_protection_for_symbol(&analysis->loader, new_binary, "internal/syscall/unix.FcntlSyscall", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
 		force_protection_for_symbol(&analysis->loader, new_binary, "syscall.fcntl64Syscall", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
 		force_protection_for_symbol(&analysis->loader, new_binary, "github.com/docker/docker/vendor/golang.org/x/sys/unix.fcntl64Syscall", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
 		void *unixSchedAffinity = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "github.com/docker/docker/vendor/golang.org/x/sys/unix.schedAffinity", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (unixSchedAffinity) {
-			find_and_add_callback(analysis, unixSchedAffinity, (register_mask)1 << REGISTER_STACK_4, EFFECT_NONE, handle_golang_unix_sched_affinity, NULL);
+			register_mask stack_4 = (register_mask)1 << REGISTER_STACK_4;
+			find_and_add_callback(analysis, unixSchedAffinity, stack_4, stack_4, stack_4, EFFECT_NONE, handle_golang_unix_sched_affinity, NULL);
 		}
 	}
 	if ((new_binary->special_binary_flags & BINARY_IS_SECCOMP) && new_binary->has_symbols) {
