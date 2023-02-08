@@ -1,0 +1,3 @@
+deb http://ddebs.ubuntu.com jammy main restricted universe multiverse
+deb http://ddebs.ubuntu.com jammy-updates main restricted universe multiverse
+deb http://ddebs.ubuntu.com jammy-proposed main restricted universe multiverse

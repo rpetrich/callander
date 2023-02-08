@@ -5,13 +5,28 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source /etc/os-release
 FIXTURE_PATH="$SCRIPT_DIR/callander_fixtures_"$ID"_"$VERSION_ID
 
-if [ "$ID" = alpine ]; then
-	lib_path=/usr/lib
-	ruby_version="3.1.0"
-else
-	lib_path=/usr/lib/x86_64-linux-gnu
-	ruby_version="2.7.0"
-fi
+case "$ID" in
+	alpine)
+		lib_path=/usr/lib
+		ruby_version="3.1.3"
+		python_version="310"
+		;;
+	ubuntu)
+		lib_path=/usr/lib/x86_64-linux-gnu
+		if [ "$VERSION_ID" = "22.04" ]; then
+			ruby_version="3.0.0"
+			python_version="310"
+		else
+			ruby_version="2.7.0"
+			python_version="38"
+		fi
+		;;
+	fedora)
+		lib_path=/lib64
+		ruby_version="3.1.0"
+		python_version="38"
+		;;
+esac
 
 declare -A program_args=(
 	# perl
@@ -40,6 +55,8 @@ declare -A program_args=(
 	["corelist"]="--block-function Perl_pp_syscall"
 	["cpan"]="--block-function Perl_pp_syscall"
 	["cpan5.30-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
+	["cpan5.34-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
+	["cpan5.36-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
 	["deb-systemd-helper"]="--block-function Perl_pp_syscall"
 	["deb-systemd-invoke"]="--block-function Perl_pp_syscall"
 	["debconf-apt-progress"]="--block-function Perl_pp_syscall"
@@ -93,18 +110,22 @@ declare -A program_args=(
 	["linux-version"]="--block-function Perl_pp_syscall"
 	["luksformat"]="--block-function Perl_pp_syscall"
 	["make-first-existing-target"]="--block-function Perl_pp_syscall"
+	["md5pass"]="--block-function Perl_pp_syscall"
+	["mkdiskimage"]="--block-function Perl_pp_syscall"
 	["ms_print"]="--block-function Perl_pp_syscall"
 	["mtrace"]="--block-function Perl_pp_syscall"
 	["niceload"]="--block-function Perl_pp_syscall"
 	["pam-auth-update"]="--block-function Perl_pp_syscall"
 	["pam_getenv"]="--block-function Perl_pp_syscall"
-	["parallel"]="--block-function Perl_pp_syscall"
 	["parcat"]="--block-function Perl_pp_syscall"
 	["parsort"]="--block-function Perl_pp_syscall"
 	["perl"]="--block-function Perl_pp_syscall"
 	["perl5.30.0"]="--block-function Perl_pp_syscall"
 	["perl5.30-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
+	["perl5.34.0"]="--block-function Perl_pp_syscall"
+	["perl5.34-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
 	["perl5.36.0"]="--block-function Perl_pp_syscall"
+	["perl5.36-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
 	["perlbug"]="--block-function Perl_pp_syscall"
 	["perldoc"]="--block-function Perl_pp_syscall"
 	["perlivp"]="--block-function Perl_pp_syscall"
@@ -130,8 +151,11 @@ declare -A program_args=(
 	["run-mailcap"]="--block-function Perl_pp_syscall"
 	["see"]="--block-function Perl_pp_syscall"
 	["shasum"]="--block-function Perl_pp_syscall"
+	["sha1pass"]="--block-function Perl_pp_syscall"
+	["snmpconf"]="--block-function Perl_pp_syscall"
 	["splain"]="--block-function Perl_pp_syscall"
 	["sql"]="--block-function Perl_pp_syscall"
+	["streamzip"]="--block-function Perl_pp_syscall"
 	["syslinux2ansi"]="--block-function Perl_pp_syscall"
 	["tasksel"]="--block-function Perl_pp_syscall"
 	["ts"]="--block-function Perl_pp_syscall"
@@ -148,24 +172,38 @@ declare -A program_args=(
 	["hmm-assembler.pl"]="--block-function Perl_pp_syscall"
 	["zff2gff3.pl"]="--block-function Perl_pp_syscall"
 	["patch-hmm.pl"]="--block-function Perl_pp_syscall"
+	["xt_geoip_query"]="--block-function Perl_pp_syscall"
 	# ruby
 	["bundle2.7"]="--block-debug-function rb_f_syscall"
+	["bundle3.0"]="--block-debug-function rb_f_syscall"
 	["bundler2.7"]="--block-debug-function rb_f_syscall"
+	["bundler3.0"]="--block-debug-function rb_f_syscall"
 	["erb"]="--block-debug-function rb_f_syscall"
 	["erb2.7"]="--block-debug-function rb_f_syscall"
+	["erb3.0"]="--block-debug-function rb_f_syscall"
 	["gem"]="--block-debug-function rb_f_syscall"
 	["gem2.7"]="--block-debug-function rb_f_syscall"
+	["gem3.0"]="--block-debug-function rb_f_syscall"
 	["irb"]="--block-debug-function rb_f_syscall"
 	["irb2.7"]="--block-debug-function rb_f_syscall"
+	["irb3.0"]="--block-debug-function rb_f_syscall"
 	["racc2.7"]="--block-debug-function rb_f_syscall"
 	["racc2y2.7"]="--block-debug-function rb_f_syscall"
+	["racc3.0"]="--block-debug-function rb_f_syscall"
 	["rake"]="--block-debug-function rb_f_syscall"
+	["rake3.0"]="--block-debug-function rb_f_syscall"
+	["rbs3.0"]="--block-debug-function rb_f_syscall"
 	["rdoc"]="--block-debug-function rb_f_syscall"
 	["rdoc2.7"]="--block-debug-function rb_f_syscall"
+	["rdoc3.0"]="--block-debug-function rb_f_syscall"
 	["ri"]="--block-debug-function rb_f_syscall"
 	["ri2.7"]="--block-debug-function rb_f_syscall"
+	["ri3.0"]="--block-debug-function rb_f_syscall"
 	["ruby"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
 	["ruby2.7"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
+	["ruby3.0"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
+	["typeprof3.0"]="--block-debug-function rb_f_syscall"
+	["update_rubygems"]="--block-debug-function rb_f_syscall"
 	["y2racc2.7"]="--block-debug-function rb_f_syscall"
 	# both
 	["ex"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
@@ -177,8 +215,8 @@ declare -A program_args=(
 	["vimdiff"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
 	["vim.nox"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
 	# python
-	["landscape-sysinfo"]="--dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-38-x86_64-linux-gnu.so"
-	["netplan"]="--dlopen $lib_path/libnetplan.so.0.0 --dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-38-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/_yaml.cpython-38-x86_64-linux-gnu.so"
+	["landscape-sysinfo"]="--dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-$python_version-x86_64-linux-gnu.so"
+	["netplan"]="--dlopen $lib_path/libnetplan.so.0.0 --dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/_yaml.cpython-$python_version-x86_64-linux-gnu.so"
 	# nm
 	["nm"]="--dlopen /usr/bin/../bin/../lib/bfd-plugins/liblto_plugin.so"
 )
@@ -234,139 +272,137 @@ run_and_diff () {
 if [ "$1" != "" ]; then
 	test_program "$1"
 else
-	echo "will cite" | parallel --citation 2> /dev/null
-
-	if [ $ID == ubuntu ]; then
-		run_and_diff echo "hello world"
-		run_and_diff bash -c "echo hi"
-		run_and_diff ls -lah
-		run_and_diff apt --version
-		run_and_diff python3 --version
-		run_and_diff ruby --version
-		run_and_diff stat .
-		run_and_diff ar --version
-		run_and_diff base64 "$0"
-		run_and_diff basename /hello/world
-		run_and_diff bc --version
-		run_and_diff busybox sh -c 'echo hi'
-		run_and_diff bzip2 --version
-		run_and_diff gcc --version
-		run_and_diff cat "$0"
-		run_and_diff c++filt _ZSt18uncaught_exceptionv
-		run_and_diff containerd --version
-		run_and_diff curl localhost
-		run_and_diff curl --version
-		run_and_diff dash -c 'echo hi'
-		run_and_diff date -I
-		run_and_diff diff --version
-		run_and_diff df -h /
-		run_and_diff docker --version
-		run_and_diff hostname
-		run_and_diff dpkg-query --status
-		run_and_diff du -h "$0"
-		run_and_diff env -u _ -u LD_PRELOAD
-		run_and_diff false
-		run_and_diff fincore `which false`
-		run_and_diff file /bin/file
-		run_and_diff getent hosts localhost
-		run_and_diff getopt h -s hi
-		run_and_diff gettext hi
-		run_and_diff git --version
-		run_and_diff gpasswd --help
-		run_and_diff grep -e hi "$0"
-		run_and_diff gzip --version
-		run_and_diff hd `which callander`
-		run_and_diff head 10 "$0"
-		run_and_diff host localhost
-		run_and_diff hostid
-		run_and_diff hostname
-		run_and_diff hostnamectl status
-		run_and_diff iconv -l
-		run_and_diff id
-		run_and_diff ifconfig
-		run_and_diff ipcs
-		run_and_diff ipmaddr
-		run_and_diff join "$0" "$0"
-		run_and_diff journalctl --list-boots
-		run_and_diff jq --version
-		run_and_diff killall -l
-		run_and_diff kmod list
-		run_and_diff kmod static-nodes
-		run_and_diff landscape-sysinfo --sysinfo-plugins=Disk,Network
-		run_and_diff last
-		run_and_diff lastlog
-		run_and_diff ld --version
-		run_and_diff locale
-		run_and_diff loginctl --no-pager
-		run_and_diff logname
-		run_and_diff look hell
-		run_and_diff lsb_release -a
-		run_and_diff lsblk
-		run_and_diff lscpu
-		run_and_diff lshw
-		run_and_diff lsipc
-		run_and_diff lslocks
-		run_and_diff lslogins -o=UID,USER,GID,GROUP,LAST-LOGIN
-		run_and_diff lsmem
-		run_and_diff lsmod
-		run_and_diff lsmod
-		run_and_diff lspci
-		run_and_diff m4 --help
-		run_and_diff make --version
-		run_and_diff manpath
-		run_and_diff md5sum "$0"
-		run_and_diff mesg
-		run_and_diff mkdir -p .
-		run_and_diff modprobe -c
-		run_and_diff namei "$0"
-		run_and_diff nc
-		run_and_diff ncal
-		run_and_diff netplan get all
-		run_and_diff networkctl -a --no-pager
-		run_and_diff nl "$0"
-		run_and_diff nm /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
-		run_and_diff node -e 'console.log("hi")'
-		run_and_diff nohup --version
-		run_and_diff nologin
-		run_and_diff nproc
-		run_and_diff nslookup localhost
-		run_and_diff objdump --all-headers `which callander`
-		run_and_diff od "$0"
-		run_and_diff openssl sha512 "$0"
-		run_and_diff paste "$0" "$0"
-		run_and_diff perl -e 'print "hi"'
-		run_and_diff pinky
-		run_and_diff printf 'hello world'
-		run_and_diff prlimit
-		run_and_diff python3 -c 'print("hi")'
-		run_and_diff readelf -S `which callander`
-		run_and_diff readlink -f .
-		run_and_diff realpath .
-		run_and_diff resolvectl
-		run_and_diff rev "$0"
-		run_and_diff route
-		run_and_diff ruby -e 'print("hi")'
-		run_and_diff runc --version
-		run_and_diff sleep 1
-		run_and_diff snap list
-		run_and_diff sort "$0"
-		run_and_diff stat -f "$0"
-		run_and_diff static-sh -c 'printf hi'
-		run_and_diff strings `which callander`
-		run_and_diff systemctl list-units
-		run_and_diff tail -n 1 "$0"
-		run_and_diff test -e "$0"
-		run_and_diff tree "$SCRIPT_DIR"
-		run_and_diff true
-		run_and_diff uname -a
-		run_and_diff uniq "$0"
-		run_and_diff uptime --pretty
-		run_and_diff users
-		# run_and_diff wasmtime --version
-		run_and_diff wc "$0"
-		run_and_diff which echo
-		run_and_diff whoami
-	fi
+	# if [ $ID == ubuntu ]; then
+	# 	run_and_diff echo "hello world"
+	# 	run_and_diff bash -c "echo hi"
+	# 	run_and_diff ls -lah
+	# 	run_and_diff apt --version
+	# 	run_and_diff python3 --version
+	# 	run_and_diff ruby --version
+	# 	run_and_diff stat .
+	# 	run_and_diff ar --version
+	# 	run_and_diff base64 "$0"
+	# 	run_and_diff basename /hello/world
+	# 	run_and_diff bc --version
+	# 	run_and_diff busybox sh -c 'echo hi'
+	# 	run_and_diff bzip2 --version
+	# 	run_and_diff gcc --version
+	# 	run_and_diff cat "$0"
+	# 	run_and_diff c++filt _ZSt18uncaught_exceptionv
+	# 	run_and_diff containerd --version
+	# 	run_and_diff curl localhost
+	# 	run_and_diff curl --version
+	# 	run_and_diff dash -c 'echo hi'
+	# 	run_and_diff date -I
+	# 	run_and_diff diff --version
+	# 	run_and_diff df -h /
+	# 	run_and_diff docker --version
+	# 	run_and_diff hostname
+	# 	run_and_diff dpkg-query --status
+	# 	run_and_diff du -h "$0"
+	# 	run_and_diff env -u _ -u LD_PRELOAD -u LD_BIND_NOW
+	# 	run_and_diff false
+	# 	run_and_diff fincore `which false`
+	# 	run_and_diff file /bin/file
+	# 	run_and_diff getent hosts localhost
+	# 	run_and_diff getopt h -s hi
+	# 	run_and_diff gettext hi
+	# 	run_and_diff git --version
+	# 	run_and_diff gpasswd --help
+	# 	run_and_diff grep -e hi "$0"
+	# 	run_and_diff gzip --version
+	# 	run_and_diff hd `which callander`
+	# 	run_and_diff head 10 "$0"
+	# 	run_and_diff host localhost
+	# 	run_and_diff hostid
+	# 	run_and_diff hostname
+	# 	run_and_diff hostnamectl status
+	# 	run_and_diff iconv -l
+	# 	run_and_diff id
+	# 	run_and_diff ifconfig
+	# 	run_and_diff ipcs
+	# 	run_and_diff ipmaddr
+	# 	run_and_diff join "$0" "$0"
+	# 	run_and_diff journalctl --list-boots
+	# 	run_and_diff jq --version
+	# 	run_and_diff killall -l
+	# 	run_and_diff kmod list
+	# 	run_and_diff kmod static-nodes
+	# 	run_and_diff landscape-sysinfo --sysinfo-plugins=Disk,Network
+	# 	run_and_diff last
+	# 	run_and_diff lastlog
+	# 	run_and_diff ld --version
+	# 	run_and_diff locale
+	# 	run_and_diff loginctl --no-pager
+	# 	run_and_diff logname
+	# 	run_and_diff look hell
+	# 	run_and_diff lsb_release -a
+	# 	run_and_diff lsblk
+	# 	run_and_diff lscpu
+	# 	run_and_diff lshw
+	# 	run_and_diff lsipc
+	# 	run_and_diff lslocks
+	# 	run_and_diff lslogins -o=UID,USER,GID,GROUP,LAST-LOGIN
+	# 	run_and_diff lsmem
+	# 	run_and_diff lsmod
+	# 	run_and_diff lsmod
+	# 	run_and_diff lspci
+	# 	run_and_diff m4 --help
+	# 	run_and_diff make --version
+	# 	run_and_diff manpath
+	# 	run_and_diff md5sum "$0"
+	# 	run_and_diff mesg
+	# 	run_and_diff mkdir -p .
+	# 	run_and_diff modprobe -c
+	# 	run_and_diff namei "$0"
+	# 	run_and_diff nc
+	# 	run_and_diff ncal
+	# 	run_and_diff netplan get all
+	# 	run_and_diff networkctl -a --no-pager
+	# 	run_and_diff nl "$0"
+	# 	run_and_diff nm /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+	# 	run_and_diff node -e 'console.log("hi")'
+	# 	run_and_diff nohup --version
+	# 	run_and_diff nologin
+	# 	run_and_diff nproc
+	# 	run_and_diff nslookup localhost
+	# 	run_and_diff objdump --all-headers `which callander`
+	# 	run_and_diff od "$0"
+	# 	run_and_diff openssl sha512 "$0"
+	# 	run_and_diff paste "$0" "$0"
+	# 	run_and_diff perl -e 'print "hi"'
+	# 	run_and_diff pinky
+	# 	run_and_diff printf 'hello world'
+	# 	run_and_diff prlimit
+	# 	run_and_diff python3 -c 'print("hi")'
+	# 	run_and_diff readelf -S `which callander`
+	# 	run_and_diff readlink -f .
+	# 	run_and_diff realpath .
+	# 	run_and_diff resolvectl
+	# 	run_and_diff rev "$0"
+	# 	run_and_diff route
+	# 	run_and_diff ruby -e 'print("hi")'
+	# 	run_and_diff runc --version
+	# 	run_and_diff sleep 1
+	# 	run_and_diff snap list
+	# 	run_and_diff sort "$0"
+	# 	run_and_diff stat -f "$0"
+	# 	run_and_diff static-sh -c 'printf hi'
+	# 	run_and_diff strings `which callander`
+	# 	run_and_diff systemctl list-units
+	# 	run_and_diff tail -n 1 "$0"
+	# 	run_and_diff test -e "$0"
+	# 	run_and_diff tree "$SCRIPT_DIR"
+	# 	run_and_diff true
+	# 	run_and_diff uname -a
+	# 	run_and_diff uniq "$0"
+	# 	run_and_diff uptime --pretty
+	# 	run_and_diff users
+	# 	# run_and_diff wasmtime --version
+	# 	run_and_diff wc "$0"
+	# 	run_and_diff which echo
+	# 	run_and_diff whoami
+	# fi
 
 	# exit 0
 	mkdir -p "$FIXTURE_PATH"
@@ -374,7 +410,13 @@ else
 	if [ `readlink -f /bin` == "/bin" ]; then
 		paths="$paths /bin"
 	fi
-	find $paths -executable -type f | grep -v callander | parallel "$0"
+	binaries=$(find $paths -executable -type f | grep -v callander)
+	# note: this is the moreutils parallel instead of GNU parallel
+	if [ -e /usr/bin/parallel-moreutils ]; then
+		parallel-moreutils "$0" -- $binaries
+	else
+		parallel "$0" -- $binaries
+	fi
 	echo $(grep -R -e 'permitted syscalls' -- "$FIXTURE_PATH" | wc -l)/$(ls "$FIXTURE_PATH" | wc -l) binaries successfully processed
 	echo failing tests:
 	grep -R -e 'callander: ' -- "$FIXTURE_PATH" | grep -v 'permitted' | cut -d ':' -f 1 | uniq
