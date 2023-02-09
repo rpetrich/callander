@@ -2317,6 +2317,14 @@ static void handle_golang_unix_sched_affinity(struct program_state *analysis, __
 	LOG("skipping unix.schedAffinity");
 }
 
+static void handle_openssl_dso_load(struct program_state *analysis, __attribute__((unused)) struct registers *state, const uint8_t *ins, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+{
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
+	if (fs_access("/usr/lib/x86_64-linux-gnu/ossl-modules", R_OK) == 0) {
+		register_dlopen(analysis, "/usr/lib/x86_64-linux-gnu/ossl-modules", caller, false, true);
+	}
+}
+
 static void intercept_jump_slot(struct program_state *analysis, struct loaded_binary *binary, const char *slot_name, instruction_reached_callback callback)
 {
 	const ElfW(Dyn) *dynamic = binary->info.dynamic;
@@ -2529,6 +2537,12 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		if (unixSchedAffinity) {
 			register_mask stack_4 = (register_mask)1 << REGISTER_STACK_4;
 			find_and_add_callback(analysis, unixSchedAffinity, stack_4, stack_4, stack_4, EFFECT_NONE, handle_golang_unix_sched_affinity, NULL);
+		}
+	}
+	if (new_binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+		void *dso_load = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "DSO_load", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (dso_load) {
+			find_and_add_callback(analysis, dso_load, 0, 0, 0, EFFECT_NONE, handle_openssl_dso_load, NULL);
 		}
 	}
 	if ((new_binary->special_binary_flags & BINARY_IS_SECCOMP) && new_binary->has_symbols) {
@@ -7763,7 +7777,8 @@ static int special_binary_flags_for_path(const char *path)
 			if (path[4] == '.') { // libc.
 				result |= BINARY_IS_LIBC | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'r' && path[5] == 'y' && path[6] == 'p' && path[7] == 't' && path[8] == 'o' && path[9] == '.') { // libcrypto.
-				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				result |= BINARY_IS_LIBCRYPTO;
 			} else if (path[4] == 'a' && path[5] == 'p' && path[6] == '.') {
 				result |= BINARY_IS_LIBCAP;
 			}
