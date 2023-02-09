@@ -583,10 +583,10 @@ static struct loaded_binary *binary_for_child_address(const struct loader_contex
 	return binary;
 }
 
-static void wait_for_syscall_event(pid_t pid)
+static void wait_for_ptrace_event(enum __ptrace_request request, pid_t pid)
 {
 	// identify that we're looking for syscall entries
-	intptr_t result = fs_ptrace(PTRACE_SYSCALL, pid, 0, 0);
+	intptr_t result = fs_ptrace(request, pid, 0, 0);
 	if (result < 0) {
 		DIE("failed to wait for syscall entry", fs_strerror(result));
 	}
@@ -620,9 +620,9 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 		DIE("failed to poke a syscall", fs_strerror(result));
 	}
 	// wait for syscall entry
-	wait_for_syscall_event(pid);
+	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
 	// wait for syscall exit
-	wait_for_syscall_event(pid);
+	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.rip, (void *)original_bytes);
 	if (result < 0) {
 		DIE("failed to poke the original data back", fs_strerror(result));
@@ -1320,6 +1320,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 					*d++ = *s;
 				}
 			}
+			*d++ = "LD_BIND_NOW=1";
 
 			// child does not need any new privs, so revoke them preemptively
 			result = fs_prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
@@ -1333,13 +1334,18 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				DIE("failed to set tracer", fs_strerror(result));
 			}
 
+			result = fs_ptrace(PTRACE_TRACEME, 0, 0, 0);
+			if (result < 0) {
+				DIE("failed to be traced", fs_strerror(result));
+			}
+			ERROR_FLUSH();
+
 			// wait to be woken up on the pipe
 			fs_close(pipe_fds[1]);
 			char buf;
 			result = fs_read(pipe_fds[0], &buf, 1);
 			if (result != 1) {
 				if (result == 0) {
-					ERROR_FLUSH();
 					return 0;
 				}
 				DIE("error reading from pipe", fs_strerror(result));
@@ -1347,16 +1353,9 @@ int main(__attribute__((unused)) int argc, const char **argv)
 			if (*new_ld_preload != '\0') {
 				*d++ = new_ld_preload;
 			}
-			*d++ = "LD_BIND_NOW=1";
 			*d = NULL;
 
 			// ask to be traced
-			result = fs_ptrace(PTRACE_TRACEME, 0, 0, 0);
-			if (result < 0) {
-				DIE("failed to be traced", fs_strerror(result));
-			}
-			ERROR_FLUSH();
-
 			// exec the new program
 			result = fs_execve(path_buf, (char * const *)&argv[executable_index], (char *const *)new_envp);
 			if (result < 0) {
@@ -1535,10 +1534,10 @@ skip_analysis:
 		DIE("failed to set PTRACE_O_EXITKILL", fs_strerror(result));
 	}
 
-	// wait for syscall entry, should be exec
-	wait_for_syscall_event(tracee);
-	// wait for syscall exit, should be after the exec completes
-	wait_for_syscall_event(tracee);
+	// // wait for syscall entry, should be exec
+	// wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
+	// // wait for syscall exit, should be after the exec completes
+	// wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
 
 	// no longer need the wakeup fd
 	fs_close(wakeup_child_fd);
