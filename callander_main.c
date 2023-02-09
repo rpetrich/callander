@@ -818,6 +818,9 @@ static int add_dlopen_paths_recursively(struct program_state *analysis, const ch
 	size_t prefix_len = strlen(path);
 	int fd = fs_open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (fd < 0) {
+		if (fd == -ENOENT) {
+			return 0;
+		}
 		return fd;
 	}
 	for (;;) {
@@ -935,6 +938,21 @@ static int query_program_version(const char *program_path, char *const envp[], c
 	return status;
 }
 
+#define MAKE_VERSION_BUF(name, prefix, separator, suffix) \
+	char name[sizeof(prefix "xxxxx" separator "xxxxx" suffix)]; \
+	do { \
+		char *buf = name; \
+		fs_memcpy(buf, prefix, sizeof(prefix)-1); \
+		buf += sizeof(prefix)-1; \
+		fs_memcpy(buf, python_major, (python_minor - 1) - python_major); \
+		buf += (python_minor - 1) - python_major; \
+		fs_memcpy(buf, separator, sizeof(separator)-1); \
+		buf += sizeof(separator)-1; \
+		fs_memcpy(buf, python_minor, python_patch - python_minor); \
+		buf += python_patch - python_minor; \
+		fs_memcpy(buf, suffix, sizeof(suffix)); \
+	} while(0)
+
 static int apply_program_special_cases(struct program_state *analysis, const char *program_path, char *const envp[])
 {
 	const char *slash = fs_strrchr(program_path, '/');
@@ -960,28 +978,29 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		}
 		python_minor++;
 		const char *python_patch = fs_strchr(python_minor, '.');
-		char dynload_buf[sizeof("/usr/lib/pythonxxxxx.xxxxx/lib-dynload")];
-		char *buf = dynload_buf;
-		fs_memcpy(buf, "/usr/lib/python", sizeof("/usr/lib/python")-1);
-		buf += sizeof("/usr/lib/python")-1;
-		fs_memcpy(buf, python_major, python_patch - python_major);
-		buf += python_patch - python_major;
-		fs_memcpy(buf, "/lib-dynload", sizeof("/lib-dynload"));
-		char suffix_buf[sizeof(".cpython-xxxxxxxxxx-x86_64-linux-gnu.so:.abi3.so")];
-		buf = suffix_buf;
-		fs_memcpy(suffix_buf, ".cpython-", sizeof(".cpython-")-1);
-		buf += sizeof(".cpython-")-1;
-		fs_memcpy(buf, python_major, (python_minor - 1) - python_major);
-		buf += (python_minor - 1) - python_major;
-		fs_memcpy(buf, python_minor, python_patch - python_minor);
-		buf += python_patch - python_minor;
-		fs_memcpy(buf, "-x86_64-linux-gnu.so:.abi3.so", sizeof("-x86_64-linux-gnu.so:.abi3.so"));
+		MAKE_VERSION_BUF(dynload_buf, "/usr/lib/python", ".", "/lib-dynload");
+		MAKE_VERSION_BUF(dynload64_buf, "/usr/lib64/python", ".", "/lib-dynload");
+		MAKE_VERSION_BUF(site_packages_buf, "/usr/lib/python", ".", "/site-packages");
+		MAKE_VERSION_BUF(site_packages64_buf, "/usr/lib64/python", ".", "/site-packages");
+		MAKE_VERSION_BUF(suffix_buf, ".cpython-", "", "-x86_64-linux-gnu.so:.abi3.so");
 		free(version_string);
 		result = add_dlopen_paths_recursively(analysis, dynload_buf, suffix_buf);
 		if (result < 0) {
 			return result;
 		}
+		result = add_dlopen_paths_recursively(analysis, dynload64_buf, suffix_buf);
+		if (result < 0) {
+			return result;
+		}
 		result = add_dlopen_paths_recursively(analysis, "/usr/lib/python3/dist-packages", suffix_buf);
+		if (result < 0) {
+			return result;
+		}
+		result = add_dlopen_paths_recursively(analysis, site_packages_buf, suffix_buf);
+		if (result < 0) {
+			return result;
+		}
+		result = add_dlopen_paths_recursively(analysis, site_packages64_buf, suffix_buf);
 		if (result < 0) {
 			return result;
 		}
