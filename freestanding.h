@@ -311,6 +311,12 @@ static inline intptr_t fs_lseek(int fd, off_t offset, int origin)
 }
 
 __attribute__((warn_unused_result))
+static inline int fs_pipe(int pipefd[2])
+{
+	return FS_SYSCALL(SYS_pipe, (intptr_t)pipefd);
+}
+
+__attribute__((warn_unused_result))
 static inline int fs_socket(int domain, int type, int protocol)
 {
 	return FS_SYSCALL(SYS_socket, domain, type, protocol);
