@@ -1129,7 +1129,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				ERROR_FLUSH();
 				return 1;
 			}
-			add_blocked_symbol(&analysis.known_symbols, function_name, DEBUG_SYMBOL_FORCING_LOAD);
+			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD);
 			executable_index++;
 			if (!attach) {
 				attach = STAY_ATTACHED;
