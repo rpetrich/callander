@@ -1,5 +1,6 @@
 #include "callander.h"
 
+#include <dirent.h>
 #include <linux/audit.h>
 #include <linux/binfmts.h>
 #include <linux/limits.h>
@@ -794,6 +795,199 @@ static void prune_unreachable_instructions(__attribute__((unused)) struct unreac
 }
 #endif
 
+static void add_dlopen_path(struct program_state *analysis, const char *path)
+{
+	struct dlopen_path *dlopen = malloc(sizeof(struct dlopen_path));
+	dlopen->path = path;
+	dlopen->next = analysis->dlopen;
+	analysis->dlopen = dlopen;
+}
+
+static char *copy_path_with_subpath(const char *path, size_t path_len, const char *subpath, size_t subpath_len)
+{
+	char *result = malloc(path_len + 1 + subpath_len + 1);
+	fs_memcpy(result, path, path_len);
+	result[path_len] = '/';
+	fs_memcpy(&result[path_len+1], subpath, subpath_len);
+	result[path_len+1+subpath_len] = '\0';
+	return result;
+}
+
+static int add_dlopen_paths_recursively(struct program_state *analysis, const char *path, const char *required_suffixes)
+{
+	size_t prefix_len = strlen(path);
+	int fd = fs_open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+	if (fd < 0) {
+		return fd;
+	}
+	for (;;) {
+		char buf[8192];
+		int count = fs_getdents(fd, (struct fs_dirent *)&buf[0], sizeof(buf));
+		if (count <= 0) {
+			if (count < 0) {
+				return count;
+			}
+			break;
+		}
+		for (const char *current_required_suffix = required_suffixes; ;) {
+			for (int offset = 0; offset < count; ) {
+				const struct fs_dirent *ent = (const struct fs_dirent *)&buf[offset];
+				const char *name = ent->d_name;
+				const char *needle = current_required_suffix;
+				for (const char *haystack = name;;) {
+					if (*haystack == *needle || *needle == ':') {
+						if (*needle == '\0' || *needle == ':') {
+							add_dlopen_path(analysis, copy_path_with_subpath(path, prefix_len, name, haystack - name));
+						}
+						needle++;
+					} else {
+						needle = current_required_suffix;
+					}
+					if (*haystack == '\0') {
+						break;
+					}
+					haystack++;
+				}
+				if (ent->d_type == DT_DIR && name[0] != '.' && current_required_suffix == required_suffixes) {
+					char *child_path = copy_path_with_subpath(path, prefix_len, name, fs_strlen(name));
+					int result = add_dlopen_paths_recursively(analysis, child_path, required_suffixes);
+					free(child_path);
+					if (result < 0){
+						fs_close(fd);
+						return result;
+					}
+				}
+				offset += ent->d_reclen;
+			}
+			current_required_suffix = fs_strchr(current_required_suffix, ':');
+			if (*current_required_suffix == '\0') {
+				break;
+			}
+			current_required_suffix++;
+		}
+	}
+	fs_close(fd);
+	return 0;
+}
+
+static int query_program_version(const char *program_path, char *const envp[], char **out_response, size_t *out_size)
+{
+	int pipes[2];
+	int result = fs_pipe(pipes);
+	if (result < 0) {
+		return result;
+	}
+	pid_t child_pid = fs_fork();
+	if (child_pid < 0) {
+		return child_pid;
+	}
+	if (child_pid == 0) {
+		fs_close(pipes[0]);
+		fs_close(0);
+		int result = fs_dup2(pipes[1], 1);
+		if (result >= 0) {
+			result = fs_dup2(pipes[1], 2);
+			fs_close(pipes[1]);
+			if (result >= 0) {
+				const char *args[3];
+				args[0] = program_path;
+				args[1] = "--version";
+				args[2] = NULL;
+				result = fs_execve(program_path, (char * const*)args, envp);
+			}
+		}
+		fs_exit(-result);
+	}
+	fs_close(pipes[1]);
+	char *buf = malloc(PAGE_SIZE);
+	size_t size = PAGE_SIZE;
+	size_t offset = 0;
+	for (;;) {
+		int result = fs_read(pipes[0], &buf[offset], size-offset);
+		if (result <= 0) {
+			if (result == -EINTR) {
+				continue;
+			}
+			if (result < 0) {
+				fs_close(pipes[0]);
+				int status;
+				waitpid_uninterrupted(child_pid, &status, 0);
+				free(buf);
+				return result;
+			}
+			break;
+		}
+		offset += result;
+		if (offset == size) {
+			size *= 2;
+			buf = realloc(buf, size);
+		}
+	}
+	fs_close(pipes[0]);
+	int status;
+	result = waitpid_uninterrupted(child_pid, &status, 0);
+	if (result < 0) {
+		free(buf);
+		return result;
+	}
+	*out_response = buf;
+	*out_size = size - offset;
+	return status;
+}
+
+static int apply_program_special_cases(struct program_state *analysis, const char *program_path, char *const envp[])
+{
+	const char *slash = fs_strrchr(program_path, '/');
+	const char *program_name = *slash != '\0' ? &slash[1] : program_path;
+	if (fs_strncmp(program_name, "python", sizeof("python")-1) == 0) {
+		// found a python!
+		analysis->loader.ignore_dlopen = true;
+		char *version_string;
+		size_t version_string_size;
+		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
+		if (result < 0) {
+			DIE("failed reading program version", fs_strerror(result));
+		}
+		version_string[version_string_size-1] = '\0';
+		const char *python_major = fs_strchr(version_string, ' ');
+		if (*python_major == '\0') {
+			DIE("failed parsing program version", version_string);
+		}
+		python_major++;
+		const char *python_minor = fs_strchr(python_major, '.');
+		if (*python_minor == '\0') {
+			DIE("failed parsing program version", version_string);
+		}
+		python_minor++;
+		const char *python_patch = fs_strchr(python_minor, '.');
+		char dynload_buf[sizeof("/usr/lib/pythonxxxxx.xxxxx/lib-dynload")];
+		char *buf = dynload_buf;
+		fs_memcpy(buf, "/usr/lib/python", sizeof("/usr/lib/python")-1);
+		buf += sizeof("/usr/lib/python")-1;
+		fs_memcpy(buf, python_major, python_patch - python_major);
+		buf += python_patch - python_major;
+		fs_memcpy(buf, "/lib-dynload", sizeof("/lib-dynload"));
+		char suffix_buf[sizeof(".cpython-xxxxxxxxxx-x86_64-linux-gnu.so:.abi3.so")];
+		buf = suffix_buf;
+		fs_memcpy(suffix_buf, ".cpython-", sizeof(".cpython-")-1);
+		buf += sizeof(".cpython-")-1;
+		fs_memcpy(buf, python_major, (python_minor - 1) - python_major);
+		buf += (python_minor - 1) - python_major;
+		fs_memcpy(buf, python_minor, python_patch - python_minor);
+		buf += python_patch - python_minor;
+		fs_memcpy(buf, "-x86_64-linux-gnu.so:.abi3.so", sizeof("-x86_64-linux-gnu.so:.abi3.so"));
+		free(version_string);
+		result = add_dlopen_paths_recursively(analysis, dynload_buf, suffix_buf);
+		if (result < 0) {
+			return result;
+		}
+		result = add_dlopen_paths_recursively(analysis, "/usr/lib/python3/dist-packages", suffix_buf);
+		if (result < 0) {
+			return result;
+		}
+	}
+	return 0;
+}
 
 void __restore();
 
@@ -951,10 +1145,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				ERROR_FLUSH();
 				return 1;
 			}
-			struct dlopen_path *dlopen = malloc(sizeof(struct dlopen_path));
-			dlopen->path = path;
-			dlopen->next = analysis.dlopen;
-			analysis.dlopen = dlopen;
+			add_dlopen_path(&analysis, path);
 			executable_index++;
 		} else if (fs_strcmp(arg, "--main-function") == 0) {
 			if (analysis.main_function_name != NULL) {
@@ -1096,6 +1287,10 @@ int main(__attribute__((unused)) int argc, const char **argv)
 			}
 		}
 	} while (0);
+	result = apply_program_special_cases(&analysis, loaded_executable_path != NULL ? loaded_executable_path : &path_buf[0], (char *const *)envp);
+	if (result < 0) {
+		DIE("failed to apply program special cases", fs_strerror(result));
+	}
 
 	char *new_ld_preload = NULL;
 	// create child so we can get the pid
