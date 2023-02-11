@@ -8076,6 +8076,9 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 		const char *additional_run_path = NULL;
 		for (size_t i = 0; i < dynamic_size; i++) {
 			switch (dynamic[i].d_tag) {
+				case DT_RPATH:
+					additional_run_path = new_binary->symbols.strings + dynamic[i].d_un.d_val;
+					break;
 				case DT_RUNPATH:
 					additional_run_path = new_binary->symbols.strings + dynamic[i].d_un.d_val;
 					break;
