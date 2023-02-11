@@ -413,7 +413,8 @@ struct blocked_symbol {
 	const char *name;
 	const uint8_t *value;
 	int symbol_types;
-	bool is_dlopen;
+	bool is_dlopen:1;
+	bool is_required:1;
 };
 
 struct known_symbols {
@@ -429,7 +430,7 @@ enum {
 	DEBUG_SYMBOL_FORCING_LOAD = DEBUG_SYMBOL | (1 << 3),
 };
 
-struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types);
+struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types, bool required);
 
 struct dlopen_path {
 	struct dlopen_path *next;

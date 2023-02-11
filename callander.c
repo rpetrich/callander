@@ -1928,7 +1928,7 @@ static void handle_forkAndExecInChild1(struct program_state *analysis, __attribu
 		fs_exit(1);
 	}
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS);
-	add_blocked_symbol(&analysis->known_symbols, "syscall.forkAndExecInChild1", 0)->value = ins;
+	add_blocked_symbol(&analysis->known_symbols, "syscall.forkAndExecInChild1", 0, true)->value = ins;
 }
 
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
@@ -2504,7 +2504,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		// block functions that introduce executable code at runtime
 		const uint8_t *dl_map_object_from_fd = update_known_function(analysis, new_binary, "_dl_map_object_from_fd", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		if (dl_map_object_from_fd != NULL) {
-			struct blocked_symbol *blocked = add_blocked_symbol(&analysis->known_symbols, "_dl_map_object_from_fd", 0);
+			struct blocked_symbol *blocked = add_blocked_symbol(&analysis->known_symbols, "_dl_map_object_from_fd", 0, true);
 			blocked->value = dl_map_object_from_fd;
 			blocked->is_dlopen = true;
 		}
@@ -2553,7 +2553,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	}
 }
 
-struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types)
+struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types, bool required)
 {
 	uint32_t i = known_symbols->blocked_symbol_count;
 	uint32_t count = i + 1;
@@ -2562,6 +2562,7 @@ struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, c
 	symbols[i].name = name;
 	symbols[i].symbol_types = symbol_types;
 	symbols[i].is_dlopen = false;
+	symbols[i].is_required = required;
 	known_symbols->blocked_symbols = symbols;
 	known_symbols->blocked_symbol_count = count;
 	return &symbols[i];

@@ -35,4 +35,15 @@ struct thread_storage;
 __attribute__((warn_unused_result))
 int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filename, const char *const *argv, const char *const *envp, int flags);
 
+// count_args counts the number of arguments in an argv array
+static inline size_t count_args(char * const *argv) {
+	size_t argc = 0;
+	if (argv) {
+		while (argv[argc]) {
+			argc++;
+		}
+	}
+	return argc;
+}
+
 #endif

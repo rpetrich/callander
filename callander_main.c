@@ -13,6 +13,7 @@
 #include <sys/user.h>
 
 #include "bpf_debug.h"
+#include "exec.h"
 #include "dlmalloc.h"
 #include "freestanding.h"
 #include "axon.h"
@@ -938,18 +939,84 @@ static int query_program_version(const char *program_path, char *const envp[], c
 	return status;
 }
 
+static bool parse_version_components(char *version_output, const char **out_major, const char **out_minor, const char **out_patch)
+{
+	char *cur = (char *)fs_strchr(version_output, ' ');
+	if (*cur == '\0') {
+		return false;
+	}
+	cur++;
+	*out_major = cur;
+	cur = (char *)fs_strchr(cur, '.');
+	if (*cur == '\0') {
+		return false;
+	}
+	cur++;
+	*out_minor = cur;
+	for (;; cur++) {
+		if (*cur < '0' || *cur > '9') {
+			break;
+		}
+	}
+	if (*cur != '.') {
+		*cur = '\0';
+		*out_patch = "0";
+	} else {
+		*cur = '\0';
+		cur++;
+		*out_patch = cur;
+		for (;; cur++) {
+			if (*cur < '0' || *cur > '9') {
+				*cur = '\0';
+				break;
+			}
+		}
+	}
+	return true;
+}
+
 #define MAKE_VERSION_BUF(name, prefix, separator, suffix) \
 	char name[sizeof(prefix "xxxxx" separator "xxxxx" suffix)]; \
 	do { \
+		size_t major_len = fs_strlen(version_major); \
+		size_t minor_len = fs_strlen(version_minor); \
+		if (major_len + minor_len > 10) { \
+			DIE("invalid version"); \
+		} \
 		char *buf = name; \
 		fs_memcpy(buf, prefix, sizeof(prefix)-1); \
 		buf += sizeof(prefix)-1; \
-		fs_memcpy(buf, python_major, (python_minor - 1) - python_major); \
-		buf += (python_minor - 1) - python_major; \
+		fs_memcpy(buf, version_major, major_len); \
+		buf += major_len; \
 		fs_memcpy(buf, separator, sizeof(separator)-1); \
 		buf += sizeof(separator)-1; \
-		fs_memcpy(buf, python_minor, python_patch - python_minor); \
-		buf += python_patch - python_minor; \
+		fs_memcpy(buf, version_minor, minor_len); \
+		buf += minor_len; \
+		fs_memcpy(buf, suffix, sizeof(suffix)); \
+	} while(0)
+
+#define MAKE_FULL_VERSION_BUF(name, prefix, separator, separator2, suffix) \
+	char name[sizeof(prefix "xxxxx" separator "xxxxx" separator2 "xxxxx" suffix)]; \
+	do { \
+		size_t major_len = fs_strlen(version_major); \
+		size_t minor_len = fs_strlen(version_minor); \
+		size_t patch_len = fs_strlen(version_patch); \
+		if (major_len + minor_len + patch_len > 15) { \
+			DIE("invalid version"); \
+		} \
+		char *buf = name; \
+		fs_memcpy(buf, prefix, sizeof(prefix)-1); \
+		buf += sizeof(prefix)-1; \
+		fs_memcpy(buf, version_major, major_len); \
+		buf += major_len; \
+		fs_memcpy(buf, separator, sizeof(separator)-1); \
+		buf += sizeof(separator)-1; \
+		fs_memcpy(buf, version_minor, minor_len); \
+		buf += minor_len; \
+		fs_memcpy(buf, separator, sizeof(separator2)-1); \
+		buf += sizeof(separator2)-1; \
+		fs_memcpy(buf, version_patch, patch_len); \
+		buf += patch_len; \
 		fs_memcpy(buf, suffix, sizeof(suffix)); \
 	} while(0)
 
@@ -964,20 +1031,15 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		size_t version_string_size;
 		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
 		if (result < 0) {
-			DIE("failed reading program version", fs_strerror(result));
+			DIE("failed reading python version", fs_strerror(result));
 		}
 		version_string[version_string_size-1] = '\0';
-		const char *python_major = fs_strchr(version_string, ' ');
-		if (*python_major == '\0') {
-			DIE("failed parsing program version", version_string);
+		const char *version_major;
+		const char *version_minor;
+		const char *version_patch;
+		if (!parse_version_components(version_string, &version_major, &version_minor, &version_patch)) {
+			DIE("failed parsing python version", version_string);
 		}
-		python_major++;
-		const char *python_minor = fs_strchr(python_major, '.');
-		if (*python_minor == '\0') {
-			DIE("failed parsing program version", version_string);
-		}
-		python_minor++;
-		const char *python_patch = fs_strchr(python_minor, '.');
 		MAKE_VERSION_BUF(dynload_buf, "/usr/lib/python", ".", "/lib-dynload");
 		MAKE_VERSION_BUF(dynload64_buf, "/usr/lib64/python", ".", "/lib-dynload");
 		MAKE_VERSION_BUF(site_packages_buf, "/usr/lib/python", ".", "/site-packages");
@@ -1004,8 +1066,55 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (result < 0) {
 			return result;
 		}
+	} else if (fs_strncmp(program_name, "ruby", sizeof("ruby")-1) == 0) {
+		analysis->loader.ignore_dlopen = true;
+		char *version_string;
+		size_t version_string_size;
+		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
+		if (result < 0) {
+			DIE("failed reading ruby version", fs_strerror(result));
+		}
+		version_string[version_string_size-1] = '\0';
+		const char *version_major;
+		const char *version_minor;
+		const char *version_patch;
+		if (!parse_version_components(version_string, &version_major, &version_minor, &version_patch)) {
+			DIE("failed parsing ruby version", version_string);
+		}
+		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
+		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall.lto_priv.0", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
+		result = add_dlopen_paths_recursively(analysis, "/usr/lib64/ruby", ".so");
+		if (result < 0) {
+			return result;
+		}
+		result = add_dlopen_paths_recursively(analysis, "/usr/lib/ruby", ".so");
+		if (result < 0) {
+			return result;
+		}
+		MAKE_FULL_VERSION_BUF(usr_lib_buf, "/usr/lib/x86_64-linux-gnu/ruby/", ".", ".", "");
+		result = add_dlopen_paths_recursively(analysis, usr_lib_buf, ".so");
+		if (result < 0) {
+			return result;
+		}
+	} else if (fs_strncmp(program_name, "perl", sizeof("perl")-1) == 0) {
+		add_blocked_symbol(&analysis->known_symbols, "Perl_pp_syscall", NORMAL_SYMBOL | LINKER_SYMBOL, false);
 	}
 	return 0;
+}
+
+static char **copy_argv_with_prefixes(char **argv, char *arg0, char *arg1)
+{
+	size_t existing_argc = count_args(argv);
+	size_t starting_offset = 1 + (arg1 != NULL ? 1 : 0);
+	char **result = malloc((existing_argc + (starting_offset + 1)) * sizeof(char *));
+	result[0] = arg0;
+	if (arg1 != NULL) {
+		result[1] = arg1;
+	}
+	for (size_t i = 0; i <= existing_argc; i++) {
+		result[starting_offset+i] = argv[i];
+	}
+	return result;
 }
 
 void __restore();
@@ -1033,10 +1142,10 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 #pragma GCC optimize ("-fomit-frame-pointer")
 #ifdef STANDALONE
 __attribute__((noinline))
-int main(const char **argv, const char **envp, const ElfW(auxv_t) *aux)
+int main(char *argv[], char *envp[], const ElfW(auxv_t) *aux)
 #else
 __attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc, const char **argv)
+int main(__attribute__((unused)) int argc, char *argv[])
 #endif
 {
 #ifndef STANDALONE
@@ -1051,7 +1160,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 	int envp_count = 0;
 	const char *path = "/bin:/usr/bin";
 	struct program_state analysis = { 0 };
-	for (const char **s = envp; *s != NULL; s++) {
+	for (char **s = envp; *s != NULL; s++) {
 		if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) == 0) {
 			analysis.ld_preload = *s + sizeof("LD_PRELOAD=")-1;
 		} else {
@@ -1136,7 +1245,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				ERROR_FLUSH();
 				return 1;
 			}
-			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL);
+			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL, true);
 			executable_index++;
 			if (!attach) {
 				attach = STAY_ATTACHED;
@@ -1148,7 +1257,7 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				ERROR_FLUSH();
 				return 1;
 			}
-			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD);
+			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, true);
 			executable_index++;
 			if (!attach) {
 				attach = STAY_ATTACHED;
@@ -1258,16 +1367,20 @@ int main(__attribute__((unused)) int argc, const char **argv)
 
 	// find path so we can exec it
 	char path_buf[PATH_MAX+1];
-	intptr_t result = fs_readlink_fd(fd, path_buf, sizeof(path_buf));
+	intptr_t result = fs_readlink_fd(fd, path_buf, sizeof(path_buf)-1);
 	if (result < 0) {
 		DIE("failed to read path", fs_strerror(result));
 	}
 	path_buf[result] = '\0';
 	LOG("will exec", &path_buf[0]);
 
+	char **new_argv = &argv[executable_index];
+
 	// parse #! lines
 	char *loaded_executable_path = NULL;
 	do {
+	next_interpreter:
+		;
 		char header[BINPRM_BUF_SIZE + 1];
 		size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
 		if (header_size <= 0) {
@@ -1278,15 +1391,53 @@ int main(__attribute__((unused)) int argc, const char **argv)
 		}
 		header[header_size] = '\0';
 		if (header[0] == '#' && header[1] == '!') {
+			if (fs_strstr(header, "[_mri_]=/usr/bin/ruby-mri") != NULL) {
+				// TODO: Support JRuby in RubyPick
+				int new_fd = open_executable_in_paths("/usr/bin/ruby-mri", path, true, analysis.loader.uid, analysis.loader.gid);
+				if (new_fd < 0) {
+					DIE("could not load #! interpreter", fs_strerror(new_fd));
+				}
+				fs_close(fd);
+				fd = new_fd;
+				loaded_executable_path = "/usr/bin/ruby-mri";
+				new_argv = copy_argv_with_prefixes(&new_argv[1], "/usr/bin/ruby-mri", NULL);
+				goto next_interpreter;
+			}
 			char *arg0 = &header[2];
 			while (*arg0 == ' ' || *arg0 == '\t') {
 				arg0++;
 			}
 			if (*arg0 != '\n' && *arg0 != '\0') {
 				char *arg1 = arg0;
+				size_t arg0_len;
+				size_t arg1_len = 0;
 				for (;; arg1++) {
-					if (*arg1 == ' ' || *arg1 == '\n' || *arg1 == '\0') {
+					if (*arg1 == ' ' || *arg1 == '\t') {
 						*arg1 = '\0';
+						arg0_len = arg1 - arg0;
+						arg1++;
+						for (char *end = arg1;; end++) {
+							if (*end == ' ' || *end == '\t' || *end == '\n') {
+								*end = '\0';
+								arg1_len = end - arg1;
+								break;
+							}
+							if (*end == '\0') {
+								arg1_len = end - arg1;
+								break;
+							}
+						}
+						break;
+					}
+					if (*arg1 == '\n') {
+						*arg1 = '\0';
+						arg0_len = arg1 - arg0;
+						arg1 = NULL;
+						break;
+					}
+					if (*arg1 == '\0') {
+						arg0_len = arg1 - arg0;
+						arg1 = NULL;
 						break;
 					}
 				}
@@ -1296,13 +1447,16 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				}
 				fs_close(fd);
 				fd = new_fd;
-				char *new_path = malloc(arg1 - arg0 + 1);
-				fs_memcpy(new_path, arg0, arg1 - arg0 + 1);
-				if (loaded_executable_path != NULL) {
-					free(loaded_executable_path);
+				char *new_path = malloc(arg0_len + 1);
+				fs_memcpy(new_path, arg0, arg0_len + 1);
+				char *new_arg1 = NULL;
+				if (arg1 != NULL) {
+					new_arg1 = malloc(arg1_len + 1);
+					fs_memcpy(new_arg1, arg1, arg1_len + 1);
 				}
+				new_argv = copy_argv_with_prefixes(new_argv, new_path, new_arg1);
 				loaded_executable_path = new_path;
-				continue;
+				goto next_interpreter;
 			}
 		}
 	} while (0);
@@ -1332,9 +1486,9 @@ int main(__attribute__((unused)) int argc, const char **argv)
 			DIE("failed to fork", fs_strerror(result));
 		}
 		if (result == 0) {
-			const char **new_envp = malloc((envp_count + 3) * sizeof(*envp));
-			const char **d = new_envp;
-			for (const char **s = envp; *s != NULL; s++) {
+			char **new_envp = malloc((envp_count + 3) * sizeof(*envp));
+			char **d = new_envp;
+			for (char **s = envp; *s != NULL; s++) {
 				if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) != 0 && fs_strncmp(*s, "LD_BIND_NOW=1", sizeof("LD_BIND_NOW=")-1) != 0) {
 					*d++ = *s;
 				}
@@ -1353,12 +1507,6 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				DIE("failed to set tracer", fs_strerror(result));
 			}
 
-			result = fs_ptrace(PTRACE_TRACEME, 0, 0, 0);
-			if (result < 0) {
-				DIE("failed to be traced", fs_strerror(result));
-			}
-			ERROR_FLUSH();
-
 			// wait to be woken up on the pipe
 			fs_close(pipe_fds[1]);
 			char buf;
@@ -1373,10 +1521,16 @@ int main(__attribute__((unused)) int argc, const char **argv)
 				*d++ = new_ld_preload;
 			}
 			*d = NULL;
+			ERROR_FLUSH();
+
+			result = fs_ptrace(PTRACE_TRACEME, 0, 0, 0);
+			if (result < 0) {
+				DIE("failed to be traced", fs_strerror(result));
+			}
 
 			// ask to be traced
 			// exec the new program
-			result = fs_execve(path_buf, (char * const *)&argv[executable_index], (char *const *)new_envp);
+			result = fs_execve(loaded_executable_path ?: &path_buf[0], new_argv, (char *const *)new_envp);
 			if (result < 0) {
 				DIE("failed to exec", fs_strerror(result));
 			}
@@ -1553,10 +1707,10 @@ skip_analysis:
 		DIE("failed to set PTRACE_O_EXITKILL", fs_strerror(result));
 	}
 
-	// // wait for syscall entry, should be exec
-	// wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
-	// // wait for syscall exit, should be after the exec completes
-	// wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
+	// wait for syscall entry, should be exec
+	wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
+	// wait for syscall exit, should be after the exec completes
+	wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
 
 	// no longer need the wakeup fd
 	fs_close(wakeup_child_fd);
@@ -1687,6 +1841,9 @@ skip_analysis:
 	for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 		struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
 		if (symbol.value == NULL) {
+			if (!symbol.is_required) {
+				continue;
+			}
 			DIE("failed to find blocked function", symbol.name);
 		}
 		uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);
@@ -1966,13 +2123,13 @@ skip_analysis:
 __attribute__((used))
 noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 {
-	const char **argv = (void *)(sp+1);
-	const char **current_argv = argv;
+	char **argv = (void *)(sp+1);
+	char **current_argv = argv;
 	while (*current_argv != NULL) {
 		++current_argv;
 	}
-	const char **envp = current_argv+1;
-	const char **current_envp = envp;
+	char **envp = current_argv+1;
+	char **current_envp = envp;
 	bool bench = false;
 	while (*current_envp != NULL) {
 		if (UNLIKELY(fs_strcmp(*current_envp, "CALLANDER_BENCH=1") == 0)) {

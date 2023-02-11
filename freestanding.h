@@ -969,6 +969,26 @@ static inline const char *fs_strrchr(const char * str, int character)
 	return last;
 }
 
+// fs_strstr returns the first occurrence of the needle in the haystack
+__attribute__((warn_unused_result))
+__attribute__((nonnull(1)))
+static inline const char *fs_strstr(const char *haystack, const char *needle)
+{
+	for (; ; haystack++) {
+		for (int i = 0; ; i++) {
+			if (needle[i] == '\0') {
+				return haystack;
+			}
+			if (haystack[i] == '\0') {
+				return NULL;
+			}
+			if (needle[i] != haystack[i]) {
+				break;
+			}
+		}
+	}
+}
+
 // fs_memchr returns the position in the buffer where character is found,
 // scanning up to n characters
 __attribute__((warn_unused_result))

@@ -51,17 +51,6 @@ bool is_axon(const struct fs_stat *stat)
 	return stat->st_dev == axon_stat.st_dev && stat->st_ino == axon_stat.st_ino;
 }
 
-// count_args counts the number of arguments in an argv array
-static size_t count_args(const char *const *argv) {
-	size_t argc = 0;
-	if (argv) {
-		while (argv[argc]) {
-			argc++;
-		}
-	}
-	return argc;
-}
-
 __attribute__((warn_unused_result))
 static int exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth, size_t header_size, char header[header_size]);
 __attribute__((warn_unused_result))
