@@ -2266,7 +2266,6 @@ static void handle_nss_usage(struct program_state *analysis, struct registers *s
 static void handle_libseccomp_syscall(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libseccomp syscall function call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
-	LOG("found libseccomp syscall from stack", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	// if first syscall argument is unbounded, assume it's __NR_seccomp
 	struct analysis_frame self = { .current = { .address = ins, .description = "libseccomp syscall", .next = &caller->current }, .current_state = *state, .entry = ins, .entry_state = state, .token = { 0 } };
 #pragma GCC unroll 64
@@ -2288,7 +2287,6 @@ static void handle_libcap_syscall(struct program_state *analysis, struct registe
 	LOG("encountered libcap syscall function call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	// if first syscall argument is unbounded, assume it's __NR_seccomp
 	struct registers new_state = *state;
-	LOG("found libcap syscall from stack", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	function_effects effects = 0;
 	if (register_is_partially_known_32bit(&new_state.registers[sysv_argument_abi_register_indexes[0]])) {
 		effects = analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
@@ -2307,6 +2305,15 @@ static void handle_libcap_syscall(struct program_state *analysis, struct registe
 		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
 	}
 	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
+}
+
+static void handle_ruby_syscall(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *syscall_function)
+{
+	LOG("encountered ruby syscall function call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
+	if (!register_is_partially_known_32bit(&state->registers[sysv_argument_abi_register_indexes[0]])) {
+		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", 0, false)->value = caller->current.address;
+		set_effects(&analysis->search, ins, token, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_RETURNS | EFFECT_EXITS);
+	}
 }
 
 static void handle_golang_unix_sched_affinity(struct program_state *analysis, __attribute__((unused)) struct registers *state, const uint8_t *ins, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
@@ -2550,6 +2557,9 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	}
 	if ((new_binary->special_binary_flags & BINARY_IS_LIBCAP) && new_binary->has_symbols) {
 		intercept_jump_slot(analysis, new_binary, "syscall", &handle_libcap_syscall);
+	}
+	if ((new_binary->special_binary_flags & BINARY_IS_RUBY) && new_binary->has_symbols) {
+		intercept_jump_slot(analysis, new_binary, "syscall", &handle_ruby_syscall);
 	}
 }
 
@@ -7815,11 +7825,14 @@ static int special_binary_flags_for_path(const char *path)
 			}
 		} else if (path[3] == 'r') {
 			if (path[4] == 'u' && path[5] == 'b' && path[6] == 'y' && (path[7] == '.' || path[7] == '-')) { // libruby. or libruby-
-				result |= BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				// result |= BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				result |= BINARY_IS_RUBY;
 			}
 		}
 	} else if (fs_strcmp(path, "ubuntu-core-launcher") == 0) {
 		result |= BINARY_IS_LIBCAP;
+	} else if (fs_strncmp(path, "ruby", sizeof("ruby")-1) == 0) {
+		result |= BINARY_IS_RUBY;
 	}
 	return result;
 }

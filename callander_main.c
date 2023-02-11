@@ -1081,8 +1081,8 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (!parse_version_components(version_string, &version_major, &version_minor, &version_patch)) {
 			DIE("failed parsing ruby version", version_string);
 		}
-		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
-		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall.lto_priv.0", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
+		// add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
+		// add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall.lto_priv.0", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
 		result = add_dlopen_paths_recursively(analysis, "/usr/lib64/ruby", ".so");
 		if (result < 0) {
 			return result;
