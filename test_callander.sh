@@ -9,22 +9,22 @@ case "$ID" in
 	alpine)
 		lib_path=/usr/lib
 		ruby_version="3.1.3"
-		python_version="310"
+		python_minor_version="10"
 		;;
 	ubuntu)
 		lib_path=/usr/lib/x86_64-linux-gnu
 		if [ "$VERSION_ID" = "22.04" ]; then
 			ruby_version="3.0.0"
-			python_version="310"
+			python_minor_version="10"
 		else
 			ruby_version="2.7.0"
-			python_version="38"
+			python_minor_version="8"
 		fi
 		;;
 	fedora)
 		lib_path=/lib64
 		ruby_version="3.1.0"
-		python_version="38"
+		python_minor_version="8"
 		;;
 esac
 
@@ -127,7 +127,7 @@ declare -A program_args=(
 	["perl5.36.0"]="--block-function Perl_pp_syscall"
 	["perl5.36-x86_64-linux-gnu"]="--block-function Perl_pp_syscall"
 	["perlbug"]="--block-function Perl_pp_syscall"
-	["perldoc"]="--block-function Perl_pp_syscall"
+	# ["perldoc"]="--block-function Perl_pp_syscall"
 	["perlivp"]="--block-function Perl_pp_syscall"
 	["perlthanks"]="--block-function Perl_pp_syscall"
 	["piconv"]="--block-function Perl_pp_syscall"
@@ -181,7 +181,7 @@ declare -A program_args=(
 	["erb"]="--block-debug-function rb_f_syscall"
 	["erb2.7"]="--block-debug-function rb_f_syscall"
 	["erb3.0"]="--block-debug-function rb_f_syscall"
-	["gem"]="--block-debug-function rb_f_syscall"
+	# ["gem"]="--block-debug-function rb_f_syscall"
 	["gem2.7"]="--block-debug-function rb_f_syscall"
 	["gem3.0"]="--block-debug-function rb_f_syscall"
 	["irb"]="--block-debug-function rb_f_syscall"
@@ -199,9 +199,9 @@ declare -A program_args=(
 	["ri"]="--block-debug-function rb_f_syscall"
 	["ri2.7"]="--block-debug-function rb_f_syscall"
 	["ri3.0"]="--block-debug-function rb_f_syscall"
-	["ruby"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
-	["ruby2.7"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
-	["ruby3.0"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
+	# ["ruby"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
+	# ["ruby2.7"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
+	# ["ruby3.0"]="--block-debug-function rb_f_syscall --dlopen $lib_path/ruby/$ruby_version/enc/encdb.so --dlopen $lib_path/ruby/$ruby_version/enc/trans/transdb.so --dlopen $lib_path/ruby/$ruby_version/monitor.so"
 	["typeprof3.0"]="--block-debug-function rb_f_syscall"
 	["update_rubygems"]="--block-debug-function rb_f_syscall"
 	["y2racc2.7"]="--block-debug-function rb_f_syscall"
@@ -214,11 +214,8 @@ declare -A program_args=(
 	["vim"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
 	["vimdiff"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
 	["vim.nox"]="--block-function Perl_pp_syscall --block-debug-function rb_f_syscall"
-	# python
-	["landscape-sysinfo"]="--dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-$python_version-x86_64-linux-gnu.so"
-	["netplan"]="--dlopen $lib_path/libnetplan.so.0.0 --dlopen $lib_path/libcrypto.so.1.1 --dlopen /usr/lib/python3.8/lib-dynload/_opcode.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_hashlib.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ssl.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_bz2.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_lzma.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/zope/interface/_zope_interface_coptimizations.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_json.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_uuid.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_queue.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3.8/lib-dynload/_ctypes.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_constant_time.abi3.so --dlopen /usr/lib/python3/dist-packages/_cffi_backend.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/cryptography/hazmat/bindings/_openssl.abi3.so --dlopen /usr/lib/python3.8/lib-dynload/termios.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/netifaces.cpython-$python_version-x86_64-linux-gnu.so --dlopen /usr/lib/python3/dist-packages/_yaml.cpython-$python_version-x86_64-linux-gnu.so"
 	# nm
-	["nm"]="--dlopen /usr/bin/../bin/../lib/bfd-plugins/liblto_plugin.so"
+	# ["nm"]="--dlopen /usr/bin/../bin/../lib/bfd-plugins/liblto_plugin.so"
 )
 
 test_program () {
