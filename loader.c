@@ -585,7 +585,7 @@ int parse_dynamic_symbols(const struct binary_info *info, void *mapped_address, 
 	out_symbols->init_functions = (const void **)apply_base_address_heuristic(mapped_address, init_functions);
 	out_symbols->init_function_count = init_function_size / sizeof(void *);
 	load_hash(hash != 0 ? (const ElfW(Word) *)apply_base_address_heuristic(mapped_address, hash) : 0, 0, out_symbols);
-	load_versions(versym != 0 ? (const ElfW(Half) *)apply_base_address_heuristic(mapped_address, versym) : NULL, verneed != 0 ? (const ElfW(Verneed) *)apply_base_address_heuristic(mapped_address, verneed) : NULL, verneed != 0 ? (const ElfW(Verdef) *)apply_base_address_heuristic(mapped_address, verdef) : NULL, out_symbols);
+	load_versions(versym != 0 ? (const ElfW(Half) *)apply_base_address_heuristic(mapped_address, versym) : NULL, verneed != 0 ? (const ElfW(Verneed) *)apply_base_address_heuristic(mapped_address, verneed) : NULL, verdef != 0 ? (const ElfW(Verdef) *)apply_base_address_heuristic(mapped_address, verdef) : NULL, out_symbols);
 	return 0;
 }
 
