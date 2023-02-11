@@ -1,7 +1,7 @@
 callander: permitted syscalls: read(any u32, any, any) @ libc.so.6+0x10dfd0(read+16)
 read(any u32, any, any) @ libc.so.6+0x10e00a(read+74)
 read(any u32, any, any) @ libc.so.6+0x113606(__read_nocancel+6)
-read(any u32, /usr/sbin/mkfs.minix+0x1b080(buffer.7189*), NULL-0x4000) @ libc.so.6+0x12e7ab(__read_chk+11)
+read(any u32, /usr/sbin/mkfs.minix+0x1b080, NULL-0x4000) @ libc.so.6+0x12e7ab(__read_chk+11)
 write(any u32, any, any) @ libc.so.6+0x10e075(write+21)
 write(any u32, any, any) @ libc.so.6+0x10e0ad(write+77)
 write(any u32, any, any) @ libc.so.6+0x113679(__write_nocancel+9)
