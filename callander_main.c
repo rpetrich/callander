@@ -1470,7 +1470,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 	pid_t tracee = 0;
 	int wakeup_child_fd = 0;
 	if (!skip_running) {
-		new_ld_preload = fs_mmap(NULL, PAGE_SIZE * 4, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		new_ld_preload = fs_mmap(NULL, PAGE_SIZE * 128, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		if (fs_is_map_failed(new_ld_preload)) {
 			DIE("failed to allocate a shared page for LD_PRELOAD", fs_strerror((intptr_t)new_ld_preload));
 		}
@@ -1695,7 +1695,7 @@ skip_analysis:
 		}
 
 		// cleanup the shared LD_PRELOAD mapping
-		fs_munmap(new_ld_preload, PAGE_SIZE * 4);
+		fs_munmap(new_ld_preload, PAGE_SIZE * 128);
 	}
 
 	// set the child to exit if we ever do
