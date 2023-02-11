@@ -1238,6 +1238,9 @@ int main(__attribute__((unused)) int argc, char *argv[])
 				return 1;
 			}
 			executable_index++;
+		} else if (fs_strcmp(arg, "--block-exec") == 0) {
+			analysis.syscalls.config[__NR_execve] |= SYSCALL_CONFIG_BLOCK;
+			analysis.syscalls.config[__NR_execveat] |= SYSCALL_CONFIG_BLOCK;
 		} else if (fs_strcmp(arg, "--block-function") == 0) {
 			const char *function_name = argv[executable_index+1];
 			if (function_name == NULL) {
@@ -1345,6 +1348,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 #define USAGE "usage: callander [command]\n"\
 		"Runs programs in an automatically generated seccomp sandbox\n"\
 		"\n"\
+		"  --block-exec                 blocks calls to execute new programs\n"\
 		"  --permit-syscall NAME        permits a specific system call by NAME (may be specified multiple times)\n"\
 		"  --block-syscall NAME         blocks a specific system call by NAME (may be specified multiple times)\n"\
 		"  --block-function NAME        blocks a specific function by symbol NAME (may be specified multiple times)\n"\
@@ -1642,11 +1646,11 @@ skip_analysis:
 				kill_or_die(tracee);
 			}
 			if (discovered_execve && discovered_execveat) {
-				ERROR("program calls execve and execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-syscall execve --block-syscall execveat");
+				ERROR("program calls execve and execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
 			} else if (discovered_execve) {
-				ERROR("program calls execve. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-syscall execve");
+				ERROR("program calls execve. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
 			} else {
-				ERROR("program calls execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-syscall execveat");
+				ERROR("program calls execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
 			}
 			ERROR_FLUSH();
 			return 1;
