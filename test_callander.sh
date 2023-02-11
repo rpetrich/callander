@@ -230,14 +230,14 @@ test_program () {
 			# skipping since duplicate binary in /sbin
 			return
 		else
-			"$SCRIPT_DIR/callander" --skip-running --show-permitted --block-syscall execve --block-syscall execveat --ignore-dlopen $flags-- "$prog" 2> "$FIXTURE_PATH/$filename"_new.txt
+			"$SCRIPT_DIR/callander" --skip-running --show-permitted --block-exec --ignore-dlopen $flags-- "$prog" 2> "$FIXTURE_PATH/$filename"_new.txt
 			if [ "$?" != 0 ]; then
-				echo "\"callander --skip-running --show-permitted --block-syscall execve --block-syscall execveat --ignore-dlopen $flags-- $prog\" failed"
+				echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen $flags-- $prog\" failed"
 			fi
 			if [ -e "$FIXTURE_PATH/$filename.txt" ]; then
 				diff=$(unbuffer git --no-pager diff --no-index -- "$FIXTURE_PATH/$filename".txt "$FIXTURE_PATH/$filename"_new.txt)
 				if [ "$?" != 0 ]; then
-					echo "\"callander --skip-running --show-permitted --block-syscall execve --block-syscall execveat --ignore-dlopen $flags-- $prog\" changed"
+					echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen $flags-- $prog\" changed"
 					echo "$diff"
 				fi
 			fi
@@ -254,14 +254,14 @@ run_and_capture () {
 run_and_diff () {
 	local prog_name=$(basename "$1")
 	local flags="${program_args[$prog_name]} "
-	run_and_capture callander --block-syscall execve --block-syscall execveat --ignore-dlopen --stay-attached $flags-- "$@" > "/tmp/$prog_name-with-callander.txt"
+	run_and_capture callander --block-exec --ignore-dlopen --stay-attached $flags-- "$@" > "/tmp/$prog_name-with-callander.txt"
 	run_and_capture "$@" > "/tmp/$prog_name.txt"
 	diff=$(unbuffer git --no-pager diff --no-index -- "/tmp/$prog_name.txt" "/tmp/$prog_name-with-callander.txt")
 	if [ "$?" != 0 ]; then
-		echo "\"callander --block-syscall execve --block-syscall execveat --ignore-dlopen --stay-attached $flags-- $@\" has differing output"
+		echo "\"callander --block-exec --ignore-dlopen --stay-attached $flags-- $@\" has differing output"
 		echo "$diff"
 	else
-		echo "\"callander --block-syscall execve --block-syscall execveat --ignore-dlopen --stay-attached $flags-- $@\" has matching output"
+		echo "\"callander --block-exec --ignore-dlopen --stay-attached $flags-- $@\" has matching output"
 	fi
 	rm -f "/tmp/$prog_name-with-callander.txt" "/tmp/$prog_name.txt"
 }
