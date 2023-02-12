@@ -4144,6 +4144,56 @@ static void print_debug_symbol_requirement(const struct loaded_binary *binary)
 	ERROR("on debian-based systems find-dbgsym-packages can help you discover debug symbol packages");
 }
 
+static int compare_uintptr_t(const void *l, const void *r, __attribute__((unused)) void *unused)
+{
+	uintptr_t lval = *(const uintptr_t *)l;
+	uintptr_t rval = *(const uintptr_t *)r;
+	if (lval < rval) {
+		return -1;
+	}
+	if (lval == rval) {
+		return 0;
+	}
+	return 1;
+}
+
+static inline bool bsearch_address_callback(int index, void *ordered_addresses, void *needle)
+{
+	const uintptr_t *ordered = (const uintptr_t *)ordered_addresses;
+	return ordered[index] > (uintptr_t)needle;
+}
+
+static inline uintptr_t search_find_next_loaded_address(struct searched_instructions *search, uintptr_t address)
+{
+	int count = search->loaded_address_count;
+	uintptr_t *addresses = search->loaded_addresses;
+	if (!search->loaded_addresses_are_sorted) {
+		search->loaded_addresses_are_sorted = true;
+		qsort_r(addresses, count, sizeof(uint64_t), compare_uintptr_t, NULL);
+	}
+	int i = bsearch_bool(count, addresses, (void *)address, bsearch_address_callback);
+	return i < count ? addresses[i] : ~(uintptr_t)0;
+}
+
+static inline void add_loaded_address(struct searched_instructions *search, uintptr_t address)
+{
+	size_t old_count = search->loaded_address_count;
+	uintptr_t *addresses = search->loaded_addresses;
+	uintptr_t last_address;
+	if (LIKELY(old_count != 0)) {
+		last_address = addresses[old_count - 1];
+		if (UNLIKELY(last_address == address)) {
+			return;
+		}
+	} else {
+		last_address = 0;
+	}
+	size_t new_count = search->loaded_address_count = old_count + 1;
+	addresses = search->loaded_addresses = realloc(addresses, sizeof(uintptr_t) * new_count);
+	addresses[old_count] = address;
+	search->loaded_addresses_are_sorted = last_address <= address;
+}
+
 enum {
 	MAX_LOOKUP_TABLE_SIZE = 0x408,
 };
@@ -6127,6 +6177,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							const ElfW(Shdr) *section;
 							int prot = protection_for_address(&analysis->loader, (const void *)base_addr, &binary, &section);
 							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
+								// enforce max range from other lea instructions
+								uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+								if ((next_base_address - base_addr) / sizeof(int32_t) <= max) {
+									max = ((next_base_address - base_addr) / sizeof(int32_t)) - 1;
+								}
 								uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - base_addr) / 4;
 								if (max >= max_in_section) {
 									max = max_in_section - 1;
@@ -6177,6 +6232,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										set_register(&copy.registers[reg], relative);
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.current.address)));
+										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
+										uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+										if ((next_base_address - base_addr) / sizeof(int32_t) <= max) {
+											max = ((next_base_address - base_addr) / sizeof(int32_t)) - 1;
+										}
 									}
 									LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
 									goto update_and_return;
@@ -6744,6 +6804,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						} else if (prot & PROT_READ) {
+							add_loaded_address(&analysis->search, (uintptr_t)self.current_state.registers[reg].value);
 							LOG("rip-relative lea is to readable address, assuming it is data");
 							const ElfW(Sym) *symbol = find_skipped_symbol_for_address(&analysis->loader, binary, address);
 							if (symbol) {
