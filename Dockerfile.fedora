@@ -1,5 +1,5 @@
 FROM fedora:37
 RUN dnf -y install gdb binutils less moreutils moreutils-parallel expect git gcc clang @cloud-server-environment ruby ruby-libs
 RUN dnf -y update
-RUN dnf -y debuginfo-install glibc-common glibc glibc-minimal-langpack libgcrypt readline krb5-libs gnutls ruby-libs ruby
+RUN dnf -y debuginfo-install glibc-common glibc glibc-minimal-langpack libgcrypt readline krb5-libs gnutls
 COPY callander callander.debug /bin/
