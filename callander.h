@@ -139,7 +139,11 @@ struct loader_context {
 	bool loaded_gconv_libraries:1;
 	bool ignore_dlopen:1;
 	bool searching_gconv_dlopen:1;
+	bool searching_setxid:1;
+	bool searching_setxid_sighandler:1;
 	const uint8_t *gconv_dlopen;
+	const uint8_t *setxid_syscall;
+	const uint8_t *setxid_sighandler_syscall;
 	struct loaded_binary *last_used;
 	int binary_count;
 };

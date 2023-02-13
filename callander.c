@@ -2525,9 +2525,25 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	}
 	// setxid signal handler callbacks
 	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
-		update_known_function(analysis, new_binary, "__GI___nptl_setxid_sighandler", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
-		update_known_function(analysis, new_binary, "sighandler_setxid", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
-		update_known_function(analysis, new_binary, "__nptl_setxid", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		analysis->loader.searching_setxid_sighandler = true;
+		struct registers registers = empty_registers;
+		struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "sighandler_setxid", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		const uint8_t *nptl_setxid_sighandler = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__GI___nptl_setxid_sighandler", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		if (nptl_setxid_sighandler != NULL) {
+			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, nptl_setxid_sighandler, &new_caller, true);
+		}
+		const uint8_t *sighandler_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "sighandler_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		if (sighandler_setxid != NULL) {
+			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, sighandler_setxid, &new_caller, true);
+		}
+		analysis->loader.searching_setxid_sighandler = false;
+		const uint8_t *nptl_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nptl_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		if (nptl_setxid) {
+			new_caller.current.description = "__nptl_setxid";
+			analysis->loader.searching_setxid = true;
+			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, nptl_setxid, &new_caller, true);
+			analysis->loader.searching_setxid = false;
+		}
 		// assume new libraries won't be loaded after startup
 		update_known_function(analysis, new_binary, "__make_stacks_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 	}
@@ -2855,6 +2871,19 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 	}
 }
 
+static inline void add_syscall(struct recorded_syscalls *syscalls, struct recorded_syscall syscall)
+{
+	int index = syscalls->count++;
+	if (syscalls->list == NULL) {
+		syscalls->capacity = 8;
+		syscalls->list = malloc(syscalls->capacity * sizeof(struct recorded_syscall));
+	} else if (index >= syscalls->capacity) {
+		syscalls->capacity = syscalls->capacity << 1;
+		syscalls->list = realloc(syscalls->list, syscalls->capacity * sizeof(struct recorded_syscall));
+	}
+	syscalls->list[index] = syscall;
+}
+
 void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects)
 {
 	struct recorded_syscalls *syscalls = &analysis->syscalls;
@@ -2880,30 +2909,21 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == __NR_exit || nr == __NR_exit_group);
 	if (should_record) {
 		LOG("recorded syscall");
-		int index = syscalls->count++;
-		if (syscalls->list == NULL) {
-			syscalls->capacity = 8;
-			syscalls->list = malloc(syscalls->capacity * sizeof(struct recorded_syscall));
-		} else if (index >= ((argc & SYSCALL_IS_RESTARTABLE) ? syscalls->capacity - 1 : syscalls->capacity)) {
-			syscalls->capacity = syscalls->capacity << 1;
-			syscalls->list = realloc(syscalls->list, syscalls->capacity * sizeof(struct recorded_syscall));
-		}
-		syscalls->list[index] = (struct recorded_syscall){
+		add_syscall(syscalls, (struct recorded_syscall){
 			.nr = nr,
 			.ins = self.current.address,
 			.entry = self.entry,
 			.registers = self.current_state,
-		};
+		});
 		if (argc & SYSCALL_IS_RESTARTABLE) {
-			index = syscalls->count++;
 			struct registers restart = self.current_state;
 			set_register(&restart.registers[REGISTER_RAX], __NR_restart_syscall);
-			syscalls->list[index] = (struct recorded_syscall){
+			add_syscall(syscalls, (struct recorded_syscall){
 				.nr = __NR_restart_syscall,
 				.ins = self.current.address,
 				.entry = self.entry,
 				.registers = restart,
-			};
+			});
 		}
 	} else {
 		if ((config & SYSCALL_CONFIG_BLOCK) == 0) {
@@ -5050,6 +5070,18 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 						} else if (caller && caller->current.description != NULL && fs_strcmp(caller->current.description, ".data.rel.ro") == 0 && (analysis->loader.main->special_binary_flags & BINARY_IS_GOLANG)) {
 							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0, SHOULD_LOG);
+						} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
+							self.current.description = "syscall";
+							analysis->loader.setxid_syscall = self.current.address;
+							LOG("found setxid dynamic syscall", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
+						} else if (analysis->loader.searching_setxid_sighandler && analysis->loader.setxid_sighandler_syscall == NULL) {
+							self.current.description = "syscall";
+							analysis->loader.setxid_sighandler_syscall = self.current.address;
+							LOG("found setxid_sighandler dynamic syscall", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
+						} else if (self.current.address == analysis->loader.setxid_sighandler_syscall) {
+							LOG("unknown setxid_sighandler syscall, assumed covered by set*id handlers", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
+						} else if (self.current.address == analysis->loader.setxid_syscall) {
+							LOG("unknown setxid syscall, assumed covered by set*id handlers", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
 						} else {
 							self.current.description = NULL;
 							ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_RAX])));
@@ -8296,13 +8328,17 @@ static int load_all_needed_and_relocate(struct program_state *analysis)
 
 static const ElfW(Sym) *find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address)
 {
-	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD)) == 0) {
+	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD | BINARY_IS_LIBNSS_SYSTEMD)) == 0) {
 		return NULL;
 	}
 	const struct symbol_info *symbols = NULL;
 	const ElfW(Sym) *symbol = NULL;
 	if (find_any_symbol_by_address(loader, binary, address, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, &symbols, &symbol) != NULL) {
 		const char *name = symbol_name(symbols, symbol);
+		if (fs_strcmp(name, "pthread_functions") == 0) {
+			LOG("skipping pthread_functions, since it's assumed pthread_functions will be called properly");
+			return symbol;
+		}
 		if (fs_strcmp(name, "_rtld_global_ro") == 0) {
 			LOG("skipping _rtld_global_ro, since it's assumed dlopen and dlclose won't be called");
 			return symbol;
@@ -8890,6 +8926,37 @@ static bool merge_recorded_syscall(const struct recorded_syscall *source, struct
 void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader)
 {
 	int count = syscalls->count;
+	if (loader->setxid_syscall != NULL || loader->setxid_sighandler_syscall != NULL) {
+		// make __nptl_setxid syscall thread broaddcasting work
+		for (int i = 0; i < count; i++) {
+			struct recorded_syscall *syscall = &syscalls->list[i];
+			switch (syscall->nr) {
+				case __NR_setuid:
+				case __NR_setgid:
+				case __NR_setreuid:
+				case __NR_setregid:
+				case __NR_setgroups:
+				case __NR_setresuid:
+				case __NR_setresgid:
+				case __NR_setfsuid:
+				case __NR_setfsgid: {
+					struct recorded_syscall copy = *syscall;
+					if (loader->setxid_syscall != NULL) {
+						copy.ins = loader->setxid_syscall;
+						add_syscall(syscalls, copy);
+					}
+					if (loader->setxid_sighandler_syscall != NULL) {
+						copy.ins = loader->setxid_sighandler_syscall;
+						add_syscall(syscalls, copy);
+					}
+					break;
+				}
+				default:
+					break;
+			}
+		}
+		count = syscalls->count;
+	}
 	qsort_r(syscalls->list, count, sizeof(*syscalls->list), compare_found_syscalls, loader);
 	for (int i = 0; i < count - 1; ) {
 		struct recorded_syscall *earlier = &syscalls->list[i];
