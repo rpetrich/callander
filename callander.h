@@ -365,6 +365,9 @@ struct searched_instructions {
 	struct lookup_base_addresses lookup_base_addresses;
 	struct searched_instruction_callback *callbacks;
 	uint32_t callback_count;
+	uintptr_t *loaded_addresses;
+	size_t loaded_address_count;
+	bool loaded_addresses_are_sorted:1;
 };
 
 void init_searched_instructions(struct searched_instructions *search);
