@@ -2525,9 +2525,9 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	}
 	// setxid signal handler callbacks
 	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
-		update_known_function(analysis, new_binary, "__GI___nptl_setxid_sighandler", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "__GI___nptl_setxid_sighandler", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		update_known_function(analysis, new_binary, "sighandler_setxid", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
-		update_known_function(analysis, new_binary, "__nptl_setxid", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "__nptl_setxid", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		// assume new libraries won't be loaded after startup
 		update_known_function(analysis, new_binary, "__make_stacks_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 	}
@@ -7856,22 +7856,22 @@ static int special_binary_flags_for_path(const char *path)
 			}
 		} else if (path[3] == 'g') {
 			if (path[4] == 'n' && path[5] == 'u' && path[6] == 't' && path[7] == 'l' && path[8] == 's' && path[9] == '.') { // libgnutls.
-				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == '.') { // libgcrypt.
-				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'm' && path[5] == 'p' && path[6] == '.') { // libgmp.
 				result |= BINARY_IGNORES_SIGNEDNESS;
 			}
 		} else if (path[3] == 'h') {
 			if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == 'o' && path[10] == '.') { // libhcrypto.
-				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			}
 		} else if (path[3] == 'p') {
 			if (path[4] == 't' && path[5] == 'h' && path[6] == 'r' && path[7] == 'e' && path[8] == 'a' && path[9] == 'd' && path[10] == '.') { // libpthread.
 				result |= BINARY_IS_PTHREAD;
 			}
 		} else if (path[3] == 'r' && path[4] == 'e' && path[5] == 'a' && path[6] == 'd') {
-			result |= BINARY_IS_LIBREADLINE;
+			// result |= BINARY_IS_LIBREADLINE;
 		} else if (path[3] == 's') {
 			if (path[4] == 'e' && path[5] == 'c' && path[6] == 'c' && path[7] == 'o' && path[8] == 'm' && path[9] == 'p' && path[10] == '.') { // libseccomp.
 				result |= BINARY_IS_SECCOMP;
@@ -7882,7 +7882,7 @@ static int special_binary_flags_for_path(const char *path)
 			}
 		} else if (path[3] == 'k') {
 			if (path[4] == 'r' && path[5] == 'b' && path[6] == '5' && path[7] == '.') { // libkrb5.
-				result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+				// result |= BINARY_ASSUME_FUNCTION_CALLfS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			}
 		} else if (path[3] == 'r') {
 			if (path[4] == 'u' && path[5] == 'b' && path[6] == 'y' && (path[7] == '.' || path[7] == '-')) { // libruby. or libruby-
