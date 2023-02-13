@@ -1452,7 +1452,7 @@ static inline function_effects *get_or_populate_effects(struct program_state *an
 	if (UNLIKELY(table_entry->data->callback_index != 0)) {
 		LOG("invoking callback for address", temp_str(copy_address_description(&analysis->loader, addr)));
 		token->entry_offset = entry_offset;
-		search->callbacks[table_entry->data->callback_index].callback(analysis, registers, addr, caller, token, search->callbacks[table_entry->data->callback_index].data);
+		search->callbacks[table_entry->data->callback_index].callback(analysis, addr, registers, required_effects, caller, token, search->callbacks[table_entry->data->callback_index].data);
 		if (UNLIKELY(token->generation != search->generation)) {
 			table_entry = find_searched_instruction_table_entry(search, addr, token);
 		}
@@ -1919,7 +1919,7 @@ static inline void skip_lea_on_known_symbol(struct program_state *analysis, stru
 	}
 }
 
-static void handle_forkAndExecInChild1(struct program_state *analysis, __attribute__((unused)) struct registers *state, const uint8_t *ins, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_forkAndExecInChild1(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered forkAndExecInChild1 call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	if ((analysis->syscalls.config[SYS_execve] & SYSCALL_CONFIG_BLOCK) == 0) {
@@ -1929,6 +1929,33 @@ static void handle_forkAndExecInChild1(struct program_state *analysis, __attribu
 	}
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS);
 	add_blocked_symbol(&analysis->known_symbols, "syscall.forkAndExecInChild1", 0, true)->value = ins;
+}
+
+static void handle_musl_setxid(struct program_state *analysis, __attribute__((unused)) const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	LOG("encountered musl __setxid call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
+	if (analysis->loader.setxid_sighandler_syscall != NULL) {
+		int arg0index = sysv_argument_abi_register_indexes[0];
+		if (!register_is_exactly_known(&state->registers[arg0index])) {
+			DIE("musl __setxid with unknown nr argument", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
+		}
+		struct analysis_frame self = {
+			.current = {
+				.address = analysis->loader.setxid_sighandler_syscall,
+				.description = "syscall",
+				.next = &caller->current,
+			},
+			.entry = caller->current.address,
+			.entry_state = &caller->current_state,
+			.token = { 0 },
+			.current_state = empty_registers,
+		};
+		self.current_state.registers[REGISTER_RAX] = caller->current_state.registers[arg0index];
+		for (int i = 0; i < 3; i++) {
+			self.current_state.registers[syscall_argument_abi_register_indexes[i]] = caller->current_state.registers[sysv_argument_abi_register_indexes[i+1]];
+		}
+		record_syscall(analysis, caller->current_state.registers[arg0index].value, self, effects);
+	}
 }
 
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
@@ -2003,7 +2030,7 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 	return binary;
 }
 
-static void handle_gconv_find_shlib(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data);
+static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data);
 
 static const uint8_t *find_function_entry(struct loader_context *loader, const uint8_t *ins)
 {
@@ -2019,7 +2046,7 @@ static const uint8_t *find_function_entry(struct loader_context *loader, const u
 	return NULL;
 }
 
-static void handle_dlopen(struct program_state *analysis, struct registers *state, __attribute__((unused)) const uint8_t *ins, struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered dlopen call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	struct register_state *first_arg = &state->registers[sysv_argument_abi_register_indexes[0]];
@@ -2078,7 +2105,7 @@ static void handle_dlopen(struct program_state *analysis, struct registers *stat
 	register_dlopen_file(analysis, needed_path, caller, false);
 }
 
-static void handle_gconv_find_shlib(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered gconv_find_shlib call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	struct analysis_frame self = {
@@ -2246,7 +2273,7 @@ static void load_nss_libraries(struct program_state *analysis, struct analysis_f
 	free(buf);
 }
 
-static void handle_nss_usage(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_nss_usage(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered nss call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	load_nss_libraries(analysis, caller);
@@ -2263,7 +2290,7 @@ static void handle_nss_usage(struct program_state *analysis, struct registers *s
 	*token = self.token;
 }
 
-static void handle_libseccomp_syscall(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
+static void handle_libseccomp_syscall(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libseccomp syscall function call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	// if first syscall argument is unbounded, assume it's __NR_seccomp
@@ -2278,36 +2305,36 @@ static void handle_libseccomp_syscall(struct program_state *analysis, struct reg
 		clear_match(&analysis->loader, &self.current_state, first_arg, ins);
 		self.current_state.sources[first_arg] = 0;
 	}
-	function_effects effects = analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &self.current_state, syscall_function, &self, true);
+	function_effects effects = analyze_instructions(analysis, required_effects, &self.current_state, syscall_function, &self, true);
 	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
 }
 
-static void handle_libcap_syscall(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
+static void handle_libcap_syscall(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libcap syscall function call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	// if first syscall argument is unbounded, assume it's __NR_seccomp
 	struct registers new_state = *state;
 	function_effects effects = 0;
 	if (register_is_partially_known_32bit(&new_state.registers[sysv_argument_abi_register_indexes[0]])) {
-		effects = analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects = analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 	} else {
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_capset);
-		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_prctl);
-		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setuid);
-		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setgid);
-		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setgroups);
-		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_chroot);
-		effects |= analyze_instructions(analysis, EFFECT_AFTER_STARTUP, &new_state, syscall_function, caller, true);
+		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
 	}
 	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
 }
 
-static void handle_ruby_syscall(struct program_state *analysis, struct registers *state, const uint8_t *ins, struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *syscall_function)
+static void handle_ruby_syscall(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *syscall_function)
 {
 	LOG("encountered ruby syscall function call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	if (!register_is_partially_known_32bit(&state->registers[sysv_argument_abi_register_indexes[0]])) {
@@ -2316,7 +2343,7 @@ static void handle_ruby_syscall(struct program_state *analysis, struct registers
 	}
 }
 
-static void handle_golang_unix_sched_affinity(struct program_state *analysis, __attribute__((unused)) struct registers *state, const uint8_t *ins, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_golang_unix_sched_affinity(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered unix.schedAffinity call", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
 	// skip affinity
@@ -2324,7 +2351,7 @@ static void handle_golang_unix_sched_affinity(struct program_state *analysis, __
 	LOG("skipping unix.schedAffinity");
 }
 
-static void handle_openssl_dso_load(struct program_state *analysis, __attribute__((unused)) struct registers *state, const uint8_t *ins, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_openssl_dso_load(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
 	if (fs_access("/usr/lib/x86_64-linux-gnu/ossl-modules", R_OK) == 0) {
@@ -2377,7 +2404,7 @@ static void intercept_jump_slot(struct program_state *analysis, struct loaded_bi
 	}
 }
 
-static void blocked_function_called(__attribute__((unused)) struct program_state *analysis, __attribute__((unused)) struct registers *state, __attribute__((unused)) const uint8_t *ins, __attribute__((unused)) struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+static void blocked_function_called(__attribute__((unused)) struct program_state *analysis, __attribute__((unused)) const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("blocked function called", (const char *)data);
 	LOG("stack", temp_str(copy_address_list_description(&analysis->loader, &caller->current)));
@@ -2520,7 +2547,18 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_INTERPRETER) {
 		// temporary workaround for musl
-		update_known_function(analysis, new_binary, "do_setxid", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		const uint8_t *do_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "do_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		if (do_setxid != NULL) {
+			struct registers registers = empty_registers;
+			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "do_setxid", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			analysis->loader.searching_setxid_sighandler = true;
+			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, do_setxid, &new_caller, true);
+			analysis->loader.searching_setxid_sighandler = false;
+		}
+		const uint8_t *setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		if (setxid != NULL) {
+			find_and_add_callback(analysis, setxid, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_musl_setxid, NULL);
+		}
 		update_known_function(analysis, new_binary, "cancel_handler", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 	}
 	// setxid signal handler callbacks

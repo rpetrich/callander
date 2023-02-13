@@ -351,9 +351,22 @@ struct analysis_frame {
 	struct effect_token token;
 };
 
+enum effects {
+	EFFECT_NONE          = 0,
+	EFFECT_RETURNS       = 1 << 0, // set if the function could potentially return to its caller
+	EFFECT_EXITS         = 1 << 1, // set if the function could potentially exit the program/thread
+	EFFECT_STICKY_EXITS  = 1 << 2, // set if the function always exits by predefined policy
+	EFFECT_PROCESSED     = 1 << 3, // set if the address has been processed
+	EFFECT_PROCESSING    = 1 << 4, // set if the function is currently in the middle of being processed
+	EFFECT_AFTER_STARTUP = 1 << 5, // set if the function could run after startup
+	EFFECT_ENTRY_POINT   = 1 << 6, // set if the function is run as the program entrypoint
+	VALID_EFFECTS        = (EFFECT_ENTRY_POINT << 1) - 1,
+};
+typedef uint8_t function_effects;
+
 struct program_state;
 
-typedef void (*instruction_reached_callback)(struct program_state *, struct registers *registers, const uint8_t *, struct analysis_frame *, struct effect_token *, void *callback_data);
+typedef void (*instruction_reached_callback)(struct program_state *, const uint8_t *, struct registers *, function_effects, struct analysis_frame *, struct effect_token *, void *callback_data);
 
 struct searched_instruction_callback {
 	instruction_reached_callback callback;
@@ -460,19 +473,6 @@ struct unreachable_instructions {
 	size_t reachable_region_buffer_size;
 #endif
 };
-
-enum effects {
-	EFFECT_NONE          = 0,
-	EFFECT_RETURNS       = 1 << 0, // set if the function could potentially return to its caller
-	EFFECT_EXITS         = 1 << 1, // set if the function could potentially exit the program/thread
-	EFFECT_STICKY_EXITS  = 1 << 2, // set if the function always exits by predefined policy
-	EFFECT_PROCESSED     = 1 << 3, // set if the address has been processed
-	EFFECT_PROCESSING    = 1 << 4, // set if the function is currently in the middle of being processed
-	EFFECT_AFTER_STARTUP = 1 << 5, // set if the function could run after startup
-	EFFECT_ENTRY_POINT   = 1 << 6, // set if the function is run as the program entrypoint
-	VALID_EFFECTS        = (EFFECT_ENTRY_POINT << 1) - 1,
-};
-typedef uint8_t function_effects;
 
 struct program_state {
 	struct loader_context loader;
