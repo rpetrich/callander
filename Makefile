@@ -241,3 +241,6 @@ endif
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
+
+systranslate: systranslate.c defaultlibs.c syscall_defs_x86_64.h Makefile
+	$(CC) $(LDFLAGS) -g -o "$@" "$<" defaultlibs.c
