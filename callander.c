@@ -6886,8 +6886,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									uintptr_t data = symbol_data[i];
 									if (protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
 										LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
-										LOG("value of address is, assuming callable", data);
-										struct analysis_frame new_caller = { .current = { .address = &symbol_data[i], .description = "lea to skipped symbol", .next = &caller->current }, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
+										LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (const uint8_t *)data)));
+										self.current.description = "lea";
+										struct analysis_frame new_caller = { .current = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self.current }, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
 										analyze_instructions(analysis, effects, &empty_registers, (const uint8_t *)data, &new_caller, true);
 									}
 								}
