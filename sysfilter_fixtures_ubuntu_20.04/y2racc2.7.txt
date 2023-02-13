@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/y2racc2.7"
+Failed to parse input.

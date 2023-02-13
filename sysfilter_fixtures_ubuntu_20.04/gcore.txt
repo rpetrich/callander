@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/gcore"
+Failed to parse input.

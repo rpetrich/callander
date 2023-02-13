@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/zmore"
+Failed to parse input.

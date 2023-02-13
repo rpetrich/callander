@@ -39,7 +39,7 @@ run_and_capture () {
 
 run_and_diff () {
 	local prog_name=$(basename "$1")
-	run_and_capture callander --block-exec --ignore-dlopen --stay-attached -- "$@" > "/tmp/$prog_name-with-callander.txt"
+	run_and_capture "$SCRIPT_DIR/callander" --block-exec --ignore-dlopen --stay-attached -- "$@" > "/tmp/$prog_name-with-callander.txt"
 	run_and_capture "$@" > "/tmp/$prog_name.txt"
 	diff=$(unbuffer git --no-pager diff --no-index -- "/tmp/$prog_name.txt" "/tmp/$prog_name-with-callander.txt")
 	if [ "$?" != 0 ]; then

@@ -1,0 +1,2 @@
+Failed to parse input file "/sbin/update-mime"
+Failed to parse input.
