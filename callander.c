@@ -2507,9 +2507,11 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		if (analysis->ld_profile != NULL) {
 			const uint8_t *dl_start_profile = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_dl_start_profile", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
 			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
-			struct registers registers = empty_registers;
-			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "_dl_start_profile", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &registers, dl_start_profile, &new_caller, true);
+			if (dl_start_profile != NULL) {
+				struct registers registers = empty_registers;
+				struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "_dl_start_profile", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+				analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &registers, dl_start_profile, &new_caller, true);
+			}
 		}
 		const uint8_t *error = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "error", NULL, NORMAL_SYMBOL, NULL);
 		if (error) {
