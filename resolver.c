@@ -319,7 +319,8 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 	struct {
 		struct dns_header header;
 		char data[65536-sizeof(struct dns_header)];
-	} request = { 0 };
+	} request;
+	request.header = (struct dns_header){ 0 };
 	request.header.id = 2048;
 	request.header.rd = 1;
 	request.header.q_count = hton_16(1);
