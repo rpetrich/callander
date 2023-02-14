@@ -135,7 +135,7 @@ struct section_info {
 // load_section_info loads the section info
 __attribute__((warn_unused_result))
 extern int load_section_info(int fd, const struct binary_info *info, struct section_info *out_section_info);
-// free_section_info cleans up the sectio info
+// free_section_info cleans up the section info
 extern void free_section_info(const struct section_info *section_info);
 
 // find_section looks up a section by name

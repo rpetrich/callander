@@ -458,13 +458,24 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	fs_close(fd);
 
 	// analyze the program
-	record_syscall(analysis, SYS_clock_gettime, (struct analysis_frame){
-		.current = { .address = NULL, .description = "vDSO", .next = NULL },
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP);
+	if (analysis->loader.vdso != 0) {
+		struct loaded_binary *vdso;
+		result = load_binary_into_analysis(analysis, "[vdso]", -1, (const void *)analysis->loader.vdso, &vdso);
+		if (result != 0) {
+			DIE("failed to load vDSO", fs_strerror(result));
+		}
+		result = finish_loading_binary(analysis, vdso, EFFECT_AFTER_STARTUP, false);
+		if (result != 0) {
+			DIE("failed to finish loading vDSO", fs_strerror(result));
+		}
+		if (vdso->has_symbols) {
+			LOG("analyzing symbols for", vdso->path);
+			struct analysis_frame vdso_caller = { .current = { .address = vdso->info.base, .description = "vdso", .next = NULL }, .current_state = empty_registers, .entry = vdso->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			analyze_function_symbols(analysis, vdso, &vdso->symbols, &vdso_caller);
+		} else {
+			DIE("expected vDSO to have symbols");
+		}
+	}
 
 	LOG("base", (uintptr_t)loaded->info.base);
 	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
@@ -537,7 +548,7 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader)
 			break;
 		}
 		result = 0;
-		if ((mapping.device != 0 || mapping.inode != 0) && (mapping.prot & PROT_EXEC)) {
+		if ((mapping.device != 0 || mapping.inode != 0 || fs_strcmp(mapping.path, "[vdso]") == 0) && (mapping.prot & PROT_EXEC)) {
 			for (struct loaded_binary *binary = loader->binaries; binary != NULL; binary = binary->next) {
 				if (binary->inode == mapping.inode && binary->device == mapping.device) {
 					if (binary->child_base == 0) {
@@ -1185,6 +1196,9 @@ int main(__attribute__((unused)) int argc, char *argv[])
 				break;
 			case AT_EGID:
 				analysis.loader.gid = aux->a_un.a_val;
+				break;
+			case AT_SYSINFO_EHDR:
+				analysis.loader.vdso = aux->a_un.a_val;
 				break;
 		}
 		aux++;

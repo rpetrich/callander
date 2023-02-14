@@ -135,6 +135,7 @@ struct loader_context {
 	struct loader_stub *stubs;
 	uid_t uid;
 	gid_t gid;
+	uintptr_t vdso;
 	bool loaded_nss_libraries:1;
 	bool loaded_gconv_libraries:1;
 	bool ignore_dlopen:1;
@@ -490,6 +491,7 @@ struct program_state {
 
 int load_binary_into_analysis(struct program_state *analysis, const char *path, int fd, const void *existing_base_address, struct loaded_binary **out_binary);
 int finish_loading_binary(struct program_state *analysis, struct loaded_binary *new_binary, function_effects effects, bool skip_analysis);
+void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
 const struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, struct analysis_frame *caller, bool skip_analysis, bool recursive);
 void finish_analysis(struct program_state *analysis);
 
