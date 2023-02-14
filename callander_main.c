@@ -704,6 +704,9 @@ static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_st
 		remote_apply_seccomp_filter(tracee, regs, remote_address, prog);
 		return;
 	}
+	if (syscall_range_low == syscall_range_high) {
+		DIE("syscall has too many call sites to generate a seccomp program", name_for_syscall(syscall_range_low));
+	}
 	// split, so half the syscalls are in one program and half in another
 	uint32_t mid = syscall_range_low + ((syscall_range_high == ~(uint32_t)0 ? syscalls->list[syscalls->count-1].nr : syscall_range_high) - syscall_range_low) / 2;
 	struct sock_fprog progs[2];
