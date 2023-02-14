@@ -9197,12 +9197,13 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct
 	size_t descriptions_cap = 0;
 	size_t pos = 0;
 	// validate current architecture
-	push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_STMT(BPF_LD+BPF_W+BPF_ABS, offsetof(struct seccomp_data, arch)));
-	push_description(&descriptions, &descriptions_cap, pos, strdup("load arch"));
-	push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, CURRENT_AUDIT_ARCH, 1, 0));
-	push_description(&descriptions, &descriptions_cap, pos, strdup("compare CURRENT_AUDIT_ARCH"));
-	push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_TRAP));
-	push_description(&descriptions, &descriptions_cap, pos, strdup("return kill process"));
+	// can't exec, so don't bother -- architecture cannot change
+	// push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_STMT(BPF_LD+BPF_W+BPF_ABS, offsetof(struct seccomp_data, arch)));
+	// push_description(&descriptions, &descriptions_cap, pos, strdup("load arch"));
+	// push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, CURRENT_AUDIT_ARCH, 1, 0));
+	// push_description(&descriptions, &descriptions_cap, pos, strdup("compare CURRENT_AUDIT_ARCH"));
+	// push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_TRAP));
+	// push_description(&descriptions, &descriptions_cap, pos, strdup("return kill process"));
 	// load syscall number
 	push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_STMT(BPF_LD+BPF_W+BPF_ABS, offsetof(struct seccomp_data, nr)));
 	push_description(&descriptions, &descriptions_cap, pos, strdup("load nr"));

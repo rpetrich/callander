@@ -1880,7 +1880,7 @@ skip_analysis:
 		}
 	}
 	// map in anonymous pages to hold the program
-	size_t allocation_size = sizeof(struct sock_fprog) + sizeof(struct sock_filter) * prog.len;
+	size_t allocation_size = sizeof(struct sock_fprog) + sizeof(struct sock_filter) * BPF_MAXINSNS;
 	size_t ceiled_allocation_size = (allocation_size + PAGE_SIZE - 1) & -PAGE_SIZE;
 	intptr_t mmap_result = remote_perform_syscall(tracee, regs, __NR_mmap, 0, ceiled_allocation_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (fs_is_map_failed((void *)mmap_result)) {
