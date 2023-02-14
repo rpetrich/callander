@@ -66,6 +66,7 @@ readlink(any, any, 4095) @ /usr/sbin/ldconfig+0x528e9
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig+0x528e9
 readlink(/usr/sbin/ldconfig+0xcf518, any, 0x1000) @ /usr/sbin/ldconfig+0x91971
 chmod(any, 420) @ /usr/sbin/ldconfig+0x51d89
+gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 sysinfo(any) @ /usr/sbin/ldconfig+0x548b9
 sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x811b9
 sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x811e9
@@ -93,7 +94,9 @@ futex(/usr/sbin/ldconfig+0xf6dcc, 128, any u32, 0, any, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x544d6
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x80a35
 restart_syscall()
-clock_gettime(any, any)
+clock_gettime(NULL-0x1, any) @ /usr/sbin/ldconfig+0x4abcd
+clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)
+clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
 exit_group(any u32) @ /usr/sbin/ldconfig+0x4af8f
 tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig+0x21998
 tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig+0x21998

@@ -70,6 +70,7 @@ readlink(any, NULL-0xfffffffffffffff0, 4095) @ /usr/sbin/ldconfig.real+0x73759
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73759
 readlink(/usr/sbin/ldconfig.real+0x105558, any, 0x1000) @ /usr/sbin/ldconfig.real+0xc03a1
 chmod(any, 420) @ /usr/sbin/ldconfig.real+0x72c49
+gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x75ef9
 sched_getparam(any u32, any) @ /usr/sbin/ldconfig.real+0xabf59
 sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig.real+0xabf89
@@ -91,7 +92,10 @@ futex(/usr/sbin/ldconfig.real+0x12cf6c, 128, any u32, 0, 202, 2177)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig.real+0x75a66
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xab5b5
 restart_syscall()
-clock_gettime(any, any)
+clock_gettime(NULL-0x1, any) @ /usr/sbin/ldconfig.real+0x6b9bd
+clock_gettime(5, any) @ /usr/sbin/ldconfig.real+0x6b9bd
+clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)
+clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
 clock_nanosleep(0, 0, any, any) @ /usr/sbin/ldconfig.real+0xcdf18
 clock_nanosleep(any u32, 0, any, any) @ /usr/sbin/ldconfig.real+0xcdf86
 clock_nanosleep(1, 0, any, any) @ /usr/sbin/ldconfig.real+0xcdfdd

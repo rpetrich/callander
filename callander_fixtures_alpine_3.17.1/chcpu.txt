@@ -49,6 +49,7 @@ exit(0) @ ld-musl-x86_64.so.1+0x5835d
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4a2d8(fdopen+159)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x5963b(clock_gettime+80)
+gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 getuid() @ ld-musl-x86_64.so.1+0x5b38c(getuid+5)
 getgid() @ ld-musl-x86_64.so.1+0x5b27e(getgid+5)
 geteuid() @ ld-musl-x86_64.so.1+0x5b276(geteuid+5)
@@ -66,7 +67,9 @@ futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), any, any, 0, ld-musl-x86_64.so.1+0x9
 futex(ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any, any, 0, ld-musl-x86_64.so.1+0x9a038(tl_lock_waiters*), 0x1-0xffffffff)
 sched_getaffinity(any, any, any) @ ld-musl-x86_64.so.1+0x38702(syscall+153)
 restart_syscall()
-clock_gettime(any, any)
+clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x5961c(clock_gettime+49)
+clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)
+clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bf
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
