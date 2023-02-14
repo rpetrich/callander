@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/ca-legacy"
+Failed to parse input.

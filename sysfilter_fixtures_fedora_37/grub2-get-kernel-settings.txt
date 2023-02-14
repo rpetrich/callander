@@ -1,0 +1,2 @@
+Failed to parse input file "/sbin/grub2-get-kernel-settings"
+Failed to parse input.

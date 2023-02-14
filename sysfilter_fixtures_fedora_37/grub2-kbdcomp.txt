@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/grub2-kbdcomp"
+Failed to parse input.

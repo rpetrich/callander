@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/bashbug-64"
+Failed to parse input.

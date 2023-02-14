@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/source-highlight-esc.sh"
+Failed to parse input.

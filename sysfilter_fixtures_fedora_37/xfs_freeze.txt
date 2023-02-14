@@ -1,0 +1,2 @@
+Failed to parse input file "/sbin/xfs_freeze"
+Failed to parse input.
