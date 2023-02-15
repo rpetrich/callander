@@ -2445,8 +2445,13 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
-	const uint8_t *dlopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__libc_dlopen_mode", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL) ?: resolve_binary_loaded_symbol(&analysis->loader, new_binary, "dlopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-	if (dlopen) {
+	const uint8_t *dlopen_mode = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__libc_dlopen_mode", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+	if (dlopen_mode) {
+		register_mask arg0 = (register_mask)1 << sysv_argument_abi_register_indexes[0];
+		find_and_add_callback(analysis, dlopen_mode, arg0, arg0, arg0, EFFECT_NONE, handle_dlopen, NULL);
+	}
+	const uint8_t *dlopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "dlopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+	if (dlopen != NULL && dlopen != dlopen_mode) {
 		register_mask arg0 = (register_mask)1 << sysv_argument_abi_register_indexes[0];
 		find_and_add_callback(analysis, dlopen, arg0, arg0, arg0, EFFECT_NONE, handle_dlopen, NULL);
 	}
