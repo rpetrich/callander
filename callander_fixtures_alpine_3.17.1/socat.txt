@@ -96,8 +96,10 @@ sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_
 sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bf
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bf
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bf
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
+sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bf
+sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x583bf
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bf
 shutdown(any, any) @ ld-musl-x86_64.so.1+0x3f34f(shutdown+23)

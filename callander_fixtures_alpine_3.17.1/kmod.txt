@@ -77,8 +77,8 @@ shmat(any, 0, 0x1000) @ ld-musl-x86_64.so.1+0x1f0ef(shmat+11)
 dup(any) @ ld-musl-x86_64.so.1+0x41d5d(child*+459)
 dup2(any, any) @ ld-musl-x86_64.so.1+0x41db8(child*+550)
 dup2(any, any) @ ld-musl-x86_64.so.1+0x41e0e(child*+636)
-nanosleep(any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
-nanosleep(any, any) @ ld-musl-x86_64.so.1+0x583bf
+nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
+nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x583bf
 getpid() @ ld-musl-x86_64.so.1+0x5b367(getpid+5)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f39d(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f3cd(socket+75)

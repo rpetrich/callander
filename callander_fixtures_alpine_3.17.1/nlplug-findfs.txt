@@ -88,8 +88,8 @@ connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bf
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x583bf
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bf
+sendto(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
+sendto(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x583bf
 recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 recvfrom(any, non-NULL, any, any, any, any) @ ld-musl-x86_64.so.1+0x55597(__syscall_cp_c*+57)
 recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x583bf
