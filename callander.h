@@ -122,6 +122,7 @@ struct loaded_binary {
 	uintptr_t override_access_starts[OVERRIDE_ACCESS_SLOT_COUNT];
 	uintptr_t override_access_ends[OVERRIDE_ACCESS_SLOT_COUNT];
 	int override_access_permissions[OVERRIDE_ACCESS_SLOT_COUNT];
+	ElfW(Sym) libcrypto_dso_meth_dl;
 	char loaded_path[];
 };
 
@@ -140,9 +141,11 @@ struct loader_context {
 	bool loaded_gconv_libraries:1;
 	bool ignore_dlopen:1;
 	bool searching_gconv_dlopen:1;
+	bool searching_libcrypto_dlopen:1;
 	bool searching_setxid:1;
 	bool searching_setxid_sighandler:1;
 	const uint8_t *gconv_dlopen;
+	const uint8_t *libcrypto_dlopen;
 	const uint8_t *setxid_syscall;
 	const uint8_t *setxid_sighandler_syscall;
 	struct loaded_binary *last_used;

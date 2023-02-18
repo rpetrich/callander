@@ -2053,7 +2053,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 	struct register_state *first_arg = &state->registers[sysv_argument_abi_register_indexes[0]];
 	if (!register_is_exactly_known(first_arg)) {
 		// check if we're searching for gconv and if so attach handle_gconv_find_shlib as callback
-		if (analysis->loader.searching_gconv_dlopen) {
+		if (analysis->loader.searching_gconv_dlopen || analysis->loader.searching_libcrypto_dlopen) {
 			struct analysis_frame self = {
 				.current = {
 					.address = ins,
@@ -2066,8 +2066,25 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 			};
 			vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED, SHOULD_LOG);
 			find_and_add_callback(analysis, find_function_entry(&analysis->loader, caller->entry) ?: caller->entry, 0, 0, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
-			analysis->loader.searching_gconv_dlopen = false;
-			analysis->loader.gconv_dlopen = ins;
+			if (analysis->loader.searching_gconv_dlopen) {
+				analysis->loader.gconv_dlopen = ins;
+			}
+			if (analysis->loader.searching_libcrypto_dlopen) {
+				analysis->loader.libcrypto_dlopen = ins;
+				if (fs_access("/lib/x86_64-linux-gnu/ossl-modules", R_OK) == 0) {
+					register_dlopen(analysis, "/lib/x86_64-linux-gnu/ossl-modules", caller, false, true);
+				}
+				if (fs_access("/lib/engines-3", R_OK) == 0) {
+					register_dlopen(analysis, "/lib/engines-3", caller, false, true);
+				}
+				if (fs_access("/lib64/engines-3", R_OK) == 0) {
+					register_dlopen(analysis, "/lib64/engines-3", caller, false, true);
+				}
+				if (fs_access("/usr/lib64/openssl/engines", R_OK) == 0) {
+					register_dlopen(analysis, "/usr/lib64/openssl/engines", caller, false, true);
+				}
+			}
+			analysis->loader.searching_gconv_dlopen = analysis->loader.searching_libcrypto_dlopen = false;
 			return;
 		}
 		if (analysis->loader.ignore_dlopen) {
@@ -2467,7 +2484,6 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, gconv_open, &new_caller, true);
 			if (analysis->loader.gconv_dlopen != NULL) {
 				struct registers state = empty_registers;
-				clear_register(&state.registers[sysv_argument_abi_register_indexes[0]]);
 				struct analysis_frame self = {
 					.current = {
 						.address = analysis->loader.gconv_dlopen,
@@ -2612,6 +2628,19 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		void *dso_load = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "DSO_load", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (dso_load) {
 			find_and_add_callback(analysis, dso_load, 0, 0, 0, EFFECT_NONE, handle_openssl_dso_load, NULL);
+		}
+		void *DSO_METHOD_openssl = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "DSO_METHOD_openssl", NULL, NORMAL_SYMBOL, NULL);
+		if (DSO_METHOD_openssl != NULL) {
+			size_t pre_count = analysis->search.loaded_address_count;
+			struct registers registers = empty_registers;
+			struct analysis_frame new_caller = { .current = { .address = new_binary->info.base, .description = "DSO_METHOD_openssl", .next = NULL }, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, DSO_METHOD_openssl, &new_caller, true);
+			size_t post_count = analysis->search.loaded_address_count;
+			if (pre_count < post_count) {
+				uintptr_t address = analysis->search.loaded_addresses[pre_count];
+				new_binary->libcrypto_dso_meth_dl.st_value = address - (uintptr_t)new_binary->info.base;
+				new_binary->libcrypto_dso_meth_dl.st_size = 12 * sizeof(uintptr_t);
+			}
 		}
 	}
 	if ((new_binary->special_binary_flags & BINARY_IS_SECCOMP) && new_binary->has_symbols) {
@@ -6886,6 +6915,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							LOG("rip-relative lea is to readable address, assuming it is data");
 							const ElfW(Sym) *symbol = find_skipped_symbol_for_address(&analysis->loader, binary, address);
 							if (symbol) {
+								if (symbol == &binary->libcrypto_dso_meth_dl) {
+									analysis->loader.searching_libcrypto_dlopen = true;
+								}
 								uintptr_t *symbol_data = (uintptr_t *)((uintptr_t)binary->info.base + symbol->st_value - (uintptr_t)binary->info.default_base);
 								int size = symbol->st_size / sizeof(uintptr_t);
 								for (int i = 0; i < size; i++) {
@@ -6897,6 +6929,24 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										struct analysis_frame new_caller = { .current = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self.current }, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
 										analyze_instructions(analysis, effects, &empty_registers, (const uint8_t *)data, &new_caller, true);
 									}
+								}
+								if (symbol == &binary->libcrypto_dso_meth_dl) {
+									if (analysis->loader.libcrypto_dlopen != NULL) {
+										struct registers state = empty_registers;
+										struct analysis_frame self = {
+											.current = {
+												.address = analysis->loader.libcrypto_dlopen,
+												.description = NULL,
+												.next = NULL,
+											},
+											.entry = analysis->loader.libcrypto_dlopen,
+											.entry_state = &state,
+											.token = { 0 },
+										};
+										analysis->loader.searching_libcrypto_dlopen = true;
+										*get_or_populate_effects(analysis, analysis->loader.libcrypto_dlopen, &state, EFFECT_NONE, &self, &self.token) = EFFECT_NONE;
+									}
+									analysis->loader.searching_libcrypto_dlopen = false;
 								}
 							}
 						} else {
@@ -8436,7 +8486,14 @@ static int load_all_needed_and_relocate(struct program_state *analysis)
 
 static const ElfW(Sym) *find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address)
 {
-	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD | BINARY_IS_LIBNSS_SYSTEMD)) == 0) {
+	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBCRYPTO)) == 0) {
+		return NULL;
+	}
+	if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+		uintptr_t offset = address - binary->info.base;
+		if ((offset >= binary->libcrypto_dso_meth_dl.st_value) && (offset < binary->libcrypto_dso_meth_dl.st_value + binary->libcrypto_dso_meth_dl.st_size)) {
+			return &binary->libcrypto_dso_meth_dl;
+		}
 		return NULL;
 	}
 	const struct symbol_info *symbols = NULL;
