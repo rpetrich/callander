@@ -8190,6 +8190,7 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 	result = load_section_symbols(debuglink_fd, &binary->debuglink_info, &debuglink_sections, false, &binary->debuglink_symbols);
 	if (result != 0) {
 		LOG("error loading debuglink section symbols", fs_strerror(result));
+		result = 0;
 	} else {
 		LOG("loaded debuglink successfully");
 		binary->has_debuglink_symbols = true;
