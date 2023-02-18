@@ -4,6 +4,7 @@
 #include "axon.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <linux/audit.h>
 #include <linux/binfmts.h>
 #include <linux/limits.h>
@@ -8300,6 +8301,39 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 	return 0;
 }
 
+#ifndef SHT_RELR
+#define SHT_RELR 19
+#endif
+
+// #ifndef ELF64_R_JUMP
+// #define ELF64_R_JUMP(val) ((val) >> 56)
+// #endif
+// #ifndef ELF64_R_BITS
+// #define ELF64_R_BITS(val) ((val) & 0xffffffffffffff)
+// #endif
+
+static void apply_relr_table(struct loaded_binary *new_binary, const uintptr_t *relative, size_t size)
+{
+	const uintptr_t *end = relative + size;
+	// ElfW(Addr) offset = 0;
+	uintptr_t base = (uintptr_t)new_binary->info.base;
+	uintptr_t *where = (uintptr_t *)base;
+	for (; relative < end; ++relative) {
+		uintptr_t entry = *relative;
+		if (entry & 1) {
+			for (long i = 0; (entry >>= 1) != 0; i++) {
+				if (entry & 1) {
+					where[i] += base;
+				}
+			}
+			where += CHAR_BIT * sizeof(uintptr_t) - 1;
+		} else {
+			where = (uintptr_t *)(base + entry);
+			*where++ += base;
+		}
+	}
+}
+
 __attribute__((warn_unused_result))
 static int relocate_loaded_library(struct program_state *analysis, struct loaded_binary *new_binary)
 {
@@ -8363,10 +8397,17 @@ static int relocate_loaded_library(struct program_state *analysis, struct loaded
 		}
 		for (size_t i = 0; i < new_binary->info.section_entry_count; i++) {
 			const ElfW(Shdr) *section = (const ElfW(Shdr) *)((char *)new_binary->sections.sections + i * new_binary->info.section_entry_size);
-			if (section->sh_type == SHT_RELA) {
-				int result = apply_relocation_table(&analysis->loader, new_binary, section->sh_addr, relaent, section->sh_size);
-				if (result < 0) {
-					return result;
+			switch (section->sh_type) {
+				case SHT_RELA: {
+					int result = apply_relocation_table(&analysis->loader, new_binary, section->sh_addr, relaent, section->sh_size);
+					if (result < 0) {
+						return result;
+					}
+					break;
+				}
+				case SHT_RELR: {
+					apply_relr_table(new_binary, (const uintptr_t *)apply_base_address(&new_binary->info, section->sh_addr), section->sh_size / sizeof(uintptr_t));
+					break;
 				}
 			}
 		}
