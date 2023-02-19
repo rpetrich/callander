@@ -8316,8 +8316,8 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					break;
 			}
 		}
-		const char *standard_run_path = "/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib/perl5/core_perl/CORE";
-		size_t standard_run_path_sizeof = sizeof("/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib/perl5/core_perl/CORE");
+		const char *standard_run_path = "/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE";
+		size_t standard_run_path_sizeof = sizeof("/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
 			if (fs_strcmp(additional_run_path, "$ORIGIN") == 0) {
