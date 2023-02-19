@@ -8035,7 +8035,7 @@ static int special_binary_flags_for_path(const char *path)
 				// result |= BINARY_ASSUME_FUNCTION_CALLfS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			}
 		} else if (path[3] == 'r') {
-			if (path[4] == 'u' && path[5] == 'b' && path[6] == 'y' && (path[7] == '.' || path[7] == '-')) { // libruby. or libruby-
+			if (path[4] == 'u' && path[5] == 'b' && path[6] == 'y' && (path[7] == '.' || path[7] == '-' || path[7] == '2')) { // libruby. or libruby-
 				// result |= BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 				result |= BINARY_IS_RUBY;
 			}
