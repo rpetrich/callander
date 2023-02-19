@@ -197,7 +197,13 @@ else
 	if [ -e /usr/bin/parallel-moreutils ]; then
 		parallel-moreutils "$0" -- $binaries
 	else
-		parallel "$0" -- $binaries
+		if command -v parallel >/dev/null; then
+			parallel "$0" -- $binaries
+		else
+			for b in $binaries; do
+				test_program "$b"
+			done
+		fi
 	fi
 	echo $(grep -R -e 'permitted syscalls' -- "$FIXTURE_PATH" | wc -l)/$(ls "$FIXTURE_PATH" | wc -l) binaries successfully processed
 	echo failing tests:
