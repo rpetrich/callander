@@ -5110,6 +5110,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0x05: { // syscall
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						if (register_is_exactly_known(&self.current_state.registers[REGISTER_RAX])) {
+						syscall_nr_is_known:
+							;
 							uintptr_t value = self.current_state.registers[REGISTER_RAX].value;
 							LOG("found syscall with known number", (int)value);
 							LOG("syscall name is", name_for_syscall(value));
@@ -5158,6 +5160,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						} else if (self.current.address == analysis->loader.setxid_syscall) {
 							LOG("unknown setxid syscall, assumed covered by set*id handlers", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
 						} else {
+							struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
+							if (binary != NULL) {
+								const struct symbol_info *symbols;
+								const ElfW(Sym) *symbol;
+								if (find_any_symbol_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
+									const char *name = symbol_name(symbols, symbol);
+									if (fs_strcmp(name, "next_line") == 0) {
+										// this is a giant hack
+										self.current_state.registers[REGISTER_RAX].value = self.current_state.registers[REGISTER_RAX].max = __NR_read;
+										goto syscall_nr_is_known;
+									}
+								}
+							}
 							self.current.description = NULL;
 							ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_RAX])));
 							if (SHOULD_LOG) {
