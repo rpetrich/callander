@@ -388,7 +388,7 @@ static int remote_exec_fd_script(int fd, const char *named_path, const char *con
 __attribute__((warn_unused_result))
 static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, const char *exec_path);
 
-static size_t count_args(const char *const *argv, size_t *out_total_bytes) {
+static size_t count_arg_bytes(const char *const *argv, size_t *out_total_bytes) {
 	size_t argc = 0;
 	if (argv) {
 		while (argv[argc]) {
@@ -605,8 +605,8 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	ERROR("stack", (uintptr_t)stack);
 	// prepare thread args and dynv
 	size_t string_size = sizeof("x86_64") + 16;
-	size_t argc = count_args(argv, &string_size);
-	size_t envc = count_args(envp, &string_size);
+	size_t argc = count_arg_bytes(argv, &string_size);
+	size_t envc = count_arg_bytes(envp, &string_size);
 	size_t header_size = sizeof(struct start_thread_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
 	size_t dynv_size = ((string_size + header_size + (0xf + 8)) & ~0xf) - 8;
 	intptr_t dynv_base = (stack + (STACK_SIZE - dynv_size - sizeof(uint32_t))) & ~0xf;
@@ -1007,7 +1007,7 @@ static int remote_exec_fd_script(int fd, const char *named_path, const char *con
 		named_path = path_buf;
 	}
 	// Recreate arguments to pass to the interpreter script
-	size_t argc = count_args(argv, NULL);
+	size_t argc = count_arg_bytes(argv, NULL);
 	const char *new_argv[argc + 3];
 	const char **dest_argv = new_argv;
 	*dest_argv++ = arg0;

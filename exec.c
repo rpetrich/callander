@@ -106,7 +106,7 @@ extern const ElfW(Addr) _GLOBAL_OFFSET_TABLE_[] __attribute__((visibility("hidde
 static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const char *comm, const char *exec_path)
 {
 	// Add the AXON_ADDR and AXON_COMM environment variables
-	int envc = count_args(envp);
+	int envc = count_args((char * const*)envp);
 	struct thread_storage *thread = get_thread_storage();
 	const char **new_envp = malloc(sizeof(const char *) * (envc + 5));
 	struct attempt_cleanup_state new_envp_cleanup;
@@ -236,7 +236,7 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 		named_path = path_buf;
 	}
 	// Recreate arguments to pass to the interpreter script
-	size_t argc = count_args(argv);
+	size_t argc = count_args((char * const*)argv);
 	const char *new_argv[argc + 3];
 	const char **dest_argv = new_argv;
 	*dest_argv++ = arg0;
