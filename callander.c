@@ -2146,7 +2146,13 @@ static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_
 		if (dirfd == -ENOENT) {
 			dirfd = fs_open("/lib64/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 		}
+		if (dirfd == -ENOENT) {
+			dirfd = fs_open("/usr/lib64/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+		}
 		if (dirfd < 0) {
+			if (dirfd == -ENOENT) {
+				return;
+			}
 			DIE("failed to open gconv library path", fs_strerror(dirfd));
 		}
 	}
