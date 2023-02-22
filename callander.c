@@ -4349,6 +4349,402 @@ static void analyze_libcrypto_dlopen(struct program_state *analysis)
 	}
 }
 
+__attribute__((always_inline))
+static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, const uint8_t *ins, const uint8_t *call_target, struct analysis_frame *self)
+{
+	push_stack(&self->current_state, 2);
+	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
+	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
+	function_effects more_effects = analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self, true);
+	pop_stack(&self->current_state, 2);
+	if (more_effects & EFFECT_PROCESSING) {
+		queue_instruction(&analysis->search.queue, call_target, required_effects, call_state, call_target, self->current.description);
+		more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
+	}
+	return more_effects;
+}
+
+__attribute__((always_inline))
+static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, const uint8_t *ins, const uint8_t *jump_target, const uint8_t *continue_target, struct analysis_frame *self)
+{
+	bool skip_jump = false;
+	bool skip_continue = false;
+	struct registers jump_state = self->current_state;
+	struct registers continue_state = self->current_state;
+	LOG("found conditional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
+	struct loaded_binary *jump_binary = NULL;
+	int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
+	if ((self->current_state.compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&self->current_state.compare_state.value)) {
+		// include matching registers
+		if (jump_state.compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
+			LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.mem_rm)));
+			LOG("replacing with new mem r/m", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.compare_state.mem_rm)));
+			jump_state.mem_rm = continue_state.mem_rm = jump_state.compare_state.mem_rm;
+			jump_state.registers[REGISTER_MEM].value = continue_state.registers[REGISTER_MEM].value = 0;
+			jump_state.registers[REGISTER_MEM].max = continue_state.registers[REGISTER_MEM].max = jump_state.compare_state.mask;
+			clear_match(&analysis->loader, &jump_state, REGISTER_MEM, self->current.address);
+		}
+		register_mask target_registers = jump_state.matches[self->current_state.compare_state.target_register] | ((register_mask)1 << self->current_state.compare_state.target_register);
+		register_mask skip_jump_mask = 0;
+		register_mask skip_continue_mask = 0;
+		if (SHOULD_LOG) {
+			for (int target_register = 0; target_register < REGISTER_COUNT; target_register++) {
+				if (target_registers & ((register_mask)1 << target_register)) {
+					LOG("comparing", name_for_register(target_register));
+				}
+			}
+		}
+		for (int target_register = 0; target_register < REGISTER_COUNT; target_register++) {
+			if ((target_registers & ((register_mask)1 << target_register)) == 0) {
+				continue;
+			}
+			uintptr_t compare_mask = self->current_state.compare_state.mask;
+			if ((jump_state.registers[target_register].value & ~compare_mask) != (jump_state.registers[target_register].max & ~compare_mask)) {
+				jump_state.registers[target_register].value = 0;
+				jump_state.registers[target_register].max = compare_mask;
+			} else {
+				jump_state.registers[target_register].value &= compare_mask;
+				jump_state.registers[target_register].max &= compare_mask;
+			}
+			if ((continue_state.registers[target_register].value & ~compare_mask) != (continue_state.registers[target_register].max & ~compare_mask)) {
+				continue_state.registers[target_register].value = 0;
+				continue_state.registers[target_register].max = compare_mask;
+			} else {
+				continue_state.registers[target_register].value &= compare_mask;
+				continue_state.registers[target_register].max &= compare_mask;
+			}
+			if (x86_is_jb_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jb comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; jb
+				if (jump_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+					skip_jump_mask |= (register_mask)1 << target_register;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+				} else if (jump_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
+					jump_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
+				}
+				if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+					skip_continue_mask |= (register_mask)1 << target_register;
+					LOG("continue jump", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+				} else if (continue_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+					continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
+				}
+			}
+			if (x86_is_jae_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jae comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; jae
+				if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+					skip_jump_mask |= (register_mask)1 << target_register;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+				} else if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+					jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
+				}
+				if (continue_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+					skip_continue_mask |= (register_mask)1 << target_register;
+					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+				} else if (continue_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
+					continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
+				}
+			}
+			if (x86_is_je_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
+				LOG("found je comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; je
+				if (jump_state.registers[target_register].value <= self->current_state.compare_state.value.value && self->current_state.compare_state.value.value <= jump_state.registers[target_register].max) {
+					jump_state.registers[target_register] = self->current_state.compare_state.value;
+					jump_state.sources[target_register] = self->current_state.compare_state.sources;
+					// remove value from edge of ranges
+					if (continue_state.registers[target_register].value == self->current_state.compare_state.value.value) {
+						if (register_is_exactly_known(&continue_state.registers[target_register])) {
+							skip_continue_mask |= (register_mask)1 << target_register;
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						} else {
+							continue_state.registers[target_register].value++;
+						}
+					} else if (continue_state.registers[target_register].max == self->current_state.compare_state.value.value) {
+						continue_state.registers[target_register].max--;
+					}
+				} else {
+					skip_jump_mask |= (register_mask)1 << target_register;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+				}
+			}
+			if (x86_is_jne_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
+				LOG("found jne comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; jne
+				if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value && self->current_state.compare_state.value.value <= continue_state.registers[target_register].max) {
+					continue_state.registers[target_register] = self->current_state.compare_state.value;
+					continue_state.sources[target_register] = self->current_state.compare_state.sources;
+					// remove value from edge of ranges
+					if (jump_state.registers[target_register].value == self->current_state.compare_state.value.value) {
+						if (register_is_exactly_known(&jump_state.registers[target_register])) {
+							skip_jump_mask |= (register_mask)1 << target_register;
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+						} else {
+							jump_state.registers[target_register].value++;
+						}
+					} else if (jump_state.registers[target_register].max == self->current_state.compare_state.value.value) {
+						jump_state.registers[target_register].max--;
+					}
+				} else {
+					skip_continue_mask |= (register_mask)1 << target_register;
+					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+				}
+			}
+			if (x86_is_jbe_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jbe comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; jbe
+				if (jump_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+					skip_jump_mask |= (register_mask)1 << target_register;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+				} else if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+					jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+				}
+				if (continue_state.registers[target_register].max <= self->current_state.compare_state.value.value) {
+					skip_continue_mask |= (register_mask)1 << target_register;
+					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+				} else if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
+					continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+				}
+			}
+			if (x86_is_ja_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found ja comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; ja
+				if (jump_state.registers[target_register].max <= self->current_state.compare_state.value.value) {
+					skip_jump_mask |= (register_mask)1 << target_register;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+				} else if (jump_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
+					jump_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+				}
+				if (continue_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+					skip_continue_mask |= (register_mask)1 << target_register;
+					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+				} else if (continue_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+					continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+				}
+			}
+			if (x86_is_js_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found js comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				if (self->current_state.compare_state.value.value == 0) {
+					uintptr_t msb = most_significant_bit(self->current_state.compare_state.mask);
+					// test %target_register; ja
+					if (jump_state.registers[target_register].max < msb) {
+						skip_jump_mask |= (register_mask)1 << target_register;
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+					} else if (jump_state.registers[target_register].value < msb) {
+						jump_state.registers[target_register].value = msb;
+					}
+					if (continue_state.registers[target_register].value >= msb) {
+						skip_continue_mask |= (register_mask)1 << target_register;
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+					} else if (continue_state.registers[target_register].max >= msb) {
+						continue_state.registers[target_register].max = msb - 1;
+					}
+				}
+			}
+			if (x86_is_jns_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jns comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				if (self->current_state.compare_state.value.value == 0) {
+					uintptr_t msb = most_significant_bit(self->current_state.compare_state.mask);
+					// test %target_register; ja
+					if (jump_state.registers[target_register].value >= msb) {
+						skip_jump_mask |= (register_mask)1 << target_register;
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+					} else if (jump_state.registers[target_register].max >= msb) {
+						jump_state.registers[target_register].max = msb - 1;
+					}
+					if (continue_state.registers[target_register].max < msb) {
+						skip_continue_mask |= (register_mask)1 << target_register;
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+					} else if (continue_state.registers[target_register].value < msb) {
+						continue_state.registers[target_register].value = msb;
+					}
+				}
+			}
+			if (x86_is_jl_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jl comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				// test %target_register; jl
+				if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					LOG("signed comparison on potentially negative value, skipping narrowing");
+				} else {
+					if (jump_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+						skip_jump_mask |= (register_mask)1 << target_register;
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+					} else if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+						jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+					}
+					if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+						skip_continue_mask |= (register_mask)1 << target_register;
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+					} else if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
+						continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+					}
+				}
+			}
+			if (x86_is_jge_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jge comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					LOG("signed comparison on potentially negative value, skipping narrowing");
+				} else {
+					// test %target_register; jge
+					if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+						skip_jump_mask |= (register_mask)1 << target_register;
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+					} else if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+						jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
+					}
+					if (continue_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+						skip_continue_mask |= (register_mask)1 << target_register;
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+					} else if (continue_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
+						continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
+					}
+				}
+			}
+			if (x86_is_jg_instruction(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+				LOG("found jg comparing", name_for_register(target_register));
+				dump_register(&analysis->loader, continue_state.registers[target_register]);
+				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+				if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					LOG("signed comparison on potentially negative value, skipping narrowing");
+				} else {
+					// test %target_register; jg
+					if (register_is_partially_known(&continue_state.registers[target_register])) {
+						if (continue_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+							continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+						}
+						if (continue_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+							continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
+						}
+						if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+							jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+						}
+						if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+							jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
+						}
+					} else {
+						continue_state.registers[target_register].value = 0;
+						continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+						jump_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+						jump_state.registers[target_register].max = ~(uintptr_t)0;
+					}
+				}
+			}
+			canonicalize_register(&jump_state.registers[target_register]);
+			canonicalize_register(&continue_state.registers[target_register]);
+			if (SHOULD_LOG) {
+				if (self->current_state.registers[target_register].value != jump_state.registers[target_register].value || self->current_state.registers[target_register].max != jump_state.registers[target_register].max) {
+					ERROR("narrowed register for jump", name_for_register(target_register));
+					dump_register(&analysis->loader, jump_state.registers[target_register]);
+				}
+				if (self->current_state.registers[target_register].value != continue_state.registers[target_register].value || self->current_state.registers[target_register].max != continue_state.registers[target_register].max) {
+					ERROR("narrowed register for continue", name_for_register(target_register));
+					dump_register(&analysis->loader, continue_state.registers[target_register]);
+				}
+			}
+		}
+		if (skip_jump_mask) {
+			if (skip_jump_mask & (register_mask)1 << self->current_state.compare_state.target_register) {
+				skip_jump = true;
+				LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
+				self->current.description = "skip conditional jump";
+				vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | skip_jump_mask | self->current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
+				push_unreachable_breakpoint(&analysis->unreachables, jump_target);
+			} else {
+				LOG("not all registers skipped for jump");
+				dump_registers(&analysis->loader, &jump_state, target_registers);
+			}
+		}
+		if (skip_continue_mask) {
+			// if (skip_continue_mask == target_registers) {
+			if (skip_continue_mask & (register_mask)1 << self->current_state.compare_state.target_register) {
+				skip_continue = true;
+				LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
+				self->current.description = "skip conditional continue";
+				vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | skip_continue_mask | self->current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
+				push_unreachable_breakpoint(&analysis->unreachables, continue_target);
+			} else {
+				LOG("not all registers skipped for continue");
+				dump_registers(&analysis->loader, &continue_state, target_registers);
+			}
+		}
+		if (!(skip_jump || skip_continue) && self->current_state.compare_state.sources != 0) {
+			self->current.description = "conditional jump predicate";
+			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | self->current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
+		}
+	}
+	function_effects jump_effects;
+	function_effects continue_effects = EFFECT_NONE;
+	bool continue_first = continue_target < jump_target;
+	if (continue_first) {
+		if (skip_continue) {
+		} else {
+			LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
+			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING);
+			self->current.description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
+			continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, self, true);
+			LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
+		}
+	}
+	if (skip_jump) {
+		jump_effects = EFFECT_NONE;
+	} else if ((jump_prot & PROT_EXEC) == 0) {
+#if ABORT_AT_NON_EXECUTABLE_ADDRESS
+		self->current.description = "conditional jump";
+		ERROR("found conditional jump to non-executable address at", temp_str(copy_address_list_description(&analysis->loader, &self->current)));
+		LOG("jump is to", temp_str(copy_address_description(&analysis->loader, jump_target)));
+		ERROR_FLUSH();
+		abort();
+#endif
+		LOG("found conditional jump to non-executable address, assuming all effects");
+		jump_effects = EFFECT_EXITS | EFFECT_RETURNS;
+	} else {
+		LOG("taking jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
+		self->current.description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
+		jump_effects = analyze_instructions(analysis, required_effects, &jump_state, jump_target, self, true);
+	}
+	if (continue_first) {
+		LOG("completing conditional jump after branch", temp_str(copy_address_description(&analysis->loader, ins)));
+	} else {
+		LOG("resuming from conditional jump", temp_str(copy_address_description(&analysis->loader, ins)));
+		if (skip_continue) {
+		} else {
+			LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
+			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING);
+			self->current.description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
+			continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, self, true);
+			LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
+		}
+	}
+	if (continue_effects & EFFECT_PROCESSING) {
+		LOG("continue is processing", temp_str(copy_address_description(&analysis->loader, continue_target)));
+		continue_effects = (continue_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
+	}
+	if (jump_effects & EFFECT_PROCESSING) {
+		LOG("jump is processing", temp_str(copy_address_description(&analysis->loader, jump_target)));
+		jump_effects = (jump_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
+	}
+	return jump_effects | continue_effects;
+}
+
 static inline function_effects fallback_effects_if_processing(function_effects effects)
 {
 	return effects & ~EFFECT_PROCESSING;
@@ -4447,383 +4843,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto update_and_return;
 			}
 			case X86_JUMPS_OR_CONTINUES: {
-				const uint8_t *continue_target = ins + length;
-				bool skip_jump = false;
-				bool skip_continue = false;
-				struct registers jump_state = self.current_state;
-				struct registers continue_state = self.current_state;
-				LOG("found conditional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
-				struct loaded_binary *jump_binary = NULL;
-				int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
-				if ((self.current_state.compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&self.current_state.compare_state.value)) {
-					// include matching registers
-					if (jump_state.compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
-						LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.mem_rm)));
-						LOG("replacing with new mem r/m", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.compare_state.mem_rm)));
-						jump_state.mem_rm = continue_state.mem_rm = jump_state.compare_state.mem_rm;
-						jump_state.registers[REGISTER_MEM].value = continue_state.registers[REGISTER_MEM].value = 0;
-						jump_state.registers[REGISTER_MEM].max = continue_state.registers[REGISTER_MEM].max = jump_state.compare_state.mask;
-						clear_match(&analysis->loader, &jump_state, REGISTER_MEM, ins);
-					}
-					register_mask target_registers = jump_state.matches[self.current_state.compare_state.target_register] | ((register_mask)1 << self.current_state.compare_state.target_register);
-					register_mask skip_jump_mask = 0;
-					register_mask skip_continue_mask = 0;
-					if (SHOULD_LOG) {
-						for (int target_register = 0; target_register < REGISTER_COUNT; target_register++) {
-							if (target_registers & ((register_mask)1 << target_register)) {
-								LOG("comparing", name_for_register(target_register));
-							}
-						}
-					}
-					for (int target_register = 0; target_register < REGISTER_COUNT; target_register++) {
-						if ((target_registers & ((register_mask)1 << target_register)) == 0) {
-							continue;
-						}
-						uintptr_t compare_mask = self.current_state.compare_state.mask;
-						if ((jump_state.registers[target_register].value & ~compare_mask) != (jump_state.registers[target_register].max & ~compare_mask)) {
-							jump_state.registers[target_register].value = 0;
-							jump_state.registers[target_register].max = compare_mask;
-						} else {
-							jump_state.registers[target_register].value &= compare_mask;
-							jump_state.registers[target_register].max &= compare_mask;
-						}
-						if ((continue_state.registers[target_register].value & ~compare_mask) != (continue_state.registers[target_register].max & ~compare_mask)) {
-							continue_state.registers[target_register].value = 0;
-							continue_state.registers[target_register].max = compare_mask;
-						} else {
-							continue_state.registers[target_register].value &= compare_mask;
-							continue_state.registers[target_register].max &= compare_mask;
-						}
-						if (x86_is_jb_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jb comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; jb
-							if (jump_state.registers[target_register].value >= self.current_state.compare_state.value.value) {
-								skip_jump_mask |= (register_mask)1 << target_register;
-								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-							} else if (jump_state.registers[target_register].max >= self.current_state.compare_state.value.value) {
-								jump_state.registers[target_register].max = self.current_state.compare_state.value.value - 1;
-							}
-							if (continue_state.registers[target_register].max < self.current_state.compare_state.value.value) {
-								skip_continue_mask |= (register_mask)1 << target_register;
-								LOG("continue jump", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-							} else if (continue_state.registers[target_register].value < self.current_state.compare_state.value.value) {
-								continue_state.registers[target_register].value = self.current_state.compare_state.value.value;
-							}
-						}
-						if (x86_is_jae_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jae comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; jae
-							if (jump_state.registers[target_register].max < self.current_state.compare_state.value.value) {
-								skip_jump_mask |= (register_mask)1 << target_register;
-								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-							} else if (jump_state.registers[target_register].value < self.current_state.compare_state.value.value) {
-								jump_state.registers[target_register].value = self.current_state.compare_state.value.value;
-							}
-							if (continue_state.registers[target_register].value >= self.current_state.compare_state.value.value) {
-								skip_continue_mask |= (register_mask)1 << target_register;
-								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-							} else if (continue_state.registers[target_register].max >= self.current_state.compare_state.value.value) {
-								continue_state.registers[target_register].max = self.current_state.compare_state.value.value - 1;
-							}
-						}
-						if (x86_is_je_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
-							LOG("found je comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; je
-							if (jump_state.registers[target_register].value <= self.current_state.compare_state.value.value && self.current_state.compare_state.value.value <= jump_state.registers[target_register].max) {
-								jump_state.registers[target_register] = self.current_state.compare_state.value;
-								jump_state.sources[target_register] = self.current_state.compare_state.sources;
-								// remove value from edge of ranges
-								if (continue_state.registers[target_register].value == self.current_state.compare_state.value.value) {
-									if (register_is_exactly_known(&continue_state.registers[target_register])) {
-										skip_continue_mask |= (register_mask)1 << target_register;
-										LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-									} else {
-										continue_state.registers[target_register].value++;
-									}
-								} else if (continue_state.registers[target_register].max == self.current_state.compare_state.value.value) {
-									continue_state.registers[target_register].max--;
-								}
-							} else {
-								skip_jump_mask |= (register_mask)1 << target_register;
-								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-							}
-						}
-						if (x86_is_jne_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
-							LOG("found jne comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; jne
-							if (continue_state.registers[target_register].value <= self.current_state.compare_state.value.value && self.current_state.compare_state.value.value <= continue_state.registers[target_register].max) {
-								continue_state.registers[target_register] = self.current_state.compare_state.value;
-								continue_state.sources[target_register] = self.current_state.compare_state.sources;
-								// remove value from edge of ranges
-								if (jump_state.registers[target_register].value == self.current_state.compare_state.value.value) {
-									if (register_is_exactly_known(&jump_state.registers[target_register])) {
-										skip_jump_mask |= (register_mask)1 << target_register;
-										LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-									} else {
-										jump_state.registers[target_register].value++;
-									}
-								} else if (jump_state.registers[target_register].max == self.current_state.compare_state.value.value) {
-									jump_state.registers[target_register].max--;
-								}
-							} else {
-								skip_continue_mask |= (register_mask)1 << target_register;
-								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-							}
-						}
-						if (x86_is_jbe_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jbe comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; jbe
-							if (jump_state.registers[target_register].value > self.current_state.compare_state.value.value) {
-								skip_jump_mask |= (register_mask)1 << target_register;
-								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-							} else if (jump_state.registers[target_register].max > self.current_state.compare_state.value.value) {
-								jump_state.registers[target_register].max = self.current_state.compare_state.value.value;
-							}
-							if (continue_state.registers[target_register].max <= self.current_state.compare_state.value.value) {
-								skip_continue_mask |= (register_mask)1 << target_register;
-								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-							} else if (continue_state.registers[target_register].value <= self.current_state.compare_state.value.value) {
-								continue_state.registers[target_register].value = self.current_state.compare_state.value.value + 1;
-							}
-						}
-						if (x86_is_ja_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found ja comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; ja
-							if (jump_state.registers[target_register].max <= self.current_state.compare_state.value.value) {
-								skip_jump_mask |= (register_mask)1 << target_register;
-								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-							} else if (jump_state.registers[target_register].value <= self.current_state.compare_state.value.value) {
-								jump_state.registers[target_register].value = self.current_state.compare_state.value.value + 1;
-							}
-							if (continue_state.registers[target_register].value > self.current_state.compare_state.value.value) {
-								skip_continue_mask |= (register_mask)1 << target_register;
-								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-							} else if (continue_state.registers[target_register].max > self.current_state.compare_state.value.value) {
-								continue_state.registers[target_register].max = self.current_state.compare_state.value.value;
-							}
-						}
-						if (x86_is_js_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found js comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							if (self.current_state.compare_state.value.value == 0) {
-								uintptr_t msb = most_significant_bit(self.current_state.compare_state.mask);
-								// test %target_register; ja
-								if (jump_state.registers[target_register].max < msb) {
-									skip_jump_mask |= (register_mask)1 << target_register;
-									LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-								} else if (jump_state.registers[target_register].value < msb) {
-									jump_state.registers[target_register].value = msb;
-								}
-								if (continue_state.registers[target_register].value >= msb) {
-									skip_continue_mask |= (register_mask)1 << target_register;
-									LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-								} else if (continue_state.registers[target_register].max >= msb) {
-									continue_state.registers[target_register].max = msb - 1;
-								}
-							}
-						}
-						if (x86_is_jns_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jns comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							if (self.current_state.compare_state.value.value == 0) {
-								uintptr_t msb = most_significant_bit(self.current_state.compare_state.mask);
-								// test %target_register; ja
-								if (jump_state.registers[target_register].value >= msb) {
-									skip_jump_mask |= (register_mask)1 << target_register;
-									LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-								} else if (jump_state.registers[target_register].max >= msb) {
-									jump_state.registers[target_register].max = msb - 1;
-								}
-								if (continue_state.registers[target_register].max < msb) {
-									skip_continue_mask |= (register_mask)1 << target_register;
-									LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-								} else if (continue_state.registers[target_register].value < msb) {
-									continue_state.registers[target_register].value = msb;
-								}
-							}
-						}
-						if (x86_is_jl_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jl comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							// test %target_register; jl
-							if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
-								LOG("signed comparison on potentially negative value, skipping narrowing");
-							} else {
-								if (jump_state.registers[target_register].value >= self.current_state.compare_state.value.value) {
-									skip_jump_mask |= (register_mask)1 << target_register;
-									LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-								} else if (jump_state.registers[target_register].max > self.current_state.compare_state.value.value) {
-									jump_state.registers[target_register].max = self.current_state.compare_state.value.value;
-								}
-								if (continue_state.registers[target_register].max < self.current_state.compare_state.value.value) {
-									skip_continue_mask |= (register_mask)1 << target_register;
-									LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-								} else if (continue_state.registers[target_register].value <= self.current_state.compare_state.value.value) {
-									continue_state.registers[target_register].value = self.current_state.compare_state.value.value + 1;
-								}
-							}
-						}
-						if (x86_is_jge_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jge comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
-								LOG("signed comparison on potentially negative value, skipping narrowing");
-							} else {
-								// test %target_register; jge
-								if (jump_state.registers[target_register].max < self.current_state.compare_state.value.value) {
-									skip_jump_mask |= (register_mask)1 << target_register;
-									LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-								} else if (jump_state.registers[target_register].value < self.current_state.compare_state.value.value) {
-									jump_state.registers[target_register].value = self.current_state.compare_state.value.value;
-								}
-								if (continue_state.registers[target_register].value >= self.current_state.compare_state.value.value) {
-									skip_continue_mask |= (register_mask)1 << target_register;
-									LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-								} else if (continue_state.registers[target_register].max >= self.current_state.compare_state.value.value) {
-									continue_state.registers[target_register].max = self.current_state.compare_state.value.value - 1;
-								}
-							}
-						}
-						if (x86_is_jg_instruction(ins) && (self.current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-							LOG("found jg comparing", name_for_register(target_register));
-							dump_register(&analysis->loader, continue_state.registers[target_register]);
-							LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
-							if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
-								LOG("signed comparison on potentially negative value, skipping narrowing");
-							} else {
-								// test %target_register; jg
-								if (register_is_partially_known(&continue_state.registers[target_register])) {
-									if (continue_state.registers[target_register].max > self.current_state.compare_state.value.value) {
-										continue_state.registers[target_register].max = self.current_state.compare_state.value.value;
-									}
-									if (continue_state.registers[target_register].value > self.current_state.compare_state.value.value) {
-										continue_state.registers[target_register].value = self.current_state.compare_state.value.value;
-									}
-									if (jump_state.registers[target_register].max < self.current_state.compare_state.value.value) {
-										jump_state.registers[target_register].max = self.current_state.compare_state.value.value;
-									}
-									if (jump_state.registers[target_register].value < self.current_state.compare_state.value.value) {
-										jump_state.registers[target_register].value = self.current_state.compare_state.value.value;
-									}
-								} else {
-									continue_state.registers[target_register].value = 0;
-									continue_state.registers[target_register].max = self.current_state.compare_state.value.value;
-									jump_state.registers[target_register].value = self.current_state.compare_state.value.value + 1;
-									jump_state.registers[target_register].max = ~(uintptr_t)0;
-								}
-							}
-						}
-						canonicalize_register(&jump_state.registers[target_register]);
-						canonicalize_register(&continue_state.registers[target_register]);
-						if (SHOULD_LOG) {
-							if (self.current_state.registers[target_register].value != jump_state.registers[target_register].value || self.current_state.registers[target_register].max != jump_state.registers[target_register].max) {
-								ERROR("narrowed register for jump", name_for_register(target_register));
-								dump_register(&analysis->loader, jump_state.registers[target_register]);
-							}
-							if (self.current_state.registers[target_register].value != continue_state.registers[target_register].value || self.current_state.registers[target_register].max != continue_state.registers[target_register].max) {
-								ERROR("narrowed register for continue", name_for_register(target_register));
-								dump_register(&analysis->loader, continue_state.registers[target_register]);
-							}
-						}
-					}
-					if (skip_jump_mask) {
-						if (skip_jump_mask & (register_mask)1 << self.current_state.compare_state.target_register) {
-							skip_jump = true;
-							LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
-							self.current.description = "skip conditional jump";
-							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, target_registers | skip_jump_mask | self.current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
-							push_unreachable_breakpoint(&analysis->unreachables, jump_target);
-						} else {
-							LOG("not all registers skipped for jump");
-							dump_registers(&analysis->loader, &jump_state, target_registers);
-						}
-					}
-					if (skip_continue_mask) {
-						// if (skip_continue_mask == target_registers) {
-						if (skip_continue_mask & (register_mask)1 << self.current_state.compare_state.target_register) {
-							skip_continue = true;
-							LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
-							self.current.description = "skip conditional continue";
-							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, target_registers | skip_continue_mask | self.current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
-							push_unreachable_breakpoint(&analysis->unreachables, ins + length);
-						} else {
-							LOG("not all registers skipped for continue");
-							dump_registers(&analysis->loader, &continue_state, target_registers);
-						}
-					}
-					if (!(skip_jump || skip_continue) && self.current_state.compare_state.sources != 0) {
-						self.current.description = "conditional jump predicate";
-						vary_effects_by_registers(&analysis->search, &analysis->loader, &self, target_registers | self.current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
-					}
-				}
-				function_effects jump_effects;
-				function_effects continue_effects = EFFECT_NONE;
-				bool continue_first = ins + length < jump_target;
-				if (continue_first) {
-					if (skip_continue) {
-					} else {
-						LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
-						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-						self.current.description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
-						continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, &self, true);
-						LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self.entry)));
-					}
-				}
-				if (skip_jump) {
-					jump_effects = EFFECT_NONE;
-				} else if ((jump_prot & PROT_EXEC) == 0) {
-#if ABORT_AT_NON_EXECUTABLE_ADDRESS
-					self.current.description = "conditional jump";
-					ERROR("found conditional jump to non-executable address at", temp_str(copy_address_list_description(&analysis->loader, &self.current)));
-					LOG("jump is to", temp_str(copy_address_description(&analysis->loader, jump_target)));
-					ERROR_FLUSH();
-					abort();
-#endif
-					LOG("found conditional jump to non-executable address, assuming all effects");
-					jump_effects = EFFECT_EXITS | EFFECT_RETURNS;
-				} else {
-					LOG("taking jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
-					self.current.description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
-					jump_effects = analyze_instructions(analysis, required_effects, &jump_state, jump_target, &self, true);
-				}
-				if (continue_first) {
-					LOG("completing conditional jump after branch", temp_str(copy_address_description(&analysis->loader, ins)));
-				} else {
-					LOG("resuming from conditional jump", temp_str(copy_address_description(&analysis->loader, ins)));
-					if (skip_continue) {
-					} else {
-						LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
-						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-						self.current.description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
-						continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, &self, true);
-						LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self.entry)));
-					}
-				}
-				if (continue_effects & EFFECT_PROCESSING) {
-					LOG("continue is processing", temp_str(copy_address_description(&analysis->loader, continue_target)));
-					continue_effects = (continue_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
-				}
-				if (jump_effects & EFFECT_PROCESSING) {
-					LOG("jump is processing", temp_str(copy_address_description(&analysis->loader, jump_target)));
-					jump_effects = (jump_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
-				}
-				effects |= (jump_effects | continue_effects) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING);
+				effects |= analyze_conditional_branch(analysis, required_effects, ins, jump_target, ins + length, &self) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING);
 				goto update_and_return;
 			}
 		}
@@ -4868,16 +4888,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 						LOG("call* to non-executable address, assuming all effects", address.value);
 					} else {
-						push_stack(&self.current_state, 2);
-						struct registers call_state = copy_call_argument_registers(&analysis->loader, &self.current_state, ins);
-						dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 						self.current.description = "indirect call";
-						function_effects more_effects = analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, (const uint8_t *)address.value, &self, true);
-						pop_stack(&self.current_state, 2);
-						if (more_effects & EFFECT_PROCESSING) {
-							queue_instruction(&analysis->search.queue, (const uint8_t *)address.value, required_effects, call_state, (const uint8_t *)address.value, "indirect call");
-							more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
-						}
+						function_effects more_effects = analyze_call(analysis, required_effects & ~EFFECT_ENTRY_POINT, ins, (const uint8_t *)address.value, &self);
 						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP);
 						LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -4916,16 +4928,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
 								effects |= EFFECT_EXITS | EFFECT_RETURNS;
 							} else {
-								push_stack(&self.current_state, 2);
-								struct registers call_state = copy_call_argument_registers(&analysis->loader, &self.current_state, ins);
-								dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 								self.current.description = "indirect call";
-								function_effects more_effects = analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, dest, &self, true);
-								pop_stack(&self.current_state, 2);
-								if (more_effects & EFFECT_PROCESSING) {
-									queue_instruction(&analysis->search.queue, dest, required_effects, call_state, dest, "indirect call");
-									more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
-								}
+								function_effects more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
 								effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP);
 								LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -6881,10 +6885,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x8c: { // mov r/m, Sreg
 				const uint8_t *remaining = &unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, rex, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
-				struct register_state empty;
-				clear_register(&empty);
-				truncate_to_size_prefixes(&empty, rex);
-				self.current_state.registers[rm] = empty;
+				clear_register(&self.current_state.registers[rm]);
+				truncate_to_size_prefixes(&self.current_state.registers[rm], rex);
 				self.current_state.sources[rm] = 0;
 				clear_match(&analysis->loader, &self.current_state, rm, ins);
 				pending_stack_clear &= ~((register_mask)1 << rm);
@@ -6976,8 +6978,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
-									struct registers empty = empty_registers;
-									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), empty, self.current.address, "lea");
+									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), empty_registers, self.current.address, "lea");
 									//analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self, true);
 								}
 							}
@@ -7452,15 +7453,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (required_effects & EFFECT_ENTRY_POINT) {
 						required_effects |= EFFECT_AFTER_STARTUP;
 					}
-					push_stack(&self.current_state, 2);
-					struct registers call_state = copy_call_argument_registers(&analysis->loader, &self.current_state, ins);
 					self.current.description = "call";
-					function_effects more_effects = analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, (const uint8_t *)dest, &self, true);
-					pop_stack(&self.current_state, 2);
-					if (more_effects & EFFECT_PROCESSING) {
-						queue_instruction(&analysis->search.queue, (const uint8_t *)dest, required_effects, call_state, self.current.address, "call");
-						more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
-					}
+					function_effects more_effects = analyze_call(analysis, required_effects, ins, (const uint8_t *)dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					LOG("resuming from call", temp_str(copy_address_description(&analysis->loader, ins)));
