@@ -56,7 +56,7 @@ extern void fs_syscall_ret(void);
 static inline unsigned short fs_htons(unsigned short value)
 {
 #if BYTE_ORDER == LITTLE_ENDIAN
-	return value << 8 | value >> 8;
+	return (unsigned short)(value << 8 | value >> 8);
 #else
 	return value;
 #endif
@@ -89,19 +89,19 @@ __attribute__((warn_unused_result))
 static inline pid_t fs_fork(void)
 {
 #ifdef SYS_fork
-	return FS_SYSCALL(SYS_fork);
+	return (pid_t)FS_SYSCALL(SYS_fork);
 #else
-	return FS_SYSCALL(SYS_clone, SIGCHLD, 0);
+	return (pid_t)FS_SYSCALL(SYS_clone, SIGCHLD, 0);
 #endif
 }
 
 __attribute__((warn_unused_result))
-static inline size_t fs_getcwd(char *buf, size_t size)
+static inline ssize_t fs_getcwd(char *buf, size_t size)
 {
 #ifdef SYS_getcwd
-	return FS_SYSCALL(SYS_getcwd, (intptr_t)buf, size);
+	return FS_SYSCALL(SYS_getcwd, (intptr_t)buf, (intptr_t)size);
 #else
-	intptr_t result = FS_SYSCALL(SYS_readlink, (intptr_t)".", (intptr_t)buf, size);
+	intptr_t result = FS_SYSCALL(SYS_readlink, (intptr_t)".", (intptr_t)buf, (intptr_t)size);
 	if (result >= (intptr_t)size) {
 		result = -ERANGE;
 	} else if (result >= 0) {
@@ -149,9 +149,9 @@ static inline intptr_t fs_write_all(int fd, const char *buffer, size_t length)
 			return result;
 		}
 		buffer += result;
-		remaining -= result;
+		remaining -= (size_t)result;
 	}
-	return length - remaining;
+	return (intptr_t)(length - remaining);
 }
 
 static inline intptr_t fs_send(int fd, const char *buffer, size_t length, int flags)
@@ -177,14 +177,14 @@ static inline intptr_t fs_writev_all(int fd, struct iovec *iov, int iovcnt)
 			return result;
 		}
 		while ((size_t)result >= iov->iov_len) {
-			result -= iov->iov_len;
+			result -= (intptr_t)iov->iov_len;
 			++iov;
 			if ((--iovcnt) == 0) {
 				return 1;
 			}
 		}
 		iov->iov_base += result;
-		iov->iov_len -= result;
+		iov->iov_len -= (size_t)result;
 	}
 }
 
@@ -212,9 +212,9 @@ static inline intptr_t fs_read_all(int fd, char *buffer, size_t length)
 			return result;
 		}
 		buffer += result;
-		remaining -= result;
+		remaining -= (size_t)result;
 	}
-	return length - remaining;
+	return (intptr_t)(length - remaining);
 }
 
 __attribute__((warn_unused_result))
@@ -237,14 +237,14 @@ static inline intptr_t fs_readv_all(int fd, struct iovec *iov, int iovcnt)
 		}
 		written += result;
 		while ((size_t)result >= iov->iov_len) {
-			result -= iov->iov_len;
+			result -= (intptr_t)iov->iov_len;
 			++iov;
 			if ((--iovcnt) == 0) {
 				return written;
 			}
 		}
 		iov->iov_base += result;
-		iov->iov_len -= result;
+		iov->iov_len -= (size_t)result;
 	}
 }
 
@@ -293,15 +293,15 @@ static inline intptr_t fs_pread_all(int fd, char *buffer, size_t length, uint64_
 				continue;
 			}
 			if (result == 0) {
-				return length - remaining;
+				return (intptr_t)(length - remaining);
 			}
 			return result;
 		}
-		offset += result;
+		offset += (size_t)result;
 		buffer += result;
-		remaining -= result;
+		remaining -= (size_t)result;
 	}
-	return length;
+	return (intptr_t)length;
 }
 
 __attribute__((warn_unused_result))
@@ -313,178 +313,178 @@ static inline intptr_t fs_lseek(int fd, off_t offset, int origin)
 __attribute__((warn_unused_result))
 static inline int fs_pipe(int pipefd[2])
 {
-	return FS_SYSCALL(SYS_pipe, (intptr_t)pipefd);
+	return (int)FS_SYSCALL(SYS_pipe, (intptr_t)pipefd);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_socket(int domain, int type, int protocol)
 {
-	return FS_SYSCALL(SYS_socket, domain, type, protocol);
+	return (int)FS_SYSCALL(SYS_socket, domain, type, protocol);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_socketpair(int domain, int type, int protocol, int sv[2])
 {
-	return FS_SYSCALL(SYS_socketpair, domain, type, protocol, (intptr_t)sv);
+	return (int)FS_SYSCALL(SYS_socketpair, domain, type, protocol, (intptr_t)sv);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_setsockopt(int socket, int level, int option, const void *value, size_t value_len)
 {
-	return FS_SYSCALL(SYS_setsockopt, socket, level, option, (intptr_t)value, value_len);
+	return (int)FS_SYSCALL(SYS_setsockopt, socket, level, option, (intptr_t)value, (intptr_t)value_len);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_getsockopt(int socket, int level, int option, void *value, size_t *value_len)
 {
-	return FS_SYSCALL(SYS_getsockopt, socket, level, option, (intptr_t)value, (intptr_t)value_len);
+	return (int)FS_SYSCALL(SYS_getsockopt, socket, level, option, (intptr_t)value, (intptr_t)value_len);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_connect(int socket, const void *address, size_t address_len)
 {
-	return FS_SYSCALL(SYS_connect, socket, (intptr_t)address, (intptr_t)address_len);
+	return (int)FS_SYSCALL(SYS_connect, socket, (intptr_t)address, (intptr_t)address_len);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_bind(int socket, const void *address, size_t address_len)
 {
-	return FS_SYSCALL(SYS_bind, socket, (intptr_t)address, (intptr_t)address_len);
+	return (int)FS_SYSCALL(SYS_bind, socket, (intptr_t)address, (intptr_t)address_len);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_listen(int socket, int backlog)
 {
-	return FS_SYSCALL(SYS_listen, socket, (intptr_t)backlog);
+	return (int)FS_SYSCALL(SYS_listen, socket, (intptr_t)backlog);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_accept(int socket, void *address, size_t *address_len)
 {
-	return FS_SYSCALL(SYS_accept, socket, (intptr_t)address, (intptr_t)address_len);
+	return (int)FS_SYSCALL(SYS_accept, socket, (intptr_t)address, (intptr_t)address_len);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_open(const char *path, int flags, mode_t mode)
 {
 #ifdef SYS_open
-	return FS_SYSCALL(SYS_open, (intptr_t)path, flags, mode);
+	return (int)FS_SYSCALL(SYS_open, (intptr_t)path, flags, mode);
 #else
-	return FS_SYSCALL(SYS_openat, AT_FDCWD, (intptr_t)path, flags, mode);
+	return (int)FS_SYSCALL(SYS_openat, AT_FDCWD, (intptr_t)path, flags, mode);
 #endif
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_openat(int fd, const char *path, int flags, mode_t mode)
 {
-	return FS_SYSCALL(SYS_openat, fd, (intptr_t)path, flags, mode);
+	return (int)FS_SYSCALL(SYS_openat, fd, (intptr_t)path, flags, mode);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_mkdir(const char *path, mode_t mode)
 {
 #ifdef SYS_mkdir
-	return FS_SYSCALL(SYS_mkdir, (intptr_t)path, mode);
+	return (int)FS_SYSCALL(SYS_mkdir, (intptr_t)path, mode);
 #else
-	return FS_SYSCALL(SYS_mkdirat, AT_FDCWD, (intptr_t)path, mode);
+	return (int)FS_SYSCALL(SYS_mkdirat, AT_FDCWD, (intptr_t)path, mode);
 #endif
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_mkdirat(int dirfd, const char *path, mode_t mode)
 {
-	return FS_SYSCALL(SYS_mkdirat, dirfd, (intptr_t)path, mode);
+	return (int)FS_SYSCALL(SYS_mkdirat, dirfd, (intptr_t)path, mode);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_readlink(const char *path, char *buf, size_t bufsiz)
 {
 #ifdef SYS_readlink
-	return FS_SYSCALL(SYS_readlink, (intptr_t)path, (intptr_t)buf, bufsiz);
+	return (int)FS_SYSCALL(SYS_readlink, (intptr_t)path, (intptr_t)buf, (intptr_t)bufsiz);
 #else
-	return FS_SYSCALL(SYS_readlinkat, AT_FDCWD, (intptr_t)path, (intptr_t)buf, bufsiz);
+	return (int)FS_SYSCALL(SYS_readlinkat, AT_FDCWD, (intptr_t)path, (intptr_t)buf, (intptr_t)bufsiz);
 #endif
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_readlinkat(int fd, const char *path, char *buf, size_t bufsiz)
 {
-	return FS_SYSCALL(SYS_readlinkat, fd, (intptr_t)path, (intptr_t)buf, bufsiz);
+	return (int)FS_SYSCALL(SYS_readlinkat, fd, (intptr_t)path, (intptr_t)buf, (intptr_t)bufsiz);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_unlink(const char *path)
 {
 #ifdef SYS_unlink
-	return FS_SYSCALL(SYS_unlink, (intptr_t)path);
+	return (int)FS_SYSCALL(SYS_unlink, (intptr_t)path);
 #else
-	return FS_SYSCALL(SYS_unlinkat, AT_FDCWD, (intptr_t)path, 0);
+	return (int)FS_SYSCALL(SYS_unlinkat, AT_FDCWD, (intptr_t)path, 0);
 #endif
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_unlinkat(int fd, const char *path, int flags)
 {
-	return FS_SYSCALL(SYS_unlinkat, fd, (intptr_t)path, flags);
+	return (int)FS_SYSCALL(SYS_unlinkat, fd, (intptr_t)path, flags);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_renameat(int old_dirfd, const char *old_path, int new_dirfd, const char *new_path)
 {
-	return FS_SYSCALL(SYS_renameat, old_dirfd, (intptr_t)old_path, new_dirfd, (intptr_t)new_path);
+	return (int)FS_SYSCALL(SYS_renameat, old_dirfd, (intptr_t)old_path, new_dirfd, (intptr_t)new_path);
 }
 
 #ifdef SYS_renameat2
 __attribute__((warn_unused_result))
 static inline int fs_renameat2(int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
 {
-	return FS_SYSCALL(SYS_renameat2, old_dirfd, (intptr_t)old_path, new_dirfd, (intptr_t)new_path, flags);
+	return (int)FS_SYSCALL(SYS_renameat2, old_dirfd, (intptr_t)old_path, new_dirfd, (intptr_t)new_path, flags);
 }
 #endif
 
 __attribute__((warn_unused_result))
 static inline int fs_linkat(int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
 {
-	return FS_SYSCALL(SYS_linkat, old_dirfd, (intptr_t)old_path, new_dirfd, (intptr_t)new_path, flags);
+	return (int)FS_SYSCALL(SYS_linkat, old_dirfd, (intptr_t)old_path, new_dirfd, (intptr_t)new_path, flags);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_symlinkat(const char *old_path, int new_dirfd, const char *new_path)
 {
-	return FS_SYSCALL(SYS_symlinkat, (intptr_t)old_path, new_dirfd, (intptr_t)new_path);
+	return (int)FS_SYSCALL(SYS_symlinkat, (intptr_t)old_path, new_dirfd, (intptr_t)new_path);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_fchmod(int fd, mode_t mode)
 {
-	return FS_SYSCALL(SYS_fchmod, fd, mode);
+	return (int)FS_SYSCALL(SYS_fchmod, fd, mode);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_fchown(int fd, uid_t uid, gid_t gid)
 {
-	return FS_SYSCALL(SYS_fchown, fd, uid, gid);
+	return (int)FS_SYSCALL(SYS_fchown, fd, uid, gid);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_fchownat(int fd, const char *path, uid_t uid, gid_t gid, int flags)
 {
-	return FS_SYSCALL(SYS_fchownat, fd, (intptr_t)path, uid, gid, flags);
+	return (int)FS_SYSCALL(SYS_fchownat, fd, (intptr_t)path, uid, gid, flags);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_ftruncate(int fd, size_t size)
 {
-	return FS_SYSCALL(SYS_ftruncate, fd, size);
+	return (int)FS_SYSCALL(SYS_ftruncate, fd, (intptr_t)size);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_fstat(int fd, struct fs_stat *buf)
 {
 #ifdef SYS_fstat64
-	return FS_SYSCALL(SYS_fstat64, fd, (intptr_t)buf);
+	return (int)FS_SYSCALL(SYS_fstat64, fd, (intptr_t)buf);
 #else
-	return FS_SYSCALL(SYS_fstat, fd, (intptr_t)buf);
+	return (int)FS_SYSCALL(SYS_fstat, fd, (intptr_t)buf);
 #endif
 }
 
@@ -492,12 +492,12 @@ __attribute__((warn_unused_result))
 static inline int fs_stat(const char *path, struct fs_stat *buf)
 {
 #ifdef SYS_stat64
-	return FS_SYSCALL(SYS_stat64, (intptr_t)path, (intptr_t)buf);
+	return (int)FS_SYSCALL(SYS_stat64, (intptr_t)path, (intptr_t)buf);
 #else
 #ifdef SYS_stat
-	return FS_SYSCALL(SYS_stat, (intptr_t)path, (intptr_t)buf);
+	return (int)FS_SYSCALL(SYS_stat, (intptr_t)path, (intptr_t)buf);
 #else
-	return FS_SYSCALL(SYS_newfstatat, AT_FDCWD, (intptr_t)path, (intptr_t)buf, 0);
+	return (int)FS_SYSCALL(SYS_newfstatat, AT_FDCWD, (intptr_t)path, (intptr_t)buf, 0);
 #endif
 #endif
 }
@@ -520,7 +520,7 @@ struct fs_statfs {
 __attribute__((warn_unused_result))
 static inline int fs_fstatfs(int fd, struct fs_statfs *buf)
 {
-	return FS_SYSCALL(SYS_fstatfs, fd, (intptr_t)buf);
+	return (int)FS_SYSCALL(SYS_fstatfs, fd, (intptr_t)buf);
 }
 
 struct fs_dirent {
@@ -534,7 +534,7 @@ struct fs_dirent {
 #ifdef SYS_getdents64
 static inline int fs_getdents(int fd, struct fs_dirent *dirp, size_t size)
 {
-	return FS_SYSCALL(SYS_getdents64, fd, (intptr_t)dirp, size);
+	return (int)FS_SYSCALL(SYS_getdents64, fd, (intptr_t)dirp, (intptr_t)size);
 }
 #endif
 
@@ -542,31 +542,31 @@ __attribute__((warn_unused_result))
 static inline int fs_access(const char *pathname, int mode)
 {
 #ifdef SYS_access
-	return FS_SYSCALL(SYS_access, (intptr_t)pathname, mode);
+	return (int)FS_SYSCALL(SYS_access, (intptr_t)pathname, mode);
 #else
-	return FS_SYSCALL(SYS_faccessat, AT_FDCWD, (intptr_t)pathname, mode);
+	return (int)FS_SYSCALL(SYS_faccessat, AT_FDCWD, (intptr_t)pathname, mode);
 #endif
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_faccessat(int dirfd, const char *pathname, int mode, int flags)
 {
-	return FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode, flags);
+	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode, flags);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_dup(int oldfd)
 {
-	return FS_SYSCALL(SYS_dup, oldfd);
+	return (int)FS_SYSCALL(SYS_dup, oldfd);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_dup2(int oldfd, int newfd)
 {
 #ifdef SYS_dup2
-	return FS_SYSCALL(SYS_dup2, oldfd, newfd);
+	return (int)FS_SYSCALL(SYS_dup2, oldfd, newfd);
 #else
-	return FS_SYSCALL(SYS_dup3, oldfd, newfd, 0);
+	return (int)FS_SYSCALL(SYS_dup3, oldfd, newfd, 0);
 #endif
 }
 
@@ -574,25 +574,25 @@ static inline int fs_dup2(int oldfd, int newfd)
 __attribute__((warn_unused_result))
 static inline int fs_dup3(int oldfd, int newfd, int flags)
 {
-	return FS_SYSCALL(SYS_dup3, oldfd, newfd, flags);
+	return (int)FS_SYSCALL(SYS_dup3, oldfd, newfd, flags);
 }
 #endif
 
 __attribute__((warn_unused_result))
 static inline int fs_fcntl(int fd, int cmd, uintptr_t arg)
 {
-	return FS_SYSCALL(SYS_fcntl, fd, cmd, arg);
+	return (int)FS_SYSCALL(SYS_fcntl, fd, cmd, (intptr_t)arg);
 }
 
 static inline int fs_close(int fd)
 {
-	return FS_SYSCALL(SYS_close, fd);
+	return (int)FS_SYSCALL(SYS_close, fd);
 }
 
 __attribute__((warn_unused_result))
 static inline void *fs_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
-	return (void *)FS_SYSCALL(SYS_mmap, (intptr_t)addr, length, prot, flags, fd, offset);
+	return (void *)FS_SYSCALL(SYS_mmap, (intptr_t)addr, (intptr_t)length, prot, flags, fd, offset);
 }
 
 __attribute__((warn_unused_result))
@@ -602,34 +602,34 @@ static inline bool fs_is_map_failed(void *address) {
 
 static inline int fs_munmap(void *addr, size_t length)
 {
-	return FS_SYSCALL(SYS_munmap, (intptr_t)addr, length);
+	return (int)FS_SYSCALL(SYS_munmap, (intptr_t)addr, (intptr_t)length);
 }
 
 #ifdef SYS_mremap
 __attribute__((warn_unused_result))
 static inline void *fs_mremap(void *old_address, size_t old_size, size_t new_size, int flags, void *new_address)
 {
-	return (void *)FS_SYSCALL(SYS_mremap, (intptr_t)old_address, old_size, new_size, flags, (intptr_t)new_address);
+	return (void *)FS_SYSCALL(SYS_mremap, (intptr_t)old_address, (intptr_t)old_size, (intptr_t)new_size, flags, (intptr_t)new_address);
 }
 #endif
 
 __attribute__((warn_unused_result))
 static inline int fs_mprotect(void *addr, size_t len, int prot)
 {
-	return FS_SYSCALL(SYS_mprotect, (intptr_t)addr, len, prot);
+	return (int)FS_SYSCALL(SYS_mprotect, (intptr_t)addr, (intptr_t)len, prot);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_mincore(const void *addr, size_t length, unsigned char *vec)
 {
-	return FS_SYSCALL(SYS_mincore, (intptr_t)addr, length, (intptr_t)vec);
+	return (int)FS_SYSCALL(SYS_mincore, (intptr_t)addr, (intptr_t)length, (intptr_t)vec);
 }
 
 #ifdef SYS_prctl
 __attribute__((warn_unused_result))
 static inline int fs_prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
 {
-	return FS_SYSCALL(SYS_prctl, option, arg2, arg3, arg4, arg5);
+	return (int)FS_SYSCALL(SYS_prctl, option, (intptr_t)arg2, (intptr_t)arg3, (intptr_t)arg4, (intptr_t)arg5);
 }
 #endif
 
@@ -637,7 +637,7 @@ static inline int fs_prctl(int option, unsigned long arg2, unsigned long arg3, u
 __attribute__((warn_unused_result))
 static inline int fs_seccomp(unsigned int operation, unsigned int flags, void *args)
 {
-	return FS_SYSCALL(SYS_seccomp, operation, flags, (intptr_t)args);
+	return (int)FS_SYSCALL(SYS_seccomp, operation, flags, (intptr_t)args);
 }
 #endif
 
@@ -692,7 +692,7 @@ struct fs_sigaction {
 __attribute__((warn_unused_result))
 static inline int fs_sigaction(int signum, const struct fs_sigaction *act, struct fs_sigaction *oldact, size_t sigsetsize)
 {
-	return FS_SYSCALL(SYS_sigaction, signum, (intptr_t)act, (intptr_t)oldact, sigsetsize);
+	return (int)FS_SYSCALL(SYS_sigaction, signum, (intptr_t)act, (intptr_t)oldact, sigsetsize);
 }
 #endif
 
@@ -700,7 +700,7 @@ static inline int fs_sigaction(int signum, const struct fs_sigaction *act, struc
 __attribute__((warn_unused_result))
 static inline int fs_rt_sigaction(int signum, const struct fs_sigaction *act, struct fs_sigaction *oldact, size_t sigsetsize)
 {
-	return FS_SYSCALL(SYS_rt_sigaction, signum, (intptr_t)act, (intptr_t)oldact, sigsetsize);
+	return (int)FS_SYSCALL(SYS_rt_sigaction, signum, (intptr_t)act, (intptr_t)oldact, (intptr_t)sigsetsize);
 }
 #endif
 
@@ -708,7 +708,7 @@ static inline int fs_rt_sigaction(int signum, const struct fs_sigaction *act, st
 __attribute__((warn_unused_result))
 static inline int fs_sigprocmask(int how, const struct fs_sigset_t *set, struct fs_sigset_t *oldset, size_t sigsetsize)
 {
-	return FS_SYSCALL(SYS_sigprocmask, how, (intptr_t)set, (intptr_t)oldset, sigsetsize);
+	return (int)FS_SYSCALL(SYS_sigprocmask, how, (intptr_t)set, (intptr_t)oldset, (intptr_t)sigsetsize);
 }
 #endif
 
@@ -716,14 +716,14 @@ static inline int fs_sigprocmask(int how, const struct fs_sigset_t *set, struct 
 __attribute__((warn_unused_result))
 static inline int fs_rt_sigprocmask(int how, const struct fs_sigset_t *set, struct fs_sigset_t *oldset, size_t sigsetsize)
 {
-	return FS_SYSCALL(SYS_rt_sigprocmask, how, (intptr_t)set, (intptr_t)oldset, sigsetsize);
+	return (int)FS_SYSCALL(SYS_rt_sigprocmask, how, (intptr_t)set, (intptr_t)oldset, (intptr_t)sigsetsize);
 }
 #endif
 
 #ifdef SYS_sigreturn
 static inline void fs_sigreturn(void)
 {
-	FS_SYSCALL(SYS_sigreturn, 0);
+	FS_SYSCALL_NORETURN(SYS_sigreturn, 0);
 	__builtin_unreachable();
 }
 #endif
@@ -731,7 +731,7 @@ static inline void fs_sigreturn(void)
 #ifdef SYS_rt_sigreturn
 static inline void fs_rt_sigreturn(void)
 {
-	FS_SYSCALL(SYS_rt_sigreturn, 0);
+	FS_SYSCALL_NORETURN(SYS_rt_sigreturn, 0);
 	__builtin_unreachable();
 }
 #endif
@@ -739,125 +739,125 @@ static inline void fs_rt_sigreturn(void)
 __attribute__((warn_unused_result))
 static inline int fs_sigaltstack(const stack_t *ss, stack_t *old_ss)
 {
-	return FS_SYSCALL(SYS_sigaltstack, (intptr_t)ss, (intptr_t)old_ss);
+	return (int)FS_SYSCALL(SYS_sigaltstack, (intptr_t)ss, (intptr_t)old_ss);
 }
 
 __attribute__((warn_unused_result))
-static inline int fs_getpid(void)
+static inline pid_t fs_getpid(void)
 {
-	return FS_SYSCALL(SYS_getpid);
+	return (pid_t)FS_SYSCALL(SYS_getpid);
 }
 
 __attribute__((warn_unused_result))
-static inline int fs_getpgid(pid_t pid)
+static inline pid_t fs_getpgid(pid_t pid)
 {
-	return FS_SYSCALL(SYS_getpgid, pid);
+	return (pid_t)FS_SYSCALL(SYS_getpgid, pid);
 }
 
 #ifdef __linux__
 __attribute__((warn_unused_result))
-static inline int fs_gettid(void)
+static inline pid_t fs_gettid(void)
 {
 	// darwin's gettid is completely different from linux's
-	return FS_SYSCALL(SYS_gettid);
+	return (pid_t)FS_SYSCALL(SYS_gettid);
 }
 #endif
 
 __attribute__((warn_unused_result))
 static inline uid_t fs_getuid(void)
 {
-	return FS_SYSCALL(SYS_getuid);
+	return (uid_t)FS_SYSCALL(SYS_getuid);
 }
 
 __attribute__((warn_unused_result))
 static inline gid_t fs_getgid(void)
 {
-	return FS_SYSCALL(SYS_getgid);
+	return (gid_t)FS_SYSCALL(SYS_getgid);
 }
 
 #ifdef SYS_tkill
 __attribute__((warn_unused_result))
 static inline int fs_tkill(int tid, int sig)
 {
-	return FS_SYSCALL(SYS_tkill, tid, sig);
+	return (int)FS_SYSCALL(SYS_tkill, tid, sig);
 }
 #endif
 
 __attribute__((warn_unused_result))
 static inline int fs_kill(int pid, int sig)
 {
-	return FS_SYSCALL(__NR_kill, pid, sig);
+	return (int)FS_SYSCALL(__NR_kill, pid, sig);
 }
 
 __attribute__((warn_unused_result))
 static inline int fs_execve(const char *pathname, char *const argv[], char *const envp[])
 {
-	return FS_SYSCALL(SYS_execve, (intptr_t)pathname, (intptr_t)argv, (intptr_t)envp);
+	return (int)FS_SYSCALL(SYS_execve, (intptr_t)pathname, (intptr_t)argv, (intptr_t)envp);
 }
 
 #ifdef SYS_execveat
 __attribute__((warn_unused_result))
 static inline int fs_execveat(int dirfd, const char *pathname, char *const argv[], char *const envp[], int flags)
 {
-	return FS_SYSCALL(SYS_execveat, dirfd, (intptr_t)pathname, (intptr_t)argv, (intptr_t)envp, flags);
+	return (int)FS_SYSCALL(SYS_execveat, dirfd, (intptr_t)pathname, (intptr_t)argv, (intptr_t)envp, flags);
 }
 #endif
 
 #ifdef SYS_futex
 static inline int fs_futex(int *uaddr, int futex_op, int val, const struct timespec *timeout)
 {
-	return FS_SYSCALL(SYS_futex, (intptr_t)uaddr, futex_op, val, (intptr_t)timeout);
+	return (int)FS_SYSCALL(SYS_futex, (intptr_t)uaddr, futex_op, val, (intptr_t)timeout);
 }
 #endif
 
 #ifdef SYS_membarrier
 static inline int fs_membarrier(int cmd, int flags)
 {
-	return FS_SYSCALL(SYS_membarrier, cmd, flags);
+	return (int)FS_SYSCALL(SYS_membarrier, cmd, flags);
 }
 #endif
 
 #ifdef SYS_sched_yield
 static inline int fs_sched_yield(void)
 {
-	return FS_SYSCALL(SYS_sched_yield);
+	return (int)FS_SYSCALL(SYS_sched_yield);
 }
 #endif
 
 #ifdef SYS_clock_gettime
 static inline int fs_clock_gettime(clockid_t clk_id, struct timespec *tp)
 {
-	return FS_SYSCALL(SYS_clock_gettime, (intptr_t)clk_id, (intptr_t)tp);
+	return (int)FS_SYSCALL(SYS_clock_gettime, (intptr_t)clk_id, (intptr_t)tp);
 }
 #endif
 
 #ifdef SYS_nanosleep
 static inline int fs_nanosleep(const struct timespec *req, struct timespec *rem)
 {
-	return FS_SYSCALL(SYS_nanosleep, (intptr_t)req, (intptr_t)rem);
+	return (int)FS_SYSCALL(SYS_nanosleep, (intptr_t)req, (intptr_t)rem);
 }
 #endif
 
 #ifdef SYS_memfd_create
 static inline int fs_memfd_create(const char *name, unsigned int flags)
 {
-	return FS_SYSCALL(SYS_memfd_create, (intptr_t)name, flags);
+	return (int)FS_SYSCALL(SYS_memfd_create, (intptr_t)name, flags);
 }
 #endif
 
 static inline long fs_ptrace(int request, pid_t pid, void *addr, void *data)
 {
-	return FS_SYSCALL(__NR_ptrace, request, pid, (intptr_t)addr, (intptr_t)data);
+	return (long)FS_SYSCALL(__NR_ptrace, request, pid, (intptr_t)addr, (intptr_t)data);
 }
 
 static inline ssize_t fs_process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags)
 {
-	return FS_SYSCALL(__NR_process_vm_readv, pid, (intptr_t)local_iov, liovcnt, (intptr_t)remote_iov, riovcnt, flags);
+	return (ssize_t)FS_SYSCALL(__NR_process_vm_readv, pid, (intptr_t)local_iov, (intptr_t)liovcnt, (intptr_t)remote_iov, (intptr_t)riovcnt, (intptr_t)flags);
 }
 
 static inline ssize_t fs_process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags)
 {
-	return FS_SYSCALL(__NR_process_vm_writev, pid, (intptr_t)local_iov, liovcnt, (intptr_t)remote_iov, riovcnt, flags);
+	return (ssize_t)FS_SYSCALL(__NR_process_vm_writev, pid, (intptr_t)local_iov, (intptr_t)liovcnt, (intptr_t)remote_iov, (intptr_t)riovcnt, (intptr_t)flags);
 }
 
 static inline ssize_t fs_process_vm_read(pid_t pid, void *buf, size_t size, uintptr_t remote)
@@ -895,7 +895,7 @@ static inline bool fs_fd_isset(int fd, const struct fs_fd_set *fds)
 	if ((fd < 0) || (fd >= FD_SETSIZE)) {
 		return false;
 	}
-	return (fds->bits[fd / (8 * sizeof(long int))] & (1 << (fd % (8 * sizeof(long int))))) != 0;
+	return (fds->bits[(unsigned int)fd / (8 * sizeof(long int))] & (1 << ((unsigned int)fd % (8 * sizeof(long int))))) != 0;
 }
 
 static inline void fs_fd_clr(int fd, struct fs_fd_set *fds)
@@ -903,7 +903,7 @@ static inline void fs_fd_clr(int fd, struct fs_fd_set *fds)
 	if ((fd < 0) || (fd >= FD_SETSIZE)) {
 		return;
 	}
-	fds->bits[fd / (8 * sizeof(long int))] &= ~(1 << (fd % (8 * sizeof(long int))));
+	fds->bits[(unsigned int)fd / (8 * sizeof(long int))] &= ~(1 << ((unsigned int)fd % (8 * sizeof(long int))));
 }
 
 // fs_memset fills a buffer with a specified character value
@@ -912,7 +912,7 @@ static inline void *fs_memset(void *buffer, int value, size_t num)
 {
 	char *buf = buffer;
 	for (int i = 0; i < (int)num; i++) {
-		buf[i] = value;
+		buf[i] = (char)value;
 	}
 	return buffer;
 }
@@ -926,7 +926,7 @@ static inline size_t fs_strlen(const char *string)
 	while (*current) {
 		++current;
 	}
-	return current - string;
+	return (size_t)(current - string);
 }
 
 // fs_strcmp compares two strings
@@ -1086,7 +1086,7 @@ static inline void *fs_memmove(void *destination, const void *source, size_t num
 	}
 	if (destination > source && (source - destination < (intptr_t)num)) {
 		// copy in reverse to avoid overwriting destination
-		for (ssize_t i = num - 1; i >= 0; i--) {
+		for (ssize_t i = (ssize_t)(num - 1); i >= 0; i--) {
 			dst[i] = src[i];
 		}
 		return destination;
@@ -1114,7 +1114,7 @@ static inline char *fs_strcpy(char * restrict buf, const char * restrict str)
 __attribute__((nonnull(1)))
 static inline void fs_reverse(char buffer[], size_t length)
 {
-	for (int i = 0, j = length - 1; i < j; i++, j--) {
+	for (size_t i = 0, j = length - 1; i < j; i++, j--) {
 		char c = buffer[i];
 		buffer[i] = buffer[j];
 		buffer[j] = c;
@@ -1124,11 +1124,11 @@ static inline void fs_reverse(char buffer[], size_t length)
 // fs_utoa formats an unsigned integer as decimal into buffer, which must hold
 // enough space for the largest formatted number to be written
 __attribute__((nonnull(2)))
-static inline int fs_utoa(uintptr_t value, char buffer[])
+static inline size_t fs_utoa(uintptr_t value, char buffer[])
 {
-	int i = 0;
+	size_t i = 0;
 	do {
-		buffer[i++] = value % 10 + '0';
+		buffer[i++] = (char)((value % 10) + '0');
 	} while (value /= 10);
 	buffer[i] = '\0';
 	fs_reverse(buffer, i);
@@ -1138,7 +1138,7 @@ static inline int fs_utoa(uintptr_t value, char buffer[])
 // fs_itoa formats an integer as decimal into buffer, which must hold enough
 // space for the largest formatted number to be written
 __attribute__((nonnull(2)))
-static inline int fs_itoa(intptr_t value, char buffer[])
+static inline size_t fs_itoa(intptr_t value, char buffer[])
 {
 	if (value < 0) {
 		*buffer = '-';
@@ -1160,9 +1160,9 @@ static inline int fs_itoa(intptr_t value, char buffer[])
 // fs_utoah_noprefix formats an integer as hexadecimal into buffer, which must
 // hold enough space for the largest formatted number to be written
 __attribute__((nonnull(2)))
-static inline int fs_utoah_noprefix(uintptr_t value, char buffer[])
+static inline size_t fs_utoah_noprefix(uintptr_t value, char buffer[])
 {
-	int i = 0;
+	size_t i = 0;
 	do {
 		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0xf];
 		value = value >> 4;
@@ -1175,11 +1175,11 @@ static inline int fs_utoah_noprefix(uintptr_t value, char buffer[])
 // fs_utoah formats an integer as hexadecimal into buffer, which must hold
 // enough space for the largest formatted number to be written
 __attribute__((nonnull(2)))
-static inline int fs_utoah(uintptr_t value, char buffer[])
+static inline size_t fs_utoah(uintptr_t value, char buffer[])
 {
 	buffer[0] = '0';
 	buffer[1] = 'x';
-	int i = 2;
+	size_t i = 2;
 	do {
 		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0xf];
 		value = value >> 4;
@@ -1223,7 +1223,7 @@ static inline const char *fs_scanu(const char *buffer, uintptr_t *result)
 		if (val == -1) {
 			break;
 		}
-		value = value << 4 | val;
+		value = value << 4 | (uintptr_t)val;
 		buffer++;
 	}
 	*result = value;
@@ -1260,9 +1260,12 @@ __attribute__((warn_unused_result))
 __attribute__((nonnull(2)))
 static inline int fs_readlink_fd(int fd, char *out_path, size_t size)
 {
+	if (fd < 0) {
+		return -EINVAL;
+	}
 	char dev_path[64];
 	fs_memcpy(dev_path, "/proc/self/fd/", sizeof("/proc/self/fd/") - 1);
-	fs_utoa(fd, &dev_path[sizeof("/proc/self/fd/") - 1]);
+	fs_utoa((uintptr_t)fd, &dev_path[sizeof("/proc/self/fd/") - 1]);
 	return fs_readlink(dev_path, out_path, size);
 }
 

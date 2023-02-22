@@ -71,8 +71,8 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
 		LOG("assuming interpreter can run after startup");
-		struct analysis_frame new_caller = { .current = { .address = interpreter->info.base, .description = "interpreter", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller, true);
+		struct analysis_frame interpreter_caller = { .current = { .address = interpreter->info.base, .description = "interpreter", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &interpreter_caller, true);
 	} else {
 		LOG("no interpreter for this binary");
 	}
@@ -322,7 +322,6 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 		}
 		uintptr_t this_min = ph->p_vaddr & -PAGE_SIZE;
 		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & -PAGE_SIZE;
-		off_t off_start = ph->p_offset & -PAGE_SIZE;
 		int protection = 0;
 		if (ph->p_flags & PF_R) {
 			protection |= PROT_READ;
@@ -334,7 +333,7 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 			protection |= PROT_EXEC;
 		}
 		if (this_max-this_min) {
-			intptr_t section_mapping = remote_mmap(map_offset + this_min, this_max-this_min, protection, MAP_PRIVATE|MAP_FIXED, fd, off_start);
+			intptr_t section_mapping = remote_mmap(map_offset + this_min, this_max-this_min, protection, MAP_PRIVATE|MAP_FIXED, fd, ph->p_offset & -PAGE_SIZE);
 			if (fs_is_map_failed((void *)section_mapping)) {
 				ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
 				return -ENOEXEC;
@@ -493,7 +492,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	}
 	// load the main binary
 	struct binary_info main_info = { 0 };
-	int result = remote_load_binary(fd, &main_info);
+	intptr_t result = remote_load_binary(fd, &main_info);
 	if (result < 0) {
 		cleanup_searched_instructions(&analysis.search);
 		return result;
@@ -821,11 +820,11 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		}
 	}
 	uint32_t stream_id = proxy_generate_stream_id();
-	struct proxy_target_state proxy_state = { 0 };
-	proxy_state.self_pid = 0;
-	proxy_state.stream_id = stream_id;
-	proxy_state.target_state = proxy_get_hello_message()->state;
-	proxy_poke(proxy_state_addr, sizeof(proxy_state), &proxy_state);
+	struct proxy_target_state new_proxy_state = { 0 };
+	new_proxy_state.self_pid = 0;
+	new_proxy_state.stream_id = stream_id;
+	new_proxy_state.target_state = proxy_get_hello_message()->state;
+	proxy_poke(proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
 	char buf[512 * 1024];
 	ERROR("press enter to continue");
 	if (fs_read(0, &buf[0], 1) != 1) {
@@ -847,7 +846,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	for (;;) {
 		struct iovec vec[PROXY_ARGUMENT_COUNT];
 		size_t io_count = 0;
-		intptr_t result = 0;
+		result = 0;
 		intptr_t result_id = proxy_read_stream_message_start(stream_id, &message);
 		switch (message.template.nr) {
 			case TARGET_NR_PEEK:
@@ -899,7 +898,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 				// read trailer
 				size_t bytes_read = 0;
 				while (trailer_bytes != bytes_read) {
-					int result = proxy_read_stream_message_body(stream_id, &buf[bytes_read], sizeof(buf) - bytes_read);
+					result = proxy_read_stream_message_body(stream_id, &buf[bytes_read], sizeof(buf) - bytes_read);
 					if (result <= 0) {
 						if (result == -EINTR) {
 							continue;

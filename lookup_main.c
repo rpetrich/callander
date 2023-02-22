@@ -94,11 +94,11 @@ int main(__attribute__((unused)) int argc, const char **argv)
 							struct sockaddr_in6 *addr = (struct sockaddr_in6 *)results->ai_addr;
 							char buffer[INET6_ADDRSTRLEN];
 							int offset = 0;
-							for (int i = 0; i < 8; i++) {
-								if (i != 0) {
+							for (int j = 0; j < 8; j++) {
+								if (j != 0) {
 									buffer[offset++] = ':';
 								}
-								offset += fs_utoah_noprefix(((uintptr_t)addr->sin6_addr.s6_addr[i*2] << 8) | addr->sin6_addr.s6_addr[i*2+1], &buffer[offset]);
+								offset += fs_utoah_noprefix(((uintptr_t)addr->sin6_addr.s6_addr[j*2] << 8) | addr->sin6_addr.s6_addr[j*2+1], &buffer[offset]);
 							}
 							ERROR("result", &buffer[0]);
 							break;

@@ -13,6 +13,7 @@
 #define MORE_STACK_SLOTS 1
 #define STORE_LAST_MODIFIED 0
 #define BREAK_ON_UNREACHABLES 0
+#define RECORD_WHERE_STACK_ADDRESS_TAKEN 0
 
 #define LOGGING
 
@@ -99,26 +100,26 @@ struct loaded_binary {
 	bool has_finished_loading:1;
 	bool has_frame_info:1;
 	bool owns_binary_info:1;
-	int id;
 	struct symbol_info symbols;
 	struct symbol_info linker_symbols;
 	struct section_info sections;
 	struct frame_info frame_info;
 	struct loaded_binary *next;
 	struct loaded_binary *previous;
+	int id;
+	int special_binary_flags;
 	dev_t device;
 	ino_t inode;
 	mode_t mode;
 	uid_t uid;
 	gid_t gid;
+	int debuglink_error;
 	uintptr_t child_base;
 	struct binary_info debuglink_info;
 	struct symbol_info debuglink_symbols;
-	int special_binary_flags;
 	char *debuglink;
 	char *build_id;
 	size_t build_id_size;
-	int debuglink_error;
 	uintptr_t override_access_starts[OVERRIDE_ACCESS_SLOT_COUNT];
 	uintptr_t override_access_ends[OVERRIDE_ACCESS_SLOT_COUNT];
 	int override_access_permissions[OVERRIDE_ACCESS_SLOT_COUNT];
@@ -307,6 +308,7 @@ static inline void set_register(struct register_state *reg, uintptr_t value) {
 	reg->max = value;
 }
 
+__attribute__((packed))
 struct decoded_rm {
 	uintptr_t addr;
 	uint8_t rm:6;
@@ -329,8 +331,8 @@ struct x86_comparison {
 	uintptr_t mask;
 	struct decoded_rm mem_rm;
 	register_mask sources;
-	uint8_t target_register;
-	comparison_validity validity;
+	uint8_t target_register:6;
+	comparison_validity validity:2;
 };
 
 struct registers {
@@ -340,9 +342,13 @@ struct registers {
 #if STORE_LAST_MODIFIED
 	const uint8_t *last_modify_ins[REGISTER_COUNT];
 #endif
+#if RECORD_WHERE_STACK_ADDRESS_TAKEN
+	const uint8_t *stack_address_taken;
+#else
+	bool stack_address_taken:1;
+#endif
 	struct decoded_rm mem_rm;
 	struct x86_comparison compare_state;
-	const uint8_t *stack_address_taken;
 };
 
 const struct registers empty_registers;

@@ -180,7 +180,6 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		}
 		uintptr_t this_min = ph->p_vaddr & -PAGE_SIZE;
 		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & -PAGE_SIZE;
-		off_t off_start = ph->p_offset & -PAGE_SIZE;
 		int protection = 0;
 		if (ph->p_flags & PF_R) {
 			protection |= PROT_READ;
@@ -192,7 +191,7 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 			protection |= PROT_EXEC;
 		}
 		if (this_max-this_min) {
-			void *section_mapping = fs_mmap((void *)(map_offset + this_min), this_max-this_min, ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection, MAP_PRIVATE|MAP_FIXED, fd, off_start);
+			void *section_mapping = fs_mmap((void *)(map_offset + this_min), this_max-this_min, ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection, MAP_PRIVATE|MAP_FIXED, fd, ph->p_offset & -PAGE_SIZE);
 			if (fs_is_map_failed(section_mapping)) {
 				ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
 				return -ENOEXEC;
@@ -347,10 +346,8 @@ void relocate_binary(struct binary_info *info)
 	uintptr_t rel_base = apply_base_address(info, rela);
 	for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
 		const ElfW(Rel) *rel = (const ElfW(Rel) *)(rel_base + rel_off);
-		uintptr_t info = rel->r_info;
-		uintptr_t offset = rel->r_offset;
-		if (info == ELF_REL_RELATIVE) {
-			*(uintptr_t *)(base + offset) += base;
+		if (rel->r_info == ELF_REL_RELATIVE) {
+			*(uintptr_t *)(base + rel->r_offset) += base;
 		}
 	}
 }
@@ -1308,18 +1305,18 @@ bool find_containing_frame_info(struct frame_info *info, const void *address, st
 				// FDE
 				// ERROR("FDE", cie_offset);
 				// start
-				uintptr_t location = read_pointer_and_advance(info, &current, pointer_format);
+				uintptr_t frame_location = read_pointer_and_advance(info, &current, pointer_format);
 				// ERROR("location", location);
-				uintptr_t size = read_offset_and_advance(&current, pointer_format);
+				uintptr_t frame_size = read_offset_and_advance(&current, pointer_format);
 				// ERROR("size", size);
 #ifdef INDEX_FRAMES
 				entries[i++] = address << SYMBOL_INDEX_BITS + size;
 #else
-				if (location <= (uintptr_t)address) {
-					if (location + size > (uintptr_t)address) {
+				if (frame_location <= (uintptr_t)address) {
+					if (frame_location + frame_size > (uintptr_t)address) {
 						*out_frame = (struct frame_details){
-							.address = (const void *)location,
-							.size = size,
+							.address = (const void *)frame_location,
+							.size = frame_size,
 						};
 						return true;
 					}

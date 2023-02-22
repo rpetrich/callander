@@ -146,7 +146,7 @@ static inline void error_write_char_range(const char *prefix, size_t prefix_len,
 {
 	ERROR_WRITE(prefix, prefix_len);
 	char buf[810];
-	int index = 0;
+	size_t index = 0;
 	for (size_t i = 0; i < value.size; i++) {
 		buf[index++] = "0123456789abcdef"[(unsigned char)value.buf[i] >> 4];
 		buf[index++] = "0123456789abcdef"[(unsigned char)value.buf[i] & 0xf];

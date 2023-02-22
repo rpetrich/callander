@@ -412,7 +412,11 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 					} else {
 						ERROR("clearing stack slot since memory was written", name_for_register(i));
 						ERROR("memory r/m is", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
-						ERROR("stack address was taken at", temp_str(copy_address_description(loader, regs->stack_address_taken)));
+#if RECORD_WHERE_STACK_ADDRESS_TAKEN
+						ERROR("stack address was taken previously at", temp_str(copy_address_description(loader, regs->stack_address_taken)));
+#else
+						ERROR("stack address was taken previously");
+#endif
 					}
 				}
 			}
@@ -892,10 +896,10 @@ static inline const char *name_for_effect(function_effects effects)
 
 struct queued_instruction {
 	const uint8_t *ins;
-	function_effects effects;
 	struct registers registers;
 	const uint8_t *caller;
 	const char *description;
+	function_effects effects;
 };
 
 static void queue_instruction(struct queued_instructions *queue, const uint8_t *ins, function_effects effects, struct registers registers, const uint8_t *caller, const char *description)
@@ -982,8 +986,8 @@ struct searched_instruction_entry {
 struct searched_instruction_data_entry {
 	function_effects effects;
 	uint8_t widen_count[REGISTER_COUNT];
-	uint16_t generation;
 	uint8_t used_count;
+	uint16_t generation;
 	register_mask used_registers;
 	struct register_state registers[];
 };
@@ -2175,10 +2179,10 @@ static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_
 						if (*needle == '\0') {
 							size_t suffix_len = haystack - name;
 							char *path = malloc(sizeof("/usr/lib/x86_64-linux-gnu/gconv/") + suffix_len);
-							char *buf = path;
-							fs_memcpy(buf, "/usr/lib/x86_64-linux-gnu/gconv/", sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1);
-							buf += sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1;
-							fs_memcpy(buf, name, suffix_len + 1);
+							char *path_buf = path;
+							fs_memcpy(path_buf, "/usr/lib/x86_64-linux-gnu/gconv/", sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1);
+							path_buf += sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1;
+							fs_memcpy(path_buf, name, suffix_len + 1);
 							LOG("found gconv library", path);
 							register_dlopen_file(analysis, path, caller, true);
 						}
@@ -2872,12 +2876,14 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
-#pragma GCC unroll 64
-		for (int i = 0; i < REGISTER_COUNT; i++) {
+		for (register_mask all_relevant_registers = relevant_registers | preserved_registers | preserved_and_kept_registers; all_relevant_registers != 0; ) {
+			register_mask bit = all_relevant_registers & -all_relevant_registers;
+			int i = __builtin_ctzl(all_relevant_registers);
+			all_relevant_registers ^= bit;
 			register_mask s = ancestor->current_state.sources[i];
-			new_relevant_registers |= (relevant_registers & ((register_mask)1 << i)) ? s : 0;
-			new_preserved_registers |= (preserved_registers & ((register_mask)1 << i)) ? s : 0;
-			new_preserved_and_kept_registers |= (preserved_and_kept_registers & ((register_mask)1 << i)) ? s : 0;
+			new_relevant_registers |= (relevant_registers & bit) ? s : 0;
+			new_preserved_registers |= (preserved_registers & bit) ? s : 0;
+			new_preserved_and_kept_registers |= (preserved_and_kept_registers & bit) ? s : 0;
 		}
 		new_relevant_registers &= ~((register_mask)1 << REGISTER_RSP);
 #if 0
@@ -3296,9 +3302,13 @@ static uintptr_t read_imm(struct x86_ins_prefixes rex, const uint8_t *imm)
 static void record_stack_address_taken(__attribute__((unused)) const struct loader_context *loader, const uint8_t *addr, struct registers *regs)
 {
 	LOG("taking address of stack", temp_str(copy_address_description(loader, addr)));
+#if RECORD_WHERE_STACK_ADDRESS_TAKEN
 	if (regs->stack_address_taken == NULL) {
 		regs->stack_address_taken = addr;
 	}
+#else
+	regs->stack_address_taken = true;
+#endif
 }
 
 enum {
@@ -4299,13 +4309,7 @@ enum {
 	MAX_LOOKUP_TABLE_SIZE = 0x408,
 };
 
-static inline function_effects fallback_effects_if_processing(function_effects effects)
-{
-	return effects & ~EFFECT_PROCESSING;
-	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
-}
-
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status)
+static inline const uint8_t *skip_prefix_jumps(struct program_state *analysis, const uint8_t *ins)
 {
 	// skip over function stubs that simply call into a target function
 	const uint8_t *jump_target;
@@ -4322,6 +4326,38 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			break;
 		}
 	}
+	return ins;
+}
+
+__attribute__((noinline))
+static void analyze_libcrypto_dlopen(struct program_state *analysis)
+{
+	if (analysis->loader.libcrypto_dlopen != NULL) {
+		struct registers state = empty_registers;
+		struct analysis_frame libcrypto_dlopen = {
+			.current = {
+				.address = analysis->loader.libcrypto_dlopen,
+				.description = NULL,
+				.next = NULL,
+			},
+			.entry = analysis->loader.libcrypto_dlopen,
+			.entry_state = &state,
+			.token = { 0 },
+		};
+		analysis->loader.searching_libcrypto_dlopen = true;
+		*get_or_populate_effects(analysis, analysis->loader.libcrypto_dlopen, &state, EFFECT_NONE, &libcrypto_dlopen, &libcrypto_dlopen.token) = EFFECT_NONE;
+	}
+}
+
+static inline function_effects fallback_effects_if_processing(function_effects effects)
+{
+	return effects & ~EFFECT_PROCESSING;
+	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
+}
+
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status)
+{
+	ins = skip_prefix_jumps(analysis, ins);
 	struct analysis_frame self;
 	self.current_state = *entry_state;
 	function_effects effects;
@@ -4370,9 +4406,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			LOG("completing from return", temp_str(copy_address_description(&analysis->loader, self.entry)));
 			goto update_and_return;
 		}
+#if 0
 		if (x86_is_nop_instruction(ins)) {
 			LOG("processing a nop", temp_str(copy_address_description(&analysis->loader, ins)));
 		}
+#endif
+		const uint8_t *jump_target;
 		switch (x86_jump_addresses_at_instruction(ins, &jump_target)) {
 			case X86_JUMPS_NEVER:
 				break;
@@ -4815,7 +4854,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("call to address in register", name_for_register(reg));
 					struct register_state address = self.current_state.registers[reg];
 					self.current.description = "call*";
-					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, self.current_state.sources[reg], 0, 0, required_effects, SHOULD_LOG);
+					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, 0, 0, required_effects, SHOULD_LOG);
 					if (!register_is_exactly_known(&address)) {
 						LOG("address isn't exactly known, assuming all effects");
 						// could have any effect
@@ -6288,13 +6327,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						uintptr_t base_addr = 0;
 						if (register_is_exactly_known(&self.current_state.registers[base])) {
 							base_addr = self.current_state.registers[base].value + displacement;
+							LOG("storing base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
 							add_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins, base_addr);
 						}
 						if (base_addr == 0) {
 							base_addr = find_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins);
+							if (base_addr != 0) {
+								LOG("reusing previous base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
+							}
 							set_register(&copy.registers[base], base);
 							clear_match(&analysis->loader, &copy, base, ins);
 							copy.sources[base] = 0;
+							clear_match(&analysis->loader, &self.current_state, base, ins);
+							self.current_state.sources[base] = 0;
 						}
 						if (base_addr != 0) {
 							uintptr_t value = self.current_state.registers[index].value;
@@ -6308,6 +6353,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								// enforce max range from other lea instructions
 								uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
 								if ((next_base_address - base_addr) / sizeof(int32_t) <= max) {
+									LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
 									max = ((next_base_address - base_addr) / sizeof(int32_t)) - 1;
 								}
 								uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - base_addr) / 4;
@@ -6361,7 +6407,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.current.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
-										uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
 										if ((next_base_address - base_addr) / sizeof(int32_t) <= max) {
 											max = ((next_base_address - base_addr) / sizeof(int32_t)) - 1;
 										}
@@ -6562,7 +6608,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				switch (modrm.reg) {
 					case 0: { // add r/m, imm8
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						mod_rm_t modrm = read_modrm(&unprefixed[1]);
 						if (rex.has_w && modrm.mod == 0x3 && read_rm(modrm, rex) == REGISTER_RSP) {
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&unprefixed[2];
@@ -6601,7 +6646,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					case 5: { // sub r/m, imm8
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						mod_rm_t modrm = read_modrm(&unprefixed[1]);
 						if (rex.has_w && modrm.mod == 0x3 && read_rm(modrm, rex) == REGISTER_RSP) {
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&unprefixed[2];
@@ -6932,7 +6976,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						} else if (prot & PROT_READ) {
-							add_loaded_address(&analysis->search, (uintptr_t)self.current_state.registers[reg].value);
+							add_loaded_address(&analysis->search, (uintptr_t)address);
 							LOG("rip-relative lea is to readable address, assuming it is data");
 							const ElfW(Sym) *symbol = find_skipped_symbol_for_address(&analysis->loader, binary, address);
 							if (symbol) {
@@ -6952,21 +6996,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 								}
 								if (symbol == &binary->libcrypto_dso_meth_dl) {
-									if (analysis->loader.libcrypto_dlopen != NULL) {
-										struct registers state = empty_registers;
-										struct analysis_frame self = {
-											.current = {
-												.address = analysis->loader.libcrypto_dlopen,
-												.description = NULL,
-												.next = NULL,
-											},
-											.entry = analysis->loader.libcrypto_dlopen,
-											.entry_state = &state,
-											.token = { 0 },
-										};
-										analysis->loader.searching_libcrypto_dlopen = true;
-										*get_or_populate_effects(analysis, analysis->loader.libcrypto_dlopen, &state, EFFECT_NONE, &self, &self.token) = EFFECT_NONE;
-									}
+									analyze_libcrypto_dlopen(analysis);
 									analysis->loader.searching_libcrypto_dlopen = false;
 								}
 							}
@@ -8141,7 +8171,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 					if (debuglink == NULL) {
 						if (fs_strcmp(name, ".gnu_debuglink") == 0) {
 							debuglink = malloc(section->sh_size);
-							int result = fs_pread_all(fd, debuglink, section->sh_size, section->sh_offset);
+							result = fs_pread_all(fd, debuglink, section->sh_size, section->sh_offset);
 							if (result != (int)section->sh_size) {
 								if (result >= 0) {
 									result = -EINVAL;
@@ -8157,7 +8187,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 						const char *name = &new_binary->sections.strings[section->sh_name];
 						if (fs_strcmp(name, ".note.gnu.build-id") == 0) {
 							build_id = malloc(section->sh_size);
-							int result = fs_pread_all(fd, build_id, section->sh_size, section->sh_offset);
+							result = fs_pread_all(fd, build_id, section->sh_size, section->sh_offset);
 							if (result != (int)section->sh_size) {
 								free(build_id);
 								if (result >= 0) {
@@ -8184,7 +8214,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		new_binary->special_binary_flags |= BINARY_IS_MAIN;
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
-		int result = load_debuglink(&analysis->loader, new_binary, false);
+		result = load_debuglink(&analysis->loader, new_binary, false);
 		if (result < 0) {
 			if (result == -ENOENT || result == -ENOEXEC) {
 				print_debug_symbol_requirement(new_binary);
@@ -8645,7 +8675,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 			for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
 				if (other->special_binary_flags & BINARY_IS_INTERPRETER) {
 					found_interpreter = true;
-					int result = finish_loading_binary(analysis, other, effects, skip_analysis);
+					result = finish_loading_binary(analysis, other, effects, skip_analysis);
 					if (result != 0) {
 						return result;
 					}
@@ -8673,7 +8703,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 					LOG("needed finishing", needed_path);
 					struct loaded_binary *additional_binary = find_loaded_binary(&analysis->loader, needed_path);
 					if (additional_binary) {
-						int result = finish_loading_binary(analysis, additional_binary, effects, skip_analysis);
+						result = finish_loading_binary(analysis, additional_binary, effects, skip_analysis);
 						if (result != 0) {
 							LOG("failed to finish loading", needed_path);
 							return result;
@@ -8752,13 +8782,13 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 					LOG("scanning section for addresses", name);
 					const uintptr_t *section_data = (const uintptr_t *)apply_base_address(&new_binary->info, section->sh_addr);
 					int size = section->sh_size / sizeof(uintptr_t);
-					for (int i = 0; i < size; i++) {
-						uintptr_t data = section_data[i];
+					for (int j = 0; j < size; j++) {
+						uintptr_t data = section_data[j];
 						if (protection_for_address_in_binary(new_binary, data, NULL) & PROT_EXEC) {
 							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[i])));
 							LOG("value of address is, assuming callable", data);
-							if (find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[i]) == NULL) {
-								struct analysis_frame new_caller = { .current = { .address = &section_data[i], .description = name, .next = NULL }, .current_state = empty_registers, .entry = (void *)&section_data[i], .entry_state = &empty_registers, .token = { 0 } };
+							if (find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j]) == NULL) {
+								struct analysis_frame new_caller = { .current = { .address = &section_data[j], .description = name, .next = NULL }, .current_state = empty_registers, .entry = (void *)&section_data[j], .entry_state = &empty_registers, .token = { 0 } };
 								analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | effects, &registers, (const uint8_t *)data, &new_caller, true);
 							}
 						}
@@ -8891,7 +8921,7 @@ static int protection_for_address(const struct loader_context *context, const vo
 			return result;
 		}
 		for (binary = context->binaries; binary != NULL; binary = binary->next) {
-			int result = protection_for_address_in_binary(binary, addr, out_section);
+			result = protection_for_address_in_binary(binary, addr, out_section);
 			if (result != 0) {
 				if (out_binary != NULL) {
 					*out_binary = binary;
@@ -9168,8 +9198,8 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 			if (merge_recorded_syscall(later, earlier, relevant_registers)) {
 				LOG("coalesced into", temp_str(copy_syscall_description(loader, earlier->nr, earlier->registers, true)));
 				// found a match. merge!
-				for (int i = 0; i < count - j; i++) {
-					later[i] = later[i+1];
+				for (int k = 0; k < count - j; k++) {
+					later[k] = later[k+1];
 				}
 				count--;
 				goto next_i;
@@ -9266,7 +9296,7 @@ char *copy_used_binaries(const struct loader_context *loader)
 		if (buf != message) {
 			*buf++ = '\n';
 		}
-		size_t len = fs_strlen(binary->path);
+		len = fs_strlen(binary->path);
 		fs_memcpy(buf, binary->path, len);
 		buf += len;
 		if (binary->special_binary_flags & BINARY_IS_LOADED_VIA_DLOPEN) {
@@ -9458,9 +9488,9 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct
 							push_description(&descriptions, &descriptions_cap, pos, strdup("return allow"));
 							// else to next register comparison or the final return trap
 							for (int j = 0; j < (argc & SYSCALL_ARGC_MASK); j++) {
-								size_t hi_pos = arg_pos[j].compare_hi;
-								if (hi_pos != 0) {
-									filter[hi_pos].jf = pos - hi_pos - 1;
+								size_t inner_hi_pos = arg_pos[j].compare_hi;
+								if (inner_hi_pos != 0) {
+									filter[hi_pos].jf = pos - inner_hi_pos - 1;
 								}
 								size_t low_value_pos = arg_pos[j].compare_low_value;
 								if (low_value_pos != 0) {
@@ -9568,11 +9598,11 @@ const struct loaded_binary *register_dlopen(struct program_state *analysis, cons
 					if (*needle == '\0') {
 						size_t suffix_len = haystack - name;
 						char *subpath = malloc(prefix_len + 1 + suffix_len + 1);
-						char *buf = subpath;
-						fs_memcpy(buf, path, prefix_len);
-						buf += prefix_len;
-						*buf++ = '/';
-						fs_memcpy(buf, name, suffix_len + 1);
+						char *subpath_buf = subpath;
+						fs_memcpy(subpath_buf, path, prefix_len);
+						subpath_buf += prefix_len;
+						*subpath_buf++ = '/';
+						fs_memcpy(subpath_buf, name, suffix_len + 1);
 						register_dlopen(analysis, subpath, caller, skip_analysis, true);
 					}
 					needle++;

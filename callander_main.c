@@ -659,9 +659,9 @@ static char *remote_read_string(pid_t pid, uintptr_t address)
 	}
 	for (size_t i = 0; i < remaining_in_page; i++) {
 		if (buf[i] == '\0') {
-			char *result = malloc(i+1);
-			memcpy(result, buf, i+1);
-			return result;
+			char *str = malloc(i+1);
+			memcpy(str, buf, i+1);
+			return str;
 		}
 	}
 	result = fs_process_vm_read(pid, &buf[remaining_in_page], PAGE_SIZE, address + remaining_in_page);
@@ -670,9 +670,9 @@ static char *remote_read_string(pid_t pid, uintptr_t address)
 	}
 	for (size_t i = remaining_in_page; i < remaining_in_page + PAGE_SIZE; i++) {
 		if (buf[i] == '\0') {
-			char *result = malloc(i+1);
-			memcpy(result, buf, i+1);
-			return result;
+			char *str = malloc(i+1);
+			memcpy(str, buf, i+1);
+			return str;
 		}
 	}
 	return NULL;
@@ -902,7 +902,7 @@ static int query_program_version(const char *program_path, char *const envp[], c
 	if (child_pid == 0) {
 		fs_close(pipes[0]);
 		fs_close(0);
-		int result = fs_dup2(pipes[1], 1);
+		result = fs_dup2(pipes[1], 1);
 		if (result >= 0) {
 			result = fs_dup2(pipes[1], 2);
 			fs_close(pipes[1]);
@@ -921,7 +921,7 @@ static int query_program_version(const char *program_path, char *const envp[], c
 	size_t size = PAGE_SIZE;
 	size_t offset = 0;
 	for (;;) {
-		int result = fs_read(pipes[0], &buf[offset], size-offset);
+		result = fs_read(pipes[0], &buf[offset], size-offset);
 		if (result <= 0) {
 			if (result == -EINTR) {
 				continue;
@@ -1287,13 +1287,13 @@ int main(__attribute__((unused)) int argc, char *argv[])
 		} else if (fs_strcmp(arg, "--ignore-dlopen") == 0) {
 			analysis.loader.ignore_dlopen = true;
 		} else if (fs_strcmp(arg, "--dlopen") == 0) {
-			const char *path = argv[executable_index+1];
-			if (path == NULL) {
+			const char *dlopen_path = argv[executable_index+1];
+			if (dlopen_path == NULL) {
 				ERROR("--dlopen requires an argument");
 				ERROR_FLUSH();
 				return 1;
 			}
-			add_dlopen_path(&analysis, path);
+			add_dlopen_path(&analysis, dlopen_path);
 			executable_index++;
 		} else if (fs_strcmp(arg, "--main-function") == 0) {
 			if (analysis.main_function_name != NULL) {
@@ -1496,7 +1496,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 			DIE("failed to allocate a shared page for LD_PRELOAD", fs_strerror((intptr_t)new_ld_preload));
 		}
 		int pipe_fds[2];
-		intptr_t result = FS_SYSCALL(SYS_pipe2, (intptr_t)&pipe_fds, O_CLOEXEC);
+		result = FS_SYSCALL(SYS_pipe2, (intptr_t)&pipe_fds, O_CLOEXEC);
 		if (result < 0) {
 			DIE("failed to create pipe", fs_strerror(result));
 		}
@@ -1803,12 +1803,11 @@ skip_analysis:
 				LOG("patching breakpoint to unreachable instruction", temp_str(copy_address_description(&analysis.loader, addr)));
 				void *child_addr = (void *)translate_analysis_address_to_child(&analysis.loader, addr);
 				if (child_addr != NULL) {
-					long original_bytes;
 					result = fs_ptrace(PTRACE_PEEKTEXT, tracee, child_addr, &original_bytes);
 					if (result < 0) {
 						DIE("failed to peek", fs_strerror(result));
 					}
-					long new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
+					new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
 					result = fs_ptrace(PTRACE_POKETEXT, tracee, child_addr, (void *)new_bytes);
 					if (result < 0) {
 						DIE("failed to poke", fs_strerror(result));
@@ -1868,12 +1867,11 @@ skip_analysis:
 			DIE("failed to find blocked function", symbol.name);
 		}
 		uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);
-		long original_bytes;
 		result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)addr, &original_bytes);
 		if (result < 0) {
 			DIE("failed to peek at blocked function", fs_strerror(result));
 		}
-		long new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
+		new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)addr, (void *)new_bytes);
 		if (result < 0) {
 			DIE("failed to poke at blocked function", fs_strerror(result));
@@ -1917,10 +1915,10 @@ skip_analysis:
 		ERROR_FLUSH();
 		char pid_buf[64];
 		fs_itoa(tracee, pid_buf);
-		const char *path;
+		const char *exec_path;
 		const char *args[8];
 		if (attach == ATTACH_STRACE) {
-			path = "/usr/bin/strace";
+			exec_path = "/usr/bin/strace";
 			args[0] = "strace";
 			args[1] = "-p";
 			args[2] = pid_buf;
@@ -1930,7 +1928,7 @@ skip_analysis:
 		} else {
 			struct fs_stat sudo_stat;
 			if (fs_stat("/usr/bin/sudo", &sudo_stat) == 0) {
-				path = "/usr/bin/sudo";
+				exec_path = "/usr/bin/sudo";
 				args[0] = "sudo";
 				args[1] = "gdb";
 				args[2] = "--pid";
@@ -1940,7 +1938,7 @@ skip_analysis:
 				// args[6] = "--eval-command=continue";
 				args[6] = NULL;
 			} else {
-				path = "/usr/bin/gdb";
+				exec_path = "/usr/bin/gdb";
 				args[0] = "gdb";
 				args[1] = "--pid";
 				args[2] = pid_buf;
@@ -1950,7 +1948,7 @@ skip_analysis:
 				args[5] = NULL;
 			}
 		}
-		result = fs_execve(path, (void *)args, (char * const *)envp);
+		result = fs_execve(exec_path, (void *)args, (char * const *)envp);
 		if (result < 0) {
 			DIE("failed to exec attaching program", fs_strerror(result));
 		}
@@ -1993,7 +1991,6 @@ skip_analysis:
 				if (siginfo.si_signo == SIGSYS) {
 					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - 2;
 					const uint8_t *analysis_addr = NULL;
-					struct user_regs_struct regs;
 					result = fs_ptrace(PTRACE_GETREGS, tracee, 0, &regs);
 					if (result < 0) {
 						DIE("failed to read registers back", fs_strerror(result));
@@ -2073,7 +2070,6 @@ skip_analysis:
 						ERROR("perhaps callander's analysis is insufficient?");
 					}
 				} else if (siginfo.si_signo == SIGTRAP) {
-					struct user_regs_struct regs;
 					result = fs_ptrace(PTRACE_GETREGS, tracee, 0, &regs);
 					if (result < 0) {
 						DIE("failed to read registers back", fs_strerror(result));
@@ -2084,10 +2080,10 @@ skip_analysis:
 						uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);
 						if (addr == breakpoint_address) {
 							if (symbol.is_dlopen) {
-								char *path = remote_read_string(tracee, regs.rdi);
-								if (path != NULL) {
-									ERROR("dlopen on an unexpected binary was called", path);
-									free(path);
+								char *dlopen_path = remote_read_string(tracee, regs.rdi);
+								if (dlopen_path != NULL) {
+									ERROR("dlopen on an unexpected binary was called", dlopen_path);
+									free(dlopen_path);
 									break;
 								}
 							}

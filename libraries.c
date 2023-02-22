@@ -48,12 +48,12 @@ static int remote_getaddrinfo(const char *node, const char *service, __attribute
 		.errno_location = inferior_errno_location(),
 	}, res);
 	if (result == 0) {
-		for (struct addrinfo *result = *res; result != NULL; result = result->ai_next) {
-			switch (result->ai_addr->sa_family) {
+		for (struct addrinfo *addr = *res; addr != NULL; addr = addr->ai_next) {
+			switch (addr->ai_addr->sa_family) {
 				case AF_INET: {
 					struct sockaddr_in6 *wrapped_addr = inferior_malloc(sizeof(struct sockaddr_in6));
 					wrapped_addr->sin6_family = AF_INET6;
-					wrapped_addr->sin6_port = ((struct sockaddr_in *)result->ai_addr)->sin_port;
+					wrapped_addr->sin6_port = ((struct sockaddr_in *)addr->ai_addr)->sin_port;
 					wrapped_addr->sin6_flowinfo = 0;
 					wrapped_addr->sin6_scope_id = 0;
 					// first two bytes indicate invalid multicast address
@@ -70,15 +70,15 @@ static int remote_getaddrinfo(const char *node, const char *service, __attribute
 					wrapped_addr->sin6_addr.s6_addr[10] = 0;
 					wrapped_addr->sin6_addr.s6_addr[11] = 0;
 					// low bytes indicate the IPv4 address
-					fs_memcpy(&wrapped_addr->sin6_addr.s6_addr[12], &((struct sockaddr_in *)result->ai_addr)->sin_addr, sizeof(struct in_addr));
-					inferior_free(result->ai_addr);
-					result->ai_addr = (struct sockaddr *)wrapped_addr;
-					result->ai_family = AF_INET6;
+					fs_memcpy(&wrapped_addr->sin6_addr.s6_addr[12], &((struct sockaddr_in *)addr->ai_addr)->sin_addr, sizeof(struct in_addr));
+					inferior_free(addr->ai_addr);
+					addr->ai_addr = (struct sockaddr *)wrapped_addr;
+					addr->ai_family = AF_INET6;
 					break;
 				}
 				case AF_INET6:
 					// ~0 scope id indicates target address
-					((struct sockaddr_in6 *)result->ai_addr)->sin6_scope_id = ~(uint32_t)0;
+					((struct sockaddr_in6 *)addr->ai_addr)->sin6_scope_id = ~(uint32_t)0;
 					break;
 			}
 		}

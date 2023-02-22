@@ -29,7 +29,6 @@ struct binary_info {
 	void *program_header;
 	size_t header_entry_size;
 	size_t header_entry_count;
-	int executable_stack;
 	const ElfW(Dyn) *dynamic;
 	size_t dynamic_size;
 	size_t dynamic_offset;
@@ -37,6 +36,7 @@ struct binary_info {
 	size_t section_entry_size;
 	size_t section_entry_count;
 	int strtab_section_index;
+	int executable_stack;
 	const char *interpreter;
 	char *phbuffer;
 };
