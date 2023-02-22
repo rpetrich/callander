@@ -6333,9 +6333,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						if (base_addr == 0) {
 							base_addr = find_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins);
 							if (base_addr != 0) {
+#if 0
 								LOG("reusing previous base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
+#else
+								LOG("missing base address for lookup table that previously had a base address, skipping");
+								effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
+								goto update_and_return;
+#endif
 							}
-							set_register(&copy.registers[base], base);
+							set_register(&copy.registers[base], base_addr);
 							clear_match(&analysis->loader, &copy, base, ins);
 							copy.sources[base] = 0;
 							clear_match(&analysis->loader, &self.current_state, base, ins);
