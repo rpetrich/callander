@@ -8776,7 +8776,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 				if (name[0] == '.') {
 					should_search = fs_strcmp(name, ".data") == 0 || fs_strcmp(name, ".rodata") == 0 || fs_strcmp(name, ".data.rel.ro") == 0 || fs_strcmp(name, ".tdata") == 0;
 				} else {
-					should_search = fs_strcmp(name, "__libc_subfreeres") != 0;
+					should_search = fs_strcmp(name, "__libc_subfreeres") != 0 && fs_strcmp(name, "__patchable_function_entries") != 0;
 				}
 				if (should_search) {
 					LOG("scanning section for addresses", name);
