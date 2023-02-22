@@ -4537,7 +4537,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							// test %target_register; je
 							if (jump_state.registers[target_register].value <= self.current_state.compare_state.value.value && self.current_state.compare_state.value.value <= jump_state.registers[target_register].max) {
 								jump_state.registers[target_register] = self.current_state.compare_state.value;
-								jump_state.sources[target_register] = 0;
+								jump_state.sources[target_register] = self.current_state.compare_state.sources;
 								// remove value from edge of ranges
 								if (continue_state.registers[target_register].value == self.current_state.compare_state.value.value) {
 									if (register_is_exactly_known(&continue_state.registers[target_register])) {
@@ -4561,7 +4561,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							// test %target_register; jne
 							if (continue_state.registers[target_register].value <= self.current_state.compare_state.value.value && self.current_state.compare_state.value.value <= continue_state.registers[target_register].max) {
 								continue_state.registers[target_register] = self.current_state.compare_state.value;
-								continue_state.sources[target_register] = 0;
+								continue_state.sources[target_register] = self.current_state.compare_state.sources;
 								// remove value from edge of ranges
 								if (jump_state.registers[target_register].value == self.current_state.compare_state.value.value) {
 									if (register_is_exactly_known(&jump_state.registers[target_register])) {
