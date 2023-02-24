@@ -61,7 +61,7 @@ enum {
 
 extern struct syscall_decl const syscall_list[SYSCALL_DEFINED_COUNT];
 const char *name_for_syscall(uintptr_t nr);
-uint32_t argc_for_syscall(uintptr_t nr);
+uint32_t attributes_for_syscall(uintptr_t nr);
 
 enum {
 	BINARY_IS_MAIN = 1 << 0,
@@ -154,14 +154,22 @@ struct loader_context {
 	int binary_count;
 };
 
+__attribute__((nonnull(1)))
 char *copy_used_binaries(const struct loader_context *loader);
+__attribute__((nonnull(1)))
 char *copy_address_details(const struct loader_context *loader, const void *addr, bool include_symbol);
+__attribute__((nonnull(1, 2)))
 char *copy_address_description(const struct loader_context *context, const void *address);
+__attribute__((nonnull(1, 2)))
 struct loaded_binary *find_loaded_binary(const struct loader_context *context, const char *path);
+__attribute__((nonnull(1)))
 void free_loaded_binary(struct loaded_binary *binary);
+__attribute__((nonnull(1, 1)))
 void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) **out_symbol);
 
+__attribute__((nonnull(1)))
 uintptr_t translate_analysis_address_to_child(struct loader_context *loader, const uint8_t *addr);
+__attribute__((nonnull(1)))
 struct register_state translate_register_state_to_child(struct loader_context *loader, struct register_state state);
 
 struct queued_instruction;
@@ -293,11 +301,13 @@ struct register_state {
 	uintptr_t max;
 };
 
+__attribute__((nonnull(1)))
 static inline void clear_register(struct register_state *reg) {
 	reg->value = (uintptr_t)0;
 	reg->max = ~(uintptr_t)0;
 }
 
+__attribute__((nonnull(1)))
 static inline void set_register(struct register_state *reg, uintptr_t value) {
 	reg->value = value;
 	reg->max = value;
@@ -395,7 +405,9 @@ struct searched_instructions {
 	bool loaded_addresses_are_sorted:1;
 };
 
+__attribute__((nonnull(1)))
 void init_searched_instructions(struct searched_instructions *search);
+__attribute__((nonnull(1)))
 void cleanup_searched_instructions(struct searched_instructions *search);
 
 struct recorded_syscall {
@@ -421,8 +433,11 @@ struct recorded_syscalls {
 	uint8_t config[SYSCALL_COUNT];
 };
 
+__attribute__((nonnull(1, 2)))
 char *copy_used_syscalls(const struct loader_context *context, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol);
+__attribute__((nonnull(1, 2)))
 void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader);
+__attribute__((nonnull(1)))
 const struct recorded_syscall *find_recorded_syscall(const struct recorded_syscalls *syscalls, uintptr_t nr);
 
 enum seccomp_validation_mode {
@@ -430,6 +445,7 @@ enum seccomp_validation_mode {
 	VALIDATE_SYSCALL_AND_CALL_SITE = 1,
 	VALIDATE_ALL = 2,
 };
+__attribute__((nonnull(1, 2)))
 struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct recorded_syscalls *syscalls, enum seccomp_validation_mode validation_mode, uint32_t syscall_range_low, uint32_t syscall_range_high);
 
 struct address_and_size {
@@ -462,6 +478,7 @@ enum {
 	DEBUG_SYMBOL_FORCING_LOAD = DEBUG_SYMBOL | (1 << 3),
 };
 
+__attribute__((nonnull(1, 2)))
 struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types, bool required);
 
 struct dlopen_path {
@@ -499,10 +516,15 @@ struct program_state {
 	struct unreachable_instructions unreachables;
 };
 
+__attribute__((nonnull(1, 2, 5)))
 int load_binary_into_analysis(struct program_state *analysis, const char *path, int fd, const void *existing_base_address, struct loaded_binary **out_binary);
+__attribute__((nonnull(1, 2)))
 int finish_loading_binary(struct program_state *analysis, struct loaded_binary *new_binary, function_effects effects, bool skip_analysis);
+__attribute__((nonnull(1, 2, 3, 4)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
+__attribute__((nonnull(1, 2)))
 const struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, struct analysis_frame *caller, bool skip_analysis, bool recursive);
+__attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
 enum jump_table_status {
@@ -511,14 +533,17 @@ enum jump_table_status {
 	DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS = 2,
 };
 
+__attribute__((nonnull(1, 3, 4, 5)))
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
 
 __attribute__((always_inline))
+__attribute__((nonnull(1, 3, 4, 5)))
 static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller)
 {
 	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, true);
 }
 
+__attribute__((nonnull(1)))
 void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects);
 
 #endif

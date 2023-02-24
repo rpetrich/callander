@@ -79,32 +79,39 @@ uint32_t attributes_for_syscall(uintptr_t nr)
 #define INS_REX_WR_PREFIX 0x4c
 #define INS_REX_WRXB_PREFIX 0x4f
 
+__attribute__((nonnull(1)))
 static inline void canonicalize_register(struct register_state *reg) {
 	if (reg->value > reg->max) {
 		clear_register(reg);
 	}
 }
 
+__attribute__((nonnull(1)))
 static inline bool register_is_exactly_known(const struct register_state *reg) {
 	return reg->value == reg->max;
 }
 
+__attribute__((nonnull(1)))
 static inline bool register_is_partially_known(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max != ~(uintptr_t)0;
 }
 
+__attribute__((nonnull(1)))
 static inline bool register_is_partially_known_8bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xff;
 }
 
+__attribute__((nonnull(1)))
 static inline bool register_is_partially_known_16bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xffff;
 }
 
+__attribute__((nonnull(1)))
 static inline bool register_is_partially_known_32bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xffffffff;
 }
 
+__attribute__((nonnull(1)))
 static inline void truncate_to_8bit(struct register_state *reg) {
 	if ((reg->max >> 8) == (reg->value >> 8)) {
 		reg->value &= 0xff;
@@ -117,6 +124,7 @@ static inline void truncate_to_8bit(struct register_state *reg) {
 	reg->max = 0xff;
 }
 
+__attribute__((nonnull(1)))
 static inline void truncate_to_16bit(struct register_state *reg) {
 	if ((reg->max >> 16) == (reg->value >> 16)) {
 		reg->value &= 0xffff;
@@ -129,6 +137,7 @@ static inline void truncate_to_16bit(struct register_state *reg) {
 	reg->max = 0xffff;
 }
 
+__attribute__((nonnull(1)))
 static inline void truncate_to_32bit(struct register_state *reg) {
 	if ((reg->max >> 32) == (reg->value >> 32)) {
 		reg->value &= 0xffffffff;
@@ -141,6 +150,7 @@ static inline void truncate_to_32bit(struct register_state *reg) {
 	reg->max = 0xffffffff;
 }
 
+__attribute__((nonnull(1, 2)))
 static inline bool register_is_subset_of_register(const struct register_state *potential_subset, const struct register_state *potential_superset)
 {
 	return potential_subset->value >= potential_superset->value && potential_subset->max <= potential_superset->max;
@@ -168,6 +178,7 @@ static const struct decoded_rm invalid_decoded_rm = {
 	.addr = 0,
 };
 
+__attribute__((nonnull(1)))
 static bool decoded_rm_references_register(const struct decoded_rm *rm, int register_index)
 {
 	switch (rm->rm) {
@@ -195,6 +206,7 @@ static bool decoded_rm_references_register(const struct decoded_rm *rm, int regi
 
 static inline const char *name_for_register(int register_index);
 
+__attribute__((nonnull(1)))
 static bool decoded_rm_cannot_reference_stack_slot(const struct decoded_rm *rm)
 {
 	switch (rm->rm) {
@@ -363,8 +375,10 @@ static inline register_mask matching_registers(const struct register_state a[REG
 	return result;
 }
 
+__attribute__((nonnull(1, 2)))
 static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm *r);
 
+__attribute__((nonnull(1, 3)))
 static void register_changed(struct registers *regs, int register_index, __attribute__((unused)) const uint8_t *ins)
 {
 #if STORE_LAST_MODIFIED
@@ -397,9 +411,11 @@ static void register_changed(struct registers *regs, int register_index, __attri
 	}
 }
 
+__attribute__((nonnull(1)))
 static char *copy_decoded_rm_description(const struct loader_context *loader, struct decoded_rm rm);
 
 // __attribute__((always_inline))
+__attribute__((nonnull(1, 2, 4)))
 static inline void clear_match(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) const uint8_t *ins)
 {
 	register_mask mask = regs->matches[register_index];
@@ -443,6 +459,7 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 }
 
 // add_match_and_copy_sources maintains the mapping table describing which registers have identical values
+__attribute__((nonnull(1, 2, 5)))
 static void add_match_and_copy_sources(const struct loader_context *loader, struct registers *regs, int dest_reg, int source_reg, __attribute__((unused)) const uint8_t *ins)
 {
 	clear_match(loader, regs, dest_reg, ins);
@@ -463,6 +480,7 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 	regs->sources[dest_reg] = regs->sources[source_reg];
 }
 
+__attribute__((nonnull(1)))
 static inline void clear_stack(struct registers *regs)
 {
 	for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
@@ -475,6 +493,7 @@ static inline void clear_stack(struct registers *regs)
 	}
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static inline void clear_call_dirtied_registers(const struct loader_context *loader, struct registers *regs, __attribute__((unused)) const uint8_t *ins) {
 	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RAX])) {
 		LOG("clearing call dirtied register", name_for_register(REGISTER_RAX));
@@ -540,6 +559,7 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	regs->mem_rm = invalid_decoded_rm;
 }
 
+__attribute__((nonnull(1)))
 static inline void push_stack(struct registers *regs, int push_count)
 {
 	LOG("push stack", push_count);
@@ -567,6 +587,7 @@ static inline void push_stack(struct registers *regs, int push_count)
 	}
 }
 
+__attribute__((nonnull(1)))
 static inline void pop_stack(struct registers *regs, int pop_count)
 {
 	LOG("pop stack", pop_count);
@@ -591,6 +612,7 @@ static inline void pop_stack(struct registers *regs, int pop_count)
 	}
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static inline struct registers copy_call_argument_registers(const struct loader_context *loader, const struct registers *regs, __attribute__((unused)) const uint8_t *ins) {
 	struct registers result = *regs;
 	clear_register(&result.registers[REGISTER_RBX]);
@@ -689,9 +711,11 @@ static inline const char *name_for_register(int register_index)
 }
 
 struct loader_context;
+__attribute__((nonnull(1)))
 static char *copy_register_state_description(const struct loader_context *context, struct register_state reg);
 
 __attribute__((always_inline))
+__attribute__((nonnull(1)))
 static inline void dump_register(__attribute__((unused)) const struct loader_context *loader, __attribute__((unused)) struct register_state state)
 {
 	if (SHOULD_LOG) {
@@ -699,6 +723,7 @@ static inline void dump_register(__attribute__((unused)) const struct loader_con
 	}
 }
 
+__attribute__((nonnull(1, 2)))
 static inline void dump_registers(const struct loader_context *loader, const struct registers *state, register_mask registers)
 {
 	if (SHOULD_LOG) {
@@ -770,6 +795,7 @@ static inline void dump_registers(const struct loader_context *loader, const str
 	}
 }
 
+__attribute__((nonnull(1, 2)))
 static inline void dump_nonempty_registers(const struct loader_context *loader, const struct registers *state, register_mask registers)
 {
 	if (SHOULD_LOG) {
@@ -784,12 +810,15 @@ static inline void dump_nonempty_registers(const struct loader_context *loader, 
 	}
 }
 
+__attribute__((nonnull(1, 2)))
 static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm *r)
 {
 	return l->rm == r->rm && l->base == r->base && l->index == r->index && l->scale == r->scale && l->addr == r->addr;
 }
 
-__attribute__((unused)) static char *copy_decoded_rm_description(const struct loader_context *loader, struct decoded_rm rm)
+__attribute__((unused))
+__attribute__((nonnull(1)))
+static char *copy_decoded_rm_description(const struct loader_context *loader, struct decoded_rm rm)
 {
 	char *result;
 	char *buf;
@@ -902,6 +931,7 @@ struct queued_instruction {
 	function_effects effects;
 };
 
+__attribute__((nonnull(1, 2)))
 static void queue_instruction(struct queued_instructions *queue, const uint8_t *ins, function_effects effects, struct registers registers, const uint8_t *caller, const char *description)
 {
 	uint32_t i = queue->count;
@@ -920,6 +950,7 @@ static void queue_instruction(struct queued_instructions *queue, const uint8_t *
 	queue->count = count;
 }
 
+__attribute__((nonnull(1, 2)))
 static bool dequeue_instruction(struct queued_instructions *queue, struct queued_instruction *out_instruction)
 {
 	uint32_t count = queue->count;
@@ -942,6 +973,7 @@ struct lookup_base_address {
 	uintptr_t base;
 };
 
+__attribute__((nonnull(1, 2)))
 static void add_lookup_table_base_address(struct lookup_base_addresses *addresses, const uint8_t *ins, uintptr_t base)
 {
 	size_t count = addresses->count;
@@ -954,6 +986,7 @@ static void add_lookup_table_base_address(struct lookup_base_addresses *addresse
 	addresses->count = count + 1;
 }
 
+__attribute__((nonnull(1, 2)))
 static uintptr_t find_lookup_table_base_address(const struct lookup_base_addresses *addresses, const uint8_t *ins)
 {
 	const struct lookup_base_address *addr = addresses->addresses;
@@ -990,11 +1023,13 @@ struct searched_instruction_data_entry {
 	struct register_state registers[];
 };
 
+__attribute__((nonnull(1)))
 static size_t sizeof_searched_instruction_data_entry(struct searched_instruction_data_entry *entry)
 {
 	return sizeof(struct searched_instruction_data_entry) + entry->used_count * sizeof(struct register_state);
 }
 
+__attribute__((nonnull(1, 2)))
 static char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head);
 
 void init_searched_instructions(struct searched_instructions *search)
@@ -1028,6 +1063,7 @@ void cleanup_searched_instructions(struct searched_instructions *search)
 }
 
 __attribute__((noinline))
+__attribute__((nonnull(1)))
 static void grow_already_searched_instructions(struct searched_instructions *search)
 {
 	struct searched_instruction_entry *old_table = search->table;
@@ -1058,6 +1094,7 @@ static void grow_already_searched_instructions(struct searched_instructions *sea
 	search->generation++;
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects);
 
 __attribute__((always_inline))
@@ -1079,6 +1116,7 @@ struct loader_stub {
 };
 
 __attribute__((always_inline))
+__attribute__((nonnull(1, 2)))
 static inline void push_unreachable_breakpoint(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) const uint8_t *breakpoint)
 {
 #if BREAK_ON_UNREACHABLES
@@ -1095,6 +1133,7 @@ static inline void push_unreachable_breakpoint(__attribute__((unused)) struct un
 
 #if BREAK_ON_UNREACHABLES
 __attribute__((always_inline))
+__attribute__((nonnull(1, 2, 3, 4)))
 static inline void push_reachable_region(const struct loader_context *loader, struct unreachable_instructions *unreachables, const uint8_t *entry, const uint8_t *exit)
 {
 	LOG("reachable entry", temp_str(copy_address_description(loader, entry)));
@@ -1112,6 +1151,7 @@ static inline void push_reachable_region(const struct loader_context *loader, st
 #endif
 
 __attribute__((always_inline))
+__attribute__((nonnull(2)))
 static inline void expand_registers(struct register_state full[REGISTER_COUNT], const struct searched_instruction_data_entry *entry)
 {
 	register_mask used_registers = entry->used_registers;
@@ -1127,6 +1167,7 @@ static inline void expand_registers(struct register_state full[REGISTER_COUNT], 
 }
 
 __attribute__((always_inline))
+__attribute__((nonnull(1)))
 static inline bool collapse_registers(struct searched_instruction_data_entry *entry, const struct register_state full[REGISTER_COUNT])
 {
 #if 0
@@ -1165,6 +1206,7 @@ static inline bool collapse_registers(struct searched_instruction_data_entry *en
 }
 
 __attribute__((always_inline))
+__attribute__((nonnull(2)))
 static inline bool registers_are_subset_of_entry_registers(const struct register_state potential_subset[REGISTER_COUNT], const struct searched_instruction_data_entry *entry, register_mask valid_registers)
 {
 	register_mask used_registers = entry->used_registers;
@@ -1186,6 +1228,7 @@ static inline bool registers_are_subset_of_entry_registers(const struct register
 }
 
 __attribute__((always_inline))
+__attribute__((nonnull(1)))
 static inline bool entry_registers_are_subset_of_registers(const struct searched_instruction_data_entry *entry, const struct register_state potential_superset[REGISTER_COUNT], register_mask valid_registers)
 {
 	register_mask used_registers = entry->used_registers;
@@ -1206,6 +1249,7 @@ static inline bool entry_registers_are_subset_of_registers(const struct searched
 	return true;
 }
 
+__attribute__((nonnull(1, 2)))
 static void add_new_entry_with_registers(struct searched_instruction_entry *table_entry, struct registers *registers)
 {
 	union {
@@ -1236,6 +1280,7 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 	data->end_offset = new_end_offset;
 }
 
+__attribute__((nonnull(1, 2, 3, 5)))
 static size_t entry_offset_for_registers(struct searched_instruction_entry *table_entry, struct registers *registers, struct program_state *analysis, function_effects required_effects, __attribute__((unused)) const uint8_t *addr)
 {
 	struct searched_instruction_data *data = table_entry->data;
@@ -1412,6 +1457,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 }
 
 __attribute__((always_inline))
+__attribute__((nonnull(1, 2, 3)))
 static inline struct searched_instruction_entry *find_searched_instruction_table_entry(struct searched_instructions *search, const uint8_t *addr, struct effect_token *token)
 {
 	token->entry_offset = 0;
@@ -1447,6 +1493,7 @@ retry:
 }
 
 __attribute__((always_inline))
+__attribute__((nonnull(1, 2, 3, 6)))
 static inline function_effects *get_or_populate_effects(struct program_state *analysis, const uint8_t *addr, struct registers *registers, function_effects required_effects, struct analysis_frame *caller, struct effect_token *token)
 {
 	struct searched_instructions *search = &analysis->search;
@@ -1602,6 +1649,7 @@ static inline register_mask add_relevant_registers(struct searched_instructions 
 	return result;
 }
 
+__attribute__((nonnull(1, 2)))
 static uint16_t index_for_callback_and_data(struct searched_instructions *search, instruction_reached_callback callback, void *callback_data)
 {
 	int count = search->callback_count;
@@ -1623,6 +1671,7 @@ static uint16_t index_for_callback_and_data(struct searched_instructions *search
 	return count;
 }
 
+__attribute__((nonnull(1, 2, 7)))
 static void find_and_add_callback(struct program_state *analysis, const uint8_t *addr, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects additional_effects, instruction_reached_callback callback, void *callback_data)
 {
 	struct effect_token token;
@@ -1655,6 +1704,7 @@ struct x86_ins_prefixes {
 };
 
 __attribute__((always_inline))
+__attribute__((nonnull(1)))
 static inline struct x86_ins_prefixes decode_x86_ins_prefixes(const uint8_t **ins) {
 	struct x86_ins_prefixes result = { 0 };
 	if (UNLIKELY(**ins == 0x3e)) {
@@ -1746,6 +1796,7 @@ static inline void dump_x86_ins_prefixes(__attribute__((unused)) struct x86_ins_
 }
 
 __attribute__((always_inline))
+__attribute__((nonnull(2)))
 static inline bool register_is_legacy_8bit_high(struct x86_ins_prefixes rex, int *register_index)
 {
 	if (UNLIKELY(*register_index >= REGISTER_RSP && *register_index < REGISTER_R8 && !rex.has_any_rex)) {
@@ -1756,6 +1807,7 @@ static inline bool register_is_legacy_8bit_high(struct x86_ins_prefixes rex, int
 	return false;
 }
 
+__attribute__((nonnull(1)))
 static inline void truncate_to_size_prefixes(struct register_state *reg, struct x86_ins_prefixes rex)
 {
 	if (rex.has_w) {
@@ -1767,6 +1819,7 @@ static inline void truncate_to_size_prefixes(struct register_state *reg, struct 
 	}
 }
 
+__attribute__((nonnull(1)))
 static inline bool register_is_partially_known_size_prefixes(struct register_state *reg, struct x86_ins_prefixes rex)
 {
 	if (rex.has_w) {
@@ -1789,9 +1842,11 @@ struct loaded_binary *find_loaded_binary(const struct loader_context *context, c
 	return NULL;
 }
 
+__attribute__((nonnull(1)))
 static int protection_for_address(const struct loader_context *context, const void *address, struct loaded_binary **out_binary, const ElfW(Shdr) **out_section);
 static int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section);
 
+__attribute__((nonnull(1)))
 const struct recorded_syscall *find_recorded_syscall(const struct recorded_syscalls *syscalls, uintptr_t nr)
 {
 	for (int i = 0; i < syscalls->count; i++) {
@@ -1802,8 +1857,10 @@ const struct recorded_syscall *find_recorded_syscall(const struct recorded_sysca
 	return NULL;
 }
 
+__attribute__((nonnull(1, 2)))
 static int load_debuglink(const struct loader_context *loader, struct loaded_binary *binary, bool force_loading);
 
+__attribute__((nonnull(1, 2, 3)))
 static void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) **out_symbol) {
 	if ((symbol_types & NORMAL_SYMBOL) && binary->has_symbols) {
 		const struct symbol_info *symbols = &binary->symbols;
@@ -1853,6 +1910,7 @@ void *resolve_loaded_symbol(const struct loader_context *context, const char *na
 	return NULL;
 }
 
+__attribute__((nonnull(1, 2)))
 static void *resolve_next_binary_loaded_symbol(struct loaded_binary *binary, const char *name, int symbol_types, const ElfW(Sym) **symbol) {
 	if ((symbol_types & NORMAL_SYMBOL) && binary->has_symbols && (*symbol == NULL || symbol_info_contains_symbol(&binary->symbols, *symbol))) {
 		const struct symbol_info *symbols = &binary->symbols;
@@ -1880,6 +1938,7 @@ static void *resolve_next_binary_loaded_symbol(struct loaded_binary *binary, con
 	return NULL;
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static inline const uint8_t *update_known_function(struct program_state *analysis, struct loaded_binary *binary, const char *name, int symbol_locations, function_effects effects)
 {
 	const uint8_t *addr = resolve_binary_loaded_symbol(&analysis->loader, binary, name, NULL, symbol_locations, NULL);
@@ -1904,6 +1963,7 @@ static inline const uint8_t *update_known_function(struct program_state *analysi
 	return addr;
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static inline void skip_lea_on_known_symbol(struct program_state *analysis, struct loaded_binary *binary, const char *name, size_t default_size)
 {
 	const ElfW(Sym) *symbol = NULL;
@@ -1962,6 +2022,7 @@ static void handle_musl_setxid(struct program_state *analysis, __attribute__((un
 
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
+__attribute__((nonnull(1, 2, 3)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller)
 {
 	for (size_t i = 0; i < symbols->symbol_count; i++) {
@@ -2034,6 +2095,7 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 
 static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data);
 
+__attribute__((nonnull(1, 2)))
 static const uint8_t *find_function_entry(struct loader_context *loader, const uint8_t *ins)
 {
 	struct loaded_binary *binary = binary_for_address(loader, ins);
@@ -2196,6 +2258,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_
     fs_close(dirfd);
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static void discovered_nss_provider(struct program_state *analysis, struct analysis_frame *caller, const char *provider)
 {
 	size_t len = fs_strlen(provider);
@@ -2219,6 +2282,7 @@ static void discovered_nss_provider(struct program_state *analysis, struct analy
 	register_dlopen_file(analysis, library_name, caller, false);
 }
 
+__attribute__((nonnull(1, 2)))
 static void load_nss_libraries(struct program_state *analysis, struct analysis_frame *caller)
 {
 	if (analysis->loader.loaded_nss_libraries) {
@@ -2380,6 +2444,7 @@ static void handle_openssl_dso_load(struct program_state *analysis, const uint8_
 	}
 }
 
+__attribute__((nonnull(1, 2, 3, 4)))
 static void intercept_jump_slot(struct program_state *analysis, struct loaded_binary *binary, const char *slot_name, instruction_reached_callback callback)
 {
 	const ElfW(Dyn) *dynamic = binary->info.dynamic;
@@ -2431,6 +2496,7 @@ static void blocked_function_called(__attribute__((unused)) struct program_state
 	LOG("stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static void force_protection_for_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *symbol_name, int symbol_types, int prot)
 {
 	const ElfW(Sym) *symbol;
@@ -2448,6 +2514,7 @@ static void force_protection_for_symbol(const struct loader_context *loader, str
 	}
 }
 
+__attribute__((nonnull(1, 2)))
 static void update_known_symbols(struct program_state *analysis, struct loaded_binary *new_binary)
 {
 	struct known_symbols *known_symbols = &analysis->known_symbols;
@@ -2671,8 +2738,10 @@ struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, c
 	return &symbols[i];
 }
 
+__attribute__((nonnull(1)))
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
+__attribute__((nonnull(1, 2)))
 static char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head)
 {
 	size_t count = 0;
@@ -2724,6 +2793,7 @@ static char *copy_call_trace_description(const struct loader_context *context, c
 	return result;
 }
 
+__attribute__((nonnull(1)))
 static char *copy_register_state_description_simple(const struct loader_context *context, struct register_state reg)
 {
 	if (register_is_exactly_known(&reg)) {
@@ -2742,6 +2812,7 @@ static char *copy_register_state_description_simple(const struct loader_context 
 	return result;
 }
 
+__attribute__((nonnull(1)))
 static char *copy_register_state_description(const struct loader_context *context, struct register_state reg)
 {
 	if (register_is_exactly_known(&reg)) {
@@ -2798,6 +2869,7 @@ static char *copy_register_state_description(const struct loader_context *contex
 }
 
 __attribute__((unused))
+__attribute__((nonnull(1, 2, 4)))
 static char *copy_call_description(const struct loader_context *context, const char *name, struct registers registers, const int *register_indexes, int argc, bool include_symbol)
 {
 	size_t name_len = fs_strlen(name);
@@ -2831,12 +2903,14 @@ static char *copy_call_description(const struct loader_context *context, const c
 	return result;
 }
 
+__attribute__((nonnull(1)))
 static char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, struct registers registers, bool include_symbol)
 {
 	return copy_call_description(context, name_for_syscall(nr), registers, syscall_argument_abi_register_indexes, attributes_for_syscall(nr) & SYSCALL_ARGC_MASK, include_symbol);
 }
 
 __attribute__((unused))
+__attribute__((nonnull(1, 2)))
 static char *copy_function_call_description(const struct loader_context *context, const uint8_t *target, struct registers registers)
 {
 	char *name = copy_address_description(context, target);
@@ -2861,6 +2935,7 @@ static char *copy_function_call_description(const struct loader_context *context
 	return result;
 }
 
+__attribute__((nonnull(1, 2, 3)))
 static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects)
 {
 	// mark ancestor functions as varying by registers until we find one that no longer passes data into the call site
@@ -2950,6 +3025,7 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 	}
 }
 
+__attribute__((nonnull(1)))
 static inline void add_syscall(struct recorded_syscalls *syscalls, struct recorded_syscall syscall)
 {
 	int index = syscalls->count++;
@@ -5200,7 +5276,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									LOG("completing from rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
 									goto update_and_return;
 							}
-						} else if (caller && caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && (analysis->loader.main->special_binary_flags & BINARY_IS_GOLANG)) {
+						} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && (analysis->loader.main->special_binary_flags & BINARY_IS_GOLANG)) {
 							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
 						} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
 							self.description = "syscall";
