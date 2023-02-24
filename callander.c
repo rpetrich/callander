@@ -1950,6 +1950,7 @@ static void handle_musl_setxid(struct program_state *analysis, __attribute__((un
 			.entry_state = &caller->current_state,
 			.token = { 0 },
 			.current_state = empty_registers,
+			.is_entry = false,
 		};
 		self.current_state.registers[REGISTER_RAX] = caller->current_state.registers[arg0index];
 		for (int i = 0; i < 3; i++) {
@@ -1969,8 +1970,8 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 			const uint8_t *ins = (const uint8_t *)apply_base_address(&binary->info, symbol->st_value);
 			if (protection_for_address_in_binary(binary, (uintptr_t)ins, NULL) & PROT_EXEC) {
 				LOG("symbol contains executable code that might be dlsym'ed", symbol_name(symbols, symbol));
-				struct analysis_frame new_caller = { .address = ins, .description = symbol_name(symbols, symbol), .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-				analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &empty_registers, ins, &new_caller, true);
+				struct analysis_frame new_caller = { .address = ins, .description = symbol_name(symbols, symbol), .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = false, };
+				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &empty_registers, ins, &new_caller);
 			} else {
 				LOG("symbol is not executable", symbol_name(symbols, symbol));
 			}
@@ -2014,7 +2015,7 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 		LOG("skipping analysis for", path);
 	} else {
 		binary->special_binary_flags |= BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED;
-		struct analysis_frame dlopen_caller = { .address = binary->info.base, .description = "dlopen", .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame dlopen_caller = { .address = binary->info.base, .description = "dlopen", .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 		if (binary->has_symbols) {
 			LOG("analyzing symbols for", path);
 			analyze_function_symbols(analysis, binary, &binary->symbols, &dlopen_caller);
@@ -2061,6 +2062,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 				.entry = ins,
 				.entry_state = state,
 				.token = *token,
+				.is_entry = true,
 			};
 			vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED, SHOULD_LOG);
 			find_and_add_callback(analysis, find_function_entry(&analysis->loader, caller->entry) ?: caller->entry, 0, 0, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
@@ -2114,6 +2116,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 		.entry = ins,
 		.entry_state = state,
 		.token = *token,
+		.is_entry = true,
 	};
 	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS, SHOULD_LOG);
 	register_dlopen_file(analysis, needed_path, caller, false);
@@ -2128,6 +2131,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_
 		.entry = ins,
 		.entry_state = state,
 		.token = *token,
+		.is_entry = true,
 	};
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_RETURNS);
 	*token = self.token;
@@ -2301,6 +2305,7 @@ static void handle_nss_usage(struct program_state *analysis, const uint8_t *ins,
 		.entry = ins,
 		.entry_state = state,
 		.token = *token,
+		.is_entry = true,
 	};
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
 	*token = self.token;
@@ -2310,7 +2315,7 @@ static void handle_libseccomp_syscall(struct program_state *analysis, const uint
 {
 	LOG("encountered libseccomp syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	// if first syscall argument is unbounded, assume it's __NR_seccomp
-	struct analysis_frame self = { .address = ins, .description = "libseccomp syscall", .next = caller, .current_state = *state, .entry = ins, .entry_state = state, .token = { 0 } };
+	struct analysis_frame self = { .address = ins, .description = "libseccomp syscall", .next = caller, .current_state = *state, .entry = ins, .entry_state = state, .token = { 0 }, .is_entry = true };
 #pragma GCC unroll 64
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		self.current_state.sources[i] = (register_mask)1 << i;
@@ -2321,7 +2326,7 @@ static void handle_libseccomp_syscall(struct program_state *analysis, const uint
 		clear_match(&analysis->loader, &self.current_state, first_arg, ins);
 		self.current_state.sources[first_arg] = 0;
 	}
-	function_effects effects = analyze_instructions(analysis, required_effects, &self.current_state, syscall_function, &self, true);
+	function_effects effects = analyze_function(analysis, required_effects, &self.current_state, syscall_function, &self);
 	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
 }
 
@@ -2332,20 +2337,20 @@ static void handle_libcap_syscall(struct program_state *analysis, const uint8_t 
 	struct registers new_state = *state;
 	function_effects effects = 0;
 	if (register_is_partially_known_32bit(&new_state.registers[sysv_argument_abi_register_indexes[0]])) {
-		effects = analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects = analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 	} else {
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_capset);
-		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_prctl);
-		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setuid);
-		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setgid);
-		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setgroups);
-		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_chroot);
-		effects |= analyze_instructions(analysis, required_effects, &new_state, syscall_function, caller, true);
+		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 	}
 	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
 }
@@ -2477,9 +2482,9 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		if (gconv_open) {
 			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
 			struct registers registers = empty_registers;
-			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "__gconv_open", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "__gconv_open", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 			analysis->loader.searching_gconv_dlopen = true;
-			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, gconv_open, &new_caller, true);
+			analyze_function(analysis, EFFECT_PROCESSED, &registers, gconv_open, &new_caller);
 			if (analysis->loader.gconv_dlopen != NULL) {
 				struct registers state = empty_registers;
 				struct analysis_frame self = {
@@ -2489,6 +2494,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 					.entry = analysis->loader.gconv_dlopen,
 					.entry_state = &state,
 					.token = { 0 },
+					.is_entry = true,
 				};
 				analysis->loader.searching_gconv_dlopen = true;
 				*get_or_populate_effects(analysis, analysis->loader.gconv_dlopen, &state, EFFECT_NONE, &self, &self.token) = EFFECT_NONE;
@@ -2527,8 +2533,8 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
 			if (dl_start_profile != NULL) {
 				struct registers registers = empty_registers;
-				struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "_dl_start_profile", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-				analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &registers, dl_start_profile, &new_caller, true);
+				struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "_dl_start_profile", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &registers, dl_start_profile, &new_caller);
 			}
 		}
 		const uint8_t *error = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "error", NULL, NORMAL_SYMBOL, NULL);
@@ -2570,9 +2576,9 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		const uint8_t *do_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "do_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
 		if (do_setxid != NULL) {
 			struct registers registers = empty_registers;
-			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "do_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "do_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 			analysis->loader.searching_setxid_sighandler = true;
-			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, do_setxid, &new_caller, true);
+			analyze_function(analysis, EFFECT_PROCESSED, &registers, do_setxid, &new_caller);
 			analysis->loader.searching_setxid_sighandler = false;
 		}
 		const uint8_t *setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
@@ -2585,21 +2591,21 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
 		analysis->loader.searching_setxid_sighandler = true;
 		struct registers registers = empty_registers;
-		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "sighandler_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "sighandler_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 		const uint8_t *nptl_setxid_sighandler = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__GI___nptl_setxid_sighandler", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
 		if (nptl_setxid_sighandler != NULL) {
-			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, nptl_setxid_sighandler, &new_caller, true);
+			analyze_function(analysis, EFFECT_PROCESSED, &registers, nptl_setxid_sighandler, &new_caller);
 		}
 		const uint8_t *sighandler_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "sighandler_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
 		if (sighandler_setxid != NULL) {
-			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, sighandler_setxid, &new_caller, true);
+			analyze_function(analysis, EFFECT_PROCESSED, &registers, sighandler_setxid, &new_caller);
 		}
 		analysis->loader.searching_setxid_sighandler = false;
 		const uint8_t *nptl_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nptl_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
 		if (nptl_setxid) {
 			new_caller.description = "__nptl_setxid";
 			analysis->loader.searching_setxid = true;
-			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, nptl_setxid, &new_caller, true);
+			analyze_function(analysis, EFFECT_PROCESSED, &registers, nptl_setxid, &new_caller);
 			analysis->loader.searching_setxid = false;
 		}
 		// assume new libraries won't be loaded after startup
@@ -2629,8 +2635,8 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		if (DSO_METHOD_openssl != NULL) {
 			size_t pre_count = analysis->search.loaded_address_count;
 			struct registers registers = empty_registers;
-			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "DSO_METHOD_openssl", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_instructions(analysis, EFFECT_PROCESSED, &registers, DSO_METHOD_openssl, &new_caller, true);
+			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "DSO_METHOD_openssl", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+			analyze_function(analysis, EFFECT_PROCESSED, &registers, DSO_METHOD_openssl, &new_caller);
 			size_t post_count = analysis->search.loaded_address_count;
 			if (pre_count < post_count) {
 				uintptr_t address = analysis->search.loaded_addresses[pre_count];
@@ -2981,11 +2987,20 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	LOG("syscall is", temp_str(copy_call_description(&analysis->loader, name_for_syscall(nr), self.current_state, syscall_argument_abi_register_indexes, argc & SYSCALL_ARGC_MASK, true)));
 	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == __NR_exit || nr == __NR_exit_group);
 	if (should_record) {
+#if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
+		struct analysis_frame *function = &self;
+		while (!function->is_entry && function->next != NULL) {
+			function = function->next;
+		}
+#endif
 		LOG("recorded syscall");
 		add_syscall(syscalls, (struct recorded_syscall){
 			.nr = nr,
 			.ins = self.address,
 			.entry = self.entry,
+#if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
+			.function_entry = function->entry,
+#endif
 			.registers = self.current_state,
 		});
 		if (argc & SYSCALL_IS_RESTARTABLE) {
@@ -2995,6 +3010,9 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 				.nr = __NR_restart_syscall,
 				.ins = self.address,
 				.entry = self.entry,
+#if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
+				.function_entry = function->entry,
+#endif
 				.registers = restart,
 			});
 		}
@@ -4327,6 +4345,7 @@ static void analyze_libcrypto_dlopen(struct program_state *analysis)
 			.entry = analysis->loader.libcrypto_dlopen,
 			.entry_state = &state,
 			.token = { 0 },
+			.is_entry = true,
 		};
 		analysis->loader.searching_libcrypto_dlopen = true;
 		*get_or_populate_effects(analysis, analysis->loader.libcrypto_dlopen, &state, EFFECT_NONE, &libcrypto_dlopen, &libcrypto_dlopen.token) = EFFECT_NONE;
@@ -4339,7 +4358,7 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 	push_stack(&self->current_state, 2);
 	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
-	function_effects more_effects = analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self, true);
+	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
 	pop_stack(&self->current_state, 2);
 	if (more_effects & EFFECT_PROCESSING) {
 		queue_instruction(&analysis->search.queue, call_target, required_effects, call_state, call_target, self->description);
@@ -4684,7 +4703,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
 			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING);
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
-			continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, self, true);
+			continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, self, ALLOW_JUMPS_INTO_THE_ABYSS, false);
 			LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
 		}
 	}
@@ -4703,7 +4722,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 	} else {
 		LOG("taking jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
 		self->description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
-		jump_effects = analyze_instructions(analysis, required_effects, &jump_state, jump_target, self, true);
+		jump_effects = analyze_instructions(analysis, required_effects, &jump_state, jump_target, self, ALLOW_JUMPS_INTO_THE_ABYSS, false);
 	}
 	if (continue_first) {
 		LOG("completing conditional jump after branch", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -4714,7 +4733,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			LOG("taking continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
 			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING);
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
-			continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, self, true);
+			continue_effects = analyze_instructions(analysis, required_effects, &continue_state, continue_target, self, ALLOW_JUMPS_INTO_THE_ABYSS, false);
 			LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
 		}
 	}
@@ -4735,7 +4754,7 @@ static inline function_effects fallback_effects_if_processing(function_effects e
 	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
 }
 
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status)
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
 {
 	ins = skip_prefix_jumps(analysis, ins);
 	struct analysis_frame self;
@@ -4761,6 +4780,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 	self.entry_state = entry_state;
 	self.next = caller;
 	self.entry = ins;
+	self.is_entry = is_entry;
 #pragma GCC unroll 64
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		self.current_state.sources[i] = (register_mask)1 << i;
@@ -4821,7 +4841,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (ins == self.entry || (ins == &self.entry[4] && x86_is_endbr64_instruction(self.entry))) {
 						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
 					}
-					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, true) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
@@ -4939,7 +4959,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int reg = read_rm(modrm, rex);
 				LOG("jmpq*", name_for_register(reg));
 				dump_nonempty_registers(&analysis->loader, &self.current_state, (register_mask)1 << reg);
-				self.description = "jmpq*";
+				self.description = "indirect jump";
 				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, jump_status == ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : (register_mask)1 << reg, 0, required_effects, SHOULD_LOG);
 				const uint8_t *new_ins;
 				if (modrm_is_direct(modrm)) {
@@ -5024,7 +5044,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 					LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
-					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, true) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 					LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
@@ -5759,7 +5779,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												}
 											}
 											set_register(&copy.registers[dest], dest);
-											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 											LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										}
 										LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -6398,7 +6418,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											}
 										}
 										set_register(&copy.registers[reg], relative);
-										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
 										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
@@ -6901,7 +6921,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_match(&analysis->loader, &self.current_state, reg, ins);
 				if (register_is_partially_known(&new_value.state)) {
 					dump_register(&analysis->loader, new_value.state);
-					self.description = "lea";
+					self.description = "load address";
 					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, new_value.source, 0, 0, required_effects, SHOULD_LOG);
 				}
 				if (rex.has_w) {
@@ -6944,26 +6964,26 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								clear_register(&self.current_state.registers[reg]);
 								self.current_state.sources[reg] = 0;
 							} else {
-								self.description = "lea";
+								self.description = "load address";
 								if (required_effects & EFFECT_ENTRY_POINT) {
 									if (reg == sysv_argument_abi_register_indexes[0]) {
 										// main
 										analysis->main = (uintptr_t)address;
 										LOG("rip-relative lea is to executable address, assuming it is the main function");
-										analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self, true);
+										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
 									} else if (reg == sysv_argument_abi_register_indexes[3]) {
 										// init, will be called before main, can skip it
 									} else if (reg == sysv_argument_abi_register_indexes[4] || reg == sysv_argument_abi_register_indexes[5]) {
 										LOG("rip-relative lea is to executable address, assuming it is the finit function");
-										analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self, true);
+										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
 									} else {
 										LOG("rip-relative lea is to executable address, assuming it could be called during startup");
-										analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, address, &self, true);
+										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, address, &self);
 									}
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
 									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), empty_registers, self.address, "lea");
-									//analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self, true);
+									//analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
 								}
 							}
 						} else if (prot & PROT_READ) {
@@ -6981,9 +7001,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									if (protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
 										LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
 										LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (const uint8_t *)data)));
-										self.description = "lea";
-										struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
-										analyze_instructions(analysis, effects, &empty_registers, (const uint8_t *)data, &new_caller, true);
+										self.description = "load address";
+										struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+										analyze_function(analysis, effects, &empty_registers, (const uint8_t *)data, &new_caller);
 									}
 								}
 								if (symbol == &binary->libcrypto_dso_meth_dl) {
@@ -7176,7 +7196,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("mov is to executable address, assuming it could be called after startup");
 					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, empty_registers, self.address, "mov");
 					// self.description = "mov";
-					// analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)address, &self, true);
+					// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)address, &self);
 				}
 				break;
 			}
@@ -7268,20 +7288,20 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								// main
 								analysis->main = (uintptr_t)state.value;
 								LOG("mov is to executable address, assuming it is the main function");
-								analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)state.value, &self, true);
+								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)state.value, &self);
 							} else if (rm == sysv_argument_abi_register_indexes[3]) {
 								// init, will be called before main, can skip it
 							} else if (rm == sysv_argument_abi_register_indexes[4] || rm == sysv_argument_abi_register_indexes[5]) {
 								LOG("mov is to executable address, assuming it is the finit function");
-								analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)state.value, &self, true);
+								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)state.value, &self);
 							} else {
 								LOG("mov is to executable address, assuming it could be called during startup");
-								analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, (const uint8_t *)state.value, &self, true);
+								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, (const uint8_t *)state.value, &self);
 							}
 						} else {
 							LOG("mov is to executable address, assuming it could be called after startup");
 							queue_instruction(&analysis->search.queue, (const uint8_t *)state.value, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, empty_registers, self.address, "mov");
-							// analyze_instructions(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)state.value, &self, true);
+							// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (const uint8_t *)state.value, &self);
 						}
 					} else {
 						LOG("mov is to non-executable value, assuming it is data");
@@ -8631,8 +8651,8 @@ static void analyze_golang_init_task(struct program_state *analysis, function_ef
 	}
 	for (uintptr_t i = 0; i < nfns; i++) {
 		LOG("found golang init function", temp_str(copy_address_description(&analysis->loader, task->data[ndeps+i])));
-		struct analysis_frame new_caller = { .address = &task->data[ndeps+i], .description = "golang task init", .next = NULL, .current_state = registers, .entry = (const void *)task, .entry_state = &registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, task->data[ndeps+i], &new_caller, true);
+		struct analysis_frame new_caller = { .address = &task->data[ndeps+i], .description = "golang task init", .next = NULL, .current_state = registers, .entry = (const void *)task, .entry_state = &registers, .token = { 0 }, .is_entry = true };
+		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, task->data[ndeps+i], &new_caller);
 	}
 }
 
@@ -8723,29 +8743,29 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 		const uintptr_t *inits = (const uintptr_t *)apply_base_address(&new_binary->info, init_array_ptr);
 		for (size_t i = 0; i < init_array_count; i++) {
 			LOG("analyzing initializer function", i);
-			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "init", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)(inits[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, inits[i]) : inits[i]), &new_caller, true);
+			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "init", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+			analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)(inits[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, inits[i]) : inits[i]), &new_caller);
 		}
 	}
 	if (init != 0) {
 		LOG("analyzing initializer function");
 		const uint8_t *init_function = (const uint8_t *)apply_base_address(&new_binary->info, init);
-		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "init", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, init_function, &new_caller, true);
+		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "init", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, init_function, &new_caller);
 	}
 	if (fini_array_ptr != 0) {
 		const uintptr_t *finis = (const uintptr_t *)apply_base_address(&new_binary->info, fini_array_ptr);
 		for (size_t i = 0; i < fini_array_count; i++) {
 			LOG("analyzing finalizer function", i);
-			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)(finis[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, finis[i]) : finis[i]), &new_caller, true);
+			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+			analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, (const uint8_t *)(finis[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, finis[i]) : finis[i]), &new_caller);
 		}
 	}
 	if (fini != 0) {
 		LOG("analyzing finalizer function");
 		const uint8_t *fini_function = (const uint8_t *)apply_base_address(&new_binary->info, fini);
-		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_PROCESSED | effects, &registers, fini_function, &new_caller, true);
+		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, fini_function, &new_caller);
 	}
 	void *golangInitTask = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "main..inittask", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 	if (golangInitTask) {
@@ -8772,8 +8792,8 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[i])));
 							LOG("value of address is, assuming callable", data);
 							if (find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j]) == NULL) {
-								struct analysis_frame new_caller = { .address = &section_data[j], .description = name, .next = NULL, .current_state = empty_registers, .entry = (void *)&section_data[j], .entry_state = &empty_registers, .token = { 0 } };
-								analyze_instructions(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | effects, &registers, (const uint8_t *)data, &new_caller, true);
+								struct analysis_frame new_caller = { .address = &section_data[j], .description = name, .next = NULL, .current_state = empty_registers, .entry = (void *)&section_data[j], .entry_state = &empty_registers, .token = { 0 }, .is_entry = true};
+								analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | effects, &registers, (const uint8_t *)data, &new_caller);
 							}
 						}
 					}
@@ -9611,8 +9631,9 @@ void finish_analysis(struct program_state *analysis)
 	while (dequeue_instruction(&analysis->search.queue, &ins)) {
 		LOG("dequeuing", temp_str(copy_address_description(&analysis->loader, ins.ins)));
 		dump_nonempty_registers(&analysis->loader, &ins.registers, ~(register_mask)0);
-		struct analysis_frame queued_caller = { .address = ins.caller, .description = ins.description, .next = NULL, .current_state = empty_registers, .entry = ins.caller, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, ins.effects, &ins.registers, ins.ins, &queued_caller, true);
+		struct analysis_frame queued_caller = { .address = ins.caller, .description = ins.description, .next = NULL, .current_state = empty_registers, .entry = ins.caller, .entry_state = &empty_registers, .token = { 0 }, .is_entry = false };
+		// TODO: determine if this should always be considered a function entry point
+		analyze_function(analysis, ins.effects, &ins.registers, ins.ins, &queued_caller);
 	}
 
 	sort_and_coalesce_syscalls(&analysis->syscalls, &analysis->loader);

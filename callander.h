@@ -14,6 +14,7 @@
 #define STORE_LAST_MODIFIED 0
 #define BREAK_ON_UNREACHABLES 0
 #define RECORD_WHERE_STACK_ADDRESS_TAKEN 0
+#define RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY 0
 
 #define LOGGING
 
@@ -355,6 +356,7 @@ struct analysis_frame {
 	const uint8_t *entry;
 	const struct registers *entry_state;
 	struct effect_token token;
+	bool is_entry:1;
 };
 
 enum effects {
@@ -400,6 +402,9 @@ struct recorded_syscall {
 	uintptr_t nr;
 	const uint8_t *ins;
 	const uint8_t *entry;
+#if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
+	const uint8_t *function_entry;
+#endif
 	struct registers registers;
 };
 
@@ -506,7 +511,13 @@ enum jump_table_status {
 	DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS = 2,
 };
 
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status);
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
+
+__attribute__((always_inline))
+static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller)
+{
+	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, true);
+}
 
 void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects);
 

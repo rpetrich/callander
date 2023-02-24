@@ -487,13 +487,13 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		}
 		analysis->main = (uintptr_t)main;
 		struct analysis_frame new_caller = { .address = loaded->info.base, .description = "main", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, main, &new_caller, true);
+		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, main, &new_caller);
 	} else {
 		struct analysis_frame new_caller = { .address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
+		analyze_function(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller);
 		if (analysis->main == (uintptr_t)loaded->info.entrypoint) {
 			// reanalyze, since we didn't find a main
-			analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
+			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller);
 		}
 	}
 	// interpreter entrypoint
@@ -501,7 +501,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	if (interpreter != NULL) {
 		// LOG("assuming interpreter can run after startup");
 		struct analysis_frame new_caller = { .address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_instructions(analysis, EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller, true);
+		analyze_function(analysis, EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller);
 	} else {
 		LOG("no interpreter for this binary");
 	}
