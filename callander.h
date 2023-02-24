@@ -45,7 +45,7 @@ enum {
 
 struct syscall_decl {
 	const char *name;
-	uint32_t valid_args;
+	uint32_t attributes;
 };
 
 #define SYSCALL_DEF(name, argc, flags) 1+

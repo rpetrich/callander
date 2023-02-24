@@ -2044,7 +2044,7 @@ skip_analysis:
 						const char *name = name_for_syscall(regs.rax);
 						size_t name_len = fs_strlen(name);
 						size_t len = name_len + 3; // '(' ... ')' '\0'
-						int argc = argc_for_syscall(regs.rax) & SYSCALL_ARGC_MASK;
+						int argc = attributes_for_syscall(regs.rax) & SYSCALL_ARGC_MASK;
 						for (int i = 0; i < argc; i++) {
 							if (i != 0) {
 								len += 2; // ", "

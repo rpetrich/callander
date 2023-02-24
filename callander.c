@@ -60,10 +60,10 @@ const char *name_for_syscall(uintptr_t nr) {
 	return result;
 }
 
-uint32_t argc_for_syscall(uintptr_t nr)
+uint32_t attributes_for_syscall(uintptr_t nr)
 {
 	if (nr < sizeof(syscall_list) / sizeof(syscall_list[0])) {
-		return syscall_list[nr].valid_args;
+		return syscall_list[nr].attributes;
 	}
 	return 6;
 }
@@ -2833,7 +2833,7 @@ static char *copy_call_description(const struct loader_context *context, const c
 
 static char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, struct registers registers, bool include_symbol)
 {
-	return copy_call_description(context, name_for_syscall(nr), registers, syscall_argument_abi_register_indexes, argc_for_syscall(nr) & SYSCALL_ARGC_MASK, include_symbol);
+	return copy_call_description(context, name_for_syscall(nr), registers, syscall_argument_abi_register_indexes, attributes_for_syscall(nr) & SYSCALL_ARGC_MASK, include_symbol);
 }
 
 __attribute__((unused))
@@ -2967,9 +2967,9 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 {
 	struct recorded_syscalls *syscalls = &analysis->syscalls;
 	uint8_t config = nr < SYSCALL_COUNT ? syscalls->config[nr] : 0;
-	int argc = argc_for_syscall(nr);
-	for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
-		if (argc & (SYSCALL_ARG_IS_MODEFLAGS_BASE << i)) {
+	int attributes = attributes_for_syscall(nr);
+	for (int i = 0; i < (attributes & SYSCALL_ARGC_MASK); i++) {
+		if (attributes & (SYSCALL_ARG_IS_MODEFLAGS_BASE << i)) {
 			// argument is flags, next is mode. check if mode is used and if not, convert to any
 			const struct register_state *arg = &self.current_state.registers[syscall_argument_abi_register_indexes[i]];
 			if (register_is_exactly_known(arg)) {
@@ -2984,7 +2984,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		}
 	}
 	// debug logging
-	LOG("syscall is", temp_str(copy_call_description(&analysis->loader, name_for_syscall(nr), self.current_state, syscall_argument_abi_register_indexes, argc & SYSCALL_ARGC_MASK, true)));
+	LOG("syscall is", temp_str(copy_call_description(&analysis->loader, name_for_syscall(nr), self.current_state, syscall_argument_abi_register_indexes, attributes & SYSCALL_ARGC_MASK, true)));
 	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == __NR_exit || nr == __NR_exit_group);
 	if (should_record) {
 #if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
@@ -3003,7 +3003,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 #endif
 			.registers = self.current_state,
 		});
-		if (argc & SYSCALL_IS_RESTARTABLE) {
+		if (attributes & SYSCALL_IS_RESTARTABLE) {
 			struct registers restart = self.current_state;
 			set_register(&restart.registers[REGISTER_RAX], __NR_restart_syscall);
 			add_syscall(syscalls, (struct recorded_syscall){
@@ -3030,7 +3030,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 			ERROR("found startup syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
 		}
 		if (SHOULD_LOG) {
-			for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
+			for (int i = 0; i < (attributes & SYSCALL_ARGC_MASK); i++) {
 				int reg = syscall_argument_abi_register_indexes[i];
 				for (int j = 0; j < REGISTER_COUNT; j++) {
 					if (self.current_state.sources[reg] & ((register_mask)1 << j)) {
@@ -3043,11 +3043,11 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		ERROR("at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 	}
 	// figure out which, if any, arguments to the function were used in the syscall
-	register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[argc & SYSCALL_ARGC_MASK];
+	register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[attributes & SYSCALL_ARGC_MASK];
 	// determine which registers to preserve
 	register_mask preserved_registers = syscall_argument_abi_used_registers_for_argc[0];
 	for (int i = 0; i < 6; i++) {
-		if (argc & (SYSCALL_ARG_IS_PRESERVED_BASE << i)) {
+		if (attributes & (SYSCALL_ARG_IS_PRESERVED_BASE << i)) {
 			preserved_registers |= (register_mask)1 << syscall_argument_abi_register_indexes[i];
 		}
 	}
@@ -9067,8 +9067,8 @@ static int compare_found_syscalls(const void *a, const void *b, void *data)
 	if (syscalla->nr > syscallb->nr) {
 		return 1;
 	}
-	int argc = argc_for_syscall(syscalla->nr);
-	if ((argc & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
+	int attributes = attributes_for_syscall(syscalla->nr);
+	if ((attributes & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
 		uintptr_t ins_a = (uintptr_t)syscalla->ins;
 		uintptr_t ins_b = (uintptr_t)syscallb->ins;
 		if (data != NULL) {
@@ -9089,7 +9089,7 @@ static int compare_found_syscalls(const void *a, const void *b, void *data)
 			return 1;
 		}
 	}
-	for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
+	for (int i = 0; i < (attributes & SYSCALL_ARGC_MASK); i++) {
 		int reg = syscall_argument_abi_register_indexes[i];
 		const struct register_state *register_a = &syscalla->registers.registers[reg];
 		const struct register_state *register_b = &syscallb->registers.registers[reg];
@@ -9183,8 +9183,8 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 	qsort_r(syscalls->list, count, sizeof(*syscalls->list), compare_found_syscalls, loader);
 	for (int i = 0; i < count - 1; ) {
 		struct recorded_syscall *earlier = &syscalls->list[i];
-		int argc = argc_for_syscall(earlier->nr);
-		register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[argc & SYSCALL_ARGC_MASK];
+		int attributes = attributes_for_syscall(earlier->nr);
+		register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[attributes & SYSCALL_ARGC_MASK];
 		for (int j = i + 1; j < count; j++) {
 			struct recorded_syscall *later = &syscalls->list[j];
 			// find reasons not to merge syscalls
@@ -9192,7 +9192,7 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 				// numbers don't match
 				break;
 			}
-			if ((argc & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
+			if ((attributes & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
 				if (later->ins != earlier->ins) {
 					// addresses don't match
 					break;
@@ -9239,7 +9239,7 @@ char *copy_used_syscalls(const struct loader_context *context, const struct reco
 			} else {
 				log_len += fs_strlen(name_for_syscall(nr));
 			}
-			if (log_caller && (argc_for_syscall(nr) & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
+			if (log_caller && (attributes_for_syscall(nr) & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
 				log_len += 3; // " @ ";
 				char *description = copy_address_details(context, list[i].ins, include_symbol);
 				log_len += fs_strlen(description);
@@ -9267,7 +9267,7 @@ char *copy_used_syscalls(const struct loader_context *context, const struct reco
 				fs_memcpy(&logbuf[logpos], name, name_len);
 				logpos += name_len;
 			}
-			if (log_caller && (argc_for_syscall(nr) & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
+			if (log_caller && (attributes_for_syscall(nr) & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
 				logbuf[logpos++] = ' ';
 				logbuf[logpos++] = '@';
 				logbuf[logpos++] = ' ';
@@ -9389,8 +9389,8 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct
 		size_t nr_pos = pos;
 		push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, nr, 0, 0));
 		push_description(&descriptions, &descriptions_cap, pos, strdup(name_for_syscall(nr)));
-		int argc = argc_for_syscall(nr);
-		if (validation_mode >= VALIDATE_SYSCALL_AND_CALL_SITE && list[i].ins != NULL && (argc & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
+		int attributes = attributes_for_syscall(nr);
+		if (validation_mode >= VALIDATE_SYSCALL_AND_CALL_SITE && list[i].ins != NULL && (attributes & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
 			// compare instruction pointers
 			do {
 				// read high part of instruction pointer
@@ -9431,7 +9431,7 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct
 								size_t compare_low_value;
 								size_t compare_low_max;
 							} arg_pos[6] = { 0 };
-							for (int j = 0; j < (argc & SYSCALL_ARGC_MASK); j++) {
+							for (int j = 0; j < (attributes & SYSCALL_ARGC_MASK); j++) {
 								int arg_register = syscall_argument_abi_register_indexes[j];
 								const struct register_state match_state = translate_register_state_to_child(loader, list[i].registers.registers[arg_register]);
 								if (register_is_partially_known(&match_state) && (match_state.value >> 32) == (match_state.max >> 32)) {
@@ -9493,7 +9493,7 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct
 							push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ALLOW));
 							push_description(&descriptions, &descriptions_cap, pos, strdup("return allow"));
 							// else to next register comparison or the final return trap
-							for (int j = 0; j < (argc & SYSCALL_ARGC_MASK); j++) {
+							for (int j = 0; j < (attributes & SYSCALL_ARGC_MASK); j++) {
 								size_t inner_hi_pos = arg_pos[j].compare_hi;
 								if (inner_hi_pos != 0) {
 									filter[hi_pos].jf = pos - inner_hi_pos - 1;
