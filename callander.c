@@ -1058,7 +1058,7 @@ static void grow_already_searched_instructions(struct searched_instructions *sea
 	search->generation++;
 }
 
-static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects, bool log);
+static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects);
 
 __attribute__((always_inline))
 static inline uint32_t hash_instruction_address(const uint8_t *addr)
@@ -1463,7 +1463,7 @@ static inline function_effects *get_or_populate_effects(struct program_state *an
 	token->entry_offset = entry_offset;
 	register_mask relevant_registers = table_entry->data->relevant_registers;
 	if (relevant_registers != 0 && caller != NULL/* && (data->entries[entry_index].effects & ~EFFECT_STICKY_EXITS) != 0*/) {
-		vary_effects_by_registers(search, &analysis->loader, caller, relevant_registers, table_entry->data->preserved_and_kept_registers, table_entry->data->preserved_and_kept_registers, 0, SHOULD_LOG);
+		vary_effects_by_registers(search, &analysis->loader, caller, relevant_registers, table_entry->data->preserved_and_kept_registers, table_entry->data->preserved_and_kept_registers, 0);
 		if (UNLIKELY(token->generation != search->generation)) {
 			table_entry = find_searched_instruction_table_entry(search, addr, token);
 		}
@@ -2064,7 +2064,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 				.token = *token,
 				.is_entry = true,
 			};
-			vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED, SHOULD_LOG);
+			vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED);
 			find_and_add_callback(analysis, find_function_entry(&analysis->loader, caller->entry) ?: caller->entry, 0, 0, 0, EFFECT_NONE, handle_gconv_find_shlib, NULL);
 			if (analysis->loader.searching_gconv_dlopen) {
 				analysis->loader.gconv_dlopen = ins;
@@ -2118,7 +2118,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 		.token = *token,
 		.is_entry = true,
 	};
-	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS, SHOULD_LOG);
+	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
 	register_dlopen_file(analysis, needed_path, caller, false);
 }
 
@@ -2861,7 +2861,7 @@ static char *copy_function_call_description(const struct loader_context *context
 	return result;
 }
 
-static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects, bool log)
+static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects)
 {
 	// mark ancestor functions as varying by registers until we find one that no longer passes data into the call site
 	for (struct analysis_frame *ancestor = self;;) {
@@ -2904,7 +2904,7 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 #endif
 		if (new_relevant_registers == 0) {
-			if (log) {
+			if (SHOULD_LOG) {
 				ERROR("first entry point without varying arguments", temp_str(copy_address_description(loader, ancestor->entry)));
 				for (int i = 0; i < REGISTER_COUNT; i++) {
 					if (relevant_registers & ((register_mask)1 << i)) {
@@ -2916,7 +2916,7 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 		new_preserved_registers &= ~((register_mask)1 << REGISTER_RSP);
 		new_preserved_and_kept_registers &= ~((register_mask)1 << REGISTER_RSP);
-		if (UNLIKELY(log)) {
+		if (SHOULD_LOG) {
 			ERROR("marking", temp_str(copy_address_description(loader, ancestor->entry)));
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				if (new_relevant_registers & ((register_mask)1 << i)) {
@@ -2932,14 +2932,14 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 		register_mask existing_relevant_registers = add_relevant_registers(search, loader, ancestor->entry, ancestor->entry_state, required_effects, new_relevant_registers, new_preserved_registers, new_preserved_and_kept_registers, &ancestor->token);
 		if ((existing_relevant_registers & new_relevant_registers) == new_relevant_registers && new_preserved_and_kept_registers == 0) {
-			if (UNLIKELY(log)) {
+			if (SHOULD_LOG) {
 				ERROR("relevant and preserved registers have already been added");
 			}
 			break;
 		}
 		ancestor = (struct analysis_frame *)ancestor->next;
 		if (ancestor == NULL) {
-			if (UNLIKELY(log)) {
+			if (SHOULD_LOG) {
 				ERROR("all ancestors had arguments");
 			}
 			break;
@@ -3023,18 +3023,20 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 			LOG("skipped recording syscall because blocked");
 		}
 	}
-	if (config & SYSCALL_CONFIG_DEBUG) {
+	if ((config & SYSCALL_CONFIG_DEBUG) && (should_record || SHOULD_LOG)) {
 		if (should_record) {
 			ERROR("found syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
 		} else {
 			ERROR("found startup syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
 		}
-		for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
-			int reg = syscall_argument_abi_register_indexes[i];
-			for (int j = 0; j < REGISTER_COUNT; j++) {
-				if (self.current_state.sources[reg] & ((register_mask)1 << j)) {
-					ERROR("argument", i);
-					ERROR("using block input from", name_for_register(j));
+		if (SHOULD_LOG) {
+			for (int i = 0; i < (argc & SYSCALL_ARGC_MASK); i++) {
+				int reg = syscall_argument_abi_register_indexes[i];
+				for (int j = 0; j < REGISTER_COUNT; j++) {
+					if (self.current_state.sources[reg] & ((register_mask)1 << j)) {
+						ERROR("argument", i);
+						ERROR("using block input from", name_for_register(j));
+					}
 				}
 			}
 		}
@@ -3050,7 +3052,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		}
 	}
 	// vary effects by following control flow that produced any used values
-	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, relevant_registers, preserved_registers, preserved_registers, 0, SHOULD_LOG || ((config & SYSCALL_CONFIG_DEBUG) != 0));
+	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, relevant_registers, preserved_registers, preserved_registers, 0);
 }
 
 typedef struct {
@@ -4669,7 +4671,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				skip_jump = true;
 				LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
 				self->description = "skip conditional jump";
-				vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | skip_jump_mask | self->current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
+				vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | skip_jump_mask | self->current_state.compare_state.sources, 0, 0, required_effects);
 				push_unreachable_breakpoint(&analysis->unreachables, jump_target);
 			} else {
 				LOG("not all registers skipped for jump");
@@ -4682,7 +4684,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				skip_continue = true;
 				LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
 				self->description = "skip conditional continue";
-				vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | skip_continue_mask | self->current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
+				vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | skip_continue_mask | self->current_state.compare_state.sources, 0, 0, required_effects);
 				push_unreachable_breakpoint(&analysis->unreachables, continue_target);
 			} else {
 				LOG("not all registers skipped for continue");
@@ -4691,7 +4693,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 		}
 		if (!(skip_jump || skip_continue) && self->current_state.compare_state.sources != 0) {
 			self->description = "conditional jump predicate";
-			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | self->current_state.compare_state.sources, 0, 0, required_effects, SHOULD_LOG);
+			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | self->current_state.compare_state.sources, 0, 0, required_effects);
 		}
 	}
 	function_effects jump_effects;
@@ -4878,7 +4880,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("call to address in register", name_for_register(reg));
 					struct register_state address = self.current_state.registers[reg];
 					self.description = "call*";
-					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, 0, 0, required_effects, SHOULD_LOG);
+					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, 0, 0, required_effects);
 					if (!register_is_exactly_known(&address)) {
 						LOG("address isn't exactly known, assuming all effects");
 						// could have any effect
@@ -4908,7 +4910,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					bool is_null;
 					struct register_state_and_source address = address_for_indirect(rex, modrm, self.current_state, &unprefixed[2], &analysis->loader, ins, NULL, &is_null);
 					self.description = "call*";
-					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, address.source, 0, 0, required_effects, SHOULD_LOG);
+					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, address.source, 0, 0, required_effects);
 					if (!register_is_exactly_known(&address.state)) {
 						LOG("address isn't exactly known, assuming all effects");
 						// could have any effect
@@ -4960,7 +4962,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("jmpq*", name_for_register(reg));
 				dump_nonempty_registers(&analysis->loader, &self.current_state, (register_mask)1 << reg);
 				self.description = "indirect jump";
-				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, jump_status == ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : (register_mask)1 << reg, 0, required_effects, SHOULD_LOG);
+				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, jump_status == ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : (register_mask)1 << reg, 0, required_effects);
 				const uint8_t *new_ins;
 				if (modrm_is_direct(modrm)) {
 					if (!register_is_exactly_known(&self.current_state.registers[reg])) {
@@ -5199,7 +5201,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									goto update_and_return;
 							}
 						} else if (caller && caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && (analysis->loader.main->special_binary_flags & BINARY_IS_GOLANG)) {
-							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0, SHOULD_LOG);
+							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
 						} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
 							self.description = "syscall";
 							analysis->loader.setxid_syscall = self.address;
@@ -5759,7 +5761,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 									} else {
 										self.description = "lookup table";
-										vary_effects_by_registers(&analysis->search, &analysis->loader, &self, ((register_mask)1 << base) | ((register_mask)1 << index), (register_mask)1 << base/* | ((register_mask)1 << index)*/, (register_mask)1 << base/* | ((register_mask)1 << index)*/, required_effects, SHOULD_LOG);
+										vary_effects_by_registers(&analysis->search, &analysis->loader, &self, ((register_mask)1 << base) | ((register_mask)1 << index), (register_mask)1 << base/* | ((register_mask)1 << index)*/, (register_mask)1 << base/* | ((register_mask)1 << index)*/, required_effects);
 										LOG("unsigned lookup table from known base", temp_str(copy_address_description(&analysis->loader, (void *)base_addr)));
 										dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << base) | ((register_mask)1 << index));
 										struct registers copy = self.current_state;
@@ -6393,7 +6395,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									jump_status = binary && !binary->has_debuglink_symbols ? DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS : DISALLOW_JUMPS_INTO_THE_ABYSS;
 								} else {
 									self.description = "lookup table";
-									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, ((register_mask)1 << base) | ((register_mask)1 << index), (register_mask)1 << base | ((register_mask)1 << index), (register_mask)1 << base/* | ((register_mask)1 << index)*/, required_effects, SHOULD_LOG);
+									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, ((register_mask)1 << base) | ((register_mask)1 << index), (register_mask)1 << base | ((register_mask)1 << index), (register_mask)1 << base/* | ((register_mask)1 << index)*/, required_effects);
 									LOG("signed lookup table from known base", temp_str(copy_address_description(&analysis->loader, (void *)base_addr)));
 									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << base) | ((register_mask)1 << index));
 									copy.sources[reg] = self.current_state.sources[base] | self.current_state.sources[index];
@@ -6922,7 +6924,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (register_is_partially_known(&new_value.state)) {
 					dump_register(&analysis->loader, new_value.state);
 					self.description = "load address";
-					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, new_value.source, 0, 0, required_effects, SHOULD_LOG);
+					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, new_value.source, 0, 0, required_effects);
 				}
 				if (rex.has_w) {
 					if (register_is_exactly_known(&self.current_state.registers[reg])) {
