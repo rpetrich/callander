@@ -470,7 +470,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		}
 		if (vdso->has_symbols) {
 			LOG("analyzing symbols for", vdso->path);
-			struct analysis_frame vdso_caller = { .current = { .address = vdso->info.base, .description = "vdso", .next = NULL }, .current_state = empty_registers, .entry = vdso->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			struct analysis_frame vdso_caller = { .address = vdso->info.base, .description = "vdso", .next = NULL, .current_state = empty_registers, .entry = vdso->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analyze_function_symbols(analysis, vdso, &vdso->symbols, &vdso_caller);
 		} else {
 			DIE("expected vDSO to have symbols");
@@ -486,10 +486,10 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 			DIE("could not resolve main function", analysis->main_function_name);
 		}
 		analysis->main = (uintptr_t)main;
-		struct analysis_frame new_caller = { .current = { .address = loaded->info.base, .description = "main", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = { .address = loaded->info.base, .description = "main", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, main, &new_caller, true);
 	} else {
-		struct analysis_frame new_caller = { .current = { .address = loaded->info.base, .description = "entrypoint", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = { .address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		analyze_instructions(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller, true);
 		if (analysis->main == (uintptr_t)loaded->info.entrypoint) {
 			// reanalyze, since we didn't find a main
@@ -500,7 +500,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
 		// LOG("assuming interpreter can run after startup");
-		struct analysis_frame new_caller = { .current = { .address = interpreter->info.base, .description = "interpreter", .next = NULL }, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = { .address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		analyze_instructions(analysis, EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &new_caller, true);
 	} else {
 		LOG("no interpreter for this binary");
@@ -1234,7 +1234,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 				if (syscall_list[i].name && fs_strcmp(syscall_list[i].name, syscall_name) == 0) {
 					if (is_permit) {
 						record_syscall(&analysis, i, (struct analysis_frame){
-							.current = { .address = NULL, .description = "permit", .next = NULL },
+							.address = NULL, .description = "permit", .next = NULL,
 							.current_state = empty_registers,
 							.entry = NULL,
 							.entry_state = &empty_registers,

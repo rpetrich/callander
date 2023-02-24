@@ -187,12 +187,6 @@ struct effect_token {
 	uint32_t entry_offset;
 };
 
-struct address_list_entry {
-	const void *address;
-	const char *description;
-	const struct address_list_entry *next;
-};
-
 #if MORE_STACK_SLOTS
 #define GENERATE_PER_STACK_REGISTER() \
 	PER_STACK_REGISTER_IMPL(0) \
@@ -354,7 +348,9 @@ struct registers {
 const struct registers empty_registers;
 
 struct analysis_frame {
-	struct address_list_entry current;
+	const struct analysis_frame *next;
+	const void *address;
+	const char *description;
 	struct registers current_state;
 	const uint8_t *entry;
 	const struct registers *entry_state;
