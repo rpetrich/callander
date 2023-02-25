@@ -278,7 +278,11 @@ intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *me
 int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size)
 {
 	(void)stream_id;
-	return fs_read(PROXY_FD, buffer, size);
+	int result = fs_read(PROXY_FD, buffer, size);
+	if (result == 0) {
+		remote_exited();
+	}
+	return result;
 }
 
 void proxy_read_stream_message_finish(uint32_t stream_id)

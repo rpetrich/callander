@@ -655,6 +655,114 @@ static void transfer_fd_table(uintptr_t fd_table_addr)
 	}
 }
 
+static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr)
+{
+	request_message message;
+	for (;;) {
+		struct iovec vec[PROXY_ARGUMENT_COUNT];
+		size_t io_count = 0;
+		intptr_t result = 0;
+		intptr_t result_id = proxy_read_stream_message_start(stream_id, &message);
+		switch (message.template.nr) {
+			case TARGET_NR_PEEK:
+				proxy_read_stream_message_finish(stream_id);
+				ERROR("received a peek");
+				ERROR_FLUSH();
+				// TODO
+				break;
+			case TARGET_NR_POKE:
+				proxy_read_stream_message_finish(stream_id);
+				ERROR("received a poke");
+				ERROR_FLUSH();
+				// TODO
+				break;
+			case __NR_exit_group | PROXY_NO_RESPONSE:
+				proxy_read_stream_message_finish(stream_id);
+				ERROR("received an exit");
+				ERROR_FLUSH();
+				break;
+			default: {
+				ERROR("received syscall", name_for_syscall(message.template.nr));
+				ERROR_FLUSH();
+				size_t trailer_bytes = 0;
+				intptr_t index = 0;
+				uint64_t values[6];
+				for (int i = 0; i < 6; i++) {
+					if (message.template.is_in & (1 << i)) {
+						trailer_bytes += message.values[i];
+						if (message.template.is_out & (1 << i)) {
+							vec[io_count].iov_base = &buf[index];
+							vec[io_count].iov_len = message.values[i];
+							io_count++;
+						}
+						values[i] = (intptr_t)&buf[index];
+						index += message.values[i];
+					} else if (message.template.is_out & (1 << i)) {
+					} else {
+						values[i] = message.values[i];
+					}
+				}
+				for (int i = 0; i < 6; i++) {
+					if (message.template.is_in & (1 << i)) {
+						if (message.template.is_out & (1 << i)) {
+						}
+					} else if (message.template.is_out & (1 << i)) {
+						vec[io_count].iov_base = &buf[index];
+						vec[io_count].iov_len = message.values[i];
+						io_count++;
+						values[i] = (intptr_t)&buf[index];
+						index += message.values[i];
+					}
+				}
+				// read trailer
+				size_t bytes_read = 0;
+				while (trailer_bytes != bytes_read) {
+					result = proxy_read_stream_message_body(stream_id, &buf[bytes_read], trailer_bytes - bytes_read);
+					if (result <= 0) {
+						if (result == -EINTR) {
+							continue;
+						}
+						DIE("Failed to read from socket", fs_strerror(result));
+					}
+					bytes_read += result;
+				}
+				proxy_read_stream_message_finish(stream_id);
+				int syscall = message.template.nr & ~TARGET_NO_RESPONSE;
+				switch (syscall) {
+					case __NR_faccessat:
+						ERROR("faccessat", (const char *)values[1]);
+						break;
+					case __NR_openat:
+						ERROR("openat", (const char *)values[1]);
+						break;
+				}
+				result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
+				break;
+			}
+		}
+		if ((message.template.nr & TARGET_NO_RESPONSE) == 0) {
+			proxy_arg return_args[PROXY_ARGUMENT_COUNT];
+			return_args[0] = proxy_value(receive_response_addr);
+			return_args[1] = proxy_value(result_id);
+			return_args[2] = proxy_value(result);
+			size_t i = 0;
+			for (; i < io_count; i++) {
+				if (i+3 >= PROXY_ARGUMENT_COUNT) {
+					DIE("too many output arguments");
+				}
+				return_args[i+3] = proxy_in(vec[i].iov_base, vec[i].iov_len);
+			}
+			for (i += 3; i < PROXY_ARGUMENT_COUNT; i++) {
+				return_args[i] = proxy_value(0);
+			}
+			proxy_call(TARGET_NR_CALL, return_args);
+		}
+		if (message.template.nr == (__NR_exit_group | PROXY_NO_RESPONSE)) {
+			return message.values[0];
+		}
+	}
+}
+
 #define STACK_SIZE (2 * 1024 * 1024)
 
 // remote_exec_fd_elf executes an elf binary from an open file
@@ -936,113 +1044,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		free_remote_patches(&patches, &analysis);
 		return clone_result;
 	}
-	request_message message;
-	for (;;) {
-		struct iovec vec[PROXY_ARGUMENT_COUNT];
-		size_t io_count = 0;
-		result = 0;
-		intptr_t result_id = proxy_read_stream_message_start(stream_id, &message);
-		switch (message.template.nr) {
-			case TARGET_NR_PEEK:
-				proxy_read_stream_message_finish(stream_id);
-				ERROR("received a peek");
-				ERROR_FLUSH();
-				// TODO
-				break;
-			case TARGET_NR_POKE:
-				proxy_read_stream_message_finish(stream_id);
-				ERROR("received a poke");
-				ERROR_FLUSH();
-				// TODO
-				break;
-			case __NR_exit_group | PROXY_NO_RESPONSE:
-				proxy_read_stream_message_finish(stream_id);
-				ERROR("received an exit");
-				ERROR_FLUSH();
-				break;
-			default: {
-				ERROR("received syscall", name_for_syscall(message.template.nr));
-				ERROR_FLUSH();
-				size_t trailer_bytes = 0;
-				intptr_t index = 0;
-				uint64_t values[6];
-				for (int i = 0; i < 6; i++) {
-					if (message.template.is_in & (1 << i)) {
-						trailer_bytes += message.values[i];
-						if (message.template.is_out & (1 << i)) {
-							vec[io_count].iov_base = &buf[index];
-							vec[io_count].iov_len = message.values[i];
-							io_count++;
-						}
-						values[i] = (intptr_t)&buf[index];
-						index += message.values[i];
-					} else if (message.template.is_out & (1 << i)) {
-					} else {
-						values[i] = message.values[i];
-					}
-				}
-				for (int i = 0; i < 6; i++) {
-					if (message.template.is_in & (1 << i)) {
-						if (message.template.is_out & (1 << i)) {
-						}
-					} else if (message.template.is_out & (1 << i)) {
-						vec[io_count].iov_base = &buf[index];
-						vec[io_count].iov_len = message.values[i];
-						io_count++;
-						values[i] = (intptr_t)&buf[index];
-						index += message.values[i];
-					}
-				}
-				// read trailer
-				size_t bytes_read = 0;
-				while (trailer_bytes != bytes_read) {
-					result = proxy_read_stream_message_body(stream_id, &buf[bytes_read], sizeof(buf) - bytes_read);
-					if (result <= 0) {
-						if (result == -EINTR) {
-							continue;
-						}
-						if (result == 0) {
-							fs_exit(0);
-						}
-						DIE("Failed to read from socket", fs_strerror(result));
-					}
-					bytes_read += result;
-				}
-				proxy_read_stream_message_finish(stream_id);
-				int syscall = message.template.nr & ~TARGET_NO_RESPONSE;
-				switch (syscall) {
-					case __NR_faccessat:
-						ERROR("faccessat", (const char *)values[1]);
-						break;
-					case __NR_openat:
-						ERROR("openat", (const char *)values[1]);
-						break;
-				}
-				result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
-				break;
-			}
-		}
-		if ((message.template.nr & TARGET_NO_RESPONSE) == 0) {
-			proxy_arg return_args[PROXY_ARGUMENT_COUNT];
-			return_args[0] = proxy_value(receive_response_addr);
-			return_args[1] = proxy_value(result_id);
-			return_args[2] = proxy_value(result);
-			size_t i = 0;
-			for (; i < io_count; i++) {
-				if (i+3 >= PROXY_ARGUMENT_COUNT) {
-					DIE("too many output arguments");
-				}
-				return_args[i+3] = proxy_in(vec[i].iov_base, vec[i].iov_len);
-			}
-			for (i += 3; i < PROXY_ARGUMENT_COUNT; i++) {
-				return_args[i] = proxy_value(0);
-			}
-			proxy_call(TARGET_NR_CALL, return_args);
-		}
-		if (message.template.nr == (__NR_exit_group | PROXY_NO_RESPONSE)) {
-			break;
-		}
-	}
+	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, receive_response_addr);
 	// wait for remote thread
 	pid_t tid;
 	do {
@@ -1056,7 +1058,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	remote_unload_binary(&main_info);
 	remote_unload_binary(&thandler_info);
 	cleanup_searched_instructions(&analysis.search);
-	return 0;
+	return status_code;
 }
 
 static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size])
