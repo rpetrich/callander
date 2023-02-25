@@ -876,13 +876,12 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	}
 	uint32_t stream_id = proxy_generate_stream_id();
 	struct proxy_target_state new_proxy_state = { 0 };
-	new_proxy_state.self_pid = 0;
 	new_proxy_state.stream_id = stream_id;
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
 	proxy_poke(proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
+	transfer_fd_table(fd_table_addr);
 	char buf[512 * 1024];
 	print_gdb_attach_command(buf, &thandler_info, &thandler_local_info, thandler_fd, thandler_buf);
-	transfer_fd_table(fd_table_addr);
 	ERROR("press enter to continue");
 	ERROR_FLUSH();
 	if (fs_read(0, &buf[0], 1) != 1) {

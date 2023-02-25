@@ -9,10 +9,17 @@
 
 FS_DEFINE_SYSCALL
 
+static pid_t self_pid;
+
+pid_t get_self_pid(void)
+{
+	return self_pid;
+}
+
 __attribute__((naked)) __attribute__((used)) __attribute__((visibility("default")))
 noreturn void start_thread(const struct start_thread_args *args)
 {
-	proxy_state.self_pid = fs_gettid();
+	self_pid = fs_gettid();
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
 	__builtin_unreachable();
 }

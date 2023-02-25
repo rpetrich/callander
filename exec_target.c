@@ -17,11 +17,6 @@ gid_t startup_egid;
 uint32_t enabled_telemetry;
 #endif
 
-pid_t get_self_pid(void)
-{
-	return proxy_state.self_pid;
-}
-
 // void invalidate_self_pid(void)
 // {
 // }
