@@ -709,6 +709,119 @@ static void print_gdb_attach_command(char *buf, const struct thandler_info *than
 	}
 }
 
+#define STACK_SIZE (2 * 1024 * 1024)
+
+static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, struct binary_info *main_info, struct binary_info *interpreter_info)
+{
+	size_t string_size = sizeof("x86_64") + 16;
+	size_t argc = count_arg_bytes(argv, &string_size);
+	size_t envc = count_arg_bytes(envp, &string_size);
+	size_t header_size = sizeof(struct start_thread_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
+	size_t dynv_size = ((string_size + header_size + (0xf + 8)) & ~0xf) - 8;
+	intptr_t dynv_base = (stack + (STACK_SIZE - dynv_size - sizeof(uint32_t))) & ~0xf;
+	char dynv_buf[dynv_size];
+	int string_cur = header_size;
+	size_t *argc_buf = (size_t *)&dynv_buf[0];
+	*argc_buf++ = argc;
+	intptr_t *argv_buf = (intptr_t *)argc_buf;
+	for (size_t i = 0; i < argc; i++) {
+		*argv_buf++ = dynv_base + string_cur;
+		for (const char *arg = argv[i];;) {
+			char c = *arg++;
+			dynv_buf[string_cur++] = c;
+			if (c == '\0') {
+				break;
+			}
+		}
+	}
+	*argv_buf++ = 0;
+	intptr_t *env_buf = argv_buf;
+	for (size_t i = 0; i < envc; i++) {
+		*env_buf++ = dynv_base + string_cur;
+		for (const char *env = envp[i];;) {
+			char c = *env++;
+			dynv_buf[string_cur++] = c;
+			if (c == '\0') {
+				break;
+			}
+		}
+	}
+	*env_buf++ = 0;
+	ElfW(auxv_t) *aux_buf = (ElfW(auxv_t) *)env_buf;
+	while (aux->a_type != AT_NULL) {
+		aux_buf->a_type = aux->a_type;
+		switch (aux->a_type) {
+			case AT_BASE:
+				aux_buf->a_un.a_val = (intptr_t)(interpreter_info != NULL ? interpreter_info->base : main_info->base);
+				aux_buf++;
+				break;
+			case AT_PHDR:
+				aux_buf->a_un.a_val = (intptr_t)main_info->program_header;
+				aux_buf++;
+				break;
+			case AT_PHENT:
+				aux_buf->a_un.a_val = (intptr_t)main_info->header_entry_size;
+				aux_buf++;
+				break;
+			case AT_PHNUM:
+				aux_buf->a_un.a_val = (intptr_t)main_info->header_entry_count;
+				aux_buf++;
+				break;
+			case AT_ENTRY:
+				aux_buf->a_un.a_val = (intptr_t)main_info->entrypoint;
+				aux_buf++;
+				break;
+			case AT_EXECFN:
+				aux_buf->a_un.a_val = dynv_base + string_cur;
+				aux_buf++;
+				break;
+			case AT_CLKTCK:
+			case AT_PAGESZ:
+			case AT_FLAGS:
+			case AT_UID:
+			case AT_EUID:
+			case AT_GID:
+			case AT_EGID:
+			case AT_SECURE:
+			case AT_HWCAP:
+			case AT_HWCAP2:
+				aux_buf->a_un.a_val = aux->a_un.a_val;
+				aux_buf++;
+				break;
+			case AT_PLATFORM:
+				aux_buf->a_un.a_val = dynv_base + string_cur;
+				aux_buf++;
+				fs_memcpy(&dynv_buf[string_cur], "x86_64", sizeof("x86_64"));
+				string_cur += sizeof("x86_64");
+				break;
+			case AT_RANDOM:
+				aux_buf->a_un.a_val = dynv_base + string_cur;
+				aux_buf++;
+				fs_memcpy(&dynv_buf[string_cur], (const char *)aux->a_un.a_val, 16);
+				string_cur += 16;
+				break;
+			case AT_SYSINFO_EHDR:
+				// TODO: system address page
+				aux_buf->a_un.a_val = 0;
+				aux_buf++;
+				break;
+			default:
+				ERROR("unknown auxv type", (intptr_t)aux_buf->a_type);
+				break;
+		}
+		++aux;
+	}
+	*aux_buf++ = *aux;
+	struct start_thread_args *args = (struct start_thread_args *)aux_buf;
+	args->pc = interpreter_info != NULL ? interpreter_info->entrypoint : main_info->entrypoint;
+	args->sp = dynv_base;
+	args->arg1 = 0;
+	args->arg2 = 0;
+	args->arg3 = 0;
+	proxy_poke(dynv_base, dynv_size, dynv_buf);
+	return dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0]);
+}
+
 static void transfer_fd_table(uintptr_t fd_table_addr)
 {
 	// poke the remote file table
@@ -843,10 +956,8 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 	}
 }
 
-#define STACK_SIZE (2 * 1024 * 1024)
-
 // remote_exec_fd_elf executes an elf binary from an open file
-static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const *argv, __attribute__((unused)) const char *const *envp, __attribute__((unused)) const ElfW(auxv_t) *aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path)
+static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path)
 {
 	// analyze the program
 	struct program_state analysis = { 0 };
@@ -929,112 +1040,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	}
 	ERROR("stack", (uintptr_t)stack);
 	// prepare thread args and dynv
-	size_t string_size = sizeof("x86_64") + 16;
-	size_t argc = count_arg_bytes(argv, &string_size);
-	size_t envc = count_arg_bytes(envp, &string_size);
-	size_t header_size = sizeof(struct start_thread_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
-	size_t dynv_size = ((string_size + header_size + (0xf + 8)) & ~0xf) - 8;
-	intptr_t dynv_base = (stack + (STACK_SIZE - dynv_size - sizeof(uint32_t))) & ~0xf;
-	char dynv_buf[dynv_size];
-	int string_cur = header_size;
-	size_t *argc_buf = (size_t *)&dynv_buf[0];
-	*argc_buf++ = argc;
-	intptr_t *argv_buf = (intptr_t *)argc_buf;
-	for (size_t i = 0; i < argc; i++) {
-		*argv_buf++ = dynv_base + string_cur;
-		for (const char *arg = argv[i];;) {
-			char c = *arg++;
-			dynv_buf[string_cur++] = c;
-			if (c == '\0') {
-				break;
-			}
-		}
-	}
-	*argv_buf++ = 0;
-	intptr_t *env_buf = argv_buf;
-	for (size_t i = 0; i < envc; i++) {
-		*env_buf++ = dynv_base + string_cur;
-		for (const char *env = envp[i];;) {
-			char c = *env++;
-			dynv_buf[string_cur++] = c;
-			if (c == '\0') {
-				break;
-			}
-		}
-	}
-	*env_buf++ = 0;
-	ElfW(auxv_t) *aux_buf = (ElfW(auxv_t) *)env_buf;
-	while (aux->a_type != AT_NULL) {
-		aux_buf->a_type = aux->a_type;
-		switch (aux->a_type) {
-			case AT_BASE:
-				aux_buf->a_un.a_val = (intptr_t)(has_interpreter ? interpreter_info.base : main_info.base);
-				aux_buf++;
-				break;
-			case AT_PHDR:
-				aux_buf->a_un.a_val = (intptr_t)main_info.program_header;
-				aux_buf++;
-				break;
-			case AT_PHENT:
-				aux_buf->a_un.a_val = (intptr_t)main_info.header_entry_size;
-				aux_buf++;
-				break;
-			case AT_PHNUM:
-				aux_buf->a_un.a_val = (intptr_t)main_info.header_entry_count;
-				aux_buf++;
-				break;
-			case AT_ENTRY:
-				aux_buf->a_un.a_val = (intptr_t)main_info.entrypoint;
-				aux_buf++;
-				break;
-			case AT_EXECFN:
-				aux_buf->a_un.a_val = dynv_base + string_cur;
-				aux_buf++;
-				break;
-			case AT_CLKTCK:
-			case AT_PAGESZ:
-			case AT_FLAGS:
-			case AT_UID:
-			case AT_EUID:
-			case AT_GID:
-			case AT_EGID:
-			case AT_SECURE:
-			case AT_HWCAP:
-			case AT_HWCAP2:
-				aux_buf->a_un.a_val = aux->a_un.a_val;
-				aux_buf++;
-				break;
-			case AT_PLATFORM:
-				aux_buf->a_un.a_val = dynv_base + string_cur;
-				aux_buf++;
-				fs_memcpy(&dynv_buf[string_cur], "x86_64", sizeof("x86_64"));
-				string_cur += sizeof("x86_64");
-				break;
-			case AT_RANDOM:
-				aux_buf->a_un.a_val = dynv_base + string_cur;
-				aux_buf++;
-				fs_memcpy(&dynv_buf[string_cur], (const char *)aux->a_un.a_val, 16);
-				string_cur += 16;
-				break;
-			case AT_SYSINFO_EHDR:
-				// TODO: system address page
-				aux_buf->a_un.a_val = 0;
-				aux_buf++;
-				break;
-			default:
-				ERROR("unknown auxv type", (intptr_t)aux_buf->a_type);
-				break;
-		}
-		++aux;
-	}
-	*aux_buf++ = *aux;
-	struct start_thread_args *args = (struct start_thread_args *)aux_buf;
-	args->pc = has_interpreter ? interpreter_info.entrypoint : main_info.entrypoint;
-	args->sp = dynv_base;
-	args->arg1 = 0;
-	args->arg2 = 0;
-	args->arg3 = 0;
-	proxy_poke(dynv_base, dynv_size, dynv_buf);
+	intptr_t sp = prepare_and_send_program_stack(stack, argv, envp, aux, &main_info, has_interpreter ? &interpreter_info : NULL);
 	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
 	// check that all libraries have a child address
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
@@ -1067,7 +1073,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		DIE("exiting");
 	}
 	// spawn remote thread
-	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thandler.start_thread_addr));
+	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(sp), proxy_value(thandler.start_thread_addr));
 	if (clone_result < 0) {
 		free_remote_patches(&patches, &analysis);
 		remote_munmap(stack, STACK_SIZE);
@@ -1076,8 +1082,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
-		ERROR("clone_result", fs_strerror(clone_result));
-		free_remote_patches(&patches, &analysis);
+		ERROR("failed to clone", fs_strerror(clone_result));
 		return clone_result;
 	}
 	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr);
