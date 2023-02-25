@@ -862,7 +862,8 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
 	struct binary_info interpreter_info = { 0 };
-	if (analysis.loader.main->info.interpreter != NULL) {
+	bool has_interpreter = analysis.loader.main->info.interpreter != NULL;
+	if (has_interpreter) {
 		int interpreter_fd = fs_openat(AT_FDCWD, analysis.loader.main->info.interpreter, O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
 			remote_unload_binary(&main_info);
@@ -907,7 +908,9 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	// create thread stack
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
-		remote_unload_binary(&interpreter_info);
+		if (has_interpreter) {
+			remote_unload_binary(&interpreter_info);
+		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
 		ERROR("creating stack failed", fs_strerror(stack));
@@ -954,7 +957,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		aux_buf->a_type = aux->a_type;
 		switch (aux->a_type) {
 			case AT_BASE:
-				aux_buf->a_un.a_val = (intptr_t)(main_info.entrypoint != NULL ? interpreter_info.base : main_info.base);
+				aux_buf->a_un.a_val = (intptr_t)(has_interpreter ? interpreter_info.base : main_info.base);
 				aux_buf++;
 				break;
 			case AT_PHDR:
@@ -1015,7 +1018,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	}
 	*aux_buf++ = *aux;
 	struct start_thread_args *args = (struct start_thread_args *)aux_buf;
-	args->pc = main_info.interpreter != NULL ? interpreter_info.entrypoint : main_info.entrypoint;
+	args->pc = has_interpreter ? interpreter_info.entrypoint : main_info.entrypoint;
 	args->sp = dynv_base;
 	args->arg1 = 0;
 	args->arg2 = 0;
@@ -1044,14 +1047,22 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	ERROR_FLUSH();
 	if (fs_read(0, &buf[0], 1) != 1) {
 		free_remote_patches(&patches, &analysis);
+		remote_munmap(stack, STACK_SIZE);
+		if (has_interpreter) {
+			remote_unload_binary(&interpreter_info);
+		}
+		remote_unload_binary(&main_info);
+		free_thandler(&thandler);
 		DIE("exiting");
 	}
 	// spawn remote thread
 	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thandler.start_thread_addr));
-	// intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(0), proxy_value((intptr_t)args->pc));
 	if (clone_result < 0) {
+		free_remote_patches(&patches, &analysis);
 		remote_munmap(stack, STACK_SIZE);
-		remote_unload_binary(&interpreter_info);
+		if (has_interpreter) {
+			remote_unload_binary(&interpreter_info);
+		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
 		ERROR("clone_result", fs_strerror(clone_result));
@@ -1068,7 +1079,9 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	// cleanup
 	free_remote_patches(&patches, &analysis);
 	remote_munmap(stack, STACK_SIZE);
-	remote_unload_binary(&interpreter_info);
+	if (has_interpreter) {
+		remote_unload_binary(&interpreter_info);
+	}
 	remote_unload_binary(&main_info);
 	free_thandler(&thandler);
 	return status_code;
