@@ -475,6 +475,37 @@ static intptr_t alloc_remote_page_near_address(intptr_t address, size_t size, in
 	}
 }
 
+static void print_gdb_attach_command(char *buf, struct binary_info *thandler_info, struct binary_info *thandler_local_info, int thandler_fd, const char *thandler_path)
+{
+	char *cur = buf;
+	fs_memcpy(cur, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
+	cur += sizeof("sudo gdb --pid=")-1;
+	intptr_t remote_pid = PROXY_CALL(SYS_getpid);
+	cur += fs_itoa(remote_pid, cur);
+	fs_memcpy(cur, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
+	cur += sizeof(" --eval-command=\"add-symbol-file ")-1;
+	size_t thandler_path_len = fs_strlen(thandler_path);
+	fs_memcpy(cur, thandler_path, thandler_path_len);
+	cur += thandler_path_len;
+	*cur++ = ' ';
+	struct section_info sections;
+	intptr_t result = load_section_info(thandler_fd, thandler_local_info, &sections);
+	if (result == 0) {
+		const ElfW(Shdr) *text_section = find_section(thandler_local_info, &sections, ".text");
+		if (text_section != NULL) {
+			cur += fs_utoah((uintptr_t)thandler_info->base + text_section->sh_addr, cur);
+			*cur++ = '"';
+			*cur++ = '\0';
+			ERROR("thandler gdb command", &buf[0]);
+		} else {
+			ERROR("missing thandler section named .text");
+		}
+		free_section_info(&sections);
+	} else {
+		ERROR("failed to read thandler sections", fs_strerror(result));
+	}
+}
+
 #define STACK_SIZE (2 * 1024 * 1024)
 
 // remote_exec_fd_elf executes an elf binary from an open file
@@ -832,35 +863,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
 	proxy_poke(proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
 	char buf[512 * 1024];
-	{
-		char *cur = buf;
-		fs_memcpy(cur, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
-		cur += sizeof("sudo gdb --pid=")-1;
-		intptr_t remote_pid = PROXY_CALL(SYS_getpid);
-		cur += fs_itoa(remote_pid, cur);
-		fs_memcpy(cur, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
-		cur += sizeof(" --eval-command=\"add-symbol-file ")-1;
-		thandler_char_count = fs_strlen(thandler_buf);
-		fs_memcpy(cur, thandler_buf, thandler_char_count);
-		cur += thandler_char_count;
-		*cur++ = ' ';
-		struct section_info sections;
-		result = load_section_info(thandler_fd, &thandler_local_info, &sections);
-		if (result == 0) {
-			const ElfW(Shdr) *text_section = find_section(&thandler_local_info, &sections, ".text");
-			if (text_section != NULL) {
-				cur += fs_utoah((uintptr_t)thandler_info.base + text_section->sh_addr, cur);
-				*cur++ = '"';
-				*cur++ = '\0';
-				ERROR("thandler gdb command", &buf[0]);
-			} else {
-				ERROR("missing thandler section named .text");
-			}
-			free_section_info(&sections);
-		} else {
-			ERROR("failed to read thandler sections", fs_strerror(result));
-		}
-	}
+	print_gdb_attach_command(buf, &thandler_info, &thandler_local_info, thandler_fd, thandler_buf);
 	// poke the remote file table
 	const int *local_table = (const int *)FS_SYSCALL(0x666);
 	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
