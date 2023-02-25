@@ -699,7 +699,7 @@ static void print_gdb_attach_command(char *buf, const struct thandler_info *than
 			cur += fs_utoah((uintptr_t)thandler->remote_info.base + text_section->sh_addr, cur);
 			*cur++ = '"';
 			*cur++ = '\0';
-			ERROR("thandler gdb command", &buf[0]);
+			ERROR("remote debugging command", &buf[0]);
 		} else {
 			ERROR("missing thandler section named .text");
 		}
@@ -1039,9 +1039,6 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return stack;
 	}
 	ERROR("stack", (uintptr_t)stack);
-	// prepare thread args and dynv
-	intptr_t sp = prepare_and_send_program_stack(stack, argv, envp, aux, &main_info, has_interpreter ? &interpreter_info : NULL);
-	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
 	// check that all libraries have a child address
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 		if (binary->child_base == 0) {
@@ -1052,14 +1049,21 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	struct remote_syscall_patches patches;
 	init_remote_patches(&patches, &analysis);
 	patch_remote_syscalls(&patches, &analysis, thandler.receive_syscall_addr);
+	// set up the backchannel and initialize thandler running remotely
 	uint32_t stream_id = proxy_generate_stream_id();
 	struct proxy_target_state new_proxy_state = { 0 };
 	new_proxy_state.stream_id = stream_id;
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
 	proxy_poke(thandler.proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
+	// initialize the remote file descriptor table
 	transfer_fd_table(thandler.fd_table_addr);
+	// prepare thread args and dynv
+	intptr_t sp = prepare_and_send_program_stack(stack, argv, envp, aux, &main_info, has_interpreter ? &interpreter_info : NULL);
+	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
+	// print a gdb command to attach remotely if debugging
 	char buf[512 * 1024];
 	print_gdb_attach_command(buf, &thandler);
+	// wait to proceed
 	ERROR("press enter to continue");
 	ERROR_FLUSH();
 	if (fs_read(0, &buf[0], 1) != 1) {
@@ -1085,6 +1089,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		ERROR("failed to clone", fs_strerror(clone_result));
 		return clone_result;
 	}
+	// process syscalls until the remote exits
 	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr);
 	// wait for remote thread
 	pid_t tid;
@@ -1234,9 +1239,9 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 		DIE("could not find main executable", argv[1]);
 	}
 	int exec_result = remote_exec_fd(fd, executable_path, &argv[1], envp, aux, comm, 0);
-	if (exec_result != 0) {
+	if (exec_result < 0) {
 		DIE("remote exec failed", fs_strerror(exec_result));
 	}
-	fs_exit(0);
+	fs_exit(exec_result);
 	__builtin_unreachable();
 }
