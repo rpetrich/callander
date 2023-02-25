@@ -7,6 +7,11 @@
 #define DEAD_FD 0x3f8
 #define CWD_FD 0x3f7
 
+#define HAS_REMOTE_FD 1
+#define HAS_LOCAL_FD 2
+#define HAS_CLOEXEC 4
+#define USED_BITS 3
+
 #define MAX_TABLE_SIZE 1024
 
 void initialize_fd_table(void);
@@ -48,5 +53,7 @@ int chdir_become_local_path(const char *path);
 // chdir_become_local_fd does not take ownership of local_fd
 __attribute__((warn_unused_result))
 int chdir_become_local_fd(int local_fd);
+
+const int *get_fd_table(void);
 
 #endif

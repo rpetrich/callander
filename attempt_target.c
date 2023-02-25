@@ -18,11 +18,13 @@ __attribute__((noinline))
 void attempt_exit(struct thread_storage *thread)
 {
 	struct attempt *attempt = thread->attempt;
-	thread->attempt = NULL;
-	struct attempt_cleanup_state *cleanup = attempt->cleanup;
-	while (cleanup != NULL) {
-		cleanup->body(cleanup->data);
-		cleanup = cleanup->next;
+	if (attempt != NULL) {
+		thread->attempt = NULL;
+		struct attempt_cleanup_state *cleanup = attempt->cleanup;
+		while (cleanup != NULL) {
+			cleanup->body(cleanup->data);
+			cleanup = cleanup->next;
+		}
 	}
 }
 

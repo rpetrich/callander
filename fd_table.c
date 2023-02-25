@@ -8,11 +8,6 @@
 
 #include <errno.h>
 
-#define HAS_REMOTE_FD 1
-#define HAS_LOCAL_FD 2
-#define HAS_CLOEXEC 4
-#define USED_BITS 3
-
 static int table[MAX_TABLE_SIZE];
 static struct fs_mutex table_lock;
 
@@ -446,3 +441,7 @@ int chdir_become_local_fd(int local_fd)
 	return result;
 }
 
+const int *get_fd_table(void)
+{
+	return table;
+}

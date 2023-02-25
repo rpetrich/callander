@@ -24,12 +24,14 @@ struct instruction_range {
 	const uint8_t *end;
 };
 
-__attribute__((warn_unused_result))
-__attribute__((nonnull(2, 5)))
-bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, struct instruction_range *out_result);
+typedef char *(*patch_address_formatter)(const uint8_t *, void *);
 
 __attribute__((warn_unused_result))
-bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count);
+__attribute__((nonnull(2, 5, 7)))
+bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result);
+
+__attribute__((warn_unused_result))
+bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data);
 
 #define INS_JMP_32_IMM 0xe9
 #define INS_MOV_RCX_64_IMM_0 0x48

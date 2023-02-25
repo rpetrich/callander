@@ -2855,6 +2855,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3);
 		}
+		case 0x666: {
+			return (intptr_t)get_fd_table();
+		}
 	}
 	return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 }

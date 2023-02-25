@@ -224,90 +224,104 @@ static inline intptr_t destination_of_pc_relative_addr(const uint8_t *addr)
 }
 
 // is_patchable_instruction returns true if the instruction can safely be relocated into a detour
-static bool is_patchable_instruction(const uint8_t *addr)
+static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatter formatter, void *formatter_data)
 {
+	(void)formatter;
+	(void)formatter_data;
 	if (addr[0] >= INS_MOVL_START && addr[0] <= INS_MOVL_END) {
-		PATCH_LOG("Patching address with movl $..., %...prefix", (uintptr_t)addr);
+		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] == INS_MOV_REG) {
-		PATCH_LOG("Patching address with mov prefix", (uintptr_t)addr);
+		PATCH_LOG("Patching address with mov prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if ((addr[0] == INS_OPERAND_SIZE_PREFIX || addr[0] == INS_REX_W_PREFIX) && addr[1] == INS_CMP_32_IMM) {
-		PATCH_LOG("Patching address with cmpw prefix", (uintptr_t)addr);
+		PATCH_LOG("Patching address with cmpw prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] == INS_CMP_32_IMM) {
-		PATCH_LOG("Patching address with cmp prefix", (uintptr_t)addr);
+		PATCH_LOG("Patching address with cmp prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] == INS_REX_W_PREFIX && addr[1] == INS_MOV_REG) {
-		PATCH_LOG("Patching address with rex.w mov prefix", (uintptr_t)addr);
+		PATCH_LOG("Patching address with rex.w mov prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] == INS_REX_W_PREFIX) {
 		if (addr[1] == 0x8b) {
 			if (addr[2] == 0x0d) {
-				PATCH_LOG("Patching address with pc-relative mov prefix", (uintptr_t)addr);
+				PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(addr, formatter_data)));
 				return true;
 			}
 			if (addr[2] == 0x44 || addr[2] == 0x54 || addr[2] == 0x74 || addr[2] == 0x7c) {
-				PATCH_LOG("Patching address with sp-relative mov prefix", (uintptr_t)addr);
+				PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(addr, formatter_data)));
 				return true;
 			}
 		} else if (addr[1] == 0xc7) {
-			PATCH_LOG("Patching address with mov $..., %...", (uintptr_t)addr);
+			PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(addr, formatter_data)));
 			return true;
 		} else if (addr[1] == 0x83) {
-			PATCH_LOG("Patching address with sub $..., %...", (uintptr_t)addr);
+			PATCH_LOG("Patching address with sub $..., %...", temp_str(formatter(addr, formatter_data)));
 			return true;
-		} else if (addr[1] == INS_LEA && (addr[2] & 0xc7) != 0x5) {
-			PATCH_LOG("Patching address with lea", (uintptr_t)addr);
-			return true;
+		} else if (addr[1] == INS_LEA) {
+			if ((addr[2] & 0xc7) != 0x5) {
+				PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
+				return true;
+			}
+			x86_mod_rm_t modrm = x86_read_modrm(&addr[2]);
+			if (!x86_modrm_is_direct(modrm)) {
+				int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){ 0 });
+				switch (rm) {
+					case X86_REGISTER_BP:
+					case X86_REGISTER_13:
+						PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(addr, formatter_data)));
+						return true;
+				}
+			}
 		}
 	}
 	if (addr[0] == INS_LEA && (addr[1] & 0xc7) != 0x5) {
-		PATCH_LOG("Patching address with lea", (uintptr_t)addr);
+		PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
 	}
 	if (addr[0] == 0x4c) {
 		if (addr[1] == 0x8b || addr[1] == 0x89) {
 			if (addr[2] == 0x44 || addr[2] == 0x4c || addr[2] == 0x54 || addr[2] == 0x5c) {
-				PATCH_LOG("Patching address with sp-relative rex.w|rex.r mov prefix", (uintptr_t)addr);
+				PATCH_LOG("Patching address with sp-relative rex.w|rex.r mov prefix", temp_str(formatter(addr, formatter_data)));
 				return true;
 			}
 		}
 	}
 	if (addr[0] == INS_REXB_PREFIX && addr[1] >= INS_MOVL_START && addr[1] <= INS_MOVL_END) {
-		PATCH_LOG("Patching address with rex.b movl prefix", (uintptr_t)addr);
+		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] == 0x31) {
-		PATCH_LOG("Patching address with xor reg to reg", (uintptr_t)addr);
+		PATCH_LOG("Patching address with xor reg to reg", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] >= INS_PUSHQ_START && addr[0] <= INS_PUSHQ_END) {
-		PATCH_LOG("Patching push", (uintptr_t)addr);
+		PATCH_LOG("Patching push", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (addr[0] == INS_REXB_PREFIX && addr[1] >= INS_PUSHQ_START && addr[1] <= INS_PUSHQ_END) {
-		PATCH_LOG("Patching rexb push", (uintptr_t)addr);
+		PATCH_LOG("Patching rexb push", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	// WRITE_LITERAL(TELEMETRY_FD, "Failed to patch: not a known suffix instruction\n");
 	if (x86_is_return_instruction(addr)) {
-		PATCH_LOG("Patching address with ret", (uintptr_t)addr);
+		PATCH_LOG("Patching address with ret", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (x86_is_syscall_instruction(addr)) {
-		PATCH_LOG("Patching address with syscall", (uintptr_t)addr);
+		PATCH_LOG("Patching address with syscall", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	if (x86_is_nop_instruction(addr)) {
-		PATCH_LOG("Patching address with nop", (uintptr_t)addr);
+		PATCH_LOG("Patching address with nop", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	PATCH_LOG("Address not patchable", (uintptr_t)addr);
+	PATCH_LOG("Address not patchable", temp_str(formatter(addr, formatter_data)));
 	return false;
 }
 
@@ -384,7 +398,7 @@ static void free_searched_instructions(struct searched_instructions *searched, s
 // instructions
 __attribute__((warn_unused_result))
 __attribute__((nonnull(3)))
-static bool find_return_address(struct instruction_search search, intptr_t bp, intptr_t *out_return_address)
+static bool find_return_address(struct instruction_search search, intptr_t bp, patch_address_formatter formatter, void *formatter_data, intptr_t *out_return_address)
 {
 	if (check_already_searched_instruction(search)) {
 		// avoid infinitely traversing loops
@@ -399,7 +413,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 		if (length == INSTRUCTION_INVALID) {
 			return false;
 		}
-		switch (x86_jump_addresses_at_instruction(ins, &jump)) {
+		switch (x86_decode_jump_instruction(ins, &jump)) {
 			case X86_JUMPS_NEVER:
 				break;
 			case X86_JUMPS_ALWAYS: {
@@ -422,11 +436,11 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 					bool taken_result = find_return_address((struct instruction_search){
 						.addr = jump,
 						.searched = search.searched,
-					}, bp, &taken_return_address);
+					}, bp, formatter, formatter_data, &taken_return_address);
 					bool not_result = find_return_address((struct instruction_search){
 						.addr = ins + length,
 						.searched = search.searched,
-					}, bp, &not_return_address);
+					}, bp, formatter, formatter_data, &not_return_address);
 					// succeed if both succeed and match, or if one succeeds
 					if (taken_result) {
 						*out_return_address = taken_return_address;
@@ -447,11 +461,11 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 				if (ins[0] >= INS_PUSHQ_START && ins[0] <= INS_PUSHQ_END) {
 					// pushq %r...
 					*out_return_address -= 8;
-					PATCH_LOG("push", (uintptr_t)ins);
+					PATCH_LOG("push", temp_str(formatter(ins, formatter_data)));
 				} else if (ins[0] >= INS_POPQ_START && ins[0] <= INS_POPQ_END) {
 					// popq %r...
 					*out_return_address += 8;
-					PATCH_LOG("pop", (uintptr_t)ins);
+					PATCH_LOG("pop", temp_str(formatter(ins, formatter_data)));
 				}
 				break;
 			case 2:
@@ -459,11 +473,11 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 					if (ins[1] >= INS_PUSHQ_START && ins[1] <= INS_PUSHQ_END) {
 						// pushq %r...
 						*out_return_address -= 8;
-						PATCH_LOG("rexb push", (uintptr_t)ins);
+						PATCH_LOG("rexb push", temp_str(formatter(ins, formatter_data)));
 					} else if (ins[1] >= INS_POPQ_START && ins[1] <= INS_POPQ_END) {
 						// popq %r...
 						*out_return_address += 8;
-						PATCH_LOG("rexb pop", (uintptr_t)ins);
+						PATCH_LOG("rexb pop", temp_str(formatter(ins, formatter_data)));
 					}
 				}
 				break;
@@ -471,19 +485,19 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 				if (ins[0] == INS_ADD_SUB_RSP_8_IMM_0 && ins[1] == INS_ADD_SUB_RSP_8_IMM_1) {
 					if (ins[2] == INS_ADD_RSP_IMM_2) {
 						// addq $..., %rsp (8-bit immediate)
-						PATCH_LOG("add %rsp", (uintptr_t)ins);
+						PATCH_LOG("add %rsp", temp_str(formatter(ins, formatter_data)));
 						PATCH_LOG("add %rsp value", (int)ins[3]);
 						*out_return_address += ins[3];
 					} else if (ins[2] == INS_SUB_RSP_IMM_2) {
 						// subq $..., %rsp (8-bit immediate)
-						PATCH_LOG("sub %rsp", (uintptr_t)ins);
+						PATCH_LOG("sub %rsp", temp_str(formatter(ins, formatter_data)));
 						PATCH_LOG("sub %rsp value", (int)ins[3]);
 						*out_return_address -= ins[3];
 					}
 				}
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_LEA && ins[2] == 0x65) {
 					// lea ...(%rbp), %rsp (8-bit immediate)
-					PATCH_LOG("lea ...(%rbp), %rsp", (uintptr_t)ins);
+					PATCH_LOG("lea ...(%rbp), %rsp", temp_str(formatter(ins, formatter_data)));
 					PATCH_LOG("lea %rbp value", (int)ins[3]);
 					*out_return_address = bp + (int8_t)ins[3];
 				}
@@ -500,12 +514,12 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_ADD_SUB_RSP_32_IMM_1) {
 					if (ins[2] == INS_ADD_RSP_IMM_2) {
 						// addq $..., %rsp (32-bit immediate)
-						PATCH_LOG("add %rsp", (uintptr_t)ins);
+						PATCH_LOG("add %rsp", temp_str(formatter(ins, formatter_data)));
 						PATCH_LOG("add %rsp value", (int)*(const uint32_t *)&ins[3]);
 						*out_return_address += *(const uint32_t *)&ins[3];
 					} else if (ins[2] == INS_SUB_RSP_IMM_2) {
 						// subq $..., %rsp (32-bit immediate)
-						PATCH_LOG("sub %rsp", (uintptr_t)ins);
+						PATCH_LOG("sub %rsp", temp_str(formatter(ins, formatter_data)));
 						PATCH_LOG("sub %rsp value", (int)*(const uint32_t *)&ins[3]);
 						*out_return_address -= *(const uint32_t *)&ins[3];
 					}
@@ -514,7 +528,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 			case 8:
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_LEA && ins[2] == 0xa4 && ins[3] == 0x24) {
 					// lea ...(%rsp), %rsp (32-bit immediate)
-					PATCH_LOG("lea ...(%rsp), %rsp", (uintptr_t)ins);
+					PATCH_LOG("lea ...(%rsp), %rsp", temp_str(formatter(ins, formatter_data)));
 					PATCH_LOG("lea %rsp value", (int)*(const uint32_t *)&ins[4]);
 					*out_return_address -= *(const uint32_t *)&ins[4];
 				}
@@ -523,7 +537,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, i
 				if (ins[0] == 0x64 && ins[1] == 0x48 && ins[2] == 0x33 && ins[4] == 0x25 && ins[5] == 0x28 && ins[6] == 0 && ins[7] == 0 && ins[8] == 0) {
 					// xor %fs:0x28,%rcx
 					// GCC's stack check. next conditional jump should be to __stack_chk_fail
-					PATCH_LOG("found stack check", (uintptr_t)ins);
+					PATCH_LOG("found stack check", temp_str(formatter(ins, formatter_data)));
 					previous_ins_is_stack_check = true;
 				}
 				break;
@@ -562,7 +576,7 @@ tail_call:
 			return false;
 		}
 		// Examine jumps
-		switch (x86_jump_addresses_at_instruction(ins, &jump)) {
+		switch (x86_decode_jump_instruction(ins, &jump)) {
 			case X86_JUMPS_NEVER:
 				break;
 			case X86_JUMPS_ALWAYS:
@@ -630,10 +644,10 @@ tail_call:
 // find_patch_target finds the longest possible span of patchable instructions
 __attribute__((warn_unused_result))
 __attribute__((nonnull(2, 5)))
-bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, struct instruction_range *out_result)
+bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result)
 {
 	// precheck on target
-	if (!is_patchable_instruction(target)) {
+	if (!is_patchable_instruction(target, formatter, formatter_data)) {
 		return false;
 	}
 	int target_size = InstructionSize_x86_64(target, 0xf);
@@ -644,7 +658,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 	const uint8_t *start = target;
 	const uint8_t *end = start + target_size;
 	for (const uint8_t *current = basic_block.start; current < target; ) {
-		if (!is_patchable_instruction(current)) {
+		if (!is_patchable_instruction(current, formatter, formatter_data)) {
 			start = target;
 		} else if (start == target || end - current >= (ssize_t)minimum_size) {
 			start = current;
@@ -657,7 +671,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 	}
 	// search past the target until the minimum patch size is found
 	while (end < basic_block.end && end - start < (ssize_t)ideal_size) {
-		if (!is_patchable_instruction(end)) {
+		if (!is_patchable_instruction(end, formatter, formatter_data)) {
 			break;
 		}
 		int size = InstructionSize_x86_64(end, 0xf);
@@ -678,6 +692,14 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 __attribute__((warn_unused_result))
 static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip);
 
+static char *naive_address_formatter(const uint8_t *address, void *unused)
+{
+	(void)unused;
+	char *result = malloc(2 * sizeof(uintptr_t) + 3);
+	fs_utoah((uintptr_t)address, result);
+	return result;
+}
+
 // patch_body attempts to patch a syscall instruction already having taken the shard's lock
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 {
@@ -697,7 +719,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		.searched = &searched,
 	};
 	intptr_t return_address = args->sp;
-	bool found_return_address = find_return_address(return_addr_search, args->bp, &return_address);
+	bool found_return_address = find_return_address(return_addr_search, args->bp, naive_address_formatter, NULL, &return_address);
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_return_address) {
 		PATCH_LOG("could not find return address");
@@ -763,8 +785,10 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 
 // migrate_instruction copies and relocates instructions
 __attribute__((warn_unused_result))
-bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count)
+bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
 {
+	(void)formatter;
+	(void)formatter_data;
 	const uint8_t *end_src = src + byte_count;
 	while (src < end_src) {
 		int length = InstructionSize_x86_64(src, 0xf);
@@ -773,10 +797,33 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 		}
 		memcpy(dest, src, length);
 		if (src[0] == INS_REX_W_PREFIX) {
-			if (src[1] == 0x8b) {
-				if (src[2] == 0x0d) {
-					// Adjust pc-relative mov
-					*(uint32_t *)&dest[3] += delta; //src - dest;
+			switch (src[1]) {
+				case 0x8b:
+					if (src[2] == 0x0d) {
+						// Adjust pc-relative mov
+						PATCH_LOG("fixing up rip-relative mov", temp_str(formatter(src, formatter_data)));
+						x86_int32 *disp = (x86_int32 *)&dest[3];
+						PATCH_LOG("was", *disp);
+						*disp += delta;
+						PATCH_LOG("is now", *disp);
+					}
+					break;
+				case INS_LEA: {
+					x86_mod_rm_t modrm = x86_read_modrm(&src[2]);
+					if (!x86_modrm_is_direct(modrm)) {
+						int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){ 0 });
+						switch (rm) {
+							case X86_REGISTER_BP:
+							case X86_REGISTER_13:
+								PATCH_LOG("fixing up rip-relative lea", temp_str(formatter(src, formatter_data)));
+								x86_int32 *disp = (x86_int32 *)&dest[3];
+								PATCH_LOG("was", *disp);
+								*disp += delta;
+								PATCH_LOG("is now", *disp);
+								break;
+						}
+					}
+					break;
 				}
 			}
 		}
@@ -796,7 +843,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		instruction += 4;
 	}
 	struct instruction_range patch_target;
-	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, &patch_target)) {
+	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, naive_address_formatter, NULL, &patch_target)) {
 		PATCH_LOG("unable to find patch target");
 		return false;
 	}
@@ -860,7 +907,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	// Construct the trampoline
 	uint8_t *trampoline = (uint8_t *)stub_address;
 	size_t head_size = instruction - (intptr_t)patch_target.start;
-	if (!migrate_instructions(trampoline, patch_target.start, patch_target.start - trampoline, head_size)) {
+	if (!migrate_instructions(trampoline, patch_target.start, patch_target.start - trampoline, head_size, naive_address_formatter, NULL)) {
 		attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 		PATCH_LOG("Failed to patch: migrating head failed");
 		if (new_address) {
@@ -884,7 +931,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	// Copy the patched instructions from the original basic block
 	uintptr_t tail_start = skip ? instruction + InstructionSize_x86_64((const uint8_t *)instruction, 0xf) : instruction;
 	size_t tail_size = (uintptr_t)patch_target.end - tail_start;
-	if (!migrate_instructions(trampoline, (const uint8_t *)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size)) {
+	if (!migrate_instructions(trampoline, (const uint8_t *)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size, naive_address_formatter, NULL)) {
 		attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 		PATCH_LOG("Failed to patch: migrating tail failed");
 		if (new_address) {

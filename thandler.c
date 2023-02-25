@@ -3,14 +3,16 @@
 #include "thandler.h"
 
 #include "axon.h"
-#include "tls.h"
 #include "handler.h"
+#include "proxy_target.h"
+#include "tls.h"
 
 FS_DEFINE_SYSCALL
 
 __attribute__((naked)) __attribute__((used)) __attribute__((visibility("default")))
 noreturn void start_thread(const struct start_thread_args *args)
 {
+	proxy_state.self_pid = fs_gettid();
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
 	__builtin_unreachable();
 }

@@ -16,6 +16,7 @@ AXON_BOOTSTRAP_ASM
 
 #include "callander.h"
 #include "exec.h"
+#include "fd_table.h"
 #include "loader.h"
 #include "patch_x86_64.h"
 #include "proxy.h"
@@ -432,15 +433,15 @@ static bool should_try_to_patch_remotely(const struct recorded_syscall *syscall)
 	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->ins != NULL;
 }
 
-static bool find_remote_patch_target(const struct recorded_syscall *syscall, struct instruction_range *out_result)
+static char *loader_address_formatter(const uint8_t *address, void *loader)
+{
+	return copy_address_description((const struct loader_context *)loader, address);
+}
+
+static bool find_remote_patch_target(const struct loader_context *loader, const struct recorded_syscall *syscall, struct instruction_range *out_result)
 {
 	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins + 2 };
-	// advance one. this isn't technically right, but getting something working
-	int next_length = InstructionSize_x86_64(basic_block.end, 15);
-	if (next_length != INSTRUCTION_INVALID) {
-		basic_block.end += next_length;
-	}
-	return find_patch_target(basic_block, syscall->ins, 5, 5, out_result);
+	return find_patch_target(basic_block, syscall->ins, 5, 5, loader_address_formatter, (void *)loader, out_result);
 }
 
 static inline bool addresses_are_within_s32(intptr_t addr1, intptr_t addr2)
@@ -487,7 +488,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	for (int i = 0; i < analysis.syscalls.count; i++) {
 		if (should_try_to_patch_remotely(&analysis.syscalls.list[i])) {
 			struct instruction_range patch_target;
-			if (!find_remote_patch_target(&analysis.syscalls.list[i], &patch_target)) {
+			if (!find_remote_patch_target(&analysis.loader, &analysis.syscalls.list[i], &patch_target)) {
 				DIE("instruction is not patchable", temp_str(copy_address_description(&analysis.loader, analysis.syscalls.list[i].ins)));
 			}
 		}
@@ -574,7 +575,6 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	}
 	struct symbol_info thandler_symbols;
 	result = load_dynamic_symbols(thandler_fd, &thandler_local_info, &thandler_symbols);
-	fs_close(thandler_fd);
 	if (result < 0) {
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
@@ -587,8 +587,9 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	intptr_t receive_syscall_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "receive_syscall", NULL, NULL);
 	intptr_t receive_response_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "receive_response", NULL, NULL);
 	intptr_t proxy_state_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "proxy_state", NULL, NULL);
+	intptr_t fd_table_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "fd_table", NULL, NULL);
 	free_symbols(&thandler_symbols);
-	if (start_thread_addr == 0 || receive_syscall_addr == 0 || receive_response_addr == 0 || proxy_state_addr == 0) {
+	if (start_thread_addr == 0 || receive_syscall_addr == 0 || receive_response_addr == 0 || proxy_state_addr == 0 || fd_table_addr == 0) {
 		ERROR("missing symbols");
 	}
 	ERROR("start_thread_addr", (uintptr_t)start_thread_addr);
@@ -752,7 +753,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 				proxy_poke(child_addr, 1, &breakpoint);
 #else
 				struct instruction_range patch_target;
-				if (!find_remote_patch_target(&analysis.syscalls.list[i], &patch_target)) {
+				if (!find_remote_patch_target(&analysis.loader, &analysis.syscalls.list[i], &patch_target)) {
 					DIE("instruction is not patchable", temp_str(copy_address_description(&analysis.loader, analysis.syscalls.list[i].ins)));
 				}
 				uintptr_t child_patch_start = translate_analysis_address_to_child(&analysis.loader, patch_target.start);
@@ -766,14 +767,17 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 				}
 				// allocate a trampoline page
 				uintptr_t remote_trampoline_page = (uintptr_t)alloc_remote_page_near_address((intptr_t)child_patch_start, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+				ERROR("syscall instruction is at", child_addr);
+				ERROR("starting patch at", child_patch_start);
+				ERROR("ending patch at", child_patch_end);
+				ERROR("redirecting to trampoline at", remote_trampoline_page);
 				// prepare and poke the trampoline
 				uint8_t trampoline_buf[PAGE_SIZE];
 				size_t cur = 0;
 				{
-					// // temporary breakpoint
-					// trampoline_buf[cur++] = 0xcc;
 					// copy the prefix of the syscall instruction that is overwritten by the patch
-					if (!migrate_instructions(&trampoline_buf[cur], patch_target.start, (uintptr_t)patch_target.start - (uintptr_t)&trampoline_buf[cur], addr - patch_target.start)) {
+					ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)remote_trampoline_page;
+					if (!migrate_instructions(&trampoline_buf[cur], patch_target.start, delta, addr - patch_target.start, loader_address_formatter, (void *)&analysis.loader)) {
 						DIE("failed to migrate prefix");
 					}
 					cur += addr - patch_target.start;
@@ -828,7 +832,51 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
 	proxy_poke(proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
 	char buf[512 * 1024];
+	{
+		char *cur = buf;
+		fs_memcpy(cur, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
+		cur += sizeof("sudo gdb --pid=")-1;
+		intptr_t remote_pid = PROXY_CALL(SYS_getpid);
+		cur += fs_itoa(remote_pid, cur);
+		fs_memcpy(cur, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
+		cur += sizeof(" --eval-command=\"add-symbol-file ")-1;
+		thandler_char_count = fs_strlen(thandler_buf);
+		fs_memcpy(cur, thandler_buf, thandler_char_count);
+		cur += thandler_char_count;
+		*cur++ = ' ';
+		struct section_info sections;
+		result = load_section_info(thandler_fd, &thandler_local_info, &sections);
+		if (result == 0) {
+			const ElfW(Shdr) *text_section = find_section(&thandler_local_info, &sections, ".text");
+			if (text_section != NULL) {
+				cur += fs_utoah((uintptr_t)thandler_info.base + text_section->sh_addr, cur);
+				*cur++ = '"';
+				*cur++ = '\0';
+				ERROR("thandler gdb command", &buf[0]);
+			} else {
+				ERROR("missing thandler section named .text");
+			}
+			free_section_info(&sections);
+		} else {
+			ERROR("failed to read thandler sections", fs_strerror(result));
+		}
+	}
+	// poke the remote file table
+	const int *local_table = (const int *)FS_SYSCALL(0x666);
+	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
+		int value = local_table[i];
+		if (value != 0) {
+			if (value & HAS_LOCAL_FD) {
+				value = (i << USED_BITS) | HAS_REMOTE_FD | (value & HAS_CLOEXEC);
+			} else if (value & HAS_REMOTE_FD) {
+				// TODO: dup remotely and update counts
+				value = (value & ~HAS_REMOTE_FD) | HAS_LOCAL_FD;
+			}
+			proxy_poke(fd_table_addr + sizeof(int) * i, sizeof(int), &value);
+		}
+	}
 	ERROR("press enter to continue");
+	ERROR_FLUSH();
 	if (fs_read(0, &buf[0], 1) != 1) {
 		DIE("exiting");
 	}
@@ -854,19 +902,23 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 			case TARGET_NR_PEEK:
 				proxy_read_stream_message_finish(stream_id);
 				ERROR("received a peek");
+				ERROR_FLUSH();
 				// TODO
 				break;
 			case TARGET_NR_POKE:
 				proxy_read_stream_message_finish(stream_id);
 				ERROR("received a poke");
+				ERROR_FLUSH();
 				// TODO
 				break;
 			case __NR_exit_group | PROXY_NO_RESPONSE:
 				proxy_read_stream_message_finish(stream_id);
 				ERROR("received an exit");
+				ERROR_FLUSH();
 				break;
 			default: {
 				ERROR("received syscall", name_for_syscall(message.template.nr));
+				ERROR_FLUSH();
 				size_t trailer_bytes = 0;
 				intptr_t index = 0;
 				uint64_t values[6];

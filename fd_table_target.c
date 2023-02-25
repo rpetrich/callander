@@ -8,12 +8,8 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#define HAS_REMOTE_FD 1
-#define HAS_LOCAL_FD 2
-#define HAS_CLOEXEC 4
-#define USED_BITS 3
-
-static int fd_table[MAX_TABLE_SIZE];
+__attribute__((visibility("default")))
+int fd_table[MAX_TABLE_SIZE];
 static struct fs_mutex table_lock;
 
 void clear_fd_table_for_exit(void)
@@ -265,4 +261,9 @@ int chdir_become_local_fd(int local_fd)
 		fs_close(new_local_fd);
 	}
 	return result;
+}
+
+const int *get_fd_table(void)
+{
+	return fd_table;
 }

@@ -65,6 +65,9 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	int result = fs_writev_all(proxy_state.target_state->sockfd, iov, 1 + arg_vec_count);
 	if (result < 0) {
 		fs_mutex_unlock(&proxy_state.target_state->write_mutex);
+		if (result == -EFAULT) {
+			return result;
+		}
 		DIE("failed to proxy send", fs_strerror(result));
 	}
 	fs_mutex_unlock(&proxy_state.target_state->write_mutex);

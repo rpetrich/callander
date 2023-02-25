@@ -104,7 +104,7 @@ bool x86_is_return_instruction(const uint8_t *addr)
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 2)))
 __attribute__((used))
-enum x86_jumps x86_jump_addresses_at_instruction(const uint8_t *ins, const uint8_t **out_jump)
+enum x86_jumps x86_decode_jump_instruction(const uint8_t *ins, const uint8_t **out_jump)
 {
 	while (*ins == INS_REPNE) {
 		ins++;
