@@ -506,6 +506,24 @@ static void print_gdb_attach_command(char *buf, struct binary_info *thandler_inf
 	}
 }
 
+static void transfer_fd_table(uintptr_t fd_table_addr)
+{
+	// poke the remote file table
+	const int *local_table = (const int *)FS_SYSCALL(0x666);
+	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
+		int value = local_table[i];
+		if (value != 0) {
+			if (value & HAS_LOCAL_FD) {
+				value = (i << USED_BITS) | HAS_REMOTE_FD | (value & HAS_CLOEXEC);
+			} else if (value & HAS_REMOTE_FD) {
+				// TODO: dup remotely and update counts
+				value = (value & ~HAS_REMOTE_FD) | HAS_LOCAL_FD;
+			}
+			proxy_poke(fd_table_addr + sizeof(int) * i, sizeof(int), &value);
+		}
+	}
+}
+
 #define STACK_SIZE (2 * 1024 * 1024)
 
 // remote_exec_fd_elf executes an elf binary from an open file
@@ -864,20 +882,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	proxy_poke(proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
 	char buf[512 * 1024];
 	print_gdb_attach_command(buf, &thandler_info, &thandler_local_info, thandler_fd, thandler_buf);
-	// poke the remote file table
-	const int *local_table = (const int *)FS_SYSCALL(0x666);
-	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
-		int value = local_table[i];
-		if (value != 0) {
-			if (value & HAS_LOCAL_FD) {
-				value = (i << USED_BITS) | HAS_REMOTE_FD | (value & HAS_CLOEXEC);
-			} else if (value & HAS_REMOTE_FD) {
-				// TODO: dup remotely and update counts
-				value = (value & ~HAS_REMOTE_FD) | HAS_LOCAL_FD;
-			}
-			proxy_poke(fd_table_addr + sizeof(int) * i, sizeof(int), &value);
-		}
-	}
+	transfer_fd_table(fd_table_addr);
 	ERROR("press enter to continue");
 	ERROR_FLUSH();
 	if (fs_read(0, &buf[0], 1) != 1) {
