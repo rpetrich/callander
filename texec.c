@@ -606,7 +606,68 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 	}
 }
 
-static void print_gdb_attach_command(char *buf, struct binary_info *thandler_info, struct binary_info *thandler_local_info, int thandler_fd, const char *thandler_path)
+struct thandler_info {
+	int fd;
+	struct binary_info local_info;
+	struct binary_info remote_info;
+	intptr_t start_thread_addr;
+	intptr_t receive_syscall_addr;
+	intptr_t receive_response_addr;
+	intptr_t proxy_state_addr;
+	intptr_t fd_table_addr;
+	char path[PATH_MAX];
+};
+
+static int init_thandler(struct thandler_info *thandler)
+{
+	ssize_t count = fs_readlink("/proc/self/exe", thandler->path, PATH_MAX);
+	if (count < 0) {
+		return count;
+	}
+	while (thandler->path[count-1] != '/') {
+		count--;
+	}
+	fs_memcpy(&thandler->path[count], "thandler", sizeof("thandler"));
+	intptr_t fd = fs_open(thandler->path, O_RDONLY|O_CLOEXEC, 0);
+	if (fd < 0) {
+		return fd;
+	}
+	intptr_t result = load_binary(fd, &thandler->local_info, 0, false);
+	if (result < 0) {
+		fs_close(fd);
+		return result;
+	}
+	struct symbol_info symbols;
+	result = load_dynamic_symbols(fd, &thandler->local_info, &symbols);
+	if (result < 0) {
+		fs_close(fd);
+		unload_binary(&thandler->local_info);
+	}
+	result = remote_load_binary(fd, &thandler->remote_info);
+	if (result < 0) {
+		fs_close(fd);
+		unload_binary(&thandler->local_info);
+		free_symbols(&symbols);
+		return result;
+	}
+	thandler->fd = fd;
+	thandler->start_thread_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "start_thread", NULL, NULL);
+	thandler->receive_syscall_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "receive_syscall", NULL, NULL);
+	thandler->receive_response_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "receive_response", NULL, NULL);
+	thandler->proxy_state_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "proxy_state", NULL, NULL);
+	thandler->fd_table_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "fd_table", NULL, NULL);
+	free_symbols(&symbols);
+	return 0;
+}
+
+static void free_thandler(struct thandler_info *thandler)
+{
+	remote_unload_binary(&thandler->remote_info);
+	unload_binary(&thandler->local_info);
+	fs_close(thandler->fd);
+}
+
+static void print_gdb_attach_command(char *buf, const struct thandler_info *thandler)
 {
 	char *cur = buf;
 	fs_memcpy(cur, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
@@ -615,16 +676,16 @@ static void print_gdb_attach_command(char *buf, struct binary_info *thandler_inf
 	cur += fs_itoa(remote_pid, cur);
 	fs_memcpy(cur, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
 	cur += sizeof(" --eval-command=\"add-symbol-file ")-1;
-	size_t thandler_path_len = fs_strlen(thandler_path);
-	fs_memcpy(cur, thandler_path, thandler_path_len);
+	size_t thandler_path_len = fs_strlen(thandler->path);
+	fs_memcpy(cur, thandler->path, thandler_path_len);
 	cur += thandler_path_len;
 	*cur++ = ' ';
 	struct section_info sections;
-	intptr_t result = load_section_info(thandler_fd, thandler_local_info, &sections);
+	intptr_t result = load_section_info(thandler->fd, &thandler->local_info, &sections);
 	if (result == 0) {
-		const ElfW(Shdr) *text_section = find_section(thandler_local_info, &sections, ".text");
+		const ElfW(Shdr) *text_section = find_section(&thandler->local_info, &sections, ".text");
 		if (text_section != NULL) {
-			cur += fs_utoah((uintptr_t)thandler_info->base + text_section->sh_addr, cur);
+			cur += fs_utoah((uintptr_t)thandler->remote_info.base + text_section->sh_addr, cur);
 			*cur++ = '"';
 			*cur++ = '\0';
 			ERROR("thandler gdb command", &buf[0]);
@@ -827,63 +888,27 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 			DIE("could not find interpreter to set base");
 		}
 	}
-	// map in thread function
-	char thandler_buf[PATH_MAX];
-	ssize_t thandler_char_count = fs_readlink("/proc/self/exe", thandler_buf, sizeof(thandler_buf));
-	while(thandler_buf[thandler_char_count-1] != '/') {
-		thandler_char_count--;
-	}
-	fs_memcpy(&thandler_buf[thandler_char_count], "thandler", sizeof("thandler"));
-	int thandler_fd = fs_open(thandler_buf, O_RDONLY|O_CLOEXEC, 0);
-	struct binary_info thandler_info;
-	result = remote_load_binary(thandler_fd, &thandler_info);
+	// map in handler binary
+	struct thandler_info thandler;
+	result = init_thandler(&thandler);
 	if (result < 0) {
-		remote_unload_binary(&interpreter_info);
-		remote_unload_binary(&main_info);
-		fs_close(thandler_fd);
-		return result;
+		DIE("failed to load thandler", fs_strerror(result));
 	}
-	ERROR("mapped thandler", &thandler_buf[0]);
-	ERROR("at", (uintptr_t)thandler_info.base);
-	struct binary_info thandler_local_info;
-	result = load_binary(thandler_fd, &thandler_local_info, 0, false);
-	if (result < 0) {
-		remote_unload_binary(&interpreter_info);
-		remote_unload_binary(&main_info);
-		remote_unload_binary(&thandler_info);
-		fs_close(thandler_fd);
-		return result;
+	ERROR("mapped thandler", &thandler.path[0]);
+	ERROR("at", (uintptr_t)thandler.remote_info.base);
+	if (thandler.start_thread_addr == 0 || thandler.receive_syscall_addr == 0 || thandler.receive_response_addr == 0 || thandler.proxy_state_addr == 0 || thandler.fd_table_addr == 0) {
+		ERROR("missing thandler symbols");
 	}
-	struct symbol_info thandler_symbols;
-	result = load_dynamic_symbols(thandler_fd, &thandler_local_info, &thandler_symbols);
-	if (result < 0) {
-		remote_unload_binary(&interpreter_info);
-		remote_unload_binary(&main_info);
-		remote_unload_binary(&thandler_info);
-		unload_binary(&thandler_local_info);
-		fs_close(thandler_fd);
-		return result;
-	}
-	intptr_t start_thread_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "start_thread", NULL, NULL);
-	intptr_t receive_syscall_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "receive_syscall", NULL, NULL);
-	intptr_t receive_response_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "receive_response", NULL, NULL);
-	intptr_t proxy_state_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "proxy_state", NULL, NULL);
-	intptr_t fd_table_addr = (intptr_t)find_symbol(&thandler_info, &thandler_symbols, "fd_table", NULL, NULL);
-	free_symbols(&thandler_symbols);
-	if (start_thread_addr == 0 || receive_syscall_addr == 0 || receive_response_addr == 0 || proxy_state_addr == 0 || fd_table_addr == 0) {
-		ERROR("missing symbols");
-	}
-	ERROR("start_thread_addr", (uintptr_t)start_thread_addr);
+	ERROR("start_thread_addr", (uintptr_t)thandler.start_thread_addr);
 	// create thread stack
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
-		remote_unload_binary(&thandler_info);
-		unload_binary(&thandler_local_info);
+		free_thandler(&thandler);
 		cleanup_searched_instructions(&analysis.search);
 		ERROR("creating stack failed", fs_strerror(stack));
-		return (int)stack;
+		return stack;
 	}
 	ERROR("stack", (uintptr_t)stack);
 	// prepare thread args and dynv
@@ -1001,7 +1026,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 			remote_munmap(stack, STACK_SIZE);
 			remote_unload_binary(&interpreter_info);
 			remote_unload_binary(&main_info);
-			remote_unload_binary(&thandler_info);
+			free_thandler(&thandler);
 			cleanup_searched_instructions(&analysis.search);
 			ERROR("failed to set name", fs_strerror(prctl_result));
 			return prctl_result;
@@ -1016,15 +1041,15 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	// poke in breakpoints/patches
 	struct remote_syscall_patches patches;
 	init_remote_patches(&patches, &analysis);
-	patch_remote_syscalls(&patches, &analysis, receive_syscall_addr);
+	patch_remote_syscalls(&patches, &analysis, thandler.receive_syscall_addr);
 	uint32_t stream_id = proxy_generate_stream_id();
 	struct proxy_target_state new_proxy_state = { 0 };
 	new_proxy_state.stream_id = stream_id;
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
-	proxy_poke(proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
-	transfer_fd_table(fd_table_addr);
+	proxy_poke(thandler.proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
+	transfer_fd_table(thandler.fd_table_addr);
 	char buf[512 * 1024];
-	print_gdb_attach_command(buf, &thandler_info, &thandler_local_info, thandler_fd, thandler_buf);
+	print_gdb_attach_command(buf, &thandler);
 	ERROR("press enter to continue");
 	ERROR_FLUSH();
 	if (fs_read(0, &buf[0], 1) != 1) {
@@ -1032,19 +1057,19 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		DIE("exiting");
 	}
 	// spawn remote thread
-	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(start_thread_addr));
+	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base - 0x100), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0])), proxy_value(thandler.start_thread_addr));
 	// intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID), proxy_value(dynv_base), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(0), proxy_value((intptr_t)args->pc));
 	if (clone_result < 0) {
 		remote_munmap(stack, STACK_SIZE);
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
-		remote_unload_binary(&thandler_info);
+		free_thandler(&thandler);
 		cleanup_searched_instructions(&analysis.search);
 		ERROR("clone_result", fs_strerror(clone_result));
 		free_remote_patches(&patches, &analysis);
 		return clone_result;
 	}
-	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, receive_response_addr);
+	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr);
 	// wait for remote thread
 	pid_t tid;
 	do {
@@ -1056,7 +1081,7 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	remote_munmap(stack, STACK_SIZE);
 	remote_unload_binary(&interpreter_info);
 	remote_unload_binary(&main_info);
-	remote_unload_binary(&thandler_info);
+	free_thandler(&thandler);
 	cleanup_searched_instructions(&analysis.search);
 	return status_code;
 }
