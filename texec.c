@@ -488,7 +488,8 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 }
 
 struct remote_syscall_patch {
-	uintptr_t remote_trampoline_page;
+	uintptr_t trampoline;
+	bool owns_trampoline;
 };
 
 struct remote_syscall_patches {
@@ -503,9 +504,8 @@ static void init_remote_patches(struct remote_syscall_patches *patches, struct p
 static void free_remote_patches(struct remote_syscall_patches *patches, struct program_state *analysis)
 {
 	for (int i = 0; i < analysis->syscalls.count; i++) {
-		uintptr_t remote_trampoline_page = patches->list[i].remote_trampoline_page;
-		if (remote_trampoline_page != 0) {
-			remote_munmap(remote_trampoline_page, PAGE_SIZE);
+		if (patches->list[i].owns_trampoline) {
+			remote_munmap(patches->list[i].trampoline, PAGE_SIZE);
 		}
 	}
 	free(patches->list);
@@ -513,8 +513,9 @@ static void free_remote_patches(struct remote_syscall_patches *patches, struct p
 
 static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct program_state *analysis, intptr_t receive_syscall_addr)
 {
+	uintptr_t existing_trampoline = PAGE_SIZE-1;
 	for (int i = 0; i < analysis->syscalls.count; i++) {
-		if (patches->list[i].remote_trampoline_page == 0 && should_try_to_patch_remotely(&analysis->syscalls.list[i])) {
+		if (patches->list[i].trampoline == 0 && should_try_to_patch_remotely(&analysis->syscalls.list[i])) {
 			const uint8_t *addr = analysis->syscalls.list[i].ins;
 			uintptr_t child_addr = translate_analysis_address_to_child(&analysis->loader, addr);
 			if (child_addr != 0) {
@@ -545,17 +546,26 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					DIE("failed to remote mprotect", fs_strerror(protect_result));
 				}
 				// allocate a trampoline page
-				uintptr_t remote_trampoline_page = patches->list[i].remote_trampoline_page = (uintptr_t)alloc_remote_page_near_address((intptr_t)child_patch_start, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+				uintptr_t trampoline;
+				size_t bytes_remaining_in_existing = PAGE_SIZE - (existing_trampoline & (PAGE_SIZE-1));
+				size_t expected_size = (addr - patch_target.start) + ((uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start) + 10 + ((uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call) + 5;
+				if (addresses_are_within_s32(existing_trampoline, child_patch_start) && bytes_remaining_in_existing > expected_size) {
+					trampoline = existing_trampoline;
+				} else {
+					trampoline = (uintptr_t)alloc_remote_page_near_address((intptr_t)child_patch_start, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+					patches->list[i].owns_trampoline = true;
+				}
+				patches->list[i].trampoline = trampoline;
 				ERROR("syscall instruction is at", child_addr);
 				ERROR("starting patch at", child_patch_start);
 				ERROR("ending patch at", child_patch_end);
-				ERROR("redirecting to trampoline at", remote_trampoline_page);
+				ERROR("redirecting to trampoline at", trampoline);
 				// prepare and poke the trampoline
 				uint8_t trampoline_buf[PAGE_SIZE];
 				size_t cur = 0;
 				{
 					// copy the prefix of the syscall instruction that is overwritten by the patch
-					ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)remote_trampoline_page;
+					ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)trampoline;
 					if (!migrate_instructions(&trampoline_buf[cur], patch_target.start, delta, addr - patch_target.start, loader_address_formatter, (void *)&analysis->loader)) {
 						DIE("failed to migrate prefix");
 					}
@@ -583,16 +593,17 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 						trampoline_buf[cur++] = *ins;
 					}
 					// jump back to the resume point in the function
-					int32_t resume_relative_offset = child_patch_end - (remote_trampoline_page + cur + PCREL_JUMP_SIZE);
+					int32_t resume_relative_offset = child_patch_end - (trampoline + cur + PCREL_JUMP_SIZE);
 					trampoline_buf[cur++] = INS_JMP_32_IMM;
 					trampoline_buf[cur++] = resume_relative_offset;
 					trampoline_buf[cur++] = resume_relative_offset >> 8;
 					trampoline_buf[cur++] = resume_relative_offset >> 16;
 					trampoline_buf[cur++] = resume_relative_offset >> 24;
 				}
-				proxy_poke(remote_trampoline_page, cur, trampoline_buf);
+				proxy_poke(trampoline, cur, trampoline_buf);
+				existing_trampoline = trampoline + cur;
 				// patch the original code to jump to the trampoline page
-				int32_t detour_relative_offset = remote_trampoline_page - (child_patch_start + 5);
+				int32_t detour_relative_offset = trampoline - (child_patch_start + 5);
 				uint8_t jump_buf[PCREL_JUMP_SIZE];
 				jump_buf[0] = INS_JMP_32_IMM;
 				jump_buf[1] = detour_relative_offset;
