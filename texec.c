@@ -716,6 +716,14 @@ static void transfer_fd_table(uintptr_t fd_table_addr)
 	}
 }
 
+static int set_local_comm(const char *comm)
+{
+	if (comm != NULL) {
+		return fs_prctl(PR_SET_NAME, (uintptr_t)comm, 0, 0, 0);
+	}
+	return 0;
+}
+
 static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr)
 {
 	request_message message;
@@ -835,11 +843,18 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	analyze_binary(&analysis, exec_path, fd);
 	// check if all instructions are patchable
 	ensure_all_syscalls_are_patchable(&analysis);
+	cleanup_searched_instructions(&analysis.search);
+	// Set comm so that pgrep, for example, will work
+	intptr_t result = set_local_comm(comm);
+	if (result < 0) {
+		ERROR("failed to set comm", fs_strerror(result));
+		return result;
+	}
 	// load the main binary
 	struct binary_info main_info = { 0 };
-	intptr_t result = remote_load_binary(fd, &main_info);
+	result = remote_load_binary(fd, &main_info);
 	if (result < 0) {
-		cleanup_searched_instructions(&analysis.search);
+		ERROR("failed to load binary remotely", fs_strerror(result));
 		return result;
 	}
 	ERROR("mapped main", exec_path);
@@ -847,19 +862,10 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
 	struct binary_info interpreter_info = { 0 };
-	if (main_info.interpreter != NULL) {
-		char buf[PATH_MAX];
-		size_t length = proxy_peek_string((intptr_t)main_info.interpreter, PATH_MAX, buf);
-		if (length == PATH_MAX) {
-			remote_unload_binary(&main_info);
-			cleanup_searched_instructions(&analysis.search);
-			ERROR("interpreter is too long", length);
-			return -ENOEXEC;
-		}
-		int interpreter_fd = fs_openat(AT_FDCWD, buf, O_RDONLY | O_CLOEXEC, 0);
+	if (analysis.loader.main->info.interpreter != NULL) {
+		int interpreter_fd = fs_openat(AT_FDCWD, analysis.loader.main->info.interpreter, O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
 			remote_unload_binary(&main_info);
-			cleanup_searched_instructions(&analysis.search);
 			ERROR("unable to open ELF interpreter", fs_strerror(interpreter_fd));
 			return interpreter_fd;
 		}
@@ -868,7 +874,6 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		if (UNLIKELY(result < 0)) {
 			remote_unload_binary(&main_info);
 			fs_close(interpreter_fd);
-			cleanup_searched_instructions(&analysis.search);
 			ERROR("ELF interpreter is not executable", fs_strerror(result));
 			return result;
 		}
@@ -876,11 +881,10 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		fs_close(interpreter_fd);
 		if (UNLIKELY(result != 0)) {
 			remote_unload_binary(&main_info);
-			cleanup_searched_instructions(&analysis.search);
 			DIE("unable to load ELF interpreter", fs_strerror(result));
 			return result;
 		}
-		ERROR("mapped interpreter", &buf[0]);
+		ERROR("mapped interpreter", analysis.loader.main->info.interpreter);
 		ERROR("at", (uintptr_t)interpreter_info.base);
 		if (analysis.loader.interpreter != NULL) {
 			analysis.loader.interpreter->child_base = (uintptr_t)interpreter_info.base;
@@ -906,7 +910,6 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
-		cleanup_searched_instructions(&analysis.search);
 		ERROR("creating stack failed", fs_strerror(stack));
 		return stack;
 	}
@@ -1019,19 +1022,6 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	args->arg3 = 0;
 	proxy_poke(dynv_base, dynv_size, dynv_buf);
 	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
-	// Set comm so that pgrep, for example, will work
-	if (comm != NULL) {
-		int prctl_result = fs_prctl(PR_SET_NAME, (uintptr_t)comm, 0, 0, 0);
-		if (prctl_result < 0) {
-			remote_munmap(stack, STACK_SIZE);
-			remote_unload_binary(&interpreter_info);
-			remote_unload_binary(&main_info);
-			free_thandler(&thandler);
-			cleanup_searched_instructions(&analysis.search);
-			ERROR("failed to set name", fs_strerror(prctl_result));
-			return prctl_result;
-		}
-	}
 	// check that all libraries have a child address
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 		if (binary->child_base == 0) {
@@ -1064,7 +1054,6 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 		remote_unload_binary(&interpreter_info);
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
-		cleanup_searched_instructions(&analysis.search);
 		ERROR("clone_result", fs_strerror(clone_result));
 		free_remote_patches(&patches, &analysis);
 		return clone_result;
@@ -1082,7 +1071,6 @@ static int remote_exec_fd_elf(int fd, __attribute__((unused)) const char *const 
 	remote_unload_binary(&interpreter_info);
 	remote_unload_binary(&main_info);
 	free_thandler(&thandler);
-	cleanup_searched_instructions(&analysis.search);
 	return status_code;
 }
 
