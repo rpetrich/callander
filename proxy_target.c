@@ -59,13 +59,19 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	iov[0].iov_len = sizeof(message);
 	// fill the request details
 	int arg_vec_count = proxy_fill_request_message(&message.request, &iov[1], syscall, args);
+	size_t trailer_bytes = 0;
+	for (int i = 0; i < arg_vec_count; i++) {
+		trailer_bytes += iov[1+i].iov_len;
+	}
+	ERROR("trailer_bytes", trailer_bytes);
+	ERROR_FLUSH();
 	message.request.id = 0;
 	// send the request
 	fs_mutex_lock(&proxy_state.target_state->write_mutex);
 	int result = fs_writev_all(proxy_state.target_state->sockfd, iov, 1 + arg_vec_count);
-	if (result < 0) {
-		fs_mutex_unlock(&proxy_state.target_state->write_mutex);
+	if (result <= 0) {
 		if (result == -EFAULT) {
+			fs_mutex_unlock(&proxy_state.target_state->write_mutex);
 			return result;
 		}
 		DIE("failed to proxy send", fs_strerror(result));

@@ -556,10 +556,10 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					patches->list[i].owns_trampoline = true;
 				}
 				patches->list[i].trampoline = trampoline;
-				ERROR("syscall instruction is at", child_addr);
-				ERROR("starting patch at", child_patch_start);
-				ERROR("ending patch at", child_patch_end);
-				ERROR("redirecting to trampoline at", trampoline);
+				PATCH_LOG("syscall instruction is at", child_addr);
+				PATCH_LOG("starting patch at", child_patch_start);
+				PATCH_LOG("ending patch at", child_patch_end);
+				PATCH_LOG("redirecting to trampoline at", trampoline);
 				// prepare and poke the trampoline
 				uint8_t trampoline_buf[PAGE_SIZE];
 				size_t cur = 0;
@@ -678,34 +678,31 @@ static void free_thandler(struct thandler_info *thandler)
 	fs_close(thandler->fd);
 }
 
-static void print_gdb_attach_command(char *buf, const struct thandler_info *thandler)
+static void add_gdb_attach_prefix(char **buf, pid_t pid)
 {
-	char *cur = buf;
-	fs_memcpy(cur, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
-	cur += sizeof("sudo gdb --pid=")-1;
-	intptr_t remote_pid = PROXY_CALL(SYS_getpid);
-	cur += fs_itoa(remote_pid, cur);
-	fs_memcpy(cur, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
-	cur += sizeof(" --eval-command=\"add-symbol-file ")-1;
-	size_t thandler_path_len = fs_strlen(thandler->path);
-	fs_memcpy(cur, thandler->path, thandler_path_len);
-	cur += thandler_path_len;
-	*cur++ = ' ';
+	fs_memcpy(*buf, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
+	*buf += sizeof("sudo gdb --pid=")-1;
+	*buf += fs_itoa(pid, *buf);
+}
+
+static void add_symbol_file_arg(char **buf, const char *path, int fd, const struct binary_info *local_info, const struct binary_info *remote_info)
+{
 	struct section_info sections;
-	intptr_t result = load_section_info(thandler->fd, &thandler->local_info, &sections);
+	intptr_t result = load_section_info(fd, local_info, &sections);
 	if (result == 0) {
-		const ElfW(Shdr) *text_section = find_section(&thandler->local_info, &sections, ".text");
+		const ElfW(Shdr) *text_section = find_section(local_info, &sections, ".text");
 		if (text_section != NULL) {
-			cur += fs_utoah((uintptr_t)thandler->remote_info.base + text_section->sh_addr, cur);
-			*cur++ = '"';
-			*cur++ = '\0';
-			ERROR("remote debugging command", &buf[0]);
-		} else {
-			ERROR("missing thandler section named .text");
+			fs_memcpy(*buf, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
+			*buf += sizeof(" --eval-command=\"add-symbol-file ")-1;
+			size_t path_len = fs_strlen(path);
+			fs_memcpy(*buf, path, path_len);
+			*buf += path_len;
+			**buf = ' ';
+			(*buf)++;
+			*buf += fs_utoah((uintptr_t)remote_info->base + text_section->sh_addr, *buf);
+			fs_memcpy(*buf, "\"", sizeof("\""));
+			*buf += sizeof("\"")-1;
 		}
-		free_section_info(&sections);
-	} else {
-		ERROR("failed to read thandler sections", fs_strerror(result));
 	}
 }
 
@@ -848,7 +845,7 @@ static int set_local_comm(const char *comm)
 	return 0;
 }
 
-static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr)
+static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr)
 {
 	request_message message;
 	for (;;) {
@@ -871,12 +868,32 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				break;
 			case __NR_exit_group | PROXY_NO_RESPONSE:
 				proxy_read_stream_message_finish(stream_id);
-				ERROR("received an exit");
+				// ERROR("received an exit");
 				ERROR_FLUSH();
 				break;
+			case 0x666: {
+				proxy_read_stream_message_finish(stream_id);
+				int fd = message.values[0];
+				intptr_t len = fs_readlink_fd(fd, buf, PATH_MAX);
+				if (len >= 0) {
+					buf[len] = '\0';
+					// ERROR("mapped", buf);
+				}
+				uintptr_t remote_address = message.values[1];
+				// ERROR("at", remote_address);
+				for (struct loaded_binary *binary = analysis->loader.binaries; binary != NULL; binary = binary->next) {
+					if (binary->child_base == 0 && fs_strcmp(binary->loaded_path, buf) == 0) {
+						// ERROR("found library", binary->path);
+						binary->child_base = remote_address;
+						patch_remote_syscalls(patches, analysis, receive_syscall_addr);
+						break;
+					}
+				}
+				break;
+			}
 			default: {
-				ERROR("received syscall", name_for_syscall(message.template.nr));
-				ERROR_FLUSH();
+				// ERROR("received syscall", name_for_syscall(message.template.nr));
+				// ERROR_FLUSH();
 				size_t trailer_bytes = 0;
 				intptr_t index = 0;
 				uint64_t values[6];
@@ -908,6 +925,8 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 					}
 				}
 				// read trailer
+				// ERROR("trailer_bytes", trailer_bytes);
+				// ERROR_FLUSH();
 				size_t bytes_read = 0;
 				while (trailer_bytes != bytes_read) {
 					result = proxy_read_stream_message_body(stream_id, &buf[bytes_read], trailer_bytes - bytes_read);
@@ -921,14 +940,14 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				}
 				proxy_read_stream_message_finish(stream_id);
 				int syscall = message.template.nr & ~TARGET_NO_RESPONSE;
-				switch (syscall) {
-					case __NR_faccessat:
-						ERROR("faccessat", (const char *)values[1]);
-						break;
-					case __NR_openat:
-						ERROR("openat", (const char *)values[1]);
-						break;
-				}
+				// switch (syscall) {
+				// 	case __NR_faccessat:
+				// 		ERROR("faccessat", (const char *)values[1]);
+				// 		break;
+				// 	case __NR_openat:
+				// 		ERROR("openat", (const char *)values[1]);
+				// 		break;
+				// }
 				result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
 				break;
 			}
@@ -963,9 +982,16 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	struct program_state analysis = { 0 };
 	init_searched_instructions(&analysis.search);
 	analyze_binary(&analysis, exec_path, fd);
+	cleanup_searched_instructions(&analysis.search);
+	// check that all libraries have a dynamic base address
+	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
+		if (binary->info.default_base != NULL) {
+			ERROR("found library with a fixed base address", binary->path);
+			return -ENOEXEC;
+		}
+	}
 	// check if all instructions are patchable
 	ensure_all_syscalls_are_patchable(&analysis);
-	cleanup_searched_instructions(&analysis.search);
 	// Set comm so that pgrep, for example, will work
 	intptr_t result = set_local_comm(comm);
 	if (result < 0) {
@@ -985,8 +1011,9 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	// load the interpreter, if necessary
 	struct binary_info interpreter_info = { 0 };
 	bool has_interpreter = analysis.loader.main->info.interpreter != NULL;
+	int interpreter_fd = -1;
 	if (has_interpreter) {
-		int interpreter_fd = fs_openat(AT_FDCWD, analysis.loader.main->info.interpreter, O_RDONLY | O_CLOEXEC, 0);
+		interpreter_fd = fs_openat(AT_FDCWD, analysis.loader.main->info.interpreter, O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
 			remote_unload_binary(&main_info);
 			ERROR("unable to open ELF interpreter", fs_strerror(interpreter_fd));
@@ -1001,7 +1028,6 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 			return result;
 		}
 		result = remote_load_binary(interpreter_fd, &interpreter_info);
-		fs_close(interpreter_fd);
 		if (UNLIKELY(result != 0)) {
 			remote_unload_binary(&main_info);
 			DIE("unable to load ELF interpreter", fs_strerror(result));
@@ -1032,6 +1058,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	if (fs_is_map_failed((void *)stack)) {
 		if (has_interpreter) {
 			remote_unload_binary(&interpreter_info);
+			fs_close(interpreter_fd);
 		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
@@ -1062,7 +1089,14 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
 	// print a gdb command to attach remotely if debugging
 	char buf[512 * 1024];
-	print_gdb_attach_command(buf, &thandler);
+	char *cur_buf = &buf[0];
+	add_gdb_attach_prefix(&cur_buf, PROXY_CALL(SYS_getpid));
+	add_symbol_file_arg(&cur_buf, thandler.path, thandler.fd, &thandler.local_info, &thandler.remote_info);
+	add_symbol_file_arg(&cur_buf, analysis.loader.main->loaded_path, fd, &analysis.loader.main->info, &main_info);
+	if (has_interpreter) {
+		add_symbol_file_arg(&cur_buf, analysis.loader.main->info.interpreter, interpreter_fd, &analysis.loader.interpreter->info, &interpreter_info);
+	}
+	ERROR("remote debugging command", &buf[0]);
 	// wait to proceed
 	ERROR("press enter to continue");
 	ERROR_FLUSH();
@@ -1071,6 +1105,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		remote_munmap(stack, STACK_SIZE);
 		if (has_interpreter) {
 			remote_unload_binary(&interpreter_info);
+			fs_close(interpreter_fd);
 		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
@@ -1083,6 +1118,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		remote_munmap(stack, STACK_SIZE);
 		if (has_interpreter) {
 			remote_unload_binary(&interpreter_info);
+			fs_close(interpreter_fd);
 		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
@@ -1090,7 +1126,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return clone_result;
 	}
 	// process syscalls until the remote exits
-	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr);
+	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr, &analysis, &patches, thandler.receive_syscall_addr);
 	// wait for remote thread
 	pid_t tid;
 	do {
@@ -1102,6 +1138,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	remote_munmap(stack, STACK_SIZE);
 	if (has_interpreter) {
 		remote_unload_binary(&interpreter_info);
+		fs_close(interpreter_fd);
 	}
 	remote_unload_binary(&main_info);
 	free_thandler(&thandler);

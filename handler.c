@@ -12,6 +12,7 @@
 #include "paths.h"
 #include "proxy.h"
 #include "remote.h"
+#include "remote_library.h"
 #include "sockets.h"
 #include "target.h"
 #include "telemetry.h"
@@ -815,6 +816,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 								fs_munmap(result, len);
 								return prot_result;
 							}
+						}
+						if (prot == (PROT_READ|PROT_EXEC) && (flags & MAP_DENYWRITE)) {
+							discovered_remote_library_mapping(real_fd, (uintptr_t)addr - off);
 						}
 					}
 					return (intptr_t)result;
@@ -2126,7 +2130,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 #endif
 				if (fs_gettid() == get_self_pid()) {
-					clear_fd_table_for_exit();
+					clear_fd_table_for_exit(0);
 				}
 				attempt_exit(thread);
 				call_on_alternate_stack(thread, unmap_and_exit_thread, (void *)arg1, (void *)arg2);
@@ -2145,7 +2149,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 #endif
 			if (fs_gettid() == get_self_pid()) {
-				clear_fd_table_for_exit();
+				clear_fd_table_for_exit(arg1);
 			}
 			attempt_exit(thread);
 			atomic_intptr_t *thread_id = clear_thread_storage();
@@ -2161,7 +2165,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #ifdef COVERAGE
 			coverage_flush();
 #endif
-			clear_fd_table_for_exit();
+			clear_fd_table_for_exit(arg1);
 			return FS_SYSCALL(__NR_exit_group, arg1);
 		case __NR_chdir: {
 			const char *path = (const char *)arg1;

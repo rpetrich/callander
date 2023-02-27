@@ -1,6 +1,7 @@
 #include "fd_table.h"
 
 #include "freestanding.h"
+#include "exec.h"
 #include "proxy.h"
 #include "remote.h"
 
@@ -12,9 +13,13 @@ __attribute__((visibility("default")))
 int fd_table[MAX_TABLE_SIZE];
 static struct fs_mutex table_lock;
 
-void clear_fd_table_for_exit(void)
+void clear_fd_table_for_exit(int status)
 {
-	PROXY_CALL(__NR_exit_group | PROXY_NO_RESPONSE);
+	PROXY_CALL(__NR_exit_group | PROXY_NO_RESPONSE, proxy_value(status));
+	// hack assuming there are no outstanding threads
+	if (fs_gettid() == get_self_pid()) {
+		fs_exitthread(status);
+	}
 }
 
 static int find_unused_slot(void)
