@@ -228,84 +228,70 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 {
 	(void)formatter;
 	(void)formatter_data;
-	if (addr[0] >= INS_MOVL_START && addr[0] <= INS_MOVL_END) {
+	const uint8_t *ins = addr;
+	x86_decode_ins_prefixes(&ins);
+	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
 		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (addr[0] == INS_MOV_REG) {
+	if (ins[0] == INS_MOV_REG) {
 		PATCH_LOG("Patching address with mov prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if ((addr[0] == INS_OPERAND_SIZE_PREFIX || addr[0] == INS_REX_W_PREFIX) && addr[1] == INS_CMP_32_IMM) {
-		PATCH_LOG("Patching address with cmpw prefix", temp_str(formatter(addr, formatter_data)));
-		return true;
-	}
-	if (addr[0] == INS_CMP_32_IMM) {
+	if (ins[0] == INS_CMP_32_IMM) {
 		PATCH_LOG("Patching address with cmp prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (addr[0] == INS_REX_W_PREFIX && addr[1] == INS_MOV_REG) {
-		PATCH_LOG("Patching address with rex.w mov prefix", temp_str(formatter(addr, formatter_data)));
+	if (ins[0] == 0x8b) {
+		if (ins[1] == 0x0d) {
+			PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(addr, formatter_data)));
+			return true;
+		}
+		if (ins[1] == 0x44 || ins[1] == 0x54 || ins[1] == 0x74 || ins[1] == 0x7c) {
+			PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(addr, formatter_data)));
+			return true;
+		}
+	} else if (ins[0] == 0xc7) {
+		PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(addr, formatter_data)));
 		return true;
-	}
-	if (addr[0] == INS_REX_W_PREFIX) {
-		if (addr[1] == 0x8b) {
-			if (addr[2] == 0x0d) {
-				PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(addr, formatter_data)));
-				return true;
-			}
-			if (addr[2] == 0x44 || addr[2] == 0x54 || addr[2] == 0x74 || addr[2] == 0x7c) {
-				PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(addr, formatter_data)));
-				return true;
-			}
-		} else if (addr[1] == 0xc7) {
-			PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(addr, formatter_data)));
+	} else if (ins[0] == 0x83) {
+		PATCH_LOG("Patching address with sub $..., %...", temp_str(formatter(addr, formatter_data)));
+		return true;
+	} else if (ins[0] == INS_LEA) {
+		if ((ins[1] & 0xc7) != 0x5) {
+			PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
 			return true;
-		} else if (addr[1] == 0x83) {
-			PATCH_LOG("Patching address with sub $..., %...", temp_str(formatter(addr, formatter_data)));
-			return true;
-		} else if (addr[1] == INS_LEA) {
-			if ((addr[2] & 0xc7) != 0x5) {
-				PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
-				return true;
-			}
-			x86_mod_rm_t modrm = x86_read_modrm(&addr[2]);
-			if (!x86_modrm_is_direct(modrm)) {
-				int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){ 0 });
-				switch (rm) {
-					case X86_REGISTER_BP:
-					case X86_REGISTER_13:
-						PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(addr, formatter_data)));
-						return true;
-				}
+		}
+		x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
+		if (!x86_modrm_is_direct(modrm)) {
+			int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){ 0 });
+			switch (rm) {
+				case X86_REGISTER_BP:
+				case X86_REGISTER_13:
+					PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(addr, formatter_data)));
+					return true;
 			}
 		}
 	}
-	if (addr[0] == INS_LEA && (addr[1] & 0xc7) != 0x5) {
+	if (ins[0] == INS_LEA && (ins[1] & 0xc7) != 0x5) {
 		PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
 	}
-	if (addr[0] == 0x4c) {
-		if (addr[1] == 0x8b || addr[1] == 0x89) {
-			if (addr[2] == 0x44 || addr[2] == 0x4c || addr[2] == 0x54 || addr[2] == 0x5c) {
-				PATCH_LOG("Patching address with sp-relative rex.w|rex.r mov prefix", temp_str(formatter(addr, formatter_data)));
-				return true;
-			}
+	if (ins[0] == 0x8b || ins[0] == 0x89) {
+		if (ins[1] == 0x44 || ins[1] == 0x4c || ins[1] == 0x54 || ins[1] == 0x5c) {
+			PATCH_LOG("Patching address with sp-relative rex.w|rex.r mov prefix", temp_str(formatter(addr, formatter_data)));
+			return true;
 		}
 	}
-	if (addr[0] == INS_REXB_PREFIX && addr[1] >= INS_MOVL_START && addr[1] <= INS_MOVL_END) {
+	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
 		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (addr[0] == 0x31) {
+	if (ins[0] == 0x31) {
 		PATCH_LOG("Patching address with xor reg to reg", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (addr[0] >= INS_PUSHQ_START && addr[0] <= INS_PUSHQ_END) {
+	if (ins[0] >= INS_PUSHQ_START && ins[0] <= INS_PUSHQ_END) {
 		PATCH_LOG("Patching push", temp_str(formatter(addr, formatter_data)));
-		return true;
-	}
-	if (addr[0] == INS_REXB_PREFIX && addr[1] >= INS_PUSHQ_START && addr[1] <= INS_PUSHQ_END) {
-		PATCH_LOG("Patching rexb push", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
 	// WRITE_LITERAL(TELEMETRY_FD, "Failed to patch: not a known suffix instruction\n");
