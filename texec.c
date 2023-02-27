@@ -441,6 +441,10 @@ static char *loader_address_formatter(const uint8_t *address, void *loader)
 static bool find_remote_patch_target(const struct loader_context *loader, const struct recorded_syscall *syscall, struct instruction_range *out_result)
 {
 	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins + 2 };
+	int size = InstructionSize_x86_64(basic_block.end, 0xf);
+	if (size >= 0) {
+		basic_block.end += size;
+	}
 	return find_patch_target(basic_block, syscall->ins, 5, 5, loader_address_formatter, (void *)loader, out_result);
 }
 
