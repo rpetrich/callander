@@ -831,7 +831,7 @@ static void transfer_fd_table(uintptr_t fd_table_addr)
 		int value = local_table[i];
 		if (value != 0) {
 			if (value & HAS_LOCAL_FD) {
-				value = (i << USED_BITS) | HAS_REMOTE_FD | (value & HAS_CLOEXEC);
+				value = ((i == CWD_FD ? AT_FDCWD : i) << USED_BITS) | HAS_REMOTE_FD | (value & HAS_CLOEXEC);
 			} else if (value & HAS_REMOTE_FD) {
 				// TODO: dup remotely and update counts
 				value = (value & ~HAS_REMOTE_FD) | HAS_LOCAL_FD;
