@@ -63,8 +63,6 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	for (int i = 0; i < arg_vec_count; i++) {
 		trailer_bytes += iov[1+i].iov_len;
 	}
-	ERROR("trailer_bytes", trailer_bytes);
-	ERROR_FLUSH();
 	message.request.id = 0;
 	// send the request
 	fs_mutex_lock(&proxy_state.target_state->write_mutex);
