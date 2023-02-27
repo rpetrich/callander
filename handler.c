@@ -804,7 +804,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						size_t successful_reads = 0;
 						do {
 							intptr_t read_result = remote_pread(real_fd, result + successful_reads, len - successful_reads, off + successful_reads);
-							if (read_result < 0) {
+							if (read_result <= 0) {
+								if (read_result == 0) {
+									// can't read past end of file, but can map. ignore short reads
+									break;
+								}
 								fs_munmap(result, len);
 								return read_result;
 							}
