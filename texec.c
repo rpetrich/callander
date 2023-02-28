@@ -83,8 +83,6 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	LOG("finished initial pass, dequeuing instructions");
 	ERROR_FLUSH();
 	finish_analysis(analysis);
-
-	ERROR("syscalls", temp_str(copy_used_syscalls(&analysis->loader, &analysis->syscalls, false, true, true)));
 }
 
 #pragma GCC push_options
@@ -386,9 +384,9 @@ static void remote_unload_binary(const struct binary_info *info)
 }
 
 __attribute__((warn_unused_result))
-static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size]);
+static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size], bool debug);
 __attribute__((warn_unused_result))
-static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, const char *exec_path);
+static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, const char *exec_path, bool debug);
 
 static size_t count_arg_bytes(const char *const *argv, size_t *out_total_bytes) {
 	size_t argc = 0;
@@ -403,7 +401,7 @@ static size_t count_arg_bytes(const char *const *argv, size_t *out_total_bytes) 
 	return argc;
 }
 
-int remote_exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth)
+int remote_exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, bool debug)
 {
 	char header[BINPRM_BUF_SIZE + 1];
 	size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
@@ -418,10 +416,10 @@ int remote_exec_fd(int fd, const char *named_path, const char *const *argv, cons
 		return -ENOEXEC;
 	}
 	if (header[0] == '#' && header[1] == '!') {
-		return remote_exec_fd_script(fd, named_path, argv, envp, aux, comm, depth, header_size, header);
+		return remote_exec_fd_script(fd, named_path, argv, envp, aux, comm, depth, header_size, header, debug);
 	}
 	if (header[0] == ELFMAG0 && header[1] == ELFMAG1 && header[2] == ELFMAG2 && header[3] == ELFMAG3) {
-		return remote_exec_fd_elf(fd, argv, envp, aux, comm, named_path);
+		return remote_exec_fd_elf(fd, argv, envp, aux, comm, named_path, debug);
 	}
 	fs_close(fd);
 	ERROR("not magic enough");
@@ -1079,12 +1077,15 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 }
 
 // remote_exec_fd_elf executes an elf binary from an open file
-static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path)
+static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path, bool debug)
 {
 	// analyze the program
 	struct program_state analysis = { 0 };
 	init_searched_instructions(&analysis.search);
 	analyze_binary(&analysis, exec_path, fd);
+	if (debug) {
+		ERROR("syscalls", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, false, true, true)));
+	}
 	cleanup_searched_instructions(&analysis.search);
 	// check that all libraries have a dynamic base address
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
@@ -1108,8 +1109,8 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		ERROR("failed to load binary remotely", fs_strerror(result));
 		return result;
 	}
-	ERROR("mapped main", exec_path);
-	ERROR("at", (uintptr_t)main_info.base);
+	LOG("mapped main", exec_path);
+	LOG("at", (uintptr_t)main_info.base);
 	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
 	struct binary_info interpreter_info = { 0 };
@@ -1136,8 +1137,8 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 			DIE("unable to load ELF interpreter", fs_strerror(result));
 			return result;
 		}
-		ERROR("mapped interpreter", analysis.loader.main->info.interpreter);
-		ERROR("at", (uintptr_t)interpreter_info.base);
+		LOG("mapped interpreter", analysis.loader.main->info.interpreter);
+		LOG("at", (uintptr_t)interpreter_info.base);
 		if (analysis.loader.interpreter != NULL) {
 			analysis.loader.interpreter->child_base = (uintptr_t)interpreter_info.base;
 		} else {
@@ -1150,12 +1151,12 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	if (result < 0) {
 		DIE("failed to load thandler", fs_strerror(result));
 	}
-	ERROR("mapped thandler", &thandler.path[0]);
-	ERROR("at", (uintptr_t)thandler.remote_info.base);
+	LOG("mapped thandler", &thandler.path[0]);
+	LOG("at", (uintptr_t)thandler.remote_info.base);
 	if (thandler.start_thread_addr == 0 || thandler.receive_syscall_addr == 0 || thandler.receive_response_addr == 0 || thandler.proxy_state_addr == 0 || thandler.fd_table_addr == 0) {
 		ERROR("missing thandler symbols");
 	}
-	ERROR("start_thread_addr", (uintptr_t)thandler.start_thread_addr);
+	LOG("start_thread_addr", (uintptr_t)thandler.start_thread_addr);
 	// create thread stack
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
@@ -1165,10 +1166,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		}
 		remote_unload_binary(&main_info);
 		free_thandler(&thandler);
-		ERROR("creating stack failed", fs_strerror(stack));
+		LOG("creating stack failed", fs_strerror(stack));
 		return stack;
 	}
-	ERROR("stack", (uintptr_t)stack);
+	LOG("stack", (uintptr_t)stack);
 	// poke in breakpoints/patches
 	struct remote_syscall_patches patches;
 	init_remote_patches(&patches, &analysis);
@@ -1186,27 +1187,29 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	intptr_t tid_ptr = stack + (STACK_SIZE - sizeof(pid_t));
 	// print a gdb command to attach remotely if debugging
 	char buf[512 * 1024];
-	char *cur_buf = &buf[0];
-	add_gdb_attach_prefix(&cur_buf, PROXY_CALL(SYS_getpid));
-	add_symbol_file_arg(&cur_buf, thandler.path, thandler.fd, &thandler.local_info, &thandler.remote_info);
-	add_symbol_file_arg(&cur_buf, analysis.loader.main->loaded_path, fd, &analysis.loader.main->info, &main_info);
-	if (has_interpreter) {
-		add_symbol_file_arg(&cur_buf, analysis.loader.main->info.interpreter, interpreter_fd, &analysis.loader.interpreter->info, &interpreter_info);
-	}
-	ERROR("remote debugging command", &buf[0]);
-	// wait to proceed
-	ERROR("press enter to continue");
-	ERROR_FLUSH();
-	if (fs_read(0, &buf[0], 1) != 1) {
-		free_remote_patches(&patches, &analysis);
-		remote_munmap(stack, STACK_SIZE);
+	if (debug) {
+		char *cur_buf = &buf[0];
+		add_gdb_attach_prefix(&cur_buf, PROXY_CALL(SYS_getpid));
+		add_symbol_file_arg(&cur_buf, thandler.path, thandler.fd, &thandler.local_info, &thandler.remote_info);
+		add_symbol_file_arg(&cur_buf, analysis.loader.main->loaded_path, fd, &analysis.loader.main->info, &main_info);
 		if (has_interpreter) {
-			remote_unload_binary(&interpreter_info);
-			fs_close(interpreter_fd);
+			add_symbol_file_arg(&cur_buf, analysis.loader.main->info.interpreter, interpreter_fd, &analysis.loader.interpreter->info, &interpreter_info);
 		}
-		remote_unload_binary(&main_info);
-		free_thandler(&thandler);
-		DIE("exiting");
+		ERROR("remote debugging command", &buf[0]);
+		// wait to proceed
+		ERROR("press enter to continue");
+		ERROR_FLUSH();
+		if (fs_read(0, &buf[0], 1) != 1) {
+			free_remote_patches(&patches, &analysis);
+			remote_munmap(stack, STACK_SIZE);
+			if (has_interpreter) {
+				remote_unload_binary(&interpreter_info);
+				fs_close(interpreter_fd);
+			}
+			remote_unload_binary(&main_info);
+			free_thandler(&thandler);
+			DIE("exiting");
+		}
 	}
 	// spawn remote thread
 	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(sp), proxy_value(thandler.start_thread_addr));
@@ -1242,7 +1245,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	return status_code;
 }
 
-static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size])
+static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size], bool debug)
 {
 	// Script binary format
 	if (depth > 4) {
@@ -1316,7 +1319,7 @@ static int remote_exec_fd_script(int fd, const char *named_path, const char *con
 		fs_close(interpreter_fd);
 		return result;
 	}
-	result = remote_exec_fd(interpreter_fd, new_argv[0], new_argv, envp, aux, comm, depth + 1);
+	result = remote_exec_fd(interpreter_fd, new_argv[0], new_argv, envp, aux, comm, depth + 1, debug);
 	fs_close(fd);
 	return result;
 }
@@ -1325,6 +1328,11 @@ __attribute__((used))
 noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 {
 	const char **argv = (void *)(sp+1);
+	bool debug = false;
+	if (argv[0] != NULL && argv[1] != NULL && fs_strcmp(argv[1], "--debug") == 0) {
+		debug = true;
+		argv++;
+	}
 	const char **current_argv = argv;
 	while (*current_argv != NULL) {
 		++current_argv;
@@ -1372,7 +1380,7 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 	if (UNLIKELY(fd < 0)) {
 		DIE("could not find main executable", argv[1]);
 	}
-	int exec_result = remote_exec_fd(fd, executable_path, &argv[1], envp, aux, comm, 0);
+	int exec_result = remote_exec_fd(fd, executable_path, &argv[1], envp, aux, comm, 0, debug);
 	if (exec_result < 0) {
 		DIE("remote exec failed", fs_strerror(exec_result));
 	}
