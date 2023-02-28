@@ -849,6 +849,101 @@ static int set_local_comm(const char *comm)
 	return 0;
 }
 
+static bool syscall_is_allowed_from_target(int syscall)
+{
+	switch (syscall) {
+		case __NR_fchmodat:
+		case __NR_fchmod:
+		case __NR_fchownat:
+		case __NR_fchown:
+		case __NR_sendfile:
+		case __NR_shutdown:
+		case __NR_getsockname:
+		case __NR_getpeername:
+		case __NR_getdents:
+		case __NR_fstatfs:
+		case __NR_setxattr:
+		case __NR_lsetxattr:
+		case __NR_fsetxattr:
+		case __NR_getxattr:
+		case __NR_lgetxattr:
+		case __NR_fgetxattr:
+		case __NR_listxattr:
+		case __NR_flistxattr:
+		case __NR_removexattr:
+		case __NR_fremovexattr:
+		case __NR_epoll_wait:
+		case __NR_epoll_create1:
+		case __NR_epoll_ctl:
+		case __NR_inotify_add_watch:
+		case __NR_inotify_rm_watch:
+		case __NR_ppoll:
+		case __NR_splice:
+		case __NR_tee:
+		case __NR_sync_file_range:
+		case __NR_utimensat:
+		case __NR_futimesat:
+		case __NR_fallocate:
+		case __NR_readv:
+		case __NR_preadv:
+		case __NR_preadv2:
+		case __NR_writev:
+		case __NR_pwritev:
+		case __NR_pwritev2:
+		case __NR_fanotify_mark:
+		case __NR_syncfs:
+		case __NR_copy_file_range:
+		case __NR_mkdirat:
+		case __NR_mknodat:
+		case __NR_unlinkat:
+		case __NR_renameat:
+		case __NR_renameat2:
+		case __NR_linkat:
+		case __NR_symlinkat:
+		case __NR_dup:
+		case __NR_connect:
+		case __NR_ioctl:
+		case __NR_listen:
+		case __NR_bind:
+		case __NR_accept4:
+		case __NR_accept:
+		case __NR_move_mount:
+		case __NR_fsopen:
+		case __NR_fsconfig:
+		case __NR_fsmount:
+		case __NR_fspick:
+		case __NR_openat:
+		case __NR_truncate:
+		case __NR_read:
+		case __NR_write:
+		case __NR_recvfrom:
+		case __NR_sendto:
+		case __NR_lseek:
+		case __NR_fadvise64:
+		case __NR_readahead:
+		case __NR_pread64:
+		case __NR_pwrite64:
+		case __NR_flock:
+		case __NR_fsync:
+		case __NR_fdatasync:
+		case __NR_ftruncate:
+		case __NR_close:
+		case __NR_fcntl:
+		case __NR_fstat:
+		case __NR_newfstatat:
+		case __NR_faccessat:
+		case __NR_readlinkat:
+		case __NR_getdents64:
+		case __NR_socket:
+		case __NR_getsockopt:
+		case __NR_setsockopt:
+		case __NR_poll:
+			return true;
+		default:
+			return false;
+	}
+}
+
 static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr)
 {
 	request_message message;
@@ -952,7 +1047,11 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				// 		ERROR("openat", (const char *)values[1]);
 				// 		break;
 				// }
-				result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
+				if (syscall_is_allowed_from_target(syscall)) {
+					result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
+				} else {
+					result = -ENOSYS;
+				}
 				break;
 			}
 		}
