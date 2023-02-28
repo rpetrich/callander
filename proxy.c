@@ -57,11 +57,12 @@ static void remote_exited(void)
 	DIE("remote exited");
 }
 
-static void read_until_response(intptr_t id)
+static void lock_and_read_until_response(uint32_t id)
 {
+	shared_mutex_lock_id(&shared->read_lock, id);
 	for (;;) {
 		if (shared->response_cursor == sizeof(response_message)) {
-			intptr_t read_message_id = shared->response_buffer.message.id;
+			uint32_t read_message_id = shared->response_buffer.message.id;
 			if (read_message_id == id) {
 				shared->response_cursor = 0;
 				shared->response_buffer.message.id = 0;
@@ -90,12 +91,12 @@ static void read_until_response(intptr_t id)
 	}
 }
 
-intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
-intptr_t proxy_wait(intptr_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT]);
+static uint32_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
+static intptr_t proxy_wait(uint32_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT]);
 
 intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
-	intptr_t send_id = proxy_send(syscall, args);
+	uint32_t send_id = proxy_send(syscall, args);
 	if (syscall & TARGET_NO_RESPONSE) {
 		return 0;
 	}
@@ -129,8 +130,7 @@ static intptr_t simple_locked_call(int syscall, intptr_t arg1, intptr_t arg2, in
 	if (syscall & PROXY_NO_RESPONSE) {
 		return 0;
 	}
-	shared_mutex_lock_id(&shared->read_lock, request.id);
-	read_until_response(request.id);
+	lock_and_read_until_response(request.id);
 	result = shared->response_buffer.message.result;
 	shared_mutex_unlock(&shared->read_lock);
 	return result;
@@ -159,7 +159,7 @@ static void spawn_worker(void)
 	}
 }
 
-intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
+static uint32_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	if (shared == NULL) {
 		setup_shared();
@@ -209,7 +209,7 @@ intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	return request.id;
 }
 
-intptr_t proxy_wait(intptr_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT])
+static intptr_t proxy_wait(uint32_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	// prepare to read response data
 	struct iovec iov[PROXY_ARGUMENT_COUNT];
@@ -233,8 +233,7 @@ intptr_t proxy_wait(intptr_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT])
 		}
 	}
 	// read response
-	shared_mutex_lock_id(&shared->read_lock, send_id);
-	read_until_response(send_id);
+	lock_and_read_until_response(send_id);
 	// read response bytes into output buffers
 	if (vec_index) {
 		intptr_t result = fs_readv_all(PROXY_FD, iov, vec_index);
@@ -266,8 +265,7 @@ uint32_t proxy_generate_stream_id(void)
 intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message)
 {
 	// read response
-	shared_mutex_lock_id(&shared->read_lock, stream_id);
-	read_until_response(stream_id);
+	lock_and_read_until_response(stream_id);
 	intptr_t result = fs_read_all(PROXY_FD, (char *)message, sizeof(*message));
 	if (result < 0) {
 		DIE("failed to read stream message", fs_strerror(result));
