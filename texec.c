@@ -1070,7 +1070,7 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 			for (i += 3; i < PROXY_ARGUMENT_COUNT; i++) {
 				return_args[i] = proxy_value(0);
 			}
-			proxy_call(TARGET_NR_CALL, return_args);
+			proxy_call(TARGET_NR_CALL | TARGET_NO_RESPONSE, return_args);
 		}
 		if (message.template.nr == (__NR_exit_group | PROXY_NO_RESPONSE)) {
 			return message.values[0];
