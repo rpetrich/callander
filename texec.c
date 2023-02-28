@@ -1169,12 +1169,6 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return stack;
 	}
 	ERROR("stack", (uintptr_t)stack);
-	// check that all libraries have a child address
-	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
-		if (binary->child_base == 0) {
-			ERROR("found library without child base", binary->path);
-		}
-	}
 	// poke in breakpoints/patches
 	struct remote_syscall_patches patches;
 	init_remote_patches(&patches, &analysis);
