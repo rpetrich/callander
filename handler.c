@@ -1731,7 +1731,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return -EINVAL;
 			}
 			if (fanotify_fd_is_remote) {
-				return PROXY_CALL(syscall, proxy_value(real_fanotify_fd), proxy_value(flags), proxy_value(mask), proxy_value(real.fd), proxy_string(real.path));
+				return PROXY_CALL(__NR_fanotify_mark, proxy_value(real_fanotify_fd), proxy_value(flags), proxy_value(mask), proxy_value(real.fd), proxy_string(real.path));
 			}
 			return FS_SYSCALL(syscall, real_fanotify_fd, flags, mask, real.fd, (intptr_t)real.path);
 		}
@@ -2367,62 +2367,62 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						// }
 						// *out_pgid = result;
 						// return 0;
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(pid_t)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(pid_t)));
 					}
 					case TIOCSPGRP: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(pid_t)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(pid_t)));
 					}
 					case TIOCGLCKTRMIOS:
 					case TCGETS: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termios)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termios)));
 					}
 					case TIOCSLCKTRMIOS:
 					case TCSETS:
 					case TCSETSW:
 					case TCSETSF: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termios)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termios)));
 					}
 					// case TCGETA: {
-					// 	return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termio)));
+					// 	return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termio)));
 					// }
 					// case TCSETA:
 					// case TCSETAW:
 					// case TCSETAF: {
-					// 	return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termio)));
+					// 	return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termio)));
 					// }
 					case TIOCGWINSZ: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct winsize)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct winsize)));
 					}
 					case TIOCSBRK:
 					case TCSBRK:
 					case TCXONC:
 					case TCFLSH:
 					case TIOCSCTTY: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
 					}
 					case TIOCCBRK:
 					case TIOCCONS:
 					case TIOCNOTTY:
 					case TIOCEXCL:
 					case TIOCNXCL: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2));
 					}
 					case FIONREAD:
 					case TIOCOUTQ:
 					case TIOCGETD:
 					case TIOCMGET:
 					case TIOCGSOFTCAR: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(int)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(int)));
 					}
 					case TIOCSETD:
 					case TIOCPKT:
 					case TIOCMSET:
 					case TIOCMBIS:
 					case TIOCSSOFTCAR: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(int)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(int)));
 					}
 					case TIOCSTI: {
-						return PROXY_CALL(syscall | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(char)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(char)));
 					}
 				}
 				return -EINVAL;
@@ -2445,7 +2445,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case __NR_listen: {
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
-				return PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(arg2));
+				return PROXY_CALL(__NR_listen, proxy_value(real_fd), proxy_value(arg2));
 			}
 #ifdef ENABLE_TELEMETRY
 			if (enabled_telemetry & TELEMETRY_TYPE_LISTEN) {
@@ -2840,7 +2840,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return -EINVAL;
 			}
 			if (from_is_remote) {
-				return PROXY_CALL(syscall, proxy_value(from_real.fd), proxy_string(from_real.path), proxy_value(to_real.fd), proxy_string(to_real.path), proxy_value(arg5));
+				return PROXY_CALL(__NR_move_mount, proxy_value(from_real.fd), proxy_string(from_real.path), proxy_value(to_real.fd), proxy_string(to_real.path), proxy_value(arg5));
 			}
 			return FS_SYSCALL(syscall, from_real.fd, (intptr_t)from_real.path, to_real.fd, (intptr_t)to_real.path, arg5);
 		}
@@ -2852,7 +2852,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return -EINVAL;
 			}
 			if (is_remote) {
-				return install_remote_fd(PROXY_CALL(syscall, proxy_string(real.path), proxy_value(arg2)), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
+				return install_remote_fd(PROXY_CALL(__NR_fsopen, proxy_string(real.path), proxy_value(arg2)), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
 			}
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
 		}
@@ -2860,7 +2860,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
+				return PROXY_CALL(__NR_fsconfig, proxy_value(real_fd), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
@@ -2868,7 +2868,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
+				return PROXY_CALL(__NR_fsmount, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
@@ -2877,7 +2877,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const char *path = (const char *)arg2;
 			path_info real;
 			if (lookup_real_path(fd, path, &real)) {
-				return PROXY_CALL(syscall, proxy_value(real.fd), proxy_string(real.path), proxy_value(arg3));
+				return PROXY_CALL(__NR_fspick, proxy_value(real.fd), proxy_string(real.path), proxy_value(arg3));
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3);
 		}
