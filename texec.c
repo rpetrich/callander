@@ -168,13 +168,22 @@ static inline intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int f
 		cur += result;
 	} while(cur != length);
 #else
-	void *buf = fs_mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, offset);
+	struct fs_stat stat;
+	intptr_t result = fs_fstat(fd, &stat);
+	if (result < 0) {
+		return result;
+	}
+	size_t padded_length = (length + (PAGE_SIZE-1)) & -PAGE_SIZE;
+	void *buf = fs_mmap(NULL, padded_length, PROT_READ, MAP_PRIVATE|MAP_FILE, fd, offset);
 	if (fs_is_map_failed(buf)) {
 		remote_munmap(addr, length);
 		return (intptr_t)buf;
 	}
-	proxy_poke(addr, length, buf);
-	fs_munmap(buf, length);
+	result = proxy_poke(addr, length > (size_t)(stat.st_size - offset) ? (size_t)(stat.st_size - offset) : length, buf);
+	if (result < 0) {
+		DIE("failed writing remote mmap contents", fs_strerror(result));
+	}
+	fs_munmap(buf, padded_length);
 #endif
 	// set the memory protection as requested, if different
 	if (prot != (PROT_READ | PROT_WRITE)) {
