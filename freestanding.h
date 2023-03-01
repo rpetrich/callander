@@ -162,12 +162,16 @@ static inline intptr_t fs_send(int fd, const char *buffer, size_t length, int fl
 __attribute__((warn_unused_result))
 static inline intptr_t fs_writev(int fd, const struct iovec *iov, int iovcnt)
 {
+	if (iovcnt == 1) {
+		return fs_write(fd, iov->iov_base, iov->iov_len);
+	}
 	return FS_SYSCALL(SYS_writev, fd, (intptr_t)iov, (intptr_t)iovcnt, 0);
 }
 
 __attribute__((warn_unused_result))
 static inline intptr_t fs_writev_all(int fd, struct iovec *iov, int iovcnt)
 {
+	intptr_t written_count = 0;
 	for (;;) {
 		intptr_t result = fs_writev(fd, iov, iovcnt);
 		if (result <= 0) {
@@ -176,11 +180,12 @@ static inline intptr_t fs_writev_all(int fd, struct iovec *iov, int iovcnt)
 			}
 			return result;
 		}
+		written_count += result;
 		while ((size_t)result >= iov->iov_len) {
 			result -= (intptr_t)iov->iov_len;
 			++iov;
 			if ((--iovcnt) == 0) {
-				return 1;
+				return written_count;
 			}
 		}
 		iov->iov_base += result;
@@ -226,7 +231,7 @@ static inline intptr_t fs_readv(int fd, const struct iovec *iov, int iovcnt)
 __attribute__((warn_unused_result))
 static inline intptr_t fs_readv_all(int fd, struct iovec *iov, int iovcnt)
 {
-	intptr_t written = 0;
+	intptr_t read_count = 0;
 	for (;;) {
 		intptr_t result = fs_readv(fd, iov, iovcnt);
 		if (result <= 0) {
@@ -235,12 +240,12 @@ static inline intptr_t fs_readv_all(int fd, struct iovec *iov, int iovcnt)
 			}
 			return result;
 		}
-		written += result;
+		read_count += result;
 		while ((size_t)result >= iov->iov_len) {
 			result -= (intptr_t)iov->iov_len;
 			++iov;
 			if ((--iovcnt) == 0) {
-				return written;
+				return read_count;
 			}
 		}
 		iov->iov_base += result;
