@@ -5122,10 +5122,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
 							self.description = "syscall";
 							analysis->loader.setxid_syscall = self.address;
+							analysis->loader.setxid_syscall_entry = self.entry;
 							LOG("found setxid dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 						} else if (analysis->loader.searching_setxid_sighandler && analysis->loader.setxid_sighandler_syscall == NULL) {
 							self.description = "syscall";
 							analysis->loader.setxid_sighandler_syscall = self.address;
+							analysis->loader.setxid_sighandler_syscall_entry = self.entry;
 							LOG("found setxid_sighandler dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 						} else if (self.address == analysis->loader.setxid_sighandler_syscall) {
 							LOG("unknown setxid_sighandler syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
@@ -9083,10 +9085,12 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 					struct recorded_syscall copy = *syscall;
 					if (loader->setxid_syscall != NULL) {
 						copy.ins = loader->setxid_syscall;
+						copy.entry = loader->setxid_syscall_entry;
 						add_syscall(syscalls, copy);
 					}
 					if (loader->setxid_sighandler_syscall != NULL) {
 						copy.ins = loader->setxid_sighandler_syscall;
+						copy.entry = loader->setxid_sighandler_syscall_entry;
 						add_syscall(syscalls, copy);
 					}
 					break;

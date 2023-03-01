@@ -150,7 +150,9 @@ struct loader_context {
 	const uint8_t *gconv_dlopen;
 	const uint8_t *libcrypto_dlopen;
 	const uint8_t *setxid_syscall;
+	const uint8_t *setxid_syscall_entry;
 	const uint8_t *setxid_sighandler_syscall;
+	const uint8_t *setxid_sighandler_syscall_entry;
 	struct loaded_binary *last_used;
 	int binary_count;
 };
