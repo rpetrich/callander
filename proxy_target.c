@@ -44,7 +44,7 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	// prepare a response future
 	struct remote_result_future response = { 0 };
-	fs_mutex_lock(&response.mutex);
+	response.mutex.state = 1;
 	response.args = args;
 	// prepare a client request
 	client_request message;
