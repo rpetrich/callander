@@ -704,14 +704,40 @@ static int init_thandler(struct thandler_info *thandler)
 	thandler->proxy_state_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "proxy_state", NULL, NULL);
 	thandler->fd_table_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "fd_table", NULL, NULL);
 	free_symbols(&symbols);
+	// relocate remotely
+	uintptr_t rela = 0;
+	uintptr_t relasz = 0;
+	uintptr_t relaent = 0;
+	const ElfW(Dyn) *dynamic = thandler->local_info.dynamic;
+	size_t size_dynamic = thandler->local_info.dynamic_size;
+	for (int i = 0; i < (int)size_dynamic; i++) {
+		switch (dynamic[i].d_tag) {
+			case DT_RELA:
+				rela = dynamic[i].d_un.d_ptr;
+				break;
+			case DT_RELASZ:
+				relasz = dynamic[i].d_un.d_val;
+				break;
+			case DT_RELAENT:
+				relaent = dynamic[i].d_un.d_val;			
+				break;
+		}
+	}
+	uintptr_t local_base = (uintptr_t)thandler->local_info.base;
+	uintptr_t remote_base = (uintptr_t)thandler->remote_info.base;
+	uintptr_t rel_base = apply_base_address(&thandler->local_info, rela);
+	for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
+		const ElfW(Rel) *rel = (const ElfW(Rel) *)(rel_base + rel_off);
+		if (rel->r_info == ELF_REL_RELATIVE) {
+			uintptr_t value = remote_base + *(uintptr_t *)(local_base + rel->r_offset);
+			result = proxy_poke(remote_base + rel->r_offset, sizeof(value), &value);
+			if (result < 0) {
+				free_thandler(thandler);
+				return result;
+			}
+		}
+	}
 	return 0;
-}
-
-static void free_thandler(struct thandler_info *thandler)
-{
-	remote_unload_binary(&thandler->remote_info);
-	unload_binary(&thandler->local_info);
-	fs_close(thandler->fd);
 }
 
 static void add_gdb_attach_prefix(char **buf, pid_t pid)
