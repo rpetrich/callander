@@ -602,7 +602,10 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					trampoline_buf[cur++] = resume_relative_offset >> 16;
 					trampoline_buf[cur++] = resume_relative_offset >> 24;
 				}
-				proxy_poke(trampoline, cur, trampoline_buf);
+				intptr_t result = proxy_poke(trampoline, cur, trampoline_buf);
+				if (result < 0) {
+					DIE("failed writing trampoline", fs_strerror(result));
+				}
 				existing_trampoline = trampoline + cur;
 				// patch the original code to jump to the trampoline page
 				int32_t detour_relative_offset = trampoline - (child_patch_start + 5);
@@ -612,7 +615,10 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 				jump_buf[2] = detour_relative_offset >> 8;
 				jump_buf[3] = detour_relative_offset >> 16;
 				jump_buf[4] = detour_relative_offset >> 24;
-				proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
+				result = proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
+				if (result < 0) {
+					DIE("failed writing detour jump", fs_strerror(result));
+				}
 #endif
 			}
 		}
@@ -630,6 +636,13 @@ struct thandler_info {
 	intptr_t fd_table_addr;
 	char path[PATH_MAX];
 };
+
+static void free_thandler(struct thandler_info *thandler)
+{
+	remote_unload_binary(&thandler->remote_info);
+	unload_binary(&thandler->local_info);
+	fs_close(thandler->fd);
+}
 
 static int init_thandler(struct thandler_info *thandler)
 {
@@ -817,7 +830,10 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 	args->arg1 = 0;
 	args->arg2 = 0;
 	args->arg3 = 0;
-	proxy_poke(dynv_base, dynv_size, dynv_buf);
+	intptr_t result = proxy_poke(dynv_base, dynv_size, dynv_buf);
+	if (result < 0) {
+		DIE("failed writing program stack", fs_strerror(result));
+	}
 	return dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0]);
 }
 
@@ -1179,7 +1195,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	struct proxy_target_state new_proxy_state = { 0 };
 	new_proxy_state.stream_id = stream_id;
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
-	proxy_poke(thandler.proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
+	result = proxy_poke(thandler.proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
+	if (result < 0) {
+		DIE("failed target proxy state", fs_strerror(result));
+	}
 	// initialize the remote file descriptor table
 	transfer_fd_table(thandler.fd_table_addr);
 	// prepare thread args and dynv
@@ -1231,7 +1250,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	pid_t tid;
 	do {
 		PROXY_CALL(__NR_futex, proxy_value(tid_ptr), proxy_value(FUTEX_WAIT), proxy_value(clone_result));
-		proxy_peek(tid_ptr, sizeof(pid_t), &tid);
+		result = proxy_peek(tid_ptr, sizeof(pid_t), &tid);
+		if (result < 0) {
+			DIE("failed to wait for thread to exit", fs_strerror(result));
+		}
 	} while (tid == clone_result);
 	// cleanup
 	free_remote_patches(&patches, &analysis);

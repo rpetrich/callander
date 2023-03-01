@@ -9,8 +9,8 @@
 
 static inline void trim_size(size_t *size)
 {
-	if (UNLIKELY(*size >= 256 * 1024)) {
-		*size = 256 * 1024;
+	if (UNLIKELY(*size >= PROXY_BUFFER_SIZE)) {
+		*size = PROXY_BUFFER_SIZE;
 	}
 }
 

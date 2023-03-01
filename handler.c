@@ -1335,7 +1335,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						return result;
 					}
 				}
-				return PROXY_CALL(syscall, proxy_value(real_epfd), proxy_value(op), proxy_value(real_fd), proxy_in(event, sizeof(*event)));
+				return PROXY_CALL(__NR_epoll_ctl, proxy_value(real_epfd), proxy_value(op), proxy_value(real_fd), proxy_in(event, sizeof(*event)));
 			}
 			if (epfd_is_remote) {
 				return -EINVAL;
@@ -1630,20 +1630,29 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					buf_cur += iov[i].iov_len;
 					iov_remote[i].iov_len += iov[i].iov_len;
 				}
-				proxy_poke(buf_cur, sizeof(*iov) * iovcnt, &iov_remote[0]);
+				intptr_t result = proxy_poke(buf_cur, sizeof(*iov) * iovcnt, &iov_remote[0]);
 				attempt_pop_free(&state);
-				// perform read remotely
-				intptr_t result = PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
 				if (result >= 0) {
-					// copy bytes into local buffers
-					buf_cur = remote_buf.addr;
-					for (int i = 0; i < iovcnt; i++) {
-						if (result < (intptr_t)iov[i].iov_len) {
-							proxy_peek(buf_cur, iov[i].iov_len, iov[i].iov_base);
-							break;
+					// perform read remotely
+					result = PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
+					if (result >= 0) {
+						// copy bytes into local buffers
+						buf_cur = remote_buf.addr;
+						for (int i = 0; i < iovcnt; i++) {
+							if (result < (intptr_t)iov[i].iov_len) {
+								intptr_t new_result = proxy_peek(buf_cur, iov[i].iov_len, iov[i].iov_base);
+								if (new_result < 0) {
+									result = new_result;
+								}
+								break;
+							}
+							intptr_t new_result = proxy_peek(buf_cur, result, iov[i].iov_base);
+							if (new_result < 0) {
+								result = new_result;
+								break;
+							}
+							buf_cur += iov[i].iov_len;
 						}
-						proxy_peek(buf_cur, result, iov[i].iov_base);
-						buf_cur += iov[i].iov_len;
 					}
 				}
 				// free buffers
@@ -1671,16 +1680,25 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				intptr_t buf_cur = remote_buf.addr;
 				struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
 				struct attempt_cleanup_state state;
+				attempt_push_free(thread, &state, iov_remote);
+				intptr_t result = 0;
 				for (int i = 0; i < iovcnt; i++) {
 					iov_remote[i].iov_base = (void *)buf_cur;
-					proxy_poke(buf_cur, iov[i].iov_len, iov[i].iov_base);
+					result = proxy_poke(buf_cur, iov[i].iov_len, iov[i].iov_base);
+					if (result < 0) {
+						attempt_pop_free(&state);
+						goto pwrite_poke_failed;
+					}
 					buf_cur += iov[i].iov_len;
 					iov_remote[i].iov_len += iov[i].iov_len;
 				}
-				proxy_poke(buf_cur, sizeof(*iov) * iovcnt, &iov_remote[0]);
+				result = proxy_poke(buf_cur, sizeof(*iov) * iovcnt, &iov_remote[0]);
 				attempt_pop_free(&state);
-				// perform write remotely
-				intptr_t result = PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
+				if (result >= 0) {
+					// perform write remotely
+					result = PROXY_CALL(syscall, proxy_value(real_fd), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
+				}
+			pwrite_poke_failed:
 				// free buffers
 				attempt_proxy_free(&remote_buf);
 				return result;

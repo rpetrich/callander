@@ -91,12 +91,15 @@ static void lock_and_read_until_response(uint32_t id)
 	}
 }
 
-static uint32_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
+static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
 static intptr_t proxy_wait(uint32_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT]);
 
 intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
-	uint32_t send_id = proxy_send(syscall, args);
+	intptr_t send_id = proxy_send(syscall, args);
+	if (send_id < 0) {
+		return send_id;
+	}
 	if (syscall & TARGET_NO_RESPONSE) {
 		return 0;
 	}
@@ -159,14 +162,14 @@ static void spawn_worker(void)
 	}
 }
 
-static uint32_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
+static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	if (shared == NULL) {
 		setup_shared();
 	}
 	// prepare request
 	request_message request;
-	struct iovec iov[7];
+	struct iovec iov[PROXY_ARGUMENT_COUNT+1];
 	iov[0].iov_base = &request;
 	iov[0].iov_len = sizeof(request);
 	int arg_vec_count = proxy_fill_request_message(&request, &iov[1], syscall, args);
@@ -309,12 +312,13 @@ hello_message *proxy_get_hello_message(void)
 	return &shared->hello;
 }
 
-void proxy_peek(intptr_t addr, size_t size, void *out_buffer)
+__attribute__((warn_unused_result))
+intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
-	PROXY_CALL(TARGET_NR_PEEK | PROXY_NO_WORKER, proxy_value(addr), proxy_out(out_buffer, size));
+	return PROXY_CALL(TARGET_NR_PEEK | PROXY_NO_WORKER, proxy_value(addr), proxy_out(out_buffer, size));
 }
 
-size_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
+ssize_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 {
 	char *buffer = out_buffer;
 	do {
@@ -323,7 +327,10 @@ size_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 		if (readable_size > buffer_size) {
 			readable_size = buffer_size;
 		}
-		proxy_peek(addr, readable_size, buffer);
+		intptr_t result = proxy_peek(addr, readable_size, buffer);
+		if (result < 0) {
+			return result;
+		}
 		for (size_t i = 0; i < readable_size; i++) {
 			if (*buffer == '\0') {
 				return buffer - (char *)out_buffer;
@@ -336,9 +343,10 @@ size_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 	return buffer - (char *)out_buffer;
 }
 
-void proxy_poke(intptr_t addr, size_t size, const void *buffer)
+__attribute__((warn_unused_result))
+intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
 {
-	PROXY_CALL(TARGET_NR_POKE | PROXY_NO_WORKER | PROXY_NO_RESPONSE, proxy_value(addr), proxy_in(buffer, size));
+	return PROXY_CALL(TARGET_NR_POKE | PROXY_NO_WORKER | PROXY_NO_RESPONSE, proxy_value(addr), proxy_in(buffer, size));
 }
 
 static inline int page_count(size_t size)

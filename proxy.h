@@ -127,9 +127,12 @@ hello_message *proxy_get_hello_message(void);
 }
 #define PROXY_CALL(syscall, ...) proxy_call(syscall, PROXY_ARGS(__VA_ARGS__))
 
-void proxy_peek(intptr_t addr, size_t size, void *out_buffer);
-size_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer);
-void proxy_poke(intptr_t addr, size_t size, const void *buffer);
+__attribute__((warn_unused_result))
+intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer);
+__attribute__((warn_unused_result))
+ssize_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer);
+__attribute__((warn_unused_result))
+intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer);
 
 intptr_t proxy_alloc(size_t size);
 void proxy_free(intptr_t mem, size_t size);
