@@ -6,9 +6,12 @@
 
 #include "target.h"
 
+#define TEXEC_HEAP_SIZE (5 * 1024 * 1024)
+
 struct proxy_target_state {
 	uint32_t stream_id;
 	target_state *target_state;
+	uintptr_t heap;
 	int fd_counts[4096];
 };
 

@@ -479,13 +479,19 @@ static intptr_t alloc_remote_page_near_address(intptr_t address, size_t size, in
 
 static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 {
+	bool die = false;
 	for (int i = 0; i < analysis->syscalls.count; i++) {
 		if (should_try_to_patch_remotely(&analysis->syscalls.list[i])) {
 			struct instruction_range patch_target;
 			if (!find_remote_patch_target(&analysis->loader, &analysis->syscalls.list[i], &patch_target)) {
-				DIE("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
+				ERROR("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
+				ERROR("from entry", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].entry)));
+				die = true;
 			}
 		}
+	}
+	if (die) {
+		DIE("at least one instruction was not patchable");
 	}
 }
 
@@ -958,7 +964,9 @@ static bool syscall_is_allowed_from_target(int syscall)
 	}
 }
 
-static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr)
+static char heap[TEXEC_HEAP_SIZE];
+
+static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, bool debug)
 {
 	request_message message;
 	for (;;) {
@@ -967,18 +975,50 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 		intptr_t result = 0;
 		intptr_t result_id = proxy_read_stream_message_start(stream_id, &message);
 		switch (message.template.nr) {
-			case TARGET_NR_PEEK:
+			case TARGET_NR_PEEK: {
+				if (debug) {
+					ERROR("received a peek");
+					ERROR_FLUSH();
+				}
 				proxy_read_stream_message_finish(stream_id);
-				ERROR("received a peek");
-				ERROR_FLUSH();
-				// TODO
+				char *addr = (char *)message.values[0];
+				size_t size = message.values[1];
+				if (addr >= heap && addr + size < &heap[sizeof(heap)]) {
+					io_count = 1;
+					vec[0].iov_base = addr;
+					vec[0].iov_len = size;
+				} else {
+					ERROR("invalid peek of", (uintptr_t)addr);
+					ERROR("with size", (intptr_t)size);
+				}
 				break;
-			case TARGET_NR_POKE:
+			}
+			case TARGET_NR_POKE | PROXY_NO_RESPONSE: {
+				if (debug) {
+					ERROR("received a poke");
+					ERROR_FLUSH();
+				}
+				char *addr = (char *)message.values[0];
+				size_t size = message.values[1];
+				if (addr >= heap && addr + size < &heap[sizeof(heap)]) {
+					size_t bytes_read = 0;
+					while (size != bytes_read) {
+						result = proxy_read_stream_message_body(stream_id, &addr[bytes_read], size - bytes_read);
+						if (result <= 0) {
+							if (result == -EINTR) {
+								continue;
+							}
+							DIE("Failed to read from socket", fs_strerror(result));
+						}
+						bytes_read += result;
+					}
+				} else {
+					ERROR("invalid poke of", (uintptr_t)addr);
+					ERROR("with size", (intptr_t)size);
+				}
 				proxy_read_stream_message_finish(stream_id);
-				ERROR("received a poke");
-				ERROR_FLUSH();
-				// TODO
 				break;
+			}
 			case __NR_exit_group | PROXY_NO_RESPONSE:
 				proxy_read_stream_message_finish(stream_id);
 				// ERROR("received an exit");
@@ -999,14 +1039,27 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 						// ERROR("found library", binary->path);
 						binary->child_base = remote_address;
 						patch_remote_syscalls(patches, analysis, receive_syscall_addr);
+						if (debug) {
+							char *cur = buf;
+							fs_memcpy(cur, "add-symbol-file ", sizeof("add-symbol-file ")-1);
+							cur += sizeof("add-symbol-file ")-1;
+							size_t loaded_path_len = fs_strlen(binary->loaded_path);
+							fs_memcpy(cur, binary->loaded_path, loaded_path_len);
+							cur += loaded_path_len;
+							*cur++ = ' ';
+							fs_utoah(remote_address, cur);
+							ERROR("additional debug command", buf);
+						}
 						break;
 					}
 				}
 				break;
 			}
 			default: {
-				// ERROR("received syscall", name_for_syscall(message.template.nr));
-				// ERROR_FLUSH();
+				if (debug) {
+					ERROR("received syscall", name_for_syscall(message.template.nr));
+					ERROR_FLUSH();
+				}
 				size_t trailer_bytes = 0;
 				intptr_t index = 0;
 				uint64_t values[6];
@@ -1194,6 +1247,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	uint32_t stream_id = proxy_generate_stream_id();
 	struct proxy_target_state new_proxy_state = { 0 };
 	new_proxy_state.stream_id = stream_id;
+	new_proxy_state.heap = (uintptr_t)&heap;
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
 	result = proxy_poke(thandler.proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
 	if (result < 0) {
@@ -1245,7 +1299,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return clone_result;
 	}
 	// process syscalls until the remote exits
-	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr, &analysis, &patches, thandler.receive_syscall_addr);
+	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr, &analysis, &patches, thandler.receive_syscall_addr, debug);
 	// wait for remote thread
 	pid_t tid;
 	do {

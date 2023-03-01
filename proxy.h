@@ -13,6 +13,8 @@
 #define PROXY_FD 0x3fc
 #define SHARED_PAGE_FD 0x3fb
 
+#define PROXY_BUFFER_SIZE (256 * 1024)
+
 #define PROXY_ARGUMENT_INPUT ((intptr_t)1 << (sizeof(intptr_t)*8-1))
 #define PROXY_ARGUMENT_OUTPUT ((intptr_t)1 << (sizeof(intptr_t)*8-2))
 #define PROXY_ARGUMENT_MASK (PROXY_ARGUMENT_INPUT | PROXY_ARGUMENT_OUTPUT)

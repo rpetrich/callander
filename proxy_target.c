@@ -80,29 +80,27 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	return response.result;
 }
 
-void proxy_peek(intptr_t addr, size_t size, void *out_buffer)
+__attribute__((warn_unused_result))
+intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
-	(void)addr;
-	(void)size;
-	(void)out_buffer;
-	DIE("proxy_peek is not supported");
+	return PROXY_CALL(TARGET_NR_PEEK, proxy_value(addr), proxy_out(out_buffer, size));
 }
 
-void proxy_poke(intptr_t addr, size_t size, const void *buffer)
+__attribute__((warn_unused_result))
+intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
 {
-	(void)addr;
-	(void)size;
-	(void)buffer;
-	DIE("proxy_poke is not supported");
+	return PROXY_CALL(TARGET_NR_POKE | PROXY_NO_RESPONSE, proxy_value(addr), proxy_in(buffer, size));
 }
+
+static struct fs_mutex heap_lock;
 
 intptr_t proxy_alloc(size_t size)
 {
 	if (size == 0) {
 		return 0;
 	}
-	DIE("proxy_alloc is not supported");
-	return 0;
+	fs_mutex_lock(&heap_lock);
+	return proxy_state.heap;
 }
 
 void proxy_free(intptr_t addr, size_t size)
@@ -111,6 +109,7 @@ void proxy_free(intptr_t addr, size_t size)
 		return;
 	}
 	(void)size;
+	fs_mutex_unlock(&heap_lock);
 }
 
 
