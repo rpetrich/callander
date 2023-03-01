@@ -352,7 +352,13 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 		if (ph->p_memsz > ph->p_filesz) {
 			size_t brk = (size_t)map_offset+ph->p_vaddr+ph->p_filesz;
 			size_t pgbrk = (brk+PAGE_SIZE-1) & -PAGE_SIZE;
-			// memset((void *)brk, 0, (pgbrk-brk) & (PAGE_SIZE-1));
+			size_t zero_count = (pgbrk-brk) & (PAGE_SIZE-1);
+			char zeros[PAGE_SIZE];
+			memset(zeros, '\0', zero_count);
+			intptr_t result = proxy_poke(brk, zero_count, &zeros);
+			if (result < 0) {
+				DIE("failed to write zeros", fs_strerror(result));
+			}
 			if (pgbrk-(size_t)map_offset < this_max) {
 				intptr_t tail_mapping = remote_mmap(pgbrk, (size_t)map_offset+this_max-pgbrk, protection, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
 				if (fs_is_map_failed((void *)tail_mapping)) {
