@@ -242,7 +242,7 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 		PATCH_LOG("Patching address with cmp prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (ins[0] == 0x8b) {
+	if (ins[0] == 0x8b || ins[0] == 0x89) {
 		if (ins[1] == 0x0d) {
 			PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(addr, formatter_data)));
 			return true;
@@ -251,6 +251,8 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 			PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(addr, formatter_data)));
 			return true;
 		}
+		PATCH_LOG("Patching address with mov", temp_str(formatter(addr, formatter_data)));
+		return true;
 	} else if (ins[0] == 0xc7) {
 		PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(addr, formatter_data)));
 		return true;
@@ -275,12 +277,6 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 	}
 	if (ins[0] == INS_LEA && (ins[1] & 0xc7) != 0x5) {
 		PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
-	}
-	if (ins[0] == 0x8b || ins[0] == 0x89) {
-		if (ins[1] == 0x44 || ins[1] == 0x4c || ins[1] == 0x54 || ins[1] == 0x5c) {
-			PATCH_LOG("Patching address with sp-relative rex.w|rex.r mov prefix", temp_str(formatter(addr, formatter_data)));
-			return true;
-		}
 	}
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
 		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(addr, formatter_data)));
@@ -782,35 +778,27 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 			return false;
 		}
 		memcpy(dest, src, length);
-		if (src[0] == INS_REX_W_PREFIX) {
-			switch (src[1]) {
-				case 0x8b:
-					if (src[2] == 0x0d) {
-						// Adjust pc-relative mov
-						PATCH_LOG("fixing up rip-relative mov", temp_str(formatter(src, formatter_data)));
-						x86_int32 *disp = (x86_int32 *)&dest[3];
-						PATCH_LOG("was", *disp);
-						*disp += delta;
-						PATCH_LOG("is now", *disp);
+		const uint8_t *ins = dest;
+		struct x86_ins_prefixes prefixes = x86_decode_ins_prefixes(&ins);
+		switch (*dest) {
+			case 0x8b:
+			case 0x89:
+			case INS_LEA: {
+				x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
+				if (modrm.mod == 0) {
+					int rm = x86_read_rm(modrm, prefixes);
+					switch (rm) {
+						case X86_REGISTER_BP:
+						case X86_REGISTER_13:
+							PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
+							x86_int32 *disp = (x86_int32 *)&ins[2];
+							PATCH_LOG("was", *disp);
+							*disp += delta;
+							PATCH_LOG("is now", *disp);
+							break;
 					}
-					break;
-				case INS_LEA: {
-					x86_mod_rm_t modrm = x86_read_modrm(&src[2]);
-					if (!x86_modrm_is_direct(modrm)) {
-						int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){ 0 });
-						switch (rm) {
-							case X86_REGISTER_BP:
-							case X86_REGISTER_13:
-								PATCH_LOG("fixing up rip-relative lea", temp_str(formatter(src, formatter_data)));
-								x86_int32 *disp = (x86_int32 *)&dest[3];
-								PATCH_LOG("was", *disp);
-								*disp += delta;
-								PATCH_LOG("is now", *disp);
-								break;
-						}
-					}
-					break;
 				}
+				break;
 			}
 		}
 		dest += length;
