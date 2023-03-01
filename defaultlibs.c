@@ -41,6 +41,15 @@ void *memset(void *s, int c, size_t n)
 	return s;
 }
 
+__attribute__((used, visibility("hidden")))
+void *__memset_chk(void *dest, int c, size_t len, size_t destlen)
+{
+	if (UNLIKELY(len > destlen)) {
+		abort();
+	}
+	return memset(dest, c, len);
+}
+
 __attribute__((__nothrow__, used))
 void *memcpy(void *__restrict destination, const void *__restrict source, size_t num)
 {
