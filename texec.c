@@ -1024,6 +1024,14 @@ static bool syscall_is_allowed_from_target(int syscall)
 	}
 }
 
+static bool wait_for_user_continue(void)
+{
+	char buf[0];
+	ERROR("press enter to continue");
+	ERROR_FLUSH();
+	return fs_read(0, &buf[0], 1) == 1;
+}
+
 static char heap[TEXEC_HEAP_SIZE];
 
 static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, bool debug)
@@ -1099,16 +1107,22 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 						// ERROR("found library", binary->path);
 						binary->child_base = remote_address;
 						patch_remote_syscalls(patches, analysis, receive_syscall_addr);
-						if (debug) {
-							char *cur = buf;
-							fs_memcpy(cur, "add-symbol-file ", sizeof("add-symbol-file ")-1);
-							cur += sizeof("add-symbol-file ")-1;
-							size_t loaded_path_len = fs_strlen(binary->loaded_path);
-							fs_memcpy(cur, binary->loaded_path, loaded_path_len);
-							cur += loaded_path_len;
-							*cur++ = ' ';
-							fs_utoah(remote_address, cur);
-							ERROR("additional debug command", buf);
+						if (debug && binary->has_sections) {
+							const ElfW(Shdr) *text_section = find_section(&binary->info, &binary->sections, ".text");
+							if (text_section != NULL) {
+								char *cur = buf;
+								fs_memcpy(cur, "add-symbol-file ", sizeof("add-symbol-file ")-1);
+								cur += sizeof("add-symbol-file ")-1;
+								size_t loaded_path_len = fs_strlen(binary->loaded_path);
+								fs_memcpy(cur, binary->loaded_path, loaded_path_len);
+								cur += loaded_path_len;
+								*cur++ = ' ';
+								fs_utoah(remote_address + text_section->sh_addr, cur);
+								ERROR("additional debug command", buf);
+								if (!wait_for_user_continue()) {
+									DIE("exiting");
+								}
+							}
 						}
 						break;
 					}
@@ -1330,9 +1344,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		}
 		ERROR("remote debugging command", &buf[0]);
 		// wait to proceed
-		ERROR("press enter to continue");
-		ERROR_FLUSH();
-		if (fs_read(0, &buf[0], 1) != 1) {
+		if (!wait_for_user_continue()) {
 			free_remote_patches(&patches, &analysis);
 			remote_munmap(stack, STACK_SIZE);
 			if (has_interpreter) {
