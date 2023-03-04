@@ -611,6 +611,18 @@ static void unmap_and_exit_thread(void *arg1, void *arg2)
 	__builtin_unreachable();
 }
 
+typedef unsigned int tcflag_t;
+typedef unsigned char cc_t;
+
+struct linux_termios {
+	tcflag_t c_iflag;
+	tcflag_t c_oflag;
+	tcflag_t c_cflag;
+	tcflag_t c_lflag;
+	cc_t c_line;
+	cc_t c_cc[19];
+};
+
 // handle_syscall handles a trapped syscall, potentially emulating or blocking as necessary
 intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, ucontext_t *context)
 {
@@ -2374,13 +2386,13 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					}
 					case TIOCGLCKTRMIOS:
 					case TCGETS: {
-						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termios)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct linux_termios)));
 					}
 					case TIOCSLCKTRMIOS:
 					case TCSETS:
 					case TCSETSW:
 					case TCSETSF: {
-						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termios)));
+						return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct linux_termios)));
 					}
 					// case TCGETA: {
 					// 	return PROXY_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termio)));
