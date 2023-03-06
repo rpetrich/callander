@@ -612,9 +612,11 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					memcpy(&trampoline_buf[cur], trampoline_call_handler_call, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call);
 					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call;
 					// copy the suffix of the syscall instruction that is overwritten by the patch
-					for (const uint8_t *ins = addr + 2; ins < patch_target.end; ins++) {
-						trampoline_buf[cur++] = *ins;
+					delta = (uintptr_t)child_addr + 2 - ((uintptr_t)trampoline + cur);
+					if (!migrate_instructions(&trampoline_buf[cur], addr + 2, delta, patch_target.end - (addr + 2), loader_address_formatter, (void *)&analysis->loader)) {
+						DIE("failed to migrate suffix");
 					}
+					cur += patch_target.end - (addr + 2);
 					// jump back to the resume point in the function
 					int32_t resume_relative_offset = child_patch_end - (trampoline + cur + PCREL_JUMP_SIZE);
 					trampoline_buf[cur++] = INS_JMP_32_IMM;
