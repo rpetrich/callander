@@ -1036,7 +1036,7 @@ static bool wait_for_user_continue(void)
 
 static char heap[TEXEC_HEAP_SIZE];
 
-static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, bool debug)
+static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, intptr_t *tid_ptr, bool debug)
 {
 	request_message message;
 	for (;;) {
@@ -1087,6 +1087,16 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 					ERROR("with size", (intptr_t)size);
 				}
 				proxy_read_stream_message_finish(stream_id);
+				break;
+			}
+			case __NR_set_tid_address | PROXY_NO_RESPONSE: {
+				intptr_t value = message.values[0];
+				proxy_read_stream_message_finish(stream_id);
+				if (debug) {
+					ERROR("received set tid address", value);
+					ERROR_FLUSH();
+				}
+				*tid_ptr = value;
 				break;
 			}
 			case __NR_exit_group | PROXY_NO_RESPONSE:
@@ -1378,7 +1388,6 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	if (debug) {
 		ERROR("received status code, waiting for exit", status_code);
 	}
-#if 0
 	pid_t tid;
 	do {
 		PROXY_CALL(__NR_futex, proxy_value(tid_ptr), proxy_value(FUTEX_WAIT), proxy_value(clone_result));
@@ -1387,22 +1396,6 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 			DIE("failed to wait for thread to exit", fs_strerror(result));
 		}
 	} while (tid == clone_result);
-#else
-	do {
-		result = PROXY_CALL(__NR_wait4, proxy_value(clone_result), proxy_value(tid_ptr), proxy_value(0), proxy_value(0));
-	} while (result == EINTR);
-	if (result == -ECHILD) {
-		DIE("missing child");
-	}
-	if (result == -EINVAL) {
-		DIE("somehow bad options");
-	}
-	int wait_status;
-	result = proxy_peek(tid_ptr, sizeof(int), &wait_status);
-	if (result < 0) {
-		DIE("failed to read exit status", fs_strerror(result));
-	}
-#endif
 	// cleanup
 	free_remote_patches(&patches, &analysis);
 	remote_munmap(stack, STACK_SIZE);
@@ -1412,7 +1405,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	}
 	remote_unload_binary(&main_info);
 	free_thandler(&thandler);
-	return wait_status != 0 ? wait_status : status_code;
+	return status_code;
 }
 
 static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size], bool debug)

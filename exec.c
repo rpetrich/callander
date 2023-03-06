@@ -45,6 +45,11 @@ void invalidate_self_pid(void)
 	atomic_store(&pid, 0);
 }
 
+void set_tid_address(const void *tid_address)
+{
+	(void)tid_address;
+}
+
 __attribute__((warn_unused_result))
 bool is_axon(const struct fs_stat *stat)
 {

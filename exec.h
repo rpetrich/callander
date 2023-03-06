@@ -25,6 +25,8 @@ pid_t get_self_pid(void);
 // get_self_pid invalidates the current process' cached PID
 void invalidate_self_pid(void);
 
+void set_tid_address(const void *new_address);
+
 // exec_fd executes an open file via the axon bootstrap, handling native-arch ELF and #! programs only
 __attribute__((warn_unused_result))
 int exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth);

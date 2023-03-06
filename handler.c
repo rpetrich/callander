@@ -639,6 +639,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			break;
 		}
+		case __NR_set_tid_address: {
+			set_tid_address((const void *)arg1);
+			break;
+		}
 #ifdef __NR_creat
 		case __NR_creat: {
 			const char *path = (const char *)arg1;
