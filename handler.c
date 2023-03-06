@@ -1163,6 +1163,17 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
+		case __NR_statfs: {
+			path_info real;
+			bool is_remote = lookup_real_path(AT_FDCWD, (const char *)arg1, &real);
+			if (real.fd != AT_FDCWD) {
+				return -EINVAL;
+			}
+			if (is_remote) {
+				return PROXY_CALL(__NR_statfs, proxy_string(real.path), proxy_out((void *)arg2, sizeof(struct fs_statfs)));
+			}
+			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		}
 		case __NR_fstatfs: {
 			int fd = arg1;
 			int real_fd;
