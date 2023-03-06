@@ -47,22 +47,11 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	// TODO: load LD_PRELOAD binaries
 
 	// finish loading the main binary
-	result = finish_loading_binary(analysis, loaded, EFFECT_NONE, false);
+	result = finish_loading_binary(analysis, loaded, EFFECT_AFTER_STARTUP, false);
 	if (result != 0) {
 		DIE("failed to finish loading main binary", fs_strerror(result));
 	}
 	analysis->main = (uintptr_t)loaded->info.entrypoint;
-
-	// analyze the program
-	record_syscall(analysis, SYS_clock_gettime, (struct analysis_frame){
-		.address = NULL,
-		.description = "vDSO",
-		.next = NULL,
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP);
 
 	LOG("base", (uintptr_t)loaded->info.base);
 	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
