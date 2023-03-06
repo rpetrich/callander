@@ -780,7 +780,7 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 		memcpy(dest, src, length);
 		const uint8_t *ins = dest;
 		struct x86_ins_prefixes prefixes = x86_decode_ins_prefixes(&ins);
-		switch (*dest) {
+		switch (*ins) {
 			case 0x8b:
 			case 0x89:
 			case INS_LEA: {
