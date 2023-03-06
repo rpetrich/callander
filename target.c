@@ -39,7 +39,7 @@ noreturn static void exit_from_errno(const char *message, size_t message_len, in
 
 #define EXIT_FROM_ERRNO(message, err) exit_from_errno(message ": ", sizeof(message)+1, err)
 #else
-#define EXIT_FROM_ERRNO(message, err) fs_exit(1)
+#define EXIT_FROM_ERRNO(message, err) do { fs_exit(1); } while(0)
 #endif
 
 typedef struct {
@@ -95,7 +95,6 @@ int main(void)
 		fd++;
 	}
 	(void)fs_fcntl(fd, F_SETFL, O_RDWR);
-	(void)fs_fcntl(fd, F_SETFD, 0);
 #else
 	int fd = fs_socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
