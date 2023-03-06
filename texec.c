@@ -1090,8 +1090,10 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 			}
 			case __NR_exit_group | PROXY_NO_RESPONSE:
 				proxy_read_stream_message_finish(stream_id);
-				// ERROR("received an exit");
-				ERROR_FLUSH();
+				if (debug) {
+					ERROR("received an exit");
+					ERROR_FLUSH();
+				}
 				break;
 			case 0x666: {
 				proxy_read_stream_message_finish(stream_id);
@@ -1105,7 +1107,10 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				// ERROR("at", remote_address);
 				for (struct loaded_binary *binary = analysis->loader.binaries; binary != NULL; binary = binary->next) {
 					if (binary->child_base == 0 && fs_strcmp(binary->loaded_path, buf) == 0) {
-						// ERROR("found library", binary->path);
+						if (debug) {
+							ERROR("known library loaded", binary->path);
+							ERROR_FLUSH();
+						}
 						binary->child_base = remote_address;
 						patch_remote_syscalls(patches, analysis, receive_syscall_addr);
 						if (debug && binary->has_sections) {
@@ -1125,9 +1130,14 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 								}
 							}
 						}
-						break;
+						goto after_unknown_library_message;
 					}
 				}
+				if (debug) {
+					ERROR("unknown library loaded", buf);
+					ERROR_FLUSH();
+				}
+			after_unknown_library_message:
 				break;
 			}
 			default: {
