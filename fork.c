@@ -78,13 +78,13 @@ pid_t wrapped_clone(struct thread_storage *thread, unsigned long flags, void *st
 		if (enabled_telemetry & TELEMETRY_TYPE_CLONE) {
 			send_clone_event(thread, fs_getpid(), flags, result);
 		}
-		if (result == 0) {
-			invalidate_self_pid();
-			resurrect_fd_table();
-		}
 	}
 #else
 	(void)thread;
 #endif
+	if (result == 0) {
+		invalidate_self_pid();
+		resurrect_fd_table();
+	}
 	return result;
 }
