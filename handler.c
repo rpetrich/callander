@@ -49,6 +49,18 @@
 #define NS_GET_PARENT   _IO(NSIO, 0x2)
 #endif
 
+#ifndef __NR_close_range
+#define __NR_close_range 436
+#endif
+
+#ifndef __NR_faccessat2
+#define __NR_faccessat2 439
+#endif
+
+#ifndef __NR_epoll_pwait2
+#define __NR_epoll_pwait2 441
+#endif
+
 __attribute__((always_inline))
 static inline int translate_openat(int dirfd, const char *path, int flags, mode_t mode)
 {
@@ -689,6 +701,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case __NR_close: {
 			return perform_close(arg1);
 		}
+		case __NR_close_range: {
+			return -ENOSYS;
+		}
 		case __NR_execve: {
 			const char *path = (const char *)arg1;
 			const char *const *argv = (const char *const *)arg2;
@@ -881,6 +896,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return remote_faccessat(real.fd, real.path, arg3, arg4);
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		}
+		case __NR_faccessat2: {
+			return -ENOSYS;
 		}
 		case __NR_pipe: {
 			int result = FS_SYSCALL(syscall, arg1);
@@ -1257,7 +1275,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_listxattr: {
+		case __NR_listxattr:
+		case __NR_llistxattr: {
 			const char *path = (const char *)arg1;
 			path_info real;
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
@@ -1268,7 +1287,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						return result;
 					}
 				}
-				return PROXY_CALL(__NR_listxattr, proxy_string(real.path), proxy_out((void *)arg2, arg3), proxy_value(arg3));
+				return PROXY_CALL(syscall, proxy_string(real.path), proxy_out((void *)arg2, arg3), proxy_value(arg3));
 			}
 			if (real.fd != AT_FDCWD) {
 				return -EINVAL;
@@ -1283,7 +1302,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
-		case __NR_removexattr: {
+		case __NR_removexattr:
+		case __NR_lremovexattr: {
 			const char *path = (const char *)arg1;
 			const char *name = (const char *)arg2;
 			path_info real;
@@ -1295,7 +1315,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						return result;
 					}
 				}
-				return PROXY_CALL(__NR_removexattr, proxy_string(real.path), proxy_string(name));
+				return PROXY_CALL(syscall, proxy_string(real.path), proxy_string(name));
 			}
 			if (real.fd != AT_FDCWD) {
 				return -EINVAL;
@@ -1339,6 +1359,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return PROXY_CALL(__NR_epoll_wait, proxy_value(real_fd), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+		}
+		case __NR_epoll_pwait2: {
+			return -ENOSYS;
 		}
 		case __NR_epoll_ctl: {
 			// TODO: handle epoll_ctl with mixed remote and local fds
@@ -2714,6 +2737,12 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1);
+		}
+		case __NR_getpid: {
+			return get_self_pid();
+		}
+		case __NR_gettid: {
+			return fs_gettid();
 		}
 		case __NR_sendto: {
 			int real_fd;
