@@ -432,7 +432,7 @@ int remote_exec_fd(int fd, const char *named_path, const char *const *argv, cons
 
 static bool should_try_to_patch_remotely(const struct recorded_syscall *syscall)
 {
-	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->ins != NULL;
+	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->nr != SYS_clone && syscall->nr != SYS_clock_gettime && syscall->ins != NULL;
 }
 
 static char *loader_address_formatter(const uint8_t *address, void *loader)
