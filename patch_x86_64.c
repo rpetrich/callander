@@ -234,6 +234,10 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
+	if (ins[0] == 0xe9) {
+		PATCH_LOG("Patching address with jump", temp_str(formatter(addr, formatter_data)));
+		return true;
+	}
 	if (ins[0] == INS_MOV_REG) {
 		PATCH_LOG("Patching address with mov prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
@@ -781,6 +785,14 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 		const uint8_t *ins = dest;
 		struct x86_ins_prefixes prefixes = x86_decode_ins_prefixes(&ins);
 		switch (*ins) {
+			case 0xe9: {
+				PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
+				x86_int32 *disp = (x86_int32 *)&ins[1];
+				PATCH_LOG("was", *disp);
+				*disp += delta;
+				PATCH_LOG("is now", *disp);
+				break;
+			}
 			case 0x8b:
 			case 0x89:
 			case INS_LEA: {
@@ -789,13 +801,14 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 					int rm = x86_read_rm(modrm, prefixes);
 					switch (rm) {
 						case X86_REGISTER_BP:
-						case X86_REGISTER_13:
+						case X86_REGISTER_13: {
 							PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
 							x86_int32 *disp = (x86_int32 *)&ins[2];
 							PATCH_LOG("was", *disp);
 							*disp += delta;
 							PATCH_LOG("is now", *disp);
 							break;
+						}
 					}
 				}
 				break;
