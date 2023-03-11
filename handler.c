@@ -38,6 +38,7 @@
 #include <sys/resource.h>
 #include <sys/shm.h>
 #include <termios.h>
+#include <utime.h>
 
 #ifndef RENAME_EXCHANGE
 #define RENAME_EXCHANGE (1 << 1)
@@ -1590,16 +1591,23 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
 		case __NR_utime: {
-			// TODO: handle utime
+			const char *path = (const char *)arg1;
+			path_info real;
+			bool is_remote = lookup_real_path(AT_FDCWD, path, &real);
+			if (real.fd != AT_FDCWD) {
+				return is_remote ? invalid_remote_operation() : invalid_local_operation();
+			}
+			if (is_remote) {
+				return PROXY_CALL(__NR_utime, proxy_string(real.path), proxy_in((void *)arg2, sizeof(struct utimbuf)));
+			}
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_utimensat: {
-			// TODO: is this correct?
 			int dirfd = arg1;
 			const char *path = (const char *)arg2;
 			path_info real;
 			if (lookup_real_path(dirfd, path, &real)) {
-				return PROXY_CALL(__NR_utimensat, proxy_value(real.fd), proxy_string(real.path), proxy_in((void *)arg3, sizeof(struct timeval)), proxy_value(arg4));
+				return PROXY_CALL(__NR_utimensat, proxy_value(real.fd), proxy_string(real.path), proxy_in((void *)arg3, sizeof(struct timespec) * 2), proxy_value(arg4));
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
 		}
@@ -1608,7 +1616,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const char *path = (const char *)arg2;
 			path_info real;
 			if (lookup_real_path(dirfd, path, &real)) {
-				return PROXY_CALL(__NR_futimesat, proxy_value(real.fd), proxy_string(real.path), proxy_in((void *)arg3, sizeof(struct timeval)));
+				return PROXY_CALL(__NR_futimesat, proxy_value(real.fd), proxy_string(real.path), proxy_in((void *)arg3, sizeof(struct timespec) * 2));
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
 		}
