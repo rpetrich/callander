@@ -952,6 +952,7 @@ static bool syscall_is_allowed_from_target(int syscall)
 		case __NR_splice:
 		case __NR_tee:
 		case __NR_sync_file_range:
+		case __NR_utime:
 		case __NR_utimensat:
 		case __NR_futimesat:
 		case __NR_fallocate:
@@ -989,6 +990,8 @@ static bool syscall_is_allowed_from_target(int syscall)
 		case __NR_write:
 		case __NR_recvfrom:
 		case __NR_sendto:
+		case __NR_sendmsg:
+		case __NR_recvmsg:
 		case __NR_lseek:
 		case __NR_fadvise64:
 		case __NR_readahead:
