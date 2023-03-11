@@ -202,6 +202,126 @@ intptr_t remote_ftruncate(int fd, off_t length)
 	}
 }
 
+intptr_t remote_recvmsg(struct thread_storage *thread, int fd, struct msghdr *msghdr, int flags)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX: {
+			if (msghdr->msg_name != NULL || msghdr->msg_namelen != 0 || msghdr->msg_control != NULL || msghdr->msg_controllen != 0) {
+				// TODO: support names and control data
+				return invalid_remote_operation();
+			}
+			int iovcnt = msghdr->msg_iovlen;
+			// allocate a local iovec
+			struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
+			struct attempt_cleanup_state state;
+			attempt_push_free(thread, &state, iov_remote);
+			// calculate the total size
+			size_t total_size = sizeof(struct iovec) * iovcnt;
+			for (int i = 0; i < iovcnt; i++) {
+				size_t len = msghdr->msg_iov[i].iov_len;
+				iov_remote[i].iov_len = len;
+				total_size += len;
+			}
+			// allocate a remote buffer
+			attempt_proxy_alloc_state remote_buf;
+			attempt_proxy_alloc(total_size, thread, &remote_buf);
+			// set up the vectors
+			intptr_t buf_cur = remote_buf.addr;
+			for (int i = 0; i < iovcnt; i++) {
+				size_t len = iov_remote[i].iov_len;
+				iov_remote[i].iov_base = (void *)buf_cur;
+				buf_cur += len;
+			}
+			// poke the iovec
+			intptr_t result = proxy_poke(buf_cur, sizeof(struct iovec) * iovcnt, iov_remote);
+			if (result < 0) {
+				attempt_pop_free(&state);
+				attempt_proxy_free(&remote_buf);
+				return result;
+			}
+			// perform the recvmsg remotely
+			struct msghdr copy = *msghdr;
+			copy.msg_iov = (struct iovec *)buf_cur;
+			result = PROXY_CALL(__NR_recvmsg, proxy_value(fd), proxy_in(&copy, sizeof(struct msghdr)), proxy_value(flags));
+			if (result >= 0) {
+				// peek the bytes we received
+				buf_cur = remote_buf.addr;
+				for (int i = 0; i < iovcnt; i++) {
+					size_t len = iov_remote[i].iov_len;
+					intptr_t peek_result = proxy_peek(buf_cur, len, msghdr->msg_iov[i].iov_base);
+					if (peek_result < 0) {
+						attempt_pop_free(&state);
+						attempt_proxy_free(&remote_buf);
+						return peek_result;
+					}
+					buf_cur += len;
+				}
+			}
+			attempt_pop_free(&state);
+			attempt_proxy_free(&remote_buf);
+			return result;
+		}
+		default:
+			unknown_target();
+	}
+}
+
+intptr_t remote_sendmsg(struct thread_storage *thread, int fd, const struct msghdr *msghdr, int flags)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX: {
+			if (msghdr->msg_name != NULL || msghdr->msg_namelen != 0 || msghdr->msg_control != NULL || msghdr->msg_controllen != 0) {
+				// TODO: support names and control data
+				return invalid_remote_operation();
+			}
+			int iovcnt = msghdr->msg_iovlen;
+			// allocate a local iovec
+			struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
+			struct attempt_cleanup_state state;
+			attempt_push_free(thread, &state, iov_remote);
+			// calculate the total size
+			size_t total_size = sizeof(struct iovec) * iovcnt;
+			for (int i = 0; i < iovcnt; i++) {
+				size_t len = msghdr->msg_iov[i].iov_len;
+				iov_remote[i].iov_len = len;
+				total_size += len;
+			}
+			// allocate a remote buffer
+			attempt_proxy_alloc_state remote_buf;
+			attempt_proxy_alloc(total_size, thread, &remote_buf);
+			// poke the bytes to send
+			intptr_t buf_cur = remote_buf.addr;
+			for (int i = 0; i < iovcnt; i++) {
+				size_t len = iov_remote[i].iov_len;
+				intptr_t result = proxy_poke(buf_cur, len, msghdr->msg_iov[i].iov_base);
+				if (result < 0) {
+					attempt_pop_free(&state);
+					attempt_proxy_free(&remote_buf);
+					return result;
+				}
+				iov_remote[i].iov_base = (void *)buf_cur;
+				buf_cur += len;
+			}
+			// poke the iovec
+			intptr_t result = proxy_poke(buf_cur, sizeof(struct iovec) * iovcnt, iov_remote);
+			attempt_pop_free(&state);
+			if (result < 0) {
+				attempt_proxy_free(&remote_buf);
+				return result;
+			}
+			// perform the sendmsg remotely
+			struct msghdr copy = *msghdr;
+			copy.msg_iov = (struct iovec *)buf_cur;
+			result = PROXY_CALL(__NR_sendmsg, proxy_value(fd), proxy_in(&copy, sizeof(struct msghdr)), proxy_value(flags));
+			attempt_proxy_free(&remote_buf);
+			return result;
+		}
+		default:
+			unknown_target();
+	}
+}
+
+
 void remote_close(int fd)
 {
 	switch (proxy_get_target_platform()) {
@@ -260,6 +380,19 @@ intptr_t remote_fcntl_lock(int fd, int cmd, struct flock *lock)
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_fcntl | PROXY_NO_WORKER, proxy_value(fd), proxy_value(cmd), proxy_inout(lock, sizeof(struct flock)));
+		case TARGET_PLATFORM_DARWIN:
+			return -EINVAL;
+		default:
+			unknown_target();
+			break;
+	}
+}
+
+intptr_t remote_fcntl_int(int fd, int cmd, int *value)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(__NR_fcntl | PROXY_NO_WORKER, proxy_value(fd), proxy_value(cmd), proxy_inout(value, sizeof(int)));
 		case TARGET_PLATFORM_DARWIN:
 			return -EINVAL;
 		default:
@@ -449,4 +582,10 @@ intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 		default:
 			unknown_target();
 	}
+}
+
+__attribute__((noinline))
+intptr_t invalid_remote_operation(void)
+{
+	return -EINVAL;
 }
