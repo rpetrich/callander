@@ -1032,6 +1032,7 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 {
 	request_message message;
 	for (;;) {
+		char description_buf[256];
 		struct iovec vec[PROXY_ARGUMENT_COUNT];
 		size_t io_count = 0;
 		intptr_t result = 0;
@@ -1052,6 +1053,7 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				} else {
 					ERROR("invalid peek of", (uintptr_t)addr);
 					ERROR("with size", (intptr_t)size);
+					ERROR_FLUSH();
 				}
 				break;
 			}
@@ -1077,6 +1079,7 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				} else {
 					ERROR("invalid poke of", (uintptr_t)addr);
 					ERROR("with size", (intptr_t)size);
+					ERROR_FLUSH();
 				}
 				proxy_read_stream_message_finish(stream_id);
 				break;
@@ -1144,8 +1147,50 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				break;
 			}
 			default: {
+				intptr_t syscall = message.template.nr & ~TARGET_NO_RESPONSE;
 				if (debug) {
-					ERROR("received syscall", name_for_syscall(message.template.nr));
+					const char *syscall_desc = name_for_syscall(syscall);
+					size_t syscall_desc_len = fs_strlen(syscall_desc);
+					fs_memcpy(description_buf, syscall_desc, syscall_desc_len);
+					int offset = syscall_desc_len;
+					description_buf[offset++] = '(';
+					int argc = attributes_for_syscall(syscall) & SYSCALL_ARGC_MASK;
+					for (int i = 0; i < argc; i++) {
+						if (i != 0) {
+							description_buf[offset++] = ',';
+							description_buf[offset++] = ' ';
+						}
+						bool is_in = message.template.is_in & (1 << i);
+						bool is_out = message.template.is_out & (1 << i);
+						if (is_in) {
+							if (is_out) {
+								fs_memcpy(&description_buf[offset], "<in-out>", sizeof("<in-out>")-1);
+								offset += sizeof("<in-out>")-1;
+							} else {
+								fs_memcpy(&description_buf[offset], "<in>", sizeof("<in>")-1);
+								offset += sizeof("<in>")-1;
+							}
+						} else {
+							if (is_out) {
+								fs_memcpy(&description_buf[offset], "<out>", sizeof("<out>")-1);
+								offset += sizeof("<out>")-1;
+							} else {
+								if (message.values[i] == (uintptr_t)AT_FDCWD) {
+									fs_memcpy(&description_buf[offset], "AT_FDCWD", sizeof("AT_FDCWD")-1);
+									offset += sizeof("AT_FDCWD")-1;
+								} else {
+									offset += fs_utoah(message.values[i], &description_buf[offset]);
+								}
+							}
+						}
+					}
+					description_buf[offset++] = ')';
+					description_buf[offset++] = '\0';
+					if (message.template.nr & TARGET_NO_RESPONSE) {
+						ERROR("received syscall (no response)", description_buf);
+					} else {
+						ERROR("received syscall", description_buf);
+					}
 					ERROR_FLUSH();
 				}
 				size_t trailer_bytes = 0;
@@ -1193,24 +1238,26 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 					bytes_read += result;
 				}
 				proxy_read_stream_message_finish(stream_id);
-				int syscall = message.template.nr & ~TARGET_NO_RESPONSE;
-				// switch (syscall) {
-				// 	case __NR_faccessat:
-				// 		ERROR("faccessat", (const char *)values[1]);
-				// 		break;
-				// 	case __NR_openat:
-				// 		ERROR("openat", (const char *)values[1]);
-				// 		break;
-				// }
 				if (syscall_is_allowed_from_target(syscall)) {
 					result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
 				} else {
+					if (debug) {
+						ERROR("requested syscall is not allowed");
+						ERROR_FLUSH();
+					}
 					result = -ENOSYS;
 				}
 				break;
 			}
 		}
 		if ((message.template.nr & TARGET_NO_RESPONSE) == 0) {
+			if (debug) {
+				if (result < 0) {
+					ERROR("=", fs_strerror(result));
+				} else {
+					ERROR("=", (uintptr_t)result);
+				}
+			}
 			proxy_arg return_args[PROXY_ARGUMENT_COUNT];
 			return_args[0] = proxy_value(receive_response_addr);
 			return_args[1] = proxy_value(result_id);
