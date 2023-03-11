@@ -25,11 +25,18 @@ void set_tid_address(const void *tid_address)
 }
 
 __attribute__((naked)) __attribute__((used)) __attribute__((visibility("default")))
-noreturn void start_thread(const struct start_thread_args *args)
+noreturn void receive_start(const struct receive_start_args *args)
 {
 	self_pid = fs_gettid();
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
 	__builtin_unreachable();
+}
+
+__attribute__((used)) __attribute__((visibility("default")))
+void receive_clone(intptr_t data[7])
+{
+	(void)data;
+	PROXY_CALL(__NR_clone | PROXY_NO_RESPONSE);
 }
 
 __attribute__((used)) __attribute__((visibility("default")))

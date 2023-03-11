@@ -432,7 +432,7 @@ int remote_exec_fd(int fd, const char *named_path, const char *const *argv, cons
 
 static bool should_try_to_patch_remotely(const struct recorded_syscall *syscall)
 {
-	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->nr != SYS_clone && syscall->nr != SYS_clock_gettime && syscall->ins != NULL;
+	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->nr != SYS_clock_gettime && syscall->ins != NULL;
 }
 
 static char *loader_address_formatter(const uint8_t *address, void *loader)
@@ -523,7 +523,7 @@ static void free_remote_patches(struct remote_syscall_patches *patches, struct p
 	free(patches->list);
 }
 
-static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct program_state *analysis, intptr_t receive_syscall_addr)
+static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct program_state *analysis, intptr_t receive_syscall_addr, intptr_t receive_clone_addr)
 {
 	uintptr_t existing_trampoline = PAGE_SIZE-1;
 	for (int i = 0; i < analysis->syscalls.count; i++) {
@@ -531,6 +531,8 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 			const uint8_t *addr = analysis->syscalls.list[i].ins;
 			uintptr_t child_addr = translate_analysis_address_to_child(&analysis->loader, addr);
 			if (child_addr != 0) {
+				intptr_t nr = analysis->syscalls.list[i].nr;
+				PATCH_LOG("remotely patching", temp_str(copy_address_description(&analysis->loader, addr)));
 				// TODO: reprotect with correct protection
 #if 0
 				ERROR("mprotect", (uintptr_t)addr & -PAGE_SIZE);
@@ -588,7 +590,7 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					// // move address of remote handler function into rcx
 					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_0;
 					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_1;
-					uintptr_t receive_syscall_remote = receive_syscall_addr;
+					uintptr_t receive_syscall_remote = nr != SYS_clone ? receive_syscall_addr : receive_clone_addr;
 					trampoline_buf[cur++] = receive_syscall_remote;
 					trampoline_buf[cur++] = receive_syscall_remote >> 8;
 					trampoline_buf[cur++] = receive_syscall_remote >> 16;
@@ -601,11 +603,12 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					memcpy(&trampoline_buf[cur], trampoline_call_handler_call, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call);
 					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call;
 					// copy the suffix of the syscall instruction that is overwritten by the patch
-					delta = (uintptr_t)child_addr + 2 - ((uintptr_t)trampoline + cur);
-					if (!migrate_instructions(&trampoline_buf[cur], addr + 2, delta, patch_target.end - (addr + 2), loader_address_formatter, (void *)&analysis->loader)) {
+					size_t skip_len = nr != SYS_clone ? 2 : 0;
+					delta = (uintptr_t)child_addr + skip_len - ((uintptr_t)trampoline + cur);
+					if (!migrate_instructions(&trampoline_buf[cur], addr + skip_len, delta, patch_target.end - (addr + skip_len), loader_address_formatter, (void *)&analysis->loader)) {
 						DIE("failed to migrate suffix");
 					}
-					cur += patch_target.end - (addr + 2);
+					cur += patch_target.end - (addr + skip_len);
 					// jump back to the resume point in the function
 					int32_t resume_relative_offset = child_patch_end - (trampoline + cur + PCREL_JUMP_SIZE);
 					trampoline_buf[cur++] = INS_JMP_32_IMM;
@@ -641,7 +644,8 @@ struct thandler_info {
 	int fd;
 	struct binary_info local_info;
 	struct binary_info remote_info;
-	intptr_t start_thread_addr;
+	intptr_t receive_start_addr;
+	intptr_t receive_clone_addr;
 	intptr_t receive_syscall_addr;
 	intptr_t receive_response_addr;
 	intptr_t proxy_state_addr;
@@ -689,9 +693,10 @@ static int init_thandler(struct thandler_info *thandler)
 		return result;
 	}
 	thandler->fd = fd;
-	thandler->start_thread_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "start_thread", NULL, NULL);
+	thandler->receive_start_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "receive_start", NULL, NULL);
 	thandler->receive_syscall_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "receive_syscall", NULL, NULL);
 	thandler->receive_response_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "receive_response", NULL, NULL);
+	thandler->receive_clone_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "receive_clone", NULL, NULL);
 	thandler->proxy_state_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "proxy_state", NULL, NULL);
 	thandler->fd_table_addr = (intptr_t)find_symbol(&thandler->remote_info, &symbols, "fd_table", NULL, NULL);
 	free_symbols(&symbols);
@@ -766,7 +771,7 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 	size_t string_size = sizeof("x86_64") + 16;
 	size_t argc = count_arg_bytes(argv, &string_size);
 	size_t envc = count_arg_bytes(envp, &string_size);
-	size_t header_size = sizeof(struct start_thread_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
+	size_t header_size = sizeof(struct receive_start_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
 	size_t dynv_size = ((string_size + header_size + (0xf + 8)) & ~0xf) - 8;
 	intptr_t dynv_base = (stack + (STACK_SIZE - dynv_size - sizeof(uint32_t))) & ~0xf;
 	char dynv_buf[dynv_size];
@@ -862,7 +867,7 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 		++aux;
 	}
 	*aux_buf++ = *aux;
-	struct start_thread_args *args = (struct start_thread_args *)aux_buf;
+	struct receive_start_args *args = (struct receive_start_args *)aux_buf;
 	args->pc = interpreter_info != NULL ? interpreter_info->entrypoint : main_info->entrypoint;
 	args->sp = dynv_base;
 	args->arg1 = 0;
@@ -1028,7 +1033,7 @@ static bool wait_for_user_continue(void)
 
 static char heap[TEXEC_HEAP_SIZE];
 
-static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, intptr_t *tid_ptr, bool debug)
+static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, intptr_t receive_clone_addr, intptr_t *tid_ptr, bool debug)
 {
 	request_message message;
 	for (;;) {
@@ -1084,6 +1089,14 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				proxy_read_stream_message_finish(stream_id);
 				break;
 			}
+			case __NR_clone | PROXY_NO_RESPONSE: {
+				proxy_read_stream_message_finish(stream_id);
+				if (debug) {
+					ERROR("child spawned a thread");
+					ERROR_FLUSH();
+				}
+				break;
+			}
 			case __NR_set_tid_address | PROXY_NO_RESPONSE: {
 				intptr_t value = message.values[0];
 				proxy_read_stream_message_finish(stream_id);
@@ -1118,7 +1131,7 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 							ERROR_FLUSH();
 						}
 						binary->child_base = remote_address;
-						patch_remote_syscalls(patches, analysis, receive_syscall_addr);
+						patch_remote_syscalls(patches, analysis, receive_syscall_addr, receive_clone_addr);
 						if (debug && binary->has_sections) {
 							const ElfW(Shdr) *text_section = find_section(&binary->info, &binary->sections, ".text");
 							if (text_section != NULL) {
@@ -1257,6 +1270,7 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				} else {
 					ERROR("=", (uintptr_t)result);
 				}
+				ERROR_FLUSH();
 			}
 			proxy_arg return_args[PROXY_ARGUMENT_COUNT];
 			return_args[0] = proxy_value(receive_response_addr);
@@ -1357,10 +1371,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	}
 	LOG("mapped thandler", &thandler.path[0]);
 	LOG("at", (uintptr_t)thandler.remote_info.base);
-	if (thandler.start_thread_addr == 0 || thandler.receive_syscall_addr == 0 || thandler.receive_response_addr == 0 || thandler.proxy_state_addr == 0 || thandler.fd_table_addr == 0) {
+	if (thandler.receive_start_addr == 0 || thandler.receive_clone_addr == 0 || thandler.receive_syscall_addr == 0 || thandler.receive_response_addr == 0 || thandler.proxy_state_addr == 0 || thandler.fd_table_addr == 0) {
 		ERROR("missing thandler symbols");
 	}
-	LOG("start_thread_addr", (uintptr_t)thandler.start_thread_addr);
+	LOG("receive_start_addr", (uintptr_t)thandler.receive_start_addr);
 	// create thread stack
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
@@ -1377,7 +1391,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	// poke in breakpoints/patches
 	struct remote_syscall_patches patches;
 	init_remote_patches(&patches, &analysis);
-	patch_remote_syscalls(&patches, &analysis, thandler.receive_syscall_addr);
+	patch_remote_syscalls(&patches, &analysis, thandler.receive_syscall_addr, thandler.receive_clone_addr);
 	// set up the backchannel and initialize thandler running remotely
 	uint32_t stream_id = proxy_generate_stream_id();
 	struct proxy_target_state new_proxy_state = { 0 };
@@ -1418,7 +1432,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		}
 	}
 	// spawn remote thread
-	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(sp), proxy_value(thandler.start_thread_addr));
+	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(sp), proxy_value(thandler.receive_start_addr));
 	if (clone_result < 0) {
 		free_remote_patches(&patches, &analysis);
 		remote_munmap(stack, STACK_SIZE);
@@ -1432,7 +1446,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return clone_result;
 	}
 	// process syscalls until the remote exits
-	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr, &analysis, &patches, thandler.receive_syscall_addr, &tid_ptr, debug);
+	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr, &analysis, &patches, thandler.receive_syscall_addr, thandler.receive_clone_addr, &tid_ptr, debug);
 	// wait for remote thread
 	if (debug) {
 		ERROR("received status code, waiting for exit", status_code);
