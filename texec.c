@@ -1037,8 +1037,38 @@ static bool wait_for_user_continue(void)
 
 static char heap[TEXEC_HEAP_SIZE];
 
-static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intptr_t receive_response_addr, struct program_state *analysis, struct remote_syscall_patches *patches, intptr_t receive_syscall_addr, intptr_t receive_clone_addr, intptr_t *tid_ptr, bool debug)
+struct process_syscalls_data {
+	uint32_t stream_id;
+	intptr_t receive_response_addr;
+	struct program_state *analysis;
+	struct remote_syscall_patches *patches;
+	intptr_t receive_syscall_addr;
+	intptr_t receive_clone_addr;
+	intptr_t *tid_ptr;
+	bool debug;
+};
+
+static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process_syscalls_data *data);
+
+static void *process_syscalls_thread(struct process_syscalls_data *data)
 {
+	char buf[512 * 1024];
+	intptr_t result = process_syscalls_until_exit(buf, data);
+	ERROR("worker received exit", result);
+	ERROR_FLUSH();
+	fs_exitthread(0);
+}
+
+static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process_syscalls_data *data)
+{
+	uint32_t stream_id = data->stream_id;
+	intptr_t receive_response_addr = data->receive_response_addr;
+	struct program_state *analysis = data->analysis;
+	struct remote_syscall_patches *patches = data->patches;
+	intptr_t receive_syscall_addr = data->receive_syscall_addr;
+	intptr_t receive_clone_addr = data->receive_clone_addr;
+	intptr_t *tid_ptr = data->tid_ptr;
+	bool debug = data->debug;
 	request_message message;
 	for (;;) {
 		char description_buf[256];
@@ -1098,6 +1128,19 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 				if (debug) {
 					ERROR("child spawned a thread");
 					ERROR_FLUSH();
+				}
+				void *stack = fs_mmap(NULL, PROXY_WORKER_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
+				if (fs_is_map_failed(stack)) {
+					ERROR("unable to map a worker stack", fs_strerror((intptr_t)stack));
+					ERROR_FLUSH();
+					break;
+				}
+				result = fs_clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS, stack + PROXY_WORKER_STACK_SIZE, NULL, NULL, data, process_syscalls_thread);
+				if (result < 0) {
+					fs_munmap(stack, PROXY_WORKER_STACK_SIZE);
+					ERROR("unable to start a worker thread", fs_strerror(result));
+					ERROR_FLUSH();
+					break;
 				}
 				break;
 			}
@@ -1451,7 +1494,17 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return clone_result;
 	}
 	// process syscalls until the remote exits
-	intptr_t status_code = process_syscalls_until_exit(buf, stream_id, thandler.receive_response_addr, &analysis, &patches, thandler.receive_syscall_addr, thandler.receive_clone_addr, &tid_ptr, debug);
+	struct process_syscalls_data process_data = (struct process_syscalls_data) {
+		.stream_id = stream_id,
+		.receive_response_addr = thandler.receive_response_addr,
+		.analysis = &analysis,
+		.patches = &patches,
+		.receive_syscall_addr = thandler.receive_syscall_addr,
+		.receive_clone_addr = thandler.receive_clone_addr,
+		.tid_ptr = &tid_ptr,
+		.debug = debug,
+	};
+	intptr_t status_code = process_syscalls_until_exit(buf, &process_data);
 	// wait for remote thread
 	if (debug) {
 		ERROR("received status code, waiting for exit", status_code);
