@@ -491,6 +491,10 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 				ERROR("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
 				ERROR("from entry", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].entry)));
 				die = true;
+			} else {
+				ERROR("patching from", temp_str(copy_address_description(&analysis->loader, patch_target.start)));
+				ERROR("to", temp_str(copy_address_description(&analysis->loader, patch_target.end)));
+				ERROR("for", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
 			}
 		}
 	}
@@ -1144,9 +1148,10 @@ static intptr_t process_syscalls_until_exit(char *buf, uint32_t stream_id, intpt
 								*cur++ = ' ';
 								fs_utoah(remote_address + text_section->sh_addr, cur);
 								ERROR("additional debug command", buf);
-								if (!wait_for_user_continue()) {
-									DIE("exiting");
-								}
+								ERROR_FLUSH();
+								// if (!wait_for_user_continue()) {
+								// 	DIE("exiting");
+								// }
 							}
 						}
 						goto after_unknown_library_message;
