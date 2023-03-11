@@ -584,11 +584,11 @@ intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	}
 }
 
-intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout)
+intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, struct timespec *timeout)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			return PROXY_CALL(__NR_ppoll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), timeout != NULL ? proxy_in(timeout, sizeof(struct timespec)) : proxy_value(0), proxy_value(0));
+			return PROXY_CALL(__NR_ppoll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), timeout != NULL ? proxy_inout(timeout, sizeof(struct timespec)) : proxy_value(0), proxy_value(0), proxy_value(0));
 		default:
 			unknown_target();
 	}

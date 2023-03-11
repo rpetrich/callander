@@ -37,6 +37,7 @@
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/shm.h>
+#include <sys/time.h>
 #include <termios.h>
 #include <utime.h>
 
@@ -833,7 +834,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (has_remote) {
 				if (syscall == __NR_ppoll) {
 					// TODO: set signal mask
-					result = remote_ppoll(&real_fds[0], nfds, (const struct timespec *)arg3);
+					result = remote_ppoll(&real_fds[0], nfds, (struct timespec *)arg3);
 				} else {
 					result = remote_poll(&real_fds[0], nfds, arg3);
 				}
@@ -1070,7 +1071,6 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			fd_set *readfds = (fd_set *)arg2;
 			fd_set *writefds = (fd_set *)arg3;
 			fd_set *exceptfds = (fd_set *)arg4;
-			struct timespec *timeout = (struct timespec *)arg5;
 			// translate select to the equivalent poll syscall and possibly send remotely
 			struct attempt_cleanup_state state;
 			struct pollfd *real_fds = malloc(sizeof(struct pollfd) * n);
@@ -1101,12 +1101,34 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					nfds++;
 				}
 			}
+			// translate timeout
+			struct timespec *timeout;
+			struct timespec timeout_copy;
+			if (syscall == __NR_pselect6) {
+				timeout = (struct timespec *)arg5;
+			} else if (arg5 != 0) {
+				TIMEVAL_TO_TIMESPEC((struct timeval *)arg5, &timeout_copy);
+				timeout = &timeout_copy;
+			} else {
+				timeout = NULL;
+			}
+			// translate sigset
+			const void *sigset = NULL;
+			size_t sigsetsize = 0;
+			if (syscall == __NR_pselect6 && arg6 != 0) {
+				struct {
+					const void *ss;
+					size_t ss_len;
+				}* sigsetdata = (void *)arg6;
+				sigset = sigsetdata->ss;
+				sigsetsize = sigsetdata->ss_len;
+			}
 			int result;
 			if (has_remote) {
 				// TODO: mask signals for pselect6
 				result = remote_ppoll(&real_fds[0], nfds, timeout);
 			} else {
-				result = FS_SYSCALL(__NR_ppoll, (intptr_t)&real_fds[0], nfds, (intptr_t)timeout, syscall == __NR_pselect6 ? arg6 : 0);
+				result = FS_SYSCALL(__NR_ppoll, (intptr_t)&real_fds[0], nfds, (intptr_t)timeout, (intptr_t)sigset, sigsetsize);
 			}
 			if (result > 0) {
 				nfds = 0;
