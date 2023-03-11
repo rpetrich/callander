@@ -50,6 +50,9 @@ static inline int install_underlying_fd(int underlying_fd, int underlying_type, 
 __attribute__((warn_unused_result))
 int install_local_fd(int local_fd, int flags)
 {
+	if (local_fd < 0) {
+		return local_fd;
+	}
 	int result = install_underlying_fd(local_fd, HAS_LOCAL_FD, flags);
 	if (result < 0) {
 		fs_close(local_fd);
@@ -60,6 +63,9 @@ int install_local_fd(int local_fd, int flags)
 __attribute__((warn_unused_result))
 int install_remote_fd(int remote_fd, int flags)
 {
+	if (remote_fd < 0) {
+		return remote_fd;
+	}
 	int result = install_underlying_fd(remote_fd, HAS_REMOTE_FD, flags);
 	if (result < 0) {
 		remote_close(remote_fd);
@@ -103,6 +109,15 @@ int become_remote_fd(int fd, int remote_fd) {
 	int result = become_underlying_fd(fd, remote_fd, HAS_REMOTE_FD, true);
 	if (result < 0) {
 		remote_close(remote_fd);
+	}
+	return result;
+}
+
+int become_local_fd(int fd, int local_fd)
+{
+	int result = become_underlying_fd(fd, local_fd, HAS_LOCAL_FD, true);
+	if (result < 0) {
+		fs_close(local_fd);
 	}
 	return result;
 }

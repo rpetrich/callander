@@ -29,6 +29,8 @@ __attribute__((warn_unused_result))
 int install_remote_fd(int remote_fd, int flags);
 // become_remote_fd takes ownership of remote_fd
 int become_remote_fd(int fd, int remote_fd);
+// become_local_fd takes ownership of remote_fd
+int become_local_fd(int fd, int local_fd);
 // lookup_real_fd looks up the real file descriptor and returns true if it's remote
 __attribute__((warn_unused_result))
 bool lookup_real_fd(int fd, int *out_real_fd);

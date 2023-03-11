@@ -263,6 +263,16 @@ int become_remote_fd(int fd, int remote_fd) {
 	return 0;
 }
 
+int become_local_fd(int fd, int local_fd)
+{
+	// TODO: preserve O_CLOEXEC status
+	int result = perform_dup3(local_fd, fd, O_CLOEXEC);
+	if (result >= 0) {
+		fs_close(local_fd);
+	}
+	return result;
+}
+
 __attribute__((warn_unused_result))
 bool lookup_real_fd(int fd, int *out_real_fd)
 {
