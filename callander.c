@@ -2430,6 +2430,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
+	update_known_function(analysis, new_binary, "__cxa_throw", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
 	const uint8_t *dlopen_mode = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__libc_dlopen_mode", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 	if (dlopen_mode) {
 		register_mask arg0 = (register_mask)1 << sysv_argument_abi_register_indexes[0];
