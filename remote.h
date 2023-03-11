@@ -49,6 +49,7 @@ intptr_t remote_getsockopt(int sockfd, int level, int optname, void *restrict op
 intptr_t remote_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
 
 intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout);
+intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout);
 
 intptr_t invalid_remote_operation(void);
 

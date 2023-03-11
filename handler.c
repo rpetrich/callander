@@ -797,10 +797,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
 		}
-		case __NR_poll: {
+		case __NR_poll:
+		case __NR_ppoll: {
 			struct pollfd *fds = (struct pollfd *)arg1;
 			nfds_t nfds = arg2;
-			int timeout = arg3;
 			if (nfds == 0) {
 				return FS_SYSCALL(syscall, arg1, arg2, arg3);
 			}
@@ -830,9 +830,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			int result;
 			if (has_remote) {
-				result = remote_poll(&real_fds[0], nfds, timeout);
+				if (syscall == __NR_ppoll) {
+					// TODO: set signal mask
+					result = remote_ppoll(&real_fds[0], nfds, (const struct timespec *)arg3);
+				} else {
+					result = remote_poll(&real_fds[0], nfds, arg3);
+				}
 			} else {
-				result = FS_SYSCALL(syscall, (intptr_t)&real_fds[0], nfds, timeout);
+				result = FS_SYSCALL(syscall, (intptr_t)&real_fds[0], nfds, arg3, arg4);
 			}
 			if (result > 0) {
 				for (nfds_t i = 0; i < nfds; i++) {
@@ -1058,23 +1063,70 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
 		}
-		case __NR_select: {
+		case __NR_select:
+		case __NR_pselect6: {
 			int n = arg1;
 			fd_set *readfds = (fd_set *)arg2;
 			fd_set *writefds = (fd_set *)arg3;
 			fd_set *exceptfds = (fd_set *)arg4;
+			struct timespec *timeout = (struct timespec *)arg5;
+			// translate select to the equivalent poll syscall and possibly send remotely
+			struct attempt_cleanup_state state;
+			struct pollfd *real_fds = malloc(sizeof(struct pollfd) * n);
+			attempt_push_free(thread, &state, real_fds);
+			bool has_local = false;
+			bool has_remote = false;
+			int nfds = 0;
 			for (int i = 0; i < n; i++) {
 				if ((readfds != NULL && FD_ISSET(i, readfds)) || (writefds != NULL && FD_ISSET(i, writefds)) || (exceptfds != NULL && FD_ISSET(i, exceptfds))) {
-					int real_fd;
-					if (lookup_real_fd(i, &real_fd)) {
-						// TODO: proxy remotely
-						return invalid_remote_operation();
+					if (lookup_real_fd(i, &real_fds[nfds].fd)) {
+						if (has_local) {
+							// cannot poll on both local and remote file descriptors
+							attempt_pop_free(&state);
+							return invalid_local_remote_mixed_operation();
+						}
+						has_remote = true;
+					} else {
+						if (has_remote) {
+							// cannot poll on both local and remote file descriptors
+							attempt_pop_free(&state);
+							return invalid_local_remote_mixed_operation();
+						}
+						has_local = true;
 					}
-					// TODO: support mapping back and forth
+					real_fds[nfds].events = ((readfds != NULL && FD_ISSET(i, readfds)) ? (POLLIN | POLLPRI) : 0)
+					                      | ((writefds != NULL && FD_ISSET(i, writefds)) ? (POLLOUT | POLLWRBAND) : 0);
+					// TODO: what about exceptfds?
+					nfds++;
 				}
 			}
-			return invalid_local_operation();
-			// return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5);
+			int result;
+			if (has_remote) {
+				// TODO: mask signals for pselect6
+				result = remote_ppoll(&real_fds[0], nfds, timeout);
+			} else {
+				result = FS_SYSCALL(__NR_ppoll, (intptr_t)&real_fds[0], nfds, (intptr_t)timeout, syscall == __NR_pselect6 ? arg6 : 0);
+			}
+			if (result > 0) {
+				nfds = 0;
+				for (int i = 0; i < n; i++) {
+					if ((readfds != NULL && FD_ISSET(i, readfds)) || (writefds != NULL && FD_ISSET(i, writefds)) || (exceptfds != NULL && FD_ISSET(i, exceptfds))) {
+						short revents = real_fds[nfds].revents;
+						if ((revents & (POLLIN | POLLPRI)) == 0 && readfds != NULL) {
+							FD_CLR(nfds, readfds);
+						}
+						if ((revents & (POLLOUT | POLLWRBAND)) == 0 && writefds != NULL) {
+							FD_CLR(nfds, writefds);
+						}
+						if ((revents & (POLLERR | POLLHUP | POLLNVAL)) == 0 && exceptfds != NULL) {
+							FD_CLR(nfds, exceptfds);
+						}
+						nfds++;
+					}
+				}
+			}
+			attempt_pop_free(&state);
+			return result;
 		}
 		case __NR_sendfile: {
 			int out_real_fd;
@@ -1495,62 +1547,6 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return PROXY_CALL(__NR_inotify_rm_watch, real_fd, arg2);
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2);
-		}
-		case __NR_pselect6: {
-			// TODO: handle pselect6
-			int nfds = arg1;
-			struct fs_fd_set *readfds = (struct fs_fd_set *)arg2;
-			struct fs_fd_set *writefds = (struct fs_fd_set *)arg3;
-			struct fs_fd_set *exceptfds = (struct fs_fd_set *)arg4;
-			const struct timespec *timeout = (const struct timespec *)arg5;
-			const struct fs_sigset_t *sigmask = (const struct fs_sigset_t *)arg6;
-			for (int i = 0; i < nfds; i++) {
-				bool has_read = readfds && fs_fd_isset(i, readfds);
-				bool has_write = writefds && fs_fd_isset(i, writefds);
-				bool has_except = exceptfds && fs_fd_isset(i, exceptfds);
-				if (has_read || has_write || has_except) {
-					int real_fd;
-					if (lookup_real_fd(i, &real_fd)) {
-						// TODO: handle more than one
-						struct pollfd poll = {
-							.fd = real_fd,
-							.events = (has_read ? POLLIN : 0) | (has_write ? POLLOUT : 0) | (has_except ? POLLRDHUP : 0),
-							.revents = 0,
-						};
-						int result = PROXY_CALL(__NR_ppoll, proxy_inout(&poll, sizeof(poll)), proxy_value(1), proxy_in(timeout, sizeof(struct timespec)), proxy_value(0), proxy_value(sizeof(*sigmask)));
-						if (result < 0) {
-							return result;
-						}
-						if (has_read && ((poll.revents & POLLIN) == 0)) {
-							fs_fd_clr(i, readfds);
-						}
-						if (has_write && ((poll.revents & POLLOUT) == 0)) {
-							fs_fd_clr(i, writefds);
-						}
-						if (has_write && ((poll.revents & POLLERR) == 0)) {
-							fs_fd_clr(i, exceptfds);
-						}
-						for (i++; i < nfds; i++) {
-							if (readfds && fs_fd_isset(i, readfds)) {
-								fs_fd_clr(i, readfds);
-							}
-							if (writefds && fs_fd_isset(i, writefds)) {
-								fs_fd_clr(i, writefds);
-							}
-							if (exceptfds && fs_fd_isset(i, exceptfds)) {
-								fs_fd_clr(i, exceptfds);
-							}
-						}
-						return (int)has_read + (int)has_write + (int)has_except;
-					}
-					// TODO: remap local fds
-				}
-			}
-			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
-		}
-		case __NR_ppoll: {
-			// TODO: handle ppoll
-			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5);
 		}
 		case __NR_splice: {
 			int fd_in_real;
