@@ -137,25 +137,23 @@ static intptr_t simple_locked_call(int syscall, intptr_t arg1, intptr_t arg2, in
 	if (syscall & PROXY_NO_RESPONSE) {
 		return 0;
 	}
-	lock_and_read_until_response(request.id);
+	lock_and_read_until_response(request.id, NULL);
 	result = shared->response_buffer.message.result;
 	shared_mutex_unlock(&shared->read_lock);
 	return result;
 }
-
-#define WORKER_STACK_SIZE 2 * 1024 * 1024
 
 static void spawn_worker(void)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX: {
 			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
-			intptr_t stack_addr = simple_locked_call(__NR_mmap, 0, WORKER_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
+			intptr_t stack_addr = simple_locked_call(__NR_mmap, 0, PROXY_WORKER_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 			if (fs_is_map_failed((void *)stack_addr)) {
 				DIE("unable to map a worker stack", fs_strerror(stack_addr));
 				return;
 			}
-			simple_locked_call(__NR_clone | TARGET_NO_RESPONSE, CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS, stack_addr + WORKER_STACK_SIZE, 0, 0, 0, worker_func_addr);
+			simple_locked_call(__NR_clone | TARGET_NO_RESPONSE, CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS, stack_addr + PROXY_WORKER_STACK_SIZE, 0, 0, 0, worker_func_addr);
 			atomic_fetch_add_explicit(&shared->idle_worker_count, 1, memory_order_relaxed);
 			break;
 		}
