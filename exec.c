@@ -166,8 +166,8 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 			fs_strncmp(envp[i], AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0)
 		{
 			fs_close(fd);
-			attempt_pop_free(&new_envp_cleanup);
 			attempt_pop_free(&exec_path_buf_cleanup);
+			attempt_pop_free(&new_envp_cleanup);
 			return -EINVAL;
 		}
 #ifdef ENABLE_TELEMETRY
@@ -182,14 +182,13 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 	int result = fs_dup2(fd, MAIN_FD);
 	fs_close(fd);
 	if (result < 0) {
-		attempt_pop_free(&new_envp_cleanup);
-		attempt_pop_free(&exec_path_buf_cleanup);
-		return result;
+		goto cleanup;
 	}
 	serialize_fd_table_for_exec();
 	result = fs_execveat(SELF_FD, empty_string, (char *const*)argv, (char *const*)new_envp, AT_EMPTY_PATH);
-	attempt_pop_free(&new_envp_cleanup);
+cleanup:
 	attempt_pop_free(&exec_path_buf_cleanup);
+	attempt_pop_free(&new_envp_cleanup);
 	return result;
 }
 
