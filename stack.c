@@ -75,6 +75,10 @@ static inline void *get_allocated_stack(struct stack_data *stack_data)
 		if (result != 0) {
 			DIE("failed to protect stack guard", fs_strerror(result));
 		}
+#if defined(__x86_64__)
+		// align the stack
+		stack -= 8;
+#endif
 		stack_data->allocated_stack = stack;
 	}
 	return stack;
