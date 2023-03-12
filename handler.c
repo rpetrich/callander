@@ -1136,13 +1136,13 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					if ((readfds != NULL && FD_ISSET(i, readfds)) || (writefds != NULL && FD_ISSET(i, writefds)) || (exceptfds != NULL && FD_ISSET(i, exceptfds))) {
 						short revents = real_fds[nfds].revents;
 						if ((revents & (POLLIN | POLLPRI)) == 0 && readfds != NULL) {
-							FD_CLR(nfds, readfds);
+							FD_CLR(i, readfds);
 						}
 						if ((revents & (POLLOUT | POLLWRBAND)) == 0 && writefds != NULL) {
-							FD_CLR(nfds, writefds);
+							FD_CLR(i, writefds);
 						}
 						if ((revents & (POLLERR | POLLHUP | POLLNVAL)) == 0 && exceptfds != NULL) {
-							FD_CLR(nfds, exceptfds);
+							FD_CLR(i, exceptfds);
 						}
 						nfds++;
 					}
