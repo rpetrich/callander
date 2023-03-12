@@ -279,9 +279,6 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 			}
 		}
 	}
-	if (ins[0] == INS_LEA && (ins[1] & 0xc7) != 0x5) {
-		PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
-	}
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
 		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
