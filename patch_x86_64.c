@@ -832,6 +832,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	struct instruction_range patch_target;
 	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, naive_address_formatter, NULL, &patch_target)) {
 		PATCH_LOG("unable to find patch target");
+		ERROR_FLUSH();
 		return false;
 	}
 	PATCH_LOG("patch start", (uintptr_t)patch_target.start);
@@ -847,6 +848,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	if ((target_mapping.flags & (MAP_SHARED | MAP_PRIVATE)) == MAP_SHARED) {
 		// Found that the mapping was shared, don't patch
 		PATCH_LOG("found shared mapping", (uintptr_t)target_mapping.flags);
+		ERROR_FLUSH();
 		return false;
 	}
 	// Find an unused page to detour to
@@ -878,6 +880,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 				PATCH_LOG("Failed to patch: invalid pc-relative offset", (intptr_t)stub_address - (uintptr_t)patch_target.end);
+				ERROR_FLUSH();
 				return false;
 			}
 			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
@@ -885,6 +888,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 				PATCH_LOG("Failed to patch: mremap failed", -(intptr_t)remap_result);
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
+				ERROR_FLUSH();
 				return false;
 			}
 		}
@@ -940,6 +944,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		if (new_address) {
 			fs_munmap((void *)stub_address, TRAMPOLINE_REGION_SIZE);
 		}
+		ERROR_FLUSH();
 		return false;
 	}
 	// Patch in some illegal instructions
@@ -983,6 +988,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 	PATCH_LOG("finished patch");
+	ERROR_FLUSH();
 	return true;
 }
 

@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sched.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
 #include <sys/prctl.h>
@@ -2052,9 +2053,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 			return;
 		}
 		ERROR("dlopen with indeterminate value", temp_str(copy_register_state_description(&analysis->loader, *first_arg)));
-		ERROR("dlopen call stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
-		ERROR_FLUSH();
-		abort();
+		DIE("dlopen call stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	}
 	const char *needed_path = (const char *)first_arg->value;
 	if (needed_path == NULL) {
@@ -2064,9 +2063,7 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 	int prot = protection_for_address(&analysis->loader, needed_path, NULL, NULL);
 	if ((prot & PROT_READ) == 0) {
 		ERROR("dlopen with constant, but unreadable value", temp_str(copy_address_description(&analysis->loader, needed_path)));
-		ERROR("dlopen call stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
-		ERROR_FLUSH();
-		abort();
+		DIE("dlopen call stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	}
 	LOG("dlopen with constant path", needed_path);
 	struct analysis_frame self = {
@@ -3334,8 +3331,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 					LOG("read 64 bit", value);
 					break;
 				default:
-					ERROR_FLUSH();
-					abort();
+					__builtin_unreachable();
 					break;
 			}
 			if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
@@ -4632,10 +4628,8 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 	} else if ((jump_prot & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 		self->description = "conditional jump";
-		ERROR("found conditional jump to non-executable address at", temp_str(copy_call_trace_description(&analysis->loader, self)));
-		LOG("jump is to", temp_str(copy_address_description(&analysis->loader, jump_target)));
-		ERROR_FLUSH();
-		abort();
+		ERROR("found conditional jump at", temp_str(copy_call_trace_description(&analysis->loader, self)));
+		DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, jump_target)));
 #endif
 		LOG("found conditional jump to non-executable address, assuming all effects");
 		jump_effects = EFFECT_EXITS | EFFECT_RETURNS;
@@ -4745,10 +4739,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				} else if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
-					ERROR("found single jump to non-executable address at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-					LOG("jump is to", temp_str(copy_address_description(&analysis->loader, jump_target)));
-					ERROR_FLUSH();
-					abort();
+					ERROR("found single jump at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+					DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, jump_target)));
 #endif
 					LOG("completing from jump to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
@@ -4806,9 +4798,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					} else if ((protection_for_address(&analysis->loader, (const void *)address.value, NULL, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 						ERROR("found call* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-						ERROR("call is to non-executable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.value)));
-						ERROR_FLUSH();
-						abort();
+						DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.value)));
 #endif
 						LOG("call* to non-executable address, assuming all effects", address.value);
 					} else {
@@ -4845,9 +4835,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 								ERROR("found call* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-								ERROR("call is to non-executable address", temp_str(copy_address_description(&analysis->loader, dest)));
-								ERROR_FLUSH();
-								abort();
+								DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, dest)));
 #endif
 								LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
 								effects |= EFFECT_EXITS | EFFECT_RETURNS;
@@ -4957,10 +4945,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
-					ERROR("found jmp* to non-executable address at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-					LOG("jump is to", temp_str(copy_address_description(&analysis->loader, new_ins)));
-					ERROR_FLUSH();
-					abort();
+					ERROR("found jump* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+					DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, new_ins)));
 #endif
 					LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
@@ -5184,9 +5170,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if (required_effects & EFFECT_AFTER_STARTUP) {
 								analysis->syscalls.unknown = true;
 							}
-							ERROR("try blocking a function from the call stack using --block-function or --block-debug-function");
-							ERROR_FLUSH();
-							abort();
+							DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
 						}
 						break;
 					}
@@ -7368,10 +7352,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("found call to NULL, assuming all effects");
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
-					ERROR("found call to non-executable address at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-					LOG("call is to", temp_str(copy_address_description(&analysis->loader, (void *)dest)));
-					ERROR_FLUSH();
-					abort();
+					ERROR("found call at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+					DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, (void *)dest)));
 #endif
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;

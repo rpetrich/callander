@@ -17,7 +17,11 @@
 #endif
 #endif
 
-#include <stdlib.h>
+#include <stdnoreturn.h>
+// #include <stdlib.h>
+extern void free(void *);
+extern noreturn void abort();
+
 #include <string.h>
 
 // #define ERRORS_ARE_BUFFERED

@@ -4,6 +4,8 @@
 
 #include "loader.h"
 
+#include <stdlib.h>
+
 #ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
 #else

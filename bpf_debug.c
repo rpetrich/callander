@@ -566,18 +566,15 @@ struct sock_fprog convert_to_sock_fprog(struct bpf_prog prog)
 	for (unsigned long i = 0; i < prog.len; i++) {
 		if (UNLIKELY(!bpf_code_is_valid(prog.filter[i].code))) {
 			ERROR("invalid code", temp_str(copy_bpf_insn_description(prog.filter[i])));
-			ERROR("for instruction at index", (intptr_t)i);
-			abort();
+			DIE("for instruction at index", (intptr_t)i);
 		}
 		if (UNLIKELY(!bpf_jump_offset_is_valid(prog.filter[i].jt))) {
 			ERROR("invalid jt", temp_str(copy_bpf_insn_description(prog.filter[i])));
-			ERROR("for instruction at index", (intptr_t)i);
-			abort();
+			DIE("for instruction at index", (intptr_t)i);
 		}
 		if (UNLIKELY(!bpf_jump_offset_is_valid(prog.filter[i].jf))) {
 			ERROR("invalid jf", temp_str(copy_bpf_insn_description(prog.filter[i])));
-			ERROR("for instruction at index", (intptr_t)i);
-			abort();
+			DIE("for instruction at index", (intptr_t)i);
 		}
 		filter[i] = (struct sock_filter){
 			.code = prog.filter[i].code,

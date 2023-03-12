@@ -12,6 +12,8 @@
 #include "axon.h"
 
 #include <errno.h>
+#include <stdatomic.h>
+#include <stdlib.h>
 
 #ifdef STANDALONE
 
@@ -255,7 +257,7 @@ void *aligned_alloc(size_t alignment, size_t size)
 #ifdef ERRORS_ARE_BUFFERED
 
 static char error_buffer[4096 * 64];
-static volatile size_t error_offset;
+static atomic_size_t error_offset;
 
 void error_writev(const struct iovec *vec, int count)
 {
@@ -266,7 +268,8 @@ void error_writev(const struct iovec *vec, int count)
 
 void error_write(const char *buf, size_t length)
 {
-	if (error_offset + length > sizeof(error_buffer)) {
+	size_t existing_offset = atomic_load(&error_offset);
+	while (UNLIKELY(existing_offset + length > sizeof(error_buffer))) {
 		error_flush();
 		if (length > sizeof(error_buffer)) {
 			if (fs_write_all(2, buf, length) != (intptr_t)length) {
@@ -275,19 +278,32 @@ void error_write(const char *buf, size_t length)
 			}
 			return;
 		}
+		existing_offset = atomic_load(&error_offset);
 	}
-	fs_memcpy(&error_buffer[error_offset], buf, length);
-	error_offset += length;
+	fs_memcpy(&error_buffer[existing_offset], buf, length);
+	atomic_fetch_add(&error_offset, length);
 }
 
 void error_flush(void)
 {
-	if (error_offset != 0) {
-		if (fs_write_all(2, error_buffer, error_offset) != (intptr_t)error_offset) {
+	size_t existing_offset = atomic_exchange(&error_offset, 0);
+	if (existing_offset != 0) {
+		if (existing_offset > sizeof(error_buffer)) {
+			existing_offset = sizeof(error_buffer);
+		}
+		intptr_t result = fs_write_all(2, error_buffer, existing_offset);
+		if (result != (intptr_t)existing_offset) {
+			if (result < 0) {
+				(void)fs_write(2, "failed to write errors: ", sizeof("failed to write errors: ")-1);
+				const char *errorstr = fs_strerror(result);
+				fs_write(2, errorstr, fs_strlen(errorstr));
+				(void)fs_write(2, "\n", 1);
+			} else {
+				(void)fs_write(2, "failed to write errors\n", sizeof("failed to write errors\n")-1);
+			}
 			abort();
 			__builtin_unreachable();
 		}
-		error_offset = 0;
 	}
 }
 
