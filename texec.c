@@ -5,6 +5,7 @@
 #include "axon.h"
 AXON_BOOTSTRAP_ASM
 
+#include <asm/prctl.h>
 #include <errno.h>
 #include <linux/binfmts.h>
 #include <netinet/in.h>
@@ -25,6 +26,12 @@ AXON_BOOTSTRAP_ASM
 #include "thandler.h"
 #include "time.h"
 #include "x86_64_length_disassembler.h"
+
+static void set_thread_pointer(const void **thread_pointer)
+{
+	*thread_pointer = thread_pointer;
+	FS_SYSCALL(__NR_arch_prctl, ARCH_SET_FS, (intptr_t)thread_pointer);
+}
 
 __attribute__((used)) __attribute__((visibility("hidden")))
 void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
@@ -1037,6 +1044,11 @@ static bool wait_for_user_continue(void)
 
 static char heap[TEXEC_HEAP_SIZE];
 
+struct worker_thread_info {
+	int thread_id;
+	struct worker_thread_info *next;
+};
+
 struct process_syscalls_data {
 	uint32_t stream_id;
 	intptr_t receive_response_addr;
@@ -1046,20 +1058,25 @@ struct process_syscalls_data {
 	intptr_t receive_clone_addr;
 	intptr_t *tid_ptr;
 	bool debug;
+	bool exited;
+	intptr_t status_code;
+	struct worker_thread_info *threads;
 };
 
-static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process_syscalls_data *data);
+static void process_syscalls_until_exit(char buf[512 * 1024], struct process_syscalls_data *data);
 
 static void *process_syscalls_thread(struct process_syscalls_data *data)
 {
+	const void *thread_ptr;
+	set_thread_pointer(&thread_ptr);
 	char buf[512 * 1024];
-	intptr_t result = process_syscalls_until_exit(buf, data);
-	ERROR("worker received exit", result);
+	process_syscalls_until_exit(buf, data);
+	ERROR("worker thread exited");
 	ERROR_FLUSH();
 	fs_exitthread(0);
 }
 
-static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process_syscalls_data *data)
+static void process_syscalls_until_exit(char buf[512 * 1024], struct process_syscalls_data *data)
 {
 	uint32_t stream_id = data->stream_id;
 	intptr_t receive_response_addr = data->receive_response_addr;
@@ -1075,7 +1092,14 @@ static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process
 		struct iovec vec[PROXY_ARGUMENT_COUNT];
 		size_t io_count = 0;
 		intptr_t result = 0;
-		intptr_t result_id = proxy_read_stream_message_start(stream_id, &message);
+		intptr_t result_id = proxy_read_stream_message_start(stream_id, &message, &data->exited);
+		if (UNLIKELY(result_id < 0)) {
+			if (result_id == -ECANCELED) {
+				return;
+			}
+			DIE("proxy_read_stream_message_start returned unexpected error", fs_strerror(result_id));
+			return;
+		}
 		switch (message.template.nr) {
 			case TARGET_NR_PEEK: {
 				if (debug) {
@@ -1124,7 +1148,6 @@ static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process
 				break;
 			}
 			case __NR_clone | PROXY_NO_RESPONSE: {
-				proxy_read_stream_message_finish(stream_id);
 				if (debug) {
 					ERROR("child spawned a thread");
 					ERROR_FLUSH();
@@ -1135,32 +1158,39 @@ static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process
 					ERROR_FLUSH();
 					break;
 				}
-				result = fs_clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS, stack + PROXY_WORKER_STACK_SIZE, NULL, NULL, data, process_syscalls_thread);
+				struct worker_thread_info *info = stack;
+				info->thread_id = 0;
+				info->next = data->threads;
+				data->threads = info;
+				result = fs_clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_CLEARTID | CLONE_PARENT_SETTID, stack + PROXY_WORKER_STACK_SIZE, &info->thread_id, &info->thread_id, data, process_syscalls_thread);
 				if (result < 0) {
 					fs_munmap(stack, PROXY_WORKER_STACK_SIZE);
 					ERROR("unable to start a worker thread", fs_strerror(result));
 					ERROR_FLUSH();
 					break;
 				}
+				proxy_read_stream_message_finish(stream_id);
 				break;
 			}
 			case __NR_set_tid_address | PROXY_NO_RESPONSE: {
 				intptr_t value = message.values[0];
+				*tid_ptr = value;
 				proxy_read_stream_message_finish(stream_id);
 				if (debug) {
-					ERROR("received set tid address", value);
+					ERROR("received set tid address", (uintptr_t)value);
 					ERROR_FLUSH();
 				}
-				*tid_ptr = value;
 				break;
 			}
 			case __NR_exit_group | PROXY_NO_RESPONSE:
-				proxy_read_stream_message_finish(stream_id);
 				if (debug) {
 					ERROR("received an exit");
 					ERROR_FLUSH();
 				}
-				break;
+				data->status_code = message.values[0];
+				data->exited = true;
+				proxy_read_stream_message_finish(stream_id);
+				return;
 			case 0x666: {
 				proxy_read_stream_message_finish(stream_id);
 				int fd = message.values[0];
@@ -1336,9 +1366,6 @@ static intptr_t process_syscalls_until_exit(char buf[512 * 1024], struct process
 			}
 			proxy_call(TARGET_NR_CALL | TARGET_NO_RESPONSE, return_args);
 		}
-		if (message.template.nr == (__NR_exit_group | PROXY_NO_RESPONSE)) {
-			return message.values[0];
-		}
 	}
 }
 
@@ -1503,11 +1530,37 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		.receive_clone_addr = thandler.receive_clone_addr,
 		.tid_ptr = &tid_ptr,
 		.debug = debug,
+		.exited = false,
+		.status_code = 0,
+		.threads = NULL,
 	};
-	intptr_t status_code = process_syscalls_until_exit(buf, &process_data);
+	process_syscalls_until_exit(buf, &process_data);
+	ERROR("syscall loop exited, waiting for workers");
+	ERROR_FLUSH();
+	// wait for workers
+	for (struct worker_thread_info *worker = process_data.threads; worker != NULL; ) {
+		for (;;) {
+			int thread_id = worker->thread_id;
+			if (thread_id == 0) {
+				break;
+			}
+			int futex_result = fs_futex(&worker->thread_id, FUTEX_WAIT, thread_id, NULL);
+			if (futex_result == 0) {
+				ERROR("woke up");
+			} else {
+				ERROR("futex error", fs_strerror(futex_result));
+			}
+			ERROR_FLUSH();
+		}
+		void *worker_stack = worker;
+		worker = worker->next;
+		fs_munmap(worker_stack, PROXY_WORKER_STACK_SIZE);
+	}
 	// wait for remote thread
+	ERROR("workers exited, waiting for remote thread");
+	ERROR_FLUSH();
 	if (debug) {
-		ERROR("received status code, waiting for exit", status_code);
+		ERROR("received status code, waiting for exit", process_data.status_code);
 	}
 	pid_t tid;
 	do {
@@ -1526,7 +1579,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	}
 	remote_unload_binary(&main_info);
 	free_thandler(&thandler);
-	return status_code;
+	return process_data.status_code;
 }
 
 static int remote_exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size], bool debug)
@@ -1612,6 +1665,8 @@ __attribute__((used))
 noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 {
 	const char **argv = (void *)(sp+1);
+	const void *thread_ptr;
+	set_thread_pointer(&thread_ptr);
 	bool debug = false;
 	if (argv[0] != NULL && argv[1] != NULL && fs_strcmp(argv[1], "--debug") == 0) {
 		debug = true;
