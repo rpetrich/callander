@@ -160,6 +160,30 @@ static inline intptr_t fs_syscall6(intptr_t id, intptr_t arg1, intptr_t arg2, in
 	return result;
 }
 
+#ifdef __linux__
+__attribute__((always_inline))
+static inline intptr_t fs_clone(unsigned long flags, void *child_stack, void *ptid, void *ctid, void *regs, void *fn)
+{
+	intptr_t result;
+	register void *r10 asm("r10") = ctid;
+	register void *r8 asm("r8") = regs;
+	register void *r9 asm("r9") = fn;
+	asm __volatile__ (
+		"syscall;"
+		"test %%eax,%%eax;"
+		"jnz 1f;"
+		"xor %%ebp,%%ebp;"
+		"mov %%r8,%%rdi;"
+		"jmp *%%r9;"
+		"1:"
+		: "=a"(result)
+		: "a"(__NR_clone), "D"(flags), "S"(child_stack), "d"(ptid), "r"(r10), "r"(r8), "r"(r9)
+		: "memory", "cc", "rcx", "r11"
+	);
+	return result;
+}
+#endif
+
 struct fs_stat {
 	dev_t st_dev;
 	ino_t st_ino;

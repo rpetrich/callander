@@ -47,30 +47,6 @@ typedef struct {
 	const char *argv[];
 } aux_t;
 
-#ifdef __linux__
-__attribute__((always_inline))
-static inline intptr_t fs_clone(unsigned long flags, void *child_stack, void *ptid, void *ctid, void *regs, void *fn)
-{
-	intptr_t result;
-	register void *r10 asm("r10") = ctid;
-	register void *r8 asm("r8") = regs;
-	register void *r9 asm("r9") = fn;
-	asm __volatile__ (
-		FS_CALL_SYSCALL ";"
-		"test %%eax,%%eax;"
-		"jnz 1f;"
-		"xor %%ebp,%%ebp;"
-		"mov %%r8,%%rdi;"
-		"jmp *%%r9;"
-		"1:"
-		: "=a"(result)
-		: "a"(__NR_clone), "D"(flags), "S"(child_stack), "d"(ptid), "r"(r10), "r"(r8), "r"(r9)
-		: "memory", "cc", "rcx", "r11"
-	);
-	return result;
-}
-#endif
-
 noreturn static void process_data(void);
 
 static target_state state;
