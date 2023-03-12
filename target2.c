@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <errno.h>
 
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 union sockaddr_buf {
 	struct sockaddr addr;
 	struct sockaddr_in in;

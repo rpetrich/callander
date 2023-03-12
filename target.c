@@ -17,6 +17,8 @@
 #include "target.h"
 #include "proxy.h"
 
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 #if 0
 
 #define WRITE_LITERAL(fd, lit) fs_write(fd, lit, sizeof(lit)-1)
@@ -64,7 +66,7 @@ int main(void)
 	for (;;) {
 		struct sockaddr_in sa;
 		socklen_t len = sizeof(sa);
-		intptr_t result = FS_SYSCALL(SYS_getpeername, fd, (intptr_t)&sa, (intptr_t)&len);
+		result = FS_SYSCALL(SYS_getpeername, fd, (intptr_t)&sa, (intptr_t)&len);
 		if (result == 0 && sa.sin_family == AF_INET && sa.sin_addr.s_addr == expected_addr && sa.sin_port == expected_port) {
 			break;
 		}
@@ -165,7 +167,7 @@ noreturn static void process_data(void)
 				io_count++;
 				response.result = 0;
 				break;
-			case TARGET_NR_POKE:
+			case TARGET_NR_POKE: {
 				// poke at local memory, reading the new data from the socket
 				bytes_read = 0;
 				char *addr = (char *)request.message.values[0];
@@ -187,6 +189,7 @@ noreturn static void process_data(void)
 				fs_mutex_unlock(&state.read_mutex);
 #endif
 				break;
+			}
 			default: {
 				size_t trailer_bytes = 0;
 				intptr_t index = 0;
