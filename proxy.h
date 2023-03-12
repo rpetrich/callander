@@ -140,7 +140,7 @@ intptr_t proxy_alloc(size_t size);
 void proxy_free(intptr_t mem, size_t size);
 
 uint32_t proxy_generate_stream_id(void);
-intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message);
+intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message, const bool *cancellation);
 int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size);
 void proxy_read_stream_message_finish(uint32_t stream_id);
 

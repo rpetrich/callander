@@ -57,7 +57,7 @@ static void remote_exited(void)
 	DIE("remote exited");
 }
 
-static void lock_and_read_until_response(uint32_t id)
+static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 {
 	shared_mutex_lock_id(&shared->read_lock, id);
 	for (;;) {
@@ -66,11 +66,14 @@ static void lock_and_read_until_response(uint32_t id)
 			if (read_message_id == id) {
 				shared->response_cursor = 0;
 				shared->response_buffer.message.id = 0;
-				return;
+				return true;
 			}
 			shared_mutex_unlock_handoff(&shared->read_lock, read_message_id);
 			shared_mutex_lock_id(&shared->read_lock, id);
 			continue;
+		}
+		if (cancellation && *cancellation) {
+			return false;
 		}
 		for (;;) {
 			// read some more bytes
@@ -89,6 +92,7 @@ static void lock_and_read_until_response(uint32_t id)
 			break;
 		}
 	}
+	return true;
 }
 
 static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
@@ -236,7 +240,7 @@ static intptr_t proxy_wait(uint32_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT
 		}
 	}
 	// read response
-	lock_and_read_until_response(send_id);
+	lock_and_read_until_response(send_id, NULL);
 	// read response bytes into output buffers
 	if (vec_index) {
 		intptr_t result = fs_readv_all(PROXY_FD, iov, vec_index);
@@ -265,10 +269,12 @@ uint32_t proxy_generate_stream_id(void)
 	return result;
 }
 
-intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message)
+intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *message, const bool *cancellation)
 {
 	// read response
-	lock_and_read_until_response(stream_id);
+	if (!lock_and_read_until_response(stream_id, cancellation)) {
+		return -ECANCELED;
+	}
 	intptr_t result = fs_read_all(PROXY_FD, (char *)message, sizeof(*message));
 	if (result < 0) {
 		DIE("failed to read stream message", fs_strerror(result));
