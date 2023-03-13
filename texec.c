@@ -1535,8 +1535,14 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		.threads = NULL,
 	};
 	process_syscalls_until_exit(buf, &process_data);
-	ERROR("syscall loop exited, waiting for workers");
-	ERROR_FLUSH();
+	if (debug) {
+		if (process_data.threads) {
+			ERROR("received status code, waiting for workers", process_data.status_code);
+		} else {
+			ERROR("received status code, waiting for exit", process_data.status_code);
+		}
+		ERROR_FLUSH();
+	}
 	// wait for workers
 	for (struct worker_thread_info *worker = process_data.threads; worker != NULL; ) {
 		for (;;) {
@@ -1544,23 +1550,16 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 			if (thread_id == 0) {
 				break;
 			}
-			int futex_result = fs_futex(&worker->thread_id, FUTEX_WAIT, thread_id, NULL);
-			if (futex_result == 0) {
-				ERROR("woke up");
-			} else {
-				ERROR("futex error", fs_strerror(futex_result));
-			}
-			ERROR_FLUSH();
+			(void)fs_futex(&worker->thread_id, FUTEX_WAIT, thread_id, NULL);
 		}
 		void *worker_stack = worker;
 		worker = worker->next;
 		fs_munmap(worker_stack, PROXY_WORKER_STACK_SIZE);
 	}
 	// wait for remote thread
-	ERROR("workers exited, waiting for remote thread");
-	ERROR_FLUSH();
 	if (debug) {
-		ERROR("received status code, waiting for exit", process_data.status_code);
+		ERROR("waiting for remote thread");
+		ERROR_FLUSH();
 	}
 	pid_t tid;
 	do {

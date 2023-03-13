@@ -73,6 +73,7 @@ static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 			continue;
 		}
 		if (cancellation && *cancellation) {
+			shared_mutex_unlock(&shared->read_lock);
 			return false;
 		}
 		for (;;) {
