@@ -1071,8 +1071,6 @@ static void *process_syscalls_thread(struct process_syscalls_data *data)
 	set_thread_pointer(&thread_ptr);
 	char buf[512 * 1024];
 	process_syscalls_until_exit(buf, data);
-	ERROR("worker thread exited");
-	ERROR_FLUSH();
 	fs_exitthread(0);
 }
 
