@@ -70,6 +70,11 @@ static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 				shared->response_buffer.message.id = 0;
 				return true;
 			}
+#if 0
+			ERROR("handing off", read_message_id);
+			ERROR("waiting for", id);
+			ERROR_FLUSH();
+#endif
 			shared_mutex_unlock_handoff(&shared->read_lock, read_message_id);
 			if (!shared_mutex_lock_id(&shared->read_lock, id, cancellation != NULL)) {
 				return false;
