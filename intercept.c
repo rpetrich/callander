@@ -318,3 +318,9 @@ int handle_sigaction(int signal, const struct fs_sigaction *act, struct fs_sigac
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &signal_lock);
 	return 0;
 }
+
+void handle_raise(int tid, int sig)
+{
+	(void)tid;
+	(void)sig;
+}

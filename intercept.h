@@ -11,6 +11,9 @@ int intercept_signals(void);
 __attribute__((warn_unused_result))
 int handle_sigaction(int signal, const struct fs_sigaction *act, struct fs_sigaction *oldact, size_t size);
 
+// handle_raise handles an incoming signal raise for the current thread
+void handle_raise(int tid, int sig);
+
 #ifdef PATCH_HANDLES_SIGILL
 #define REQUIRED_SIGNALS ((1UL << (SIGSYS - 1)) | (1UL << (SIGSEGV - 1)) | (1UL << (SIGTRAP - 1)) | (1UL << (SIGILL - 1)))
 #else

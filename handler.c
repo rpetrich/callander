@@ -3002,6 +3002,18 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, kernel_fd, initrd_fd, arg3, arg4, arg5);
 		}
+		case __NR_tkill: {
+			if (arg1 == fs_gettid()) {
+				handle_raise(arg1, arg2);
+			}
+			break;
+		}
+		case __NR_tgkill: {
+			if (arg1 ==  get_self_pid() && arg2 == fs_gettid()) {
+				handle_raise(arg2, arg3);
+			}
+			break;
+		}
 		case __NR_pidfd_open: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), O_CLOEXEC);
 		}
