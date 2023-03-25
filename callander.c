@@ -3000,6 +3000,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		} else {
 			ERROR("found startup syscall", temp_str(copy_syscall_description(&analysis->loader, nr, self.current_state, true)));
 		}
+		ERROR("from entry", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		if (SHOULD_LOG) {
 			for (int i = 0; i < (attributes & SYSCALL_ARGC_MASK); i++) {
 				int reg = syscall_argument_abi_register_indexes[i];
