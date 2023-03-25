@@ -1080,6 +1080,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			attempt_push_free(thread, &state, real_fds);
 			bool has_local = false;
 			bool has_remote = false;
+			bool fds_all_match = true;
 			int nfds = 0;
 			for (int i = 0; i < n; i++) {
 				if ((readfds != NULL && FD_ISSET(i, readfds)) || (writefds != NULL && FD_ISSET(i, writefds)) || (exceptfds != NULL && FD_ISSET(i, exceptfds))) {
@@ -1097,6 +1098,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 							return invalid_local_remote_mixed_operation();
 						}
 						has_local = true;
+					}
+					if (real_fds[nfds].fd != i) {
+						fds_all_match = false;
 					}
 					real_fds[nfds].events = ((readfds != NULL && FD_ISSET(i, readfds)) ? (POLLIN | POLLPRI) : 0)
 					                      | ((writefds != NULL && FD_ISSET(i, writefds)) ? (POLLOUT | POLLWRBAND) : 0);
@@ -1130,6 +1134,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (has_remote) {
 				// TODO: mask signals for pselect6
 				result = remote_ppoll(&real_fds[0], nfds, timeout);
+			} else if (fds_all_match) {
+				attempt_pop_free(&state);
+				// all the file descriptors match, just use the standard __NR_select or __NR_pselect6
+				// syscall that would have been invoked anyway
+				return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 			} else {
 				result = FS_SYSCALL(__NR_ppoll, (intptr_t)&real_fds[0], nfds, (intptr_t)timeout, (intptr_t)sigset, sigsetsize);
 			}
