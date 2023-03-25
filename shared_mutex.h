@@ -63,7 +63,7 @@ static inline uint32_t shared_mutex_bitset_for_id(uint32_t id)
 #ifdef FS_INLINE_MUTEX_SLOW_PATH
 __attribute__((always_inline))
 #endif
-static inline void shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, uint32_t id, int state)
+static inline bool shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, uint32_t id, int state, bool interruptable)
 {
 	do {
 		intptr_t result;
@@ -78,7 +78,7 @@ static inline void shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, ui
 		} else if (state > 2) {
 			if (state == (int)((id & ~(1 << 31)) + 3)) {
 				atomic_store_explicit(&mutex->state, 2, memory_order_relaxed);
-				return;
+				return true;
 			}
 			result = FS_SYSCALL(__NR_futex, (intptr_t)&mutex->state, FUTEX_WAIT_BITSET, state, 0, 0, shared_mutex_bitset_for_id(id));
 		} else {
@@ -88,6 +88,9 @@ static inline void shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, ui
 			switch (result) {
 				case -EINTR:
 				case -EAGAIN:
+					if (interruptable) {
+						return false;
+					}
 					break;
 				default:
 					DIE("futex wait bitset failed", fs_strerror(result));
@@ -95,15 +98,18 @@ static inline void shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, ui
 		}
 		state = fs_cmpxchg(&mutex->state, 0, 2);
 	} while(state);
+	return true;
 }
 
 __attribute__((always_inline))
 __attribute__((nonnull(1)))
-static inline void shared_mutex_lock_id(struct shared_mutex *mutex, uint32_t id)
+static inline bool shared_mutex_lock_id(struct shared_mutex *mutex, uint32_t id, bool interruptable)
 {
 	int state = fs_cmpxchg(&mutex->state, 0, 1);
 	if (__builtin_expect(state, 0)) {
-		shared_mutex_lock_id_slow_path(mutex, id, state);
+		return shared_mutex_lock_id_slow_path(mutex, id, state, interruptable);
+	} else {
+		return true;
 	}
 }
 

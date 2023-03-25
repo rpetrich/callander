@@ -59,7 +59,9 @@ static void remote_exited(void)
 
 static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 {
-	shared_mutex_lock_id(&shared->read_lock, id);
+	if (!shared_mutex_lock_id(&shared->read_lock, id, cancellation != NULL)) {
+		return false;
+	}
 	for (;;) {
 		if (shared->response_cursor == sizeof(response_message)) {
 			uint32_t read_message_id = shared->response_buffer.message.id;
@@ -69,7 +71,9 @@ static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 				return true;
 			}
 			shared_mutex_unlock_handoff(&shared->read_lock, read_message_id);
-			shared_mutex_lock_id(&shared->read_lock, id);
+			if (!shared_mutex_lock_id(&shared->read_lock, id, cancellation != NULL)) {
+				return false;
+			}
 			continue;
 		}
 		if (cancellation && *cancellation) {
@@ -272,7 +276,7 @@ intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *me
 {
 	// read response
 	if (!lock_and_read_until_response(stream_id, cancellation)) {
-		return -ECANCELED;
+		return -EINTR;
 	}
 	intptr_t result = fs_read_all(PROXY_FD, (char *)message, sizeof(*message));
 	if (result < 0) {
