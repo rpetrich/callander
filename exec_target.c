@@ -3,6 +3,7 @@
 #include "axon.h"
 #include "exec.h"
 
+#include "proxy.h"
 #include "proxy_target.h"
 
 #include <errno.h>
@@ -17,9 +18,12 @@ gid_t startup_egid;
 uint32_t enabled_telemetry;
 #endif
 
-// void invalidate_self_pid(void)
-// {
-// }
+void set_tid_address(const void *tid_address)
+{
+	if (fs_gettid() == get_self_pid()) {
+		PROXY_CALL(__NR_set_tid_address | PROXY_NO_RESPONSE, proxy_value((intptr_t)tid_address));
+	}
+}
 
 __attribute__((warn_unused_result))
 bool is_axon(const struct fs_stat *stat)

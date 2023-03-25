@@ -17,13 +17,6 @@ pid_t get_self_pid(void)
 	return self_pid;
 }
 
-void set_tid_address(const void *tid_address)
-{
-	if (fs_gettid() == get_self_pid()) {
-		PROXY_CALL(__NR_set_tid_address | PROXY_NO_RESPONSE, proxy_value((intptr_t)tid_address));
-	}
-}
-
 __attribute__((naked)) __attribute__((used)) __attribute__((visibility("default")))
 noreturn void receive_start(const struct receive_start_args *args)
 {

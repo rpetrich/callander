@@ -25,6 +25,7 @@ pid_t get_self_pid(void);
 // get_self_pid invalidates the current process' cached PID
 void invalidate_self_pid(void);
 
+// set_tid_address records a new tid
 void set_tid_address(const void *new_address);
 
 // exec_fd executes an open file via the axon bootstrap, handling native-arch ELF and #! programs only
