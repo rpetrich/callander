@@ -499,9 +499,9 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 				ERROR("from entry", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].entry)));
 				die = true;
 			} else {
-				ERROR("patching from", temp_str(copy_address_description(&analysis->loader, patch_target.start)));
-				ERROR("to", temp_str(copy_address_description(&analysis->loader, patch_target.end)));
-				ERROR("for", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
+				PATCH_LOG("patching from", temp_str(copy_address_description(&analysis->loader, patch_target.start)));
+				PATCH_LOG("to", temp_str(copy_address_description(&analysis->loader, patch_target.end)));
+				PATCH_LOG("for", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
 			}
 		}
 	}
