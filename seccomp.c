@@ -56,6 +56,8 @@ int apply_seccomp(void)
 		// Load the syscall ID
 		LD_SYSCALL,
 		// Early exit for common syscalls that are frequently used
+		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_nanosleep, 0, 1),
+		BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ALLOW),
 // #if (__NR_write == 1) && (__NR_read == 0)
 // 		BPF_JUMP(BPF_JMP+BPF_JGT+BPF_K, __NR_write, 0, 4),
 // #else
