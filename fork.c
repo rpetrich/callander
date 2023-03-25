@@ -42,7 +42,11 @@ pid_t wrapped_vfork(struct thread_storage *thread)
 	fs_mutex_lock(&malloc_lock);
 	// equivalent of vfork, but without the memory sharing
 	serialize_fd_table_for_fork();
+#if 1
 	intptr_t result = FS_SYSCALL(__NR_clone, SIGCHLD|CLONE_VFORK, 0, 0, 0, 0, 0);
+#else
+	intptr_t result = fs_fork();
+#endif
 	finish_fd_table_fork();
 	fs_mutex_unlock(&malloc_lock);
 #ifdef ENABLE_TELEMETRY
