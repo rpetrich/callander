@@ -4951,7 +4951,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 					LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
-					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 					LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
