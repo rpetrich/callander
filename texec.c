@@ -1372,6 +1372,7 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 {
 	// analyze the program
 	struct program_state analysis = { 0 };
+	analysis.loader.ignore_dlopen = true;
 	init_searched_instructions(&analysis.search);
 	analyze_binary(&analysis, exec_path, fd);
 	if (debug) {
