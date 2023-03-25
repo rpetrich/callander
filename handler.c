@@ -637,6 +637,9 @@ static void unmap_and_exit_thread(void *arg1, void *arg2)
 	atomic_intptr_t *thread_id = clear_thread_storage();
 	fs_munmap(arg1, (size_t)arg2);
 	atomic_store_explicit(thread_id, 0, memory_order_release);
+	if (fs_gettid() == get_self_pid()) {
+		clear_fd_table_for_exit(0);
+	}
 	fs_exitthread(0);
 	__builtin_unreachable();
 }
