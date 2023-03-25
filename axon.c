@@ -16,6 +16,7 @@
 #include "seccomp.h"
 #include "telemetry.h"
 #include "time.h"
+#include "tls.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -215,6 +216,12 @@ noreturn void release(size_t *sp)
 	__builtin_unreachable();
 }
 
+#if defined(__x86_64__)
+#ifndef HWCAP2_FSGSBASE
+#define HWCAP2_FSGSBASE (1 << 1)
+#endif
+#endif
+
 // bind_axon is responsible for unmapping the original load address of
 // axon, fixing up the auxiliary vector, mapping the target program and/or
 // interpreter and jumping to the program/interpreter. If the seccomp filter
@@ -316,6 +323,13 @@ noreturn static void bind_axon(bind_data data)
 			case AT_SYSINFO_EHDR:
 				vdso = aux;
 				break;
+#if defined(__x86_64__)
+			case AT_HWCAP2:
+				if (aux->a_un.a_val & HWCAP2_FSGSBASE) {
+					discovered_fsgsbase();
+				}
+				break;
+#endif
 		}
 		++aux;
 	}

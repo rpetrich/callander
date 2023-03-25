@@ -4,11 +4,16 @@
 #include <stdatomic.h>
 #include <signal.h>
 #include <errno.h>
+#include <immintrin.h>
 
 #include "defaultlibs.h"
 #include "axon.h"
 
 #define THREAD_DATA_COUNT 64 // must be power of two
+
+#if defined(__x86_64__) || defined(__i386__)
+#define TLS_READ_IS_FALLIABLE
+#endif
 
 // thread_data stores the bookkeeping for the TLS linked list as well as the
 // actual data itself
@@ -23,8 +28,12 @@ __attribute__((aligned(64))) struct thread_data {
 };
 static struct thread_data threads[THREAD_DATA_COUNT];
 
-#if defined(__x86_64__)
+#if defined(TLS_READ_IS_FALLIABLE)
 static bool is_multithreaded;
+#endif
+
+#if defined(__x86_64__)
+static bool supports_fsgsbase;
 #endif
 
 // read_thread_id returns an identifier unique to the current thread
@@ -32,6 +41,11 @@ __attribute__((warn_unused_result))
 static inline intptr_t read_thread_id(void)
 {
 #if defined(__x86_64__)
+	if (LIKELY(supports_fsgsbase)) {
+		return __builtin_ia32_rdfsbase64();
+	}
+#endif
+#if defined(TLS_READ_IS_FALLIABLE)
 	if (!is_multithreaded) {
 		return 0;
 	}
@@ -119,9 +133,16 @@ atomic_intptr_t *clear_thread_storage(void)
 	return &dummy;
 }
 
-#if defined(__x86_64__)
+#if defined(TLS_READ_IS_FALLIABLE)
 void became_multithreaded(void)
 {
 	is_multithreaded = true;
+}
+#endif
+
+#if defined(__x86_64__)
+void discovered_fsgsbase(void)
+{
+	supports_fsgsbase = true;
 }
 #endif

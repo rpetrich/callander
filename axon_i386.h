@@ -48,7 +48,7 @@ __attribute__((warn_unused_result))
 static inline const void *read_thread_register(void)
 {
 	void *result;
-	__asm__("mov %%gs, %0":"=r"(result));
+	__asm__ __volatile__("mov %%gs, %0":"=r"(result));
 	return result;
 }
 

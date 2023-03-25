@@ -28,4 +28,8 @@ atomic_intptr_t *clear_thread_storage(void);
 // became_multithreaded informs tls that it is now multithreaded
 void became_multithreaded(void);
 
+#if defined(__x86_64__)
+void discovered_fsgsbase(void);
+#endif
+
 #endif
