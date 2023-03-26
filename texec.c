@@ -1243,7 +1243,7 @@ static void process_syscalls_until_exit(char buf[512 * 1024], struct process_sys
 					fs_memcpy(description_buf, syscall_desc, syscall_desc_len);
 					int offset = syscall_desc_len;
 					description_buf[offset++] = '(';
-					int argc = attributes_for_syscall(syscall) & SYSCALL_ARGC_MASK;
+					int argc = info_for_syscall(syscall).attributes & SYSCALL_ARGC_MASK;
 					for (int i = 0; i < argc; i++) {
 						if (i != 0) {
 							description_buf[offset++] = ',';

@@ -37,19 +37,36 @@ enum {
 
 enum {
 	SYSCALL_ARGC_MASK = 0x7,
-	SYSCALL_ARG_IS_ADDRESS_BASE = 0x8,
-	SYSCALL_CAN_BE_FROM_ANYWHERE = SYSCALL_ARG_IS_ADDRESS_BASE << 6,
-	SYSCALL_IS_RESTARTABLE = SYSCALL_ARG_IS_ADDRESS_BASE << 7,
-	SYSCALL_ARG_IS_PRESERVED_BASE = SYSCALL_ARG_IS_ADDRESS_BASE << 8,
-	SYSCALL_ARG_IS_MODEFLAGS_BASE = SYSCALL_ARG_IS_PRESERVED_BASE << 6,
+	SYSCALL_IS_RESTARTABLE = 0x8,
+	SYSCALL_CAN_BE_FROM_ANYWHERE = 0x10,
+
+	SYSCALL_ARG_IS_INTEGER = 0x0,
+	SYSCALL_ARG_IS_OFFSET = SYSCALL_ARG_IS_INTEGER,
+	SYSCALL_ARG_IS_PROT = SYSCALL_ARG_IS_INTEGER,
+	SYSCALL_ARG_IS_FLAGS = SYSCALL_ARG_IS_INTEGER,
+	SYSCALL_ARG_IS_PID = SYSCALL_ARG_IS_INTEGER,
+	SYSCALL_ARG_IS_ADDRESS = 0x1,
+	SYSCALL_ARG_IS_PATH = SYSCALL_ARG_IS_ADDRESS,
+	SYSCALL_ARG_IS_STRING = SYSCALL_ARG_IS_ADDRESS,
+	SYSCALL_ARG_IS_FD = 0x2,
+	SYSCALL_ARG_IS_SIZE = 0x3,
+	SYSCALL_ARG_IS_COUNT = SYSCALL_ARG_IS_SIZE,
+	SYSCALL_ARG_IS_MODEFLAGS = 0x4,
+	SYSCALL_ARG_IS_PRESERVED = 0x8,
+	SYSCALL_ARG_RELATED_ARGUMENT_BASE = 0x10,
+};
+
+struct syscall_info {
+	uint8_t attributes;
+	uint16_t arguments[6];
 };
 
 struct syscall_decl {
 	const char *name;
-	uint32_t attributes;
+	struct syscall_info info;
 };
 
-#define SYSCALL_DEF(name, argc, flags) 1+
+#define SYSCALL_DEF(...) 1+
 #define SYSCALL_DEF_EMPTY() 1+
 enum {
 	SYSCALL_COUNT = 512,
@@ -62,7 +79,7 @@ enum {
 
 extern struct syscall_decl const syscall_list[SYSCALL_DEFINED_COUNT];
 const char *name_for_syscall(uintptr_t nr);
-uint32_t attributes_for_syscall(uintptr_t nr);
+struct syscall_info info_for_syscall(uintptr_t nr);
 
 enum {
 	BINARY_IS_MAIN = 1 << 0,
@@ -438,6 +455,8 @@ struct recorded_syscalls {
 
 __attribute__((nonnull(1, 2)))
 char *copy_used_syscalls(const struct loader_context *context, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol);
+__attribute__((nonnull(1)))
+char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, struct registers registers, bool include_symbol);
 __attribute__((nonnull(1, 2)))
 void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader);
 __attribute__((nonnull(1)))
