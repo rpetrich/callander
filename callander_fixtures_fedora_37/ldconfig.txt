@@ -1,15 +1,16 @@
-callander: permitted syscalls: read(any, any, any) @ /usr/sbin/ldconfig+0x51f1f
+callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig+0x51f1f
 read(any u32, any, any) @ /usr/sbin/ldconfig+0x51f5a
 read(any u32, any, any) @ /usr/sbin/ldconfig+0x52c06
 read(any, any, 1) @ /usr/sbin/ldconfig+0x52c06
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x51fc2
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x51ffd
+write(any u32, any, any) @ /usr/sbin/ldconfig+0x52c39
 close(any u32) @ /usr/sbin/ldconfig+0x52092
 close(any u32) @ /usr/sbin/ldconfig+0x520b8
 close(any u32) @ /usr/sbin/ldconfig+0x52949
 poll(any, 1, any u32) @ /usr/sbin/ldconfig+0xaefa2
 poll(any, any, any u32) @ /usr/sbin/ldconfig+0xaefdd
-lseek(any u32, any u32, 0) @ /usr/sbin/ldconfig+0x52059
+lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x52059
 mmap(any, any, any, any u32, any, any) @ /usr/sbin/ldconfig+0x53005
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x53089
 munmap(any, any) @ /usr/sbin/ldconfig+0x53059
@@ -20,7 +21,7 @@ rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig+0x15c8
 rt_sigprocmask(0, /usr/sbin/ldconfig+0xb9768, any, 8) @ /usr/sbin/ldconfig+0x2190a
 rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig+0x21957
 rt_sigreturn(any) @ /usr/sbin/ldconfig+0x67767
-ioctl(0, 0x5401, any) @ /usr/sbin/ldconfig+0x81a68
+ioctl(any u32, 0x5401, any) @ /usr/sbin/ldconfig+0x81a68
 ioctl(any u32, 0x541b, any) @ /usr/sbin/ldconfig+0xa631d
 ioctl(any u32, 0x8933, any) @ /usr/sbin/ldconfig+0xa631d
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig+0x81a0c
@@ -31,7 +32,8 @@ writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52dbb
 writev(any u32, any, any) @ /usr/sbin/ldconfig+0x91bc5
 access(/usr/sbin/ldconfig+0xbbe6d, 0) @ /usr/sbin/ldconfig+0x81419
 access(/usr/sbin/ldconfig+0xbbe7c, 0) @ /usr/sbin/ldconfig+0x81419
-mremap(any, NULL-0xfffffffffffffff7, any, 1, any) @ /usr/sbin/ldconfig+0x5483d
+sched_yield() @ /usr/sbin/ldconfig+0x51c39
+mremap(any, any, any, 1, any) @ /usr/sbin/ldconfig+0x5483d
 madvise(NULL-0xfffffffffffffffe, any, 4) @ /usr/sbin/ldconfig+0x530b9
 madvise(any, any, 14) @ /usr/sbin/ldconfig+0x530b9
 alarm(any u32) @ /usr/sbin/ldconfig+0x81059
@@ -97,6 +99,8 @@ restart_syscall()
 clock_gettime(NULL-0x1, any) @ /usr/sbin/ldconfig+0x4abcd
 clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)
 clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
+clock_nanosleep(NULL-0xfffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x9c0f5
+clock_nanosleep(any u32, any u32, any, any) @ /usr/sbin/ldconfig+0x9c133
 exit_group(any u32) @ /usr/sbin/ldconfig+0x4af8f
 tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig+0x21998
 tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig+0x21998
