@@ -22,7 +22,7 @@ struct bpf_prog {
 char *copy_bpf_insn_description(struct bpf_insn insn);
 char *copy_bpf_prog_description(struct bpf_prog prog, const char **descriptions);
 
-const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t length, uint32_t *out_result);
+const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t length, bool print_debug_messages, uint32_t *out_result);
 
 __attribute__((always_inline))
 static inline bool bpf_code_is_valid(uint32_t code) {

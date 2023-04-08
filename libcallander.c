@@ -117,7 +117,7 @@ void callander_run(callander_main_function main, void *data)
 		binary->child_base = (uintptr_t)binary->info.base;
 	}
 
-	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, VALIDATE_ALL, 0, ~(uint32_t)0);
+	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, 0, ~(uint32_t)0, NULL);
 	free_loaded_binary(analysis.loader.binaries);
 	ERROR_FLUSH();
 	result = FS_SYSCALL(__NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, (intptr_t)&prog);

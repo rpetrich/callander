@@ -268,14 +268,22 @@ char *copy_bpf_prog_description(struct bpf_prog prog, const char **descriptions)
 }
 
 __attribute__((used))
-const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t length, uint32_t *out_result)
+const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t length, bool print_debug_messages, uint32_t *out_result)
 {
 	size_t pc = 0;
 	uint32_t acc = 0;
 	uint32_t index = 0;
+	uint32_t scratch[BPF_MEMWORDS] = { 0 };
 	for (; pc <= prog.len; pc++) {
-		// ERROR("pc", (intptr_t)pc);
-		// ERROR("insn", temp_str(copy_sock_filter_description(prog.filter[pc])));
+		if (print_debug_messages) {
+			ERROR("pc", (intptr_t)pc);
+			ERROR("insn", temp_str(copy_bpf_insn_description((struct bpf_insn){
+				.code = prog.filter[pc].code,
+				.jt = prog.filter[pc].jt,
+				.jf = prog.filter[pc].jf,
+				.k = prog.filter[pc].k,
+			})));
+		}
 		uint16_t code = prog.filter[pc].code;
 		switch (BPF_CLASS(code)) {
 			case BPF_LD: {
@@ -283,6 +291,9 @@ const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t len
 				switch (BPF_MODE(code)) {
 					case BPF_IMM:
 						acc = prog.filter[pc].k;
+						if (print_debug_messages) {
+							ERROR("acc", acc);
+						}
 						goto next;
 					case BPF_ABS:
 						offset = prog.filter[pc].k;
@@ -291,9 +302,20 @@ const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t len
 						offset = index;
 						break;
 					case BPF_MEM:
-						return "BPF_MEM not supported!";
+						offset = prog.filter[pc].k;
+						if (offset >= BPF_MEMWORDS) {
+							return "invalid BPF_MEM index!";
+						}
+						acc = scratch[offset];
+						if (print_debug_messages) {
+							ERROR("acc", acc);
+						}
+						goto next;
 					case BPF_LEN:
 						acc = length;
+						if (print_debug_messages) {
+							ERROR("acc", acc);
+						}
 						goto next;
 					case BPF_MSH:
 						return "BPF_MSH invalid in this context!";
@@ -322,40 +344,123 @@ const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t len
 					default:
 						return "invalid size for BPF_LD!";
 				}
+				if (print_debug_messages) {
+					ERROR("acc", acc);
+				}
 				break;
 			}
-			case BPF_LDX:
-				return "BPF_LDX not supported!";
-			case BPF_ST:
-				return "BPF_ST not supported!";
-			case BPF_ALU:
-				return "BPF_ALU not supported!";
-			case BPF_JMP: {
-				uint32_t k = prog.filter[pc].k;
-				switch (BPF_OP(code)) {
-					case BPF_JA:
-						pc += k;
+			case BPF_LDX: {
+				switch (BPF_MODE(code)) {
+					case BPF_MEM: {
+						size_t offset = prog.filter[pc].k;
+						if (offset >= BPF_MEMWORDS) {
+							return "invalid BPF_MEM index!";
+						}
+						index = scratch[offset];
 						break;
-					case BPF_JGT:
-						pc += acc > k ? prog.filter[pc].jt : prog.filter[pc].jf;
-						break;
-					case BPF_JGE:
-						pc += acc >= k ? prog.filter[pc].jt : prog.filter[pc].jf;
-						break;
-					case BPF_JEQ:
-						pc += acc == k ? prog.filter[pc].jt : prog.filter[pc].jf;
-						break;
-					case BPF_JSET:
-						pc += acc & k ? prog.filter[pc].jt : prog.filter[pc].jf;
-						break;
+					}
+					default:
+						return "invalid mode for BPF_LDX!";
 				}
+				if (print_debug_messages) {
+					ERROR("index", index);
+				}
+				break;
+			}
+			case BPF_ST: {
+				size_t offset = prog.filter[pc].k;
+				if (offset >= BPF_MEMWORDS) {
+					return "invalid BPF_MEM index!";
+				}
+				scratch[offset] = acc;
+				break;
+			}
+			case BPF_STX: {
+				size_t offset = prog.filter[pc].k;
+				if (offset >= BPF_MEMWORDS) {
+					return "invalid BPF_MEM index!";
+				}
+				scratch[offset] = index;
+				break;
+			}
+			case BPF_ALU: {
+				uint32_t operand;
 				switch (BPF_SRC(code)) {
 					case BPF_K:
+						operand = prog.filter[pc].k;
 						break;
 					case BPF_X:
-						return "BPF_X not supported in BPF_JMP!";
+						operand = index;
+						break;
+					default:
+						if (BPF_OP(code) != BPF_NEG) {
+							return "unsupported source in BPF_ALU!";
+						}
+				}
+				switch (BPF_OP(code)) {
+					case BPF_ADD:
+						acc += operand;
+						break;
+					case BPF_SUB:
+						acc -= operand;
+						break;
+					case BPF_MUL:
+						acc *= operand;
+						break;
+					case BPF_DIV:
+						acc /= operand;
+						break;
+					case BPF_AND:
+						acc &= operand;
+						break;
+					case BPF_OR:
+						acc |= operand;
+						break;
+					case BPF_LSH:
+						acc <<= operand;
+						break;
+					case BPF_RSH:
+						acc >>= operand;
+						break;
+					case BPF_NEG:
+						acc = -acc;
+						break;
+					default:
+						return "BPF_ALU operation not supported!";
+				}
+				if (print_debug_messages) {
+					ERROR("acc", acc);
+				}
+				break;
+			}
+			case BPF_JMP: {
+				uint32_t operand;
+				switch (BPF_SRC(code)) {
+					case BPF_K:
+						operand = prog.filter[pc].k;
+						break;
+					case BPF_X:
+						operand = index;
+						break;
 					default:
 						return "unsupported source in BPF_JMP!";
+				}
+				switch (BPF_OP(code)) {
+					case BPF_JA:
+						pc += prog.filter[pc].k;
+						break;
+					case BPF_JGT:
+						pc += (acc > operand) ? prog.filter[pc].jt : prog.filter[pc].jf;
+						break;
+					case BPF_JGE:
+						pc += (acc >= operand) ? prog.filter[pc].jt : prog.filter[pc].jf;
+						break;
+					case BPF_JEQ:
+						pc += (acc == operand) ? prog.filter[pc].jt : prog.filter[pc].jf;
+						break;
+					case BPF_JSET:
+						pc += (acc & operand) ? prog.filter[pc].jt : prog.filter[pc].jf;
+						break;
 				}
 				break;
 			}
@@ -371,7 +476,23 @@ const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t len
 						return "invalid source for BPF_RET!";
 				}
 			case BPF_MISC:
-				return "BPF_MISC not supported!";
+				switch (code) {
+					case BPF_MISC|BPF_TAX:
+						index = acc;
+						if (print_debug_messages) {
+							ERROR("index", index);
+						}
+						break;
+					case BPF_MISC|BPF_TXA:
+						acc = index;
+						if (print_debug_messages) {
+							ERROR("acc", acc);
+						}
+						break;
+					default:
+						return "BPF_MISC not supported!";
+				}
+				break;
 			default:
 				return "invalid class!";
 		}

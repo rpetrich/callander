@@ -595,6 +595,57 @@ static struct loaded_binary *binary_for_child_address(const struct loader_contex
 	return binary;
 }
 
+static int compare_regions(const void *l, const void *r, void *unused)
+{
+	(void)unused;
+	const struct mapped_region *l_region = l;
+	const struct mapped_region *r_region = r;
+	if (l_region->start < r_region->start) {
+		return -1;
+	}
+	if (l_region->start > r_region->start) {
+		return 1;
+	}
+	if (l_region->end < r_region->end) {
+		return -1;
+	}
+	if (l_region->end > r_region->end) {
+		return 1;
+	}
+	return 0;
+}
+
+static struct mapped_region_info copy_sorted_mapped_regions(const struct loader_context *loader)
+{
+	struct mapped_region *regions = malloc(loader->binary_count * sizeof(struct mapped_region));
+	// convert to a list of regions
+	int count = 0;
+	for (struct loaded_binary *binary = loader->binaries; binary != NULL; binary = binary->next) {
+		if (binary->child_base != 0) {
+			regions[count++] = (struct mapped_region){
+				.start = binary->child_base,
+				.end = (binary->child_base + binary->info.size + (PAGE_SIZE - 1) /*+ (PAGE_SIZE * 2)*/) & -PAGE_SIZE,
+			};
+		}
+	}
+	// sort by address
+	qsort_r(regions, count, sizeof(struct mapped_region), compare_regions, NULL);
+	// merge overlapping addresses
+	for (int i = count - 1; i > 0; i--) {
+		if (regions[i].start <= regions[i-1].end) {
+			regions[i-1].end = regions[i].end;
+			for (int j = i; j < count; j++) {
+				regions[j] = regions[j+1];
+			}
+			count--;
+		}
+	}
+	return (struct mapped_region_info) {
+		.list = regions,
+		.count = count,
+	};
+}
+
 static void wait_for_ptrace_event(enum __ptrace_request request, pid_t pid)
 {
 	// identify that we're looking for syscall entries
@@ -698,30 +749,36 @@ static void remote_apply_seccomp_filter(int tracee, struct user_regs_struct regs
 	}
 }
 
-static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_struct regs, intptr_t remote_address, struct sock_fprog *prog, struct loader_context *loader, struct recorded_syscalls *syscalls, uint32_t syscall_range_low, uint32_t syscall_range_high)
+static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_struct regs, intptr_t remote_address, struct loader_context *loader, struct recorded_syscalls *syscalls, const struct mapped_region_info *regions, uint32_t syscall_range_low, uint32_t syscall_range_high, struct sock_fprog *out_prog)
 {
-	if (prog->len <= BPF_MAXINSNS) {
-		remote_apply_seccomp_filter(tracee, regs, remote_address, prog);
+	struct sock_fprog prog = generate_seccomp_program(loader, syscalls, regions, syscall_range_low, syscall_range_high);
+	if (prog.len <= BPF_MAXINSNS) {
+		remote_apply_seccomp_filter(tracee, regs, remote_address, &prog);
+		if (out_prog != NULL) {
+			*out_prog = prog;
+		} else {
+			free(prog.filter);
+		}
 		return;
+	}
+	if (out_prog != NULL) {
+		*out_prog = prog;
+	} else {
+		free(prog.filter);
 	}
 	if (syscall_range_low == syscall_range_high) {
 		DIE("syscall has too many call sites to generate a seccomp program", name_for_syscall(syscall_range_low));
 	}
 	// split, so half the syscalls are in one program and half in another
 	uint32_t mid = syscall_range_low + ((syscall_range_high == ~(uint32_t)0 ? syscalls->list[syscalls->count-1].nr : syscall_range_high) - syscall_range_low) / 2;
-	struct sock_fprog progs[2];
-	progs[0] = generate_seccomp_program(loader, syscalls, VALIDATE_ALL, syscall_range_low, mid);
-	progs[1] = generate_seccomp_program(loader, syscalls, VALIDATE_ALL, mid+1, syscall_range_high);
 	// apply both programs, being sure to load the program containing __NR_seccomp later since it will block additional program loads
 	if (__NR_seccomp > mid) {
-		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, &progs[0], loader, syscalls, syscall_range_low, mid);
-		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, &progs[1], loader, syscalls, mid+1, syscall_range_high);
+		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, syscall_range_low, mid, NULL);
+		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, mid+1, syscall_range_high, NULL);
 	} else {
-		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, &progs[1], loader, syscalls, mid+1, syscall_range_high);
-		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, &progs[0], loader, syscalls, syscall_range_low, mid);
+		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, mid+1, syscall_range_high, NULL);
+		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, syscall_range_low, mid, NULL);
 	}
-	free(progs[0].filter);
-	free(progs[1].filter);
 }
 
 #if BREAK_ON_UNREACHABLES
@@ -1131,6 +1188,62 @@ static char **copy_argv_with_prefixes(char **argv, char *arg0, char *arg1)
 	return result;
 }
 
+__attribute__((unused))
+static void test_mprotect(struct sock_fprog prog, uintptr_t base, size_t size, int prot, uint32_t expected_bpf_result)
+{
+	struct seccomp_data data = {
+		.nr = __NR_mprotect,
+		.arch = CURRENT_AUDIT_ARCH,
+		.instruction_pointer = 0,
+		.args = {
+			base,
+			size,
+			prot,
+			0,
+			0,
+			0,
+		},
+	};
+	uint32_t bpf_result;
+	ERROR("test_mprotect base", base);
+	ERROR("test_mprotect size", size);
+	const char *bpf_message = bpf_interpret(prog, (const char *)&data, sizeof(data), false, &bpf_result);
+	if (bpf_message != NULL) {
+		ERROR("test_mprotect returned error", bpf_message);
+		return;
+	}
+	switch (bpf_result) {
+		case SECCOMP_RET_ALLOW:
+			ERROR("test_mprotect determined call would be allowed");
+			break;
+		case SECCOMP_RET_TRAP:
+			ERROR("test_mprotect determined call would be trapped");
+			break;
+		case SECCOMP_RET_KILL_PROCESS:
+			ERROR("test_mprotect determined call would kill process");
+			break;
+		default:
+			ERROR("test_mprotect determined decision code", (uintptr_t)bpf_result);
+			break;
+	}
+	if (bpf_result != expected_bpf_result) {
+		switch (expected_bpf_result) {
+			case SECCOMP_RET_ALLOW:
+				ERROR("test_mprotect expected call would be allowed");
+				break;
+			case SECCOMP_RET_TRAP:
+				ERROR("test_mprotect expected call would be trapped");
+				break;
+			case SECCOMP_RET_KILL_PROCESS:
+				ERROR("test_mprotect expected call would kill process");
+				break;
+			default:
+				ERROR("test_mprotect expected decision code", (uintptr_t)bpf_result);
+				break;
+		}
+	}
+}
+
 void __restore();
 
 static void *stack;
@@ -1209,6 +1322,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 	int executable_index = 1;
 	bool show_permitted = false;
 	bool show_binaries = false;
+	bool mutable_binary_mappings = false;
 	const char *profile_path = NULL;
 	enum attach_behavior attach = DETACH_AT_START;
 	bool skip_running = false;
@@ -1312,6 +1426,8 @@ int main(__attribute__((unused)) int argc, char *argv[])
 			show_permitted = true;
 		} else if (fs_strcmp(arg, "--show-binaries") == 0) {
 			show_binaries = true;
+		} else if (fs_strcmp(arg, "--mutable-binary-mappings") == 0) {
+			mutable_binary_mappings = true;
 		} else if (fs_strcmp(arg, "--profile") == 0) {
 			profile_path = argv[executable_index+1];
 			if (profile_path == NULL) {
@@ -1844,7 +1960,6 @@ skip_analysis:
 	if (profile_path != NULL && !has_read_profile) {
 		write_profile(&analysis.loader, &analysis.syscalls, (const uint8_t *)analysis.main, profile_path);
 	}
-	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, VALIDATE_ALL, 0, ~(uint32_t)0);
 	// send the original main bytes back, restoring the main function back to its original state
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)original_bytes);
 	if (result < 0) {
@@ -1885,7 +2000,25 @@ skip_analysis:
 		DIE("failed to mmap in child", fs_strerror(result));
 	}
 	// set seccomp filters in the child
-	remote_apply_seccomp_filter_or_split(tracee, regs, mmap_result, &prog, &analysis.loader, &analysis.syscalls, 0, ~(uint32_t)0);
+	struct sock_fprog prog;
+	if (mutable_binary_mappings) {
+		remote_apply_seccomp_filter_or_split(tracee, regs, mmap_result, &analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0, &prog);
+	} else {
+		struct mapped_region_info regions = copy_sorted_mapped_regions(&analysis.loader);
+		remote_apply_seccomp_filter_or_split(tracee, regs, mmap_result, &analysis.loader, &analysis.syscalls, &regions, 0, ~(uint32_t)0, &prog);
+#if 0
+		test_mprotect(prog, regions.list[0].start-0x2000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
+		test_mprotect(prog, regions.list[0].start-0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
+		test_mprotect(prog, regions.list[0].start, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_TRAP);
+		test_mprotect(prog, regions.list[0].start, regions.list[0].end-regions.list[0].start, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_TRAP);
+		test_mprotect(prog, regions.list[0].end-0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_TRAP);
+		test_mprotect(prog, regions.list[0].end, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
+		test_mprotect(prog, regions.list[0].end+0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
+		ERROR_FLUSH();
+		fs_exit(1);
+#endif
+		free(regions.list);
+	}
 	// free if not attaching
 	if (!attach) {
 		free(prog.filter);
@@ -2022,7 +2155,7 @@ skip_analysis:
 							},
 						};
 						uint32_t bpf_result;
-						const char *bpf_error = bpf_interpret(prog, (const char *)&data, sizeof(data), &bpf_result);
+						const char *bpf_error = bpf_interpret(prog, (const char *)&data, sizeof(data), SHOULD_LOG, &bpf_result);
 						if (bpf_error != NULL) {
 							ERROR("error interpreting BPF program", bpf_error);
 						} else {

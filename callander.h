@@ -462,13 +462,16 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 __attribute__((nonnull(1)))
 const struct recorded_syscall *find_recorded_syscall(const struct recorded_syscalls *syscalls, uintptr_t nr);
 
-enum seccomp_validation_mode {
-	VALIDATE_SYSCALL_ONLY = 0,
-	VALIDATE_SYSCALL_AND_CALL_SITE = 1,
-	VALIDATE_ALL = 2,
+struct mapped_region {
+	uintptr_t start;
+	uintptr_t end;
+};
+struct mapped_region_info {
+	struct mapped_region *list;
+	int count;
 };
 __attribute__((nonnull(1, 2)))
-struct sock_fprog generate_seccomp_program(struct loader_context *loader, struct recorded_syscalls *syscalls, enum seccomp_validation_mode validation_mode, uint32_t syscall_range_low, uint32_t syscall_range_high);
+struct sock_fprog generate_seccomp_program(struct loader_context *loader, const struct recorded_syscalls *syscalls, const struct mapped_region_info *blocked_memory_regions, uint32_t syscall_range_low, uint32_t syscall_range_high);
 
 struct address_and_size {
 	const uint8_t *address;
