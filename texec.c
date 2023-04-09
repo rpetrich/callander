@@ -1374,11 +1374,20 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	struct program_state analysis = { 0 };
 	analysis.loader.ignore_dlopen = true;
 	init_searched_instructions(&analysis.search);
+	if (debug) {
+		ERROR("analyzing program");
+		ERROR_FLUSH();
+	}
 	analyze_binary(&analysis, exec_path, fd);
 	if (debug) {
 		ERROR("syscalls", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, false, true, true)));
+		ERROR_FLUSH();
 	}
 	cleanup_searched_instructions(&analysis.search);
+	if (debug) {
+		ERROR("checking program for remote compatibility");
+		ERROR_FLUSH();
+	}
 	// check that all libraries have a dynamic base address
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 		if (binary->info.default_base != NULL) {
@@ -1388,6 +1397,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	}
 	// check if all instructions are patchable
 	ensure_all_syscalls_are_patchable(&analysis);
+	if (debug) {
+		ERROR("updating local comm");
+		ERROR_FLUSH();
+	}
 	// Set comm so that pgrep, for example, will work
 	intptr_t result = set_local_comm(comm);
 	if (result < 0) {
@@ -1395,6 +1408,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		return result;
 	}
 	// load the main binary
+	if (debug) {
+		ERROR("remotely loading program", analysis.loader.main->path);
+		ERROR_FLUSH();
+	}
 	struct binary_info main_info = { 0 };
 	result = remote_load_binary(fd, &main_info);
 	if (result < 0) {
@@ -1409,6 +1426,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	bool has_interpreter = analysis.loader.main->info.interpreter != NULL;
 	int interpreter_fd = -1;
 	if (has_interpreter) {
+		if (debug) {
+			ERROR("remotely loading interpreter", analysis.loader.main->info.interpreter);
+			ERROR_FLUSH();
+		}
 		interpreter_fd = fs_openat(AT_FDCWD, analysis.loader.main->info.interpreter, O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
 			remote_unload_binary(&main_info);
@@ -1438,6 +1459,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		}
 	}
 	// map in handler binary
+	if (debug) {
+		ERROR("remotely loading call handler");
+		ERROR_FLUSH();
+	}
 	struct thandler_info thandler;
 	result = init_thandler(&thandler);
 	if (result < 0) {
@@ -1450,6 +1475,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	}
 	LOG("receive_start_addr", (uintptr_t)thandler.receive_start_addr);
 	// create thread stack
+	if (debug) {
+		ERROR("creating remote stack");
+		ERROR_FLUSH();
+	}
 	intptr_t stack = remote_mmap(0, STACK_SIZE, PROT_READ | PROT_WRITE | (main_info.executable_stack ? PROT_EXEC : 0), MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 	if (fs_is_map_failed((void *)stack)) {
 		if (has_interpreter) {
@@ -1463,10 +1492,18 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 	}
 	LOG("stack", (uintptr_t)stack);
 	// poke in breakpoints/patches
+	if (debug) {
+		ERROR("patching remote syscalls");
+		ERROR_FLUSH();
+	}
 	struct remote_syscall_patches patches;
 	init_remote_patches(&patches, &analysis);
 	patch_remote_syscalls(&patches, &analysis, thandler.receive_syscall_addr, thandler.receive_clone_addr);
 	// set up the backchannel and initialize thandler running remotely
+	if (debug) {
+		ERROR("initializing backchannel");
+		ERROR_FLUSH();
+	}
 	uint32_t stream_id = proxy_generate_stream_id();
 	struct proxy_target_state new_proxy_state = { 0 };
 	new_proxy_state.stream_id = stream_id;
@@ -1477,6 +1514,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		DIE("failed target proxy state", fs_strerror(result));
 	}
 	// initialize the remote file descriptor table
+	if (debug) {
+		ERROR("transferring file descriptor table");
+		ERROR_FLUSH();
+	}
 	transfer_fd_table(thandler.fd_table_addr);
 	// prepare thread args and dynv
 	intptr_t sp = prepare_and_send_program_stack(stack, argv, envp, aux, &main_info, has_interpreter ? &interpreter_info : NULL);
@@ -1506,6 +1547,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		}
 	}
 	// spawn remote thread
+	if (debug) {
+		ERROR("spawning remote thread");
+		ERROR_FLUSH();
+	}
 	intptr_t clone_result = PROXY_CALL(__NR_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(tid_ptr), proxy_value(tid_ptr), proxy_value(sp), proxy_value(thandler.receive_start_addr));
 	if (clone_result < 0) {
 		free_remote_patches(&patches, &analysis);
@@ -1518,6 +1563,10 @@ static int remote_exec_fd_elf(int fd, const char *const *argv, const char *const
 		free_thandler(&thandler);
 		ERROR("failed to clone", fs_strerror(clone_result));
 		return clone_result;
+	}
+	if (debug) {
+		ERROR("processing syscalls");
+		ERROR_FLUSH();
 	}
 	// process syscalls until the remote exits
 	struct process_syscalls_data process_data = (struct process_syscalls_data) {
