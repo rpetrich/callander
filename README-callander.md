@@ -18,6 +18,16 @@ Additionally, Callander waits for the process to initialize before applying a
 sandboxing policy, and thus can use a more restrictive policy that blocks calls
 that only occur during startup.
 
+## Installation
+
+Download and install an appropriate package for your distribution, or download
+and untar the .tar file.
+
+## Usage
+
+Prefix any command you wish to run sandboxed with `callander`. Callander will
+analyze, apply the sandbox, and run the program.
+
 Running a program inside a Callander sandbox will:
 1. Limit the process to performing only the system calls that Callander
   discovered it uses (use `--show-permitted` to see the allowed system calls
@@ -34,15 +44,6 @@ Running a program inside a Callander sandbox will:
   program may try to execute new programs, it will error and note that you have
   the option to block executing new programs.
 
-## Installation
-
-Download and install an appropriate package for your distribution, or download
-and untar the .tar file.
-
-## Usage
-
-Prefix any command you wish to run sandboxed with `callander`. Callander will
-analyze, apply the sandbox, and run the program.
 
 ## Additional Options
 
