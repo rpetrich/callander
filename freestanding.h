@@ -318,7 +318,11 @@ static inline intptr_t fs_lseek(int fd, off_t offset, int origin)
 __attribute__((warn_unused_result))
 static inline int fs_pipe(int pipefd[2])
 {
+#ifdef SYS_pipe
 	return (int)FS_SYSCALL(SYS_pipe, (intptr_t)pipefd);
+#else
+	return (int)FS_SYSCALL(SYS_pipe2, (intptr_t)pipefd, 0);
+#endif
 }
 
 __attribute__((warn_unused_result))

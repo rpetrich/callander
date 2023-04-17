@@ -20,7 +20,10 @@ else
 	BASE_ADDRESS=0x08040000
 endif
 
-CC ?= gcc
+ifneq ($(NATIVEMACHINE),$(TARGETMACHINE))
+	CC = $(TARGETMACHINE)-$(TARGETOS)-gnu-gcc
+	export PATH := /usr/$(TARGETMACHINE)-$(TARGETOS)-gnu/bin:$(PATH)
+endif
 OBJCOPY ?= objcopy
 STRIP ?= strip
 
@@ -34,8 +37,12 @@ LDFLAGS += -flto -fvisibility=hidden -Wl,--gc-sections
 # LDFLAGS += -fstack-usage
 
 CFLAGS += -fno-omit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -fcf-protection=none
-ifeq ($(shell cc --version | grep -o 'Free Software Foundation'),Free Software Foundation)
+ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Software Foundation)
 	CFLAGS += -mgeneral-regs-only -Wold-style-declaration -Wmissing-parameter-type
+ifeq ($(TARGETMACHINE),aarch64)
+	CFLAGS += -Wno-psabi
+	LDFLAGS += -Wno-psabi
+endif
 else
 ifeq ($(CC),clang)
 ifeq ($(TARGETMACHINE),aarch64)

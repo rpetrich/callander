@@ -22,6 +22,17 @@
 #include "qsort.h"
 #include "search.h"
 
+#if defined(__x86_64__)
+#define BREAKPOINT_LEN 1
+#else
+#if defined(__aarch64__)
+#define BREAKPOINT_LEN 4
+#else
+#error "Unknown architecture"
+#endif
+#endif
+
+
 #ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
 #else
@@ -661,24 +672,36 @@ static void wait_for_ptrace_event(enum __ptrace_request request, pid_t pid)
 static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_regs, intptr_t id, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
 {
 	struct user_regs_struct regs = valid_regs;
-	regs.rax = id;
-	regs.rdi = arg1;
-	regs.rsi = arg2;
-	regs.rdx = arg3;
-	regs.r10 = arg4;
-	regs.r8 = arg5;
-	regs.r9 = arg6;
+	regs.REG_SYSCALL = id;
+	regs.REG_ARG1 = arg1;
+	regs.REG_ARG2 = arg2;
+	regs.REG_ARG3 = arg3;
+	regs.REG_ARG4 = arg4;
+	regs.REG_ARG5 = arg5;
+	regs.REG_ARG6 = arg6;
+#ifdef PTRACE_SETREGS
 	intptr_t result = fs_ptrace(PTRACE_SETREGS, pid, 0, &regs);
+#else
+	intptr_t result = fs_ptrace(PTRACE_SETREGSET, pid, (void *)NT_PRSTATUS, &regs);
+#endif
 	if (result < 0) {
 		DIE("failed to set registers", fs_strerror(result));
 	}
 	long original_bytes;
-	result = fs_ptrace(PTRACE_PEEKTEXT, pid, (void *)valid_regs.rip, &original_bytes);
+	result = fs_ptrace(PTRACE_PEEKTEXT, pid, (void *)valid_regs.REG_PC, &original_bytes);
 	if (result < 0) {
 		DIE("failed to peek under rip", fs_strerror(result));
 	}
+#if defined(__x86_64__)
 	long new_bytes = (original_bytes & ~(long)0xffff) | 0x50f;
-	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.rip, (void *)new_bytes);
+#else
+#if defined(__aarch64__)
+	long new_bytes = 0xd4000001;
+#else
+#error "Unsupported architecture"
+#endif
+#endif
+	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.REG_PC, (void *)new_bytes);
 	if (result < 0) {
 		DIE("failed to poke a syscall", fs_strerror(result));
 	}
@@ -686,15 +709,19 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
 	// wait for syscall exit
 	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
-	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.rip, (void *)original_bytes);
+	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.REG_PC, (void *)original_bytes);
 	if (result < 0) {
 		DIE("failed to poke the original data back", fs_strerror(result));
 	}
+#ifdef PTRACE_GETREGS
 	result = fs_ptrace(PTRACE_GETREGS, pid, 0, &regs);
+#else
+	result = fs_ptrace(PTRACE_GETREGSET, pid, (void *)NT_PRSTATUS, &regs);
+#endif
 	if (result < 0) {
 		DIE("failed to read registers back", fs_strerror(result));
 	}
-	return regs.rax;
+	return regs.REG_RESULT;
 }
 
 static char *remote_read_string(pid_t pid, uintptr_t address)
@@ -1868,7 +1895,16 @@ skip_analysis:
 	if (result < 0) {
 		DIE("failed to peek", fs_strerror(result));
 	}
+#if defined(__x86_64__)
 	long new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
+#else
+#if defined(__aarch64__)
+	// TODO: add breakpoint
+	long new_bytes = 0;
+#else
+#error "Unknown architecture"
+#endif
+#endif
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)new_bytes);
 	if (result < 0) {
 		DIE("failed to poke", fs_strerror(result));
@@ -1967,12 +2003,16 @@ skip_analysis:
 	}
 	// read the registers
 	struct user_regs_struct regs;
+#ifdef PTRACE_GETREGS
 	result = fs_ptrace(PTRACE_GETREGS, tracee, 0, &regs);
+#else
+	result = fs_ptrace(PTRACE_GETREGSET, tracee, (void *)NT_PRSTATUS, &regs);
+#endif
 	if (result < 0) {
 		DIE("failed to read registers", fs_strerror(result));
 	}
 	// rewind back to where the breakpoint was
-	regs.rip -= 1;
+	regs.REG_PC -= BREAKPOINT_LEN;
 	for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 		struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
 		if (symbol.value == NULL) {
@@ -2031,7 +2071,11 @@ skip_analysis:
 	// 	DIE("failed to munmap in child", fs_strerror(result));
 	// }
 	// restore the register state
+#ifdef PTRACE_SETREGS
 	result = fs_ptrace(PTRACE_SETREGS, tracee, 0, &regs);
+#else
+	result = fs_ptrace(PTRACE_SETREGSET, tracee, (void *)NT_PRSTATUS, &regs);
+#endif
 	if (result < 0) {
 		DIE("failed to restore registers", fs_strerror(result));
 	}
@@ -2124,11 +2168,15 @@ skip_analysis:
 				if (siginfo.si_signo == SIGSYS) {
 					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - 2;
 					const uint8_t *analysis_addr = NULL;
+#ifdef PTRACE_SETREGS
 					result = fs_ptrace(PTRACE_GETREGS, tracee, 0, &regs);
+#else
+					result = fs_ptrace(PTRACE_GETREGSET, tracee, (void *)NT_PRSTATUS, &regs);
+#endif
 					if (result < 0) {
 						DIE("failed to read registers back", fs_strerror(result));
 					}
-					uintptr_t nr = regs.rax;
+					uintptr_t nr = regs.REG_SYSCALL;
 					uint8_t config = nr < SYSCALL_COUNT ? analysis.syscalls.config[nr] : 0;
 					if (config & SYSCALL_CONFIG_BLOCK) {
 						ERROR("blocked syscall was issued", name_for_syscall(nr));
@@ -2146,12 +2194,12 @@ skip_analysis:
 							.arch = CURRENT_AUDIT_ARCH,
 							.instruction_pointer = (uintptr_t)siginfo.si_call_addr,
 							.args = {
-								regs.rdi,
-								regs.rsi,
-								regs.rdx,
-								regs.r10,
-								regs.r8,
-								regs.r9,
+								regs.REG_ARG1,
+								regs.REG_ARG2,
+								regs.REG_ARG3,
+								regs.REG_ARG4,
+								regs.REG_ARG5,
+								regs.REG_ARG6,
 							},
 						};
 						uint32_t bpf_result;
@@ -2174,10 +2222,10 @@ skip_analysis:
 									break;
 							}
 						}
-						const char *name = name_for_syscall(regs.rax);
+						const char *name = name_for_syscall(nr);
 						size_t name_len = fs_strlen(name);
 						size_t len = name_len + 3; // '(' ... ')' '\0'
-						int argc = info_for_syscall(regs.rax).attributes & SYSCALL_ARGC_MASK;
+						int argc = info_for_syscall(nr).attributes & SYSCALL_ARGC_MASK;
 						for (int i = 0; i < argc; i++) {
 							if (i != 0) {
 								len += 2; // ", "
@@ -2203,17 +2251,21 @@ skip_analysis:
 						ERROR("perhaps callander's analysis is insufficient?");
 					}
 				} else if (siginfo.si_signo == SIGTRAP) {
+#ifdef PTRACE_GETREGS
 					result = fs_ptrace(PTRACE_GETREGS, tracee, 0, &regs);
+#else
+					result = fs_ptrace(PTRACE_GETREGSET, tracee, (void *)NT_PRSTATUS, &regs);
+#endif
 					if (result < 0) {
 						DIE("failed to read registers back", fs_strerror(result));
 					}
-					uintptr_t breakpoint_address = regs.rip - 1;
+					uintptr_t breakpoint_address = regs.REG_PC - BREAKPOINT_LEN;
 					for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 						struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
 						uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);
 						if (addr == breakpoint_address) {
 							if (symbol.is_dlopen) {
-								char *dlopen_path = remote_read_string(tracee, regs.rdi);
+								char *dlopen_path = remote_read_string(tracee, regs.REG_ARG1);
 								if (dlopen_path != NULL) {
 									ERROR("dlopen on an unexpected binary was called", dlopen_path);
 									free(dlopen_path);

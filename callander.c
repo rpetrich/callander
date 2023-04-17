@@ -29,6 +29,16 @@
 #include "x86.h"
 #include "x86_64_length_disassembler.h"
 
+#if defined(__x86_64__)
+#define ARCH_NAME "x86_64"
+#else
+#if defined(__aarch64__)
+#define ARCH_NAME "aarch64"
+#else
+#error "Unknown architecture"
+#endif
+#endif
+
 #ifdef LOGGING
 bool should_log;
 #endif
@@ -1952,7 +1962,7 @@ const struct loaded_binary *register_dlopen_file(struct program_state *analysis,
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
 	if (binary == NULL) {
-		int needed_fd = open_executable_in_paths(path, "/lib/x86_64-linux-gnu:/lib:/usr/lib", false, analysis->loader.uid, analysis->loader.gid);
+		int needed_fd = open_executable_in_paths(path, "/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib", false, analysis->loader.uid, analysis->loader.gid);
 		if (needed_fd < 0) {
 			LOG("failed to find dlopen'ed path, assuming it will fail at runtime", path);
 			return NULL;
@@ -2035,8 +2045,8 @@ static void handle_dlopen(struct program_state *analysis, const uint8_t *ins, __
 			}
 			if (analysis->loader.searching_libcrypto_dlopen) {
 				analysis->loader.libcrypto_dlopen = ins;
-				if (fs_access("/lib/x86_64-linux-gnu/ossl-modules", R_OK) == 0) {
-					register_dlopen(analysis, "/lib/x86_64-linux-gnu/ossl-modules", caller, false, true);
+				if (fs_access("/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
+					register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, true);
 				}
 				if (fs_access("/lib/engines-3", R_OK) == 0) {
 					register_dlopen(analysis, "/lib/engines-3", caller, false, true);
@@ -2099,7 +2109,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_
 		return;
 	}
 	analysis->loader.loaded_gconv_libraries = true;
-	int dirfd = fs_open("/usr/lib/x86_64-linux-gnu/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+	int dirfd = fs_open("/usr/lib/"ARCH_NAME"-linux-gnu/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (dirfd < 0) {
 		if (dirfd == -ENOENT) {
 			dirfd = fs_open("/lib64/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
@@ -2132,10 +2142,10 @@ static void handle_gconv_find_shlib(struct program_state *analysis, const uint8_
 					if (*haystack == *needle) {
 						if (*needle == '\0') {
 							size_t suffix_len = haystack - name;
-							char *path = malloc(sizeof("/usr/lib/x86_64-linux-gnu/gconv/") + suffix_len);
+							char *path = malloc(sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") + suffix_len);
 							char *path_buf = path;
-							fs_memcpy(path_buf, "/usr/lib/x86_64-linux-gnu/gconv/", sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1);
-							path_buf += sizeof("/usr/lib/x86_64-linux-gnu/gconv/") - 1;
+							fs_memcpy(path_buf, "/usr/lib/"ARCH_NAME"-linux-gnu/gconv/", sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") - 1);
+							path_buf += sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") - 1;
 							fs_memcpy(path_buf, name, suffix_len + 1);
 							LOG("found gconv library", path);
 							register_dlopen_file(analysis, path, caller, true);
@@ -2337,8 +2347,8 @@ static void handle_golang_unix_sched_affinity(struct program_state *analysis, co
 static void handle_openssl_dso_load(struct program_state *analysis, const uint8_t *ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
-	if (fs_access("/usr/lib/x86_64-linux-gnu/ossl-modules", R_OK) == 0) {
-		register_dlopen(analysis, "/usr/lib/x86_64-linux-gnu/ossl-modules", caller, false, true);
+	if (fs_access("/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
+		register_dlopen(analysis, "/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, true);
 	}
 }
 
@@ -7737,6 +7747,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			textual_name = symbol_name(&binary->symbols, symbol);
 			if (symbol->st_value != 0 && symbol->st_shndx != SHN_UNDEF) {
 				value = apply_base_address(&binary->info, symbol->st_value);
+#if defined(__x86_64__)
 			} else if (type != R_X86_64_RELATIVE && type != R_X86_64_IRELATIVE && type != R_X86_64_DTPMOD64 && type != R_X86_64_DTPOFF64 && type != R_X86_64_TPOFF64 && type != R_X86_64_TPOFF32) {
 				struct loaded_binary *other_binary = NULL;
 				struct symbol_version_info version = binary->symbols.symbol_versions != NULL ? symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index] & 0x7fff) : (struct symbol_version_info){ 0 };
@@ -7766,6 +7777,40 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				if (other_binary) {
 					LOG("to", other_binary->path);
 				}
+#endif
+#if defined(__aarch64__)
+			} else if (type != R_AARCH64_RELATIVE && type != R_AARCH64_IRELATIVE && type != R_AARCH64_TLS_DTPREL && type != R_AARCH64_TLS_DTPMOD && type != R_AARCH64_TLS_TPREL) {
+				struct loaded_binary *other_binary = NULL;
+				struct symbol_version_info version = binary->symbols.symbol_versions != NULL ? symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index] & 0x7fff) : (struct symbol_version_info){ 0 };
+				value = (uintptr_t)resolve_loaded_symbol(context, textual_name, version.version_name, NORMAL_SYMBOL, &other_binary, NULL);
+				if (value == 0) {
+					if ((ELF64_ST_BIND(symbol->st_info) == STB_WEAK) || (type == R_AARCH64_NONE)) {
+						LOG("symbol value is NULL");
+					} else {
+						ERROR("symbol is in another castle", textual_name);
+						if (version.version_name != NULL) {
+							ERROR("version", version.version_name);
+							if (version.library_name != NULL) {
+								ERROR("in library", version.library_name);
+							}
+						}
+						ERROR("relocation type", (intptr_t)type);
+						ERROR("symbol index", rel_off / relaent);
+						DIE("from", binary->path);
+					}
+				}
+				LOG("resolving", textual_name);
+				if (version.version_name != NULL) {
+					LOG("version", version.version_name);
+					if (version.library_name != NULL) {
+						LOG("in library", version.library_name);
+					}
+				}
+				LOG("from", binary->path);
+				if (other_binary) {
+					LOG("to", other_binary->path);
+				}
+#endif
 			} else {
 				value = 0;
 			}
@@ -7776,6 +7821,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			textual_name = "";
 		}
 		LOG("relocation is for value", value);
+#ifdef __x86_64__
 		switch (type) {
 			case R_X86_64_NONE:
 				// why does this exist?
@@ -7877,9 +7923,80 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			default:
 				ERROR("unknown relocation type for", textual_name);
 				ERROR("type is", (intptr_t)type);
-				DIE("at", (intptr_t)(rel_off / relaent));
+				ERROR("at", (intptr_t)(rel_off / relaent));
+				DIE("from", binary->path);
 				break;
 		}
+#else
+#if defined(__aarch64__)
+		switch (type) {
+			case R_AARCH64_NONE:
+				// why does this exist?
+				break;
+			case R_AARCH64_ABS64:
+				LOG("abs64 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_ABS32:
+				LOG("abs32 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_ABS16:
+				LOG("abs16 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_PREL64:
+				LOG("prel64 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_PREL32:
+				LOG("prel32 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_PREL16:
+				LOG("prel16 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_COPY:
+				LOG("copy relocation for", textual_name);
+				fs_memcpy((void *)relo_target, (const void *)value, size);
+				break;
+			case R_AARCH64_GLOB_DAT:
+				LOG("glob dat relocation for", textual_name);
+				*(x86_uint64 *)relo_target = value;
+				break;
+			case R_AARCH64_JUMP_SLOT:
+				LOG("jump slot relocation for", textual_name);
+				*(x86_uint64 *)relo_target = value;
+				break;
+			case R_AARCH64_RELATIVE: {
+				uintptr_t result = (uintptr_t)binary->info.base + addend;
+				*(uintptr_t *)relo_target = result;
+				LOG("relative relocation", temp_str(copy_address_description(context, (const void *)result)));
+				break;
+			}
+			case R_AARCH64_TLS_DTPREL:
+				LOG("tls dtprel64 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_TLS_DTPMOD:
+				LOG("tls dtpmod64 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_TLS_TPREL:
+				LOG("tls tprel64 relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_TLSDESC:
+				LOG("tls tlsdesc relocation for, not supported", textual_name);
+				break;
+			case R_AARCH64_IRELATIVE:
+				LOG("GNU magic to support STT_GNU_IFUNC/__attribute__((ifunc(\"...\"))), not supported", textual_name);
+				// TODO: figure out how to trace these
+				*(uintptr_t *)relo_target = value;
+				break;
+			default:
+				ERROR("unknown relocation type for", textual_name);
+				ERROR("type is", (intptr_t)type);
+				ERROR("at", (intptr_t)(rel_off / relaent));
+				DIE("from", binary->path);
+				break;
+		}
+#else
+#error "Unknown architecture"
+#endif
+#endif
 	}
 	return 0;
 }
@@ -8165,7 +8282,7 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 	if (debuglink == NULL) {
 		return 0;
 	}
-#define DEBUGLINK_ARCH_SEARCH_PATH "/usr/lib/debug/lib/x86_64-linux-gnu"
+#define DEBUGLINK_ARCH_SEARCH_PATH "/usr/lib/debug/lib/"ARCH_NAME"-linux-gnu"
 #define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/lib:/lib/debug/usr/lib64:/usr/lib/debug/lib64"
 #define DEBUGLINK_BUILD_ID_SEARCH_PATH "/usr/lib/debug/.build-id/XX"
 	const char *debuglink_search_paths = DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH;
@@ -8259,8 +8376,8 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					break;
 			}
 		}
-		const char *standard_run_path = "/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE";
-		size_t standard_run_path_sizeof = sizeof("/lib/x86_64-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
+		const char *standard_run_path = "/lib/"ARCH_NAME"-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE";
+		size_t standard_run_path_sizeof = sizeof("/lib/"ARCH_NAME"-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
 			if (fs_strcmp(additional_run_path, "$ORIGIN") == 0) {
