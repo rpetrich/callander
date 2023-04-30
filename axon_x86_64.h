@@ -20,6 +20,16 @@
 #define REG_SP gregs[REG_RSP]
 #define REG_BP gregs[REG_RBP]
 
+#define USER_REG_SYSCALL rax
+#define USER_REG_ARG1 rdi
+#define USER_REG_ARG2 rsi
+#define USER_REG_ARG3 rdx
+#define USER_REG_ARG4 r10
+#define USER_REG_ARG5 r8
+#define USER_REG_ARG6 r9
+#define USER_REG_RESULT rax
+#define USER_REG_PC rip
+
 #define STACK_DESCENDS
 
 #define JUMP(pc, sp, arg0, arg1, arg2) __asm__ __volatile__("mov %1,%%rsp; xor %%rbp,%%rbp; xor %1,%1; push %0; xor %0,%0; ret" : : "r"(pc), "r"(sp), "D"(arg0), "S"(arg1), "d"(arg2), "a"(0), "b"(0), "c"(0), "A"(0) : "memory")
