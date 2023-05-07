@@ -8,8 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "ins.h"
 #include "loader.h"
-#include "x86.h"
 
 #define MORE_STACK_SLOTS 1
 #define STORE_LAST_MODIFIED 0
@@ -164,12 +164,12 @@ struct loader_context {
 	bool searching_libcrypto_dlopen:1;
 	bool searching_setxid:1;
 	bool searching_setxid_sighandler:1;
-	const uint8_t *gconv_dlopen;
-	const uint8_t *libcrypto_dlopen;
-	const uint8_t *setxid_syscall;
-	const uint8_t *setxid_syscall_entry;
-	const uint8_t *setxid_sighandler_syscall;
-	const uint8_t *setxid_sighandler_syscall_entry;
+	ins_ptr gconv_dlopen;
+	ins_ptr libcrypto_dlopen;
+	ins_ptr setxid_syscall;
+	ins_ptr setxid_syscall_entry;
+	ins_ptr setxid_sighandler_syscall;
+	ins_ptr setxid_sighandler_syscall_entry;
 	struct loaded_binary *last_used;
 	int binary_count;
 };
@@ -188,7 +188,7 @@ __attribute__((nonnull(1, 1)))
 void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) **out_symbol);
 
 __attribute__((nonnull(1)))
-uintptr_t translate_analysis_address_to_child(struct loader_context *loader, const uint8_t *addr);
+uintptr_t translate_analysis_address_to_child(struct loader_context *loader, ins_ptr addr);
 __attribute__((nonnull(1)))
 struct register_state translate_register_state_to_child(struct loader_context *loader, struct register_state state);
 
@@ -270,11 +270,12 @@ struct effect_token {
 #endif
 
 enum register_index {
+#ifdef __x86_64__
 	REGISTER_RAX = X86_REGISTER_AX,
 	REGISTER_RCX = X86_REGISTER_CX,
 	REGISTER_RDX = X86_REGISTER_DX,
 	REGISTER_RBX = X86_REGISTER_BX,
-	REGISTER_RSP = X86_REGISTER_SP,
+	REGISTER_SP = X86_REGISTER_SP,
 	REGISTER_RBP = X86_REGISTER_BP,
 	REGISTER_RSI = X86_REGISTER_SI,
 	REGISTER_RDI = X86_REGISTER_DI,
@@ -286,6 +287,44 @@ enum register_index {
 	REGISTER_R13 = X86_REGISTER_13,
 	REGISTER_R14 = X86_REGISTER_14,
 	REGISTER_R15 = X86_REGISTER_15,
+#else
+#ifdef __aarch64__
+	REGISTER_X0 = AARCH64_REGISTER_X0,
+	REGISTER_X1 = AARCH64_REGISTER_X1,
+	REGISTER_X2 = AARCH64_REGISTER_X2,
+	REGISTER_X3 = AARCH64_REGISTER_X3,
+	REGISTER_X4 = AARCH64_REGISTER_X4,
+	REGISTER_X5 = AARCH64_REGISTER_X5,
+	REGISTER_X6 = AARCH64_REGISTER_X6,
+	REGISTER_X7 = AARCH64_REGISTER_X7,
+	REGISTER_X8 = AARCH64_REGISTER_X8,
+	REGISTER_X9 = AARCH64_REGISTER_X9,
+	REGISTER_X10 = AARCH64_REGISTER_X10,
+	REGISTER_X11 = AARCH64_REGISTER_X11,
+	REGISTER_X12 = AARCH64_REGISTER_X12,
+	REGISTER_X13 = AARCH64_REGISTER_X13,
+	REGISTER_X14 = AARCH64_REGISTER_X14,
+	REGISTER_X15 = AARCH64_REGISTER_X15,
+	REGISTER_X16 = AARCH64_REGISTER_X16,
+	REGISTER_X17 = AARCH64_REGISTER_X17,
+	REGISTER_X18 = AARCH64_REGISTER_X18,
+	REGISTER_X19 = AARCH64_REGISTER_X19,
+	REGISTER_X20 = AARCH64_REGISTER_X20,
+	REGISTER_X21 = AARCH64_REGISTER_X21,
+	REGISTER_X22 = AARCH64_REGISTER_X22,
+	REGISTER_X23 = AARCH64_REGISTER_X23,
+	REGISTER_X24 = AARCH64_REGISTER_X24,
+	REGISTER_X25 = AARCH64_REGISTER_X25,
+	REGISTER_X26 = AARCH64_REGISTER_X26,
+	REGISTER_X27 = AARCH64_REGISTER_X27,
+	REGISTER_X28 = AARCH64_REGISTER_X28,
+	REGISTER_X29 = AARCH64_REGISTER_X29,
+	REGISTER_X30 = AARCH64_REGISTER_X30,
+	REGISTER_SP = AARCH64_REGISTER_SP,
+#else
+#error "Unknown architecture"
+#endif
+#endif
 
 	REGISTER_MEM,
 
@@ -301,10 +340,36 @@ enum {
 #else
 	REGISTER_COUNT = REGISTER_STACK_60 + 1,
 #endif
+
+#ifdef __x86_64__
+	REGISTER_SYSCALL_NR = X86_REGISTER_AX,
+	REGISTER_SYSCALL_ARG0 = X86_REGISTER_DI,
+	REGISTER_SYSCALL_ARG1 = X86_REGISTER_SI,
+	REGISTER_SYSCALL_ARG2 = X86_REGISTER_DX,
+	REGISTER_SYSCALL_ARG3 = X86_REGISTER_10,
+	REGISTER_SYSCALL_ARG4 = X86_REGISTER_8,
+	REGISTER_SYSCALL_ARG5 = X86_REGISTER_9,
+
+	SYSV_REGISTER_ARGUMENT_COUNT = 6,
+#else
+#ifdef __aarch64__
+	REGISTER_SYSCALL_NR = AARCH64_REGISTER_X8,
+	REGISTER_SYSCALL_ARG0 = AARCH64_REGISTER_X0,
+	REGISTER_SYSCALL_ARG1 = AARCH64_REGISTER_X1,
+	REGISTER_SYSCALL_ARG2 = AARCH64_REGISTER_X2,
+	REGISTER_SYSCALL_ARG3 = AARCH64_REGISTER_X3,
+	REGISTER_SYSCALL_ARG4 = AARCH64_REGISTER_X4,
+	REGISTER_SYSCALL_ARG5 = AARCH64_REGISTER_X5,
+
+	SYSV_REGISTER_ARGUMENT_COUNT = 8,
+#else
+#error "Unknown architecture"
+#endif
+#endif
 };
 
 const int syscall_argument_abi_register_indexes[6];
-const int sysv_argument_abi_register_indexes[6];
+const int sysv_argument_abi_register_indexes[SYSV_REGISTER_ARGUMENT_COUNT];
 
 typedef uint64_t register_mask;
 
@@ -335,11 +400,13 @@ static inline void set_register(struct register_state *reg, uintptr_t value) {
 
 __attribute__((packed))
 struct decoded_rm {
+#if defined(__x86_64__)
 	uintptr_t addr;
 	uint8_t rm:6;
 	uint8_t base:4;
 	uint8_t index:4;
 	uint8_t scale:2;
+#endif
 };
 
 enum {
@@ -365,10 +432,10 @@ struct registers {
 	register_mask sources[REGISTER_COUNT];
 	register_mask matches[REGISTER_COUNT];
 #if STORE_LAST_MODIFIED
-	const uint8_t *last_modify_ins[REGISTER_COUNT];
+	ins_ptr last_modify_ins[REGISTER_COUNT];
 #endif
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
-	const uint8_t *stack_address_taken;
+	ins_ptr stack_address_taken;
 #else
 	bool stack_address_taken:1;
 #endif
@@ -383,7 +450,7 @@ struct analysis_frame {
 	const void *address;
 	const char *description;
 	struct registers current_state;
-	const uint8_t *entry;
+	ins_ptr entry;
 	const struct registers *entry_state;
 	struct effect_token token;
 	bool is_entry:1;
@@ -404,7 +471,7 @@ typedef uint8_t function_effects;
 
 struct program_state;
 
-typedef void (*instruction_reached_callback)(struct program_state *, const uint8_t *, struct registers *, function_effects, struct analysis_frame *, struct effect_token *, void *callback_data);
+typedef void (*instruction_reached_callback)(struct program_state *, ins_ptr , struct registers *, function_effects, struct analysis_frame *, struct effect_token *, void *callback_data);
 
 struct searched_instruction_callback {
 	instruction_reached_callback callback;
@@ -432,10 +499,10 @@ void cleanup_searched_instructions(struct searched_instructions *search);
 
 struct recorded_syscall {
 	uintptr_t nr;
-	const uint8_t *ins;
-	const uint8_t *entry;
+	ins_ptr ins;
+	ins_ptr entry;
 #if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
-	const uint8_t *function_entry;
+	ins_ptr function_entry;
 #endif
 	struct registers registers;
 };
@@ -474,7 +541,7 @@ __attribute__((nonnull(1, 2)))
 struct sock_fprog generate_seccomp_program(struct loader_context *loader, const struct recorded_syscalls *syscalls, const struct mapped_region_info *blocked_memory_regions, uint32_t syscall_range_low, uint32_t syscall_range_high);
 
 struct address_and_size {
-	const uint8_t *address;
+	ins_ptr address;
 	size_t size;
 };
 
@@ -484,7 +551,7 @@ enum {
 
 struct blocked_symbol {
 	const char *name;
-	const uint8_t *value;
+	ins_ptr value;
 	int symbol_types;
 	bool is_dlopen:1;
 	bool is_required:1;
@@ -512,13 +579,13 @@ struct dlopen_path {
 };
 
 struct reachable_region {
-	const uint8_t *entry;
-	const uint8_t *exit;
+	ins_ptr entry;
+	ins_ptr exit;
 };
 
 struct unreachable_instructions {
 #if BREAK_ON_UNREACHABLES
-	const uint8_t **breakpoints;
+	ins_ptr *breakpoints;
 	size_t breakpoint_count;
 	size_t breakpoint_buffer_size;
 	struct reachable_region *reachable_regions;
@@ -559,11 +626,11 @@ enum jump_table_status {
 };
 
 __attribute__((nonnull(1, 3, 4, 5)))
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 3, 4, 5)))
-static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, const uint8_t *ins, struct analysis_frame *caller)
+static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller)
 {
 	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, true);
 }

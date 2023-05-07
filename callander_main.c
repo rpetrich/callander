@@ -60,7 +60,7 @@ enum attach_behavior {
 
 #define PROFILE_HEADER_LINE "callander profile 0.0.1"
 
-static void write_profile(const struct loader_context *loader, const struct recorded_syscalls *syscalls, const uint8_t *main, const char *path)
+static void write_profile(const struct loader_context *loader, const struct recorded_syscalls *syscalls, ins_ptr main, const char *path)
 {
 	int fd = fs_open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	if (fd < 0) {
@@ -279,7 +279,7 @@ found_number:
 		syscalls->list = realloc(syscalls->list, syscalls->capacity * sizeof(struct recorded_syscall));
 	}
 	struct registers regs = empty_registers;
-	set_register(&regs.registers[REGISTER_RAX], nr);
+	set_register(&regs.registers[REGISTER_SYSCALL_NR], nr);
 	// int argc = argc_for_syscall(nr) & SYSCALL_ARGC_MASK;
 	size_t arg_start = name_len + 1;
 	for (int i = 0; i < 6; i++) {
@@ -329,7 +329,7 @@ found_number:
 	}
 	syscalls->list[index] = (struct recorded_syscall){
 		.nr = nr,
-		.ins = (const uint8_t *)ins,
+		.ins = (ins_ptr)ins,
 		.registers = regs,
 	};
 	return true;
@@ -589,7 +589,7 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader)
 	return result;
 }
 
-static struct loaded_binary *binary_for_child_address(const struct loader_context *context, uintptr_t addr, const uint8_t **out_analysis_address)
+static struct loaded_binary *binary_for_child_address(const struct loader_context *context, uintptr_t addr, ins_ptr *out_analysis_address)
 {
 	if ((uintptr_t)addr < PAGE_SIZE) {
 		return NULL;
@@ -598,7 +598,7 @@ static struct loaded_binary *binary_for_child_address(const struct loader_contex
 	for (; binary != NULL; binary = binary->next) {
 		if (addr >= binary->child_base && addr < binary->child_base + binary->info.size) {
 			if (out_analysis_address) {
-				*out_analysis_address = (const uint8_t *)(addr - binary->child_base + (uintptr_t)binary->info.base);
+				*out_analysis_address = (ins_ptr)(addr - binary->child_base + (uintptr_t)binary->info.base);
 			}
 			break;
 		}
@@ -831,8 +831,8 @@ static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_st
 #if BREAK_ON_UNREACHABLES
 static int compare_addresses(const void *left, const void *right, __attribute__((unused)) void *data)
 {
-	const uint8_t *const *left_address = left;
-	const uint8_t *const *right_address = right;
+	ins_ptr const *left_address = left;
+	ins_ptr const *right_address = right;
 	if ((uintptr_t)*left_address < (uintptr_t)*right_address) {
 		return -1;
 	}
@@ -886,9 +886,9 @@ static void prune_unreachable_instructions(__attribute__((unused)) struct unreac
 		}
 	}
 	size_t j = 0;
-	const uint8_t *last_breakpoint = NULL;
+	ins_ptr last_breakpoint = NULL;
 	for (size_t i = 0; i < breakpoint_count; i++) {
-		const uint8_t *breakpoint = unreachables->breakpoints[i];
+		ins_ptr breakpoint = unreachables->breakpoints[i];
 		if (breakpoint == last_breakpoint) {
 			// prune duplicates
 			unreachables->breakpoints[i] = NULL;
@@ -1845,7 +1845,7 @@ skip_analysis:
 			log_used_binaries(&analysis.loader);
 		}
 		if (profile_path != NULL && !has_read_profile) {
-			write_profile(&analysis.loader, &analysis.syscalls, (const uint8_t *)analysis.main, profile_path);
+			write_profile(&analysis.loader, &analysis.syscalls, (ins_ptr)analysis.main, profile_path);
 		}
 		free_loaded_binary(analysis.loader.binaries);
 		cleanup_searched_instructions(&analysis.search);
@@ -1970,7 +1970,7 @@ skip_analysis:
 		prune_unreachable_instructions(&analysis.unreachables, &analysis.loader);
 		size_t breakpoint_count = analysis.unreachables.breakpoint_count;
 		for (size_t i = 0; i < breakpoint_count; i++) {
-			const uint8_t *addr = analysis.unreachables.breakpoints[i];
+			ins_ptr addr = analysis.unreachables.breakpoints[i];
 			if (addr != NULL) {
 				LOG("patching breakpoint to unreachable instruction", temp_str(copy_address_description(&analysis.loader, addr)));
 				void *child_addr = (void *)translate_analysis_address_to_child(&analysis.loader, addr);
@@ -2014,7 +2014,7 @@ skip_analysis:
 		log_used_binaries(&analysis.loader);
 	}
 	if (profile_path != NULL && !has_read_profile) {
-		write_profile(&analysis.loader, &analysis.syscalls, (const uint8_t *)analysis.main, profile_path);
+		write_profile(&analysis.loader, &analysis.syscalls, (ins_ptr)analysis.main, profile_path);
 	}
 	// send the original main bytes back, restoring the main function back to its original state
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)original_bytes);
@@ -2283,7 +2283,7 @@ skip_analysis:
 #if BREAK_ON_UNREACHABLES
 					size_t breakpoint_count = analysis.unreachables.breakpoint_count;
 					for (size_t i = 0; i < breakpoint_count; i++) {
-						const uint8_t *addr = analysis.unreachables.breakpoints[i];
+						ins_ptr addr = analysis.unreachables.breakpoints[i];
 						uintptr_t child_addr = translate_analysis_address_to_child(&analysis.loader, addr);
 						if (child_addr == breakpoint_address) {
 							ERROR("assumed unreachable instruction was somehow reached", temp_str(copy_address_description(&analysis.loader, addr)));

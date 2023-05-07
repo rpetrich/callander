@@ -2,7 +2,10 @@
 #define X86_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+
+#include "x86_64_length_disassembler.h"
 
 typedef int16_t x86_int16 __attribute__((aligned(1)));
 typedef uint16_t x86_uint16 __attribute__((aligned(1)));
@@ -219,6 +222,31 @@ static inline struct x86_ins_prefixes x86_decode_ins_prefixes(const uint8_t **in
 	}
 	return result;
 }
+
+struct x86_instruction {
+	const uint8_t *unprefixed;
+	int length;
+	struct x86_ins_prefixes prefixes;
+};
+
+static inline bool x86_decode_instruction(const uint8_t *addr, struct x86_instruction *out_ins)
+{
+	int length = InstructionSize_x86_64(addr, 0xf);
+	out_ins->length = length;
+	out_ins->unprefixed = addr;
+	if (length == INSTRUCTION_INVALID) {
+		out_ins->prefixes = (struct x86_ins_prefixes){ 0 };
+		return false;
+	}
+	out_ins->prefixes = x86_decode_ins_prefixes(&out_ins->unprefixed);
+	return true;
+}
+
+static inline const uint8_t *x86_next_instruction(const uint8_t *addr, const struct x86_instruction *ins)
+{
+	return addr + ins->length;
+}
+
 
 typedef struct {
     uint8_t rm : 3;

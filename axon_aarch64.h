@@ -18,6 +18,16 @@
 #define REG_SP sp
 #define REG_BP sp
 
+#define USER_REG_SYSCALL REG_SYSCALL
+#define USER_REG_ARG1 REG_ARG1
+#define USER_REG_ARG2 REG_ARG2
+#define USER_REG_ARG3 REG_ARG3
+#define USER_REG_ARG4 REG_ARG4
+#define USER_REG_ARG5 REG_ARG5
+#define USER_REG_ARG6 REG_ARG6
+#define USER_REG_RESULT REG_RESULT
+#define USER_REG_PC REG_PC
+
 #define STACK_DESCENDS
 
 #define JUMP(pc, sp, arg0, arg1, arg2) do { \
