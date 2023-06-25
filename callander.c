@@ -3222,9 +3222,9 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	uint8_t config = nr < SYSCALL_COUNT ? syscalls->config[nr] : 0;
 	struct syscall_info info = info_for_syscall(nr);
 	for (int i = 0; i < (info.attributes & SYSCALL_ARGC_MASK); i++) {
-		if (info.arguments[i] & SYSCALL_ARG_IS_MODEFLAGS) {
-			// argument is flags, next is mode. check if mode is used and if not, convert to any
-			const struct register_state *arg = &self.current_state.registers[syscall_argument_abi_register_indexes[i]];
+		if (i != 0 && info.arguments[i] & SYSCALL_ARG_IS_MODEFLAGS) {
+			// argument is modeflags, previous is mode. check if mode is used and if not, convert to any
+			const struct register_state *arg = &self.current_state.registers[syscall_argument_abi_register_indexes[i-1]];
 			if (register_is_exactly_known(arg)) {
 				if ((arg->value & O_TMPFILE) == O_TMPFILE) {
 					continue;
@@ -3233,7 +3233,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 					continue;
 				}
 			}
-			clear_register(&self.current_state.registers[syscall_argument_abi_register_indexes[i+1]]);
+			clear_register(&self.current_state.registers[syscall_argument_abi_register_indexes[i]]);
 		}
 	}
 	// debug logging
