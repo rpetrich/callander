@@ -29,7 +29,7 @@ extern bool should_log;
 #endif
 
 enum {
-	ALT_STACK_SIZE = 160 * 1024 * 1024,
+	ALT_STACK_SIZE = 200 * 1024 * 1024,
 	SIGNAL_STACK_SIZE = 512 * 1024,
 	STACK_GUARD_SIZE = 1024 * 1024,
 };

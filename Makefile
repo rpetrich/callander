@@ -42,6 +42,7 @@ ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Softwar
 ifeq ($(TARGETMACHINE),aarch64)
 	CFLAGS += -Wno-psabi
 	LDFLAGS += -Wno-psabi
+	CFLAGS += -Wno-unused-function
 endif
 else
 ifeq ($(CC),clang)

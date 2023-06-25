@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define context context_
+#include "arch-arm64/disassembler/decode.h"
+#undef context
+
 enum aarch64_register_index {
 	AARCH64_REGISTER_X0,
 	AARCH64_REGISTER_X1,
@@ -39,6 +43,16 @@ enum aarch64_register_index {
 	AARCH64_REGISTER_SP,
 };
 
+struct aarch64_instruction {
+};
+
+static inline bool aarch64_decode_instruction(const uint32_t *ins, struct aarch64_instruction *out_decoded)
+{
+	(void)ins;
+	*out_decoded = (struct aarch64_instruction){};
+	return false;
+}
+
 static inline bool aarch64_is_conditional_branch(uint32_t ins)
 {
 	return (ins & 0xFF000010) == 0x54000000;
@@ -53,5 +67,9 @@ static inline bool aarch64_is_jbe_instruction(const uint32_t *ins)
 {
 	return aarch64_is_conditional_branch(*ins) && aarch64_read_cond(*ins) == 1;
 }
+
+__attribute__((warn_unused_result))
+__attribute__((nonnull(1, 2)))
+enum ins_jump_behavior aarch64_decode_jump_instruction(const uint32_t *ins, const uint32_t **out_jump);
 
 #endif

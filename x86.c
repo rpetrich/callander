@@ -1,3 +1,4 @@
+#include "ins.h"
 #include "x86.h"
 
 #include "patch.h"
@@ -12,11 +13,6 @@
 #define INS_REPNE 0xf2
 #define INS_REPZ 0xf3
 
-#define INS_RET 0xc3
-#define INS_RET_IMM 0xc2
-#define INS_RET_FAR 0xcb
-#define INS_RET_FAR_IMM 0xca
-
 #define INS_JMP_8_IMM 0xeb
 #define INS_JMP_32_IMM 0xe9
 
@@ -25,8 +21,6 @@
 #define INS_CONDITIONAL_JMP_32_IMM_0 0x0f
 #define INS_CONDITIONAL_JMP_32_IMM_1_START 0x80
 #define INS_CONDITIONAL_JMP_32_IMM_1_END 0x8f
-
-#define INS_JRCXZ 0xe3
 
 __attribute__((used))
 bool x86_is_syscall_instruction(const uint8_t *addr)
@@ -84,65 +78,47 @@ bool x86_is_nop_instruction(const uint8_t *addr)
 	return false;
 }
 
-__attribute__((used))
-bool x86_is_return_instruction(const uint8_t *addr)
-{
-	if (*addr == INS_REPZ) {
-		addr++;
-	}
-	switch (*addr) {
-		case INS_RET:
-		case INS_RET_IMM:
-		case INS_RET_FAR:
-		case INS_RET_FAR_IMM:
-			return true;
-		default:
-			return false;
-	}
-}
-
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 2)))
 __attribute__((used))
-enum x86_jumps x86_decode_jump_instruction(const uint8_t *ins, const uint8_t **out_jump)
+enum ins_jump_behavior x86_decode_jump_instruction(const uint8_t *unprefixed, const uint8_t **out_jump)
 {
-	while (*ins == INS_REPNE) {
-		ins++;
-	}
-	if (ins[0] == INS_JMP_8_IMM) {
-		PATCH_LOG("jmp", (uintptr_t)ins);
-		*out_jump = ins + 2 + *(const int8_t *)&ins[1];
-		return X86_JUMPS_ALWAYS;
-	}
-	if (ins[0] == INS_JMP_32_IMM) {
-		PATCH_LOG("jmpq", (uintptr_t)ins);
-		*out_jump = ins + 5 + *(const x86_int32 *)&ins[1];
-		return X86_JUMPS_ALWAYS;
-	}
-	if (ins[0] == 0xff && ins[1] == 0x25) {
-		PATCH_LOG("jmpq *", (uintptr_t)ins);
-		const uint8_t **address = (const uint8_t **)(ins + 6 + *(const x86_int32 *)&ins[2]);
-		*out_jump = *address;
-		return X86_JUMPS_ALWAYS;
-	}
-	switch (ins[0]) {
+	switch (*unprefixed) {
+		case INS_JMP_8_IMM:
+			PATCH_LOG("jmp", (uintptr_t)unprefixed);
+			*out_jump = unprefixed + 2 + *(const int8_t *)&unprefixed[1];
+			return INS_JUMPS_ALWAYS;
+		case INS_JMP_32_IMM:
+			PATCH_LOG("jmpq", (uintptr_t)unprefixed);
+			*out_jump = unprefixed + 5 + *(const x86_int32 *)&unprefixed[1];
+			return INS_JUMPS_ALWAYS;
+		case 0xff:
+			if (unprefixed[1] == 0x25) {
+				PATCH_LOG("jmpq *", (uintptr_t)unprefixed);
+				const uint8_t **address = (const uint8_t **)(unprefixed + 6 + *(const x86_int32 *)&unprefixed[2]);
+				*out_jump = *address;
+				return INS_JUMPS_ALWAYS;
+			}
+			break;
 		case 0xe0: // loopne
 		case 0xe1: // loope
 		case 0xe2: // loop
 		case 0xe3: // jcxz
-			*out_jump = ins + 1 + *(const int8_t*)&ins[1];
-			return X86_JUMPS_OR_CONTINUES;
+			*out_jump = unprefixed + 2 + *(const int8_t*)&unprefixed[1];
+			return INS_JUMPS_OR_CONTINUES;
+		case INS_CONDITIONAL_JMP_8_IMM_START ... INS_CONDITIONAL_JMP_8_IMM_END:
+			PATCH_LOG("conditional jmp", (uintptr_t)unprefixed);
+			*out_jump = unprefixed + 2 + *(const int8_t *)&unprefixed[1];
+			return INS_JUMPS_OR_CONTINUES;
+		case INS_CONDITIONAL_JMP_32_IMM_0:
+			switch (unprefixed[1]) {
+				case INS_CONDITIONAL_JMP_32_IMM_1_START ... INS_CONDITIONAL_JMP_32_IMM_1_END:
+					PATCH_LOG("conditional jmpq", (uintptr_t)unprefixed);
+					*out_jump = unprefixed + 6 + *(const x86_int32 *)&unprefixed[2];
+					return INS_JUMPS_OR_CONTINUES;
+			}
+			break;
 	}
-	if ((ins[0] >= INS_CONDITIONAL_JMP_8_IMM_START && ins[0] <= INS_CONDITIONAL_JMP_8_IMM_END) || ins[0] == INS_JRCXZ) {
-		PATCH_LOG("conditional jmp", (uintptr_t)ins);
-		*out_jump = ins + 2 + *(const int8_t *)&ins[1];
-		return X86_JUMPS_OR_CONTINUES;
-	}
-	if (ins[0] == INS_CONDITIONAL_JMP_32_IMM_0 && ins[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && ins[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
-		PATCH_LOG("conditional jmpq", (uintptr_t)ins);
-		*out_jump = ins + 6 + *(const x86_int32 *)&ins[2];
-		return X86_JUMPS_OR_CONTINUES;
-	}
-	return X86_JUMPS_NEVER;
+	return INS_JUMPS_NEVER;
 }
 

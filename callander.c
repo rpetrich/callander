@@ -4526,29 +4526,38 @@ enum {
 	MAX_LOOKUP_TABLE_SIZE = 0x408,
 };
 
-#if defined(__x86_64__)
-
-static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr ins)
+static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr ins, struct decoded_ins *decoded)
 {
 	// skip over function stubs that simply call into a target function
-	ins_ptr jump_target;
-	while (UNLIKELY(x86_decode_jump_instruction(UNLIKELY(x86_is_endbr64_instruction(ins)) ? &ins[4] : ins, &jump_target) == X86_JUMPS_ALWAYS)) {
-		if (jump_target == NULL || jump_target == ins) {
-			break;
+	for (;;) {
+		if (!x86_decode_instruction(ins, decoded)) {
+			return NULL;
 		}
-		if (protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) {
+		if (is_landing_pad_ins(decoded)) {
+			ins_ptr next = next_ins(ins, decoded);
 #if BREAK_ON_UNREACHABLES
-			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, ins + InstructionSize_x86_64(ins, 0xf));
+			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next);
+#endif
+			ins = next;
+		} else {
+			ins_ptr jump_target;
+			if (ins_interpret_jump_behavior(decoded, &jump_target) != INS_JUMPS_ALWAYS) {
+				break;
+			}
+			if (jump_target == NULL || jump_target == ins) {
+				break;
+			}
+			if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
+				break;
+			}
+#if BREAK_ON_UNREACHABLES
+			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, decoded));
 #endif
 			ins = jump_target;
-		} else {
-			break;
 		}
 	}
 	return ins;
 }
-
-#endif
 
 __attribute__((noinline))
 static void analyze_libcrypto_dlopen(struct program_state *analysis)
@@ -4585,7 +4594,7 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 }
 
 __attribute__((always_inline))
-static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, ins_ptr ins, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
+static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
 {
 	bool skip_jump = false;
 	bool skip_continue = false;
@@ -4633,7 +4642,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				continue_state.registers[target_register].value &= compare_mask;
 				continue_state.registers[target_register].max &= compare_mask;
 			}
-			if (is_jb_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jb_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jb comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4651,7 +4660,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
 				}
 			}
-			if (is_jae_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jae_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jae comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4669,7 +4678,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
 				}
 			}
-			if (is_je_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
+			if (is_je_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
 				LOG("found je comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4693,7 +4702,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
 				}
 			}
-			if (is_jne_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
+			if (is_jne_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
 				LOG("found jne comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4717,7 +4726,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
 				}
 			}
-			if (is_jbe_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jbe_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jbe comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4735,7 +4744,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
 				}
 			}
-			if (is_ja_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_ja_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found ja comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4753,7 +4762,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
 				}
 			}
-			if (is_js_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_js_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found js comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4774,7 +4783,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					}
 				}
 			}
-			if (is_jns_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jns_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jns comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4795,7 +4804,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					}
 				}
 			}
-			if (is_jl_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jl_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jl comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4817,7 +4826,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					}
 				}
 			}
-			if (is_jge_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jge_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jge comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4839,7 +4848,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					}
 				}
 			}
-			if (is_jg_ins(ins) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
+			if (is_jg_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
 				LOG("found jg comparing", name_for_register(target_register));
 				dump_register(&analysis->loader, continue_state.registers[target_register]);
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
@@ -4969,11 +4978,13 @@ static inline function_effects fallback_effects_if_processing(function_effects e
 	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
 }
 
-#if defined(__x86_64__)
-
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
 {
-	ins = skip_prefix_jumps(analysis, ins);
+	struct decoded_ins decoded;
+	ins = skip_prefix_jumps(analysis, ins, &decoded);
+	if (ins == NULL) {
+		return EFFECT_RETURNS | EFFECT_EXITS;
+	}
 	struct analysis_frame self;
 	self.current_state = *entry_state;
 	function_effects effects;
@@ -5009,34 +5020,26 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #ifdef STATS
 		analyzed_instruction_count++;
 #endif
-		struct x86_instruction decoded;
-		if (!x86_decode_instruction(ins, &decoded)) {
-			LOG("invalid instruction, assuming all effects");
-			effects |= EFFECT_RETURNS | EFFECT_EXITS;
-			LOG("completing from invalid", temp_str(copy_address_description(&analysis->loader, self.entry)));
-			decoded = (struct x86_instruction){ 0 };
-			goto update_and_return;
-		}
-		if (is_return_ins(ins)) {
+		if (is_return_ins(&decoded)) {
 			effects |= EFFECT_RETURNS;
 			LOG("completing from return", temp_str(copy_address_description(&analysis->loader, self.entry)));
 			goto update_and_return;
 		}
 #if 0
-		if (is_nop_ins(ins)) {
+		if (is_nop_ins(decoded)) {
 			LOG("processing a nop", temp_str(copy_address_description(&analysis->loader, ins)));
 		}
 #endif
 		ins_ptr jump_target;
-		switch (x86_decode_jump_instruction(ins, &jump_target)) {
-			case X86_JUMPS_NEVER:
+		switch (ins_interpret_jump_behavior(&decoded, &jump_target)) {
+			case INS_JUMPS_NEVER:
 				break;
-			case X86_JUMPS_ALWAYS: {
+			case INS_JUMPS_ALWAYS: {
 				LOG("found single jump");
 				if (jump_target == NULL) {
 					LOG("found jump to unfilled address, assuming either exit or return!");
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
-				} else if (jump_target == x86_next_instruction(ins, &decoded)) {
+				} else if (jump_target == next_ins(ins, &decoded)) {
 					LOG("jumping to next instruction, continuing");
 					break;
 				} else if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
@@ -5052,16 +5055,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					effects |= EFFECT_EXITS;
 				} else {
 					self.description = "jump";
-					if (ins == self.entry || (ins == &self.entry[4] && x86_is_endbr64_instruction(self.entry))) {
-						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
-					}
+					// if (ins == self.entry || (ins == &self.entry[4] && is_landing_pad_ins(self.entry))) {
+					// 	set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
+					// }
 					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
 			}
-			case X86_JUMPS_OR_CONTINUES: {
-				effects |= analyze_conditional_branch(analysis, required_effects, ins, jump_target, x86_next_instruction(ins, &decoded), &self) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING);
+			case INS_JUMPS_OR_CONTINUES: {
+				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING);
 				goto update_and_return;
 			}
 		}
@@ -5109,7 +5112,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
 						if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 							LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-							push_unreachable_breakpoint(&analysis->unreachables, x86_next_instruction(ins, &decoded));
+							push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 							goto update_and_return;
 						}
 						LOG("function may return, proceeding", name_for_effect(more_effects));
@@ -5147,7 +5150,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
 								if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 									LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-									push_unreachable_breakpoint(&analysis->unreachables, x86_next_instruction(ins, &decoded));
+									push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 									goto update_and_return;
 								}
 								LOG("function may return, proceeding", name_for_effect(more_effects));
@@ -5683,9 +5686,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						int reg = x86_read_reg(modrm, decoded.prefixes);
 						if (x86_modrm_is_direct(modrm) && reg == x86_read_rm(modrm, decoded.prefixes)) {
 							LOG("found xor with self in SSE, zeroing idiom", name_for_register(reg));
-							ins_ptr lookahead = x86_next_instruction(ins, &decoded);
-							struct x86_instruction lookahead_decoded;
-							if (x86_decode_instruction(lookahead, &lookahead_decoded)) {
+							ins_ptr lookahead = next_ins(ins, &decoded);
+							struct decoded_ins lookahead_decoded;
+							if (decode_ins(lookahead, &lookahead_decoded)) {
 								if (lookahead_decoded.unprefixed[0] == 0x0f && lookahead_decoded.unprefixed[1] == 0x11) { // movups xmm2/m128, xmm1
 									x86_mod_rm_t lookahead_modrm = x86_read_modrm(&lookahead_decoded.unprefixed[2]);
 									if (reg == x86_read_reg(lookahead_modrm, lookahead_decoded.prefixes)) {
@@ -5973,7 +5976,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										struct registers copy = self.current_state;
 										copy.sources[dest] = self.current_state.sources[base] | self.current_state.sources[index];
 										clear_match(&analysis->loader, &copy, dest, ins);
-										ins_ptr continue_target = ins + decoded.length;
+										ins_ptr continue_target = next_ins(ins, &decoded);
 										for (uintptr_t i = value; i <= max; i++) {
 											LOG("processing table index", i);
 											LOG("processing table value", (intptr_t)((ins_ptr)base_addr)[i]);
@@ -6606,7 +6609,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << base) | ((register_mask)1 << index));
 									copy.sources[reg] = self.current_state.sources[base] | self.current_state.sources[index];
 									clear_match(&analysis->loader, &copy, reg, ins);
-									ins_ptr continue_target = ins + decoded.length;
+									ins_ptr continue_target = next_ins(ins, &decoded);
 									for (uintptr_t i = value; i <= max; i++) {
 										LOG("processing table index", i);
 										int32_t relative = ((const x86_int32 *)base_addr)[i];
@@ -7647,7 +7650,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0xe8: { // call
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				uintptr_t dest = (uintptr_t)x86_next_instruction(ins, &decoded) + *(const x86_int32 *)&decoded.unprefixed[1];
+				uintptr_t dest = (uintptr_t)next_ins(ins, &decoded) + *(const x86_int32 *)&decoded.unprefixed[1];
 				LOG("found call", temp_str(copy_function_call_description(&analysis->loader, (void *)dest, self.current_state)));
 				struct loaded_binary *binary = NULL;
 				if (dest == 0) {
@@ -7670,7 +7673,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("resuming from call", temp_str(copy_address_description(&analysis->loader, ins)));
 					if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 						LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-						push_unreachable_breakpoint(&analysis->unreachables, ins + decoded.length);
+						push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 						goto update_and_return;
 					}
 					LOG("function may return, proceeding", name_for_effect(more_effects));
@@ -7678,7 +7681,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (caller_binary != NULL) {
 						struct frame_details frame;
 						if (find_containing_frame_info(&caller_binary->frame_info, ins, &frame)) {
-							if ((uintptr_t)frame.address + frame.size <= (uintptr_t)ins + decoded.length) {
+							if ((uintptr_t)frame.address + frame.size <= (uintptr_t)next_ins(ins, &decoded)) {
 								LOG("found call to exit-only function not marked exit-only", temp_str(copy_address_description(&analysis->loader, ins)));
 								goto update_and_return;
 							}
@@ -7982,8 +7985,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			pending_stack_clear = 0;
 		}
 	skip_stack_clear:
-		ins = x86_next_instruction(ins, &decoded);
+		ins = next_ins(ins, &decoded);
 		LOG("instruction", temp_str(copy_address_description(&analysis->loader, ins)));
+		if (!decode_ins(ins, &decoded)) {
+			LOG("invalid instruction, assuming all effects");
+			effects |= EFFECT_RETURNS | EFFECT_EXITS;
+			LOG("completing from invalid", temp_str(copy_address_description(&analysis->loader, self.entry)));
+			decoded = (struct decoded_ins){ 0 };
+			break;
+		}
 	}
 update_and_return:
 	effects &= ~EFFECT_PROCESSING;
@@ -8005,34 +8015,10 @@ update_and_return:
 		LOG("exit-only block", temp_str(copy_address_description(&analysis->loader, self.entry)));
 	}
 #if BREAK_ON_UNREACHABLES
-	push_reachable_region(&analysis->loader, &analysis->unreachables, self.entry, ins + decoded.length);
+	push_reachable_region(&analysis->loader, &analysis->unreachables, self.entry, next_ins(ins, &decoded));
 #endif
 	return effects;
 }
-
-#else
-
-#if defined(__aarch64__)
-
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
-{
-	(void)analysis;
-	(void)required_effects;
-	(void)entry_state;
-	(void)ins;
-	(void)caller;
-	(void)jump_status;
-	(void)is_entry;
-	return EFFECT_EXITS | EFFECT_RETURNS | required_effects;
-}
-
-#else
-
-#error "Unknown architecture"
-
-#endif
-
-#endif
 
 static int apply_relocation_table(const struct loader_context *context, struct loaded_binary *binary, uintptr_t rela, uintptr_t relaent, uintptr_t relasz)
 {

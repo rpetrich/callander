@@ -1,7 +1,22 @@
+#ifndef INS_H
+#define INS_H
+
+enum ins_jump_behavior {
+	INS_JUMPS_NEVER,
+	INS_JUMPS_ALWAYS,
+	INS_JUMPS_OR_CONTINUES,
+};
+
 #if defined(__x86_64__)
 
 #include "x86.h"
+
 typedef const uint8_t *ins_ptr;
+#define decoded_ins x86_instruction
+
+#define decode_ins x86_decode_instruction
+#define next_ins x86_next_instruction
+
 #define is_jo_ins x86_is_jo_instruction
 #define is_jno_ins x86_is_jno_instruction
 #define is_jb_ins x86_is_jb_instruction
@@ -21,11 +36,21 @@ typedef const uint8_t *ins_ptr;
 
 #define is_return_ins x86_is_return_instruction
 
+#define is_landing_pad_ins x86_is_endbr64_instruction
+
+#define ins_interpret_jump_behavior(ins, out_jump) x86_decode_jump_instruction((ins)->unprefixed, out_jump)
+#define ins_interpret_comparisons decode_x86_comparisons
+
 #else
 #if defined(__aarch64__)
 
 #include "aarch64.h"
 typedef const uint32_t *ins_ptr;
+#define decoded_ins aarch64_instruction
+
+#define decode_ins aarch64_decode_instruction
+#define next_ins(ins, unused) (&(ins)[1])
+
 #define is_jo_ins aarch64_is_jo_instruction
 #define is_jno_ins aarch64_is_jno_instruction
 #define is_jb_ins aarch64_is_jb_instruction
@@ -43,7 +68,15 @@ typedef const uint32_t *ins_ptr;
 #define is_jng_ins aarch64_is_jng_instruction
 #define is_jg_ins aarch64_is_jg_instruction
 
+#define is_return_ins aarch64_is_return_instruction
+
+#define is_landing_pad_ins(ins) false
+
+#define ins_interpret_jump_behavior aarch64_decode_jump_instruction
+
 #else
 #error "Unsupported architecture"
 #endif
+#endif
+
 #endif
