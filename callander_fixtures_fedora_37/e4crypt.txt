@@ -141,7 +141,7 @@ tgkill(any u32, any u32, 6) @ libc.so.6+0x8ce27(__pthread_kill_implementation+21
 tgkill(any u32, any u32, 8) @ libc.so.6+0x8ce27(__pthread_kill_implementation+215)
 tgkill(any u32, any u32, 6) @ libc.so.6+0x8ce5a(__pthread_kill_implementation+266)
 tgkill(any u32, any u32, 8) @ libc.so.6+0x8ce5a(__pthread_kill_implementation+266)
-add_key(/usr/sbin/e4crypt+0x51fd, any, any, 72) @ libc.so.6+0x10492b(syscall+27)
+add_key(/usr/sbin/e4crypt+0x51fd, any, any, 72, any u32) @ libc.so.6+0x10492b(syscall+27)
 keyctl(NULL-0x1, any, any, any, any) @ libc.so.6+0x10492b(syscall+27)
 keyctl(6, any, any, any, any) @ libc.so.6+0x10492b(syscall+27)
 keyctl(10, any, any, any, any) @ libc.so.6+0x10492b(syscall+27)

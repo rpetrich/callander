@@ -105,7 +105,7 @@ newfstatat(any u32, libc.so.6+0x196dd5, any, 0x1000) @ libc.so.6+0xfa77c(fstatat
 newfstatat(any u32, any, any, 0) @ libc.so.6+0xfa77c(fstatat64+12)
 newfstatat(any u32, any, any, 256) @ libc.so.6+0xfa77c(fstatat64+12)
 unlinkat(any u32, any, any u32) @ libc.so.6+0xfcad9(unlinkat+9)
-faccessat(any u32, any, 2) @ libc.so.6+0xfb5df(faccessat+303)
+faccessat(any u32, any, 2, 512) @ libc.so.6+0xfb5df(faccessat+303)
 getrandom(libc.so.6+0x1da498(tcache_key), 8, 1) @ libc.so.6+0x3fdc2(getrandom+18)
 getrandom(any, any, any u32) @ libc.so.6+0x3fdfd(getrandom+77)
 faccessat2(any u32, any, 2, 512) @ libc.so.6+0xfb4e0(faccessat+48)

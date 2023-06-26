@@ -97,7 +97,7 @@ newfstatat(any u32, libc.so.6+0x196dd5, any, 0x1000) @ libc.so.6+0xfa77c(fstatat
 newfstatat(any u32, any, any, 256) @ libc.so.6+0xfa77c(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xfa77c(fstatat64+12)
 readlinkat(any u32, any, any, any) @ libc.so.6+0xfca7c(readlinkat+12)
-faccessat(any u32, libudev.so.1+0x21607, 0) @ libc.so.6+0xfb5df(faccessat+303)
+faccessat(any u32, libudev.so.1+0x21607, 0, 0) @ libc.so.6+0xfb5df(faccessat+303)
 ppoll(any, 1, 0, 0, 8) @ libc.so.6+0xff2ba(ppoll+74)
 ppoll(any, any, 0, any, 8) @ libc.so.6+0xff314(ppoll+164)
 getrandom(any, any, 4) @ libc.so.6+0x3fdc2(getrandom+18)

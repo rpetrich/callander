@@ -75,7 +75,7 @@ sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x811e9
 sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x81219
 sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x81249
 sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x81279
-arch_prctl(0x3002, any u8, any u8) @ /usr/sbin/ldconfig+0xa5071
+arch_prctl(0x3002, any u8) @ /usr/sbin/ldconfig+0xa5071
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x52ea9
 gettid() @ /usr/sbin/ldconfig+0x219b5
 futex(any, 0, 0x1-0xffffffff, 0, any, any u32)

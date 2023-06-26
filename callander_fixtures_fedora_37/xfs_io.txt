@@ -203,7 +203,7 @@ openat(NULL-0xfffffffe, NULL-0xfffffffffffffffe, 0x10800, any) @ libc.so.6+0x100
 newfstatat(any u32, libc.so.6+0x196dd5, any, 0x1000) @ libc.so.6+0xfa77c(fstatat64+12)
 newfstatat(any u32, any, any, NULL-0x100) @ libc.so.6+0xfa77c(fstatat64+12)
 linkat(any u32, /usr/sbin/xfs_io+0x24684, AT_FDCWD, any, 0x1000) @ libc.so.6+0xfc9bc(linkat+12)
-faccessat(AT_FDCWD, any, 0) @ libc.so.6+0xfb5df(faccessat+303)
+faccessat(AT_FDCWD, any, 0, 512) @ libc.so.6+0xfb5df(faccessat+303)
 set_robust_list(any, 24) @ libc.so.6+0x8af19(start_thread+185)
 set_robust_list(any, 24) @ libc.so.6+0xd6cef(_Fork+95)
 sync_file_range(any u32, any, any, NULL-0x4) @ libc.so.6+0xffd05(sync_file_range+21)

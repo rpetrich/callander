@@ -184,7 +184,7 @@ openat(NULL-0xfffffffe, NULL-0xfffffffffffffffe, 0x10800, any) @ libc.so.6+0x100
 mknodat(AT_FDCWD, any, 0x6180, any u32) @ libc.so.6+0xfaae5(mknodat+21)
 newfstatat(any u32, libc.so.6+0x196dd5, any, 0x1000) @ libc.so.6+0xfa77c(fstatat64+12)
 newfstatat(any u32, any, any, NULL-0x100) @ libc.so.6+0xfa77c(fstatat64+12)
-faccessat(AT_FDCWD, any, 0) @ libc.so.6+0xfb5df(faccessat+303)
+faccessat(AT_FDCWD, any, 0, 512) @ libc.so.6+0xfb5df(faccessat+303)
 pselect6(any u32, 0, 0, any, any, 0) @ libc.so.6+0x101962(select+178)
 pselect6(any u32, 0, any, 0, any, 0) @ libc.so.6+0x101962(select+178)
 pselect6(any u32, any, 0, 0, any, 0) @ libc.so.6+0x101962(select+178)
