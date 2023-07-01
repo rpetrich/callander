@@ -130,7 +130,7 @@ sched_setscheduler(any u32, any u32, any) @ libc.so.6+0x1026b9(__sched_setschedu
 sched_getscheduler(any u32) @ libc.so.6+0x1026e9(sched_getscheduler+9)
 sched_get_priority_max(1) @ libc.so.6+0x102749(sched_get_priority_max+9)
 sched_get_priority_min(1) @ libc.so.6+0x102779(__sched_get_priority_min+9)
-iopl(3, any) @ libc.so.6+0x11f019(iopl+9)
+iopl(3) @ libc.so.6+0x11f019(iopl+9)
 gettid() @ libc.so.6+0x42fdb(raise+155)
 gettid() @ libc.so.6+0x120069(gettid+9)
 time(any) @ libc.so.6+0xd0dc9(time_syscall*+9)

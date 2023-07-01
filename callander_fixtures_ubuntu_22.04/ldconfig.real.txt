@@ -105,11 +105,11 @@ tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig.real+0x2d639
 tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig.real+0x2d639
 tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig.real+0x2d66a
 tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig.real+0x2d66a
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x72cf9
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x72d72
-openat(AT_FDCWD, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0x7396a
-openat(any u32, /usr/sbin/ldconfig.real+0xf2630, 0, any u32) @ /usr/sbin/ldconfig.real+0xac0d4
-openat(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0xac161
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x72cf9
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x72d72
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x7396a
+openat(any u32, /usr/sbin/ldconfig.real+0xf2630, 0, any) @ /usr/sbin/ldconfig.real+0xac0d4
+openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig.real+0xac161
 newfstatat(any u32, /usr/sbin/ldconfig.real+0x1023c1, any, 0x1000) @ /usr/sbin/ldconfig.real+0x72c0c
 newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig.real+0x72c0c
 newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig.real+0x72c0c

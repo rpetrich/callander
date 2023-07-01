@@ -77,8 +77,8 @@ readlink(/usr/sbin/ldconfig.real+0xe63e3, any, 0x1000) @ /usr/sbin/ldconfig.real
 chmod(any, 420) @ /usr/sbin/ldconfig.real+0x730d9
 gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x772d9
-arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60, 1) @ /usr/sbin/ldconfig.real+0xc7a79
-arch_prctl(0x3002, NULL-0x2, any u32) @ /usr/sbin/ldconfig.real+0xc7abf
+arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60) @ /usr/sbin/ldconfig.real+0xc7a79
+arch_prctl(0x3002, NULL-0x2) @ /usr/sbin/ldconfig.real+0xc7abf
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x741c9
 gettid() @ /usr/sbin/ldconfig.real+0x208bb
 futex(any, 128, 2, 0, any, any)

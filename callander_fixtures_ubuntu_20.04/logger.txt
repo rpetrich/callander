@@ -216,7 +216,7 @@ openat(any u32, libc.so.6+0x1b5e38, 0x80000, any) @ libc.so.6+0x113598(__openat6
 newfstatat(any u32, any, any, 256) @ libc.so.6+0x10d9bd(__fxstatat+29)
 newfstatat(AT_FDCWD, non-NULL, any, 0) @ libc.so.6+0x10d9bd(__fxstatat+29)
 readlinkat(any u32, any, any, any) @ libc.so.6+0x10fcac(readlinkat+12)
-faccessat(AT_FDCWD, libsystemd.so.0+0x8c9f3, 0) @ libc.so.6+0x10e3b8(faccessat+264)
+faccessat(AT_FDCWD, libsystemd.so.0+0x8c9f3, 0, any) @ libc.so.6+0x10e3b8(faccessat+264)
 ppoll(any, 0x1-0x2, any, 0, 8) @ libc.so.6+0x112a3d(ppoll+77)
 ppoll(any, any, any, any, 8) @ libc.so.6+0x112a94(ppoll+164)
 signalfd4(any u32, any, 8, 0x80800) @ libc.so.6+0x11f2f1(signalfd+17)

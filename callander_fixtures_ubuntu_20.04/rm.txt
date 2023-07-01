@@ -95,4 +95,4 @@ openat(any u32, libc.so.6+0x1b5e38, 0x80000, any) @ libc.so.6+0x113598(__openat6
 newfstatat(any u32, any, any, 0) @ libc.so.6+0x10d9bd(__fxstatat+29)
 newfstatat(any u32, any, any, 256) @ libc.so.6+0x10d9bd(__fxstatat+29)
 unlinkat(any u32, any, any u32) @ libc.so.6+0x10fd09(unlinkat+9)
-faccessat(any u32, any, 2) @ libc.so.6+0x10e3b8(faccessat+264)
+faccessat(any u32, any, 2, any) @ libc.so.6+0x10e3b8(faccessat+264)
