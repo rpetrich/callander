@@ -4529,34 +4529,44 @@ enum {
 static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr ins, struct decoded_ins *decoded)
 {
 	// skip over function stubs that simply call into a target function
+	ins_ptr ret = ins;
+	struct decoded_ins peek;
+	if (!x86_decode_instruction(ins, &peek)) {
+		return NULL;
+	}
+	*decoded = peek;
 	for (;;) {
-		if (!x86_decode_instruction(ins, decoded)) {
-			return NULL;
-		}
-		if (is_landing_pad_ins(decoded)) {
-			ins_ptr next = next_ins(ins, decoded);
+		if (is_landing_pad_ins(&peek)) {
+			ins_ptr next = next_ins(ins, &peek);
 #if BREAK_ON_UNREACHABLES
 			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next);
 #endif
 			ins = next;
+			if (!x86_decode_instruction(ins, &peek)) {
+				return NULL;
+			}
 		} else {
 			ins_ptr jump_target;
-			if (ins_interpret_jump_behavior(decoded, &jump_target) != INS_JUMPS_ALWAYS) {
+			if (ins_interpret_jump_behavior(&peek, &jump_target) != INS_JUMPS_ALWAYS) {
 				break;
 			}
-			if (jump_target == NULL || jump_target == ins) {
+			if (jump_target == NULL || jump_target == ins || jump_target == ret) {
 				break;
 			}
 			if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
 				break;
 			}
 #if BREAK_ON_UNREACHABLES
-			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, decoded));
+			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, peek));
 #endif
 			ins = jump_target;
+			ret = jump_target;
+			if (!x86_decode_instruction(ins, decoded)) {
+				return NULL;
+			}
 		}
 	}
-	return ins;
+	return ret;
 }
 
 __attribute__((noinline))
