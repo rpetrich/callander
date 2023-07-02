@@ -4978,6 +4978,16 @@ static inline function_effects fallback_effects_if_processing(function_effects e
 	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
 }
 
+__attribute__((noinline))
+static bool is_landing_pad_ins_decode(ins_ptr addr)
+{
+	struct decoded_ins decoded;
+	if (decode_ins(addr, &decoded)) {
+		return is_landing_pad_ins(&decoded);
+	}
+	return false;
+}
+
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
 {
 	struct decoded_ins decoded;
@@ -5055,9 +5065,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					effects |= EFFECT_EXITS;
 				} else {
 					self.description = "jump";
-					// if (ins == self.entry || (ins == &self.entry[4] && is_landing_pad_ins(self.entry))) {
-					// 	set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
-					// }
+					if (ins == self.entry || (ins == &self.entry[4] && is_landing_pad_ins_decode(self.entry))) {
+						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
+					}
 					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
