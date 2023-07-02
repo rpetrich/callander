@@ -2179,7 +2179,7 @@ skip_analysis:
 				}
 				if (siginfo.si_signo == SIGSYS) {
 					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - 2;
-					const uint8_t *analysis_addr = NULL;
+					ins_ptr analysis_addr = NULL;
 					result = ptrace_getregs(tracee, &regs);
 					if (result < 0) {
 						DIE("failed to read registers back", fs_strerror(result));
