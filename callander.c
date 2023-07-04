@@ -4613,8 +4613,8 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 	return more_effects;
 }
 
-__attribute__((always_inline))
-static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
+__attribute__((noinline))
+static function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
 {
 	bool skip_jump = false;
 	bool skip_continue = false;
