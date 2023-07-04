@@ -471,7 +471,7 @@ typedef uint8_t function_effects;
 
 struct program_state;
 
-typedef void (*instruction_reached_callback)(struct program_state *, ins_ptr , struct registers *, function_effects, struct analysis_frame *, struct effect_token *, void *callback_data);
+typedef void (*instruction_reached_callback)(struct program_state *, ins_ptr, struct registers *, function_effects, const struct analysis_frame *, struct effect_token *, void *callback_data);
 
 struct searched_instruction_callback {
 	instruction_reached_callback callback;
@@ -615,7 +615,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 __attribute__((nonnull(1, 2, 3, 4)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
 __attribute__((nonnull(1, 2)))
-const struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, struct analysis_frame *caller, bool skip_analysis, bool recursive);
+const struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive);
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
@@ -626,11 +626,11 @@ enum jump_table_status {
 };
 
 __attribute__((nonnull(1, 3, 4, 5)))
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 3, 4, 5)))
-static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, struct analysis_frame *caller)
+static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller)
 {
 	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, true);
 }
