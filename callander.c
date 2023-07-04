@@ -40,6 +40,8 @@
 
 #define CLEAR_PROCESSED_ENTRIES
 
+#define for_each_bit(value, bit_name, index) for (__typeof__(value) bit_name, index, temp = value; temp != 0;) if ((bit_name = temp & -temp), (index = __builtin_ctzl(temp)), (temp ^= bit_name), true)
+
 #ifdef LOGGING
 bool should_log;
 #endif
@@ -416,13 +418,10 @@ static inline bool registers_are_subset_of_registers(const struct register_state
 		}
 	}
 #else
-	while (valid_registers != 0) {
-		register_mask bit = valid_registers & -valid_registers;
-		int i = __builtin_ctzl(valid_registers);
+	for_each_bit(valid_registers, bit, i) {
 		if (!register_is_subset_of_register(&potential_subset[i], &potential_superset[i])) {
 			return false;
 		}
-		valid_registers ^= bit;
 	}
 #endif
 	return true;
@@ -510,7 +509,7 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 #pragma GCC unroll 64
 		for (int i = 0; i < REGISTER_COUNT; i++) {
 			if (SHOULD_LOG) {
-				if (regs->matches[i] &~mask) {
+				if (regs->matches[i] & ~mask) {
 					ERROR("clearing match", name_for_register(i));
 				}
 			}
@@ -1476,11 +1475,8 @@ static inline bool collapse_registers(struct searched_instruction_data_entry *en
 	}
 	entry->used_registers = used_registers;
 	int j = 0;
-	while (used_registers != 0) {
-		register_mask t = used_registers & -used_registers;
-		int i = __builtin_ctzl(used_registers);
+	for_each_bit(used_registers, bit, i) {
 		entry->registers[j++] = full[i];
-		used_registers ^= t;
 	}
 	return true;
 #endif
@@ -1592,7 +1588,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 			}
-			#pragma GCC unroll 64
+#pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
 			}
@@ -1604,14 +1600,12 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		}
 		if (entry_registers_are_subset_of_registers(entry, registers->registers, relevant_registers)) {
 			// new register values are a superset of an existing entry, widen and reuse it
-			for (int i = 0; i < REGISTER_COUNT; i++) {
-				if (relevant_registers & ((register_mask)1 << i)) {
-					if (entry->widen_count[i] >= 20) {
-						// widened too many times
-						goto continue_search_initial;
-					}
-					entry->widen_count[i]++;
+			for_each_bit(relevant_registers, bit, i) {
+				if (entry->widen_count[i] >= 20) {
+					// widened too many times
+					goto continue_search_initial;
 				}
+				entry->widen_count[i]++;
 			}
 			if (collapse_registers(entry, registers->registers)) {
 				goto continue_search_initial;
@@ -1655,54 +1649,52 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
 			register_mask widened = 0;
-			for (int r = 0; r < REGISTER_COUNT; r++) {
-				if (relevant_registers & ((register_mask)1 << r)) {
-					if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
-						continue;
-					}
-					if ((widenable_registers & ((register_mask)1 << r)) == 0) {
-						goto continue_search;
-					}
-					if (entry->widen_count[r] < 4) {
-						if (register_is_exactly_known(&registers->registers[r])) {
-							if (registers->registers[r].value == out_registers->registers[r].value - 1 && out_registers->registers[r].value != 0) {
-								out_registers->registers[r].value = registers->registers[r].value;
-								LOG("widening down", name_for_register(r));
-								dump_register(loader, out_registers->registers[r]);
-							} else if (registers->registers[r].value == out_registers->registers[r].max + 1 && out_registers->registers[r].max != ~(uintptr_t)0) {
-								out_registers->registers[r].max = registers->registers[r].value;
-								LOG("widening up", name_for_register(r));
-								dump_register(loader, out_registers->registers[r]);
-							} else {
-								goto continue_search;
-							}
-						} else if (register_is_subset_of_register(&out_registers->registers[r], &registers->registers[r])) {
-							out_registers->registers[r] = registers->registers[r];
-							LOG("widened range", name_for_register(r));
+			for_each_bit(relevant_registers, bit, r) {
+				if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
+					continue;
+				}
+				if ((widenable_registers & ((register_mask)1 << r)) == 0) {
+					goto continue_search;
+				}
+				if (entry->widen_count[r] < 4) {
+					if (register_is_exactly_known(&registers->registers[r])) {
+						if (registers->registers[r].value == out_registers->registers[r].value - 1 && out_registers->registers[r].value != 0) {
+							out_registers->registers[r].value = registers->registers[r].value;
+							LOG("widening down", name_for_register(r));
+							dump_register(loader, out_registers->registers[r]);
+						} else if (registers->registers[r].value == out_registers->registers[r].max + 1 && out_registers->registers[r].max != ~(uintptr_t)0) {
+							out_registers->registers[r].max = registers->registers[r].value;
+							LOG("widening up", name_for_register(r));
 							dump_register(loader, out_registers->registers[r]);
 						} else {
 							goto continue_search;
 						}
-					} else {
-						if (entry->widen_count[r] < 4) {
-							LOG("not exactly known", name_for_register(r));
-						} else {
-							LOG("widened too many times", name_for_register(r));
-						}
+					} else if (register_is_subset_of_register(&out_registers->registers[r], &registers->registers[r])) {
+						out_registers->registers[r] = registers->registers[r];
+						LOG("widened range", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
-						clear_register(&out_registers->registers[r]);
-						out_registers->sources[r] = 0;
-						register_mask match_mask = out_registers->matches[r];
-						if (match_mask != 0) {
-							if ((widenable_registers & match_mask) == match_mask) {
-								LOG("widening a register in tandem with another, preserving match", name_for_register(r));
-							} else {
-								clear_match(&analysis->loader, out_registers, r, addr);
-							}
+					} else {
+						goto continue_search;
+					}
+				} else {
+					if (entry->widen_count[r] < 4) {
+						LOG("not exactly known", name_for_register(r));
+					} else {
+						LOG("widened too many times", name_for_register(r));
+					}
+					dump_register(loader, out_registers->registers[r]);
+					clear_register(&out_registers->registers[r]);
+					out_registers->sources[r] = 0;
+					register_mask match_mask = out_registers->matches[r];
+					if (match_mask != 0) {
+						if ((widenable_registers & match_mask) == match_mask) {
+							LOG("widening a register in tandem with another, preserving match", name_for_register(r));
+						} else {
+							clear_match(&analysis->loader, out_registers, r, addr);
 						}
 					}
-					widened |= (register_mask)1 << r;
 				}
+				widened |= (register_mask)1 << r;
 			}
 			for (int r = 0; r < REGISTER_COUNT; r++) {
 				if (widened & ((register_mask)1 << r)) {
@@ -3139,10 +3131,7 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
-		for (register_mask all_relevant_registers = relevant_registers | preserved_registers | preserved_and_kept_registers; all_relevant_registers != 0; ) {
-			register_mask bit = all_relevant_registers & -all_relevant_registers;
-			int i = __builtin_ctzl(all_relevant_registers);
-			all_relevant_registers ^= bit;
+		for_each_bit(relevant_registers | preserved_registers | preserved_and_kept_registers, bit, i) {
 			register_mask s = ancestor->current_state.sources[i];
 			new_relevant_registers |= (relevant_registers & bit) ? s : 0;
 			new_preserved_registers |= (preserved_registers & bit) ? s : 0;
@@ -3163,10 +3152,7 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 			}
 		}
 #else
-		for (register_mask copy = new_relevant_registers; copy != 0; ) {
-			register_mask bit = copy & -copy;
-			int i = __builtin_ctzl(copy);
-			copy ^= bit;
+		for_each_bit(new_relevant_registers, bit, i) {
 			if (!register_is_partially_known(&ancestor->entry_state->registers[i])) {
 				LOG("register is not known, skipping requiring", name_for_register(i));
 				new_relevant_registers &= ~bit;
