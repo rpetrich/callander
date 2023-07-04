@@ -3329,7 +3329,7 @@ static intptr_t analyzed_instruction_count;
 #endif
 
 #if defined(__x86_64__)
-static inline struct register_state_and_source address_for_indirect(struct x86_instruction decoded, x86_mod_rm_t modrm, struct registers state, const uint8_t *data, const struct loader_context *loader, ins_ptr ins, ins_ptr *out_remaining, bool *out_base_is_null) {
+static inline struct register_state_and_source address_for_indirect(struct x86_instruction decoded, x86_mod_rm_t modrm, struct registers state, const uint8_t *data, const struct loader_context *loader, ins_ptr ins, bool *out_base_is_null) {
 	struct register_state_and_source result;
 	result.source = 0;
 	clear_register(&result.state);
@@ -3415,7 +3415,6 @@ static inline struct register_state_and_source address_for_indirect(struct x86_i
 				result.state.max += disp;
 				LOG("adding 8-bit displacement", (intptr_t)disp);
 			}
-			data += sizeof(int8_t);
 			break;
 		case 2:
 			if (register_is_partially_known(&result.state)) {
@@ -3425,16 +3424,12 @@ static inline struct register_state_and_source address_for_indirect(struct x86_i
 				result.state.max += disp;
 				LOG("adding 32-bit displacement", (intptr_t)disp);
 			}
-			data += sizeof(int32_t);
 			break;
 		case 3:
 			DIE("modrm is not indirect at", temp_str(copy_address_description(loader, ins)));
 			break;
 	}
 	canonicalize_register(&result.state);
-	if (out_remaining != NULL) {
-		*out_remaining = data;
-	}
 	return result;
 }
 
@@ -5154,7 +5149,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 				} else {
 					bool is_null;
-					struct register_state_and_source address = address_for_indirect(decoded, modrm, self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, NULL, &is_null);
+					struct register_state_and_source address = address_for_indirect(decoded, modrm, self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, &is_null);
 					self.description = "call*";
 					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, address.source, 0, 0, required_effects);
 					if (!register_is_exactly_known(&address.state)) {
@@ -5234,7 +5229,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					new_ins = (ins_ptr)self.current_state.registers[reg].value;
 				} else {
 					bool is_null;
-					struct register_state_and_source address = address_for_indirect(decoded, modrm, self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, NULL, &is_null);
+					struct register_state_and_source address = address_for_indirect(decoded, modrm, self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, &is_null);
 					if (is_null) {
 						LOG("indirecting through null, assuming read of data that is populated at runtime");
 						// could have any effect
@@ -7152,7 +7147,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				LOG("lea to", name_for_register(reg));
-				struct register_state_and_source new_value = address_for_indirect(decoded, modrm, self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, NULL, NULL);
+				struct register_state_and_source new_value = address_for_indirect(decoded, modrm, self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, NULL);
 				// when an address is taken to the stack, clear all of the stack entries
 				if (new_value.source & ((register_mask)1 << REGISTER_SP)) {
 					// if (reg == REGISTER_RBP) {
