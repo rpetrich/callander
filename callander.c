@@ -38,6 +38,8 @@
 #endif
 #endif
 
+#define CLEAR_PROCESSED_ENTRIES
+
 #ifdef LOGGING
 bool should_log;
 #endif
@@ -1583,6 +1585,20 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			} else {
 				expand_registers(out_registers->registers, entry);
 			}
+#pragma GCC unroll 64
+			for (int i = 0; i < REGISTER_COUNT; i++) {
+				out_registers->sources[i] = registers->sources[i];
+#if STORE_LAST_MODIFIED
+				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
+#endif
+			}
+			#pragma GCC unroll 64
+			for (int i = 0; i < REGISTER_COUNT; i++) {
+				out_registers->matches[i] = registers->matches[i];
+			}
+			out_registers->mem_rm = registers->mem_rm;
+			out_registers->stack_address_taken = registers->stack_address_taken;
+			out_registers->compare_state = registers->compare_state;
 			*out_wrote_registers = true;
 			return offset;
 		}
@@ -1627,17 +1643,17 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 #pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->sources[i] = registers->sources[i];
-// #if STORE_LAST_MODIFIED
-// 				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
-// #endif
+#if STORE_LAST_MODIFIED
+				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
+#endif
 			}
 #pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
 			}
-			// out_registers->mem_rm = registers->mem_rm;
-			// out_registers->stack_address_taken = registers->stack_address_taken;
-			// out_registers->compare_state = registers->compare_state;
+			out_registers->mem_rm = registers->mem_rm;
+			out_registers->stack_address_taken = registers->stack_address_taken;
+			out_registers->compare_state = registers->compare_state;
 			register_mask widened = 0;
 			for (int r = 0; r < REGISTER_COUNT; r++) {
 				if (relevant_registers & ((register_mask)1 << r)) {
@@ -1790,16 +1806,18 @@ static inline function_effects *get_or_populate_effects(struct program_state *an
 	bool wrote_registers;
 	int entry_offset = entry_offset_for_registers(table_entry, registers, analysis, required_effects, addr, registers, &wrote_registers);
 	token->entry_offset = entry_offset;
+#ifdef CLEAR_PROCESSED_ENTRIES
 	if (UNLIKELY(table_entry->data->end_offset <= (uint32_t)entry_offset)) {
 		return &table_entry->data->sticky_effects;
 	}
+#endif
 	struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table_entry->data->entries[entry_offset];
 	token->entry_generation = entry->generation;
 	return &entry->effects;
 }
 
 __attribute__((always_inline))
-static inline struct searched_instruction_data_entry *get_entry(struct searched_instructions *search, ins_ptr addr, struct effect_token *token)
+static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects)
 {
 	// optimistically assume the generation hasn't changed
 	struct searched_instruction_entry *table = search->table;
@@ -1819,31 +1837,30 @@ static inline struct searched_instruction_data_entry *get_entry(struct searched_
 			}
 		}
 	}
-	// if (UNLIKELY(table[index].end_offset <= (uint32_t)token->entry_offset)) {
-	// 	// this is awful
-	// 	return (struct searched_instruction_data_entry *)&table[index].sticky_effects;
-	// }
-	return (struct searched_instruction_data_entry *)&table[index].data->entries[token->entry_offset];
-}
-
-__attribute__((always_inline))
-static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects)
-{
-	struct searched_instruction_data_entry *entry = get_entry(search, addr, token);
+	uint32_t entry_offset = token->entry_offset;
+#ifdef CLEAR_PROCESSED_ENTRIES
+	if (UNLIKELY(table[index].data->end_offset <= entry_offset)) {
+		// deleted by hack for lower memory usage!
+		return;
+	}
+#endif
+	struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table[index].data->entries[entry_offset];
 	if (token->entry_generation == entry->generation) {
 		entry->effects = new_effects;
+#ifdef CLEAR_PROCESSED_ENTRIES
 		// hack for lower memory usage
 		if (LIKELY((new_effects & EFFECT_PROCESSING) == 0)) {
-			struct searched_instruction_entry *table_entry = &search->table[token->index];
+			struct searched_instruction_entry *table_entry = &table[index];
 			if (UNLIKELY(table_entry->data->relevant_registers == 0)) {
 				size_t size = sizeof_searched_instruction_data_entry(entry);
-				if (table_entry->data->end_offset == token->entry_offset + size) {
+				if (table_entry->data->end_offset == entry_offset + size) {
 					table_entry->data->sticky_effects = entry->effects;
-					table_entry->data->end_offset = token->entry_offset;
-					table_entry->data = realloc(table_entry->data, sizeof(*table_entry->data) + token->entry_offset);
+					table_entry->data->end_offset = entry_offset;
+					table_entry->data = realloc(table_entry->data, sizeof(*table_entry->data) + entry_offset);
 				}
 			}
 		}
+#endif
 	} else {
 		LOG("skipping setting effects because the generation changed");
 	}
@@ -1874,6 +1891,12 @@ static inline register_mask add_relevant_registers(struct searched_instructions 
 	data->relevant_registers |= relevant_registers;
 	data->preserved_registers |= preserved_registers;
 	data->preserved_and_kept_registers |= preserved_and_kept_registers;
+#ifdef CLEAR_PROCESSED_ENTRIES
+	if (token->entry_offset >= data->end_offset) {
+		// entry was deleted!
+		return result;
+	}
+#endif
 	if (SHOULD_LOG) {
 #if 0
 		for (uint32_t i = 0; i < data->count; i++) {
@@ -5016,9 +5039,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				table_entry = find_searched_instruction_table_entry(search, ins, &self.token);
 			}
 		}
+#ifdef CLEAR_PROCESSED_ENTRIES
 		if (UNLIKELY(table_entry->data->end_offset <= (uint32_t)entry_offset)) {
 			effects_entry = &table_entry->data->sticky_effects;
 		} else {
+#endif
 			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table_entry->data->entries[entry_offset];
 			self.token.entry_generation = entry->generation;
 			if (entry->effects & EFFECT_PROCESSING) {
@@ -5033,7 +5058,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 			}
 			effects_entry = &entry->effects;
+#ifdef CLEAR_PROCESSED_ENTRIES
 		}
+#endif
 		effects = *effects_entry;
 		if ((effects & required_effects) == required_effects) {
 			LOG("skip", temp_str(copy_function_call_description(&analysis->loader, ins, *entry_state)));
