@@ -2937,8 +2937,23 @@ static char *copy_call_trace_description(const struct loader_context *context, c
 	const struct analysis_frame *node = head;
 	size_t total_size = 0;
 	for (size_t i = 0; i < count; i++) {
+#ifdef CALL_TRACE_WITH_RANGE
+		char *description = copy_address_description(context, node->entry);
+#else
 		char *description = copy_address_description(context, node->address);
+#endif
 		size_t length = fs_strlen(description);
+#ifdef CALL_TRACE_WITH_RANGE
+		if (node->entry != node->address) {
+			char *additional_description = copy_address_description(context, node->address);
+			size_t additional_length = fs_strlen(additional_description);
+			ssize_t new_length = length + 1 + additional_length;
+			description = realloc(description, new_length + 1);
+			description[length] = '-';
+			memcpy(&description[length+1], additional_description, additional_length + 1);
+			length = new_length;
+		}
+#endif
 		if (node->description) {
 			size_t additional_length = fs_strlen(node->description);
 			size_t new_length = length + 2 + additional_length + 1;
