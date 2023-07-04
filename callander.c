@@ -93,39 +93,39 @@ struct syscall_info info_for_syscall(uintptr_t nr)
 #define INS_REX_WR_PREFIX 0x4c
 #define INS_REX_WRXB_PREFIX 0x4f
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline void canonicalize_register(struct register_state *reg) {
 	if (reg->value > reg->max) {
 		clear_register(reg);
 	}
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline bool register_is_exactly_known(const struct register_state *reg) {
 	return reg->value == reg->max;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline bool register_is_partially_known(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max != ~(uintptr_t)0;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline bool register_is_partially_known_8bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xff;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline bool register_is_partially_known_16bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xffff;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline bool register_is_partially_known_32bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xffffffff;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline void truncate_to_8bit(struct register_state *reg) {
 	if ((reg->max >> 8) == (reg->value >> 8)) {
 		reg->value &= 0xff;
@@ -138,7 +138,7 @@ static inline void truncate_to_8bit(struct register_state *reg) {
 	reg->max = 0xff;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline void truncate_to_16bit(struct register_state *reg) {
 	if ((reg->max >> 16) == (reg->value >> 16)) {
 		reg->value &= 0xffff;
@@ -151,7 +151,7 @@ static inline void truncate_to_16bit(struct register_state *reg) {
 	reg->max = 0xffff;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((always_inline))
 static inline void truncate_to_32bit(struct register_state *reg) {
 	if ((reg->max >> 32) == (reg->value >> 32)) {
 		reg->value &= 0xffffffff;
@@ -164,7 +164,7 @@ static inline void truncate_to_32bit(struct register_state *reg) {
 	reg->max = 0xffffffff;
 }
 
-__attribute__((nonnull(1, 2)))
+__attribute__((nonnull(1, 2))) __attribute__((always_inline))
 static inline bool register_is_subset_of_register(const struct register_state *potential_subset, const struct register_state *potential_superset)
 {
 	return potential_subset->value >= potential_superset->value && potential_subset->max <= potential_superset->max;
