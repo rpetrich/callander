@@ -1340,6 +1340,9 @@ void cleanup_searched_instructions(struct searched_instructions *search)
 	search->table = NULL;
 	search->queue.queue = NULL;
 	free(search->lookup_base_addresses.addresses);
+	free(search->loaded_addresses);
+	search->loaded_addresses = NULL;
+	free(search->callbacks);
 }
 
 __attribute__((noinline))
