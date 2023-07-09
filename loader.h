@@ -162,10 +162,7 @@ struct frame_info {
 	size_t size;
 	uintptr_t data_base_address;
 	uintptr_t text_base_address;
-#ifdef INDEX_FRAMES
-	uint64_t *entries;
-	size_t entry_count;
-#endif
+	bool supported_eh_frame_hdr;
 };
 
 __attribute__((warn_unused_result))

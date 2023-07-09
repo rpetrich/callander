@@ -1211,6 +1211,13 @@ static uintptr_t read_pointer_and_advance(const struct frame_info *frame_info, v
 	}
 }
 
+struct eh_frame_hdr {
+	uint8_t version;
+	uint8_t eh_frame_ptr_enc;
+	uint8_t fde_count_enc;
+	uint8_t table_enc;
+};
+
 int load_frame_info(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info)
 {
 	(void)fd;
@@ -1221,8 +1228,13 @@ int load_frame_info(int fd, const struct binary_info *binary, const struct secti
 	void *data = (void *)apply_base_address(binary, section->sh_addr);
 	uintptr_t data_base_address = 0;
 	const ElfW(Shdr) *header_section = find_section(binary, section_info, ".eh_frame_hdr");
+	bool supported_eh_frame_hdr = false;
 	if (header_section != NULL) {
 		data_base_address = apply_base_address(binary, header_section->sh_addr);
+		const struct eh_frame_hdr *hdr = (const struct eh_frame_hdr *)data_base_address;
+		if (hdr->version == 1 && hdr->eh_frame_ptr_enc == (DW_EH_PE_pcrel | DW_EH_PE_sdata4) && hdr->fde_count_enc == DW_EH_PE_udata4 && hdr->table_enc == (DW_EH_PE_datarel | DW_EH_PE_sdata4)) {
+			supported_eh_frame_hdr = true;
+		}
 	}
 	uintptr_t text_base_address = 0;
 	const ElfW(Shdr) *text_section = find_section(binary, section_info, ".text");
@@ -1234,6 +1246,7 @@ int load_frame_info(int fd, const struct binary_info *binary, const struct secti
 		.size = section->sh_size,
 		.data_base_address = data_base_address,
 		.text_base_address = text_base_address,
+		.supported_eh_frame_hdr = supported_eh_frame_hdr,
 	};
 	return 0;
 }
@@ -1241,113 +1254,100 @@ int load_frame_info(int fd, const struct binary_info *binary, const struct secti
 void free_frame_info(struct frame_info *info)
 {
 	(void)info;
-#ifdef INDEX_FRAMES
-	if (info->entries != NULL) {
-		free(info->entries);
-	}
-#endif
+}
+
+struct eh_frame_table_entry {
+	int32_t address_offset;
+	int32_t fde_offset;
+};
+
+static bool compare_table_entry(int i, void *entries, void *search_value)
+{
+	return (intptr_t)((const struct eh_frame_table_entry *)entries)[i].address_offset > (intptr_t)search_value;
 }
 
 bool find_containing_frame_info(struct frame_info *info, const void *address, struct frame_details *out_frame)
 {
-	size_t size = info->size;
-	void *data = info->data;
-	uintptr_t pointer_format = DW_EH_PE_ptr;
-#ifdef INDEX_FRAMES
-	uint64_t *entries = info->entries;
-	uint64_t fde_count = info->entry_count;
-	if (entries == NULL) {
-		void *eh_frame_hdr = info->data_base_address;
-		eh_frame_hdr++;
-		uint8_t eh_frame_ptr_enc = *(const uint8_t *)eh_frame_hdr;
-		eh_frame_hdr++;
-		uint8_t fde_count_enc = *(const uint8_t *)eh_frame_hdr;
-		eh_frame_hdr += 2;
-		read_offset_and_advance(&eh_frame_hdr, eh_frame_ptr_enc);
-		fde_count = info->fde_count = read_offset_and_advance(&eh_frame_hdr, fde_count);
-		entries = info->entries = malloc(entry_count * sizeof(*entries));
-		int i = 0;
-#endif
-		for (uintptr_t cie_offset = 0; cie_offset < size;) {
-			void *current = data + cie_offset;
-			// read length
-			uint32_t length = *(const uint32_t *)current;
-			current += sizeof(uint32_t);
-			// read cie_id
-			uint32_t cie_id = *(const uint32_t *)current;
-			current += sizeof(uint32_t);
-			if (cie_id == 0) {
-				// CIE
-				// skip version
-				current++;
-				// skip augmentation
-				bool has_pointer_format = false;
-				for (;;) {
-					char c = *(const char *)current++;
-					if (c == '\0') {
-						break;
-					}
-					if (c == 'R') {
-						has_pointer_format = true;
-					}
-				}
-				// skip code alignment factor
-				read_uleb128(&current);
-				// skip data alignment factor
-				read_sleb128(&current);
-				// skip return address register
-				read_uleb128(&current);
-				// read augmentation length
-				if (has_pointer_format) {
-					uintptr_t augmentation_length = read_uleb128(&current);
-					// read pointer format
-					pointer_format = ((const uint8_t *)current)[augmentation_length-1];
-				} else {
-					pointer_format = DW_EH_PE_ptr;
-				}
-			} else {
-				// FDE
-				// ERROR("FDE", cie_offset);
-				// start
-				uintptr_t frame_location = read_pointer_and_advance(info, &current, pointer_format);
-				// ERROR("location", location);
-				uintptr_t frame_size = read_offset_and_advance(&current, pointer_format);
-				// ERROR("size", size);
-#ifdef INDEX_FRAMES
-				entries[i++] = address << SYMBOL_INDEX_BITS + size;
-#else
-				if (frame_location <= (uintptr_t)address) {
-					if (frame_location + frame_size > (uintptr_t)address) {
-						*out_frame = (struct frame_details){
-							.address = (const void *)frame_location,
-							.size = frame_size,
-						};
-						return true;
-					}
-				}
-#endif
-			}
-			cie_offset += sizeof(uint32_t) + length;
+	if (info->supported_eh_frame_hdr) {
+		uintptr_t eh_frame_hdr = info->data_base_address;
+		uintptr_t entry_count_ptr = eh_frame_hdr + sizeof(struct eh_frame_hdr) + sizeof(uint32_t);
+		uint32_t entry_count = *(const uint32_t *)entry_count_ptr;
+		const struct eh_frame_table_entry *table = (const struct eh_frame_table_entry *)(entry_count_ptr + sizeof(uint32_t));
+		int larger_index = bsearch_bool(entry_count, (void *)table, (void *)((uintptr_t)address - eh_frame_hdr), compare_table_entry);
+		if (larger_index == 0) {
+			return false;
 		}
-#ifdef INDEX_FRAMES
-		qsort_r(entries, fde_count, sizeof(uint64_t), compare_uint64_t, NULL);
-	}
-	uint64_t search_value = ((uintptr_t)address + 1) << SYMBOL_INDEX_BITS;
-	int i = bsearch_bool(fde_count, (void *)search_value, entries, bsearch_symbol_by_address_callback);
-	if (i != 0) {
-		uint64_t entry = entries[i-1];
-		uintptr_t location = (uintptr_t)((intptr_t)entry >> SYMBOL_INDEX_BITS);
-		uintptr_t size = entry ~(~0ull << SYMBOL_INDEX_BITS);
-		if (location <= (uintptr_t)address) {
-			if (location + size > (uintptr_t)address) {
+		void *current = (void *)(eh_frame_hdr + table[larger_index-1].fde_offset);
+		current += sizeof(uint32_t) + sizeof(uint32_t);
+		uintptr_t frame_location = read_pointer_and_advance(info, &current, DW_EH_PE_pcrel | DW_EH_PE_sdata4);
+		uintptr_t frame_size = read_offset_and_advance(&current, DW_EH_PE_udata4);
+		if (frame_location <= (uintptr_t)address) {
+			if (frame_location + frame_size > (uintptr_t)address) {
 				*out_frame = (struct frame_details){
-					.address = (const void *)location,
-					.size = size,
+					.address = (const void *)frame_location,
+					.size = frame_size,
 				};
 				return true;
 			}
 		}
+		return false;
 	}
-#endif
+	uintptr_t pointer_format = DW_EH_PE_ptr;
+	void *data = info->data;
+	size_t size = info->size;
+	for (uintptr_t cie_offset = 0; cie_offset < size;) {
+		void *current = data + cie_offset;
+		// read length
+		uint32_t length = *(const uint32_t *)current;
+		current += sizeof(uint32_t);
+		// read cie_id
+		uint32_t cie_id = *(const uint32_t *)current;
+		current += sizeof(uint32_t);
+		if (cie_id == 0) {
+			// CIE
+			// skip version
+			current++;
+			// skip augmentation
+			bool has_pointer_format = false;
+			for (;;) {
+				char c = *(const char *)current++;
+				if (c == '\0') {
+					break;
+				}
+				if (c == 'R') {
+					has_pointer_format = true;
+				}
+			}
+			// skip code alignment factor
+			read_uleb128(&current);
+			// skip data alignment factor
+			read_sleb128(&current);
+			// skip return address register
+			read_uleb128(&current);
+			// read augmentation length
+			if (has_pointer_format) {
+				uintptr_t augmentation_length = read_uleb128(&current);
+				// read pointer format
+				pointer_format = ((const uint8_t *)current)[augmentation_length-1];
+			} else {
+				pointer_format = DW_EH_PE_ptr;
+			}
+		} else {
+			// FDE
+			// start
+			uintptr_t frame_location = read_pointer_and_advance(info, &current, pointer_format);
+			uintptr_t frame_size = read_offset_and_advance(&current, pointer_format);
+			if (frame_location <= (uintptr_t)address) {
+				if (frame_location + frame_size > (uintptr_t)address) {
+					*out_frame = (struct frame_details){
+						.address = (const void *)frame_location,
+						.size = frame_size,
+					};
+					return true;
+				}
+			}
+		}
+		cie_offset += sizeof(uint32_t) + length;
+	}
 	return false;
 }
