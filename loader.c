@@ -698,8 +698,11 @@ void free_symbols(struct symbol_info *symbols)
 	if (symbols->address_ordered) {
 		free(symbols->address_ordered);
 	}
-	if (symbols->valid_versions != NULL) {
-		free(symbols->valid_versions);
+	const struct symbol_version_info *version = symbols->valid_versions;
+	while (version) {
+		const struct symbol_version_info *next = version->next;
+		free((void *)version);
+		version = next;
 	}
 }
 
