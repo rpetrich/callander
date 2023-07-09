@@ -3134,35 +3134,18 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
-		for_each_bit(relevant_registers | preserved_registers | preserved_and_kept_registers, bit, i) {
-			register_mask s = ancestor->current_state.sources[i];
-			new_relevant_registers |= (relevant_registers & bit) ? s : 0;
-			new_preserved_registers |= (preserved_registers & bit) ? s : 0;
-			new_preserved_and_kept_registers |= (preserved_and_kept_registers & bit) ? s : 0;
+		for_each_bit(relevant_registers, bit, i) {
+			new_relevant_registers |= ancestor->current_state.sources[i];
 		}
 		new_relevant_registers &= ~((register_mask)1 << REGISTER_SP);
-#if 0
-		if (new_relevant_registers != 0) {
-			// skip any registers that are unknown, since callander has already analyzed all possibilities
-#pragma GCC unroll 64
-			for (int i = 0; i < REGISTER_COUNT; i++) {
-				register_mask reg_mask = (register_mask)1 << i;
-				if ((new_relevant_registers & reg_mask) && !register_is_partially_known(&ancestor->entry_state->registers[i])) {
-					LOG("register is not known, skipping requiring", name_for_register(i));
-					new_relevant_registers &= ~reg_mask;
-					new_preserved_registers &= ~reg_mask;
-				}
-			}
-		}
-#else
+		register_mask discarded_registers = (register_mask)1 << REGISTER_SP;
 		for_each_bit(new_relevant_registers, bit, i) {
 			if (!register_is_partially_known(&ancestor->entry_state->registers[i])) {
 				LOG("register is not known, skipping requiring", name_for_register(i));
 				new_relevant_registers &= ~bit;
-				new_preserved_registers &= ~bit;
+				discarded_registers |= bit;
 			}
 		}
-#endif
 		if (new_relevant_registers == 0) {
 			if (SHOULD_LOG) {
 				ERROR("first entry point without varying arguments", temp_str(copy_address_description(loader, ancestor->entry)));
@@ -3174,7 +3157,13 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 			}
 			break;
 		}
-		new_preserved_registers &= ~((register_mask)1 << REGISTER_SP);
+		for_each_bit(preserved_registers, bit, i) {
+			new_preserved_registers |= ancestor->current_state.sources[i];
+		}
+		new_preserved_registers &= ~discarded_registers;
+		for_each_bit(preserved_and_kept_registers, bit, i) {
+			new_preserved_and_kept_registers |= ancestor->current_state.sources[i];
+		}
 		new_preserved_and_kept_registers &= ~((register_mask)1 << REGISTER_SP);
 		if (SHOULD_LOG) {
 			ERROR("marking", temp_str(copy_address_description(loader, ancestor->entry)));
