@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdnoreturn.h>
+#include <sys/auxv.h>
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>
@@ -1291,6 +1292,12 @@ static void test_mprotect(struct sock_fprog prog, uintptr_t base, size_t size, i
 	}
 }
 
+static void cleanup_syscalls(struct recorded_syscalls *syscalls)
+{
+	free(syscalls->list);
+	syscalls->list = NULL;
+}
+
 void __restore();
 
 static void *stack;
@@ -1318,17 +1325,13 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 __attribute__((noinline))
 int main(char *argv[], char *envp[], const ElfW(auxv_t) *aux)
 #else
+extern char **environ;
 __attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc, char *argv[])
+int main(__attribute__((unused)) int argc_, char *argv[])
 #endif
 {
 #ifndef STANDALONE
-	const char **envp = (const char **)environ;
-	const ElfW(auxv_t) *aux = (const ElfW(auxv_t) *)environ;
-	while (*(void **)aux != NULL) {
-		aux++;
-	}
-	aux++;
+	char **envp = (char **)environ;
 #endif
 	// Find PATH and LD_PRELOAD
 	int envp_count = 0;
@@ -1352,6 +1355,11 @@ int main(__attribute__((unused)) int argc, char *argv[])
 			envp_count++;
 		}
 	}
+#ifndef STANDALONE
+	analysis.loader.uid = getauxval(AT_EUID);
+	analysis.loader.gid = getauxval(AT_EGID);
+	analysis.loader.vdso = getauxval(AT_SYSINFO_EHDR);
+#else
 	while (aux->a_type != AT_NULL) {
 		switch (aux->a_type) {
 			case AT_EUID:
@@ -1366,6 +1374,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 		}
 		aux++;
 	}
+#endif
 	int executable_index = 1;
 	bool show_permitted = false;
 	bool show_binaries = false;
@@ -1849,6 +1858,8 @@ skip_analysis:
 		}
 		free_loaded_binary(analysis.loader.binaries);
 		cleanup_searched_instructions(&analysis.search);
+		cleanup_syscalls(&analysis.syscalls);
+		free(analysis.known_symbols.blocked_symbols);
 		ERROR_FLUSH();
 		return 0;
 	}
