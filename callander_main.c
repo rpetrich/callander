@@ -1688,7 +1688,7 @@ int main(__attribute__((unused)) int argc, char *argv[])
 			// set the tracer so Yama doesn't block ptrace in the parent
 			result = fs_prctl(PR_SET_PTRACER, tracer, 0, 0, 0);
 			if (result < 0) {
-				DIE("failed to set tracer", fs_strerror(result));
+				LOG("failed to set tracer", fs_strerror(result));
 			}
 
 			// wait to be woken up on the pipe
