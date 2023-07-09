@@ -4464,19 +4464,6 @@ static void print_debug_symbol_requirement(const struct loaded_binary *binary)
 	ERROR("on debian-based systems find-dbgsym-packages can help you discover debug symbol packages");
 }
 
-static int compare_uintptr_t(const void *l, const void *r, __attribute__((unused)) void *unused)
-{
-	uintptr_t lval = *(const uintptr_t *)l;
-	uintptr_t rval = *(const uintptr_t *)r;
-	if (lval < rval) {
-		return -1;
-	}
-	if (lval == rval) {
-		return 0;
-	}
-	return 1;
-}
-
 static inline bool bsearch_address_callback(int index, void *ordered_addresses, void *needle)
 {
 	const uintptr_t *ordered = (const uintptr_t *)ordered_addresses;
@@ -4487,31 +4474,28 @@ static inline uintptr_t search_find_next_loaded_address(struct searched_instruct
 {
 	int count = search->loaded_address_count;
 	uintptr_t *addresses = search->loaded_addresses;
-	if (!search->loaded_addresses_are_sorted) {
-		search->loaded_addresses_are_sorted = true;
-		qsort_r(addresses, count, sizeof(uint64_t), compare_uintptr_t, NULL);
-	}
 	int i = bsearch_bool(count, addresses, (void *)address, bsearch_address_callback);
 	return i < count ? addresses[i] : ~(uintptr_t)0;
 }
 
 static inline void add_loaded_address(struct searched_instructions *search, uintptr_t address)
 {
-	size_t old_count = search->loaded_address_count;
+	int old_count = search->loaded_address_count;
 	uintptr_t *addresses = search->loaded_addresses;
-	uintptr_t last_address;
-	if (LIKELY(old_count != 0)) {
-		last_address = addresses[old_count - 1];
-		if (UNLIKELY(last_address == address)) {
+	int i = bsearch_bool(old_count, addresses, (void *)address, bsearch_address_callback);
+	if (i != old_count) {
+		if (addresses[i] == address) {
+			// already loaded, skip adding
 			return;
 		}
-	} else {
-		last_address = 0;
 	}
-	size_t new_count = search->loaded_address_count = old_count + 1;
+	int new_count = old_count + 1;
+	search->loaded_address_count = new_count;
 	addresses = search->loaded_addresses = realloc(addresses, sizeof(uintptr_t) * new_count);
-	addresses[old_count] = address;
-	search->loaded_addresses_are_sorted = last_address <= address;
+	for (int j = old_count; j > i; j--) {
+		addresses[j] = addresses[j-1];
+	}
+	addresses[i] = address;
 }
 
 enum {
