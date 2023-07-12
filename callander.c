@@ -1616,7 +1616,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				}
 				entry->widen_count[i]++;
 			}
-			if (collapse_registers(entry, registers->registers)) {
+			if (!collapse_registers(entry, registers->registers)) {
 				goto continue_search_initial;
 			}
 			entry->effects = data->sticky_effects;
