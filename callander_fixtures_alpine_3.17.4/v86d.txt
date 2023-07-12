@@ -19,7 +19,9 @@ poll(any, 1, 0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x583bc
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 mmap(0, any, 0, 34, 0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(0, any, 1, 1, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
-mmap(0, any, 3, any, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
+mmap(0, any, 3, 1, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
+mmap(0, any, 3, 34, 0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
+mmap(0, 0x20000, 3, 2, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(any, 0x1000, 0, 50, 0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mprotect(NULL-0xfffffffffffff000, any, 3) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
@@ -46,10 +48,8 @@ socket(1, 2, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 socket(16, 2, 11) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 connect(any, ld-musl-x86_64.so.1+0x937a0(log_addr*), 12) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 connect(any, ld-musl-x86_64.so.1+0x937a0(log_addr*), 12) @ ld-musl-x86_64.so.1+0x583bc
-sendto(any, any, NULL-0x4000, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, NULL-0x4000, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
-sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, 0x4000, 0x1000, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, 0x4000, 0x1000, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, 12) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)

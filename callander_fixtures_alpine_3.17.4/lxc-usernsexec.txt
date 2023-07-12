@@ -29,8 +29,7 @@ mmap(0, any, 3, 0x8002, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(NULL-0xfffffffffffffffe, any, 1, any, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(any, 0x1000, 0, 50, 0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mprotect(NULL-0xfffffffffffff000, any, 3) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
-munmap(any, non-NULL) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
-munmap(non-NULL, any) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
+munmap(any, any) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x58350
 brk(0) @ ld-musl-x86_64.so.1+0x26e0a(__malloc_alloc_meta*+234)
 brk(any) @ ld-musl-x86_64.so.1+0x26e2f(__malloc_alloc_meta*+271)
@@ -99,8 +98,8 @@ sendto(any, any, any, any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*
 sendto(any, any, any, any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x583bc
+sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, 12) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)

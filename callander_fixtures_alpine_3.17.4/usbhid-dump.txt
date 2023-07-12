@@ -5,10 +5,8 @@ read(any, any, 256) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, 8) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 19) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 256) @ ld-musl-x86_64.so.1+0x583bc
-write(any, any, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, libusb-1.0.so.0+0x1462a, NULL-0xf) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, any, 8) @ ld-musl-x86_64.so.1+0x583bc
-write(any, libusb-1.0.so.0+0x1462a, NULL-0xf) @ ld-musl-x86_64.so.1+0x583bc
+write(any, any, NULL-0xf) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, any, NULL-0xf) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, 0x8002, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
@@ -31,8 +29,13 @@ brk(0) @ ld-musl-x86_64.so.1+0x26e0a(__malloc_alloc_meta*+234)
 brk(any) @ ld-musl-x86_64.so.1+0x26e2f(__malloc_alloc_meta*+271)
 brk(any) @ ld-musl-x86_64.so.1+0x26e59(__malloc_alloc_meta*+313)
 rt_sigaction(6, any, 8, 8) @ ld-musl-x86_64.so.1+0x1cf05(abort+78)
-rt_sigaction(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
-rt_sigaction(any, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
+rt_sigaction(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(10, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(12, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(15, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(33, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(2, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
+rt_sigaction(15, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
 rt_sigprocmask(1, any, 8, 8) @ ld-musl-x86_64.so.1+0x1cf36(abort+127)
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x491f6(__block_all_sigs*+23)
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x49210(__block_app_sigs*+23)

@@ -25,8 +25,9 @@ fstat(any, any) @ ld-musl-x86_64.so.1+0x49d23(fstatat64+55)
 fstat(any, any) @ ld-musl-x86_64.so.1+0x583fb(__map_file*+55)
 lstat(any, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
 poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
-poll(any, NULL-0x1, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+poll(0, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 poll(any, any, 0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+poll(any, 1, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 poll(any, NULL-0x1, any) @ ld-musl-x86_64.so.1+0x583bc
 poll(any, any, 0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x583bc
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)

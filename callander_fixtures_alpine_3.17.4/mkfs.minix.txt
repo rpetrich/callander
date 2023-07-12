@@ -1,8 +1,6 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-read(any, any, 1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-read(any, /sbin/mkfs.minix+0x180e0, NULL-0x4000) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-read(any, any, 1) @ ld-musl-x86_64.so.1+0x583bc
-read(any, /sbin/mkfs.minix+0x180e0, NULL-0x4000) @ ld-musl-x86_64.so.1+0x583bc
+read(any, any, NULL-0x4000) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(any, any, NULL-0x4000) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, 0x8002, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
@@ -31,8 +29,7 @@ munmap(any, any) @ ld-musl-x86_64.so.1+0x58350
 brk(0) @ ld-musl-x86_64.so.1+0x26e0a(__malloc_alloc_meta*+234)
 brk(any) @ ld-musl-x86_64.so.1+0x26e2f(__malloc_alloc_meta*+271)
 brk(any) @ ld-musl-x86_64.so.1+0x26e59(__malloc_alloc_meta*+313)
-rt_sigaction(any, 0, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
-rt_sigaction(33, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
 rt_sigaction(any, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x491f6(__block_all_sigs*+23)
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x49210(__block_app_sigs*+23)

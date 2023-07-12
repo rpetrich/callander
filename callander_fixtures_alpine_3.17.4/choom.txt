@@ -47,8 +47,6 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
-fcntl(any, 3, any) @ ld-musl-x86_64.so.1+0x4a2ef(fdopen+185)
-fcntl(any, 4, any) @ ld-musl-x86_64.so.1+0x4a305(fdopen+207)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x59638(clock_gettime+80)
 gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 tkill(any, 6) @ ld-musl-x86_64.so.1+0x1cf1c(abort+101)

@@ -159,7 +159,7 @@ fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4a472(__fopen_rb_ca*+85)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4bf3e(freopen+91)
 fcntl(any, 4, any) @ ld-musl-x86_64.so.1+0x4bf58(freopen+117)
-fcntl(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+fcntl(any, 7, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 fcntl(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x5aeab(dup3+108)
 fcntl(any, 1, any u32) @ ld-musl-x86_64.so.1+0x5b11f(fchown+51)

@@ -20,8 +20,10 @@ fstat(any, any) @ ld-musl-x86_64.so.1+0x49d23(fstatat64+55)
 fstat(any, any) @ ld-musl-x86_64.so.1+0x583fb(__map_file*+55)
 lstat(any, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
 poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
-poll(any, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-poll(any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
+poll(0, 0, 1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+poll(0, 0, 10) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+poll(0, 0, 1) @ ld-musl-x86_64.so.1+0x583bc
+poll(0, 0, 10) @ ld-musl-x86_64.so.1+0x583bc
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 mmap(0, any, 0, 34, 0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(0, any, 1, 1, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
@@ -96,8 +98,6 @@ fcntl(any, 6, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, 1, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
-fcntl(any, 3, any) @ ld-musl-x86_64.so.1+0x4a2ef(fdopen+185)
-fcntl(any, 4, any) @ ld-musl-x86_64.so.1+0x4a305(fdopen+207)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)
 fsync(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 fsync(any) @ ld-musl-x86_64.so.1+0x583bc
@@ -113,8 +113,8 @@ setuid(any u32) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 setgid(any u32) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 geteuid() @ ld-musl-x86_64.so.1+0x5b273(geteuid+5)
 getegid() @ ld-musl-x86_64.so.1+0x5b26b(getegid+5)
-rt_sigtimedwait(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-rt_sigtimedwait(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+rt_sigtimedwait(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+rt_sigtimedwait(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x583bc
 sched_setscheduler(any, any, any) @ ld-musl-x86_64.so.1+0x5650e(pthread_create+1092)
 setrlimit(any, any) @ ld-musl-x86_64.so.1+0x385ee(do_setrlimit*+18)
 gettid() @ ld-musl-x86_64.so.1+0x41488(_Fork+70)
@@ -141,8 +141,12 @@ clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
-openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, libblkid.so.1+0x36de7, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x3995c, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x39e93, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x36de7, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, libblkid.so.1+0x3995c, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, libblkid.so.1+0x39e93, any, any) @ ld-musl-x86_64.so.1+0x583bc
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49d54(fstatat64+104)
 newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 newfstatat(any, any, any, 256) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)

@@ -10,7 +10,7 @@ close(any u32) @ /usr/sbin/ldconfig.real+0x737b9
 poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xcf795
 poll(any, any, any u32) @ /usr/sbin/ldconfig.real+0xcf7cd
 lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x72f19
-mmap(any, any, any, any u32, any, any) @ /usr/sbin/ldconfig.real+0x73e75
+mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig.real+0x73e75
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x73ef9
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x73ec9
 brk(any) @ /usr/sbin/ldconfig.real+0x73b19

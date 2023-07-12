@@ -72,8 +72,6 @@ fcntl(any, 6, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, 1, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
-fcntl(any, 3, any) @ ld-musl-x86_64.so.1+0x4a2ef(fdopen+185)
-fcntl(any, 4, any) @ ld-musl-x86_64.so.1+0x4a305(fdopen+207)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)
 getcwd(any, 0x1000-0x1001) @ ld-musl-x86_64.so.1+0x5b223(getcwd+71)
 readlink(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x5b657(readlink+27)
@@ -102,24 +100,12 @@ clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
-openat(any, /sbin/losetup+0x132f9, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/losetup+0x13382, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/losetup+0x133f4, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/losetup+0x1346b, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/losetup+0x1349a, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/losetup+0x13547, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/losetup+0x13555, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/losetup+0x13564, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/losetup+0x13cf3, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/losetup+0x13d1f, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/losetup+0x132f9, any, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/losetup+0x13382, any, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/losetup+0x133f4, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/losetup+0x1346b, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/losetup+0x1349a, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/losetup+0x13547, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/losetup+0x13555, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/losetup+0x13564, any, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/losetup+0x13cf3, any, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/losetup+0x13d1f, any, any) @ ld-musl-x86_64.so.1+0x583bc
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49d54(fstatat64+104)

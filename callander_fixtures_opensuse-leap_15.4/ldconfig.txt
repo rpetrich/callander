@@ -28,7 +28,7 @@ mmap(0, 0x4000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /sbin/ldconfig:0x4669be
 mmap(0, 0x8000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /sbin/ldconfig:0x4669be
 mprotect(any, any, any u32) @ /sbin/ldconfig:0x466a35
 munmap(any, any) @ /sbin/ldconfig:0x466a05
-brk(any) @ /sbin/ldconfig:0x498ac7
+brk(NULL-0xfffffffffffffffe) @ /sbin/ldconfig:0x498ac7
 rt_sigaction(any, any, 0, 8) @ /sbin/ldconfig:0x4795ab
 rt_sigaction(14, any, any, 8) @ /sbin/ldconfig:0x4795ab
 rt_sigprocmask(0, any, any, 8) @ /sbin/ldconfig:0x40ec79
