@@ -698,12 +698,15 @@ void free_symbols(struct symbol_info *symbols)
 	if (symbols->address_ordered) {
 		free(symbols->address_ordered);
 	}
-	const struct symbol_version_info *version = symbols->valid_versions;
-	while (version) {
-		const struct symbol_version_info *next = version->next;
-		free((void *)version);
-		version = next;
+	for (size_t i = 0; i < symbols->valid_version_count; i++) {
+		const struct symbol_version_info *version = symbols->valid_versions[i].next;
+		while (version) {
+			const struct symbol_version_info *next = version->next;
+			free((void *)version);
+			version = next;
+		}
 	}
+	free(symbols->valid_versions);
 }
 
 const char *symbol_name(const struct symbol_info *symbols, const ElfW(Sym) *symbol)

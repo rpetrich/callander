@@ -1279,21 +1279,6 @@ static uintptr_t find_lookup_table_base_address(const struct lookup_base_address
 	return 0;
 }
 
-struct searched_instruction_data {
-	register_mask relevant_registers;
-	register_mask preserved_registers;
-	register_mask preserved_and_kept_registers;
-	uint32_t end_offset;
-	function_effects sticky_effects;
-	uint16_t callback_index;
-	char entries[];
-};
-
-struct searched_instruction_entry {
-	ins_ptr address;
-	struct searched_instruction_data *data;
-};
-
 struct searched_instruction_data_entry {
 	function_effects effects;
 	uint8_t widen_count[REGISTER_COUNT];
@@ -1301,6 +1286,21 @@ struct searched_instruction_data_entry {
 	uint16_t generation;
 	register_mask used_registers;
 	struct register_state registers[];
+};
+
+struct searched_instruction_data {
+	register_mask relevant_registers;
+	register_mask preserved_registers;
+	register_mask preserved_and_kept_registers;
+	uint32_t end_offset;
+	function_effects sticky_effects;
+	uint16_t callback_index;
+	struct searched_instruction_data_entry entries[];
+};
+
+struct searched_instruction_entry {
+	ins_ptr address;
+	struct searched_instruction_data *data;
 };
 
 __attribute__((nonnull(1)))
@@ -1529,34 +1529,40 @@ static inline bool entry_registers_are_subset_of_registers(const struct searched
 	return true;
 }
 
+__attribute__((always_inline))
+static inline struct searched_instruction_data_entry *entry_for_offset(struct searched_instruction_data *data, size_t offset)
+{
+	return (struct searched_instruction_data_entry *)((uintptr_t)&data->entries[0] + offset);
+}
+
 __attribute__((nonnull(1, 2)))
 static void add_new_entry_with_registers(struct searched_instruction_entry *table_entry, const struct registers *registers)
 {
-	union {
-		struct searched_instruction_data_entry new_entry;
-		char buf[sizeof(struct searched_instruction_data_entry) + sizeof(struct register_state) * REGISTER_COUNT];
-	} buf;
-	buf.new_entry = (struct searched_instruction_data_entry){
-		.effects = table_entry->data->sticky_effects,
-		.generation = 0,
-		.widen_count = { 0 },
-		.used_registers = 0,
-	};
-	int j = 0;
+	register_mask used_registers = 0;
+	int used_count = 0;
 #pragma GCC unroll 64
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		if (register_is_partially_known(&registers->registers[i])) {
-			buf.new_entry.registers[j++] = registers->registers[i];
-			buf.new_entry.used_registers |= (register_mask)1 << i;
+			used_registers |= (register_mask)1 << i;
+			used_count++;
 		}
 	}
-	buf.new_entry.used_count = j;
-	size_t new_entry_size = sizeof(struct searched_instruction_data_entry) + j * sizeof(struct register_state);
+	size_t new_entry_size = sizeof(struct searched_instruction_data_entry) + used_count * sizeof(struct register_state);
 	size_t end_offset = table_entry->data->end_offset;
 	size_t new_end_offset = end_offset + new_entry_size;
 	struct searched_instruction_data *data = (table_entry->data = realloc(table_entry->data, sizeof(*table_entry->data) + new_end_offset));
-	struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&data->entries[end_offset];
-	memcpy(entry, &buf.new_entry, new_entry_size);
+	struct searched_instruction_data_entry *entry = entry_for_offset(data, end_offset);
+	*entry = (struct searched_instruction_data_entry){
+		.effects = table_entry->data->sticky_effects,
+		.widen_count = { 0 },
+		.used_count = used_count,
+		.generation = 0,
+		.used_registers = used_registers,
+	};
+	int j = 0;
+	for_each_bit(used_registers, bit, i) {
+		entry->registers[j++] = registers->registers[i];
+	}
 	data->end_offset = new_end_offset;
 }
 
@@ -1570,7 +1576,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 	size_t count = 0;
 	*out_wrote_registers = false;
 	for (size_t offset = 0; offset < end_offset; ) {
-		struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&data->entries[offset];
+		struct searched_instruction_data_entry *entry = entry_for_offset(data, offset);
 		if ((entry->effects & required_effects) != required_effects) {
 			goto continue_search_initial;
 		}
@@ -1632,7 +1638,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		dump_registers(loader, registers, widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
 		for (size_t offset = 0; offset < end_offset; ) {
-			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&data->entries[offset];
+			struct searched_instruction_data_entry *entry = entry_for_offset(data, offset);
 			if ((entry->effects & required_effects) != required_effects) {
 				goto continue_search;
 			}
@@ -1806,7 +1812,7 @@ static inline function_effects *get_or_populate_effects(struct program_state *an
 		return &table_entry->data->sticky_effects;
 	}
 #endif
-	struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table_entry->data->entries[entry_offset];
+	struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 	token->entry_generation = entry->generation;
 	return &entry->effects;
 }
@@ -1839,7 +1845,7 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 		return;
 	}
 #endif
-	struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table[index].data->entries[entry_offset];
+	struct searched_instruction_data_entry *entry = entry_for_offset(table[index].data, entry_offset);
 	if (token->entry_generation == entry->generation) {
 		entry->effects = new_effects;
 #ifdef CLEAR_PROCESSED_ENTRIES
@@ -1861,7 +1867,12 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 	}
 }
 
-static inline register_mask add_relevant_registers(struct searched_instructions *search, const struct loader_context *loader, ins_ptr addr, const struct registers *registers, function_effects required_effects, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, struct effect_token *token)
+struct previous_register_masks {
+	register_mask relevant_registers;
+	register_mask preserved_and_kept_registers;
+};
+
+static inline struct previous_register_masks add_relevant_registers(struct searched_instructions *search, const struct loader_context *loader, ins_ptr addr, const struct registers *registers, function_effects required_effects, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, struct effect_token *token)
 {
 	// optimistically assume the generation hasn't changed
 	struct searched_instruction_entry *table = search->table;
@@ -1882,16 +1893,20 @@ static inline register_mask add_relevant_registers(struct searched_instructions 
 		}
 	}
 	struct searched_instruction_data *data = table[index].data;
-	register_mask result = data->relevant_registers;
-	data->relevant_registers |= relevant_registers;
+	struct previous_register_masks result = (struct previous_register_masks){
+		.relevant_registers = data->relevant_registers,
+		.preserved_and_kept_registers = data->preserved_and_kept_registers,
+	};
+	data->relevant_registers = result.relevant_registers | relevant_registers;
 	data->preserved_registers |= preserved_registers;
-	data->preserved_and_kept_registers |= preserved_and_kept_registers;
+	data->preserved_and_kept_registers = result.preserved_and_kept_registers | preserved_and_kept_registers;
 #ifdef CLEAR_PROCESSED_ENTRIES
 	if (token->entry_offset >= data->end_offset) {
 		// entry was deleted!
 		return result;
 	}
 #endif
+	struct searched_instruction_data_entry *entry = entry_for_offset(data, token->entry_offset);
 	if (SHOULD_LOG) {
 #if 0
 		for (uint32_t i = 0; i < data->count; i++) {
@@ -1904,13 +1919,11 @@ static inline register_mask add_relevant_registers(struct searched_instructions 
 		}
 #else
 		ERROR("existing values (index)", (intptr_t)token->entry_offset);
-		struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&data->entries[token->entry_offset];
 		struct registers regs = { 0 };
 		expand_registers(regs.registers, entry);
 		dump_registers(loader, &regs, data->relevant_registers);
 #endif
 	}
-	struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&data->entries[token->entry_offset];
 	function_effects effects;
 	if (registers_are_subset_of_entry_registers(registers->registers, entry, data->relevant_registers)) {
 		effects = entry->effects;
@@ -2139,7 +2152,7 @@ static inline ins_ptr update_known_function(struct program_state *analysis, stru
 		struct searched_instruction_entry *table_entry = find_searched_instruction_table_entry(&analysis->search, addr, &token);
 		table_entry->data->sticky_effects |= EFFECT_STICKY_EXITS;
 		for (uint32_t offset = 0; offset < table_entry->data->end_offset; ) {
-			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table_entry->data->entries[offset];
+			struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, offset);
 			entry->effects = EFFECT_EXITS | EFFECT_STICKY_EXITS | (entry->effects & ~EFFECT_RETURNS);
 			offset += sizeof_searched_instruction_data_entry(entry);
 		}
@@ -2233,7 +2246,7 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 	}
 }
 
-const struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis)
+struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis)
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
 	if (binary == NULL) {
@@ -2462,7 +2475,14 @@ static void discovered_nss_provider(struct program_state *analysis, const struct
 	*buf++ = '.';
 	*buf++ = '2';
 	*buf++ = '\0';
-	register_dlopen_file(analysis, library_name, caller, false);
+	struct loaded_binary *binary = register_dlopen_file(analysis, library_name, caller, false);
+	if (binary != NULL) {
+		if (binary->path == library_name) {
+			binary->owns_path = true;
+			return;
+		}
+	}
+	free(library_name);
 }
 
 __attribute__((nonnull(1, 2)))
@@ -3135,7 +3155,9 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
 		for_each_bit(relevant_registers, bit, i) {
-			new_relevant_registers |= ancestor->current_state.sources[i];
+			if (register_is_partially_known(&ancestor->current_state.registers[i])) {
+				new_relevant_registers |= ancestor->current_state.sources[i];
+			}
 		}
 		new_relevant_registers &= ~((register_mask)1 << REGISTER_SP);
 		register_mask discarded_registers = (register_mask)1 << REGISTER_SP;
@@ -3179,8 +3201,8 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 			}
 			ERROR("from ins at", temp_str(copy_address_description(loader, ancestor->address)));
 		}
-		register_mask existing_relevant_registers = add_relevant_registers(search, loader, ancestor->entry, ancestor->entry_state, required_effects, new_relevant_registers, new_preserved_registers, new_preserved_and_kept_registers, (struct effect_token *)&ancestor->token);
-		if ((existing_relevant_registers & new_relevant_registers) == new_relevant_registers && new_preserved_and_kept_registers == 0) {
+		struct previous_register_masks existing = add_relevant_registers(search, loader, ancestor->entry, ancestor->entry_state, required_effects, new_relevant_registers, new_preserved_registers, new_preserved_and_kept_registers, (struct effect_token *)&ancestor->token);
+		if ((existing.relevant_registers & new_relevant_registers) == new_relevant_registers && (existing.preserved_and_kept_registers & new_preserved_and_kept_registers) == new_preserved_and_kept_registers) {
 			if (SHOULD_LOG) {
 				ERROR("relevant and preserved registers have already been added");
 			}
@@ -5006,7 +5028,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			effects_entry = &table_entry->data->sticky_effects;
 		} else {
 #endif
-			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&table_entry->data->entries[entry_offset];
+			struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 			self.token.entry_generation = entry->generation;
 			if (entry->effects & EFFECT_PROCESSING) {
 				if (!wrote_registers) {
@@ -8505,6 +8527,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		}
 	}
 	new_binary->owns_binary_info = existing_base_address == NULL;
+	new_binary->owns_path = false;
 	if (fd != -1) {
 		new_binary->device = stat.st_dev;
 		new_binary->inode = stat.st_ino;
@@ -9180,7 +9203,7 @@ void free_loaded_binary(struct loaded_binary *binary) {
 		if (binary->has_debuglink_symbols) {
 			free_symbols(&binary->debuglink_symbols);
 		}
-		if (binary->has_debuglink_info) {
+		if (binary->has_debuglink_info || binary->has_forced_debuglink_info) {
 			unload_binary(&binary->debuglink_info);
 		}
 		if (binary->debuglink) {
@@ -9191,6 +9214,9 @@ void free_loaded_binary(struct loaded_binary *binary) {
 		}
 		if (binary->owns_binary_info) {
 			unload_binary(&binary->info);
+		}
+		if (binary->owns_path) {
+			free((void *)binary->path);
 		}
 		free(binary);
 		binary = next;
@@ -10090,14 +10116,14 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, const 
 	return result;
 }
 
-const struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive)
+struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive)
 {
 	if (!recursive) {
 		return register_dlopen_file(analysis, path, caller, skip_analysis);
 	}
 	int fd = fs_open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (fd == -ENOTDIR) {
-		const struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis);
+		struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis);
 		if (binary == NULL) {
 			DIE("failed to load shared object specified via --dlopen", path);
 		}

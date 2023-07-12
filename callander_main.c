@@ -440,9 +440,14 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 				char *preload_path = malloc(i - cur + 1);
 				fs_memcpy(preload_path, &ld_preload[cur], i - cur);
 				preload_path[i - cur] = '\0';
-				const struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, false, false);
+				struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, false, false);
 				if (binary == NULL) {
 					DIE("failed to load shared object specified via LD_PRELOAD", preload_path);
+					free(preload_path);
+				} else if (binary->path != preload_path) {
+					free(preload_path);
+				} else {
+					binary->owns_path = true;
 				}
 				if (ld_preload[i] == '\0') {
 					break;
@@ -1856,8 +1861,8 @@ skip_analysis:
 		if (profile_path != NULL && !has_read_profile) {
 			write_profile(&analysis.loader, &analysis.syscalls, (ins_ptr)analysis.main, profile_path);
 		}
-		free_loaded_binary(analysis.loader.binaries);
 		cleanup_searched_instructions(&analysis.search);
+		free_loaded_binary(analysis.loader.binaries);
 		cleanup_syscalls(&analysis.syscalls);
 		free(analysis.known_symbols.blocked_symbols);
 		ERROR_FLUSH();

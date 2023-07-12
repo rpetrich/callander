@@ -119,6 +119,7 @@ struct loaded_binary {
 	bool has_finished_loading:1;
 	bool has_frame_info:1;
 	bool owns_binary_info:1;
+	bool owns_path:1;
 	struct symbol_info symbols;
 	struct symbol_info linker_symbols;
 	struct section_info sections;
@@ -488,8 +489,7 @@ struct searched_instructions {
 	struct searched_instruction_callback *callbacks;
 	uint32_t callback_count;
 	uintptr_t *loaded_addresses;
-	size_t loaded_address_count;
-	bool loaded_addresses_are_sorted:1;
+	int loaded_address_count;
 };
 
 __attribute__((nonnull(1)))
@@ -615,7 +615,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 __attribute__((nonnull(1, 2, 3, 4)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
 __attribute__((nonnull(1, 2)))
-const struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive);
+struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive);
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
