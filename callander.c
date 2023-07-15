@@ -2007,6 +2007,7 @@ static void find_and_add_callback(struct program_state *analysis, ins_ptr addr, 
 			callback(analysis, addr, &self.current_state, entry->effects, &self, &token, callback_data);
 			offset += sizeof_searched_instruction_data_entry(entry);
 		}
+		free(copy);
 	}
 }
 
