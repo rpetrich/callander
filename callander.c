@@ -4648,7 +4648,8 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 	bool skip_jump = false;
 	bool skip_continue = false;
 	struct registers jump_state = self->current_state;
-	struct registers continue_state = self->current_state;
+	// struct registers continue_state = self->current_state;
+#define continue_state (self->current_state)
 	LOG("found conditional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
 	struct loaded_binary *jump_binary = NULL;
 	int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
@@ -4928,16 +4929,16 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			}
 			canonicalize_register(&jump_state.registers[target_register]);
 			canonicalize_register(&continue_state.registers[target_register]);
-			if (SHOULD_LOG) {
-				if (self->current_state.registers[target_register].value != jump_state.registers[target_register].value || self->current_state.registers[target_register].max != jump_state.registers[target_register].max) {
-					ERROR("narrowed register for jump", name_for_register(target_register));
-					dump_register(&analysis->loader, jump_state.registers[target_register]);
-				}
-				if (self->current_state.registers[target_register].value != continue_state.registers[target_register].value || self->current_state.registers[target_register].max != continue_state.registers[target_register].max) {
-					ERROR("narrowed register for continue", name_for_register(target_register));
-					dump_register(&analysis->loader, continue_state.registers[target_register]);
-				}
-			}
+			// if (SHOULD_LOG) {
+			// 	if (self->current_state.registers[target_register].value != jump_state.registers[target_register].value || self->current_state.registers[target_register].max != jump_state.registers[target_register].max) {
+			// 		ERROR("narrowed register for jump", name_for_register(target_register));
+			// 		dump_register(&analysis->loader, jump_state.registers[target_register]);
+			// 	}
+			// 	if (self->current_state.registers[target_register].value != continue_state.registers[target_register].value || self->current_state.registers[target_register].max != continue_state.registers[target_register].max) {
+			// 		ERROR("narrowed register for continue", name_for_register(target_register));
+			// 		dump_register(&analysis->loader, continue_state.registers[target_register]);
+			// 	}
+			// }
 		}
 		if (skip_jump_mask) {
 			if (skip_jump_mask & (register_mask)1 << self->current_state.compare_state.target_register) {
