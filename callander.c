@@ -1211,8 +1211,8 @@ struct queued_instruction {
 	function_effects effects;
 };
 
-__attribute__((nonnull(1, 2)))
-static void queue_instruction(struct queued_instructions *queue, ins_ptr ins, function_effects effects, struct registers registers, ins_ptr caller, const char *description)
+__attribute__((nonnull(1, 2, 4)))
+static void queue_instruction(struct queued_instructions *queue, ins_ptr ins, function_effects effects, const struct registers *registers, ins_ptr caller, const char *description)
 {
 	uint32_t i = queue->count;
 	uint32_t count = i + 1;
@@ -1223,7 +1223,7 @@ static void queue_instruction(struct queued_instructions *queue, ins_ptr ins, fu
 	queue->queue[i] = (struct queued_instruction){
 		.ins = ins,
 		.effects = effects,
-		.registers = registers,
+		.registers = *registers,
 		.caller = caller,
 		.description = description,
 	};
@@ -1943,7 +1943,7 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 		copy.mem_rm = registers->mem_rm;
 		copy.compare_state = registers->compare_state;
 		copy.stack_address_taken = registers->stack_address_taken;
-		queue_instruction(&search->queue, addr, required_effects, copy, addr, "varying ancestors");
+		queue_instruction(&search->queue, addr, required_effects, &copy, addr, "varying ancestors");
 	}
 	return result;
 }
@@ -4637,7 +4637,7 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
 	pop_stack(&self->current_state, 2);
 	if (more_effects & EFFECT_PROCESSING) {
-		queue_instruction(&analysis->search.queue, call_target, required_effects, call_state, call_target, self->description);
+		queue_instruction(&analysis->search.queue, call_target, required_effects, &call_state, call_target, self->description);
 		more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
 	}
 	return more_effects;
@@ -5089,7 +5089,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (!registers_are_subset_of_entry_registers(self.current_state.registers, entry, ~relevant_registers)) {
 					LOG("queuing because subset of existing processing entry, but expanded set of registers are not subset");
 					dump_nonempty_registers(&analysis->loader, &self.current_state, ~relevant_registers);
-					queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, self.current_state, ins, "in progress");
+					queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, &self.current_state, ins, "in progress");
 				}
 			}
 			effects_entry = &entry->effects;
@@ -7302,7 +7302,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
-									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), empty_registers, self.address, "lea");
+									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), &empty_registers, self.address, "lea");
 									//analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
 								}
 							}
@@ -7514,7 +7514,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				void *address = (void *)dest.value;
 				if (protection_for_address(&analysis->loader, address, NULL, NULL) & PROT_EXEC) {
 					LOG("mov is to executable address, assuming it could be called after startup");
-					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, empty_registers, self.address, "mov");
+					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, self.address, "mov");
 					// self.description = "mov";
 					// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (ins_ptr)address, &self);
 				}
@@ -7620,7 +7620,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 						} else {
 							LOG("mov is to executable address, assuming it could be called after startup");
-							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, empty_registers, self.address, "mov");
+							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, self.address, "mov");
 							// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (ins_ptr)state.value, &self);
 						}
 					} else {
