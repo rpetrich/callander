@@ -1970,16 +1970,44 @@ static uint16_t index_for_callback_and_data(struct searched_instructions *search
 	return count;
 }
 
+__attribute__((unused))
+__attribute__((nonnull(1, 2)))
+static char *copy_function_call_description(const struct loader_context *context, ins_ptr target, struct registers registers);
+
 __attribute__((nonnull(1, 2, 7)))
 static void find_and_add_callback(struct program_state *analysis, ins_ptr addr, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects additional_effects, instruction_reached_callback callback, void *callback_data)
 {
 	struct effect_token token;
-	struct searched_instruction_entry *table_entry = find_searched_instruction_table_entry(&analysis->search, addr, &token);
-	table_entry->data->sticky_effects |= additional_effects & ~EFFECT_PROCESSING;
-	table_entry->data->relevant_registers |= relevant_registers;
-	table_entry->data->preserved_registers |= preserved_registers;
-	table_entry->data->preserved_and_kept_registers |= preserved_and_kept_registers;
-	table_entry->data->callback_index = index_for_callback_and_data(&analysis->search, callback, callback_data);
+	struct searched_instruction_data *data = find_searched_instruction_table_entry(&analysis->search, addr, &token)->data;
+	data->sticky_effects |= additional_effects & ~EFFECT_PROCESSING;
+	data->relevant_registers |= relevant_registers;
+	data->preserved_registers |= preserved_registers;
+	data->preserved_and_kept_registers |= preserved_and_kept_registers;
+	data->callback_index = index_for_callback_and_data(&analysis->search, callback, callback_data);
+	uint32_t end_offset = data->end_offset;
+	if (end_offset != 0) {
+		struct analysis_frame self = {
+			.address = addr,
+			.description = "add callback",
+			.next = NULL,
+			.entry = addr,
+			.token = { 0 },
+			.current_state = empty_registers,
+			.is_entry = true,
+		};
+		self.entry_state = &self.current_state;
+		char *copy = malloc(end_offset);
+		memcpy(copy, data->entries, end_offset);
+		for (uint32_t offset = 0; offset < end_offset; ) {
+			token.entry_offset = offset;
+			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&copy[offset];
+			token.entry_generation = entry->generation;
+			expand_registers(self.current_state.registers, entry);
+			LOG("invoking callback on existing entry", temp_str(copy_function_call_description(&analysis->loader, addr, self.current_state)));
+			callback(analysis, addr, &self.current_state, entry->effects, &self, &token, callback_data);
+			offset += sizeof_searched_instruction_data_entry(entry);
+		}
+	}
 }
 
 #ifdef __x86_64__
@@ -2246,6 +2274,8 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 	}
 }
 
+static int load_all_needed_and_relocate(struct program_state *analysis);
+
 struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis)
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
@@ -2263,6 +2293,20 @@ struct loaded_binary *register_dlopen_file(struct program_state *analysis, const
 			return NULL;
 		}
 		new_binary->special_binary_flags |= BINARY_IS_LOADED_VIA_DLOPEN;
+		result = load_all_needed_and_relocate(analysis);
+		if (result < 0) {
+			LOG("failed to load all needed for dlopen");
+			return NULL;
+		}
+		for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
+			if (other->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) {
+				result = finish_loading_binary(analysis, other, EFFECT_NONE, skip_analysis);
+				if (result != 0) {
+					ERROR("failed to load interpreter or libc", other->path);
+					return NULL;
+				}
+			}
+		}
 		result = finish_loading_binary(analysis, new_binary, EFFECT_AFTER_STARTUP, skip_analysis);
 		if (result != 0) {
 			LOG("failed to finish loading dlopen'ed path, assuming it will fail at runtime", path);
@@ -2312,7 +2356,12 @@ static ins_ptr find_function_entry(struct loader_context *loader, ins_ptr ins)
 
 static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
+	if (effects == EFFECT_NONE) {
+		LOG("encountered dlopen call with no effects", temp_str(copy_call_trace_description(&analysis->loader, caller)));
+		return;
+	}
 	LOG("encountered dlopen call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
+	LOG("with effects", (uintptr_t)effects);
 	struct register_state *first_arg = &state->registers[sysv_argument_abi_register_indexes[0]];
 	if (!register_is_exactly_known(first_arg)) {
 		// check if we're searching for gconv and if so attach handle_gconv_find_shlib as callback
@@ -9056,20 +9105,20 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 		return result;
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_MAIN) {
-		if (new_binary->info.interpreter) {
-			bool found_interpreter = false;
-			for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
+		bool found_interpreter = false;
+		for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
+			if (other->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) {
 				if (other->special_binary_flags & BINARY_IS_INTERPRETER) {
 					found_interpreter = true;
-					result = finish_loading_binary(analysis, other, effects, skip_analysis);
-					if (result != 0) {
-						return result;
-					}
+				}
+				result = finish_loading_binary(analysis, other, effects, skip_analysis);
+				if (result != 0) {
+					return result;
 				}
 			}
-			if (!found_interpreter) {
-				DIE("could not find interpreter");
-			}
+		}
+		if (new_binary->info.interpreter && !found_interpreter) {
+			DIE("could not find interpreter");
 		}
 	}
 	const ElfW(Dyn) *dynamic = new_binary->info.dynamic;
