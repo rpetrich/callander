@@ -1280,11 +1280,11 @@ static uintptr_t find_lookup_table_base_address(const struct lookup_base_address
 }
 
 struct searched_instruction_data_entry {
+	register_mask used_registers;
 	function_effects effects;
 	uint8_t widen_count[REGISTER_COUNT];
 	uint8_t used_count;
 	uint16_t generation;
-	register_mask used_registers;
 	struct register_state registers[];
 };
 
