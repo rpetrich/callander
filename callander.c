@@ -1610,7 +1610,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		if (entry_registers_are_subset_of_registers(entry, registers->registers, relevant_registers)) {
 			// new register values are a superset of an existing entry, widen and reuse it
 			for_each_bit(relevant_registers, bit, i) {
-				if (entry->widen_count[i] >= 20) {
+				if (entry->widen_count[i] >= 15) {
 					// widened too many times
 					goto continue_search_initial;
 				}
