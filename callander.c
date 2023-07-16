@@ -5153,6 +5153,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				} else if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
+					self.description = "jump";
 					ERROR("found single jump at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 					DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, jump_target)));
 #endif
@@ -5209,6 +5210,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						// effects |= EFFECT_EXITS | EFFECT_RETURNS;
 					} else if ((protection_for_address(&analysis->loader, (const void *)address.value, NULL, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
+						self.description = "call*";
 						ERROR("found call* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 						DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.value)));
 #endif
@@ -5246,6 +5248,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if ((protection_for_address(&analysis->loader, dest, NULL, NULL) & PROT_EXEC) == 0) {
 								dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
+								self.description = "call*";
 								ERROR("found call* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, dest)));
 #endif
@@ -5287,6 +5290,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						switch (jump_status) {
 							case DISALLOW_JUMPS_INTO_THE_ABYSS:
 								ERROR("jmpq* to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
+								self.description = "jump*";
 								DIE("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								break;
 							case ALLOW_JUMPS_INTO_THE_ABYSS:
@@ -5357,6 +5361,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
+					self.description = "jump*";
 					ERROR("found jump* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 					DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, new_ins)));
 #endif
@@ -5529,8 +5534,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							analysis->loader.setxid_sighandler_syscall_entry = self.entry;
 							LOG("found setxid_sighandler dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 						} else if (self.address == analysis->loader.setxid_sighandler_syscall) {
+							self.description = NULL;
 							LOG("unknown setxid_sighandler syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 						} else if (self.address == analysis->loader.setxid_syscall) {
+							self.description = NULL;
 							LOG("unknown setxid syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 						} else {
 							struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
@@ -5571,6 +5578,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									relevant_registers = new_relevant_registers;
 								}
 							}
+							self.description = NULL;
 							ERROR("full call stack", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 							dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 							clear_register(&self.current_state.registers[REGISTER_RAX]);
@@ -6076,6 +6084,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								if (protection_for_address(&analysis->loader, (const void *)(base_addr + value * sizeof(uint32_t)), NULL, NULL) & PROT_READ) {
 									if (max - value > MAX_LOOKUP_TABLE_SIZE) {
 										LOG("unsigned lookup table rejected because range of index is too large", max - value);
+										self.description = "rejected lookup table";
 										LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 									} else {
 										self.description = "lookup table";
@@ -6709,6 +6718,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								if ((max - value > MAX_LOOKUP_TABLE_SIZE) && !has_frame_details && (function_symbol == NULL)) {
 									LOG("signed lookup table rejected because range of index is too large", max - value);
 									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << base) | ((register_mask)1 << index));
+									self.description = "rejected lookup table";
 									LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 									jump_status = binary && !binary->has_debuglink_symbols ? DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS : DISALLOW_JUMPS_INTO_THE_ABYSS;
 								} else {
@@ -7766,6 +7776,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("found call to NULL, assuming all effects");
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
+					self.description = "call";
 					ERROR("found call at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 					DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, (void *)dest)));
 #endif
