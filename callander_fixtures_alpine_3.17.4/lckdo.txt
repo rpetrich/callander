@@ -30,9 +30,8 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 wait4(0xffffffffffffffff, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(0xffffffffffffffff, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
-fcntl(any, 1, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
-fcntl(any, 2, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
-fcntl(any, 0x4-0x6, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, 4, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, 6, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, 7, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 fcntl(any, 7, any) @ ld-musl-x86_64.so.1+0x583bc

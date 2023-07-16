@@ -48,20 +48,12 @@ madvise(NULL-0xfffffffffffffffe, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x583bc
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
-sendfile(any, any, 0, any) @ ld-musl-x86_64.so.1+0x20436(sendfile64+14)
-socket(38, 5, 0) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
-socket(38, 5, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
-accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
-bind(any, any, 88) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 3, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 6, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
-fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)
-fcntl(any, 4, 2048) @ ld-musl-x86_64.so.1+0x3f40b(socket+140)
 fcntl(any, 1, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49b88(fchmod+44)
 fcntl(any, 1, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, 1, any u32) @ ld-musl-x86_64.so.1+0x5b11f(fchown+51)
@@ -104,6 +96,5 @@ clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 clock_nanosleep(0, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49d54(fstatat64+104)
-newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)

@@ -1,6 +1,10 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-read(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+read(any, any, 4) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(any, any, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(any, any, 1024) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(any, any, 4) @ ld-musl-x86_64.so.1+0x583bc
+read(any, any, 8) @ ld-musl-x86_64.so.1+0x583bc
+read(any, any, 1024) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, 4) @ ld-musl-x86_64.so.1+0x41ed9(child*+842)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
@@ -39,7 +43,6 @@ brk(any) @ ld-musl-x86_64.so.1+0x26e2f(__malloc_alloc_meta*+271)
 brk(any) @ ld-musl-x86_64.so.1+0x26e59(__malloc_alloc_meta*+313)
 rt_sigaction(6, any, 8, 8) @ ld-musl-x86_64.so.1+0x1cf05(abort+78)
 rt_sigaction(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
-rt_sigaction(any, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
 rt_sigprocmask(1, any, 8, 8) @ ld-musl-x86_64.so.1+0x1cf36(abort+127)
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x491f6(__block_all_sigs*+23)
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x49210(__block_app_sigs*+23)
@@ -100,8 +103,6 @@ sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 shutdown(any, 1) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
-bind(any, any, 110) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
-listen(any, 128) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3bedb(getpeername+18)
 socketpair(1, 1, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair+43)
 socketpair(1, 1, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
@@ -116,7 +117,6 @@ wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, 1) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, 15) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
-kill(any, 18) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, 20) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
 fcntl(any, 1, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
@@ -153,7 +153,6 @@ mkdir(any, 448) @ ld-musl-x86_64.so.1+0x49f32(mkdir+8)
 unlink(any) @ ld-musl-x86_64.so.1+0x5ba2d(unlink+6)
 readlink(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x5b657(readlink+27)
 chmod(any, NULL-0x1ff) @ ld-musl-x86_64.so.1+0x49b50(chmod+8)
-umask(any u32) @ ld-musl-x86_64.so.1+0x4a121(umask+8)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x59638(clock_gettime+80)
 gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 getrlimit(any, any) @ ld-musl-x86_64.so.1+0x37713(getrlimit+73)

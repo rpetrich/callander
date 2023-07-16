@@ -109,7 +109,7 @@ rt_sigprocmask(0, 0, any, 8) @ libpthread.so.0+0x96ef(__pthread_mutex_lock_full+
 rt_sigprocmask(0, 0, any, 8) @ libpthread.so.0+0xb4a7(__pthread_mutex_cond_lock_full+295)
 rt_sigreturn(any) @ libc.so.6+0x33d17
 rt_sigreturn(any) @ libpthread.so.0+0x118e7
-ioctl(any, 0x5402-0x5404, any) @ libc.so.6+0xe6048(tcsetattr+200)
+ioctl(any, 0x5402-0x5403, any) @ libc.so.6+0xe6048(tcsetattr+200)
 ioctl(any, 0x5401, any) @ libc.so.6+0xe6084(tcsetattr+260)
 ioctl(any, 0x5401, any) @ libc.so.6+0xe6139(tcgetattr+41)
 ioctl(any u32, 0x5413, any) @ libc.so.6+0xe69a5(ioctl+5)
@@ -130,9 +130,7 @@ access(any, 0) @ libc.so.6+0xe1648(access+8)
 access(any, 4) @ libc.so.6+0xe1648(access+8)
 access(any, 7) @ libc.so.6+0xe1648(access+8)
 select(any, 0, any, any, any) @ libc.so.6+0xe7395(select+21)
-select(any, any, 0, any, any) @ libc.so.6+0xe7395(select+21)
 select(any, 0, any, any, any) @ libc.so.6+0xe73da(select+90)
-select(any, any, 0, any, any) @ libc.so.6+0xe73da(select+90)
 sched_yield() @ libc.so.6+0xd8235(sched_yield+5)
 mremap(any, any, any, 1, any) @ libc.so.6+0xeff08(mremap+8)
 madvise(NULL-0xfffffffffffffffe, any, 4) @ libc.so.6+0xea615(__madvise+5)

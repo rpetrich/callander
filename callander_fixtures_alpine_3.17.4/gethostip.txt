@@ -34,21 +34,16 @@ ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a883(__stdout_write*+48)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 madvise(NULL-0xfffffffffffffffe, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
-socket(any, 0x80002, 17) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(1, 0x80002, 0) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(2, 0x80802, 0) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(10, 0x80802, 0) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
-socket(any, 2, 17) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 socket(0x1-0x2, 2, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 socket(10, 2, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
-connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
-getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 setsockopt(any, 41, 26, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

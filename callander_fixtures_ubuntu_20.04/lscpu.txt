@@ -31,7 +31,7 @@ rt_sigaction(6, any, any, 8) @ libc.so.6+0x43164(__libc_sigaction*+196)
 rt_sigaction(11, any, any, 8) @ libc.so.6+0x43164(__libc_sigaction*+196)
 rt_sigprocmask(0, any, any, 8) @ libc.so.6+0x42fc8(raise+136)
 rt_sigprocmask(2, any, 0, 8) @ libc.so.6+0x43009(raise+201)
-rt_sigprocmask(NULL-0x2, any, any, 8) @ libc.so.6+0x43309(sigprocmask+73)
+rt_sigprocmask(0x1-0x2, any, 0, 8) @ libc.so.6+0x43309(sigprocmask+73)
 rt_sigreturn(any) @ libc.so.6+0x43097
 ioctl(any u32, 0x5401, any) @ libc.so.6+0x113a18(tcgetattr+40)
 ioctl(1, 0x5413, any) @ libc.so.6+0x1143a9(ioctl+9)

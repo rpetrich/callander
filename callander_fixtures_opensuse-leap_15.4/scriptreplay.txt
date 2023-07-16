@@ -31,7 +31,7 @@ rt_sigprocmask(0, any, any, 8) @ libc.so.6+0x4ac99(raise+203)
 rt_sigprocmask(2, any, 0, 8) @ libc.so.6+0x4acd9(raise+267)
 rt_sigprocmask(1, any, 0, 8) @ libc.so.6+0x4b004(sigprocmask+70)
 rt_sigreturn(any) @ libc.so.6+0x4ad77
-ioctl(1, 0x5402-0x5403, any) @ libc.so.6+0x10c1d3(tcsetattr+181)
+ioctl(1, 0x5402, any) @ libc.so.6+0x10c1d3(tcsetattr+181)
 ioctl(any u32, 0x5401, any) @ libc.so.6+0x10c246(tcgetattr+40)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0x11a06(_dl_debug_vdprintf+296)
 writev(2, NULL-0xfffffffffffffff0, any) @ libc.so.6+0x90a0e(__libc_message+448)

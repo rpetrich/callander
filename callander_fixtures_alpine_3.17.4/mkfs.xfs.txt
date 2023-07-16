@@ -49,7 +49,7 @@ rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(any, 0x1260-0x1261, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x1268, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, 0x1277-0x127b, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, 0x1278-0x127b, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5310, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5326, 0x7fffffff) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5331, 0) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
@@ -146,7 +146,6 @@ openat(any, libblkid.so.1+0x36de7, any, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, libblkid.so.1+0x3995c, any, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, libblkid.so.1+0x39e93, any, any) @ ld-musl-x86_64.so.1+0x583bc
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49d54(fstatat64+104)
-newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 newfstatat(any, any, any, 256) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 faccessat(any, any, 0, any) @ ld-musl-x86_64.so.1+0x5af55(faccessat+44)

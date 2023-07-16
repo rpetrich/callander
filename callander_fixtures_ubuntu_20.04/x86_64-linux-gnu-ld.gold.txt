@@ -36,7 +36,6 @@ rt_sigprocmask(1, any, 0, 8) @ libpthread.so.0+0x874f(start_thread+543)
 rt_sigprocmask(0, any, any, 8) @ libc.so.6+0x42fc8(raise+136)
 rt_sigprocmask(2, any, 0, 8) @ libc.so.6+0x43009(raise+201)
 rt_sigprocmask(0x1-0x2, any, 0, 8) @ libc.so.6+0x43309(sigprocmask+73)
-rt_sigreturn(any) @ libpthread.so.0+0x14427
 rt_sigreturn(any) @ libc.so.6+0x43097
 ioctl(any u32, 0x5401, any) @ libc.so.6+0x113a18(tcgetattr+40)
 ioctl(any u32, 0x541b, any) @ libc.so.6+0x1143a9(ioctl+9)

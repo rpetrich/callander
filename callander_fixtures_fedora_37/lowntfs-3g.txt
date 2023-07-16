@@ -33,6 +33,7 @@ pread64(NULL-0xfffffffe, any, 511, any) @ libc.so.6+0x10014c(__pread64_nocancel+
 pwrite64(any u32, any, any, any) @ libc.so.6+0xf9295(__libc_pwrite+21)
 pwrite64(any u32, any, any, any) @ libc.so.6+0xf92d5(__libc_pwrite+85)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xcb7d(_dl_debug_vdprintf+301)
+writev(any, any, 0) @ ld-linux-x86-64.so.2+0xcb7d(_dl_debug_vdprintf+301)
 writev(2, NULL-0xfffffffffffffff0, any) @ libc.so.6+0x80fee(__libc_message+510)
 writev(any u32, non-NULL, any) @ libc.so.6+0x100e62(writev+18)
 writev(any u32, any, any u32) @ libc.so.6+0x100e9b(writev+75)
