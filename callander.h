@@ -435,13 +435,13 @@ struct registers {
 #if STORE_LAST_MODIFIED
 	ins_ptr last_modify_ins[REGISTER_COUNT];
 #endif
+	struct decoded_rm mem_rm;
+	struct x86_comparison compare_state;
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
 	ins_ptr stack_address_taken;
 #else
 	bool stack_address_taken:1;
 #endif
-	struct decoded_rm mem_rm;
-	struct x86_comparison compare_state;
 };
 
 const struct registers empty_registers;
@@ -483,11 +483,11 @@ struct searched_instructions {
 	struct searched_instruction_entry *table;
 	uint32_t mask;
 	uint32_t remaining_slots;
-	uint16_t generation;
 	struct queued_instructions queue;
 	struct lookup_base_addresses lookup_base_addresses;
 	struct searched_instruction_callback *callbacks;
 	uint32_t callback_count;
+	uint16_t generation;
 	uintptr_t *loaded_addresses;
 	int loaded_address_count;
 };
