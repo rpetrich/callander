@@ -129,6 +129,7 @@ struct x86_instruction {
 	struct x86_ins_prefixes prefixes;
 };
 
+__attribute__((always_inline))
 static inline bool x86_decode_instruction(const uint8_t *addr, struct x86_instruction *out_ins)
 {
 	int length = InstructionSize_x86_64(addr, 0xf);
