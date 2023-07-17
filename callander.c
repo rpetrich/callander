@@ -1470,6 +1470,7 @@ static inline bool collapse_registers(struct searched_instruction_data_entry *en
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		if (register_is_partially_known(&full[i])) {
 			if (new_count == old_count) {
+				LOG("too many registers to collapse", new_count);
 				return false;
 			}
 			new_count++;
@@ -1637,10 +1638,14 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		LOG("loop heuristics");
 		dump_registers(loader, registers, widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
+		size_t processing_count = 0;
 		for (size_t offset = 0; offset < end_offset; ) {
 			struct searched_instruction_data_entry *entry = entry_for_offset(data, offset);
 			if ((entry->effects & required_effects) != required_effects) {
 				goto continue_search;
+			}
+			if (entry->effects & EFFECT_PROCESSING) {
+				processing_count++;
 			}
 			expand_registers(out_registers->registers, entry);
 #pragma GCC unroll 64
@@ -1662,7 +1667,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
 					continue;
 				}
-				if ((widenable_registers & ((register_mask)1 << r)) == 0) {
+				if (((widenable_registers & bit) == 0) && (processing_count < 25)) {
 					goto continue_search;
 				}
 				if (entry->widen_count[r] < 4) {
@@ -1675,7 +1680,22 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 							out_registers->registers[r].max = registers->registers[r].value;
 							LOG("widening up", name_for_register(r));
 							dump_register(loader, out_registers->registers[r]);
+						} else if (processing_count > 30) {
+							LOG("too many actively unwidened", name_for_register(r));
+							dump_register(loader, out_registers->registers[r]);
+							clear_register(&out_registers->registers[r]);
+							out_registers->sources[r] = 0;
+							register_mask match_mask = out_registers->matches[r];
+							if (match_mask != 0) {
+								if ((widenable_registers & match_mask) == match_mask) {
+									LOG("widening a register in tandem with another, preserving match", name_for_register(r));
+								} else {
+									clear_match(&analysis->loader, out_registers, r, addr);
+								}
+							}
 						} else {
+							LOG("couldn't widen", name_for_register(r));
+							dump_register(loader, registers->registers[r]);
 							goto continue_search;
 						}
 					} else if (register_is_subset_of_register(&out_registers->registers[r], &registers->registers[r])) {
@@ -1683,14 +1703,12 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 						LOG("widened range", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
 					} else {
+						LOG("couldn't widen", name_for_register(r));
+						dump_register(loader, registers->registers[r]);
 						goto continue_search;
 					}
 				} else {
-					if (entry->widen_count[r] < 4) {
-						LOG("not exactly known", name_for_register(r));
-					} else {
-						LOG("widened too many times", name_for_register(r));
-					}
+					LOG("widened too many times", name_for_register(r));
 					dump_register(loader, out_registers->registers[r]);
 					clear_register(&out_registers->registers[r]);
 					out_registers->sources[r] = 0;
@@ -1703,7 +1721,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 						}
 					}
 				}
-				widened |= (register_mask)1 << r;
+				widened |= bit;
 			}
 			for (int r = 0; r < REGISTER_COUNT; r++) {
 				if (widened & ((register_mask)1 << r)) {
