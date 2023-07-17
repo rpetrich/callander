@@ -529,14 +529,9 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 	regs->matches[dest_reg] = mask | ((register_mask)1 << source_reg);
 	LOG("matching", name_for_register(source_reg));
 	LOG("to", name_for_register(dest_reg));
-	if (UNLIKELY(mask != 0)) {
-#pragma GCC unroll 64
-		for (int i = 0; i < REGISTER_COUNT; i++) {
-			if (mask & ((register_mask)1 << i)) {
-				LOG("existing match", name_for_register(i));
-				regs->matches[i] |= (register_mask)1 << dest_reg;
-			}
-		}
+	for_each_bit(mask & ALL_REGISTERS, bit, i) {
+		LOG("existing match", name_for_register(i));
+		regs->matches[i] |= (register_mask)1 << dest_reg;
 	}
 	regs->sources[dest_reg] = regs->sources[source_reg];
 }
@@ -1066,11 +1061,9 @@ __attribute__((nonnull(1, 2)))
 static inline void dump_nonempty_registers(const struct loader_context *loader, const struct registers *state, register_mask registers)
 {
 	if (SHOULD_LOG) {
-		for (int i = 0; i < REGISTER_COUNT; i++) {
-			if (registers & ((register_mask)1 << i)) {
-				if (!register_is_partially_known(&state->registers[i])) {
-					registers &= ~((register_mask)1 << i);
-				}
+		for_each_bit(registers, bit, i) {
+			if (!register_is_partially_known(&state->registers[i])) {
+				registers &= ~bit;
 			}
 		}
 		dump_registers(loader, state, registers);
@@ -1494,15 +1487,13 @@ static inline bool registers_are_subset_of_entry_registers(const struct register
 	valid_registers &= used_registers;
 	if (UNLIKELY(valid_registers != 0)) {
 		int j = 0;
-#pragma GCC unroll 64
-		for (int i = 0; i < REGISTER_COUNT; i++) {
-			register_mask mask = (register_mask)1 << i;
-			if (valid_registers & mask) {
+		for_each_bit(used_registers, bit, i) {
+			if (valid_registers & bit) {
 				if (!register_is_subset_of_register(&potential_subset[i], &entry->registers[j])) {
 					return false;
 				}
 			}
-			j += (used_registers & mask) ? 1 : 0;
+			j++;
 		}
 	}
 	return true;
@@ -1516,13 +1507,13 @@ static inline bool entry_registers_are_subset_of_registers(const struct searched
 	if (valid_registers != 0) {
 		int j = 0;
 #pragma GCC unroll 64
-		for (int i = 0; i < REGISTER_COUNT; i++) {
-			if (valid_registers & ((register_mask)1 << i)) {
-				if ((used_registers & ((register_mask)1 << i)) && !register_is_subset_of_register(&entry->registers[j], &potential_superset[i])) {
+		for_each_bit(used_registers | valid_registers, bit, i) {
+			if (valid_registers & bit) {
+				if ((used_registers & bit) && !register_is_subset_of_register(&entry->registers[j], &potential_superset[i])) {
 					return false;
 				}
 			}
-			if (used_registers & ((register_mask)1 << i)) {
+			if (used_registers & bit) {
 				j++;
 			}
 		}
@@ -1756,19 +1747,23 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		LOG("too many entries, widening all registers");
 		if (widenable_registers != 0) {
 			*out_registers = *registers;
-			for (int i = 0; i < REGISTER_COUNT; i++) {
-				if (widenable_registers & ((register_mask)1 << i)) {
-					clear_register(&out_registers->registers[i]);
-					out_registers->sources[i] = 0;
-					LOG("widening register", name_for_register(i));
-				} else if (relevant_registers & ((register_mask)1 << i)) {
-					LOG("skipping widening register", name_for_register(i));
+			if (SHOULD_LOG) {
+				for (int i = 0; i < REGISTER_COUNT; i++) {
+					if (widenable_registers & ((register_mask)1 << i)) {
+						LOG("widening register", name_for_register(i));
+					} else if (relevant_registers & ((register_mask)1 << i)) {
+						LOG("skipping widening register", name_for_register(i));
+					}
 				}
 			}
+			for_each_bit(widenable_registers, bit, i) {
+				clear_register(&out_registers->registers[i]);
+				out_registers->sources[i] = 0;
+			}
 			*out_wrote_registers = true;
-		} else if (relevant_registers != 0) {
-			for (int i = 0; i < REGISTER_COUNT; i++) {
-				if (relevant_registers & ((register_mask)1 << i)) {
+		} else {
+			if (SHOULD_LOG) {
+				for_each_bit(relevant_registers, bit, i) {
 					LOG("skipping widening register", name_for_register(i));
 				}
 			}
@@ -3239,10 +3234,8 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		if (new_relevant_registers == 0) {
 			if (SHOULD_LOG) {
 				ERROR("first entry point without varying arguments", temp_str(copy_address_description(loader, ancestor->entry)));
-				for (int i = 0; i < REGISTER_COUNT; i++) {
-					if (relevant_registers & ((register_mask)1 << i)) {
-						ERROR("relevant register", name_for_register(i));
-					}
+				for_each_bit(relevant_registers, bit, i) {
+					ERROR("relevant register", name_for_register(i));
 				}
 			}
 			break;
@@ -3257,15 +3250,13 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		new_preserved_and_kept_registers &= ~((register_mask)1 << REGISTER_SP);
 		if (SHOULD_LOG) {
 			ERROR("marking", temp_str(copy_address_description(loader, ancestor->entry)));
-			for (int i = 0; i < REGISTER_COUNT; i++) {
-				if (new_relevant_registers & ((register_mask)1 << i)) {
-					if (new_preserved_registers & ((register_mask)1 << i)) {
-						ERROR("as preserving", name_for_register(i));
-					} else {
-						ERROR("as requiring", name_for_register(i));
-					}
-					dump_register(loader, ancestor->entry_state->registers[i]);
+			for_each_bit(new_relevant_registers, bit, i) {
+				if (new_preserved_registers & bit) {
+					ERROR("as preserving", name_for_register(i));
+				} else {
+					ERROR("as requiring", name_for_register(i));
 				}
+				dump_register(loader, ancestor->entry_state->registers[i]);
 			}
 			ERROR("from ins at", temp_str(copy_address_description(loader, ancestor->address)));
 		}
@@ -3373,11 +3364,9 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		if (SHOULD_LOG) {
 			for (int i = 0; i < (info.attributes & SYSCALL_ARGC_MASK); i++) {
 				int reg = syscall_argument_abi_register_indexes[i];
-				for (int j = 0; j < REGISTER_COUNT; j++) {
-					if (self.current_state.sources[reg] & ((register_mask)1 << j)) {
-						ERROR("argument", i);
-						ERROR("using block input from", name_for_register(j));
-					}
+				for_each_bit(self.current_state.sources[reg], bit, j) {
+					ERROR("argument", i);
+					ERROR("using block input from", name_for_register(j));
 				}
 			}
 		}
@@ -5578,10 +5567,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								for (const struct analysis_frame *ancestor = &self;;) {
 									ERROR("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
 									register_mask new_relevant_registers = 0;
-									for (int i = 0; i < REGISTER_COUNT; i++) {
-										if (relevant_registers & ((register_mask)1 << i)) {
-											new_relevant_registers |= ancestor->current_state.sources[i];
-										}
+									for_each_bit(relevant_registers, bit, i) {
+										new_relevant_registers |= ancestor->current_state.sources[i];
 									}
 									if (new_relevant_registers == 0) {
 										ERROR("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
@@ -6119,10 +6106,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											LOG("processing table target (if jump table)", temp_str(copy_address_description(&analysis->loader, (void *)base_addr + ((ins_ptr)base_addr)[i])));
 											if (index != dest) {
 												set_register(&copy.registers[index], i);
-												for (int r = 0; r < REGISTER_COUNT; r++) {
-													if (copy.matches[index] & ((register_mask)1 << r)) {
-														set_register(&copy.registers[r], i);
-													}
+												for_each_bit(copy.matches[index], bit, r) {
+													set_register(&copy.registers[r], i);
 												}
 											}
 											set_register(&copy.registers[dest], dest);
@@ -6759,10 +6744,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										if (index != reg) {
 											set_register(&copy.registers[index], i);
-											for (int r = 0; r < REGISTER_COUNT; r++) {
-												if (copy.matches[index] & ((register_mask)1 << r)) {
-													set_register(&copy.registers[r], i);
-												}
+											for_each_bit(copy.matches[index], bit, r) {
+												set_register(&copy.registers[r], i);
 											}
 										}
 										set_register(&copy.registers[reg], relative);
@@ -8107,15 +8090,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		}
 		if (UNLIKELY(pending_stack_clear)) {
 			LOG("clearing stack after call");
-			for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
-				if (pending_stack_clear & ((register_mask)1 << i)) {
-					if (SHOULD_LOG && register_is_partially_known(&self.current_state.registers[i])) {
-						ERROR("clearing", name_for_register(i));
-					}
-					clear_register(&self.current_state.registers[i]);
-					self.current_state.sources[i] = 0;
-					self.current_state.matches[i] = 0;
+			for_each_bit(pending_stack_clear, bit, i) {
+				if (SHOULD_LOG && register_is_partially_known(&self.current_state.registers[i])) {
+					ERROR("clearing", name_for_register(i));
 				}
+				clear_register(&self.current_state.registers[i]);
+				self.current_state.sources[i] = 0;
+				self.current_state.matches[i] = 0;
 			}
 			for (int i = 0; i < REGISTER_STACK_0; i++) {
 				self.current_state.matches[i] &= ~pending_stack_clear;
