@@ -2363,6 +2363,20 @@ struct loaded_binary *register_dlopen_file(struct program_state *analysis, const
 	return binary;
 }
 
+struct loaded_binary *register_dlopen_file_owning_path(struct program_state *analysis, char *path, const struct analysis_frame *caller, bool skip_analysis)
+{
+	struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis);
+	if (!binary) {
+		free(path);
+	} else if (binary->path == path) {
+		binary->owns_path = true;
+	} else {
+		free(path);
+	}
+	return binary;
+}
+
+
 static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data);
 
 __attribute__((nonnull(1, 2)))
@@ -2511,7 +2525,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 							path_buf += sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") - 1;
 							fs_memcpy(path_buf, name, suffix_len + 1);
 							LOG("found gconv library", path);
-							register_dlopen_file(analysis, path, caller, true);
+							register_dlopen_file_owning_path(analysis, path, caller, true);
 						}
 						needle++;
 					} else {
@@ -2550,14 +2564,7 @@ static void discovered_nss_provider(struct program_state *analysis, const struct
 	*buf++ = '.';
 	*buf++ = '2';
 	*buf++ = '\0';
-	struct loaded_binary *binary = register_dlopen_file(analysis, library_name, caller, false);
-	if (binary != NULL) {
-		if (binary->path == library_name) {
-			binary->owns_path = true;
-			return;
-		}
-	}
-	free(library_name);
+	register_dlopen_file_owning_path(analysis, library_name, caller, false);
 }
 
 __attribute__((nonnull(1, 2)))
