@@ -1601,7 +1601,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		}
 		if (entry_registers_are_subset_of_registers(entry, registers->registers, relevant_registers)) {
 			// new register values are a superset of an existing entry, widen and reuse it
-			for_each_bit(relevant_registers, bit, i) {
+			for_each_bit(relevant_registers & ALL_REGISTERS, bit, i) {
 				if (entry->widen_count[i] >= 15) {
 					// widened too many times
 					goto continue_search_initial;
@@ -1654,7 +1654,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
 			register_mask widened = 0;
-			for_each_bit(relevant_registers, bit, r) {
+			for_each_bit(relevant_registers & ALL_REGISTERS, bit, r) {
 				if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
 					continue;
 				}
@@ -1756,7 +1756,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 					}
 				}
 			}
-			for_each_bit(widenable_registers, bit, i) {
+			for_each_bit(widenable_registers & ALL_REGISTERS, bit, i) {
 				clear_register(&out_registers->registers[i]);
 				out_registers->sources[i] = 0;
 			}
@@ -3229,14 +3229,14 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
-		for_each_bit(relevant_registers, bit, i) {
+		for_each_bit(relevant_registers & ALL_REGISTERS, bit, i) {
 			if (register_is_partially_known(&ancestor->current_state.registers[i])) {
 				new_relevant_registers |= ancestor->current_state.sources[i];
 			}
 		}
 		new_relevant_registers &= ~((register_mask)1 << REGISTER_SP);
 		register_mask discarded_registers = (register_mask)1 << REGISTER_SP;
-		for_each_bit(new_relevant_registers, bit, i) {
+		for_each_bit(new_relevant_registers & ALL_REGISTERS, bit, i) {
 			if (!register_is_partially_known(&ancestor->entry_state->registers[i])) {
 				LOG("register is not known, skipping requiring", name_for_register(i));
 				new_relevant_registers &= ~bit;
