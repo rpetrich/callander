@@ -434,6 +434,9 @@ struct registers {
 	register_mask matches[REGISTER_COUNT];
 #if STORE_LAST_MODIFIED
 	ins_ptr last_modify_ins[REGISTER_COUNT];
+#define last_modify_syscall_register last_modify_ins[REGISTER_SYSCALL_NR]
+#else
+	ins_ptr last_modify_syscall_register;
 #endif
 	struct decoded_rm mem_rm;
 	struct x86_comparison compare_state;
@@ -568,6 +571,11 @@ enum {
 	LINKER_SYMBOL = 1 << 1,
 	DEBUG_SYMBOL = 1 << 2,
 	DEBUG_SYMBOL_FORCING_LOAD = DEBUG_SYMBOL | (1 << 3),
+#if 0
+	INTERNAL_COMMON_SYMBOL = NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD,
+#else
+	INTERNAL_COMMON_SYMBOL = NORMAL_SYMBOL | LINKER_SYMBOL,
+#endif
 };
 
 __attribute__((nonnull(1, 2)))

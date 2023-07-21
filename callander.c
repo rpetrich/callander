@@ -396,6 +396,8 @@ const struct registers empty_registers = {
 	.matches = { 0 },
 #if STORE_LAST_MODIFIED
 	.last_modify_ins = { 0 },
+#else
+	.last_modify_syscall_register = NULL,
 #endif
 #if defined(__x86_64__)
 	.mem_rm = invalid_decoded_rm,
@@ -444,6 +446,10 @@ static void register_changed(struct registers *regs, int register_index, __attri
 {
 #if STORE_LAST_MODIFIED
 	regs->last_modify_ins[register_index] = ins;
+#else
+	if (register_index == REGISTER_SYSCALL_NR) {
+		regs->last_modify_syscall_register = ins;
+	}
 #endif
 	if (regs->compare_state.validity != COMPARISON_IS_INVALID) {
 		int compare_register = regs->compare_state.target_register;
@@ -1051,6 +1057,12 @@ static inline void dump_registers(const struct loader_context *loader, const str
 				if (state->last_modify_ins[i] != NULL) {
 					ERROR("last modified at", temp_str(copy_address_description(loader, state->last_modify_ins[i])));
 				}
+#else
+				if (i == REGISTER_SYSCALL_NR) {
+					if (state->last_modify_syscall_register != NULL) {
+						ERROR("last modified at", temp_str(copy_address_description(loader, state->last_modify_syscall_register)));
+					}
+				}
 #endif
 			}
 		}
@@ -1589,6 +1601,9 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 			}
+#if !STORE_LAST_MODIFIED
+			out_registers->last_modify_syscall_register = registers->last_modify_syscall_register;
+#endif
 #pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
@@ -1646,6 +1661,9 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 			}
+#if !STORE_LAST_MODIFIED
+			out_registers->last_modify_syscall_register = registers->last_modify_syscall_register;
+#endif
 #pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
@@ -1965,6 +1983,9 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 			copy.last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 		}
+#if !STORE_LAST_MODIFIED
+		copy.last_modify_syscall_register = registers->last_modify_syscall_register;
+#endif
 		copy.mem_rm = registers->mem_rm;
 		copy.compare_state = registers->compare_state;
 		copy.stack_address_taken = registers->stack_address_taken;
@@ -2874,7 +2895,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		update_known_function(analysis, new_binary, "abort", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		if (analysis->ld_profile != NULL) {
-			ins_ptr dl_start_profile = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_dl_start_profile", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+			ins_ptr dl_start_profile = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_dl_start_profile", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
 			if (dl_start_profile != NULL) {
 				struct registers registers = empty_registers;
@@ -2907,18 +2928,18 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			*get_or_populate_effects(analysis, makecontext, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT;
 		}
 		// block functions that introduce executable code at runtime
-		ins_ptr dl_map_object_from_fd = update_known_function(analysis, new_binary, "_dl_map_object_from_fd", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		ins_ptr dl_map_object_from_fd = update_known_function(analysis, new_binary, "_dl_map_object_from_fd", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		if (dl_map_object_from_fd != NULL) {
 			struct blocked_symbol *blocked = add_blocked_symbol(&analysis->known_symbols, "_dl_map_object_from_fd", 0, true);
 			blocked->value = dl_map_object_from_fd;
 			blocked->is_dlopen = true;
 		}
-		update_known_function(analysis, new_binary, "_dl_relocate_object", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "_dl_relocate_object", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 		update_known_function(analysis, new_binary, "_dl_make_stack_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_INTERPRETER) {
 		// temporary workaround for musl
-		ins_ptr do_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "do_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		ins_ptr do_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "do_setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (do_setxid != NULL) {
 			struct registers registers = empty_registers;
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "do_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
@@ -2926,27 +2947,27 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			analyze_function(analysis, EFFECT_PROCESSED, &registers, do_setxid, &new_caller);
 			analysis->loader.searching_setxid_sighandler = false;
 		}
-		ins_ptr setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		ins_ptr setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (setxid != NULL) {
 			find_and_add_callback(analysis, setxid, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_musl_setxid, NULL);
 		}
-		update_known_function(analysis, new_binary, "cancel_handler", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "cancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
 	}
 	// setxid signal handler callbacks
 	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
 		analysis->loader.searching_setxid_sighandler = true;
 		struct registers registers = empty_registers;
 		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "sighandler_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
-		ins_ptr nptl_setxid_sighandler = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__GI___nptl_setxid_sighandler", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		ins_ptr nptl_setxid_sighandler = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__GI___nptl_setxid_sighandler", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (nptl_setxid_sighandler != NULL) {
 			analyze_function(analysis, EFFECT_PROCESSED, &registers, nptl_setxid_sighandler, &new_caller);
 		}
-		ins_ptr sighandler_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "sighandler_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		ins_ptr sighandler_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "sighandler_setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (sighandler_setxid != NULL) {
 			analyze_function(analysis, EFFECT_PROCESSED, &registers, sighandler_setxid, &new_caller);
 		}
 		analysis->loader.searching_setxid_sighandler = false;
-		ins_ptr nptl_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nptl_setxid", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, NULL);
+		ins_ptr nptl_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nptl_setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (nptl_setxid) {
 			new_caller.description = "__nptl_setxid";
 			analysis->loader.searching_setxid = true;
@@ -4474,7 +4495,7 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 		return 0;
 	}
 	const struct symbol_info *symbols;
-	bool has_symbol = find_any_symbol_by_address(loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL | debug_symbol_types, &symbols, out_function_symbol) != NULL;
+	bool has_symbol = find_any_symbol_by_address(loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL | (debug_symbol_types & INTERNAL_COMMON_SYMBOL), &symbols, out_function_symbol) != NULL;
 	if ((binary->special_binary_flags & BINARY_HAS_CUSTOM_JUMPTABLE_METADATA) == 0) {
 		LOG("binary does not have jump table metadata", binary ? binary->path : "none");
 		return 0;
@@ -4517,7 +4538,7 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 	// workaround for manual jump table in libc's __vfprintf_internal implementation
 	if (binary->special_binary_flags & BINARY_IS_LIBC) {
 		const ElfW(Sym) *symbol = NULL;
-		if (find_any_symbol_by_address(loader, binary, table, DEBUG_SYMBOL_FORCING_LOAD, &symbols, &symbol)) {
+		if (find_any_symbol_by_address(loader, binary, table, INTERNAL_COMMON_SYMBOL & DEBUG_SYMBOL_FORCING_LOAD, &symbols, &symbol)) {
 			const char *name = symbol_name(symbols, symbol);
 			if (fs_strncmp(name, "step", sizeof("step")-1) == 0) {
 				const char *jumps_text = &name[5];
@@ -5055,6 +5076,30 @@ static inline function_effects fallback_effects_if_processing(function_effects e
 	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
 }
 
+static bool is_setxid_name(const char *name)
+{
+	if (name == NULL) {
+		return false;
+	}
+	if (name[0] != 's' || name[1] != 'e' || name[2] != 't') {
+		return false;
+	}
+	name += 3;
+	if (name[0] == 'r' && name[1] == 'e') {
+		name += 2;
+		if (name[0] == 's') {
+			name++;
+		}
+	} else if (name[0] == 'e') {
+		name++;
+	} else if (name[0] == 'g' && name[1] == 'r' && name[2] == 'o' && name[3] == 'u' && name[4] == 'p' && name[5] == 's' && name[6] == '\0') {
+		return true;
+	// } else if (name[0] == 'f' && name[1] == 's') {
+	// 	name += 2;
+	}
+	return (name[0] == 'u' || name[0] == 'g') && name[1] == 'i' && name[2] == 'd' && name[3] == '\0';
+}
+
 __attribute__((noinline))
 static bool is_landing_pad_ins_decode(ins_ptr addr)
 {
@@ -5564,14 +5609,63 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						} else {
 							struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
 							if (binary != NULL) {
-								const struct symbol_info *symbols;
-								const ElfW(Sym) *symbol;
-								if (find_any_symbol_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
-									const char *name = symbol_name(symbols, symbol);
-									if (fs_strcmp(name, "next_line") == 0) {
-										// this is a giant hack
-										self.current_state.registers[REGISTER_RAX].value = self.current_state.registers[REGISTER_RAX].max = __NR_read;
-										goto syscall_nr_is_known;
+								if (binary->special_binary_flags & BINARY_IS_INTERPRETER) {
+									// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
+									if (self.entry[0] == 0x49 && self.entry[1] == 0x89 && self.entry[2] == 0xfb) {
+										if (self.entry[3] == 0x48 && self.entry[4] == 0x89 && self.entry[5] == 0xf0) {
+											if (self.entry[6] == 0x48 && self.entry[7] == 0x89 && self.entry[8] == 0xd7) {
+												if (self.entry[9] == 0x48 && self.entry[10] == 0x89 && self.entry[11] == 0xce) {
+													if (self.entry[12] == 0x4C && self.entry[13] == 0x89 && self.entry[14] == 0xc2) {
+														if (self.entry[15] == 0x4D && self.entry[16] == 0x89 && self.entry[17] == 0xca) {
+															self.description = NULL;
+															LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+															return EFFECT_NONE;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+								if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
+									const struct symbol_info *symbols;
+									const ElfW(Sym) *symbol;
+									if (find_any_symbol_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
+										const char *name = symbol_name(symbols, symbol);
+										if (name != NULL && fs_strcmp(name, "next_line") == 0) {
+											// this is a giant hack
+											self.current_state.registers[REGISTER_RAX].value = self.current_state.registers[REGISTER_RAX].max = __NR_read;
+											goto syscall_nr_is_known;
+										}
+									}
+									if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
+										for (const struct analysis_frame *frame = self.next; frame != NULL; frame = frame->next) {
+											if (find_any_symbol_by_address(&analysis->loader, binary, frame->entry, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
+												const char *name = symbol_name(symbols, symbol);
+												if (name != NULL) {
+													if (is_setxid_name(name)) {
+														if (analysis->loader.setxid_syscall == NULL) {
+															self.description = NULL;
+															analysis->loader.setxid_syscall = self.address;
+															analysis->loader.setxid_syscall_entry = self.entry;
+															LOG("found __nptl_setxid/do_setxid", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+															goto finish_syscall;
+														}
+													} else if (fs_strcmp(name, "pthread_create") == 0) {
+														if (analysis->loader.setxid_sighandler_syscall == NULL) {
+															self.description = NULL;
+															analysis->loader.setxid_sighandler_syscall = self.address;
+															analysis->loader.setxid_sighandler_syscall_entry = self.entry;
+															LOG("found __nptl_setxid_sighandler", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+															goto finish_syscall;
+														}
+													}
+												}
+											}
+										}
+									}
+									if (analysis->loader.setxid_syscall == self.address || analysis->loader.setxid_sighandler_syscall == self.address) {
+										goto finish_syscall;
 									}
 								}
 							}
@@ -5612,6 +5706,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 							DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
 						}
+					finish_syscall:
 						break;
 					}
 					case 0x0b: // ud2
@@ -8432,7 +8527,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 	return 0;
 }
 
-static void *find_any_symbol_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol)
+static void *find_any_symbol_by_address(__attribute__((unused)) const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol)
 {
 	if ((symbol_types & NORMAL_SYMBOL) && binary->has_symbols) {
 		const struct symbol_info *symbols = &binary->symbols;
@@ -8675,17 +8770,19 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	if (analysis->loader.binaries == NULL) {
 		new_binary->special_binary_flags |= BINARY_IS_MAIN;
 	}
-	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
-		result = load_debuglink(&analysis->loader, new_binary, false);
-		if (result < 0) {
-			if (result == -ENOENT || result == -ENOEXEC) {
-				print_debug_symbol_requirement(new_binary);
-			} else {
-				ERROR("failed to load debug symbols for", new_binary->path);
-				ERROR("error was", fs_strerror(result));
+	if (INTERNAL_COMMON_SYMBOL & DEBUG_SYMBOL_FORCING_LOAD) {
+		if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
+			result = load_debuglink(&analysis->loader, new_binary, false);
+			if (result < 0) {
+				if (result == -ENOENT || result == -ENOEXEC) {
+					print_debug_symbol_requirement(new_binary);
+				} else {
+					ERROR("failed to load debug symbols for", new_binary->path);
+					ERROR("error was", fs_strerror(result));
+				}
+				free(new_binary);
+				return result;
 			}
-			free(new_binary);
-			return result;
 		}
 	}
 	if (analysis->loader.binaries == NULL) {
