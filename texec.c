@@ -54,7 +54,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	// TODO: load LD_PRELOAD binaries
 
 	// finish loading the main binary
-	result = finish_loading_binary(analysis, loaded, EFFECT_AFTER_STARTUP, false);
+	result = finish_loading_binary(analysis, loaded, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, false);
 	if (result != 0) {
 		DIE("failed to finish loading main binary", fs_strerror(result));
 	}
@@ -64,14 +64,14 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
 	LOG("size", (uintptr_t)loaded->info.size);
 	struct analysis_frame new_caller = { .address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, loaded->info.entrypoint, &new_caller);
+	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &empty_registers, loaded->info.entrypoint, &new_caller);
 
 	// interpreter entrypoint
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
 		LOG("assuming interpreter can run after startup");
 		struct analysis_frame interpreter_caller = { .address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED, &empty_registers, interpreter->info.entrypoint, &interpreter_caller);
+		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &empty_registers, interpreter->info.entrypoint, &interpreter_caller);
 	} else {
 		LOG("no interpreter for this binary");
 	}

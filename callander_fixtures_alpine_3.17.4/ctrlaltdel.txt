@@ -4,8 +4,6 @@ open(/sbin/ctrlaltdel+0x7121, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_
 open(/sbin/ctrlaltdel+0x7121, any, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, 0x88800, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
-close(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-close(any) @ ld-musl-x86_64.so.1+0x583bc
 close(any) @ ld-musl-x86_64.so.1+0x58412(__map_file*+78)
 close(any) @ ld-musl-x86_64.so.1+0x58448(__map_file*+132)
 fstat(any, any) @ ld-musl-x86_64.so.1+0x583fb(__map_file*+55)
@@ -28,14 +26,12 @@ rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x49228(__restore_sigs*+21)
 rt_sigprocmask(1, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_sigaction*+155)
 rt_sigprocmask(0, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
-rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)
 ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a883(__stdout_write*+48)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
-dup(any) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

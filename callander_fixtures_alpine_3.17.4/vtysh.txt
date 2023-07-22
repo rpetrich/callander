@@ -16,7 +16,6 @@ open(any, 0x88800, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x1c470(opendir+47)
 close(any) @ ld-musl-x86_64.so.1+0x3c34d(if_indextoname+72)
 close(any) @ ld-musl-x86_64.so.1+0x3c62d(if_nametoindex+84)
-close(any) @ ld-musl-x86_64.so.1+0x3e669(cleanup*+5)
 close(any) @ ld-musl-x86_64.so.1+0x41d6b(child*+476)
 close(any) @ ld-musl-x86_64.so.1+0x41e1c(child*+653)
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
@@ -58,7 +57,6 @@ rt_sigprocmask(1, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_sigaction*+155
 rt_sigprocmask(2, 0, /usr/bin/vtysh+0xdc788, 8) @ ld-musl-x86_64.so.1+0x49a27(__sigsetjmp_tail*+35)
 rt_sigprocmask(2, /usr/bin/vtysh+0xdc788, 0, 8) @ ld-musl-x86_64.so.1+0x49a27(__sigsetjmp_tail*+35)
 rt_sigprocmask(any, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
-rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(0, 0x5402, libzebra.so.1+0x61080) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5401, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5402, libcrypto.so.3+0x3b5320) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
@@ -108,8 +106,10 @@ sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
+sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 shutdown(any, 2) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
@@ -133,7 +133,6 @@ wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
-shmdt(any) @ ld-musl-x86_64.so.1+0x1f117(shmdt+6)
 fcntl(any, 0x2-0x3, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 4, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 6, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
@@ -176,9 +175,7 @@ getuid() @ ld-musl-x86_64.so.1+0x5b389(getuid+5)
 getgid() @ ld-musl-x86_64.so.1+0x41cd7(child*+328)
 getgid() @ ld-musl-x86_64.so.1+0x5b27b(getgid+5)
 setuid(any) @ ld-musl-x86_64.so.1+0x41cfe(child*+367)
-setuid(any) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 setgid(any) @ ld-musl-x86_64.so.1+0x41ce1(child*+338)
-setgid(any) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 geteuid() @ ld-musl-x86_64.so.1+0x5b273(geteuid+5)
 getegid() @ ld-musl-x86_64.so.1+0x5b26b(getegid+5)
 setpgid(0, any) @ ld-musl-x86_64.so.1+0x41cbe(child*+303)

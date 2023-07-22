@@ -104,6 +104,11 @@ enum {
 	OVERRIDE_ACCESS_SLOT_COUNT = 3,
 };
 
+struct address_and_size {
+	ins_ptr address;
+	size_t size;
+};
+
 struct loaded_binary {
 	const char *path;
 	unsigned long path_hash;
@@ -140,10 +145,10 @@ struct loaded_binary {
 	char *debuglink;
 	char *build_id;
 	size_t build_id_size;
-	uintptr_t override_access_starts[OVERRIDE_ACCESS_SLOT_COUNT];
-	uintptr_t override_access_ends[OVERRIDE_ACCESS_SLOT_COUNT];
+	struct address_and_size override_access_ranges[OVERRIDE_ACCESS_SLOT_COUNT];
 	int override_access_permissions[OVERRIDE_ACCESS_SLOT_COUNT];
-	ElfW(Sym) libcrypto_dso_meth_dl;
+	struct address_and_size *skipped_symbols;
+	size_t skipped_symbol_count;
 	char loaded_path[];
 };
 
@@ -469,7 +474,8 @@ enum effects {
 	EFFECT_PROCESSING    = 1 << 4, // set if the function is currently in the middle of being processed
 	EFFECT_AFTER_STARTUP = 1 << 5, // set if the function could run after startup
 	EFFECT_ENTRY_POINT   = 1 << 6, // set if the function is run as the program entrypoint
-	VALID_EFFECTS        = (EFFECT_ENTRY_POINT << 1) - 1,
+	EFFECT_ENTER_CALLS   = 1 << 7, // set if should traverse calls instead of recording loads
+	VALID_EFFECTS        = (EFFECT_ENTER_CALLS << 1) - 1,
 };
 typedef uint8_t function_effects;
 
@@ -543,11 +549,6 @@ struct mapped_region_info {
 __attribute__((nonnull(1, 2)))
 struct sock_fprog generate_seccomp_program(struct loader_context *loader, const struct recorded_syscalls *syscalls, const struct mapped_region_info *blocked_memory_regions, uint32_t syscall_range_low, uint32_t syscall_range_high);
 
-struct address_and_size {
-	ins_ptr address;
-	size_t size;
-};
-
 enum {
 	SKIPPED_LEA_AREA_COUNT = 32,
 };
@@ -602,6 +603,8 @@ struct unreachable_instructions {
 #endif
 };
 
+typedef void (*address_loaded_callback)(struct program_state *, ins_ptr, const struct analysis_frame *, void *callback_data);
+
 struct program_state {
 	struct loader_context loader;
 	struct searched_instructions search;
@@ -614,6 +617,9 @@ struct program_state {
 	struct dlopen_path *dlopen;
 	const char *main_function_name;
 	struct unreachable_instructions unreachables;
+	ins_ptr skipped_call;
+	address_loaded_callback address_loaded;
+	void *address_loaded_data;
 };
 
 __attribute__((nonnull(1, 2, 5)))

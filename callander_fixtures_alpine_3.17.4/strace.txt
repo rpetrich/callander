@@ -1,6 +1,6 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-read(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+read(any, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, 0x8002, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
@@ -28,7 +28,6 @@ mmap(any, 0x1000, 0, 50, 0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x390f3(
 mprotect(NULL-0xfffffffffffff000, any, 3) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x58350
-brk(0) @ ld-musl-x86_64.so.1+0x20425(sbrk+22)
 brk(0) @ ld-musl-x86_64.so.1+0x26e0a(__malloc_alloc_meta*+234)
 brk(any) @ ld-musl-x86_64.so.1+0x26e2f(__malloc_alloc_meta*+271)
 brk(any) @ ld-musl-x86_64.so.1+0x26e59(__malloc_alloc_meta*+313)
@@ -41,7 +40,6 @@ rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, 8) @ ld-musl-x86_
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x49228(__restore_sigs*+21)
 rt_sigprocmask(1, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_sigaction*+155)
 rt_sigprocmask(any, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
-rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(any, 0x8910, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0xb702, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)
@@ -121,8 +119,6 @@ getgid() @ ld-musl-x86_64.so.1+0x5b27b(getgid+5)
 geteuid() @ ld-musl-x86_64.so.1+0x5b273(geteuid+5)
 setpgid(0, 0) @ ld-musl-x86_64.so.1+0x5b74e(setpgid+12)
 setsid() @ ld-musl-x86_64.so.1+0x5b7a9(setsid+6)
-setreuid(any u32, any u32) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
-setregid(any u32, any u32) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 setgroups(any, any) @ ld-musl-x86_64.so.1+0x20480(do_setgroups*+24)
 setgroups(any, any) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 prctl(22, 2, 0, any, any) @ ld-musl-x86_64.so.1+0x202e9(prctl+71)

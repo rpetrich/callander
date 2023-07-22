@@ -1156,7 +1156,7 @@ static char *copy_decoded_rm_description(const struct loader_context *loader, st
 
 static inline const char *name_for_effect(function_effects effects)
 {
-	effects &= ~(EFFECT_PROCESSED | EFFECT_PROCESSING | EFFECT_STICKY_EXITS) & VALID_EFFECTS;
+	effects &= ~(EFFECT_PROCESSED | EFFECT_PROCESSING | EFFECT_STICKY_EXITS | EFFECT_ENTER_CALLS) & VALID_EFFECTS;
 	if (effects == EFFECT_NONE) {
 		return "none";
 	}
@@ -2265,7 +2265,7 @@ static void handle_forkAndExecInChild1(struct program_state *analysis, ins_ptr i
 		ERROR_FLUSH();
 		fs_exit(1);
 	}
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS | EFFECT_ENTER_CALLS);
 	add_blocked_symbol(&analysis->known_symbols, "syscall.forkAndExecInChild1", 0, true)->value = ins;
 }
 
@@ -2307,7 +2307,7 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 			if (protection_for_address_in_binary(binary, (uintptr_t)ins, NULL) & PROT_EXEC) {
 				LOG("symbol contains executable code that might be dlsym'ed", symbol_name(symbols, symbol));
 				struct analysis_frame new_caller = { .address = ins, .description = symbol_name(symbols, symbol), .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = false, };
-				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &empty_registers, ins, &new_caller);
+				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, ins, &new_caller);
 			} else {
 				LOG("symbol is not executable", symbol_name(symbols, symbol));
 			}
@@ -2354,7 +2354,7 @@ struct loaded_binary *register_dlopen_file(struct program_state *analysis, const
 				}
 			}
 		}
-		result = finish_loading_binary(analysis, new_binary, EFFECT_AFTER_STARTUP, skip_analysis);
+		result = finish_loading_binary(analysis, new_binary, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, skip_analysis);
 		if (result != 0) {
 			LOG("failed to finish loading dlopen'ed path, assuming it will fail at runtime", path);
 			return NULL;
@@ -2486,7 +2486,7 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 		.token = *token,
 		.is_entry = true,
 	};
-	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
+	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
 	register_dlopen_file(analysis, needed_path, caller, false);
 }
 
@@ -2501,7 +2501,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 		.token = *token,
 		.is_entry = true,
 	};
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_RETURNS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_RETURNS | EFFECT_ENTER_CALLS);
 	*token = self.token;
 	if (analysis->loader.loaded_gconv_libraries) {
 		return;
@@ -2677,7 +2677,7 @@ static void handle_nss_usage(struct program_state *analysis, ins_ptr ins, __attr
 		.token = *token,
 		.is_entry = true,
 	};
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTER_CALLS);
 	*token = self.token;
 }
 
@@ -2697,7 +2697,7 @@ static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr in
 		self.current_state.sources[first_arg] = 0;
 	}
 	function_effects effects = analyze_function(analysis, required_effects, &self.current_state, syscall_function, &self);
-	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
+	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS);
 }
 
 static void handle_libcap_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
@@ -2722,7 +2722,7 @@ static void handle_libcap_syscall(struct program_state *analysis, ins_ptr ins, _
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_chroot);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 	}
-	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED);
+	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS);
 }
 
 static void handle_ruby_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *syscall_function)
@@ -2730,7 +2730,7 @@ static void handle_ruby_syscall(struct program_state *analysis, ins_ptr ins, __a
 	LOG("encountered ruby syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	if (!register_is_partially_known_32bit(&state->registers[sysv_argument_abi_register_indexes[0]])) {
 		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", 0, false)->value = caller->address;
-		set_effects(&analysis->search, ins, token, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_RETURNS | EFFECT_EXITS);
+		set_effects(&analysis->search, ins, token, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
 	}
 }
 
@@ -2738,13 +2738,13 @@ static void handle_golang_unix_sched_affinity(struct program_state *analysis, in
 {
 	LOG("encountered unix.schedAffinity call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	// skip affinity
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
 	LOG("skipping unix.schedAffinity");
 }
 
 static void handle_openssl_dso_load(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
 	if (fs_access("/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
 		register_dlopen(analysis, "/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, true);
 	}
@@ -2809,15 +2809,47 @@ static void force_protection_for_symbol(const struct loader_context *loader, str
 	void *address = resolve_binary_loaded_symbol(loader, binary, symbol_name, NULL, symbol_types, &symbol);
 	if (address != NULL) {
 		for (int i = 0; i < OVERRIDE_ACCESS_SLOT_COUNT; i++) {
-			if (binary->override_access_starts[i] == 0) {
-				binary->override_access_starts[i] = (uintptr_t)address;
-				binary->override_access_ends[i] = (uintptr_t)address + symbol->st_size;
+			if (binary->override_access_ranges[i].address == 0) {
+				binary->override_access_ranges[i].address = address;
+				binary->override_access_ranges[i].size = symbol->st_size;
 				binary->override_access_permissions[i] = prot;
 				return;
 			}
 		}
 		DIE("too many override access symbols in", binary->path);
 	}
+}
+
+static void ignored_load_callback(struct program_state *analysis, ins_ptr address, const struct analysis_frame *frame, void *callback_data)
+{
+	struct loaded_binary *binary = binary_for_address(&analysis->loader, address);
+	if (binary != NULL) {
+		LOG("skipping function pointers at", temp_str(copy_address_description(&analysis->loader, address)));
+		LOG("and size", (intptr_t)callback_data);
+		LOG("referenced from", temp_str(copy_address_description(&analysis->loader, frame->address)));
+		size_t old_count = binary->skipped_symbol_count;
+		size_t new_count = old_count + 1;
+		binary->skipped_symbols = realloc(binary->skipped_symbols, sizeof(*binary->skipped_symbols) * new_count);
+		binary->skipped_symbols[old_count] = (struct address_and_size){
+			.address = address,
+			.size = (size_t)callback_data,
+		};
+		binary->skipped_symbol_count = new_count;
+	}
+}
+
+__attribute__((always_inline))
+__attribute__((nonnull(1, 2, 3, 4)))
+static inline function_effects analyze_function_for_ignored_load(struct program_state *analysis, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, size_t ignored_load_size)
+{
+	address_loaded_callback old_callback = analysis->address_loaded;
+	analysis->address_loaded = ignored_load_callback;
+	void *old_data = analysis->address_loaded_data;
+	analysis->address_loaded_data = (void *)ignored_load_size;
+	function_effects result = analyze_function(analysis, EFFECT_PROCESSED /* not EFFECT_ENTER_CALLS! */, entry_state, ins, caller);
+	analysis->address_loaded = old_callback;
+	analysis->address_loaded_data = old_data;
+	return result;
 }
 
 __attribute__((nonnull(1, 2)))
@@ -2835,7 +2867,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 				continue;
 			}
 			blocked_symbols[i].value = value;
-			find_and_add_callback(analysis, value, 0, 0, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS, blocked_function_called, (void *)blocked_symbols[i].name);
+			find_and_add_callback(analysis, value, 0, 0, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS | EFFECT_ENTER_CALLS, blocked_function_called, (void *)blocked_symbols[i].name);
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);
@@ -2858,7 +2890,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			struct registers registers = empty_registers;
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "__gconv_open", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 			analysis->loader.searching_gconv_dlopen = true;
-			analyze_function(analysis, EFFECT_PROCESSED, &registers, gconv_open, &new_caller);
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, gconv_open, &new_caller);
 			if (analysis->loader.gconv_dlopen != NULL) {
 				struct registers state = empty_registers;
 				struct effect_token token;
@@ -2867,7 +2899,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			}
 			analysis->loader.searching_gconv_dlopen = false;
 		}
-		// update_known_function(analysis, new_binary, &known_symbols->gconv_find_shlib, "__gconv_find_shlib", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_RETURNS | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT);
+		// update_known_function(analysis, new_binary, &known_symbols->gconv_find_shlib, "__gconv_find_shlib", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_RETURNS | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 		// load nss libraries if an nss function is used
 		ins_ptr nss_lookup_function = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup_function", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (nss_lookup_function) {
@@ -2900,7 +2932,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			if (dl_start_profile != NULL) {
 				struct registers registers = empty_registers;
 				struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "_dl_start_profile", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
-				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, &registers, dl_start_profile, &new_caller);
+				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, dl_start_profile, &new_caller);
 			}
 		}
 		ins_ptr error = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "error", NULL, NORMAL_SYMBOL, NULL);
@@ -2909,7 +2941,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			struct effect_token token;
 			struct registers empty = empty_registers;
 			empty.registers[sysv_argument_abi_register_indexes[0]].value = 1;
-			*get_or_populate_effects(analysis, error, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT;
+			*get_or_populate_effects(analysis, error, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS;
 			add_relevant_registers(&analysis->search, &analysis->loader, error, &empty, 0, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], &token);
 		}
 		ins_ptr error_at_line = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "error_at_line", NULL, NORMAL_SYMBOL, NULL);
@@ -2918,24 +2950,24 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			struct effect_token token;
 			struct registers empty = empty_registers;
 			empty.registers[sysv_argument_abi_register_indexes[0]].value = 1;
-			*get_or_populate_effects(analysis, error, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT;
+			*get_or_populate_effects(analysis, error, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS;
 			add_relevant_registers(&analysis->search, &analysis->loader, error_at_line, &empty, 0, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], &token);
 		}
 		ins_ptr makecontext = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "makecontext", NULL, NORMAL_SYMBOL, NULL);
 		if (makecontext) {
 			struct effect_token token;
 			struct registers empty = empty_registers;
-			*get_or_populate_effects(analysis, makecontext, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT;
+			*get_or_populate_effects(analysis, makecontext, &empty, EFFECT_NONE, &token) |= EFFECT_EXITS | EFFECT_STICKY_EXITS | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS;
 		}
 		// block functions that introduce executable code at runtime
-		ins_ptr dl_map_object_from_fd = update_known_function(analysis, new_binary, "_dl_map_object_from_fd", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		ins_ptr dl_map_object_from_fd = update_known_function(analysis, new_binary, "_dl_map_object_from_fd", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 		if (dl_map_object_from_fd != NULL) {
 			struct blocked_symbol *blocked = add_blocked_symbol(&analysis->known_symbols, "_dl_map_object_from_fd", 0, true);
 			blocked->value = dl_map_object_from_fd;
 			blocked->is_dlopen = true;
 		}
-		update_known_function(analysis, new_binary, "_dl_relocate_object", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
-		update_known_function(analysis, new_binary, "_dl_make_stack_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "_dl_relocate_object", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
+		update_known_function(analysis, new_binary, "_dl_make_stack_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_INTERPRETER) {
 		// temporary workaround for musl
@@ -2944,14 +2976,14 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			struct registers registers = empty_registers;
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "do_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 			analysis->loader.searching_setxid_sighandler = true;
-			analyze_function(analysis, EFFECT_PROCESSED, &registers, do_setxid, &new_caller);
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, do_setxid, &new_caller);
 			analysis->loader.searching_setxid_sighandler = false;
 		}
 		ins_ptr setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (setxid != NULL) {
 			find_and_add_callback(analysis, setxid, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_musl_setxid, NULL);
 		}
-		update_known_function(analysis, new_binary, "cancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "cancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
 	// setxid signal handler callbacks
 	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
@@ -2960,25 +2992,25 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "sighandler_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 		ins_ptr nptl_setxid_sighandler = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__GI___nptl_setxid_sighandler", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (nptl_setxid_sighandler != NULL) {
-			analyze_function(analysis, EFFECT_PROCESSED, &registers, nptl_setxid_sighandler, &new_caller);
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, nptl_setxid_sighandler, &new_caller);
 		}
 		ins_ptr sighandler_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "sighandler_setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (sighandler_setxid != NULL) {
-			analyze_function(analysis, EFFECT_PROCESSED, &registers, sighandler_setxid, &new_caller);
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, sighandler_setxid, &new_caller);
 		}
 		analysis->loader.searching_setxid_sighandler = false;
 		ins_ptr nptl_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nptl_setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (nptl_setxid) {
 			new_caller.description = "__nptl_setxid";
 			analysis->loader.searching_setxid = true;
-			analyze_function(analysis, EFFECT_PROCESSED, &registers, nptl_setxid, &new_caller);
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, nptl_setxid, &new_caller);
 			analysis->loader.searching_setxid = false;
 		}
 		// assume new libraries won't be loaded after startup
-		update_known_function(analysis, new_binary, "__make_stacks_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT);
+		update_known_function(analysis, new_binary, "__make_stacks_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
 	if (binary_has_flags(new_binary, BINARY_IS_MAIN | BINARY_IS_GOLANG)) {
-		update_known_function(analysis, new_binary, "runtime.runPerThreadSyscall", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS);
+		update_known_function(analysis, new_binary, "runtime.runPerThreadSyscall", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTER_CALLS);
 		void *forkAndExecInChild1 = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "syscall.forkAndExecInChild1", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (forkAndExecInChild1 != NULL) {
 			find_and_add_callback(analysis, forkAndExecInChild1, 0, 0, 0, EFFECT_NONE, handle_forkAndExecInChild1, NULL);
@@ -2999,16 +3031,8 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		}
 		void *DSO_METHOD_openssl = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "DSO_METHOD_openssl", NULL, NORMAL_SYMBOL, NULL);
 		if (DSO_METHOD_openssl != NULL) {
-			size_t pre_count = analysis->search.loaded_address_count;
-			struct registers registers = empty_registers;
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "DSO_METHOD_openssl", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
-			analyze_function(analysis, EFFECT_PROCESSED, &registers, DSO_METHOD_openssl, &new_caller);
-			size_t post_count = analysis->search.loaded_address_count;
-			if (pre_count < post_count) {
-				uintptr_t address = analysis->search.loaded_addresses[pre_count];
-				new_binary->libcrypto_dso_meth_dl.st_value = address - (uintptr_t)new_binary->info.base;
-				new_binary->libcrypto_dso_meth_dl.st_size = 12 * sizeof(uintptr_t);
-			}
+			analyze_function_for_ignored_load(analysis, &new_caller.current_state, DSO_METHOD_openssl, &new_caller, 12 * sizeof(uintptr_t));
 		}
 	}
 	if ((new_binary->special_binary_flags & BINARY_IS_SECCOMP) && new_binary->has_symbols) {
@@ -4486,7 +4510,7 @@ static void set_compare_from_operation(struct registers *regs, int reg, uintptr_
 	};
 }
 
-static const ElfW(Sym) *find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address);
+static bool find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address, struct address_and_size *out_symbol);
 static void *find_any_symbol_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol);
 
 static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader, struct loaded_binary *binary, const void *table, ins_ptr ins, int debug_symbol_types, const ElfW(Sym) **out_function_symbol)
@@ -5235,13 +5259,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (ins == self.entry || (ins == &self.entry[4] && is_landing_pad_ins_decode(self.entry))) {
 						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
 					}
-					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
 			}
 			case INS_JUMPS_OR_CONTINUES: {
-				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING);
+				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 				goto update_and_return;
 			}
 		}
@@ -5261,7 +5285,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 			if (modrm.reg == 2) { // TODO: do we need this?
 				if (required_effects & EFFECT_ENTRY_POINT) {
-					required_effects |= EFFECT_AFTER_STARTUP;
+					required_effects |= EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS;
 				}
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				LOG("found call*");
@@ -5282,10 +5306,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						DIE("to non-executable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.value)));
 #endif
 						LOG("call* to non-executable address, assuming all effects", address.value);
+					} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
+						LOG("skipping call when searching for address loads");
+						analysis->skipped_call = (ins_ptr)address.value;
 					} else {
 						self.description = "indirect call";
 						function_effects more_effects = analyze_call(analysis, required_effects & ~EFFECT_ENTRY_POINT, ins, (ins_ptr)address.value, &self);
-						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP);
+						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 						LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
 						if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
@@ -5321,10 +5348,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 								LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
 								effects |= EFFECT_EXITS | EFFECT_RETURNS;
+							} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
+								LOG("skipping call when searching for address loads");
+								analysis->skipped_call = dest;
 							} else {
 								self.description = "indirect call";
 								function_effects more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
-								effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP);
+								effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 								LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
 								if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
@@ -5434,7 +5464,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 					LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
-					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
 					LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
@@ -5627,7 +5657,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 									}
 								}
-								if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
+								if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
 									const struct symbol_info *symbols;
 									const ElfW(Sym) *symbol;
 									if (find_any_symbol_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
@@ -6221,7 +6251,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												}
 											}
 											set_register(&copy.registers[dest], dest);
-											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 											LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										}
 										LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -6859,7 +6889,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											}
 										}
 										set_register(&copy.registers[reg], relative);
-										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
 										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
@@ -7411,45 +7441,53 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										// main
 										analysis->main = (uintptr_t)address;
 										LOG("rip-relative lea is to executable address, assuming it is the main function");
-										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
+										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
 									} else if (reg == sysv_argument_abi_register_indexes[3]) {
 										// init, will be called before main, can skip it
 									} else if (reg == sysv_argument_abi_register_indexes[4] || reg == sysv_argument_abi_register_indexes[5]) {
 										LOG("rip-relative lea is to executable address, assuming it is the finit function");
-										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
+										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
 									} else {
 										LOG("rip-relative lea is to executable address, assuming it could be called during startup");
 										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, address, &self);
 									}
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
-									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP), &empty_registers, self.address, "lea");
-									//analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, address, &self);
+									if ((effects & EFFECT_ENTER_CALLS) == 0) {
+										queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "lea");
+										//analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
+									}
 								}
 							}
 						} else if (prot & PROT_READ) {
-							add_loaded_address(&analysis->search, (uintptr_t)address);
-							LOG("rip-relative lea is to readable address, assuming it is data");
-							const ElfW(Sym) *symbol = find_skipped_symbol_for_address(&analysis->loader, binary, address);
-							if (symbol) {
-								if (symbol == &binary->libcrypto_dso_meth_dl) {
-									analysis->loader.searching_libcrypto_dlopen = true;
+							if ((effects & EFFECT_ENTER_CALLS) == 0) {
+								if (analysis->address_loaded != NULL) {
+									analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
 								}
-								uintptr_t *symbol_data = (uintptr_t *)((uintptr_t)binary->info.base + symbol->st_value - (uintptr_t)binary->info.default_base);
-								int size = symbol->st_size / sizeof(uintptr_t);
-								for (int i = 0; i < size; i++) {
-									uintptr_t data = symbol_data[i];
-									if (protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
-										LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
-										LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
-										self.description = "load address";
-										struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
-										analyze_function(analysis, effects, &empty_registers, (ins_ptr)data, &new_caller);
+							} else {
+								add_loaded_address(&analysis->search, (uintptr_t)address);
+								LOG("rip-relative lea is to readable address, assuming it is data");
+								struct address_and_size symbol;
+								if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
+									if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+										analysis->loader.searching_libcrypto_dlopen = true;
 									}
-								}
-								if (symbol == &binary->libcrypto_dso_meth_dl) {
-									analyze_libcrypto_dlopen(analysis);
-									analysis->loader.searching_libcrypto_dlopen = false;
+									const uintptr_t *symbol_data = (const uintptr_t *)symbol.address;
+									int size = symbol.size / sizeof(uintptr_t);
+									for (int i = 0; i < size; i++) {
+										uintptr_t data = symbol_data[i];
+										if (protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
+											LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
+											LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
+											self.description = "load address";
+											struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+											analyze_function(analysis, effects, &empty_registers, (ins_ptr)data, &new_caller);
+										}
+									}
+									if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+										analyze_libcrypto_dlopen(analysis);
+										analysis->loader.searching_libcrypto_dlopen = false;
+									}
 								}
 							}
 						} else {
@@ -7635,9 +7673,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				void *address = (void *)dest.value;
 				if (protection_for_address(&analysis->loader, address, NULL, NULL) & PROT_EXEC) {
 					LOG("mov is to executable address, assuming it could be called after startup");
-					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, self.address, "mov");
+					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
 					// self.description = "mov";
-					// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (ins_ptr)address, &self);
+					// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)address, &self);
 				}
 				break;
 			}
@@ -7729,20 +7767,20 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								// main
 								analysis->main = (uintptr_t)state.value;
 								LOG("mov is to executable address, assuming it is the main function");
-								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (ins_ptr)state.value, &self);
+								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)state.value, &self);
 							} else if (rm == sysv_argument_abi_register_indexes[3]) {
 								// init, will be called before main, can skip it
 							} else if (rm == sysv_argument_abi_register_indexes[4] || rm == sysv_argument_abi_register_indexes[5]) {
 								LOG("mov is to executable address, assuming it is the finit function");
-								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (ins_ptr)state.value, &self);
+								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)state.value, &self);
 							} else {
 								LOG("mov is to executable address, assuming it could be called during startup");
 								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, (ins_ptr)state.value, &self);
 							}
 						} else {
 							LOG("mov is to executable address, assuming it could be called after startup");
-							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, self.address, "mov");
-							// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP, &empty_registers, (ins_ptr)state.value, &self);
+							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
+							// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)state.value, &self);
 						}
 					} else {
 						LOG("mov is to non-executable value, assuming it is data");
@@ -7893,13 +7931,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
+					LOG("skipping call when searching for address loads");
+					analysis->skipped_call = (ins_ptr)dest;
 				} else {
 					if (required_effects & EFFECT_ENTRY_POINT) {
-						required_effects |= EFFECT_AFTER_STARTUP;
+						required_effects |= EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS;
 					}
 					self.description = "call";
 					function_effects more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)dest, &self);
-					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP);
+					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					LOG("resuming from call", temp_str(copy_address_description(&analysis->loader, ins)));
 					if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
@@ -9094,90 +9135,39 @@ static int load_all_needed_and_relocate(struct program_state *analysis)
 	return 0;
 }
 
-static const ElfW(Sym) *find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address)
+static bool find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address, struct address_and_size *out_symbol)
 {
 	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBCRYPTO)) == 0) {
-		return NULL;
+		return false;
 	}
-	if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
-		uintptr_t offset = address - binary->info.base;
-		if ((offset >= binary->libcrypto_dso_meth_dl.st_value) && (offset < binary->libcrypto_dso_meth_dl.st_value + binary->libcrypto_dso_meth_dl.st_size)) {
-			return &binary->libcrypto_dso_meth_dl;
+	for (size_t i = 0; i < binary->skipped_symbol_count; i++) {
+		if (address >= (const void *)binary->skipped_symbols[i].address && address < (const void *)binary->skipped_symbols[i].address + binary->skipped_symbols[i].size) {
+			*out_symbol = binary->skipped_symbols[i];
+			return true;
 		}
-		return NULL;
 	}
 	const struct symbol_info *symbols = NULL;
 	const ElfW(Sym) *symbol = NULL;
-	if (find_any_symbol_by_address(loader, binary, address, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, &symbols, &symbol) != NULL) {
-		const char *name = symbol_name(symbols, symbol);
-		if (fs_strcmp(name, "pthread_functions") == 0) {
-			LOG("skipping pthread_functions, since it's assumed pthread_functions will be called properly");
-			return symbol;
-		}
-		if (fs_strcmp(name, "_rtld_global_ro") == 0) {
-			LOG("skipping _rtld_global_ro, since it's assumed dlopen and dlclose won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "authdes_ops") == 0) {
-			LOG("skipping authdes_ops, since it's assumed that authdes_pk_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "auth_unix_ops") == 0) {
-			LOG("skipping auth_unix_ops, since it's assumed that authunix_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "udp_ops") == 0) {
-			LOG("skipping udp_ops, since it's assumed that clntudp_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "svcauthsw") == 0) {
-			LOG("skipping svcauthsw, since it's assumed that _authenticate won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "svcunix_rendezvous_op") == 0) {
-			LOG("skipping svcunix_rendezvous_op, since it's assumed that svcunix_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "svctcp_rendezvous_op") == 0) {
-			LOG("skipping svctcp_rendezvous_op, since it's assumed that svctcp_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "svcudp_op") == 0) {
-			LOG("skipping svcudp_op, since it's assumed that svcudp_bufcreate won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "svcunix_op") == 0) {
-			LOG("skipping svcunix_op, since it's assumed that svcunixfd_create/svcunix_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "svctcp_op") == 0) {
-			LOG("skipping svctcp_op, since it's assumed that svcfd_create/svctcp_create won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "argp_default_argp") == 0) {
-			LOG("skipping argp_default_argp, since it's assumed that argp_parse won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "_IO_proc_jumps") == 0) {
-			LOG("skipping _IO_proc_jumps, since it's assumed that _IO_popen won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "_IO_cookie_jumps") == 0) {
-			LOG("skipping _IO_cookie_jumps, since it's assumed that _IO_cookie_init (or indirectly via fopencookie) won't be called");
-			return symbol;
-		}
-		if (fs_strcmp(name, "link_hash_ops") == 0) {
-			LOG("skipping link_hash_ops, since it's assumed that it will be referenced");
-			return symbol;
-		}
-		if (fs_strcmp(name, "client_ops") == 0) {
-			LOG("skipping client_ops, since it's assumed that it will be referenced");
-			return symbol;
-		}
+	if (find_any_symbol_by_address(loader, binary, address, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, &symbols, &symbol) == NULL) {
+		return false;
+	}
+	const char *name = symbol_name(symbols, symbol);
+	if (fs_strcmp(name, "pthread_functions") == 0) {
+		LOG("skipping pthread_functions, since it's assumed pthread_functions will be called properly");
+	} else if (fs_strcmp(name, "_rtld_global_ro") == 0) {
+		LOG("skipping _rtld_global_ro, since it's assumed dlopen and dlclose won't be called");
+	} else if (fs_strcmp(name, "link_hash_ops") == 0) {
+		LOG("skipping link_hash_ops, since it's assumed that it will be referenced");
+	} else {
 		LOG("callable address in symbol", name);
 		LOG("of binary", binary->path);
+		return false;
 	}
-	return NULL;
+	*out_symbol = (struct address_and_size){
+		.address = (ins_ptr)((uintptr_t)binary->info.base + symbol->st_value - (uintptr_t)binary->info.default_base),
+		.size = symbol->st_size,
+	};
+	return true;
 }
 
 struct golang_init_task {
@@ -9324,8 +9314,48 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 	}
 	void *golangInitTask = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "main..inittask", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 	if (golangInitTask) {
-		analyze_golang_init_task(analysis, effects | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP, golangInitTask);
+		analyze_golang_init_task(analysis, effects | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, golangInitTask);
 	}
+	// search for vtables that should go unsearched until they're referenced explicitly
+	static const struct { const char *name; size_t size; bool inner_call; } function_pointer_ignore_sources[] = {
+		// glibc
+		{"authdes_pk_create", sizeof(uintptr_t) * 5, false}, // authdes_ops
+		{"authunix_create", sizeof(uintptr_t) * 5, false}, // auth_unix_ops
+		{"svctcp_create", sizeof(uintptr_t) * 5, false}, // svctcp_rendezvous_op
+		{"svcunix_create", sizeof(uintptr_t) * 5, false}, // svcunix_rendezvous_op
+		{"svcudp_bufcreate", sizeof(uintptr_t) * 5, false}, // svcudp_op
+		{"svcunixfd_create", sizeof(uintptr_t) * 5, false}, // svcunix_op
+		{"svcfd_create", sizeof(uintptr_t) * 5, false}, // svctcp_op
+		{"clntudp_create", sizeof(uintptr_t) * 5, false}, // udp_ops
+		{"__libc_clntudp_bufcreate", sizeof(uintptr_t) * 5, false}, // udp_ops
+		{"_authenticate", sizeof(uintptr_t) * 4, false}, // svcauthsw
+		{"clntraw_create", sizeof(uintptr_t) * 6, false}, // client_ops
+		{"_IO_cookie_init", sizeof(uintptr_t) * 22, false}, // _IO_cookie_jumps
+		{"fopencookie", sizeof(uintptr_t) * 22, true}, // _IO_cookie_jumps
+		{"_IO_popen", sizeof(uintptr_t) * 22, false}, // _IO_proc_jumps
+		// {"fdopen", sizeof(uintptr_t) * 22, false}, // _IO_wfile_jumps_maybe_mmap
+		{"__gen_tempname", sizeof(uintptr_t) * 3, false}, // tryfunc.0
+		{"gen_tempname_len", sizeof(uintptr_t) * 3, false}, // tryfunc.0
+		{"mkstemp64", sizeof(uintptr_t) * 3, false}, // tryfunc.0
+		// gnulib
+		{"__argp_parse", sizeof(uintptr_t) * 2, false}, // argp_default_argp
+	};
+	analysis->skipped_call = NULL;
+	for (size_t i = 0; i < sizeof(function_pointer_ignore_sources) / sizeof(function_pointer_ignore_sources[0]); i++) {
+		void *func = resolve_binary_loaded_symbol(&analysis->loader, new_binary, function_pointer_ignore_sources[i].name, NULL, NORMAL_SYMBOL, NULL);
+		if (func != NULL) {
+			LOG("found", function_pointer_ignore_sources[i].name);
+			LOG("at", temp_str(copy_address_description(&analysis->loader, func)));
+			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = function_pointer_ignore_sources[i].name, .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+			analyze_function_for_ignored_load(analysis, &new_caller.current_state, func, &new_caller, function_pointer_ignore_sources[i].size);
+			if (function_pointer_ignore_sources[i].inner_call && analysis->skipped_call) {
+				new_caller.current_state = empty_registers;
+				analyze_function_for_ignored_load(analysis, &new_caller.current_state, analysis->skipped_call, &new_caller, function_pointer_ignore_sources[i].size);
+			}
+			analysis->skipped_call = NULL;
+		}
+	}
+	// search sections for function pointers, ignoring vtables we discovered earlier
 	if (new_binary->has_sections) {
 		for (size_t i = 0; i < new_binary->info.section_entry_count; i++) {
 			const ElfW(Shdr) *section = (const ElfW(Shdr) *)((char *)new_binary->sections.sections + i * new_binary->info.section_entry_size);
@@ -9346,9 +9376,10 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 						if (protection_for_address_in_binary(new_binary, data, NULL) & PROT_EXEC) {
 							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[i])));
 							LOG("value of address is, assuming callable", data);
-							if (find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j]) == NULL) {
+							struct address_and_size symbol;
+							if (!find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j], &symbol)) {
 								struct analysis_frame new_caller = { .address = &section_data[j], .description = name, .next = NULL, .current_state = empty_registers, .entry = (void *)&section_data[j], .entry_state = &empty_registers, .token = { 0 }, .is_entry = true};
-								analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | effects, &registers, (ins_ptr)data, &new_caller);
+								analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | effects, &registers, (ins_ptr)data, &new_caller);
 							}
 						}
 					}
@@ -9391,6 +9422,9 @@ void free_loaded_binary(struct loaded_binary *binary) {
 		if (binary->owns_path) {
 			free((void *)binary->path);
 		}
+		if (binary->skipped_symbols) {
+			free(binary->skipped_symbols);
+		}
 		free(binary);
 		binary = next;
 	}
@@ -9420,7 +9454,7 @@ static int protection_for_address_in_binary(const struct loaded_binary *binary, 
 								*out_section = section;
 							}
 							for (int j = 0; j < OVERRIDE_ACCESS_SLOT_COUNT; j++) {
-								if (UNLIKELY(addr >= binary->override_access_starts[j] && addr < binary->override_access_ends[j])) {
+								if (UNLIKELY(addr >= (uintptr_t)binary->override_access_ranges[j].address && addr < (uintptr_t)binary->override_access_ranges[j].address + binary->override_access_ranges[j].size)) {
 									LOG("using override", j);
 									return binary->override_access_permissions[j];
 								}

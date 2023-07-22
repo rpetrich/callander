@@ -34,7 +34,6 @@ rt_sigaction(14, any, any, 8) @ /sbin/ldconfig:0x4795ab
 rt_sigprocmask(0, any, any, 8) @ /sbin/ldconfig:0x40ec79
 rt_sigprocmask(2, any, 0, 8) @ /sbin/ldconfig:0x40ecb9
 rt_sigprocmask(1, any, 0, 8) @ /sbin/ldconfig:0x479764
-rt_sigreturn(any) @ /sbin/ldconfig:0x4794d7
 ioctl(any u32, 0x5401, any) @ /sbin/ldconfig:0x4989f6
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /sbin/ldconfig:0x498998
 pread64(NULL-0xfffffffe, non-NULL, 0x10000-0xffffffffffffffff, any) @ /sbin/ldconfig:0x498998

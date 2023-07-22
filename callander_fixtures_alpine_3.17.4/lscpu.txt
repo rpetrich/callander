@@ -41,7 +41,6 @@ rt_sigprocmask(2, 0, /usr/bin/lscpu+0x1c108, 8) @ ld-musl-x86_64.so.1+0x49a27(__
 rt_sigprocmask(2, /usr/bin/lscpu+0x1c108, 0, 8) @ ld-musl-x86_64.so.1+0x49a27(__sigsetjmp_tail*+35)
 rt_sigprocmask(0, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
-rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(1, 0x5413, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)
 ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a883(__stdout_write*+48)
