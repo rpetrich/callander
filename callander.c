@@ -5954,7 +5954,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								if (lookahead_decoded.unprefixed[0] == 0x0f && lookahead_decoded.unprefixed[1] == 0x11) { // movups xmm2/m128, xmm1
 									x86_mod_rm_t lookahead_modrm = x86_read_modrm(&lookahead_decoded.unprefixed[2]);
 									if (reg == x86_read_reg(lookahead_modrm, lookahead_decoded.prefixes)) {
-										int lookahead_rm = read_rm_ref(&analysis->loader, lookahead_decoded.prefixes, &lookahead, 0, &self.current_state, OPERATION_SIZE_64BIT, READ_RM_REPLACE_MEM, NULL);
+										ins_ptr lookahead_temp = lookahead;
+										int lookahead_rm = read_rm_ref(&analysis->loader, lookahead_decoded.prefixes, &lookahead_temp, 0, &self.current_state, OPERATION_SIZE_64BIT, READ_RM_REPLACE_MEM, NULL);
 										LOG("found xorps+movps, zeroing idiom to register", name_for_register(lookahead_rm));
 										set_register(&self.current_state.registers[lookahead_rm], 0);
 										self.current_state.sources[lookahead_rm] = 0;
