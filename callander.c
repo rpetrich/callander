@@ -4676,7 +4676,7 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 				break;
 			}
 #if BREAK_ON_UNREACHABLES
-			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, peek));
+			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, &peek));
 #endif
 			ins = jump_target;
 			ret = jump_target;
