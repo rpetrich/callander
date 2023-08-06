@@ -545,7 +545,7 @@ static intptr_t waitpid_uninterrupted(pid_t pid, int *status, int options)
 	return result;
 }
 
-static int populate_child_addresses(pid_t pid, struct loader_context *loader)
+static int populate_child_addresses(pid_t pid, struct loader_context *loader, bool allow_unexpected)
 {
 	char procbuf[64];
 	fs_memcpy(procbuf, "/proc/", sizeof("/proc/")-1);
@@ -586,7 +586,9 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader)
 					goto next_mapping;
 				}
 			}
-			DIE("found unexpected binary", &mapping.path[0]);
+			if (!allow_unexpected) {
+				DIE("found unexpected binary", &mapping.path[0]);
+			}
 		}
 	next_mapping:
 		;
@@ -1383,6 +1385,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	int executable_index = 1;
 	bool show_permitted = false;
 	bool show_binaries = false;
+	bool allow_unexpected = false;
 	bool mutable_binary_mappings = false;
 	const char *profile_path = NULL;
 	enum attach_behavior attach = DETACH_AT_START;
@@ -1487,6 +1490,8 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			show_permitted = true;
 		} else if (fs_strcmp(arg, "--show-binaries") == 0) {
 			show_binaries = true;
+		} else if (fs_strcmp(arg, "--allow-unexpected-binaries") == 0) {
+			allow_unexpected = true;
 		} else if (fs_strcmp(arg, "--mutable-binary-mappings") == 0) {
 			mutable_binary_mappings = true;
 		} else if (fs_strcmp(arg, "--profile") == 0) {
@@ -1916,7 +1921,7 @@ skip_analysis:
 	fs_close(wakeup_child_fd);
 
 	// find the mapped addresses so we can determine where main landed
-	result = populate_child_addresses(tracee, &analysis.loader);
+	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
 		DIE("failed to read child process map", fs_strerror(result));
 	}
@@ -1971,7 +1976,7 @@ skip_analysis:
 		return 0;
 	}
 	// find where all the other library addresses are
-	result = populate_child_addresses(tracee, &analysis.loader);
+	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
 		DIE("failed to read child process map", fs_strerror(result));
 	}
