@@ -1975,6 +1975,11 @@ skip_analysis:
 		ERROR_FLUSH();
 		return 0;
 	}
+	// send the original main bytes back, restoring the main function back to its original state
+	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)original_bytes);
+	if (result < 0) {
+		DIE("failed to poke original breakpoint bytes back", fs_strerror(result));
+	}
 	// find where all the other library addresses are
 	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
@@ -2036,11 +2041,6 @@ skip_analysis:
 	}
 	if (profile_path != NULL && !has_read_profile) {
 		write_profile(&analysis.loader, &analysis.syscalls, (ins_ptr)analysis.main, profile_path);
-	}
-	// send the original main bytes back, restoring the main function back to its original state
-	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)original_bytes);
-	if (result < 0) {
-		DIE("failed to poke original breakpoint bytes back", fs_strerror(result));
 	}
 	// read the registers
 	struct user_regs_struct regs;
