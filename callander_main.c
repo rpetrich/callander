@@ -1504,17 +1504,17 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			executable_index++;
 		} else if (fs_strcmp(arg, "--attach-gdb") == 0) {
 			if (attach) {
-				ERROR("--attach-gdb would override previous attachment behavior");
+				ERROR("--attach-gdb overrides previous attachment behavior");
 			}
 			attach = ATTACH_GDB;
 		} else if (fs_strcmp(arg, "--attach-strace") == 0) {
 			if (attach) {
-				ERROR("--attach-strace would override previous attachment behavior");
+				ERROR("--attach-strace overrides previous attachment behavior");
 			}
 			attach = ATTACH_STRACE;
 		} else if (fs_strcmp(arg, "--stay-attached") == 0) {
 			if (attach) {
-				ERROR("--stay-attached would override previous attachment behavior");
+				ERROR("--stay-attached overrides previous attachment behavior");
 				ERROR_FLUSH();
 				return 1;
 			}
