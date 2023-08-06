@@ -6874,7 +6874,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									clear_match(&analysis->loader, &copy, reg, ins);
 									ins_ptr continue_target = next_ins(ins, &decoded);
 									for (uintptr_t i = value; i <= max; i++) {
-										LOG("processing table index", i);
+										LOG("processing table index", (intptr_t)i);
 										int32_t relative = ((const x86_int32 *)base_addr)[i];
 										LOG("processing table value", (intptr_t)relative);
 										ins_ptr jump_addr = (ins_ptr)base_addr + relative;
