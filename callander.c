@@ -7457,11 +7457,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
 									} else {
 										LOG("rip-relative lea is to executable address, assuming it could be called during startup");
-										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, address, &self);
+										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
 									}
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
-									if ((effects & EFFECT_ENTER_CALLS) == 0) {
+									if (effects & EFFECT_ENTER_CALLS) {
 										queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "lea");
 										//analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
 									}
