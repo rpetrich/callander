@@ -171,7 +171,7 @@ static inline bool x86_is_return_instruction(struct x86_instruction *ins)
 // fills the jump target
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 2)))
-enum ins_jump_behavior x86_decode_jump_instruction(const uint8_t *unprefixed, const uint8_t **out_jump);
+enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump);
 
 static inline bool x86_is_jo_instruction(const struct x86_instruction *ins)
 {

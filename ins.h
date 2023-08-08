@@ -38,7 +38,7 @@ typedef const uint8_t *ins_ptr;
 
 #define is_landing_pad_ins x86_is_endbr64_instruction
 
-#define ins_interpret_jump_behavior(ins, out_jump) x86_decode_jump_instruction((ins)->unprefixed, out_jump)
+#define ins_interpret_jump_behavior x86_decode_jump_instruction
 #define ins_interpret_comparisons decode_x86_comparisons
 
 #else

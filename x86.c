@@ -81,8 +81,12 @@ bool x86_is_nop_instruction(const uint8_t *addr)
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 2)))
 __attribute__((used))
-enum ins_jump_behavior x86_decode_jump_instruction(const uint8_t *unprefixed, const uint8_t **out_jump)
+enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump)
 {
+	if (UNLIKELY(ins->prefixes.has_vex)) {
+		return INS_JUMPS_NEVER;
+	}
+	const uint8_t *unprefixed = ins->unprefixed;
 	switch (*unprefixed) {
 		case INS_JMP_8_IMM:
 			PATCH_LOG("jmp", (uintptr_t)unprefixed);
