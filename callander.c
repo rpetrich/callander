@@ -8951,14 +8951,17 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 		size_t standard_run_path_sizeof = sizeof("/lib/"ARCH_NAME"-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
-			if (fs_strcmp(additional_run_path, "$ORIGIN") == 0) {
+			if (fs_strncmp(additional_run_path, "$ORIGIN", sizeof("$ORIGIN")-1) == 0) {
+				const char *after_origin = &additional_run_path[sizeof("$ORIGIN")-1];
+				size_t suffix_len = fs_strlen(after_origin);
 				const char *pos = fs_strrchr(new_binary->path, '/');
 				if (pos != NULL) {
 					size_t prefix_len = pos - new_binary->path;
-					new_run_path = malloc(prefix_len + (1 + standard_run_path_sizeof));
+					new_run_path = malloc(prefix_len + suffix_len + (1 + standard_run_path_sizeof));
 					fs_memcpy(new_run_path, new_binary->path, prefix_len);
-					new_run_path[prefix_len] = ':';
-					fs_memcpy(&new_run_path[prefix_len+1], standard_run_path, standard_run_path_sizeof);
+					fs_memcpy(&new_run_path[prefix_len], after_origin, suffix_len);
+					new_run_path[prefix_len+suffix_len] = ':';
+					fs_memcpy(&new_run_path[prefix_len+suffix_len+1], standard_run_path, standard_run_path_sizeof);
 				}
 			} else {
 				size_t prefix_len = fs_strlen(additional_run_path);
