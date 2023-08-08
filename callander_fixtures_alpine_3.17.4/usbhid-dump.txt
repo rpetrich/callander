@@ -5,8 +5,8 @@ read(any, any, 256) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, 8) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 19) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 256) @ ld-musl-x86_64.so.1+0x583bc
-write(any, any, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, any, 8) @ ld-musl-x86_64.so.1+0x583bc
+write(any, any, NULL-0xf) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, any, NULL-0xf) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, 0x8002, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
@@ -41,9 +41,11 @@ rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, 8) @ ld-musl-x86_
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x49210(__block_app_sigs*+23)
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x49228(__restore_sigs*+21)
 rt_sigprocmask(1, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_sigaction*+155)
+rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x56080(start*+104)
 rt_sigprocmask(1, any, any, any) @ ld-musl-x86_64.so.1+0x56194(pthread_create+202)
 rt_sigprocmask(0, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
+rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(any, 0x550b, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5514, 0) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x551f, 0) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
@@ -76,6 +78,7 @@ bind(any, any, 12) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 setsockopt(any, 1, 16, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 clone(0x7d0f00, any, any, ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x5837f
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
+exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
@@ -92,9 +95,11 @@ gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x59638(clock_gettime+80)
 gettimeofday(any, any) @ [vdso]+0x7da(gettimeofday+218)
 statfs(libusb-1.0.so.0+0x13d3a, any) @ ld-musl-x86_64.so.1+0x49fc4(statfs64+24)
 sched_setscheduler(any, any, any) @ ld-musl-x86_64.so.1+0x5650e(pthread_create+1092)
+prctl(15, libusb-1.0.so.0+0x1462a, 0, any, any) @ ld-musl-x86_64.so.1+0x202e9(prctl+71)
 gettid() @ ld-musl-x86_64.so.1+0x38702(syscall+153)
 tkill(any, 6) @ ld-musl-x86_64.so.1+0x1cf1c(abort+101)
 tkill(any, any) @ ld-musl-x86_64.so.1+0x4936a(raise+43)
+tkill(any, 33) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, 33) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 futex(any, NULL-0x87, any, any, any, any)
 futex(any, any u32, 1, any, 202, any)
@@ -106,6 +111,7 @@ futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), any, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any, any, 0, ld-musl-x86_64.so.1+0x9a038(tl_lock_waiters*), 0x1-0xffffffff)
 getdents64(any, any, 2048) @ ld-musl-x86_64.so.1+0x1c499(readdir64+30)
+set_tid_address(any) @ ld-musl-x86_64.so.1+0x5605a(start*+66)
 restart_syscall()
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x59619(clock_gettime+49)
 clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)

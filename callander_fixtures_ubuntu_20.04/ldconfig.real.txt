@@ -34,11 +34,9 @@ rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig.real+0x8ac54
 rt_sigprocmask(0, any, any, 8) @ /usr/sbin/ldconfig.real+0x208a8
 rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig.real+0x208e9
 rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8adf9
+rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab87
 ioctl(any u32, 0x5401, any) @ /usr/sbin/ldconfig.real+0xa7648
-pread64(NULL-0xfffffffe, any, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
-pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
-pread64(any u32, any, 384, any) @ /usr/sbin/ldconfig.real+0xa75ec
-pread64(any u32, any, 0x10000-0xffffffffffffffff, any) @ /usr/sbin/ldconfig.real+0xa75ec
+pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xa75ec
 writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740a5
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x740db
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xb637f

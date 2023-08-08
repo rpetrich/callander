@@ -8,6 +8,8 @@ write(any u32, any, any) @ /usr/sbin/ldconfig+0x52c39
 close(any u32) @ /usr/sbin/ldconfig+0x52092
 close(any u32) @ /usr/sbin/ldconfig+0x520b8
 close(any u32) @ /usr/sbin/ldconfig+0x52949
+poll(any, 1, any u32) @ /usr/sbin/ldconfig+0xaefa2
+poll(any, any, any u32) @ /usr/sbin/ldconfig+0xaefdd
 lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x52059
 mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x53005
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x53089
@@ -18,10 +20,14 @@ rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig+0x67831
 rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig+0x15c8
 rt_sigprocmask(0, /usr/sbin/ldconfig+0xb9768, any, 8) @ /usr/sbin/ldconfig+0x2190a
 rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig+0x21957
+rt_sigreturn(any) @ /usr/sbin/ldconfig+0x67767
 ioctl(any u32, 0x5401, any) @ /usr/sbin/ldconfig+0x81a68
+ioctl(any u32, 0x541b, any) @ /usr/sbin/ldconfig+0xa631d
+ioctl(any u32, 0x8933, any) @ /usr/sbin/ldconfig+0xa631d
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig+0x81a0c
+pread64(NULL-0xfffffffe, any, 511, any) @ /usr/sbin/ldconfig+0x81a0c
 pread64(any u32, any, 384, any) @ /usr/sbin/ldconfig+0x81a0c
-writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig+0x52d82
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52d82
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52dbb
 writev(any u32, any, any) @ /usr/sbin/ldconfig+0x91bc5
 access(/usr/sbin/ldconfig+0xbbe6d, 0) @ /usr/sbin/ldconfig+0x81419
@@ -32,6 +38,19 @@ madvise(NULL-0xfffffffffffffffe, any, 4) @ /usr/sbin/ldconfig+0x530b9
 madvise(any, any, 14) @ /usr/sbin/ldconfig+0x530b9
 alarm(any u32) @ /usr/sbin/ldconfig+0x81059
 getpid() @ /usr/sbin/ldconfig+0x4afb9
+socket(any u16, 0x80001-0x80002, 0) @ /usr/sbin/ldconfig+0xa6369
+socket(2, 0x80802, 0) @ /usr/sbin/ldconfig+0xa6369
+socket(10, 0x80802, 0) @ /usr/sbin/ldconfig+0xa6369
+connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig+0xaf042
+connect(any u32, any, any u32) @ /usr/sbin/ldconfig+0xaf079
+sendto(any u32, any, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig+0xaf1db
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig+0xaf22a
+recvfrom(any u32, any, any, 0, any, any) @ /usr/sbin/ldconfig+0xaf115
+recvfrom(any u32, any, any, any u32, any, any) @ /usr/sbin/ldconfig+0xaf168
+getpeername(any u32, any, any) @ /usr/sbin/ldconfig+0xaf0d9
+setsockopt(any u32, 0, 11, any, 4) @ /usr/sbin/ldconfig+0xb255c
+setsockopt(any u32, 41, 25, any, 4) @ /usr/sbin/ldconfig+0xb255c
+uname(any) @ /usr/sbin/ldconfig+0xb2ff9
 fcntl(any u32, 2, 1) @ /usr/sbin/ldconfig+0x529b3
 fcntl(any u32, 3, any) @ /usr/sbin/ldconfig+0x529b3
 fcntl(any u32, 7, any) @ /usr/sbin/ldconfig+0x529b3
@@ -68,12 +87,13 @@ futex(any, any u8, 0x7fffffff, 0, any, any u32)
 futex(any, any u32, any u32, 0, 0, 0xffffffff)
 futex(any, 128, any u32, 0, 202, any)
 futex(any, 128, 2, 0, any, any)
+futex(any, 129, 0x7fffffff, 0, any, any)
 futex(/usr/sbin/ldconfig+0xf6a4c, 128, any u32, 0, NULL-0x1, any)
-futex(/usr/sbin/ldconfig+0xf6a4c, 129, 0x7fffffff, 0, any, any)
+futex(/usr/sbin/ldconfig+0xf6dcc, 128, any u32, 0, any, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x544d6
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x80a35
 restart_syscall()
-clock_gettime(1, any) @ /usr/sbin/ldconfig+0x4abcd
+clock_gettime(NULL-0x1, any) @ /usr/sbin/ldconfig+0x4abcd
 clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)
 clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
 clock_nanosleep(NULL-0xfffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x9c0f5
@@ -91,5 +111,7 @@ openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x813ae
 newfstatat(any u32, /usr/sbin/ldconfig+0xcb6c1, any, 0x1000) @ /usr/sbin/ldconfig+0x51d4c
 newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x51d4c
 newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig+0x51d4c
+sendmmsg(any u32, any, 2, 0x4000) @ /usr/sbin/ldconfig+0xaf305
+sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig+0xaf344
 getrandom(/usr/sbin/ldconfig+0xf6450, 8, 1) @ /usr/sbin/ldconfig+0x679a2
 getrandom(any, any, any u32) @ /usr/sbin/ldconfig+0x679dd

@@ -1,4 +1,6 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
+read(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, 0x8002, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
@@ -11,6 +13,7 @@ open(non-NULL, any, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, 0x88800, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x3c34d(if_indextoname+72)
 close(any) @ ld-musl-x86_64.so.1+0x3c62d(if_nametoindex+84)
+close(any) @ ld-musl-x86_64.so.1+0x3e669(cleanup*+5)
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
 close(any) @ ld-musl-x86_64.so.1+0x4b74f(fopen64+158)
 close(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -41,9 +44,11 @@ rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, 8) @ ld-musl-x86_
 rt_sigprocmask(0, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x49210(__block_app_sigs*+23)
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x49228(__restore_sigs*+21)
 rt_sigprocmask(1, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_sigaction*+155)
+rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x56080(start*+104)
 rt_sigprocmask(1, any, any, any) @ ld-musl-x86_64.so.1+0x56194(pthread_create+202)
 rt_sigprocmask(0, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigprocmask(2, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
+rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
 ioctl(any, 0x8910, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x8933, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5413, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)
@@ -68,21 +73,34 @@ sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__sysc
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvfrom(any, any, 512, 2, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvfrom(any, non-NULL, 2, 2, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x583bc
+recvfrom(any, any, 512, 2, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
+recvfrom(any, non-NULL, 2, 2, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x583bc
+shutdown(any, 1) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 listen(any, 1024) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
+setsockopt(any, 1, any, any, 16) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, 1, 2, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, 41, 26, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 clone(0x7d0f00, any, any, ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x5837f
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
+exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
+wait4(0xffffffffffffffff, any, 1, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(0xffffffffffffffff, any, 1, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, 9) @ ld-musl-x86_64.so.1+0x204aa(do_setgroups*+66)
 kill(any, 9) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
+uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
+fcntl(any, 3, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, 4, any u16) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, 6, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)
 fcntl(any, 4, 2048) @ ld-musl-x86_64.so.1+0x3f40b(socket+140)
@@ -104,6 +122,7 @@ setgroups(any, any) @ ld-musl-x86_64.so.1+0x5b7e0(do_setxid*+27)
 sched_setscheduler(any, any, any) @ ld-musl-x86_64.so.1+0x5650e(pthread_create+1092)
 gettid() @ ld-musl-x86_64.so.1+0x41488(_Fork+70)
 gettid() @ ld-musl-x86_64.so.1+0x580ab(__synccall*+172)
+tkill(any, 33) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, 17) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 tkill(any, 33) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 tkill(any, 34) @ ld-musl-x86_64.so.1+0x5811e(__synccall*+287)
@@ -116,6 +135,7 @@ futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), any, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any, any, 0, ld-musl-x86_64.so.1+0x9a038(tl_lock_waiters*), 0x1-0xffffffff)
+set_tid_address(any) @ ld-musl-x86_64.so.1+0x5605a(start*+66)
 restart_syscall()
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x59619(clock_gettime+49)
 clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)

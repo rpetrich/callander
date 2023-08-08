@@ -19,11 +19,12 @@ rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig.real+0x8b291
 rt_sigprocmask(0, /usr/sbin/ldconfig.real+0xef540, any, 8) @ /usr/sbin/ldconfig.real+0x2d5a3
 rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig.real+0x2d5f0
 rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig.real+0x9ba09
+rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8b1c7
 ioctl(any u32, 0x5401, any) @ /usr/sbin/ldconfig.real+0xac838
-pread64(NULL-0xfffffffe, any, any, any) @ /usr/sbin/ldconfig.real+0xac7dc
-pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig.real+0xac7dc
-pread64(any u32, any, 384, any) @ /usr/sbin/ldconfig.real+0xac7dc
-writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x73bf5
+ioctl(any u32, 0x541b, any) @ /usr/sbin/ldconfig.real+0xd93ed
+ioctl(any u32, 0x8933, any) @ /usr/sbin/ldconfig.real+0xd93ed
+pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xac7dc
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x73bf5
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x73c2b
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xc05b2
 access(/usr/sbin/ldconfig.real+0xf2aad, 0) @ /usr/sbin/ldconfig.real+0xac1c9
@@ -34,13 +35,22 @@ madvise(NULL-0xfffffffffffffffe, any, 4) @ /usr/sbin/ldconfig.real+0x73f29
 madvise(any, any, 14) @ /usr/sbin/ldconfig.real+0x73f29
 alarm(any u32) @ /usr/sbin/ldconfig.real+0xabdb9
 getpid() @ /usr/sbin/ldconfig.real+0x6bf19
-socket(1, 0x80801, 0) @ /usr/sbin/ldconfig.real+0xcfe19
+socket(any u16, 0x80001-0x80002, 0) @ /usr/sbin/ldconfig.real+0xcfe19
+socket(0x1-0x2, 0x80801-0x80802, 0) @ /usr/sbin/ldconfig.real+0xcfe19
+socket(10, 0x80802, 0) @ /usr/sbin/ldconfig.real+0xcfe19
+connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig.real+0xcfc15
 connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xcfc15
 connect(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xcfc49
-sendto(any u32, NULL-0xfffffffffffffff0, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig.real+0xcfd6e
+sendto(any u32, any, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig.real+0xcfd6e
 sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig.real+0xcfdbc
+recvfrom(any u32, any, any, 0, any, any) @ /usr/sbin/ldconfig.real+0xe3078
+recvfrom(any u32, any, any, any u32, any, any) @ /usr/sbin/ldconfig.real+0xe30d2
 recvmsg(any u32, any, 0x40000000) @ /usr/sbin/ldconfig.real+0xcfcbb
 recvmsg(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xcfcfd
+getpeername(any u32, any, any) @ /usr/sbin/ldconfig.real+0xe3039
+setsockopt(any u32, 0, 11, any, 4) @ /usr/sbin/ldconfig.real+0xe707c
+setsockopt(any u32, 41, 25, any, 4) @ /usr/sbin/ldconfig.real+0xe707c
+uname(any) @ /usr/sbin/ldconfig.real+0xabd89
 fcntl(any u32, 2, 1) @ /usr/sbin/ldconfig.real+0x73823
 fcntl(any u32, 3, any) @ /usr/sbin/ldconfig.real+0x73823
 fcntl(any u32, 7, any) @ /usr/sbin/ldconfig.real+0x73823
@@ -76,6 +86,7 @@ futex(any, any u8, 0x7fffffff, 0, any, any)
 futex(any, any u32, any u32, 0, 0, 0xffffffff)
 futex(any, 128, 2, 0, any, any)
 futex(/usr/sbin/ldconfig.real+0x12cb94, 128, any u32, 0, 202, 2177)
+futex(/usr/sbin/ldconfig.real+0x12cf6c, 128, any u32, 0, 202, 2177)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig.real+0x75a66
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xab5b5
 restart_syscall()
@@ -100,5 +111,7 @@ openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig.real+0xac161
 newfstatat(any u32, /usr/sbin/ldconfig.real+0x1023c1, any, 0x1000) @ /usr/sbin/ldconfig.real+0x72c0c
 newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig.real+0x72c0c
 newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig.real+0x72c0c
+sendmmsg(any u32, any, 2, 0x4000) @ /usr/sbin/ldconfig.real+0xe31b8
+sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0xe31fc
 getrandom(/usr/sbin/ldconfig.real+0x12c590, 8, 1) @ /usr/sbin/ldconfig.real+0x8c625
 getrandom(any, any, any u32) @ /usr/sbin/ldconfig.real+0x8c65d
