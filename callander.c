@@ -1570,6 +1570,29 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 	data->end_offset = new_end_offset;
 }
 
+static inline bool combine_register_states(struct register_state *out_state, const struct register_state *combine_state, int register_index)
+{
+	if (combine_state->value == combine_state->max) {
+		if (combine_state->value == out_state->value - 1 && out_state->value != 0) {
+			out_state->value = combine_state->value;
+			LOG("widening down", name_for_register(register_index));
+			return true;
+		}
+		if (combine_state->value == out_state->max + 1 && out_state->max != ~(uintptr_t)0) {
+			out_state->max = combine_state->value;
+			LOG("widening up", name_for_register(register_index));
+			return true;
+		}
+	}
+	if ((combine_state->value >= out_state->value && combine_state->value <= out_state->max) ||
+		(out_state->value >= combine_state->value && out_state->value <= combine_state->max)) {
+		LOG("combining overlapping", name_for_register(register_index));
+		*out_state = union_of_register_states(*out_state, *combine_state);
+		return true;
+	}
+	return false;
+}
+
 __attribute__((nonnull(1, 2, 3, 5, 6, 7)))
 static size_t entry_offset_for_registers(struct searched_instruction_entry *table_entry, const struct registers *registers, struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr addr, struct registers *out_registers, bool *out_wrote_registers)
 {
@@ -1680,37 +1703,21 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 					goto continue_search;
 				}
 				if (entry->widen_count[r] < 4) {
-					if (register_is_exactly_known(&registers->registers[r])) {
-						if (registers->registers[r].value == out_registers->registers[r].value - 1 && out_registers->registers[r].value != 0) {
-							out_registers->registers[r].value = registers->registers[r].value;
-							LOG("widening down", name_for_register(r));
-							dump_register(loader, out_registers->registers[r]);
-						} else if (registers->registers[r].value == out_registers->registers[r].max + 1 && out_registers->registers[r].max != ~(uintptr_t)0) {
-							out_registers->registers[r].max = registers->registers[r].value;
-							LOG("widening up", name_for_register(r));
-							dump_register(loader, out_registers->registers[r]);
-						} else if (processing_count > 30) {
-							LOG("too many actively unwidened", name_for_register(r));
-							dump_register(loader, out_registers->registers[r]);
-							clear_register(&out_registers->registers[r]);
-							out_registers->sources[r] = 0;
-							register_mask match_mask = out_registers->matches[r];
-							if (match_mask != 0) {
-								if ((widenable_registers & match_mask) == match_mask) {
-									LOG("widening a register in tandem with another, preserving match", name_for_register(r));
-								} else {
-									clear_match(&analysis->loader, out_registers, r, addr);
-								}
-							}
-						} else {
-							LOG("couldn't widen", name_for_register(r));
-							dump_register(loader, registers->registers[r]);
-							goto continue_search;
-						}
-					} else if (register_is_subset_of_register(&out_registers->registers[r], &registers->registers[r])) {
-						out_registers->registers[r] = registers->registers[r];
-						LOG("widened range", name_for_register(r));
+					if (combine_register_states(&out_registers->registers[r], &registers->registers[r], r)) {
 						dump_register(loader, out_registers->registers[r]);
+					} else if (UNLIKELY(processing_count > 30) && register_is_exactly_known(&registers->registers[r])) {
+						LOG("too many actively unwidened", name_for_register(r));
+						dump_register(loader, out_registers->registers[r]);
+						clear_register(&out_registers->registers[r]);
+						out_registers->sources[r] = 0;
+						register_mask match_mask = out_registers->matches[r];
+						if (match_mask != 0) {
+							if ((widenable_registers & match_mask) == match_mask) {
+								LOG("widening a register in tandem with another, preserving match", name_for_register(r));
+							} else {
+								clear_match(&analysis->loader, out_registers, r, addr);
+							}
+						}
 					} else {
 						LOG("couldn't widen", name_for_register(r));
 						dump_register(loader, registers->registers[r]);
