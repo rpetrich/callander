@@ -24,7 +24,7 @@ extern noreturn void abort();
 
 #include <string.h>
 
-// #define ERRORS_ARE_BUFFERED
+#define ERRORS_ARE_BUFFERED
 
 // SELF_FD is a reserved FD that is assigned to the axon binary. it is used
 // to exec new programs and is blocked from dup/close in the seccomp policy
