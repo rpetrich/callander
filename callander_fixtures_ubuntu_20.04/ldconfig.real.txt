@@ -13,17 +13,17 @@ lstat(any, any) @ /usr/sbin/ldconfig.real+0x73088
 poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xc3b45
 poll(any, any, any u32) @ /usr/sbin/ldconfig.real+0xc3b7d
 lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x733a9
-mmap(0, any, 3, 34, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, any, 1, 0x1-0x2, any u32, 0) @ /usr/sbin/ldconfig.real+0x74334
+mmap(0, any, 3, 34, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(0, 0x8000000, 0, 0x4022, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 50, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 2050, any u32, any) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, any, any u32, 2066, any u32, any) @ /usr/sbin/ldconfig.real+0x74334
 mmap(any, 0x4000000, 0, 0x4022, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x74334
-mmap(0, any, 3, 0x22-0x62, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, any u32, 0x32-0x72, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, any u32, 0x40-0x852, any u32, any) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, any, 1, 0x1-0x42, any u32, 0) @ /usr/sbin/ldconfig.real+0x7437e
+mmap(0, any, 3, 0x22-0x62, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, 0x4000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mmap(0, 0x8000000, 0, 0x40-0x4062, 0xffffffff, 0) @ /usr/sbin/ldconfig.real+0x7437e
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x743f9

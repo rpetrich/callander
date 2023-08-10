@@ -36,8 +36,8 @@ rt_sigprocmask(2, any, 0, 8) @ /sbin/ldconfig:0x40ecb9
 rt_sigprocmask(1, any, 0, 8) @ /sbin/ldconfig:0x479764
 rt_sigreturn(any) @ /sbin/ldconfig:0x4794d7
 ioctl(any u32, 0x5401, any) @ /sbin/ldconfig:0x4989f6
+pread64(NULL-0xfffffffe, any, 0x20-0xffffffffffffffff, any) @ /sbin/ldconfig:0x498998
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /sbin/ldconfig:0x498998
-pread64(NULL-0xfffffffe, non-NULL, 0x10000-0xffffffffffffffff, any) @ /sbin/ldconfig:0x498998
 pread64(any u32, any, 384, any) @ /sbin/ldconfig:0x498998
 writev(2, NULL-0xfffffffffffffff0, any u32) @ /sbin/ldconfig:0x466661
 writev(2, NULL-0xfffffffffffffff0, any u32) @ /sbin/ldconfig:0x466695
