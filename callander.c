@@ -5606,23 +5606,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							clear_register(&self.current_state.registers[REGISTER_R11]);
 							self.current_state.sources[REGISTER_R11] = 0;
 							clear_match(&analysis->loader, &self.current_state, REGISTER_R11, ins);
-							switch (value) {
-								case __NR_getpid:
+							switch (info_for_syscall(value).attributes & SYSCALL_RETURN_MASK) {
+								case SYSCALL_RETURNS_SELF_PID:
 									// getpid fills the pid into RAX
 									if (analysis->pid) {
 										set_register(&self.current_state.registers[REGISTER_RAX], analysis->pid);
 									}
 									break;
-								case __NR_exit:
-								case __NR_exit_group:
-									// exit and exitgroup always exit the thread
+								case SYSCALL_RETURNS_NEVER:
+									// exit and exitgroup always exit the thread, rt_sigreturn always perform a non-local jump
 									effects |= EFFECT_EXITS;
-									LOG("completing from exit syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
-									goto update_and_return;
-								case __NR_rt_sigreturn:
-									// rt_sigreturn always perform a non-local exit
-									effects |= EFFECT_EXITS;
-									LOG("completing from rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
+									LOG("completing from exit or rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
 									goto update_and_return;
 							}
 						} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && (analysis->loader.main->special_binary_flags & BINARY_IS_GOLANG)) {
