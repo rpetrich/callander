@@ -4633,8 +4633,8 @@ static inline void add_loaded_address(struct searched_instructions *search, uint
 	int old_count = search->loaded_address_count;
 	uintptr_t *addresses = search->loaded_addresses;
 	int i = bsearch_bool(old_count, addresses, (void *)address, bsearch_address_callback);
-	if (i != old_count) {
-		if (addresses[i] == address) {
+	if (i != 0) {
+		if (addresses[i-1] == address) {
 			// already loaded, skip adding
 			return;
 		}
