@@ -9741,6 +9741,36 @@ static bool merge_recorded_syscall(const struct recorded_syscall *source, struct
 	return false;
 }
 
+static int coalesce_syscalls(struct recorded_syscall *out, const struct recorded_syscall *list, int count, int attributes, struct loader_context *loader)
+{
+	register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[attributes & SYSCALL_ARGC_MASK];
+	*out = *list;
+	for (;;) {
+		int new_count = 1;
+		for (int i = 1; i < count; i++) {
+			for (int j = 0; j < new_count; j++) {
+				// find a syscall to merge with
+				if (merge_recorded_syscall(&list[i], &out[j], relevant_registers)) {
+					goto merged;
+				}
+			}
+			// else copy it to the output buffer
+			out[new_count++] = list[i];
+		merged:
+			;
+		}
+		// keep trying until there are no possible merges
+		if (new_count == count) {
+			break;
+		}
+		list = out;
+		count = new_count;
+	}
+	// sort the output so that it's stable
+	qsort_r(out, count, sizeof(*out), compare_found_syscalls, loader);
+	return count;
+}
+
 void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader)
 {
 	int count = syscalls->count;
@@ -9778,44 +9808,32 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 		count = syscalls->count;
 	}
 	qsort_r(syscalls->list, count, sizeof(*syscalls->list), compare_found_syscalls, loader);
-	for (int i = 0; i < count - 1; ) {
-		struct recorded_syscall *earlier = &syscalls->list[i];
-		int attributes = info_for_syscall(earlier->nr).attributes;
-		register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[attributes & SYSCALL_ARGC_MASK];
-		for (int j = i + 1; j < count; j++) {
-			struct recorded_syscall *later = &syscalls->list[j];
-			// find reasons not to merge syscalls
-			if (later->nr != earlier->nr) {
-				// numbers don't match
-				break;
+	if (count > 1) {
+		struct recorded_syscall *list = syscalls->list;
+		int out_pos = 0;
+		int in_pos = 0;
+		int attributes = info_for_syscall(list[0].nr).attributes;
+		for (int i = 1; i < count; i++) {
+			if (list[i].nr != list[in_pos].nr) {
+				// numbers don't match, coalesce the batch of syscalls we just discovered
+				out_pos += coalesce_syscalls(&list[out_pos], &list[in_pos], i - in_pos, attributes, loader);
+				in_pos = i;
+				attributes = info_for_syscall(list[i].nr).attributes;
+				continue;
 			}
 			if ((attributes & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
-				if (later->ins != earlier->ins) {
-					// addresses don't match
-					break;
+				if (list[i].ins != list[in_pos].ins) {
+					// addresses don't match, coalesce the batch of syscalls we just discovered
+					out_pos += coalesce_syscalls(&list[out_pos], &list[in_pos], i - in_pos, attributes, loader);
+					in_pos = i;
+					continue;
 				}
 			}
-			LOG("testing coalescing", temp_str(copy_syscall_description(loader, later->nr, later->registers, true)));
-			LOG("into", temp_str(copy_syscall_description(loader, earlier->nr, earlier->registers, true)));
-			LOG("at", temp_str(copy_address_description(loader, earlier->ins)));
-			if (merge_recorded_syscall(later, earlier, relevant_registers)) {
-				LOG("coalesced into", temp_str(copy_syscall_description(loader, earlier->nr, earlier->registers, true)));
-				// found a match. merge!
-				for (int k = 0; k < count - j; k++) {
-					later[k] = later[k+1];
-				}
-				count--;
-				goto next_i;
-			}
-			// registers are disjoint
-			LOG("skipping coalescing because not compatible");
-			continue;
 		}
-		i++;
-	next_i:
-		;
+		// coalesce the final batch
+		out_pos += coalesce_syscalls(&list[out_pos], &list[in_pos], count - in_pos, attributes, loader);
+		syscalls->count = out_pos;
 	}
-	syscalls->count = count;
 }
 
 char *copy_used_syscalls(const struct loader_context *context, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol)
