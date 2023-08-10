@@ -49,7 +49,8 @@ static inline struct x86_ins_prefixes x86_decode_ins_prefixes(const uint8_t **in
 		result.has_notrack = true;
 		++(*ins);
 	}
-	for (;;) {
+#pragma GCC unroll 16
+	for (int i = 0; i < 16; i++) {
 		uint8_t value = **ins;
 		if (value == 0xf0) {
 			// lock prefix
