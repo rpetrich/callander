@@ -1816,7 +1816,7 @@ retry:
 	for (;; index++) {
 		index &= mask;
 		const void *value = table[index].address;
-		if (value == addr) {
+		if (LIKELY(value == addr)) {
 			token->index = index;
 			return &table[index];
 		}
