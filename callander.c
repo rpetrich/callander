@@ -1572,22 +1572,20 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 
 static inline bool combine_register_states(struct register_state *out_state, const struct register_state *combine_state, int register_index)
 {
-	if (combine_state->value == combine_state->max) {
-		if (combine_state->value == out_state->value - 1 && out_state->value != 0) {
-			out_state->value = combine_state->value;
-			LOG("widening down", name_for_register(register_index));
-			return true;
-		}
-		if (combine_state->value == out_state->max + 1 && out_state->max != ~(uintptr_t)0) {
-			out_state->max = combine_state->value;
-			LOG("widening up", name_for_register(register_index));
-			return true;
-		}
+	if (combine_state->max == out_state->value - 1 && combine_state->value < out_state->value) {
+		out_state->value = combine_state->value;
+		LOG("widening down", name_for_register(register_index));
+		return true;
+	}
+	if (combine_state->value == out_state->max + 1 && combine_state->max > out_state->max) {
+		out_state->max = combine_state->max;
+		LOG("widening up", name_for_register(register_index));
+		return true;
 	}
 	if ((combine_state->value >= out_state->value && combine_state->value <= out_state->max) ||
 		(out_state->value >= combine_state->value && out_state->value <= combine_state->max)) {
-		LOG("combining overlapping", name_for_register(register_index));
 		*out_state = union_of_register_states(*out_state, *combine_state);
+		LOG("combining overlapping", name_for_register(register_index));
 		return true;
 	}
 	return false;
@@ -9727,16 +9725,7 @@ static bool merge_recorded_syscall(const struct recorded_syscall *source, struct
 	if ((mismatched != 0) && ((mismatched & -mismatched) == mismatched)) {
 		// source and target differ by only a single register
 		int i = __builtin_ctzl(mismatched);
-		if ((source->registers.registers[i].value <= target->registers.registers[i].max + 1) && (target->registers.registers[i].max + 1 != 0) && (source->registers.registers[i].max > target->registers.registers[i].max)) {
-			// source expands the end of target's range
-			target->registers.registers[i].max = source->registers.registers[i].max;
-			return true;
-		}
-		if ((source->registers.registers[i].max >= target->registers.registers[i].value - 1) && (target->registers.registers[i].value != 0) && (source->registers.registers[i].value < target->registers.registers[i].value)) {
-			// source expands the start of target's range
-			target->registers.registers[i].value = source->registers.registers[i].value;
-			return true;
-		}
+		return combine_register_states(&target->registers.registers[i], &source->registers.registers[i], i);
 	}
 	return false;
 }
