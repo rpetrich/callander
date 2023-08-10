@@ -22,10 +22,10 @@ enum {
 
 // binary_info represents information about a loaded binary
 struct binary_info {
-	void *entrypoint;
 	void *base;
-	void *default_base;
 	size_t size;
+	void *entrypoint;
+	void *default_base;
 	void *program_header;
 	size_t header_entry_size;
 	size_t header_entry_count;

@@ -123,9 +123,9 @@ struct address_and_size {
 };
 
 struct loaded_binary {
+	struct binary_info info;
 	const char *path;
 	unsigned long path_hash;
-	struct binary_info info;
 	bool has_symbols:1;
 	bool has_sections:1;
 	bool has_linker_symbols:1;
