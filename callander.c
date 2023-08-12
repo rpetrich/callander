@@ -5985,6 +5985,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							ins_ptr lookahead = next_ins(ins, &decoded);
 							struct decoded_ins lookahead_decoded;
 							if (decode_ins(lookahead, &lookahead_decoded)) {
+								LOG("lookahead", temp_str(copy_address_description(&analysis->loader, lookahead)));
+								LOG("length", lookahead_decoded.length);
 								if (lookahead_decoded.unprefixed[0] == 0x0f && lookahead_decoded.unprefixed[1] == 0x11) { // movups xmm2/m128, xmm1
 									x86_mod_rm_t lookahead_modrm = x86_read_modrm(&lookahead_decoded.unprefixed[2]);
 									if (reg == x86_read_reg(lookahead_modrm, lookahead_decoded.prefixes)) {
