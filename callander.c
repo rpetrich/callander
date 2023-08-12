@@ -511,15 +511,14 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 	if (UNLIKELY(mask != 0)) {
 		LOG("clearing matches for", name_for_register(register_index));
 		regs->matches[register_index] = 0;
-		mask = ~((register_mask)1 << register_index);
-#pragma GCC unroll 64
-		for (int i = 0; i < REGISTER_COUNT; i++) {
+		register_mask mask_off = ~((register_mask)1 << register_index);
+		for_each_bit(mask & ALL_REGISTERS, bit, i) {
 			if (SHOULD_LOG) {
-				if (regs->matches[i] & ~mask) {
+				if (regs->matches[i] & ~mask_off) {
 					ERROR("clearing match", name_for_register(i));
 				}
 			}
-			regs->matches[i] &= mask;
+			regs->matches[i] &= mask_off;
 		}
 	}
 	register_changed(regs, register_index, ins);
