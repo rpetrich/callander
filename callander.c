@@ -1605,7 +1605,7 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 	data->end_offset = new_end_offset;
 }
 
-static inline bool combine_register_states(struct register_state *out_state, const struct register_state *combine_state, int register_index)
+static inline bool combine_register_states(struct register_state *out_state, const struct register_state *combine_state, __attribute__((unused)) int register_index)
 {
 	if (combine_state->max == out_state->value - 1 && combine_state->value < out_state->value) {
 		out_state->value = combine_state->value;
@@ -1626,8 +1626,8 @@ static inline bool combine_register_states(struct register_state *out_state, con
 	return false;
 }
 
-__attribute__((nonnull(1, 2, 3, 5, 6, 7)))
-static size_t entry_offset_for_registers(struct searched_instruction_entry *table_entry, const struct registers *registers, struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr addr, struct registers *out_registers, bool *out_wrote_registers)
+__attribute__((nonnull(1, 2, 3, 5, 6, 7))) __attribute__((always_inline))
+static inline size_t entry_offset_for_registers(struct searched_instruction_entry *table_entry, const struct registers *registers, struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr addr, struct registers *out_registers, bool *out_wrote_registers)
 {
 	struct searched_instruction_data *data = table_entry->data;
 	const struct loader_context *loader = &analysis->loader;
@@ -1822,7 +1822,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 		} else {
 			if (SHOULD_LOG) {
 				for_each_bit(relevant_registers, bit, i) {
-					LOG("skipping widening register", name_for_register(i));
+					ERROR("skipping widening register", name_for_register(i));
 				}
 			}
 		}
@@ -2860,7 +2860,7 @@ static void force_protection_for_symbol(const struct loader_context *loader, str
 	}
 }
 
-static void ignored_load_callback(struct program_state *analysis, ins_ptr address, const struct analysis_frame *frame, void *callback_data)
+static void ignored_load_callback(struct program_state *analysis, ins_ptr address, __attribute__((unused)) const struct analysis_frame *frame, void *callback_data)
 {
 	struct loaded_binary *binary = binary_for_address(&analysis->loader, address);
 	if (binary != NULL) {
@@ -3681,7 +3681,7 @@ enum {
 	OPERATION_SIZE_64BIT = sizeof(uint64_t),
 };
 
-static void record_stack_address_taken(__attribute__((unused)) const struct loader_context *loader, ins_ptr addr, struct registers *regs)
+static void record_stack_address_taken(__attribute__((unused)) const struct loader_context *loader, __attribute__((unused)) ins_ptr addr, struct registers *regs)
 {
 	LOG("taking address of stack", temp_str(copy_address_description(loader, addr)));
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
@@ -4755,7 +4755,7 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 }
 
 __attribute__((noinline))
-static function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
+static function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
 {
 	bool skip_jump = false;
 	bool skip_continue = false;
