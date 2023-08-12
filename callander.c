@@ -9468,73 +9468,82 @@ void free_loaded_binary(struct loaded_binary *binary) {
 	}
 }
 
-static int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section) {
-	if (binary == NULL) {
-		return 0;
-	}
-	uintptr_t base = (uintptr_t)binary->info.base;
-	if (addr >= base && addr < base + binary->info.size) {
-		if (LIKELY(binary->has_sections)) {
-			size_t count = binary->info.section_entry_count;
-			size_t entry_size = binary->info.section_entry_size;
-			const char *sections = (const char *)binary->sections.sections;
-			for (size_t i = 0; i < count; i++) {
-				const ElfW(Shdr) *section = (const ElfW(Shdr) *)(sections + i * entry_size);
-				if (section->sh_addr != 0) {
-					uintptr_t section_base = apply_base_address(&binary->info, section->sh_addr);
-					if (section_base <= addr && addr < section_base + section->sh_size) {
-						uint64_t flags = section->sh_flags;
-						if (flags & SHF_ALLOC) {
-							const char *section_name = &binary->sections.strings[section->sh_name];
-							LOG("found address in section", section_name);
-							LOG("of", binary->path);
-							if (out_section != NULL) {
-								*out_section = section;
-							}
-							for (int j = 0; j < OVERRIDE_ACCESS_SLOT_COUNT; j++) {
-								if (UNLIKELY(addr >= (uintptr_t)binary->override_access_ranges[j].address && addr < (uintptr_t)binary->override_access_ranges[j].address + binary->override_access_ranges[j].size)) {
-									LOG("using override", j);
-									return binary->override_access_permissions[j];
-								}
-							}
-							int result = PROT_READ;
-							if (flags & SHF_EXECINSTR) {
-								result |= PROT_EXEC;
-							}
-							if ((flags & SHF_WRITE) && (fs_strcmp(section_name, ".data.rel.ro") != 0) && (fs_strcmp(section_name, ".got") != 0)) {
-								result |= PROT_WRITE;
-							}
-							return result;
+__attribute__((noinline))
+static int protection_for_address_definitely_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section) {
+	if (LIKELY(binary->has_sections)) {
+		size_t count = binary->info.section_entry_count;
+		size_t entry_size = binary->info.section_entry_size;
+		const char *sections = (const char *)binary->sections.sections;
+		for (size_t i = 0; i < count; i++) {
+			const ElfW(Shdr) *section = (const ElfW(Shdr) *)(sections + i * entry_size);
+			if (section->sh_addr != 0) {
+				uintptr_t section_base = apply_base_address(&binary->info, section->sh_addr);
+				if (section_base <= addr && addr < section_base + section->sh_size) {
+					uint64_t flags = section->sh_flags;
+					if (flags & SHF_ALLOC) {
+						const char *section_name = &binary->sections.strings[section->sh_name];
+						LOG("found address in section", section_name);
+						LOG("of", binary->path);
+						if (out_section != NULL) {
+							*out_section = section;
 						}
+						for (int j = 0; j < OVERRIDE_ACCESS_SLOT_COUNT; j++) {
+							if (UNLIKELY(addr >= (uintptr_t)binary->override_access_ranges[j].address && addr < (uintptr_t)binary->override_access_ranges[j].address + binary->override_access_ranges[j].size)) {
+								LOG("using override", j);
+								return binary->override_access_permissions[j];
+							}
+						}
+						int result = PROT_READ;
+						if (flags & SHF_EXECINSTR) {
+							result |= PROT_EXEC;
+						}
+						if ((flags & SHF_WRITE) && (fs_strcmp(section_name, ".data.rel.ro") != 0) && (fs_strcmp(section_name, ".got") != 0)) {
+							result |= PROT_WRITE;
+						}
+						return result;
 					}
 				}
 			}
-		} else {
-			// this is more efficient, but would make it impossible to support read-only relocation sections,
-			// so it is used only when loading binaries already in memory
-			for (size_t i = 0; i < binary->info.header_entry_count; i++) {
-				const ElfW(Phdr) *ph = (const ElfW(Phdr) *)((uintptr_t)binary->info.program_header + binary->info.header_entry_size * i);
-				if (ph->p_type != PT_LOAD) {
-					continue;
-				}
-				uintptr_t load_base = apply_base_address(&binary->info, ph->p_vaddr);
-				if ((load_base <= addr) && (addr < (load_base + ph->p_memsz))) {
-					int result = 0;
-					if (ph->p_flags & PF_R) {
-						result |= PROT_READ;
-					}
-					if (ph->p_flags & PF_W) {
-						result |= PROT_WRITE;
-					}
-					if (ph->p_flags & PF_X) {
-						result |= PROT_EXEC;
-					}
-					if (out_section != NULL) {
-						*out_section = NULL;
-					}
-					return result;
-				}
+		}
+	} else {
+		// this is more efficient, but would make it impossible to support read-only relocation sections,
+		// so it is used only when loading binaries already in memory
+		for (size_t i = 0; i < binary->info.header_entry_count; i++) {
+			const ElfW(Phdr) *ph = (const ElfW(Phdr) *)((uintptr_t)binary->info.program_header + binary->info.header_entry_size * i);
+			if (ph->p_type != PT_LOAD) {
+				continue;
 			}
+			uintptr_t load_base = apply_base_address(&binary->info, ph->p_vaddr);
+			if ((load_base <= addr) && (addr < (load_base + ph->p_memsz))) {
+				int result = 0;
+				if (ph->p_flags & PF_R) {
+					result |= PROT_READ;
+				}
+				if (ph->p_flags & PF_W) {
+					result |= PROT_WRITE;
+				}
+				if (ph->p_flags & PF_X) {
+					result |= PROT_EXEC;
+				}
+				if (out_section != NULL) {
+					*out_section = NULL;
+				}
+				return result;
+			}
+		}
+	}
+	if (out_section != NULL) {
+		*out_section = NULL;
+	}
+	return 0;
+}
+
+__attribute__((always_inline))
+static inline int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section) {
+	if (binary != NULL) {
+		uintptr_t base = (uintptr_t)binary->info.base;
+		if (addr >= base && addr < base + binary->info.size) {
+			return protection_for_address_definitely_in_binary(binary, addr, out_section);
 		}
 	}
 	if (out_section != NULL) {
