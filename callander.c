@@ -1590,13 +1590,14 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 	size_t new_end_offset = end_offset + new_entry_size;
 	struct searched_instruction_data *data = (table_entry->data = realloc(table_entry->data, sizeof(*table_entry->data) + new_end_offset));
 	struct searched_instruction_data_entry *entry = entry_for_offset(data, end_offset);
-	*entry = (struct searched_instruction_data_entry){
-		.effects = table_entry->data->sticky_effects,
-		.widen_count = { 0 },
-		.used_count = used_count,
-		.generation = 0,
-		.used_registers = used_registers,
-	};
+	entry->effects = table_entry->data->sticky_effects;
+#pragma GCC unroll 64
+	for (int i = 0; i < REGISTER_COUNT; i++) {
+		entry->widen_count[i] = 0;
+	}
+	entry->used_count = used_count;
+	entry->generation = 0;
+	entry->used_registers = used_registers;
 	int j = 0;
 	for_each_bit(used_registers, bit, i) {
 		entry->registers[j++] = registers->registers[i];
