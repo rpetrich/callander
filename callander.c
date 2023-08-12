@@ -2157,7 +2157,7 @@ struct loaded_binary *find_loaded_binary(const struct loader_context *context, c
 	return NULL;
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1, 3)))
 static int protection_for_address(const struct loader_context *context, const void *address, struct loaded_binary **out_binary, const ElfW(Shdr) **out_section);
 static int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section);
 
@@ -2335,6 +2335,7 @@ static void handle_musl_setxid(struct program_state *analysis, __attribute__((un
 	}
 }
 
+__attribute__((nonnull(1)))
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
 __attribute__((nonnull(1, 2, 3)))
@@ -2512,7 +2513,8 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 		LOG("dlopen with NULL");
 		return;
 	}
-	int prot = protection_for_address(&analysis->loader, needed_path, NULL, NULL);
+	struct loaded_binary *binary;
+	int prot = protection_for_address(&analysis->loader, needed_path, &binary, NULL);
 	if ((prot & PROT_READ) == 0) {
 		ERROR("dlopen with constant, but unreadable value", temp_str(copy_address_description(&analysis->loader, needed_path)));
 		DIE("dlopen call stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
@@ -4712,7 +4714,8 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 			if (jump_target == NULL || jump_target == ins || jump_target == ret) {
 				break;
 			}
-			if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
+			struct loaded_binary *binary;
+			if ((protection_for_address(&analysis->loader, jump_target, &binary, NULL) & PROT_EXEC) == 0) {
 				break;
 			}
 #if BREAK_ON_UNREACHABLES
@@ -5276,13 +5279,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case INS_JUMPS_ALWAYS: {
 				LOG("found single jump");
+				struct loaded_binary *jump_binary;
 				if (jump_target == NULL) {
 					LOG("found jump to unfilled address, assuming either exit or return!");
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
 				} else if (jump_target == next_ins(ins, &decoded)) {
 					LOG("jumping to next instruction, continuing");
 					break;
-				} else if ((protection_for_address(&analysis->loader, jump_target, NULL, NULL) & PROT_EXEC) == 0) {
+				} else if ((protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 					self.description = "jump";
 					ERROR("found single jump at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
@@ -5335,11 +5339,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					struct register_state address = self.current_state.registers[reg];
 					self.description = "call*";
 					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << reg, 0, 0, required_effects);
+					struct loaded_binary *call_binary;
 					if (!register_is_exactly_known(&address)) {
 						LOG("address isn't exactly known, assuming all effects");
 						// could have any effect
 						// effects |= EFFECT_EXITS | EFFECT_RETURNS;
-					} else if ((protection_for_address(&analysis->loader, (const void *)address.value, NULL, NULL) & PROT_EXEC) == 0) {
+					} else if ((protection_for_address(&analysis->loader, (const void *)address.value, &call_binary, NULL) & PROT_EXEC) == 0) {
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 						self.description = "call*";
 						ERROR("found call* at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
@@ -5367,19 +5372,21 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					struct register_state_and_source address = address_for_indirect(decoded, modrm, &self.current_state, &decoded.unprefixed[2], &analysis->loader, ins, &is_null);
 					self.description = "call*";
 					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, address.source, 0, 0, required_effects);
+					struct loaded_binary *call_address_binary;
 					if (!register_is_exactly_known(&address.state)) {
 						LOG("address isn't exactly known, assuming all effects");
 						// could have any effect
 						// effects |= EFFECT_EXITS | EFFECT_RETURNS;
 					} else if (is_null) {
 						LOG("indirecting through null, assuming read of data that is populated at runtime");
-					} else if ((protection_for_address(&analysis->loader, (const void *)address.state.value, NULL, NULL) & PROT_READ) == 0) {
+					} else if ((protection_for_address(&analysis->loader, (const void *)address.state.value, &call_address_binary, NULL) & PROT_READ) == 0) {
 						LOG("call* indirect to known, but unreadable address", address.state.value);
 					} else {
 						ins_ptr dest = (ins_ptr)(uintptr_t)*(const x86_uint64 *)address.state.value;
 						LOG("dest is", (uintptr_t)dest);
 						if (dest) {
-							if ((protection_for_address(&analysis->loader, dest, NULL, NULL) & PROT_EXEC) == 0) {
+							struct loaded_binary *call_binary;
+							if ((protection_for_address(&analysis->loader, dest, &call_binary, NULL) & PROT_EXEC) == 0) {
 								dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
 								self.description = "call*";
@@ -5464,7 +5471,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						goto update_and_return;
 					}
-					if ((protection_for_address(&analysis->loader, (const void *)address.state.value, NULL, NULL) & PROT_READ) == 0) {
+					struct loaded_binary *call_address_binary;
+					if ((protection_for_address(&analysis->loader, (const void *)address.state.value, &call_address_binary, NULL) & PROT_READ) == 0) {
 						switch (jump_status) {
 							case DISALLOW_JUMPS_INTO_THE_ABYSS:
 								ERROR("jmpq* indirect to known, but unreadable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.state.value)));
@@ -5490,11 +5498,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					new_ins = *(ins_ptr *)address.state.value;
 				}
+				struct loaded_binary *call_binary;
 				if (new_ins == NULL) {
 					LOG("address is known, but only filled at runtime, assuming all effects");
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
 					LOG("completing from jmpq* to known, but unfilled address", temp_str(copy_address_description(&analysis->loader, self.entry)));
-				} else if ((protection_for_address(&analysis->loader, new_ins, NULL, NULL) & PROT_EXEC) == 0) {
+				} else if ((protection_for_address(&analysis->loader, new_ins, &call_binary, NULL) & PROT_EXEC) == 0) {
 					dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
 #if ABORT_AT_NON_EXECUTABLE_ADDRESS
@@ -6263,7 +6272,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								uintptr_t base_addr = self.current_state.registers[base].value + self.current_state.mem_rm.addr;
 								uintptr_t value = self.current_state.registers[index].value;
 								uintptr_t max = self.current_state.registers[index].max;
-								if (protection_for_address(&analysis->loader, (const void *)(base_addr + value * sizeof(uint32_t)), NULL, NULL) & PROT_READ) {
+								struct loaded_binary *mov_binary;
+								if (protection_for_address(&analysis->loader, (const void *)(base_addr + value * sizeof(uint32_t)), &mov_binary, NULL) & PROT_READ) {
 									if (max - value > MAX_LOOKUP_TABLE_SIZE) {
 										LOG("unsigned lookup table rejected because range of index is too large", max - value);
 										self.description = "rejected lookup table";
@@ -7708,7 +7718,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.current_state.sources[reg] = 0;
 				clear_match(&analysis->loader, &self.current_state, reg, ins);
 				void *address = (void *)dest.value;
-				if (protection_for_address(&analysis->loader, address, NULL, NULL) & PROT_EXEC) {
+				struct loaded_binary *binary;
+				if (protection_for_address(&analysis->loader, address, &binary, NULL) & PROT_EXEC) {
 					LOG("mov is to executable address, assuming it could be called after startup");
 					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
 					// self.description = "mov";
@@ -7797,7 +7808,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_match(&analysis->loader, &self.current_state, rm, ins);
 					dump_register(&analysis->loader, state);
 					pending_stack_clear &= ~((register_mask)1 << rm);
-					if (protection_for_address(&analysis->loader, (const void *)state.value, NULL, NULL) & PROT_EXEC) {
+					struct loaded_binary *binary;
+					if (protection_for_address(&analysis->loader, (const void *)state.value, &binary, NULL) & PROT_EXEC) {
 						self.description = "mov";
 						if (required_effects & EFFECT_ENTRY_POINT) {
 							if (rm == sysv_argument_abi_register_indexes[0]) {
@@ -9554,39 +9566,23 @@ static inline int protection_for_address_in_binary(const struct loaded_binary *b
 	return 0;
 }
 
+__attribute__((nonnull(1, 3)))
 static int protection_for_address(const struct loader_context *context, const void *address, struct loaded_binary **out_binary, const ElfW(Shdr) **out_section) {
 	uintptr_t addr = (uintptr_t)address;
+	struct loaded_binary *binary = binary_for_address(context, address);
+	if (LIKELY(binary != NULL)) {
+		*out_binary = binary;
+		return protection_for_address_definitely_in_binary(binary, addr, out_section);
+	}
 	if ((intptr_t)addr >= (intptr_t)PAGE_SIZE) {
-		struct loaded_binary *binary = context->last_used;
-		int result = protection_for_address_in_binary(binary, addr, out_section);
-		if (result != 0) {
-			if (out_binary != NULL) {
-				*out_binary = binary;
-			}
-			return result;
-		}
-		for (binary = context->binaries; binary != NULL; binary = binary->next) {
-			result = protection_for_address_in_binary(binary, addr, out_section);
-			if (result != 0) {
-				if (out_binary != NULL) {
-					*out_binary = binary;
-				}
-				((struct loader_context *)context)->last_used = binary;
-				return result;
-			}
-		}
 		for (const struct loader_stub *stub = context->stubs; stub != NULL; stub = stub->next) {
 			if (address == stub) {
-				if (out_binary != NULL) {
-					*out_binary = NULL;
-				}
+				*out_binary = NULL;
 				return PROT_EXEC;
 			}
 		}
 	}
-	if (out_binary != NULL) {
-		*out_binary = NULL;
-	}
+	*out_binary = NULL;
 	return 0;
 }
 
