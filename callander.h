@@ -189,7 +189,7 @@ struct loader_context {
 	ins_ptr setxid_syscall_entry;
 	ins_ptr setxid_sighandler_syscall;
 	ins_ptr setxid_sighandler_syscall_entry;
-	struct loaded_binary *last_used;
+	struct loaded_binary_stub *sorted_binaries;
 	int binary_count;
 };
 

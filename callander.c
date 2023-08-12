@@ -8724,6 +8724,24 @@ static int special_binary_flags_for_path(const char *path)
 	return result;
 }
 
+struct loaded_binary_stub {
+	void *base;
+	struct loaded_binary *binary;
+};
+
+static inline int compare_loaded_binary_stubs(const void *left, const void *right, __attribute__((unused)) void *data)
+{
+	struct loaded_binary_stub const *left_stub = left;
+	struct loaded_binary_stub const *right_stub = right;
+	if (left_stub->base < right_stub->base) {
+		return 1;
+	}
+	if (left_stub->base > right_stub->base) {
+		return -1;
+	}
+	return 0;
+}
+
 int load_binary_into_analysis(struct program_state *analysis, const char *path, int fd, const void *existing_base_address, struct loaded_binary **out_binary) {
 	struct binary_info info;
 	unsigned long hash = elf_hash((const unsigned char *)path);
@@ -8875,9 +8893,14 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 			}
 		}
 	}
+	analysis->loader.sorted_binaries = realloc(analysis->loader.sorted_binaries, analysis->loader.binary_count * sizeof(struct loaded_binary_stub));
+	analysis->loader.sorted_binaries[new_binary->id] = (struct loaded_binary_stub){
+		.binary = new_binary,
+		.base = new_binary->info.base,
+	};
+	qsort_r(analysis->loader.sorted_binaries, analysis->loader.binary_count, sizeof(struct loaded_binary_stub), compare_loaded_binary_stubs, NULL);
 	if (analysis->loader.binaries == NULL) {
 		analysis->loader.last = new_binary;
-		analysis->loader.last_used = new_binary;
 		analysis->loader.main = new_binary;
 	} else {
 		analysis->loader.binaries->previous = new_binary;
@@ -9586,22 +9609,26 @@ static int protection_for_address(const struct loader_context *context, const vo
 	return 0;
 }
 
+static inline bool binary_for_address_callback(int index, void *ordered, void *needle)
+{
+	const struct loaded_binary_stub *sorted_binaries = ordered;
+	return sorted_binaries[index].base <= needle;
+}
+
 struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr)
 {
-	if ((uintptr_t)addr < PAGE_SIZE) {
-		return NULL;
-	}
-	struct loaded_binary *binary = context->last_used;
-	if (addr >= binary->info.base && addr < binary->info.base + binary->info.size) {
-		return binary;
-	}
-	for (binary = context->binaries; binary != NULL; binary = binary->next) {
-		if (addr >= binary->info.base && addr < binary->info.base + binary->info.size) {
-			((struct loader_context *)context)->last_used = binary;
-			break;
+	if ((uintptr_t)addr >= PAGE_SIZE) {
+		int count = context->binary_count;
+		struct loaded_binary_stub *sorted_binaries = context->sorted_binaries;
+		int i = bsearch_bool(count, sorted_binaries, (void *)addr, binary_for_address_callback);
+		if (i < count) {
+			struct loaded_binary *binary = sorted_binaries[i].binary;
+			if (addr < sorted_binaries[i].base + binary->info.size) {
+				return binary;
+			}
 		}
 	}
-	return binary;
+	return NULL;
 }
 
 char *copy_address_details(const struct loader_context *context, const void *addr, bool include_symbol)
