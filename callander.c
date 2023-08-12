@@ -5981,7 +5981,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int reg = x86_read_reg(modrm, decoded.prefixes);
 						if (x86_modrm_is_direct(modrm) && reg == x86_read_rm(modrm, decoded.prefixes)) {
-							LOG("found xor with self in SSE, zeroing idiom", name_for_register(reg));
+							LOG("found xor with self in SSE, zeroing idiom", reg);
 							ins_ptr lookahead = next_ins(ins, &decoded);
 							struct decoded_ins lookahead_decoded;
 							if (decode_ins(lookahead, &lookahead_decoded)) {
