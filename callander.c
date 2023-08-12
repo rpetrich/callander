@@ -38,6 +38,8 @@
 #endif
 #endif
 
+#define SKIP_SHIFT
+
 #define CLEAR_PROCESSED_ENTRIES
 
 #define for_each_bit(value, bit_name, index) for (__typeof__(value) bit_name, index, temp = value; temp != 0;) if ((bit_name = temp & -temp), (index = __builtin_ctzl(temp)), (temp ^= bit_name), true)
@@ -1319,7 +1321,11 @@ static char *copy_call_trace_description(const struct loader_context *context, c
 void init_searched_instructions(struct searched_instructions *search)
 {
 	search->table = calloc(8, sizeof(*search->table));
+#ifdef SKIP_SHIFT
+	search->mask = 7 * sizeof(struct searched_instruction_entry);
+#else
 	search->mask = 7;
+#endif
 	search->remaining_slots = 7;
 	search->generation = 0;
 	search->queue = (struct queued_instructions){ 0 };
@@ -1331,7 +1337,12 @@ void cleanup_searched_instructions(struct searched_instructions *search)
 	uint32_t mask = search->mask;
 	struct searched_instruction_entry *table = search->table;
 	uint32_t count = 0;
-	for (uint32_t i = 0; i <= mask; i++) {
+#ifdef SKIP_SHIFT
+	uint32_t last_index = mask / sizeof(struct searched_instruction_entry);
+#else
+	uint32_t last_index = mask;
+#endif
+	for (uint32_t i = 0; i <= last_index; i++) {
 		struct searched_instruction_data *data = table[i].data;
 		if (data != NULL) {
 			count++;
@@ -1349,25 +1360,57 @@ void cleanup_searched_instructions(struct searched_instructions *search)
 	free(search->callbacks);
 }
 
+__attribute__((always_inline))
+static inline uint32_t hash_instruction_address(ins_ptr addr)
+{
+	// I don't know why this hash function is so effective at distributing keys, but it is
+	uint32_t truncated = (uintptr_t)addr;
+	return ((truncated >> 16) ^ truncated) * 0x119de1f3;
+}
+
+__attribute__((always_inline))
+static inline uint32_t next_index(uint32_t index)
+{
+#ifdef SKIP_SHIFT
+	return index + sizeof(struct searched_instruction_entry);
+#else
+	return index + 1;
+#endif
+}
+
+__attribute__((always_inline))
+static inline struct searched_instruction_entry *entry_for_index(struct searched_instruction_entry *table, uint32_t index)
+{
+#ifdef SKIP_SHIFT
+	return (struct searched_instruction_entry *)((uintptr_t)table + index);
+#else
+	return &table[index];
+#endif
+}
+
 __attribute__((noinline))
 __attribute__((nonnull(1)))
 static void grow_already_searched_instructions(struct searched_instructions *search)
 {
 	struct searched_instruction_entry *old_table = search->table;
+#ifdef SKIP_SHIFT
+	uint32_t old_size = (search->mask / sizeof(struct searched_instruction_entry)) + 1;
+#else
 	uint32_t old_size = search->mask + 1;
+#endif
 	uint32_t new_size = old_size * 2;
-	uint32_t mask = new_size - 1;
+	uint32_t mask = (new_size - 1) * sizeof(struct searched_instruction_entry);
 	struct searched_instruction_entry *new_table = calloc(new_size, sizeof(*new_table));
 	uint32_t remaining_slots = (new_size * 3) / 4;
 	for (uint32_t i = 0; i < old_size; i++) {
 		struct searched_instruction_entry *value = &old_table[i];
 		if (value->address != NULL) {
-			uint32_t index = (uint32_t)(uintptr_t)value->address;
-			index = ((index >> 16) ^ index) * 0x119de1f3;
-			for (;; index++) {
+			uint32_t index = hash_instruction_address(value->address);
+			for (;; index = next_index(index)) {
 				index &= mask;
-				if (new_table[index].address == NULL) {
-					new_table[index] = *value;
+				struct searched_instruction_entry *entry = entry_for_index(new_table, index);
+				if (entry->address == NULL) {
+					*entry = *value;
 					break;
 				}
 			}
@@ -1383,14 +1426,6 @@ static void grow_already_searched_instructions(struct searched_instructions *sea
 
 __attribute__((nonnull(1, 2, 3)))
 static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, const struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects);
-
-__attribute__((always_inline))
-static inline uint32_t hash_instruction_address(ins_ptr addr)
-{
-	// I don't know why this hash function is so effective at distributing keys, but it is
-	uint32_t truncated = (uintptr_t)addr;
-	return ((truncated >> 16) ^ truncated) * 0x119de1f3;
-}
 
 __attribute__((always_inline))
 static inline bool binary_has_flags(const struct loaded_binary *binary, int flags)
@@ -1808,14 +1843,14 @@ retry:
 	;
 	struct searched_instruction_entry *table = search->table;
 	uint32_t mask = search->mask;
-	uint32_t index = original_index;
+	uint32_t index = original_index & mask;
 	token->generation = search->generation;
-	for (;; index++) {
-		index &= mask;
-		const void *value = table[index].address;
+	for (;; index = next_index(index) & mask) {
+		struct searched_instruction_entry *entry = entry_for_index(table, index);
+		const void *value = entry->address;
 		if (LIKELY(value == addr)) {
 			token->index = index;
-			return &table[index];
+			return entry;
 		}
 		if (value == NULL) {
 			if (UNLIKELY(search->remaining_slots == 1)) {
@@ -1823,12 +1858,12 @@ retry:
 				goto retry;
 			}
 			search->remaining_slots--;
-			table[index].address = addr;
+			entry->address = addr;
 			token->index = index;
 			struct searched_instruction_data *result = malloc(sizeof(struct searched_instruction_data));
 			*result = (struct searched_instruction_data){ 0 };
-			table[index].data = result;
-			return &table[index];
+			entry->data = result;
+			return entry;
 		}
 	}
 }
@@ -1880,26 +1915,26 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 		uint32_t mask = search->mask;
 		index = hash_instruction_address(addr);
 		token->generation = table_generation;
-		for (;; index++) {
+		for (;; index = next_index(index)) {
 			index &= mask;
-			if (table[index].address == addr) {
+			if (entry_for_index(table, index)->address == addr) {
 				token->index = index;
 				break;
 			}
 		}
 	}
 	uint32_t entry_offset = token->entry_offset;
-	if (!validate_offset(table[index].data, entry_offset)) {
+	struct searched_instruction_entry *table_entry = entry_for_index(table, index);
+	if (!validate_offset(table_entry->data, entry_offset)) {
 		// deleted by hack for lower memory usage!
 		return;
 	}
-	struct searched_instruction_data_entry *entry = entry_for_offset(table[index].data, entry_offset);
+	struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 	if (token->entry_generation == entry->generation) {
 		entry->effects = new_effects;
 #ifdef CLEAR_PROCESSED_ENTRIES
 		// hack for lower memory usage
 		if (LIKELY((new_effects & EFFECT_PROCESSING) == 0)) {
-			struct searched_instruction_entry *table_entry = &table[index];
 			if (UNLIKELY(table_entry->data->relevant_registers == 0)) {
 				size_t size = sizeof_searched_instruction_data_entry(entry);
 				if (table_entry->data->end_offset == entry_offset + size) {
@@ -1931,16 +1966,16 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 		uint32_t mask = search->mask;
 		index = hash_instruction_address(addr);
 		token->generation = table_generation;
-		for (;; index++) {
+		for (;; index = next_index(index)) {
 			index &= mask;
-			ins_ptr value = table[index].address;
+			ins_ptr value = entry_for_index(table, index)->address;
 			if (value == addr) {
 				token->index = index;
 				break;
 			}
 		}
 	}
-	struct searched_instruction_data *data = table[index].data;
+	struct searched_instruction_data *data = entry_for_index(table, index)->data;
 	struct previous_register_masks result = (struct previous_register_masks){
 		.relevant_registers = data->relevant_registers,
 		.preserved_and_kept_registers = data->preserved_and_kept_registers,
