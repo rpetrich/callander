@@ -7519,7 +7519,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
 										analysis->loader.searching_libcrypto_dlopen = true;
 									}
-									const uintptr_t *symbol_data = (const uintptr_t *)symbol.address;
+									typedef uintptr_t unaligned_uintptr __attribute__((aligned(1)));
+									const unaligned_uintptr *symbol_data = (const unaligned_uintptr *)symbol.address;
 									int size = symbol.size / sizeof(uintptr_t);
 									for (int i = 0; i < size; i++) {
 										uintptr_t data = symbol_data[i];
