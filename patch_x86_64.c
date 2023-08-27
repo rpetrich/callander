@@ -775,13 +775,12 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 	(void)formatter_data;
 	const uint8_t *end_src = src + byte_count;
 	while (src < end_src) {
-		int length = InstructionSize_x86_64(src, 0xf);
-		if (length == INSTRUCTION_INVALID) {
+		struct x86_instruction decoded;
+		if (!x86_decode_instruction(src, &decoded)) {
 			return false;
 		}
-		memcpy(dest, src, length);
-		const uint8_t *ins = dest;
-		struct x86_ins_prefixes prefixes = x86_decode_ins_prefixes(&ins);
+		memcpy(dest, src, decoded.length);
+		const uint8_t *ins = dest + (decoded.unprefixed - src);
 		switch (*ins) {
 			case 0xe9: {
 				PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
@@ -796,7 +795,7 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 			case INS_LEA: {
 				x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
 				if (modrm.mod == 0) {
-					int rm = x86_read_rm(modrm, prefixes);
+					int rm = x86_read_rm(modrm, decoded.prefixes);
 					switch (rm) {
 						case X86_REGISTER_BP:
 						case X86_REGISTER_13: {
@@ -812,8 +811,8 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 				break;
 			}
 		}
-		dest += length;
-		src += length;
+		dest = (uint8_t *)x86_next_instruction(dest, &decoded);
+		src = x86_next_instruction(src, &decoded);
 	}
 	return true;
 }
