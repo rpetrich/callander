@@ -155,7 +155,7 @@ static inline const uint8_t *x86_next_instruction(const uint8_t *addr, const str
 }
 
 // x86_is_return_instruction checks if the instruction is a return
-static inline bool x86_is_return_instruction(struct x86_instruction *ins)
+static inline bool x86_is_return_instruction(const struct x86_instruction *ins)
 {
 	switch (*ins->unprefixed) {
 		case 0xc3: // ret

@@ -10,6 +10,7 @@
 #include "handler.h"
 #include "mapped.h"
 #include "stack.h"
+#include "ins.h"
 #include "x86.h"
 #include "x86_64_length_disassembler.h"
 
@@ -224,12 +225,11 @@ static inline intptr_t destination_of_pc_relative_addr(const uint8_t *addr)
 }
 
 // is_patchable_instruction returns true if the instruction can safely be relocated into a detour
-static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatter formatter, void *formatter_data)
+static bool is_patchable_instruction(const struct x86_instruction *addr, patch_address_formatter formatter, void *formatter_data)
 {
 	(void)formatter;
 	(void)formatter_data;
-	const uint8_t *ins = addr;
-	x86_decode_ins_prefixes(&ins);
+	const uint8_t *ins = addr->unprefixed;
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
 		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(addr, formatter_data)));
 		return true;
@@ -296,11 +296,11 @@ static bool is_patchable_instruction(const uint8_t *addr, patch_address_formatte
 		PATCH_LOG("Patching address with ret", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (x86_is_syscall_instruction(addr)) {
+	if (x86_is_syscall_instruction(ins)) {
 		PATCH_LOG("Patching address with syscall", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
-	if (x86_is_nop_instruction(addr)) {
+	if (x86_is_nop_instruction(ins)) {
 		PATCH_LOG("Patching address with nop", temp_str(formatter(addr, formatter_data)));
 		return true;
 	}
@@ -390,16 +390,19 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 	const uint8_t *jump;
 	const uint8_t *ins = search.addr;
 	bool previous_ins_is_stack_check = false;
-	while (!x86_is_return_instruction(ins)) {
-		// Examine jumps
-		int length = InstructionSize_x86_64(ins, 0xf);
-		if (length == INSTRUCTION_INVALID) {
+	for (;;) {
+		struct x86_instruction decoded;
+		if (!x86_decode_instruction(ins, &decoded)) {
 			return false;
 		}
-		switch (x86_decode_jump_instruction(ins, &jump)) {
-			case X86_JUMPS_NEVER:
+		if (x86_is_return_instruction(&decoded)) {
+			break;
+		}
+		// Examine jumps
+		switch (x86_decode_jump_instruction(&decoded, &jump)) {
+			case INS_JUMPS_NEVER:
 				break;
-			case X86_JUMPS_ALWAYS: {
+			case INS_JUMPS_ALWAYS: {
 				// jump instruction
 				ins = jump;
 				if (check_already_searched_instruction((struct instruction_search){
@@ -411,7 +414,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 				}
 				continue;
 			}
-			case X86_JUMPS_OR_CONTINUES:
+			case INS_JUMPS_OR_CONTINUES:
 				if (!previous_ins_is_stack_check) {
 					// conditional jump instruction
 					intptr_t taken_return_address = *out_return_address;
@@ -421,7 +424,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 						.searched = search.searched,
 					}, bp, formatter, formatter_data, &taken_return_address);
 					bool not_result = find_return_address((struct instruction_search){
-						.addr = ins + length,
+						.addr = x86_next_instruction(ins, &decoded),
 						.searched = search.searched,
 					}, bp, formatter, formatter_data, &not_return_address);
 					// succeed if both succeed and match, or if one succeeds
@@ -438,8 +441,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 				break;
 		}
 		previous_ins_is_stack_check = false;
-		const uint8_t *next_ins = ins + length;
-		switch (length) {
+		switch (decoded.length) {
 			case 1:
 				if (ins[0] >= INS_PUSHQ_START && ins[0] <= INS_PUSHQ_END) {
 					// pushq %r...
@@ -525,7 +527,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 				}
 				break;
 		}
-		ins = next_ins;
+		ins = x86_next_instruction(ins, &decoded);
 	}
 	// special case the imm16 form of the ret instruction
 	if (*ins == INS_REPZ) {
@@ -551,27 +553,28 @@ tail_call:
 	bool has_instruction = instruction == ins;
 	PATCH_LOG("searching for", (uintptr_t)instruction);
 	PATCH_LOG("processing", (uintptr_t)ins);
-	while (!x86_is_return_instruction(ins)) {
-		int length = InstructionSize_x86_64(ins, 0xf);
-		if (length == INSTRUCTION_INVALID) {
-			// Be conservative and assume the range was jumped to
-			PATCH_LOG("found invalid instruction", (uintptr_t)ins);
+	struct x86_instruction decoded;
+	for (;;) {
+		if (!x86_decode_instruction(ins, &decoded)) {
 			return false;
 		}
+		if (x86_is_return_instruction(&decoded)) {
+			break;
+		}
 		// Examine jumps
-		switch (x86_decode_jump_instruction(ins, &jump)) {
-			case X86_JUMPS_NEVER:
+		switch (x86_decode_jump_instruction(&decoded, &jump)) {
+			case INS_JUMPS_NEVER:
 				break;
-			case X86_JUMPS_ALWAYS:
+			case INS_JUMPS_ALWAYS:
 				if (has_instruction) {
 					if ((uintptr_t)search.addr > (uintptr_t)out_block->start) {
 						out_block->start = search.addr;
 					}
-					out_block->end = ins + length;
+					out_block->end = x86_next_instruction(ins, &decoded);
 				}
 				search.addr = jump;
 				goto tail_call;
-			case X86_JUMPS_OR_CONTINUES: {
+			case INS_JUMPS_OR_CONTINUES: {
 				bool jumped_result = find_basic_block(thread, (struct instruction_search){
 					.addr = jump,
 					.searched = search.searched,
@@ -580,7 +583,7 @@ tail_call:
 					return false;
 				}
 				bool continued_result = find_basic_block(thread, (struct instruction_search){
-					.addr = ins + length,
+					.addr = x86_next_instruction(ins, &decoded),
 					.searched = search.searched,
 				}, instruction, out_block);
 				if (!continued_result) {
@@ -589,13 +592,13 @@ tail_call:
 				break;
 			}
 		}
-		ins += length;
+		ins = x86_next_instruction(ins, &decoded);
 		if (ins == instruction) {
 			has_instruction = true;
 		}
 		PATCH_LOG("processing", (uintptr_t)ins);
 	}
-	ins += InstructionSize_x86_64(ins, 0xf);
+	ins = x86_next_instruction(ins, &decoded);
 	// Search for trailing nops
 	uintptr_t last_ins_page = ((uintptr_t)ins - 1) & -PAGE_SIZE;
 	for (;;) {
@@ -630,38 +633,36 @@ __attribute__((nonnull(2, 5)))
 bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result)
 {
 	// precheck on target
-	if (!is_patchable_instruction(target, formatter, formatter_data)) {
+	struct x86_instruction ins;
+	if (!x86_decode_instruction(target, &ins)) {
 		return false;
 	}
-	int target_size = InstructionSize_x86_64(target, 0xf);
-	if (target_size == INSTRUCTION_INVALID) {
+	if (!is_patchable_instruction(&ins, formatter, formatter_data)) {
 		return false;
 	}
 	// find a candidate for the start of the patch, possibly the target itself
 	const uint8_t *start = target;
-	const uint8_t *end = start + target_size;
+	const uint8_t *end = x86_next_instruction(start, &ins);
 	for (const uint8_t *current = basic_block.start; current < target; ) {
-		if (!is_patchable_instruction(current, formatter, formatter_data)) {
+		if (!x86_decode_instruction(current, &ins)) {
+			return false;
+		}
+		if (!is_patchable_instruction(&ins, formatter, formatter_data)) {
 			start = target;
 		} else if (start == target || end - current >= (ssize_t)minimum_size) {
 			start = current;
 		}
-		int size = InstructionSize_x86_64(current, 0xf);
-		if (size == INSTRUCTION_INVALID) {
-			return false;
-		}
-		current += size;
+		current = x86_next_instruction(current, &ins);
 	}
 	// search past the target until the minimum patch size is found
 	while (end < basic_block.end && end - start < (ssize_t)ideal_size) {
-		if (!is_patchable_instruction(end, formatter, formatter_data)) {
+		if (!x86_decode_instruction(end, &ins)) {
 			break;
 		}
-		int size = InstructionSize_x86_64(end, 0xf);
-		if (size == INSTRUCTION_INVALID) {
+		if (!is_patchable_instruction(&ins, formatter, formatter_data)) {
 			break;
 		}
-		end += size;
+		end = x86_next_instruction(end, &ins);
 	}
 	// couldn't find enough patchable bytes
 	if (end - start < (ssize_t)minimum_size) {
@@ -823,8 +824,12 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
 	// Find the patch target
-	if (x86_is_endbr64_instruction((const uint8_t *)instruction)) {
-		instruction += 4;
+	struct x86_instruction decoded;
+	if (!x86_decode_instruction((const uint8_t *)instruction, &decoded)) {
+		return false;
+	}
+	if (x86_is_endbr64_instruction(&decoded)) {
+		instruction += decoded.length;
 	}
 	struct instruction_range patch_target;
 	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, naive_address_formatter, NULL, &patch_target)) {
