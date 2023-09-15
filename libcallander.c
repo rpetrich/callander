@@ -39,11 +39,11 @@ void callander_perform_analysis(struct program_state *analysis, callander_main_f
 					ERROR("error opening binary", mapping.path);
 					DIE("error was", fs_strerror(binary_fd));
 				}
-				struct loaded_binary *binary;
+				struct loaded_binary *binary = NULL;
 				size_t path_len = fs_strlen(mapping.path);
 				char *path = malloc(path_len + 1);
 				fs_memcpy(path, mapping.path, path_len + 1);
-				int result = load_binary_into_analysis(analysis, path, binary_fd, (const void *)((uintptr_t)mapping.start - mapping.offset), &binary);
+				result = load_binary_into_analysis(analysis, path, binary_fd, (const void *)((uintptr_t)mapping.start - mapping.offset), &binary);
 				fs_close(binary_fd);
 				if (result < 0) {
 					DIE("error loading binary", fs_strerror(result));
@@ -58,22 +58,25 @@ void callander_perform_analysis(struct program_state *analysis, callander_main_f
 
 	// analyze the program
 	record_syscall(analysis, SYS_clock_gettime, (struct analysis_frame){
-		.current = { .address = NULL, .description = "vDSO", .next = NULL },
+		.next = NULL,
+		.address = NULL,
+		.description = "vDSO",
 		.current_state = empty_registers,
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
+		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
 	// analyze the main function
-	struct analysis_frame new_caller = { .current = { .address = NULL, .description = "main", .next = NULL }, .current_state = empty_registers, .entry = NULL, .entry_state = &empty_registers, .token = { 0 } };
+	struct analysis_frame new_caller = { .address = NULL, .description = "main", .next = NULL, .current_state = empty_registers, .entry = NULL, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 	set_register(&new_caller.current_state.registers[sysv_argument_abi_register_indexes[0]], (uintptr_t)data);
-	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)main, &new_caller, true);
+	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)main, &new_caller, DISALLOW_JUMPS_INTO_THE_ABYSS, true);
 
 	// analyze the return from exit
-	new_caller.current.description = "exit";
+	new_caller.description = "exit";
 	set_register(&new_caller.current_state.registers[REGISTER_RAX], (uintptr_t)SYS_exit_group);
-	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)&fs_syscall, &new_caller, true);
+	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)&fs_syscall, &new_caller, DISALLOW_JUMPS_INTO_THE_ABYSS, true);
 
 	LOG("finished initial pass, dequeuing instructions");
 	ERROR_FLUSH();
@@ -117,7 +120,7 @@ void callander_run(callander_main_function main, void *data)
 		binary->child_base = (uintptr_t)binary->info.base;
 	}
 
-	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, 0, ~(uint32_t)0, NULL);
+	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0);
 	free_loaded_binary(analysis.loader.binaries);
 	ERROR_FLUSH();
 	result = FS_SYSCALL(__NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, (intptr_t)&prog);
