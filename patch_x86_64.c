@@ -881,7 +881,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, self_fd == -1 ? MAP_ANONYMOUS|MAP_PRIVATE : MAP_PRIVATE, self_fd, self_fd == -1 ? 0 : PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
-			PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
+			PATCH_LOG("Failed to patch: mmap failed", fs_strerror((intptr_t)new_mapping));
 			return false;
 		}
 		if (is_valid_pc_relative_offset((uintptr_t)new_mapping - (uintptr_t)patch_target.end)) {
@@ -899,7 +899,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 			}
 			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
 			if (fs_is_map_failed(remap_result)) {
-				PATCH_LOG("Failed to patch: mremap failed", -(intptr_t)remap_result);
+				PATCH_LOG("Failed to patch: mremap failed", fs_strerror((intptr_t)remap_result));
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 				ERROR_FLUSH();
@@ -1002,7 +1002,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	if (mapping_error == 0) {
 		int result = fs_mprotect((void *)start_page, protect_size, target_mapping.flags & (PROT_READ | PROT_WRITE | PROT_EXEC));
 		if (result < 0) {
-			PATCH_LOG("Failed to update protection", -result);
+			PATCH_LOG("Failed to update protection", fs_strerror(result));
 		}
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
