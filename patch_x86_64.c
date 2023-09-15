@@ -612,11 +612,10 @@ tail_call:
 		if (!x86_is_nop_instruction(ins)) {
 			break;
 		}
-		int length = InstructionSize_x86_64(ins, 0xf);
-		if (length == INSTRUCTION_INVALID) {
+		if (!x86_decode_instruction(ins, &decoded)) {
 			break;
 		}
-		ins += length;
+		ins = x86_next_instruction(ins, &decoded);
 	}
 	if (has_instruction) {
 		if ((uintptr_t)search.addr > (uintptr_t)out_block->start) {
@@ -921,7 +920,12 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	memcpy(trampoline, call_template, suffix_size);
 	trampoline += suffix_size;
 	// Copy the patched instructions from the original basic block
-	uintptr_t tail_start = skip ? instruction + InstructionSize_x86_64((const uint8_t *)instruction, 0xf) : instruction;
+	uintptr_t tail_start = instruction;
+	if (skip) {
+		if (x86_decode_instruction((const uint8_t *)instruction, &decoded)) {
+			tail_start += decoded.length;
+		}
+	}
 	size_t tail_size = (uintptr_t)patch_target.end - tail_start;
 	if (!migrate_instructions(trampoline, (const uint8_t *)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size, naive_address_formatter, NULL)) {
 		attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
@@ -950,12 +954,12 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	}
 	// Patch in some illegal instructions
 	for (const uint8_t *ill = patch_target.start; ill < patch_target.end; ) {
-		int size = InstructionSize_x86_64(ill, 0xf);
-		if (size == INSTRUCTION_INVALID) {
+		struct x86_instruction ill_decoded;
+		if (!x86_decode_instruction(ill, &ill_decoded)) {
 			break;
 		}
 		*(uint8_t *)ill = INS_ONE_BYTE_ILL;
-		ill += size;
+		ill = x86_next_instruction(ill, &ill_decoded);
 	}
 	// Wait for all cores to see these illegals
 	if (membarrier_is_supported) {
