@@ -69,7 +69,7 @@ static void make_pc_known_invalid(intptr_t pc, struct patch_state_shard *state_s
 
 // patch_syscall attempts to patch a syscall instruction and returns the new
 // program counter that the syscall should return to
-void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intptr_t bp)
+void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intptr_t bp, int self_fd)
 {
 	if (!patch_syscalls) {
 		// ERROR("ignoring syscall patch at", (uintptr_t)pc);
@@ -82,6 +82,7 @@ void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intp
 		.bp = bp,
 		.shard = &patch_state_shards[((uintptr_t)pc ^ ((uintptr_t)pc >> 3)) & 0xf],
 		.patched = false,
+		.self_fd = self_fd,
 	};
 	if (!pc_is_known_invalid(args.pc, args.shard)) {
 		fs_mutex_lock(&args.shard->lock);

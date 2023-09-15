@@ -552,12 +552,13 @@ tail_call:
 	const uint8_t *ins = search.addr;
 	bool has_instruction = instruction == ins;
 	PATCH_LOG("searching for", (uintptr_t)instruction);
-	PATCH_LOG("processing", (uintptr_t)ins);
 	struct x86_instruction decoded;
 	for (;;) {
+		PATCH_LOG("processing", (uintptr_t)ins);
 		if (!x86_decode_instruction(ins, &decoded)) {
 			return false;
 		}
+		PATCH_LOG("bytes", char_range((const char *)ins, decoded.length));
 		if (x86_is_return_instruction(&decoded)) {
 			break;
 		}
@@ -596,7 +597,6 @@ tail_call:
 		if (ins == instruction) {
 			has_instruction = true;
 		}
-		PATCH_LOG("processing", (uintptr_t)ins);
 	}
 	ins = x86_next_instruction(ins, &decoded);
 	// Search for trailing nops
@@ -674,7 +674,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 }
 
 __attribute__((warn_unused_result))
-static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip);
+static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd);
 
 static char *naive_address_formatter(const uint8_t *address, void *unused)
 {
@@ -764,7 +764,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		basic_block.end = (const uint8_t *)args->pc;
 	}
 	// Actually patch
-	args->patched = patch_common(thread, args->pc - 2, basic_block, &trampoline_call_handler_start, &trampoline_call_handler_call, &trampoline_call_handler_end, &receive_trampoline, true);
+	args->patched = patch_common(thread, args->pc - 2, basic_block, &trampoline_call_handler_start, &trampoline_call_handler_call, &trampoline_call_handler_end, &receive_trampoline, true, args->self_fd);
 }
 
 // migrate_instruction copies and relocates instructions
@@ -818,7 +818,7 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 }
 
 __attribute__((always_inline))
-static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip)
+static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd)
 {
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
@@ -865,7 +865,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		stub_address = current_region;
 		new_address = false;
 	} else {
-		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE, SELF_FD, PAGE_SIZE);
+		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, self_fd == -1 ? MAP_ANONYMOUS|MAP_PRIVATE : MAP_PRIVATE, self_fd, self_fd == -1 ? 0 : PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 			PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
@@ -1026,7 +1026,7 @@ bool patch_handle_illegal_instruction(struct thread_storage *thread, ucontext_t 
 	return args.result;
 }
 
-bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *))
+bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
 {
 	PATCH_LOG("patching breakpoint", (uintptr_t)address);
 	// Construct the basic block that contains the address. Need to do a full
@@ -1046,10 +1046,10 @@ bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t 
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, address, basic_block, &breakpoint_call_handler_start, &breakpoint_call_handler_call, &breakpoint_call_handler_end, handler, false);
+	return patch_common(thread, address, basic_block, &breakpoint_call_handler_start, &breakpoint_call_handler_call, &breakpoint_call_handler_end, handler, false, self_fd);
 }
 
-bool patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original))
+bool patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
 {
 	PATCH_LOG("patching function", (uintptr_t)function);
 	// Construct the entry basic block. Need to do a full analysis of the
@@ -1070,7 +1070,7 @@ bool patch_function(struct thread_storage *thread, intptr_t function, intptr_t (
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, function, basic_block, &function_call_handler_start, &function_call_handler_call, &function_call_handler_end, handler, false);
+	return patch_common(thread, function, basic_block, &function_call_handler_start, &function_call_handler_call, &function_call_handler_end, handler, false, self_fd);
 }
 
 #endif

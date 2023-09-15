@@ -17,25 +17,26 @@ struct patch_body_args {
 	intptr_t bp;
 	struct patch_state_shard *shard;
 	bool patched;
+	int self_fd;
 };
 
 struct thread_storage;
 
 // patch_syscall attempts to patch the syscall instruction at pc. it must
 // go through great lengths to sanity check to avoid disrupting the program
-void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intptr_t bp);
+void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intptr_t bp, int self_fd);
 
 // patch_breakpoint sets a breakpoint at the address specified that calls
 // the associated handler when the address is hit
 __attribute__((warn_unused_result))
-bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *));
+bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd);
 
 // patch_function patches a function to instead call a handler instead when the
 // function would have run. The original behaviour of the function is not called
 // and instead a function pointer that will invoke the original behaviour is
 // passed to the handler
 __attribute__((warn_unused_result))
-bool patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original));
+bool patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd);
 
 // find_unused_address finds an unmapped page by searching for an unmapped page
 uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address);

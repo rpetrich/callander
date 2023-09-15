@@ -98,7 +98,7 @@ static inline bool is_syscall_instruction(const uint32_t *addr)
 }
 
 __attribute__((warn_unused_result))
-static bool patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip);
+static bool patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip, int self_fd);
 
 // patch_body attempts to patch a syscall instruction already having taken the shard's lock
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
@@ -111,7 +111,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		PATCH_LOG("not a syscall", (uintptr_t)*instruction);
 		return;
 	}
-	args->patched = patch_common(thread, (uintptr_t)instruction, &receive_trampoline, true);
+	args->patched = patch_common(thread, (uintptr_t)instruction, &receive_trampoline, true, args->self_fd);
 }
 
 #define CACHE_LINE_SIZE 64
@@ -126,7 +126,7 @@ static void clear_icache(uintptr_t start, uintptr_t end)
 	__asm__ __volatile__("dsb ish" : : : "memory");
 }
 
-static bool patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip)
+static bool patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip, uint self_fd)
 {
 	// Find the original mapping
 	struct mapping target_mapping;
@@ -151,7 +151,7 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 		// Have at least LARGEST_TRAMPOLINE bytes left in the trampoline page and the trampoline's address is compatible with a PC-relative jump
 		stub_address = (uintptr_t)current_region;
 	} else {
-		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE, SELF_FD, PAGE_SIZE);
+		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE, self_fd, PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 			PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
@@ -228,10 +228,10 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 }
 
-bool patch_breakpoint(struct thread_storage *thread, intptr_t address, __attribute__((unused)) intptr_t entry, void (*handler)(uintptr_t *))
+bool patch_breakpoint(struct thread_storage *thread, intptr_t address, __attribute__((unused)) intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
 {
 	PATCH_LOG("patching breakpoint", (uintptr_t)address);
-	return patch_common(thread, address, handler, false);
+	return patch_common(thread, address, handler, false, self_fd);
 }
 
 #endif
