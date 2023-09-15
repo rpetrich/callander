@@ -197,7 +197,7 @@ __attribute__((nonnull(1)))
 char *copy_used_binaries(const struct loader_context *loader);
 __attribute__((nonnull(1)))
 char *copy_address_details(const struct loader_context *loader, const void *addr, bool include_symbol);
-__attribute__((nonnull(1, 2)))
+__attribute__((nonnull(1)))
 char *copy_address_description(const struct loader_context *context, const void *address);
 __attribute__((nonnull(1, 2)))
 struct loaded_binary *find_loaded_binary(const struct loader_context *context, const char *path);
