@@ -228,41 +228,45 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, patch_a
 	(void)formatter_data;
 	const uint8_t *ins = addr->unprefixed;
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
-		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0xe9) {
-		PATCH_LOG("Patching address with jump", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with jump", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == INS_MOV_REG) {
-		PATCH_LOG("Patching address with mov prefix", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with mov prefix", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == INS_CMP_32_IMM) {
-		PATCH_LOG("Patching address with cmp prefix", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with cmp prefix", temp_str(formatter(ins, formatter_data)));
+		return true;
+	}
+	if (ins[0] == 0x85 || ins[1] == 0x86) {
+		PATCH_LOG("Patching address with test", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0x8b || ins[0] == 0x89) {
 		if (ins[1] == 0x0d) {
-			PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(addr, formatter_data)));
+			PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(ins, formatter_data)));
 			return true;
 		}
 		if (ins[1] == 0x44 || ins[1] == 0x54 || ins[1] == 0x74 || ins[1] == 0x7c) {
-			PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(addr, formatter_data)));
+			PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(ins, formatter_data)));
 			return true;
 		}
-		PATCH_LOG("Patching address with mov", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with mov", temp_str(formatter(ins, formatter_data)));
 		return true;
 	} else if (ins[0] == 0xc7) {
-		PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(ins, formatter_data)));
 		return true;
 	} else if (ins[0] == 0x83) {
-		PATCH_LOG("Patching address with sub $..., %...", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with sub $..., %...", temp_str(formatter(ins, formatter_data)));
 		return true;
 	} else if (ins[0] == INS_LEA) {
 		if ((ins[1] & 0xc7) != 0x5) {
-			PATCH_LOG("Patching address with lea", temp_str(formatter(addr, formatter_data)));
+			PATCH_LOG("Patching address with lea", temp_str(formatter(ins, formatter_data)));
 			return true;
 		}
 		x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
@@ -271,37 +275,41 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, patch_a
 			switch (rm) {
 				case X86_REGISTER_BP:
 				case X86_REGISTER_13:
-					PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(addr, formatter_data)));
+					PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(ins, formatter_data)));
 					return true;
 			}
 		}
 	}
+	if (ins[0] == INS_CONDITIONAL_JMP_32_IMM_0 && ins[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && ins[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
+		PATCH_LOG("Patching conditional jump", temp_str(formatter(ins, formatter_data)));
+		return true;
+	}
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
-		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0x31) {
-		PATCH_LOG("Patching address with xor reg to reg", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with xor reg to reg", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] >= INS_PUSHQ_START && ins[0] <= INS_PUSHQ_END) {
-		PATCH_LOG("Patching push", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching push", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	// WRITE_LITERAL(TELEMETRY_FD, "Failed to patch: not a known suffix instruction\n");
 	if (x86_is_return_instruction(addr)) {
-		PATCH_LOG("Patching address with ret", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with ret", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (x86_is_syscall_instruction(ins)) {
-		PATCH_LOG("Patching address with syscall", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with syscall", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (x86_is_nop_instruction(ins)) {
-		PATCH_LOG("Patching address with nop", temp_str(formatter(addr, formatter_data)));
+		PATCH_LOG("Patching address with nop", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
-	PATCH_LOG("Address not patchable", temp_str(formatter(addr, formatter_data)));
+	PATCH_LOG("Address not patchable", temp_str(formatter(ins, formatter_data)));
 	return false;
 }
 
@@ -786,6 +794,15 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 				PATCH_LOG("is now", *disp);
 				break;
 			}
+			case INS_CONDITIONAL_JMP_32_IMM_0:
+				if (ins[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && ins[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
+					PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
+					x86_int32 *disp = (x86_int32 *)&ins[2];
+					PATCH_LOG("was", *disp);
+					*disp += delta;
+					PATCH_LOG("is now", *disp);
+				}
+				break;
 			case 0x8b:
 			case 0x89:
 			case INS_LEA: {
