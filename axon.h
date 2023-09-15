@@ -149,7 +149,7 @@ static inline struct char_range char_range(const char *buf, size_t size)
 static inline void error_write_char_range(const char *prefix, size_t prefix_len, struct char_range value)
 {
 	ERROR_WRITE(prefix, prefix_len);
-	char buf[810];
+	char buf[811];
 	size_t index = 0;
 	for (size_t i = 0; i < value.size; i++) {
 		buf[index++] = "0123456789abcdef"[(unsigned char)value.buf[i] >> 4];
@@ -162,9 +162,8 @@ static inline void error_write_char_range(const char *prefix, size_t prefix_len,
 			index = 0;
 		}
 	}
-	if (index) {
-		ERROR_WRITE(buf, index);
-	}
+	buf[index] = '\n';
+	ERROR_WRITE(buf, index+1);
 }
 
 #ifndef PRODUCT_NAME
