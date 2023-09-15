@@ -4663,7 +4663,7 @@ static inline uintptr_t search_find_next_loaded_address(struct searched_instruct
 	return i < count ? addresses[i] : ~(uintptr_t)0;
 }
 
-static inline void add_loaded_address(struct searched_instructions *search, uintptr_t address)
+static inline void add_loaded_address(__attribute__((unused)) struct searched_instructions *search, __attribute__((unused)) uintptr_t address)
 {
 	int old_count = search->loaded_address_count;
 	uintptr_t *addresses = search->loaded_addresses;
