@@ -64,26 +64,118 @@ static void inferior_debug_state_hit(__attribute__((unused)) uintptr_t *args)
 	}
 }
 
-static intptr_t inferior_inflateInit2_(__attribute__((unused)) uintptr_t *args, __attribute((unused)) intptr_t original)
+static intptr_t inferior_inflateInit_(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateInit_ called");
+	int (*orig_inflateInit_)(void *strm, const char *version, int stream_size) = (void *)original;
+	return orig_inflateInit_((void *)args[0], (const char *)args[1], args[2]);
+}
+
+static intptr_t inferior_inflateInit2_(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflateInit2_ called");
 	int (*orig_inflateInit2_)(void *strm, int windowBits, const char *version, int stream_size) = (void *)original;
 	return orig_inflateInit2_((void *)args[0], args[1], (const char *)args[2], args[3]);
 }
 
-static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attribute((unused)) intptr_t original)
+static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflate called");
 	int (*orig_inflate)(void *strm, int flush) = (void *)original;
 	return orig_inflate((void *)args[0], args[1]);
 }
 
-static intptr_t inferior_inflateEnd(__attribute__((unused)) uintptr_t *args, __attribute((unused)) intptr_t original)
+static intptr_t inferior_inflateEnd(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflateEnd called");
 	ERROR_FLUSH();
 	int (*orig_inflateEnd)(void *strm) = (void *)original;
 	return orig_inflateEnd((void *)args[0]);
+}
+
+static intptr_t inferior_inflateSetDictionary(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateSetDictionary called");
+	int (*orig_inflateSetDictionary)(void *strm, const void *dictionary, size_t dictLength) = (void *)original;
+	return orig_inflateSetDictionary((void *)args[0], (const void *)args[1], args[2]);
+}
+
+static intptr_t inferior_inflateGetDictionary(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateGetDictionary called");
+	int (*orig_inflateGetDictionary)(void *strm, void *dictionary, size_t *dictLength) = (void *)original;
+	return orig_inflateGetDictionary((void *)args[0], (void *)args[1], (size_t *)args[2]);
+}
+
+static intptr_t inferior_inflateSync(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateSync called");
+	int (*orig_inflateSync)(void *strm) = (void *)original;
+	return orig_inflateSync((void *)args[0]);
+}
+
+static intptr_t inferior_inflateCopy(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateCopy called");
+	int (*orig_inflateCopy)(void *dest, void *source) = (void *)original;
+	return orig_inflateCopy((void *)args[0], (void *)args[1]);
+}
+
+static intptr_t inferior_inflateReset(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateReset called");
+	int (*orig_inflateReset)(void *strm) = (void *)original;
+	return orig_inflateReset((void *)args[0]);
+}
+
+static intptr_t inferior_inflateReset2(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateReset2 called");
+	int (*orig_inflateReset2)(void *strm, int windowBits) = (void *)original;
+	return orig_inflateReset2((void *)args[0], args[1]);
+}
+
+static intptr_t inferior_inflatePrime(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflatePrime called");
+	int (*orig_inflatePrime)(void *strm, int bits, int value) = (void *)original;
+	return orig_inflatePrime((void *)args[0], args[1], args[2]);
+}
+
+static intptr_t inferior_inflateMark(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateMark called");
+	int (*orig_inflateMark)(void *strm) = (void *)original;
+	return orig_inflateMark((void *)args[0]);
+}
+
+static intptr_t inferior_inflateGetHeader(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateGetHeader called");
+	int (*orig_inflateGetHeader)(void *strm, void *header) = (void *)original;
+	return orig_inflateGetHeader((void *)args[0], (void *)args[1]);
+}
+
+static intptr_t inferior_inflateBackInit_(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateBackInit_ called");
+	int (*orig_inflateBackInit_)(void *strm, int windowBits, unsigned char *window, const char *version, int stream_size) = (void *)original;
+	return orig_inflateBackInit_((void *)args[0], args[1], (unsigned char *)args[2], (const char *)args[3], args[4]);
+}
+
+static intptr_t inferior_inflateBack(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateBack called");
+	int (*orig_inflateBack)(void *strm, void *in, void *in_desc, void *out, void *out_desc) = (void *)original;
+	return orig_inflateBack((void *)args[0], (char *)args[1], (char *)args[2], (char *)args[3], (char *)args[4]);
+}
+
+static intptr_t inferior_inflateBackEnd(__attribute__((unused)) uintptr_t *args, intptr_t original)
+{
+	ERROR("inflateBackEnd called");
+	ERROR_FLUSH();
+	int (*orig_inflateBackEnd)(void *strm) = (void *)original;
+	return orig_inflateBackEnd((void *)args[0]);
 }
 
 __attribute__((constructor))
@@ -212,20 +304,36 @@ static void constructor(void)
 			if (result < 0) {
 				DIE("error loading libz symbols", fs_strerror(result));
 			}
-			void *inflateInit2_ = find_symbol(&loaded_libz, &libz_symbols, "inflateInit2_", NULL, NULL);
-			void *inflate = find_symbol(&loaded_libz, &libz_symbols, "inflate", NULL, NULL);
-			void *inflateEnd = find_symbol(&loaded_libz, &libz_symbols, "inflateEnd", NULL, NULL);
-			if (!inflateInit2_ || !inflate || !inflateEnd) {
-				DIE("missing an inflate symbol");
-			}
-			if (!patch_function(thread, (intptr_t)inflateInit2_, &inferior_inflateInit2_, -1)) {
-				DIE("failed to patch inflateInit2_");
-			}
-			if (!patch_function(thread, (intptr_t)inflate, &inferior_inflate, -1)) {
-				DIE("failed to patch inflate");
-			}
-			if (!patch_function(thread, (intptr_t)inflateEnd, &inferior_inflateEnd, -1)) {
-				DIE("failed to patch inflateEnd");
+			static const struct { const char *name; intptr_t (*handler)(uintptr_t *arguments, intptr_t original); } zlib_symbols[] = {
+				{"inflateInit_", &inferior_inflateInit_},
+				{"inflateInit2_", &inferior_inflateInit2_},
+				{"inflate", &inferior_inflate},
+				{"inflateEnd", &inferior_inflateEnd},
+				{"inflateSetDictionary", &inferior_inflateSetDictionary},
+				{"inflateGetDictionary", &inferior_inflateGetDictionary},
+				{"inflateSync", &inferior_inflateSync},
+				{"inflateCopy", &inferior_inflateCopy},
+				{"inflateReset", &inferior_inflateReset},
+				{"inflateReset2", &inferior_inflateReset2},
+				{"inflatePrime", &inferior_inflatePrime},
+				{"inflateMark", &inferior_inflateMark},
+				{"inflateGetHeader", &inferior_inflateGetHeader},
+				{"inflateBackInit_", &inferior_inflateBackInit_},
+				{"inflateBack", &inferior_inflateBack},
+				{"inflateBackEnd", &inferior_inflateBackEnd},
+			};
+			for (size_t i = 0; i < sizeof(zlib_symbols) / sizeof(zlib_symbols[0]); i++) {
+				void *value = find_symbol(&loaded_libz, &libz_symbols, zlib_symbols[i].name, NULL, NULL);
+				if (!value) {
+					DIE("missing zlib symbol", zlib_symbols[i].name);
+				}
+				enum patch_status status = patch_function(thread, (intptr_t)value, zlib_symbols[i].handler, -1);
+				if (status != PATCH_STATUS_INSTALLED_TRAMPOLINE) {
+					if (status == PATCH_STATUS_INSTALLED_ILLEGAL) {
+						DIE("failed to install trampoline", zlib_symbols[i].name);
+					}
+					DIE("failed to patch", zlib_symbols[i].name);
+				}
 			}
 			free_symbols(&libz_symbols);
 			free_full_binary_info(&libz);

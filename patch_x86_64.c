@@ -678,7 +678,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 }
 
 __attribute__((warn_unused_result))
-static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd);
+static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd);
 
 static char *naive_address_formatter(const uint8_t *address, void *unused)
 {
@@ -831,14 +831,14 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 }
 
 __attribute__((always_inline))
-static inline bool patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd)
+static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd)
 {
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
 	// Find the patch target
 	struct x86_instruction decoded;
 	if (!x86_decode_instruction((const uint8_t *)instruction, &decoded)) {
-		return false;
+		return PATCH_STATUS_FAILED;
 	}
 	if (x86_is_endbr64_instruction(&decoded)) {
 		instruction += decoded.length;
@@ -847,7 +847,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, naive_address_formatter, NULL, &patch_target)) {
 		PATCH_LOG("unable to find patch target");
 		ERROR_FLUSH();
-		return false;
+		return PATCH_STATUS_FAILED;
 	}
 	PATCH_LOG("patch start", (uintptr_t)patch_target.start);
 	PATCH_LOG("patch end", (uintptr_t)patch_target.end);
@@ -863,7 +863,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		// Found that the mapping was shared, don't patch
 		PATCH_LOG("found shared mapping", (uintptr_t)target_mapping.flags);
 		ERROR_FLUSH();
-		return false;
+		return PATCH_STATUS_FAILED;
 	}
 	// Find an unused page to detour to
 	uintptr_t start_page = (uintptr_t)patch_target.start & -PAGE_SIZE;
@@ -882,7 +882,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 			PATCH_LOG("Failed to patch: mmap failed", fs_strerror((intptr_t)new_mapping));
-			return false;
+			return PATCH_STATUS_FAILED;
 		}
 		if (is_valid_pc_relative_offset((uintptr_t)new_mapping - (uintptr_t)patch_target.end)) {
 			// Address kernel gave us is compatible with a pc-relative jump, use it
@@ -895,7 +895,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 				PATCH_LOG("Failed to patch: invalid pc-relative offset", (intptr_t)stub_address - (uintptr_t)patch_target.end);
 				ERROR_FLUSH();
-				return false;
+				return PATCH_STATUS_FAILED;
 			}
 			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
 			if (fs_is_map_failed(remap_result)) {
@@ -903,7 +903,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 				ERROR_FLUSH();
-				return false;
+				return PATCH_STATUS_FAILED;
 			}
 		}
 		new_address = true;
@@ -964,7 +964,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 			fs_munmap((void *)stub_address, TRAMPOLINE_REGION_SIZE);
 		}
 		ERROR_FLUSH();
-		return false;
+		return PATCH_STATUS_FAILED;
 	}
 	// Patch in some illegal instructions
 	for (const uint8_t *ill = patch_target.start; ill < patch_target.end; ) {
@@ -1008,7 +1008,7 @@ static inline bool patch_common(struct thread_storage *thread, uintptr_t instruc
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 	PATCH_LOG("finished patch");
 	ERROR_FLUSH();
-	return true;
+	return patch_with_ill ? PATCH_STATUS_INSTALLED_ILLEGAL : PATCH_STATUS_INSTALLED_TRAMPOLINE;
 }
 
 struct handle_illegal_args {
@@ -1044,7 +1044,7 @@ bool patch_handle_illegal_instruction(struct thread_storage *thread, ucontext_t 
 	return args.result;
 }
 
-bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
+enum patch_status patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
 {
 	PATCH_LOG("patching breakpoint", (uintptr_t)address);
 	// Construct the basic block that contains the address. Need to do a full
@@ -1067,7 +1067,7 @@ bool patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t 
 	return patch_common(thread, address, basic_block, &breakpoint_call_handler_start, &breakpoint_call_handler_call, &breakpoint_call_handler_end, handler, false, self_fd);
 }
 
-bool patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
+enum patch_status patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
 {
 	PATCH_LOG("patching function", (uintptr_t)function);
 	// Construct the entry basic block. Need to do a full analysis of the

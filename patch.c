@@ -88,7 +88,7 @@ void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intp
 		fs_mutex_lock(&args.shard->lock);
 		if (!pc_is_known_invalid(args.pc, args.shard)) {
 			attempt(thread, (attempt_body)((void *)&patch_body), &args);
-			if (!args.patched) {
+			if (args.patched == PATCH_STATUS_FAILED) {
 				make_pc_known_invalid(args.pc, args.shard);
 			}
 		}
@@ -112,9 +112,9 @@ void patch_syscall(__attribute__((unused)) struct thread_storage *thread, __attr
 }
 
 // patch_breakpoint does nothing when patching isn't supported
-bool patch_breakpoint(__attribute__((unused)) struct thread_storage *thread, __attribute__((unused)) intptr_t address, __attribute__((unused)) intptr_t entry, __attribute__((unused)) void (*handler)(uintptr_t *))
+enum patch_status patch_breakpoint(__attribute__((unused)) struct thread_storage *thread, __attribute__((unused)) intptr_t address, __attribute__((unused)) intptr_t entry, __attribute__((unused)) void (*handler)(uintptr_t *))
 {
-	return false;
+	return PATCH_STATUS_FAILED;
 }
 
 void patch_init(__attribute((unused)) bool enable_syscall_patching)

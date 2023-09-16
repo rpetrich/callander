@@ -98,7 +98,7 @@ static inline bool is_syscall_instruction(const uint32_t *addr)
 }
 
 __attribute__((warn_unused_result))
-static bool patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip, int self_fd);
+static enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip, int self_fd);
 
 // patch_body attempts to patch a syscall instruction already having taken the shard's lock
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
@@ -126,7 +126,7 @@ static void clear_icache(uintptr_t start, uintptr_t end)
 	__asm__ __volatile__("dsb ish" : : : "memory");
 }
 
-static bool patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip, uint self_fd)
+static enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, void *handler, bool skip, uint self_fd)
 {
 	// Find the original mapping
 	struct mapping target_mapping;
@@ -140,7 +140,7 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 	if ((target_mapping.flags & (MAP_SHARED | MAP_PRIVATE)) == MAP_SHARED) {
 		// Found that the mapping was shared, don't patch
 		PATCH_LOG("found shared mapping", (uintptr_t)target_mapping.flags);
-		return false;
+		return PATCH_STATUS_FAILED;
 	}
 	// Find an unused page to detour to
 	uintptr_t start_page = instruction & -PAGE_SIZE;
@@ -155,7 +155,7 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 			PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
-			return false;
+			return PATCH_STATUS_FAILED;
 		}
 		if (is_valid_pc_relative_offset((uintptr_t)new_mapping - (instruction + sizeof(uint32_t)))) {
 			// Address kernel gave us is compatible with a pc-relative jump, use it
@@ -168,7 +168,7 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 				PATCH_LOG("Failed to patch: invalid pc-relative offset");
 				fs_munmap((void *)new_mapping, TRAMPOLINE_REGION_SIZE);
-				return false;
+				return PATCH_STATUS_FAILED;
 
 			}
 			new_mapping = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
@@ -176,7 +176,7 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 				PATCH_LOG("Failed to patch: mremap failed", -(intptr_t)new_mapping);
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
-				return false;
+				return PATCH_STATUS_FAILED;
 			}
 		}
 	}
@@ -205,7 +205,7 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 	if (fs_mprotect((void *)start_page, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
 		attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 		PATCH_LOG("Failed to patch: mprotect failed");
-		return false;
+		return PATCH_STATUS_FAILED;
 	}
 	current_region = trampoline;
 	// Patch the syscall instruction to jump to the trampoline
@@ -222,13 +222,13 @@ static bool patch_common(struct thread_storage *thread, uintptr_t instruction, v
 		}
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
-	return true;
+	return PATCH_STATUS_INSTALLED_TRAMPOLINE;
 	// WRITE_LITERAL(TELEMETRY_FD, " to ");
 	// write_int(TELEMETRY_FD, stub_address);
 	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 }
 
-bool patch_breakpoint(struct thread_storage *thread, intptr_t address, __attribute__((unused)) intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
+enum patch_status patch_breakpoint(struct thread_storage *thread, intptr_t address, __attribute__((unused)) intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
 {
 	PATCH_LOG("patching breakpoint", (uintptr_t)address);
 	return patch_common(thread, address, handler, false, self_fd);
