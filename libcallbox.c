@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "axon.h"
 
 #include "freestanding.h"
@@ -6,6 +7,8 @@
 #include "patch.h"
 
 #include <link.h>
+#include <sched.h>
+#include <sys/prctl.h>
 
 FS_DEFINE_SYSCALL
 
@@ -64,9 +67,84 @@ static void inferior_debug_state_hit(__attribute__((unused)) uintptr_t *args)
 	}
 }
 
+static int worker_fd;
+
+
+static void spawn_worker(void)
+{
+	if (worker_fd != 0) {
+		return;
+	}
+	int sockets[2];
+	intptr_t result = fs_socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets);
+	if (result < 0) {
+		DIE("failed to create sockets", fs_strerror(result));
+	}
+	pid_t child_pid = (pid_t)FS_SYSCALL(SYS_clone, SIGCHLD | CLONE_FILES | CLONE_FS, 0);
+	if (child_pid < 0) {
+		DIE("failed to fork child", fs_strerror(child_pid));
+	}
+	char buf = '\0';
+	if (child_pid != 0) {
+		// fs_close(sockets[1]);
+		do {
+			result = fs_read(sockets[0], &buf, sizeof(buf));
+		} while(result == -EINTR);
+		if (result < 1) {
+			DIE("failed to read hello packet", fs_strerror(result));
+		}
+		worker_fd = sockets[0];
+		return;
+	}
+	// fs_close(sockets[0]);
+	result = fs_prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0);
+	if (result < 0) {
+		DIE("failed to set death signal", fs_strerror(result));
+	}
+	do {
+		result = fs_write(sockets[1], &buf, sizeof(buf));
+	} while(result == -EINTR);
+	if (result < 1) {
+		DIE("failed to write hello packet", fs_strerror(result));
+	}
+	for (;;) {
+		do {
+			result = fs_read(sockets[1], &buf, sizeof(buf));
+		} while(result == -EINTR);
+		if (result < 1) {
+			DIE("failed to read command packet", fs_strerror(result));
+		}
+		do {
+			result = fs_write(sockets[1], &buf, sizeof(buf));
+		} while(result == -EINTR);
+		if (result < 1) {
+			DIE("failed to write response packet", fs_strerror(result));
+		}
+	}
+}
+
+static void ping_worker(void)
+{
+	char buf = '\0';
+	intptr_t result;
+	do {
+		result = fs_write(worker_fd, &buf, sizeof(buf));
+	} while(result == -EINTR);
+	if (result < 0) {
+		DIE("failed to write ping command", fs_strerror(result));
+	}
+	do {
+		result = fs_read(worker_fd, &buf, sizeof(buf));
+	} while(result == -EINTR);
+	if (result < 0) {
+		DIE("failed to read ping response", fs_strerror(result));
+	}
+}
+
 static intptr_t inferior_inflateInit_(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflateInit_ called");
+	ping_worker();
 	int (*orig_inflateInit_)(void *strm, const char *version, int stream_size) = (void *)original;
 	return orig_inflateInit_((void *)args[0], (const char *)args[1], args[2]);
 }
@@ -74,6 +152,7 @@ static intptr_t inferior_inflateInit_(__attribute__((unused)) uintptr_t *args, i
 static intptr_t inferior_inflateInit2_(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflateInit2_ called");
+	ping_worker();
 	int (*orig_inflateInit2_)(void *strm, int windowBits, const char *version, int stream_size) = (void *)original;
 	return orig_inflateInit2_((void *)args[0], args[1], (const char *)args[2], args[3]);
 }
@@ -81,6 +160,7 @@ static intptr_t inferior_inflateInit2_(__attribute__((unused)) uintptr_t *args, 
 static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflate called");
+	ping_worker();
 	int (*orig_inflate)(void *strm, int flush) = (void *)original;
 	return orig_inflate((void *)args[0], args[1]);
 }
@@ -89,6 +169,7 @@ static intptr_t inferior_inflateEnd(__attribute__((unused)) uintptr_t *args, int
 {
 	ERROR("inflateEnd called");
 	ERROR_FLUSH();
+	ping_worker();
 	int (*orig_inflateEnd)(void *strm) = (void *)original;
 	return orig_inflateEnd((void *)args[0]);
 }
@@ -124,6 +205,7 @@ static intptr_t inferior_inflateCopy(__attribute__((unused)) uintptr_t *args, in
 static intptr_t inferior_inflateReset(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflateReset called");
+	ping_worker();
 	int (*orig_inflateReset)(void *strm) = (void *)original;
 	return orig_inflateReset((void *)args[0]);
 }
@@ -131,6 +213,7 @@ static intptr_t inferior_inflateReset(__attribute__((unused)) uintptr_t *args, i
 static intptr_t inferior_inflateReset2(__attribute__((unused)) uintptr_t *args, intptr_t original)
 {
 	ERROR("inflateReset2 called");
+	ping_worker();
 	int (*orig_inflateReset2)(void *strm, int windowBits) = (void *)original;
 	return orig_inflateReset2((void *)args[0], args[1]);
 }
@@ -292,6 +375,7 @@ static void constructor(void)
 		ERROR("at", (uintptr_t)entry->l_addr);
 		if (fs_strcmp(entry->l_name, "/lib/x86_64-linux-gnu/libz.so.1") == 0) {
 			ERROR("found libz!");
+			spawn_worker();
 			struct full_binary_info libz;
 			result = load_full_binary_info(AT_FDCWD, entry->l_name, &libz);
 			if (result < 0) {
