@@ -222,7 +222,7 @@ static inline intptr_t destination_of_pc_relative_addr(const uint8_t *addr)
 }
 
 // is_patchable_instruction returns true if the instruction can safely be relocated into a detour
-static bool is_patchable_instruction(const struct x86_instruction *addr, patch_address_formatter formatter, void *formatter_data)
+static bool is_patchable_instruction(const struct x86_instruction *addr, bool *expanded_rel8, patch_address_formatter formatter, void *formatter_data)
 {
 	(void)formatter;
 	(void)formatter_data;
@@ -232,6 +232,9 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, patch_a
 		return true;
 	}
 	if (ins[0] == 0xe9) {
+		if (*expanded_rel8) {
+			return false;
+		}
 		PATCH_LOG("Patching address with jump", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
@@ -275,13 +278,27 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, patch_a
 			switch (rm) {
 				case X86_REGISTER_BP:
 				case X86_REGISTER_13:
+					if (*expanded_rel8) {
+						return false;
+					}
 					PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(ins, formatter_data)));
 					return true;
 			}
 		}
 	}
 	if (ins[0] == INS_CONDITIONAL_JMP_32_IMM_0 && ins[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && ins[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
+		if (*expanded_rel8) {
+			return false;
+		}
 		PATCH_LOG("Patching conditional jump", temp_str(formatter(ins, formatter_data)));
+		return true;
+	}
+	if (ins[0] >= INS_CONDITIONAL_JMP_8_IMM_START && ins[0] <= INS_CONDITIONAL_JMP_8_IMM_END) {
+		if (*expanded_rel8) {
+			return false;
+		}
+		*expanded_rel8 = true;
+		PATCH_LOG("Patching short conditional jump", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
@@ -641,9 +658,11 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 	if (!x86_decode_instruction(target, &ins)) {
 		return false;
 	}
-	if (!is_patchable_instruction(&ins, formatter, formatter_data)) {
+	bool expanded_rel8 = false;
+	if (!is_patchable_instruction(&ins, &expanded_rel8, formatter, formatter_data)) {
 		return false;
 	}
+	expanded_rel8 = false;
 	// find a candidate for the start of the patch, possibly the target itself
 	const uint8_t *start = target;
 	const uint8_t *end = x86_next_instruction(start, &ins);
@@ -651,8 +670,9 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 		if (!x86_decode_instruction(current, &ins)) {
 			return false;
 		}
-		if (!is_patchable_instruction(&ins, formatter, formatter_data)) {
+		if (!is_patchable_instruction(&ins, &expanded_rel8, formatter, formatter_data)) {
 			start = target;
+			expanded_rel8 = false;
 		} else if (start == target || end - current >= (ssize_t)minimum_size) {
 			start = current;
 		}
@@ -663,7 +683,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 		if (!x86_decode_instruction(end, &ins)) {
 			break;
 		}
-		if (!is_patchable_instruction(&ins, formatter, formatter_data)) {
+		if (!is_patchable_instruction(&ins, &expanded_rel8, formatter, formatter_data)) {
 			break;
 		}
 		end = x86_next_instruction(end, &ins);
@@ -773,7 +793,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 
 // migrate_instruction copies and relocates instructions
 __attribute__((warn_unused_result))
-bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
+size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
 {
 	(void)formatter;
 	(void)formatter_data;
@@ -781,11 +801,11 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 	while (src < end_src) {
 		struct x86_instruction decoded;
 		if (!x86_decode_instruction(src, &decoded)) {
-			return false;
+			return 0;
 		}
 		memcpy(dest, src, decoded.length);
-		const uint8_t *ins = dest + (decoded.unprefixed - src);
-		switch (*ins) {
+		uint8_t *ins = dest + (decoded.unprefixed - src);
+		switch (*decoded.unprefixed) {
 			case 0xe9: {
 				PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
 				x86_int32 *disp = (x86_int32 *)&ins[1];
@@ -794,8 +814,21 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 				PATCH_LOG("is now", *disp);
 				break;
 			}
+			case INS_CONDITIONAL_JMP_8_IMM_START...INS_CONDITIONAL_JMP_8_IMM_END: {
+				PATCH_LOG("expanding 8 bit conditional jump", temp_str(formatter(src, formatter_data)));
+				ins[0] = INS_CONDITIONAL_JMP_32_IMM_0;
+				ins[1] = *decoded.unprefixed + 0x10;
+				int8_t old_disp = ((const int8_t *)decoded.unprefixed)[1];
+				x86_int32 *disp = (x86_int32 *)&ins[2];
+				PATCH_LOG("was", (intptr_t)old_disp);
+				*disp = (int32_t)old_disp + delta - 4;
+				PATCH_LOG("is now", *disp);
+				byte_count += 4;
+				dest += 4;
+				break;
+			}
 			case INS_CONDITIONAL_JMP_32_IMM_0:
-				if (ins[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && ins[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
+				if (decoded.unprefixed[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && decoded.unprefixed[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
 					PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
 					x86_int32 *disp = (x86_int32 *)&ins[2];
 					PATCH_LOG("was", *disp);
@@ -806,7 +839,7 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 			case 0x8b:
 			case 0x89:
 			case INS_LEA: {
-				x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
+				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				if (modrm.mod == 0) {
 					int rm = x86_read_rm(modrm, decoded.prefixes);
 					switch (rm) {
@@ -827,7 +860,7 @@ bool migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size
 		dest = (uint8_t *)x86_next_instruction(dest, &decoded);
 		src = x86_next_instruction(src, &decoded);
 	}
-	return true;
+	return byte_count;
 }
 
 __attribute__((always_inline))
@@ -872,7 +905,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	attempt_lock_and_push_mutex(thread, &lock_cleanup, &patches_lock);
 	bool new_address;
 	uintptr_t current_region = patches != NULL ? (uintptr_t)&patches[1] : 0;
-	uintptr_t space_required = (10 + ((uintptr_t)end_template - (uintptr_t)start_template) + 12 + sizeof(struct applied_patch));
+	uintptr_t space_required = (10 + ((uintptr_t)end_template - (uintptr_t)start_template) + (12 + 6) + sizeof(struct applied_patch));
 	if (current_region && trampoline_region_has_space((uint8_t *)current_region, space_required) && is_valid_pc_relative_offset(current_region - (uintptr_t)patch_target.end)) {
 		// Have at least the space left in the trampoline page and the trampoline's address is compatible with a PC-relative jump
 		stub_address = current_region;
@@ -912,11 +945,16 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	// Construct the trampoline
 	uint8_t *trampoline = (uint8_t *)stub_address;
 	size_t head_size = instruction - (intptr_t)patch_target.start;
-	if (!migrate_instructions(trampoline, patch_target.start, patch_target.start - trampoline, head_size, naive_address_formatter, NULL)) {
-		attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
-		PATCH_LOG("Failed to patch: migrating head failed");
-		if (new_address) {
-			fs_munmap((void *)stub_address, TRAMPOLINE_REGION_SIZE);
+	if (head_size != 0) {
+		head_size = migrate_instructions(trampoline, patch_target.start, patch_target.start - trampoline, head_size, naive_address_formatter, NULL);
+		if (head_size == 0) {
+			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
+			PATCH_LOG("Failed to patch: migrating head failed");
+			if (new_address) {
+				fs_munmap((void *)stub_address, TRAMPOLINE_REGION_SIZE);
+			}
+			ERROR_FLUSH();
+			return PATCH_STATUS_FAILED;
 		}
 	}
 	trampoline += head_size;
@@ -941,11 +979,16 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 		}
 	}
 	size_t tail_size = (uintptr_t)patch_target.end - tail_start;
-	if (!migrate_instructions(trampoline, (const uint8_t *)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size, naive_address_formatter, NULL)) {
-		attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
-		PATCH_LOG("Failed to patch: migrating tail failed");
-		if (new_address) {
-			fs_munmap((void *)stub_address, TRAMPOLINE_REGION_SIZE);
+	if (tail_size != 0) {
+		tail_size = migrate_instructions(trampoline, (const uint8_t *)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size, naive_address_formatter, NULL);
+		if (tail_start == 0) {
+			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
+			PATCH_LOG("Failed to patch: migrating tail failed");
+			if (new_address) {
+				fs_munmap((void *)stub_address, TRAMPOLINE_REGION_SIZE);
+			}
+			ERROR_FLUSH();
+			return PATCH_STATUS_FAILED;
 		}
 	}
 	trampoline += tail_size;

@@ -591,10 +591,14 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 				{
 					// copy the prefix of the syscall instruction that is overwritten by the patch
 					ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)trampoline;
-					if (!migrate_instructions(&trampoline_buf[cur], patch_target.start, delta, addr - patch_target.start, loader_address_formatter, (void *)&analysis->loader)) {
-						DIE("failed to migrate prefix");
+					size_t head_size = addr - patch_target.start;
+					if (head_size != 0) {
+						head_size = migrate_instructions(&trampoline_buf[cur], patch_target.start, delta, head_size, loader_address_formatter, (void *)&analysis->loader);
+						if (head_size == 0) {
+							DIE("failed to migrate prefix");
+						}
+						cur += head_size;
 					}
-					cur += addr - patch_target.start;
 					// copy the prefix part of the trampoline
 					memcpy(&trampoline_buf[cur], trampoline_call_handler_start, (uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start);
 					cur += (uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start;
@@ -616,10 +620,14 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					// copy the suffix of the syscall instruction that is overwritten by the patch
 					size_t skip_len = nr != SYS_clone ? 2 : 0;
 					delta = (uintptr_t)child_addr + skip_len - ((uintptr_t)trampoline + cur);
-					if (!migrate_instructions(&trampoline_buf[cur], addr + skip_len, delta, patch_target.end - (addr + skip_len), loader_address_formatter, (void *)&analysis->loader)) {
-						DIE("failed to migrate suffix");
+					size_t tail_size = patch_target.end - (addr + skip_len);
+					if (tail_size != 0) {
+						tail_size = migrate_instructions(&trampoline_buf[cur], addr + skip_len, delta, tail_size, loader_address_formatter, (void *)&analysis->loader);
+						if (tail_size == 0) {
+							DIE("failed to migrate suffix");
+						}
+						cur += tail_size;
 					}
-					cur += patch_target.end - (addr + skip_len);
 					// jump back to the resume point in the function
 					int32_t resume_relative_offset = child_patch_end - (trampoline + cur + PCREL_JUMP_SIZE);
 					trampoline_buf[cur++] = INS_JMP_32_IMM;
