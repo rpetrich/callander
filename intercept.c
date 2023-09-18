@@ -163,7 +163,7 @@ static void syscall_body(struct thread_storage *thread, void *d)
 			// Don't bother to patch certain syscalls
 			break;
 		default:
-			patch_syscall(thread, ctx->REG_PC, ctx->REG_SP, ctx->REG_BP);
+			patch_syscall(thread, ctx->REG_PC, ctx->REG_SP, ctx->REG_BP, SELF_FD);
 			break;
 	}
 #ifdef REG_ARG6

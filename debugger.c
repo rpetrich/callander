@@ -115,7 +115,7 @@ void debug_intercept_system_loader(int fd, const struct binary_info *info)
 	if (symbol_error == 0) {
 		void *main_dl_debug_state = find_symbol(info, &symbols, "_dl_debug_state", NULL, NULL);
 		if (main_dl_debug_state) {
-			if (!patch_breakpoint(get_thread_storage(), (intptr_t)main_dl_debug_state, (intptr_t)main_dl_debug_state, &inferior_debug_state_hit)) {
+			if (!patch_breakpoint(get_thread_storage(), (intptr_t)main_dl_debug_state, (intptr_t)main_dl_debug_state, &inferior_debug_state_hit, SELF_FD)) {
 #if 0
 				ERROR("failed to patch _dl_debug_state");
 #endif

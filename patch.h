@@ -5,7 +5,7 @@
 
 #include <stdbool.h>
 
-#if 1
+#if 0
 #define PATCH_LOG ERROR
 #else
 #define PATCH_LOG(...) do { } while(0)

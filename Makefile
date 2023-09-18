@@ -95,7 +95,7 @@ COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o
 LOOKUP_OBJECTS := defaultlibs.o loader.o lookup_main.o resolver.o
-LIBCALLBOX_OBJECTS := libcallbox.o attempt.o defaultlibs.o loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o tls.o x86.o x86_64_length_disassembler.o
+LIBCALLBOX_OBJECTS := libcallbox.o attempt.o defaultlibs.o loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o proxy.o tls.o x86.o x86_64_length_disassembler.o
 ifeq ($(STANDALONE),1)
 	CFLAGS += -DSTANDALONE=1
 	OBJECTS += malloc.o
@@ -259,7 +259,7 @@ libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
 
 libcallbox.so: $(foreach obj,$(LIBCALLBOX_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+	$(CC) $(LDFLAGS) -g3 -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
 
 callander_test: $(foreach obj,$(LIBCALLANDER_OBJECTS) callander_test_main.o,$(objdir)/$(obj))
 ifeq ($(STANDALONE),1)

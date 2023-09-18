@@ -123,7 +123,7 @@ static void library_loaded(__attribute__((unused)) struct library_info *library)
 			if (inferior_getaddrinfo) {
 				inferior_getaddrinfo_library = library;
 				struct thread_storage *thread = get_thread_storage();
-				if (!patch_function(thread, (intptr_t)inferior_getaddrinfo, new_getaddrinfo)) {
+				if (!patch_function(thread, (intptr_t)inferior_getaddrinfo, new_getaddrinfo, SELF_FD)) {
 					ERROR("failed to patch getaddrinfo");
 				}
 			}

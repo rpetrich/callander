@@ -13,6 +13,8 @@
 
 struct thread_storage;
 
+void remote_spawn_worker(void);
+
 intptr_t remote_openat(int dirfd, const char *path, int flags, mode_t mode);
 intptr_t remote_truncate(const char *path, off_t length);
 

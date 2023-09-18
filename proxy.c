@@ -6,6 +6,7 @@
 #include "freestanding.h"
 #include "shared_mutex.h"
 #include "resolver.h"
+#include "remote.h"
 #include "telemetry.h"
 
 #include <errno.h>
@@ -124,56 +125,6 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	return result;
 }
 
-static intptr_t simple_locked_call(int syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
-{
-	request_message request;
-	request.template.nr = syscall;
-	request.template.is_in = 0;
-	request.template.is_out = 0;
-	request.id = shared->current_id++;
-	request.values[0] = arg1;
-	request.values[1] = arg2;
-	request.values[2] = arg3;
-	request.values[3] = arg4;
-	request.values[4] = arg5;
-	request.values[5] = arg6;
-	intptr_t result = fs_write_all(PROXY_FD, (const char *)&request, sizeof(request));
-	if (result < (ssize_t)sizeof(request)) {
-		if (result >= 0) {
-			remote_exited();
-		}
-		DIE("error during send", fs_strerror(result));
-	}
-	if (syscall & PROXY_NO_RESPONSE) {
-		return 0;
-	}
-	lock_and_read_until_response(request.id, NULL);
-	result = shared->response_buffer.message.result;
-	shared_mutex_unlock(&shared->read_lock);
-	return result;
-}
-
-static void spawn_worker(void)
-{
-	switch (proxy_get_target_platform()) {
-		case TARGET_PLATFORM_LINUX: {
-			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
-			intptr_t stack_addr = simple_locked_call(__NR_mmap, 0, PROXY_WORKER_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
-			if (fs_is_map_failed((void *)stack_addr)) {
-				DIE("unable to map a worker stack", fs_strerror(stack_addr));
-				return;
-			}
-			simple_locked_call(__NR_clone | TARGET_NO_RESPONSE, CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS, stack_addr + PROXY_WORKER_STACK_SIZE, 0, 0, 0, worker_func_addr);
-			atomic_fetch_add_explicit(&shared->idle_worker_count, 1, memory_order_relaxed);
-			break;
-		}
-		case TARGET_PLATFORM_DARWIN:
-			break;
-		default:
-			unknown_target();
-	}
-}
-
 static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	if (shared == NULL) {
@@ -202,12 +153,13 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 				break;
 		}
 	}
-	shared_mutex_lock(&shared->write_lock);
 	if ((syscall & (PROXY_NO_RESPONSE | PROXY_NO_WORKER)) == 0) {
 		if (atomic_fetch_sub_explicit(&shared->idle_worker_count, 1, memory_order_relaxed) == 0) {
-			spawn_worker();
+			remote_spawn_worker();
+			atomic_fetch_add_explicit(&shared->idle_worker_count, 1, memory_order_relaxed);
 		}
 	}
+	shared_mutex_lock(&shared->write_lock);
 	request.id = shared->current_id++;
 	// write request
 	int result = fs_writev_all(PROXY_FD, iov, 1 + arg_vec_count);
@@ -329,6 +281,9 @@ hello_message *proxy_get_hello_message(void)
 __attribute__((warn_unused_result))
 intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
+	if (UNLIKELY(size == 0)) {
+		return 0;
+	}
 	return PROXY_CALL(TARGET_NR_PEEK | PROXY_NO_WORKER, proxy_value(addr), proxy_out(out_buffer, size));
 }
 
@@ -360,6 +315,9 @@ ssize_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 __attribute__((warn_unused_result))
 intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
 {
+	if (UNLIKELY(size == 0)) {
+		return 0;
+	}
 	return PROXY_CALL(TARGET_NR_POKE | PROXY_NO_WORKER | PROXY_NO_RESPONSE, proxy_value(addr), proxy_in(buffer, size));
 }
 
@@ -483,8 +441,8 @@ void install_proxy(int fd)
 
 	int flags = 1;
 	int result = fs_setsockopt(fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
-	if (result < 0 && (result != -ENOTSOCK)) {
-		DIE("Failed to disable nagle on socket", fs_strerror(result));
+	if (result < 0 && (result != -ENOTSOCK) && (result != -EOPNOTSUPP)) {
+		DIE("failed to disable nagle on socket", fs_strerror(result));
 	}
 
 	if (fd != PROXY_FD) {
