@@ -64,8 +64,8 @@ struct r_debug *global_r_debug;
 static void inferior_debug_state_hit(__attribute__((unused)) uintptr_t *args)
 {
 	if (global_r_debug->r_state == RT_CONSISTENT) {
-		ERROR("link map updated");
-		ERROR_FLUSH();
+		// ERROR("link map updated");
+		// ERROR_FLUSH();
 	}
 }
 
@@ -320,34 +320,38 @@ typedef struct z_stream_s {
     unsigned long   reserved;   /* reserved for future use */
 } z_stream;
 
-static intptr_t inferior_inflateInit_(__attribute__((unused)) uintptr_t *args, intptr_t original)
+typedef struct gz_header_s {
+    int     text;       /* true if compressed data believed to be text */
+    unsigned long   time;       /* modification time */
+    int     xflags;     /* extra flags (not used when writing a gzip file) */
+    int     os;         /* operating system */
+    unsigned char   *extra;     /* pointer to extra field or Z_NULL if none */
+    unsigned int    extra_len;  /* extra field length (valid if extra != Z_NULL) */
+    unsigned int    extra_max;  /* space at extra (only when reading header) */
+    unsigned char   *name;      /* pointer to zero-terminated file name or Z_NULL */
+    unsigned int    name_max;   /* space at name (only when reading header) */
+    unsigned char   *comment;   /* pointer to zero-terminated comment or Z_NULL */
+    unsigned int    comm_max;   /* space at comment (only when reading header) */
+    int     hcrc;       /* true if there was or will be a header crc */
+    int     done;       /* true when done reading gzip header (not used
+                           when writing a gzip file) */
+} gz_header;
+
+static intptr_t worker_inflateInit_;
+static intptr_t inferior_inflateInit_(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateInit_ called");
-	int (*orig_inflateInit_)(void *strm, const char *version, int stream_size) = (void *)original;
-	return orig_inflateInit_((void *)args[0], (const char *)args[1], args[2]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateInit_), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_string((const char *)args[1]), proxy_value(args[2]));
 }
 
-static void *worker_inflateInit2_;
-
+static intptr_t worker_inflateInit2_;
 static intptr_t inferior_inflateInit2_(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateInit2_ called");
-	ERROR_FLUSH();
-#if 1
-	return PROXY_CALL(TARGET_NR_CALL, proxy_value((intptr_t)worker_inflateInit2_), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_value(args[1]), proxy_string((const char *)args[2]), proxy_value(args[3]));
-#else
-	int (*orig_inflateInit2_)(void *strm, int windowBits, const char *version, int stream_size) = (void *)original;
-	return orig_inflateInit2_((void *)args[0], args[1], (const char *)args[2], args[3]);
-#endif
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateInit2_), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_value(args[1]), proxy_string((const char *)args[2]), proxy_value(args[3]));
 }
 
-static void *worker_inflate;
-
+static intptr_t worker_inflate;
 static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflate called");
-	ERROR_FLUSH();
-#if 1
 	struct z_stream_s *stream = (void *)args[0];
 	struct z_stream_s copy = *stream;
 	size_t avail_in = stream->avail_in;
@@ -362,7 +366,7 @@ static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attr
 	if (result < 0) {
 		DIE("failed to poke", fs_strerror(result));
 	}
-	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value((intptr_t)worker_inflate), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
+	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflate), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
 	result = proxy_peek(next_out, avail_out - copy.avail_out, orig_next_out);
 	if (result < 0) {
 		DIE("failed to peek", fs_strerror(result));
@@ -371,87 +375,88 @@ static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attr
 	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in]; 
 	stream->next_out = &orig_next_out[(intptr_t)copy.next_out - (intptr_t)next_out];
 	return inflate_return;
-#else
-	int (*orig_inflate)(void *strm, int flush) = (void *)original;
-	return orig_inflate((void *)args[0], args[1]);
-#endif
 }
 
-static void *worker_inflateEnd;
-
+static intptr_t worker_inflateEnd;
 static intptr_t inferior_inflateEnd(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateEnd called");
-	ERROR_FLUSH();
-#if 1
-	return PROXY_CALL(TARGET_NR_CALL, proxy_value((intptr_t)worker_inflateEnd), proxy_inout((void *)args[0], sizeof(struct z_stream_s)));
-#else
-	int (*orig_inflateEnd)(void *strm) = (void *)original;
-	return orig_inflateEnd((void *)args[0]);
-#endif
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateEnd), proxy_inout((void *)args[0], sizeof(struct z_stream_s)));
 }
 
-static intptr_t inferior_inflateSetDictionary(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateSetDictionary;
+static intptr_t inferior_inflateSetDictionary(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateSetDictionary called");
-	int (*orig_inflateSetDictionary)(void *strm, const void *dictionary, size_t dictLength) = (void *)original;
-	return orig_inflateSetDictionary((void *)args[0], (const void *)args[1], args[2]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateSetDictionary), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_in((void *)args[1], args[2]), proxy_value(args[2]));
 }
 
-static intptr_t inferior_inflateGetDictionary(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateGetDictionary;
+static intptr_t inferior_inflateGetDictionary(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateGetDictionary called");
-	int (*orig_inflateGetDictionary)(void *strm, void *dictionary, size_t *dictLength) = (void *)original;
-	return orig_inflateGetDictionary((void *)args[0], (void *)args[1], (size_t *)args[2]);
+	void *dictionary = (void *)args[1];
+	unsigned int size = 0;
+	if (dictionary != NULL) {
+		// need to do this weirdness because we don't actually know how large of a buffer dictionary is
+		intptr_t result = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateGetDictionary), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_value(0), proxy_out(&size, sizeof(size)));
+		if (result != 0) {
+			return result;
+		}
+	}
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateGetDictionary), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_out(dictionary, size), proxy_out((void *)args[2], sizeof(unsigned int)));
 }
 
-static intptr_t inferior_inflateSync(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateSync;
+static intptr_t inferior_inflateSync(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateSync called");
-	int (*orig_inflateSync)(void *strm) = (void *)original;
-	return orig_inflateSync((void *)args[0]);
+	struct z_stream_s *stream = (void *)args[0];
+	struct z_stream_s copy = *stream;
+	size_t avail_in = stream->avail_in;
+	const unsigned char *orig_next_in = stream->next_in;
+	intptr_t next_in = proxy_alloc(avail_in);
+	copy.next_in = (void *)next_in;
+	intptr_t result = proxy_poke(next_in, avail_in, stream->next_in);
+	if (result < 0) {
+		DIE("failed to poke", fs_strerror(result));
+	}
+	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateSync), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
+	*stream = copy;
+	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in]; 
+	return inflate_return;
 }
 
-static intptr_t inferior_inflateCopy(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t inferior_inflateCopy(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateCopy called");
-	int (*orig_inflateCopy)(void *dest, void *source) = (void *)original;
-	return orig_inflateCopy((void *)args[0], (void *)args[1]);
+	// TODO: Support copying. This has the same problem where inflateStateCheck cares if a stream has been moved
+	return -4;
 }
 
-static intptr_t inferior_inflateReset(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateReset;
+static intptr_t inferior_inflateReset(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateReset called");
-	int (*orig_inflateReset)(void *strm) = (void *)original;
-	return orig_inflateReset((void *)args[0]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateReset), proxy_inout((void *)args[0], sizeof(struct z_stream_s)));
 }
 
-static intptr_t inferior_inflateReset2(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateReset2;
+static intptr_t inferior_inflateReset2(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateReset2 called");
-	int (*orig_inflateReset2)(void *strm, int windowBits) = (void *)original;
-	return orig_inflateReset2((void *)args[0], args[1]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateReset2), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_value(args[1]));
 }
 
-static intptr_t inferior_inflatePrime(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflatePrime;
+static intptr_t inferior_inflatePrime(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflatePrime called");
-	int (*orig_inflatePrime)(void *strm, int bits, int value) = (void *)original;
-	return orig_inflatePrime((void *)args[0], args[1], args[2]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflatePrime), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_value(args[1]), proxy_value(args[2]));
 }
 
-static intptr_t inferior_inflateMark(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateMark;
+static intptr_t inferior_inflateMark(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateMark called");
-	int (*orig_inflateMark)(void *strm) = (void *)original;
-	return orig_inflateMark((void *)args[0]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateMark), proxy_inout((void *)args[0], sizeof(struct z_stream_s)));
 }
 
-static intptr_t inferior_inflateGetHeader(__attribute__((unused)) uintptr_t *args, intptr_t original)
+static intptr_t worker_inflateGetHeader;
+static intptr_t inferior_inflateGetHeader(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
 {
-	ERROR("inflateGetHeader called");
-	int (*orig_inflateGetHeader)(void *strm, void *header) = (void *)original;
-	return orig_inflateGetHeader((void *)args[0], (void *)args[1]);
+	return PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateGetHeader), proxy_inout((void *)args[0], sizeof(struct z_stream_s)), proxy_out((void *)args[1], sizeof(struct gz_header_s)));
 }
 
 static intptr_t inferior_inflateBackInit_(__attribute__((unused)) uintptr_t *args, intptr_t original)
@@ -481,8 +486,8 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 	const struct link_map *libz_entry = NULL;
 	const struct link_map *libpthread_entry = NULL;
 	for (const struct link_map *entry = global_r_debug->r_map; entry != NULL; entry = entry->l_next) {
-		ERROR("found in link map", entry->l_name);
-		ERROR("at", (uintptr_t)entry->l_addr);
+		// ERROR("found in link map", entry->l_name);
+		// ERROR("at", (uintptr_t)entry->l_addr);
 		if (fs_strcmp(entry->l_name, "/lib/x86_64-linux-gnu/libz.so.1") == 0) {
 			libz_entry = entry;
 		} else if (fs_strcmp(entry->l_name, "/lib/x86_64-linux-gnu/libpthread.so.0") == 0) {
@@ -514,7 +519,7 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 	}
 
 	if (libz_entry != NULL) {
-		ERROR("found libz!");
+		// ERROR("found libz!");
 		spawn_worker();
 		struct full_binary_info libz;
 		intptr_t result = load_full_binary_info(AT_FDCWD, libz_entry->l_name, &libz);
@@ -528,20 +533,20 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 		if (result < 0) {
 			DIE("error loading libz symbols", fs_strerror(result));
 		}
-		static const struct { const char *name; intptr_t (*handler)(uintptr_t *arguments, intptr_t original); void **original; } zlib_symbols[] = {
-			{"inflateInit_", &inferior_inflateInit_, NULL},
+		static const struct { const char *name; intptr_t (*handler)(uintptr_t *arguments, intptr_t original); intptr_t *original; } zlib_symbols[] = {
+			{"inflateInit_", &inferior_inflateInit_, &worker_inflateInit_},
 			{"inflateInit2_", &inferior_inflateInit2_, &worker_inflateInit2_},
 			{"inflate", &inferior_inflate, &worker_inflate},
 			{"inflateEnd", &inferior_inflateEnd, &worker_inflateEnd},
-			{"inflateSetDictionary", &inferior_inflateSetDictionary, NULL},
-			{"inflateGetDictionary", &inferior_inflateGetDictionary, NULL},
-			{"inflateSync", &inferior_inflateSync, NULL},
+			{"inflateSetDictionary", &inferior_inflateSetDictionary, &worker_inflateSetDictionary},
+			{"inflateGetDictionary", &inferior_inflateGetDictionary, &worker_inflateGetDictionary},
+			{"inflateSync", &inferior_inflateSync, &worker_inflateSync},
 			{"inflateCopy", &inferior_inflateCopy, NULL},
-			{"inflateReset", &inferior_inflateReset, NULL},
-			{"inflateReset2", &inferior_inflateReset2, NULL},
-			{"inflatePrime", &inferior_inflatePrime, NULL},
-			{"inflateMark", &inferior_inflateMark, NULL},
-			{"inflateGetHeader", &inferior_inflateGetHeader, NULL},
+			{"inflateReset", &inferior_inflateReset, &worker_inflateReset},
+			{"inflateReset2", &inferior_inflateReset2, &worker_inflateReset2},
+			{"inflatePrime", &inferior_inflatePrime, &worker_inflatePrime},
+			{"inflateMark", &inferior_inflateMark, &worker_inflateMark},
+			{"inflateGetHeader", &inferior_inflateGetHeader, &worker_inflateGetHeader},
 			{"inflateBackInit_", &inferior_inflateBackInit_, NULL},
 			{"inflateBack", &inferior_inflateBack, NULL},
 			{"inflateBackEnd", &inferior_inflateBackEnd, NULL},
@@ -553,7 +558,7 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 				DIE("missing zlib symbol", zlib_symbols[i].name);
 			}
 			if (zlib_symbols[i].original != NULL) {
-				*zlib_symbols[i].original = value;
+				*zlib_symbols[i].original = (intptr_t)value;
 			}
 			enum patch_status status = patch_function(thread, (intptr_t)value, zlib_symbols[i].handler, -1);
 			if (status != PATCH_STATUS_INSTALLED_TRAMPOLINE) {
@@ -618,19 +623,19 @@ static void constructor(void)
 			DIE("error reading mapping", fs_strerror(fd));
 		}
 		if ((mapping.device != 0 || mapping.inode != 0) && (mapping.prot & PROT_EXEC) && mapping.path[0] != '\0') {
-			ERROR("found library", mapping.path);
+			// ERROR("found library", mapping.path);
 			uintptr_t base = (uintptr_t)mapping.start - mapping.offset;
-			ERROR("at", (uintptr_t)base);
+			// ERROR("at", (uintptr_t)base);
 			if (main_base == NULL) {
 				if (mapping_is_copy_of_full_binary_info(&mapping, &main)) {
-					ERROR("is main");
+					// ERROR("is main");
 					load_existing(&loaded_main, base);
 					main_base = (void *)base;
 				}
 			}
 			if (main.info.interpreter && interpreter_base == NULL) {
 				if (mapping_is_copy_of_full_binary_info(&mapping, &interpreter)) {
-					ERROR("is interpreter");
+					// ERROR("is interpreter");
 					load_existing(&loaded_interpreter, base);
 					interpreter_base = (void *)base;
 				}
