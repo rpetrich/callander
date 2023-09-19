@@ -40,7 +40,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	analysis->loader.loaded_gconv_libraries = true;
 	// load the main executable
 	struct loaded_binary *loaded;
-	int result = load_binary_into_analysis(analysis, executable_path, fd, NULL, &loaded);
+	int result = load_binary_into_analysis(analysis, executable_path, executable_path, fd, NULL, &loaded);
 	if (result != 0) {
 		DIE("failed to load main binary", fs_strerror(result));
 	}

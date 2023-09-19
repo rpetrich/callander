@@ -43,7 +43,7 @@ void callander_perform_analysis(struct program_state *analysis, callander_main_f
 				size_t path_len = fs_strlen(mapping.path);
 				char *path = malloc(path_len + 1);
 				fs_memcpy(path, mapping.path, path_len + 1);
-				result = load_binary_into_analysis(analysis, path, binary_fd, (const void *)((uintptr_t)mapping.start - mapping.offset), &binary);
+				result = load_binary_into_analysis(analysis, path, path, binary_fd, (const void *)((uintptr_t)mapping.start - mapping.offset), &binary);
 				fs_close(binary_fd);
 				if (result < 0) {
 					DIE("error loading binary", fs_strerror(result));

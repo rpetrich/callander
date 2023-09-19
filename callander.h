@@ -205,6 +205,8 @@ __attribute__((nonnull(1)))
 void free_loaded_binary(struct loaded_binary *binary);
 __attribute__((nonnull(1, 1)))
 void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) **out_symbol);
+__attribute__((nonnull(1, 2, 3)))
+void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) **out_symbol);
 
 __attribute__((nonnull(1)))
 uintptr_t translate_analysis_address_to_child(struct loader_context *loader, ins_ptr addr);
@@ -635,14 +637,14 @@ struct program_state {
 	void *address_loaded_data;
 };
 
-__attribute__((nonnull(1, 2, 5)))
-int load_binary_into_analysis(struct program_state *analysis, const char *path, int fd, const void *existing_base_address, struct loaded_binary **out_binary);
+__attribute__((nonnull(1, 2, 6)))
+int load_binary_into_analysis(struct program_state *analysis, const char *path, const char *full_path, int fd, const void *existing_base_address, struct loaded_binary **out_binary);
 __attribute__((nonnull(1, 2)))
 int finish_loading_binary(struct program_state *analysis, struct loaded_binary *new_binary, function_effects effects, bool skip_analysis);
 __attribute__((nonnull(1, 2, 3, 4)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
 __attribute__((nonnull(1, 2)))
-struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive);
+struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols, bool recursive);
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 

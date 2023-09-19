@@ -2176,7 +2176,7 @@ __attribute__((nonnull(1, 2)))
 static int load_debuglink(const struct loader_context *loader, struct loaded_binary *binary, bool force_loading);
 
 __attribute__((nonnull(1, 2, 3)))
-static void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) **out_symbol) {
+void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) **out_symbol) {
 	if ((symbol_types & NORMAL_SYMBOL) && binary->has_symbols) {
 		const struct symbol_info *symbols = &binary->symbols;
 		void *result = find_symbol(&binary->info, symbols, name, version_name, out_symbol);
@@ -2364,17 +2364,19 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 
 static int load_all_needed_and_relocate(struct program_state *analysis);
 
-struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis)
+static struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols)
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
 	if (binary == NULL) {
-		int needed_fd = open_executable_in_paths(path, "/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib", false, analysis->loader.uid, analysis->loader.gid);
+		char buf[PATH_MAX];
+		const char *full_path;
+		int needed_fd = find_executable_in_paths(path, "/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib", false, analysis->loader.uid, analysis->loader.gid, buf, &full_path);
 		if (needed_fd < 0) {
 			LOG("failed to find dlopen'ed path, assuming it will fail at runtime", path);
 			return NULL;
 		}
 		struct loaded_binary *new_binary;
-		int result = load_binary_into_analysis(analysis, path, needed_fd, NULL, &new_binary);
+		int result = load_binary_into_analysis(analysis, path, full_path, needed_fd, NULL, &new_binary);
 		fs_close(needed_fd);
 		if (result < 0) {
 			LOG("failed to load dlopen'ed path, assuming it will fail at runtime", path);
@@ -2404,7 +2406,7 @@ struct loaded_binary *register_dlopen_file(struct program_state *analysis, const
 	} else if (binary->special_binary_flags & BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED) {
 		return binary;
 	}
-	if (skip_analysis) {
+	if (skip_analyzing_symbols) {
 		LOG("skipping analysis for", path);
 	} else {
 		binary->special_binary_flags |= BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED;
@@ -2425,9 +2427,9 @@ struct loaded_binary *register_dlopen_file(struct program_state *analysis, const
 	return binary;
 }
 
-struct loaded_binary *register_dlopen_file_owning_path(struct program_state *analysis, char *path, const struct analysis_frame *caller, bool skip_analysis)
+struct loaded_binary *register_dlopen_file_owning_path(struct program_state *analysis, char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols)
 {
-	struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis);
+	struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
 	if (!binary) {
 		free(path);
 	} else if (binary->path == path) {
@@ -2485,16 +2487,16 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 			if (analysis->loader.searching_libcrypto_dlopen) {
 				analysis->loader.libcrypto_dlopen = ins;
 				if (fs_access("/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
-					register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, true);
+					register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, false, true);
 				}
 				if (fs_access("/lib/engines-3", R_OK) == 0) {
-					register_dlopen(analysis, "/lib/engines-3", caller, false, true);
+					register_dlopen(analysis, "/lib/engines-3", caller, false, false, true);
 				}
 				if (fs_access("/lib64/engines-3", R_OK) == 0) {
-					register_dlopen(analysis, "/lib64/engines-3", caller, false, true);
+					register_dlopen(analysis, "/lib64/engines-3", caller, false, false, true);
 				}
 				if (fs_access("/usr/lib64/openssl/engines", R_OK) == 0) {
-					register_dlopen(analysis, "/usr/lib64/openssl/engines", caller, false, true);
+					register_dlopen(analysis, "/usr/lib64/openssl/engines", caller, false, false, true);
 				}
 			}
 			analysis->loader.searching_gconv_dlopen = analysis->loader.searching_libcrypto_dlopen = false;
@@ -2529,7 +2531,7 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 		.is_entry = true,
 	};
 	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
-	register_dlopen_file(analysis, needed_path, caller, false);
+	register_dlopen_file(analysis, needed_path, caller, false, false);
 }
 
 static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
@@ -2588,7 +2590,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 							path_buf += sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") - 1;
 							fs_memcpy(path_buf, name, suffix_len + 1);
 							LOG("found gconv library", path);
-							register_dlopen_file_owning_path(analysis, path, caller, true);
+							register_dlopen_file_owning_path(analysis, path, caller, true, true);
 						}
 						needle++;
 					} else {
@@ -2627,7 +2629,7 @@ static void discovered_nss_provider(struct program_state *analysis, const struct
 	*buf++ = '.';
 	*buf++ = '2';
 	*buf++ = '\0';
-	register_dlopen_file_owning_path(analysis, library_name, caller, false);
+	register_dlopen_file_owning_path(analysis, library_name, caller, false, false);
 }
 
 __attribute__((nonnull(1, 2)))
@@ -2788,7 +2790,7 @@ static void handle_openssl_dso_load(struct program_state *analysis, ins_ptr ins,
 {
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
 	if (fs_access("/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
-		register_dlopen(analysis, "/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, true);
+		register_dlopen(analysis, "/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, false, true);
 	}
 }
 
@@ -8743,7 +8745,7 @@ static inline int compare_loaded_binary_stubs(const void *left, const void *righ
 	return 0;
 }
 
-int load_binary_into_analysis(struct program_state *analysis, const char *path, int fd, const void *existing_base_address, struct loaded_binary **out_binary) {
+int load_binary_into_analysis(struct program_state *analysis, const char *path, const char *full_path, int fd, const void *existing_base_address, struct loaded_binary **out_binary) {
 	struct binary_info info;
 	unsigned long hash = elf_hash((const unsigned char *)path);
 	intptr_t result;
@@ -8770,21 +8772,13 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		relocate_binary(&info);
 	}
 	LOG("loading", path);
-	char resolved_path[PATH_MAX+1];
-	int resolved_path_len;
-	if (fd != -1) {
-		resolved_path_len = fs_readlink_fd(fd, resolved_path, sizeof(resolved_path));
-		resolved_path[resolved_path_len] = '\0';
-		if (SHOULD_LOG) {
-			LOG("from path", &resolved_path[0]);
-			LOG("at address", (uintptr_t)info.base);
-		}
-	} else {
-		resolved_path_len = fs_strlen(path);
+	if (full_path == NULL) {
+		full_path = path;
 	}
-	struct loaded_binary *new_binary = malloc(sizeof(struct loaded_binary) + resolved_path_len + 1);
+	size_t full_path_len = fs_strlen(full_path);
+	struct loaded_binary *new_binary = malloc(sizeof(struct loaded_binary) + full_path_len + 1);
 	*new_binary = (struct loaded_binary){ 0 };
-	fs_memcpy(new_binary->loaded_path, fd != -1 ? resolved_path : path, resolved_path_len + 1);
+	fs_memcpy(new_binary->loaded_path, full_path, full_path_len + 1);
 	new_binary->id = analysis->loader.binary_count++;
 	new_binary->path = path;
 	new_binary->path_hash = hash;
@@ -8997,7 +8991,7 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 			} else {
 				interpreter_filename = new_binary->info.interpreter;
 			}
-			int result = load_binary_into_analysis(analysis, interpreter_filename, interpreter_fd, NULL, &analysis->loader.interpreter);
+			int result = load_binary_into_analysis(analysis, interpreter_filename, new_binary->info.interpreter, interpreter_fd, NULL, &analysis->loader.interpreter);
 			fs_close(interpreter_fd);
 			if (result < 0) {
 				ERROR("failed to load interpreter", new_binary->info.interpreter);
@@ -9019,8 +9013,8 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					break;
 			}
 		}
-		const char *standard_run_path = "/lib/"ARCH_NAME"-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE";
-		size_t standard_run_path_sizeof = sizeof("/lib/"ARCH_NAME"-linux-gnu:/lib64:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
+		const char *standard_run_path = "/lib64:/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE";
+		size_t standard_run_path_sizeof = sizeof("/lib64:/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
 			if (fs_strncmp(additional_run_path, "$ORIGIN", sizeof("$ORIGIN")-1) == 0) {
@@ -9049,7 +9043,9 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					const char *needed_path = new_binary->symbols.strings + dynamic[i].d_un.d_val;
 					LOG("needed", needed_path);
 					if (find_loaded_binary(&analysis->loader, needed_path) == NULL) {
-						int needed_fd = open_executable_in_paths(needed_path, additional_run_path != NULL ? new_run_path : standard_run_path, false, analysis->loader.uid, analysis->loader.gid);
+						char buf[PATH_MAX];
+						const char *full_path;
+						int needed_fd = find_executable_in_paths(needed_path, additional_run_path != NULL ? new_run_path : standard_run_path, false, analysis->loader.uid, analysis->loader.gid, buf, &full_path);
 						if (needed_fd < 0) {
 							ERROR("failed to find", needed_path);
 							if (new_run_path != NULL) {
@@ -9058,7 +9054,7 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 							return needed_fd;
 						}
 						struct loaded_binary *additional_binary;
-						int result = load_binary_into_analysis(analysis, needed_path, needed_fd, NULL, &additional_binary);
+						int result = load_binary_into_analysis(analysis, needed_path, full_path, needed_fd, NULL, &additional_binary);
 						fs_close(needed_fd);
 						if (result < 0) {
 							ERROR("failed to load", needed_path);
@@ -9450,7 +9446,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 					for (int j = 0; j < size; j++) {
 						uintptr_t data = section_data[j];
 						if (protection_for_address_in_binary(new_binary, data, NULL) & PROT_EXEC) {
-							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[i])));
+							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[j])));
 							LOG("value of address is, assuming callable", data);
 							struct address_and_size symbol;
 							if (!find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j], &symbol)) {
@@ -9698,10 +9694,10 @@ uintptr_t translate_analysis_address_to_child(struct loader_context *loader, ins
 {
 	struct loaded_binary *binary = binary_for_address(loader, addr);
 	if (binary == NULL) {
-		return 0;
+		return (uintptr_t)addr;
 	}
 	if (binary->child_base == 0) {
-		return 0;
+		return (uintptr_t)addr;
 	}
 	return (uintptr_t)addr - (uintptr_t)binary->info.base + binary->child_base;
 }
@@ -10405,14 +10401,14 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, const 
 	return result;
 }
 
-struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool recursive)
+struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols, bool recursive)
 {
 	if (!recursive) {
-		return register_dlopen_file(analysis, path, caller, skip_analysis);
+		return register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
 	}
 	int fd = fs_open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (fd == -ENOTDIR) {
-		struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis);
+		struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
 		if (binary == NULL) {
 			DIE("failed to load shared object specified via --dlopen", path);
 		}
@@ -10449,7 +10445,7 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 						subpath_buf += prefix_len;
 						*subpath_buf++ = '/';
 						fs_memcpy(subpath_buf, name, suffix_len + 1);
-						register_dlopen(analysis, subpath, caller, skip_analysis, true);
+						register_dlopen(analysis, subpath, caller, skip_analysis, skip_analyzing_symbols, true);
 					}
 					needle++;
 				} else {

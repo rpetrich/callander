@@ -192,12 +192,14 @@ static struct loaded_binary *parse_and_load_library_line(struct program_state *a
 		return NULL;
 	}
 	// open the executable
-	int library_fd = open_executable_in_paths(path, NULL, false, analysis->loader.uid, analysis->loader.gid);
+	char buf[PATH_MAX];
+	const char *full_path;
+	int library_fd = find_executable_in_paths(path, NULL, false, analysis->loader.uid, analysis->loader.gid, buf, &full_path);
 	if (library_fd < 0) {
 		free(name);
 		return NULL;
 	}
-	int result = load_binary_into_analysis(analysis, name, library_fd, NULL, &binary);
+	int result = load_binary_into_analysis(analysis, name, full_path, library_fd, NULL, &binary);
 	fs_close(library_fd);
 	if (result < 0) {
 		free(name);
@@ -420,7 +422,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 {
 	// load the main executable path
 	struct loaded_binary *loaded;
-	int result = load_binary_into_analysis(analysis, executable_path, fd, NULL, &loaded);
+	int result = load_binary_into_analysis(analysis, executable_path, executable_path, fd, NULL, &loaded);
 	if (result != 0) {
 		DIE("failed to load main binary", fs_strerror(result));
 	}
@@ -440,7 +442,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 				char *preload_path = malloc(i - cur + 1);
 				fs_memcpy(preload_path, &ld_preload[cur], i - cur);
 				preload_path[i - cur] = '\0';
-				struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, false, false);
+				struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, false, false, false);
 				if (binary == NULL) {
 					DIE("failed to load shared object specified via LD_PRELOAD", preload_path);
 					free(preload_path);
@@ -458,7 +460,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	}
 
 	for (struct dlopen_path *dlopen = analysis->dlopen; dlopen != NULL; dlopen = dlopen->next) {
-		register_dlopen(analysis, dlopen->path, NULL, false, true);
+		register_dlopen(analysis, dlopen->path, NULL, false, false, true);
 	}
 
 	// finish loading the main binary
@@ -477,7 +479,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	// analyze the program
 	if (analysis->loader.vdso != 0) {
 		struct loaded_binary *vdso;
-		result = load_binary_into_analysis(analysis, "[vdso]", -1, (const void *)analysis->loader.vdso, &vdso);
+		result = load_binary_into_analysis(analysis, "[vdso]", "[vdso]", -1, (const void *)analysis->loader.vdso, &vdso);
 		if (result != 0) {
 			DIE("failed to load vDSO", fs_strerror(result));
 		}

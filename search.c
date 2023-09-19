@@ -8,8 +8,17 @@
 #include <limits.h>
 #include <string.h>
 
-// open_executable_in_paths looks for an executable file matching name in paths 
-int open_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid) {
+// open_executable_in_paths looks for an executable file matching name in paths
+int open_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid)
+{
+	char buf[PATH_MAX];
+	const char *out_path;
+	return find_executable_in_paths(name, paths, require_executable, uid, gid, buf, &out_path);
+}
+
+// find_executable_in_paths looks for an executable file matching name in paths 
+int find_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid, char buf[PATH_MAX], const char **out_path)
+{
 	// Check for absolute or relative path
 	const char *end = fs_strchr(name, '/');
 	if (*end != '\0') {
@@ -25,6 +34,9 @@ int open_executable_in_paths(const char *name, const char *paths, bool require_e
 				return -ENOEXEC;
 			}
 		}
+		if (out_path) {
+			*out_path = name;
+		}
 		return result;
 	}
 	if (paths == NULL) {
@@ -36,7 +48,6 @@ int open_executable_in_paths(const char *name, const char *paths, bool require_e
 		return -ENAMETOOLONG;
 	}
 	// Fill tail
-	char buf[PATH_MAX];
 	size_t end_pos = PATH_MAX - (name_len + 2);
 	buf[end_pos] = '/';
 	memcpy(&buf[end_pos + 1], name, name_len + 1);
@@ -55,10 +66,16 @@ int open_executable_in_paths(const char *name, const char *paths, bool require_e
 				int result = fs_openat(AT_FDCWD, full_path, O_RDONLY | O_CLOEXEC, 0);
 				if (result >= 0) {
 					if (!require_executable) {
+						if (out_path) {
+							*out_path = full_path;
+						}
 						return result;
 					}
 					struct fs_stat stat;
 					if (verify_allowed_to_exec(result, &stat, uid, gid) == 0) {
+						if (out_path) {
+							*out_path = full_path;
+						}
 						return result;
 					}
 					fs_close(result);
