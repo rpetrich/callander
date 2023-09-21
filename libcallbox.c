@@ -597,13 +597,6 @@ static void apply_sandbox(const struct link_map *libz_entry)
 	analysis.loader.loaded_gconv_libraries = true;
 	analysis.loader.ignore_dlopen = true;
 	// analysis.syscalls.config[__NR_openat] |= SYSCALL_CONFIG_DEBUG;
-	// analysis.syscalls.config[__NR_close] |= SYSCALL_CONFIG_DEBUG;
-	add_blocked_symbol(&analysis.known_symbols, "__gconv_open", NORMAL_SYMBOL | LINKER_SYMBOL, true);
-	add_blocked_symbol(&analysis.known_symbols, "mbsrtowcs", NORMAL_SYMBOL | LINKER_SYMBOL, true);
-	add_blocked_symbol(&analysis.known_symbols, "__dcgettext", NORMAL_SYMBOL | LINKER_SYMBOL, true);
-	add_blocked_symbol(&analysis.known_symbols, "__woverflow", NORMAL_SYMBOL | LINKER_SYMBOL, true);
-	add_blocked_symbol(&analysis.known_symbols, "fopen64", NORMAL_SYMBOL | LINKER_SYMBOL, true);
-	add_blocked_symbol(&analysis.known_symbols, "_IO_wdefault_xsputn", NORMAL_SYMBOL | LINKER_SYMBOL, true);
 	init_searched_instructions(&analysis.search);
 
 	// revoke permissions
