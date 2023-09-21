@@ -192,9 +192,9 @@ static struct loaded_binary *parse_and_load_library_line(struct program_state *a
 		return NULL;
 	}
 	// open the executable
-	char buf[PATH_MAX];
+	char path_buf[PATH_MAX];
 	const char *full_path;
-	int library_fd = find_executable_in_paths(path, NULL, false, analysis->loader.uid, analysis->loader.gid, buf, &full_path);
+	int library_fd = find_executable_in_paths(path, NULL, false, analysis->loader.uid, analysis->loader.gid, path_buf, &full_path);
 	if (library_fd < 0) {
 		free(name);
 		return NULL;
