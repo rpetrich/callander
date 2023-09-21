@@ -4220,6 +4220,10 @@ static void basic_op_add(struct register_state *dest, const struct register_stat
 
 static void basic_op_or(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
 {
+	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
+		dest->value = dest->max = dest->value | source->value;
+		return;
+	}
 	if (source->value == ~(uintptr_t)0) {
 		dest->value = dest->max = ~(uintptr_t)0;
 		return;
