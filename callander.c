@@ -3801,7 +3801,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 					break;
 			}
 			if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
-				if (flags & READ_RM_KEEP_MEM) {
+				if (flags & READ_RM_KEEP_MEM && !register_is_partially_known(&regs->registers[REGISTER_MEM])) {
 					if (out_state != NULL) {
 						set_register(out_state, value);
 					}
@@ -3823,7 +3823,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 			LOG("region is writable, assuming it might not be constant", value);
 		}
 	}
-	if (flags & READ_RM_KEEP_MEM) {
+	if (flags & READ_RM_KEEP_MEM && !register_is_partially_known(&regs->registers[REGISTER_MEM])) {
 		if (out_state != NULL) {
 			clear_register(out_state);
 			switch (operation_size) {
