@@ -5183,6 +5183,113 @@ static bool is_landing_pad_ins_decode(ins_ptr addr)
 	return false;
 }
 
+enum possible_conditions {
+	ALWAYS_MATCHES = 0x1,
+	NEVER_MATCHES = 0x2,
+	POSSIBLY_MATCHES = 0x3,
+};
+
+static inline enum possible_conditions calculate_possible_conditions(enum x86_conditional_type cond, struct registers *current_state)
+{
+	switch (cond) {
+		case X86_CONDITIONAL_TYPE_BELOW:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+				if (current_state->registers[current_state->compare_state.target_register].value >= current_state->compare_state.value.value) {
+					return NEVER_MATCHES;
+				}
+				if (current_state->registers[current_state->compare_state.target_register].max < current_state->compare_state.value.value) {
+					return ALWAYS_MATCHES;
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_ABOVE_OR_EQUAL:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+				if (current_state->registers[current_state->compare_state.target_register].max < current_state->compare_state.value.value) {
+					return NEVER_MATCHES;
+				}
+				if (current_state->registers[current_state->compare_state.target_register].value >= current_state->compare_state.value.value) {
+					return ALWAYS_MATCHES;
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_EQUAL:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_EQUALITY) {
+				if (current_state->registers[current_state->compare_state.target_register].value <= current_state->compare_state.value.value && current_state->compare_state.value.value <= current_state->registers[current_state->compare_state.target_register].max) {
+					if (current_state->registers[current_state->compare_state.target_register].value == current_state->compare_state.value.value) {
+						if (register_is_exactly_known(&current_state->registers[current_state->compare_state.target_register])) {
+							return ALWAYS_MATCHES;
+						}
+					}
+				} else {
+					return NEVER_MATCHES;
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_NOT_EQUAL:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_EQUALITY) {
+				if (current_state->registers[current_state->compare_state.target_register].value <= current_state->compare_state.value.value && current_state->compare_state.value.value <= current_state->registers[current_state->compare_state.target_register].max) {
+					if (current_state->registers[current_state->compare_state.target_register].value == current_state->compare_state.value.value) {
+						if (register_is_exactly_known(&current_state->registers[current_state->compare_state.target_register])) {
+							return NEVER_MATCHES;
+						}
+					}
+				} else {
+					return ALWAYS_MATCHES;
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_BELOW_OR_EQUAL:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+				if (current_state->registers[current_state->compare_state.target_register].value > current_state->compare_state.value.value) {
+					return NEVER_MATCHES;
+				}
+				if (current_state->registers[current_state->compare_state.target_register].max <= current_state->compare_state.value.value) {
+					return ALWAYS_MATCHES;
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_ABOVE:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+				if (current_state->registers[current_state->compare_state.target_register].max <= current_state->compare_state.value.value) {
+					return NEVER_MATCHES;
+				}
+				if (current_state->registers[current_state->compare_state.target_register].value > current_state->compare_state.value.value) {
+					return ALWAYS_MATCHES;
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_SIGN:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+				if (current_state->compare_state.value.value == 0) {
+					uintptr_t msb = most_significant_bit(current_state->compare_state.mask);
+					if (current_state->registers[current_state->compare_state.target_register].max < msb) {
+						return NEVER_MATCHES;
+					}
+					if (current_state->registers[current_state->compare_state.target_register].value >= msb) {
+						return ALWAYS_MATCHES;
+					}
+				}
+			}
+			break;
+		case X86_CONDITIONAL_TYPE_NOT_SIGN:
+			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+				if (current_state->compare_state.value.value == 0) {
+					uintptr_t msb = most_significant_bit(current_state->compare_state.mask);
+					if (current_state->registers[current_state->compare_state.target_register].value >= msb) {
+						return NEVER_MATCHES;
+					}
+					if (current_state->registers[current_state->compare_state.target_register].max < msb) {
+						return ALWAYS_MATCHES;
+					}
+				}
+			}
+			break;
+		default:
+			break;
+	}
+	return POSSIBLY_MATCHES;
+}
+
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
 {
 	struct decoded_ins decoded;
@@ -5977,19 +6084,34 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("from", name_for_register(source));
 						LOG("to", name_for_register(dest));
 						dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << dest) | ((register_mask)1 << source));
-						if (register_is_partially_known(&self.current_state.registers[dest]) && register_is_partially_known(&self.current_state.registers[source])) {
-							if (self.current_state.registers[source].value < self.current_state.registers[dest].value) {
-								self.current_state.registers[dest].value = self.current_state.registers[source].value;
-							}
-							if (self.current_state.registers[source].max > self.current_state.registers[dest].max) {
-								self.current_state.registers[dest].max = self.current_state.registers[source].max;
-							}
-							self.current_state.sources[dest] |= self.current_state.sources[source];
-						} else {
-							clear_register(&self.current_state.registers[dest]);
-							self.current_state.sources[dest] = 0;
+						switch (calculate_possible_conditions(x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
+							case ALWAYS_MATCHES:
+								LOG("conditional always matches");
+								self.current_state.registers[dest] = self.current_state.registers[source];
+								add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+								self.current_state.sources[dest] |= self.current_state.compare_state.sources;
+								break;
+							case NEVER_MATCHES:
+								LOG("conditional never matches");
+								self.current_state.sources[dest] |= self.current_state.compare_state.sources;
+								break;
+							case POSSIBLY_MATCHES:
+								LOG("conditional sometimes matches");
+								if (register_is_partially_known(&self.current_state.registers[dest]) && register_is_partially_known(&self.current_state.registers[source])) {
+									if (self.current_state.registers[source].value < self.current_state.registers[dest].value) {
+										self.current_state.registers[dest].value = self.current_state.registers[source].value;
+									}
+									if (self.current_state.registers[source].max > self.current_state.registers[dest].max) {
+										self.current_state.registers[dest].max = self.current_state.registers[source].max;
+									}
+									self.current_state.sources[dest] |= self.current_state.sources[source];
+								} else {
+									clear_register(&self.current_state.registers[dest]);
+									self.current_state.sources[dest] = 0;
+								}
+								clear_match(&analysis->loader, &self.current_state, dest, ins);
+								break;
 						}
-						clear_match(&analysis->loader, &self.current_state, dest, ins);
 						break;
 					}
 					case 0x57: { // xorps xmm1, xmm2/m128
@@ -6078,9 +6200,26 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						ins_ptr remaining = &decoded.unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						LOG("to", name_for_register(rm));
-						self.current_state.registers[rm].value = 0;
-						self.current_state.registers[rm].max = 1;
-						self.current_state.sources[rm] = 0;
+						switch (calculate_possible_conditions(x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
+							case ALWAYS_MATCHES:
+								LOG("conditional always matches");
+								self.current_state.registers[rm].value = 1;
+								self.current_state.registers[rm].max = 1;
+								self.current_state.sources[rm] = self.current_state.compare_state.sources;
+								break;
+							case NEVER_MATCHES:
+								LOG("conditional never matches");
+								self.current_state.registers[rm].value = 0;
+								self.current_state.registers[rm].max = 0;
+								self.current_state.sources[rm] = self.current_state.compare_state.sources;
+								break;
+							case POSSIBLY_MATCHES:
+								LOG("conditional sometimes matches");
+								self.current_state.registers[rm].value = 0;
+								self.current_state.registers[rm].max = 1;
+								self.current_state.sources[rm] = 0;
+								break;
+						}
 						clear_match(&analysis->loader, &self.current_state, rm, ins);
 						break;
 					}
