@@ -1741,7 +1741,20 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					if (combine_register_states(&out_registers->registers[r], &registers->registers[r], r)) {
 						dump_register(loader, out_registers->registers[r]);
 					} else if (UNLIKELY(processing_count > 30) && register_is_exactly_known(&registers->registers[r])) {
-						LOG("too many actively unwidened", name_for_register(r));
+						LOG("too many actively unwidened exact", name_for_register(r));
+						dump_register(loader, out_registers->registers[r]);
+						clear_register(&out_registers->registers[r]);
+						out_registers->sources[r] = 0;
+						register_mask match_mask = out_registers->matches[r];
+						if (match_mask != 0) {
+							if ((widenable_registers & match_mask) == match_mask) {
+								LOG("widening a register in tandem with another, preserving match", name_for_register(r));
+							} else {
+								clear_match(&analysis->loader, out_registers, r, addr);
+							}
+						}
+					} else if (UNLIKELY(processing_count > 40)) {
+						LOG("too many actively unwidened inexact", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
 						clear_register(&out_registers->registers[r]);
 						out_registers->sources[r] = 0;
@@ -1803,7 +1816,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 			offset += sizeof_searched_instruction_data_entry(entry);
 		}
 	}
-	if (count > 20) {
+	if (count > 50) {
 		LOG("too many entries, widening all registers");
 		if (widenable_registers != 0) {
 			*out_registers = *registers;
