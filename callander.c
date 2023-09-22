@@ -6437,7 +6437,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										copy.sources[dest] = self.current_state.sources[base] | self.current_state.sources[index];
 										clear_match(&analysis->loader, &copy, dest, ins);
 										ins_ptr continue_target = next_ins(ins, &decoded);
-										for (uintptr_t i = value; i <= max; i++) {
+										for (uintptr_t i = value; i != max + 1; i++) {
 											LOG("processing table index", i);
 											LOG("processing table value", (intptr_t)((ins_ptr)base_addr)[i]);
 											LOG("processing table target (if jump table)", temp_str(copy_address_description(&analysis->loader, (void *)base_addr + ((ins_ptr)base_addr)[i])));
