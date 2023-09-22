@@ -1698,7 +1698,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	}
 	// this is super janky. find and collapse loops
 	register_mask widenable_registers = relevant_registers & ~data->preserved_registers;
-	if (widenable_registers != 0 || total_processing_count > 30) {
+	if (widenable_registers != 0 || total_processing_count > 50) {
 		LOG("loop heuristics");
 		dump_registers(loader, registers, widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
@@ -1740,7 +1740,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				if (entry->widen_count[r] < 4) {
 					if (combine_register_states(&out_registers->registers[r], &registers->registers[r], r)) {
 						dump_register(loader, out_registers->registers[r]);
-					} else if (UNLIKELY(processing_count > 30) && register_is_exactly_known(&registers->registers[r])) {
+					} else if (UNLIKELY(processing_count > 40) && register_is_exactly_known(&registers->registers[r])) {
 						LOG("too many actively unwidened exact", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
 						clear_register(&out_registers->registers[r]);
@@ -1753,7 +1753,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 								clear_match(&analysis->loader, out_registers, r, addr);
 							}
 						}
-					} else if (UNLIKELY(processing_count > 40)) {
+					} else if (UNLIKELY(processing_count > 50)) {
 						LOG("too many actively unwidened inexact", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
 						clear_register(&out_registers->registers[r]);
@@ -1816,7 +1816,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 			offset += sizeof_searched_instruction_data_entry(entry);
 		}
 	}
-	if (count > 50) {
+	if (count > 60) {
 		LOG("too many entries, widening all registers");
 		if (widenable_registers != 0) {
 			*out_registers = *registers;
