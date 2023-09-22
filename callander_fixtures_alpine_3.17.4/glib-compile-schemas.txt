@@ -88,7 +88,7 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 access(any, any) @ ld-musl-x86_64.so.1+0x5ad31(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
 sched_yield() @ ld-musl-x86_64.so.1+0x4892a(sched_yield+6)
-mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
+mremap(any, any u32, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(any, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 dup(any) @ ld-musl-x86_64.so.1+0x41d5a(child*+459)
 dup(any) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
@@ -103,15 +103,15 @@ socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
+recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x583bc
 sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-shutdown(any, any) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
+shutdown(any, 1) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3bedb(getpeername+18)
@@ -127,8 +127,8 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
-wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, 9) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 fcntl(any, 1030, any u32) @ ld-musl-x86_64.so.1+0x1d23a(fcntl+213)
 fcntl(any, 1030, 0) @ ld-musl-x86_64.so.1+0x1d24a(fcntl+229)
@@ -266,8 +266,8 @@ pipe2(any, any) @ ld-musl-x86_64.so.1+0x5b4d7(pipe2+29)
 inotify_init1(0) @ ld-musl-x86_64.so.1+0x1ff77(inotify_init1+12)
 inotify_init1(0x80000) @ ld-musl-x86_64.so.1+0x1ff77(inotify_init1+12)
 inotify_init1(0x80800) @ ld-musl-x86_64.so.1+0x1ff77(inotify_init1+12)
-recvmmsg(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-recvmmsg(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+recvmmsg(any, any, any u32, any u16, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmmsg(any, any, any u32, any u16, 0) @ ld-musl-x86_64.so.1+0x583bc
 prlimit64(0, any, 0, any) @ ld-musl-x86_64.so.1+0x376e8(getrlimit+30)
 sched_setattr(any, any, any) @ ld-musl-x86_64.so.1+0x38702(syscall+153)
 memfd_create(any, 1) @ ld-musl-x86_64.so.1+0x20177(memfd_create+8)

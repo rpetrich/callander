@@ -15,7 +15,7 @@ mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x53005
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x53089
 munmap(any, any) @ /usr/sbin/ldconfig+0x53059
 brk(any) @ /usr/sbin/ldconfig+0x52ca9
-rt_sigaction(6, any, any, 8) @ /usr/sbin/ldconfig+0x67831
+rt_sigaction(6, any, 0, 8) @ /usr/sbin/ldconfig+0x67831
 rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig+0x67831
 rt_sigprocmask(1, any, 0, 8) @ /usr/sbin/ldconfig+0x15c8
 rt_sigprocmask(0, /usr/sbin/ldconfig+0xb9768, any, 8) @ /usr/sbin/ldconfig+0x2190a
@@ -96,15 +96,15 @@ restart_syscall()
 clock_gettime(NULL-0x1, any) @ /usr/sbin/ldconfig+0x4abcd
 clock_gettime(any u32, any) @ [vdso]+0x9af(__vdso_clock_gettime+207)
 clock_getres(any u32, any) @ [vdso]+0xbaa(__vdso_clock_getres+90)
-clock_nanosleep(NULL-0xfffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x9c0f5
+clock_nanosleep(0, 0, any, any) @ /usr/sbin/ldconfig+0x9c0f5
 clock_nanosleep(any u32, any u32, any, any) @ /usr/sbin/ldconfig+0x9c133
 exit_group(any u32) @ /usr/sbin/ldconfig+0x4af8f
 tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig+0x21998
 tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig+0x21998
 tgkill(any u32, any u32, 6) @ /usr/sbin/ldconfig+0x219c9
 tgkill(any u32, any u32, 8) @ /usr/sbin/ldconfig+0x219c9
-openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x51e33
-openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x51eae
+openat(AT_FDCWD, any, NULL-0x80002, any) @ /usr/sbin/ldconfig+0x51e33
+openat(AT_FDCWD, any, NULL-0x80002, any) @ /usr/sbin/ldconfig+0x51eae
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x52af3
 openat(any u32, /usr/sbin/ldconfig+0xbb9e0, 0, any) @ /usr/sbin/ldconfig+0x81321
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x813ae

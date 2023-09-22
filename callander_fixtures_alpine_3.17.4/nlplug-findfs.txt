@@ -32,7 +32,8 @@ lstat(any, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
 poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
 poll(any, 1, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 poll(any, 3, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-poll(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+poll(any, 1, any) @ ld-musl-x86_64.so.1+0x583bc
+poll(any, 3, any) @ ld-musl-x86_64.so.1+0x583bc
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 mmap(NULL-0xfffffffffffff000, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(any, non-NULL, any, 18, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
@@ -69,7 +70,7 @@ access(any, any) @ ld-musl-x86_64.so.1+0x5ad31(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
 select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
-mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
+mremap(any, any u32, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 shmget(114, non-NULL, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
 shmget(114, non-NULL, 804) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
@@ -88,14 +89,16 @@ connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
+recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 shutdown(any, 2) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 listen(any, 128) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
@@ -114,8 +117,8 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
-wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, 9) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
 shmdt(any) @ ld-musl-x86_64.so.1+0x1f117(shmdt+6)
@@ -191,10 +194,7 @@ tkill(any, 33) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 tkill(any, 34) @ ld-musl-x86_64.so.1+0x5811e(__synccall*+287)
 futex(any, NULL-0x87, any, any, any, any)
 futex(any, any u32, any, any, 202, any u32)
-futex(any, any u32, 1, any, 202, any)
 futex(any, any, any, any, 0, any)
-futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), any, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
-futex(ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any, any, 0, ld-musl-x86_64.so.1+0x9a038(tl_lock_waiters*), 0x1-0xffffffff)
 sched_getaffinity(28, 128, any) @ ld-musl-x86_64.so.1+0x19218(sysconf+255)
 getdents64(any, any, 2048) @ ld-musl-x86_64.so.1+0x1c499(readdir64+30)
 set_tid_address(any) @ ld-musl-x86_64.so.1+0x5605a(start*+66)

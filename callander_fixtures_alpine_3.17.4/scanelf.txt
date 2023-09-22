@@ -4,27 +4,48 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 4) @ ld-musl-x86_64.so.1+0x5b049(faccessat+288)
 write(any, /usr/bin/scanelf+0xef3f, 1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf534, 5) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf53a, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf543, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf53a, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf543, 7) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf54b, 12) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf558, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf561, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf558, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf561, 6) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf568, 6) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf56f, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf577, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf56f, 7) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf577, 7) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf57f, 5) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf585, 5) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf58b, 7) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf593, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf593, 4) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf598, 4) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf59d, 9) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, /usr/bin/scanelf+0xf5a7, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, /usr/bin/scanelf+0xf5a7, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf5b0, 5) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf5b6, 6) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf5bd, 5) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf5c3, 5) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, /usr/bin/scanelf+0xf5c9, 7) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-write(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xef3f, 1) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf534, 5) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf53a, 8) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf543, 7) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf54b, 12) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf558, 8) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf561, 6) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf568, 6) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf56f, 7) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf577, 7) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf57f, 5) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf585, 5) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf58b, 7) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf593, 4) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf598, 4) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf59d, 9) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf5a7, 8) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf5b0, 5) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf5b6, 6) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf5bd, 5) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf5c3, 5) @ ld-musl-x86_64.so.1+0x583bc
+write(any, /usr/bin/scanelf+0xf5c9, 7) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, 4) @ ld-musl-x86_64.so.1+0x5af24(checker*+109)
 open(ld-musl-x86_64.so.1+0x94b63, 0x8002, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(non-NULL, any, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
@@ -102,13 +123,10 @@ prctl(38, 1, 0, any, any) @ ld-musl-x86_64.so.1+0x202e9(prctl+71)
 tkill(any, 33) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, 33) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 futex(any, NULL-0x87, any, any, any, any)
-futex(any, any u32, 1, any, 202, any)
 futex(any, any, any, any, 0, any)
 futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, any, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), any, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
-futex(ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any, any, 0, ld-musl-x86_64.so.1+0x9a038(tl_lock_waiters*), 0x1-0xffffffff)
 getdents64(any, any, 2048) @ ld-musl-x86_64.so.1+0x1c499(readdir64+30)
 restart_syscall()
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x59619(clock_gettime+49)

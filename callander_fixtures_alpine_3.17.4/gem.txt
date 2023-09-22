@@ -160,7 +160,7 @@ fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x4bf3e(freopen+91)
 fcntl(any, 4, any) @ ld-musl-x86_64.so.1+0x4bf58(freopen+117)
 fcntl(any, 7, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-fcntl(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+fcntl(any, 7, any) @ ld-musl-x86_64.so.1+0x583bc
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x5aeab(dup3+108)
 fcntl(any, 1, any u32) @ ld-musl-x86_64.so.1+0x5b11f(fchown+51)
 fcntl(any, 2, 1) @ ld-musl-x86_64.so.1+0x5b513(pipe2+89)
@@ -219,8 +219,8 @@ getresuid(any, any, any) @ ld-musl-x86_64.so.1+0x376be(getresuid+6)
 getresgid(any, any, any) @ ld-musl-x86_64.so.1+0x376ac(getresgid+6)
 getpgid(any) @ ld-musl-x86_64.so.1+0x5b349(getpgid+9)
 getsid(any) @ ld-musl-x86_64.so.1+0x5b378(getsid+9)
-rt_sigtimedwait(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-rt_sigtimedwait(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+rt_sigtimedwait(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+rt_sigtimedwait(any, any, 0, 8) @ ld-musl-x86_64.so.1+0x583bc
 sigaltstack(any, any) @ ld-musl-x86_64.so.1+0x4961e(sigaltstack+61)
 mknod(any, any u32, 0) @ ld-musl-x86_64.so.1+0x49f74(mknod+8)
 statfs(libffi.so.8+0x721b, any) @ ld-musl-x86_64.so.1+0x49fc4(statfs64+24)
@@ -243,8 +243,6 @@ tkill(any, 34) @ ld-musl-x86_64.so.1+0x5811e(__synccall*+287)
 tkill(any, 32) @ ld-musl-x86_64.so.1+0x5a9da(timer_delete+44)
 futex(any, NULL-0x87, any, any, any, any)
 futex(any, any u32, any, any, 202, any u32)
-futex(any, any u32, 1, any, 202, any)
-futex(any, any, any, 0, any, any u32)
 futex(any, any, any, any, 0, any)
 sched_getaffinity(28, 128, any) @ ld-musl-x86_64.so.1+0x19218(sysconf+255)
 sched_getaffinity(0, 8, any) @ ld-musl-x86_64.so.1+0x48771(sched_getaffinity+9)
@@ -284,8 +282,10 @@ newfstatat(any, any, any, any) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 fchmodat(0xffffffffffffff9c, any, any u32, 0) @ ld-musl-x86_64.so.1+0x49c9f(fchmodat+229)
 faccessat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x5af0b(checker*+84)
 faccessat(0xffffffffffffff9c, any, any, any) @ ld-musl-x86_64.so.1+0x5af55(faccessat+44)
-pselect6(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-pselect6(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+pselect6(any, any, 0, any, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+pselect6(any, any, 0, any, any, 0x1-0xffffffff) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+pselect6(any, any, 0, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
+pselect6(any, any, 0, any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 ppoll(any, any, any, 0, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 ppoll(any, any, any, 0, 8) @ ld-musl-x86_64.so.1+0x583bc
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
@@ -294,8 +294,8 @@ utimensat(0xffffffffffffff9c, any, 0, 0) @ ld-musl-x86_64.so.1+0x4a168(utimensat
 utimensat(0xffffffffffffff9c, any, 0, 256) @ ld-musl-x86_64.so.1+0x4a168(utimensat+59)
 utimensat(0xffffffffffffff9c, any, non-NULL, 0) @ ld-musl-x86_64.so.1+0x4a182(utimensat+85)
 utimensat(0xffffffffffffff9c, any, non-NULL, 256) @ ld-musl-x86_64.so.1+0x4a182(utimensat+85)
-accept4(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-accept4(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+accept4(any, any, any, 0x80800) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+accept4(any, any, any, 0x80800) @ ld-musl-x86_64.so.1+0x583bc
 eventfd2(0, 0x80800) @ ld-musl-x86_64.so.1+0x1fe4e(eventfd+11)
 dup3(any, any, any) @ ld-musl-x86_64.so.1+0x5ae6e(dup3+47)
 pipe2(any, 0x80000) @ ld-musl-x86_64.so.1+0x5b4d7(pipe2+29)

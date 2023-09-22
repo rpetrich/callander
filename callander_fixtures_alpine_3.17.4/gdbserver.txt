@@ -67,9 +67,11 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 writev(any, any, 2) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 writev(any, any, 2) @ ld-musl-x86_64.so.1+0x583bc
 pipe(/usr/bin/gdbserver+0x75090) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
-select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
+select(any, any, 0, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+select(any, /usr/bin/gdbserver+0x78ce0, /usr/bin/gdbserver+0x78ce0, /usr/bin/gdbserver+0x78ce0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+select(any, any, 0, 0, any) @ ld-musl-x86_64.so.1+0x583bc
+select(any, /usr/bin/gdbserver+0x78ce0, /usr/bin/gdbserver+0x78ce0, /usr/bin/gdbserver+0x78ce0, any) @ ld-musl-x86_64.so.1+0x583bc
+mremap(any, any u32, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 dup2(2, 1) @ ld-musl-x86_64.so.1+0x5ae2e(dup2+15)
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
@@ -92,8 +94,8 @@ recvmsg(any, any, 0x40000000) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 listen(any, 1) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
-socketpair(1, any, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair+43)
-socketpair(1, any, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
+socketpair(1, 0x80001, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair+43)
+socketpair(1, 1, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
 setsockopt(any, 1, 2, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, 1, 9, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, 6, 1, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)

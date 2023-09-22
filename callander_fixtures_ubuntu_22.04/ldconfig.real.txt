@@ -14,7 +14,7 @@ mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig.real+0x73e75
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x73ef9
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x73ec9
 brk(any) @ /usr/sbin/ldconfig.real+0x73b19
-rt_sigaction(6, any, any, 8) @ /usr/sbin/ldconfig.real+0x8b291
+rt_sigaction(6, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8b291
 rt_sigaction(14, any, any, 8) @ /usr/sbin/ldconfig.real+0x8b291
 rt_sigprocmask(0, /usr/sbin/ldconfig.real+0xef540, any, 8) @ /usr/sbin/ldconfig.real+0x2d5a3
 rt_sigprocmask(2, any, 0, 8) @ /usr/sbin/ldconfig.real+0x2d5f0

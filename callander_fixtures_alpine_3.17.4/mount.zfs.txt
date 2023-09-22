@@ -60,7 +60,8 @@ ioctl(any, 0x5310, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5326, 0x7fffffff) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5331, 0) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5395, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, 0x5401-0x5402, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, 0x5401, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, 0x5402, libcrypto.so.3+0x3b5320) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5404, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5421, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, 0x5a05-0x5a06, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
@@ -89,10 +90,10 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 access(any, 0) @ ld-musl-x86_64.so.1+0x5ad31(access+9)
 access(any, 4) @ ld-musl-x86_64.so.1+0x5ad31(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
-select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
 sched_yield() @ ld-musl-x86_64.so.1+0x4892a(sched_yield+6)
-mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
+mremap(any, any u32, NULL-0xfffffffffffff000, 1, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, 8) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 shmget(114, non-NULL, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
 shmget(114, non-NULL, 804) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
@@ -107,18 +108,22 @@ getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 getpid() @ ld-musl-x86_64.so.1+0x5b7fb(do_setxid*+54)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
-connect(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-connect(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, 0x4000, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
+sendmsg(any, any, 0x4000) @ ld-musl-x86_64.so.1+0x583bc
+recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 shutdown(any, 2) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 listen(any, 128) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
@@ -138,8 +143,8 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
-wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, 9) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
@@ -203,10 +208,7 @@ tkill(any, 33) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 tkill(any, 34) @ ld-musl-x86_64.so.1+0x5811e(__synccall*+287)
 futex(any, NULL-0x87, any, any, any, any)
 futex(any, any u32, any, any, 202, any u32)
-futex(any, any u32, 1, any, 202, any)
 futex(any, any, any, any, 0, any)
-futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), any, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
-futex(ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any, any, 0, ld-musl-x86_64.so.1+0x9a038(tl_lock_waiters*), 0x1-0xffffffff)
 sched_getaffinity(28, 128, any) @ ld-musl-x86_64.so.1+0x19218(sysconf+255)
 getdents64(any, any, 2048) @ ld-musl-x86_64.so.1+0x1c499(readdir64+30)
 set_tid_address(any) @ ld-musl-x86_64.so.1+0x5605a(start*+66)
@@ -220,8 +222,14 @@ clock_nanosleep(0, 0, any, any) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
 add_key(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x38702(syscall+153)
 keyctl(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x38702(syscall+153)
-openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, libblkid.so.1+0x36de7, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x3995c, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x39e93, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(0xffffffffffffff9c, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x36de7, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, libblkid.so.1+0x3995c, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, libblkid.so.1+0x39e93, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(0xffffffffffffff9c, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49d54(fstatat64+104)
 newfstatat(any, any, any, 256) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, 0x1000) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
@@ -231,7 +239,7 @@ set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_o
 dup3(any, any, any) @ ld-musl-x86_64.so.1+0x5ae6e(dup3+47)
 prlimit64(0, any, 0, any) @ ld-musl-x86_64.so.1+0x376e8(getrlimit+30)
 getrandom(any, any, any) @ ld-musl-x86_64.so.1+0x38702(syscall+153)
-getrandom(any, non-NULL, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-getrandom(any, non-NULL, any) @ ld-musl-x86_64.so.1+0x583bc
+getrandom(any, non-NULL, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+getrandom(any, non-NULL, 0) @ ld-musl-x86_64.so.1+0x583bc
 membarrier(8, 0) @ ld-musl-x86_64.so.1+0x20034(membarrier+26)
 membarrier(16, 0) @ ld-musl-x86_64.so.1+0x2016c(__membarrier_init*+12)
