@@ -1635,7 +1635,9 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	size_t end_offset = data->end_offset;
 	size_t count = 0;
 	*out_wrote_registers = false;
+	size_t entry_count = 0;
 	for (size_t offset = 0; offset < end_offset; ) {
+		entry_count++;
 		struct searched_instruction_data_entry *entry = entry_for_offset(data, offset);
 		if ((entry->effects & required_effects) != required_effects) {
 			goto continue_search_initial;
@@ -1696,7 +1698,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	}
 	// this is super janky. find and collapse loops
 	register_mask widenable_registers = relevant_registers & ~data->preserved_registers;
-	if (widenable_registers != 0) {
+	if (widenable_registers != 0 || entry_count > 30) {
 		LOG("loop heuristics");
 		dump_registers(loader, registers, widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
