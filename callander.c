@@ -3361,7 +3361,9 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		if (SHOULD_LOG) {
 			ERROR("marking", temp_str(copy_address_description(loader, ancestor->entry)));
 			for_each_bit(new_relevant_registers, bit, i) {
-				if (new_preserved_registers & bit) {
+				if (new_preserved_and_kept_registers & bit) {
+					ERROR("as preserving and keeping", name_for_register(i));
+				} else if (new_preserved_registers & bit) {
 					ERROR("as preserving", name_for_register(i));
 				} else {
 					ERROR("as requiring", name_for_register(i));
@@ -3486,7 +3488,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[info.attributes & SYSCALL_ARGC_MASK];
 	// determine which registers to preserve
 	register_mask preserved_registers = syscall_argument_abi_used_registers_for_argc[0];
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < (info.attributes & SYSCALL_ARGC_MASK); i++) {
 		if (info.arguments[i] & SYSCALL_ARG_IS_PRESERVED) {
 			preserved_registers |= (register_mask)1 << syscall_argument_abi_register_indexes[i];
 		}
@@ -5437,6 +5439,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case SUPPORTED_COMPARISON:
 				LOG("comparing", name_for_register(self.current_state.compare_state.target_register));
+				LOG("value", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[self.current_state.compare_state.target_register])));
 				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self.current_state.compare_state.value)));
 				break;
 		}
