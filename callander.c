@@ -6448,7 +6448,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												}
 											}
 											set_register(&copy.registers[dest], dest);
-											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 											LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										}
 										LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
