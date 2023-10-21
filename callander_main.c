@@ -655,10 +655,10 @@ static struct mapped_region_info copy_sorted_mapped_regions(const struct loader_
 	for (int i = count - 1; i > 0; i--) {
 		if (regions[i].start <= regions[i-1].end) {
 			regions[i-1].end = regions[i].end;
+			count--;
 			for (int j = i; j < count; j++) {
 				regions[j] = regions[j+1];
 			}
-			count--;
 		}
 	}
 	return (struct mapped_region_info) {
