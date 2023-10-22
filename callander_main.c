@@ -1743,7 +1743,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			return 0;
 		}
 		tracee = result;
-		analysis.pid = tracee;
+		analysis.loader.pid = tracee;
 		wakeup_child_fd = pipe_fds[1];
 		fs_close(pipe_fds[0]);
 	}
@@ -2034,6 +2034,9 @@ skip_analysis:
 	}
 #endif
 	cleanup_searched_instructions(&analysis.search);
+#ifdef STATS
+	ERROR("analyzed instruction count", analyzed_instruction_count);
+#endif
 	// prepare seccomp program to inject into child
 	if (show_permitted) {
 		log_used_syscalls(&analysis.loader, &analysis.syscalls, true, true, true);
@@ -2182,9 +2185,6 @@ skip_analysis:
 #ifdef STANDALONE
 		// return memory to the kernel
 		dlmalloc_trim(0);
-#endif
-#ifdef STATS
-		ERROR("analyzed instruction count", analyzed_instruction_count);
 #endif
 		// wait for the process to finish running
 	wait_for_child:

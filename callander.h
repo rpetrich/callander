@@ -17,7 +17,8 @@
 #define RECORD_WHERE_STACK_ADDRESS_TAKEN 0
 #define RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY 1
 
-#define LOGGING
+// #define LOGGING
+// #define STATS
 
 #ifdef LOGGING
 extern bool should_log;
@@ -53,9 +54,7 @@ enum {
 
 	SYSCALL_ARG_IS_INTEGER = 0x0,
 	SYSCALL_ARG_IS_OFFSET = SYSCALL_ARG_IS_INTEGER,
-	SYSCALL_ARG_IS_PROT = SYSCALL_ARG_IS_INTEGER,
 	SYSCALL_ARG_IS_FLAGS = SYSCALL_ARG_IS_INTEGER,
-	SYSCALL_ARG_IS_PID = SYSCALL_ARG_IS_INTEGER,
 	SYSCALL_ARG_IS_ADDRESS = 0x1,
 	SYSCALL_ARG_IS_PATH = SYSCALL_ARG_IS_ADDRESS,
 	SYSCALL_ARG_IS_STRING = SYSCALL_ARG_IS_ADDRESS,
@@ -63,8 +62,28 @@ enum {
 	SYSCALL_ARG_IS_SIZE = 0x3,
 	SYSCALL_ARG_IS_COUNT = SYSCALL_ARG_IS_SIZE,
 	SYSCALL_ARG_IS_MODEFLAGS = 0x4,
-	SYSCALL_ARG_IS_PRESERVED = 0x8,
-	SYSCALL_ARG_RELATED_ARGUMENT_BASE = 0x10,
+	SYSCALL_ARG_IS_PROT = 0x5,
+	SYSCALL_ARG_IS_MAP_FLAGS = 0x6,
+	SYSCALL_ARG_IS_REMAP_FLAGS = 0x7,
+	SYSCALL_ARG_IS_OPEN_FLAGS = 0x8,
+	SYSCALL_ARG_IS_SIGNUM = 0x9,
+	SYSCALL_ARG_IS_IOCTL = 0xa,
+	SYSCALL_ARG_IS_PID = 0xb,
+	SYSCALL_ARG_IS_SIGHOW = 0xc,
+	SYSCALL_ARG_IS_MADVISE = 0xd,
+	SYSCALL_ARG_IS_FCNTL = 0xe,
+	SYSCALL_ARG_IS_RLIMIT = 0xf,
+	SYSCALL_ARG_IS_SOCKET_DOMAIN = 0x10,
+	SYSCALL_ARG_IS_SOCKET_TYPE = 0x11,
+	SYSCALL_ARG_IS_SOCKET_PROTOCOL = 0x12,
+	SYSCALL_ARG_IS_CLOCK_ID = 0x12,
+	SYSCALL_ARG_IS_SOCKET_LEVEL = 0x13,
+	SYSCALL_ARG_IS_SOCKET_OPTION = 0x14,
+	SYSCALL_ARG_IS_ACCESS_MODE = 0x15,
+	SYSCALL_ARG_IS_AT_FLAGS = 0x16,
+	SYSCALL_ARG_TYPE_MASK = 0x7f,
+	SYSCALL_ARG_IS_PRESERVED = 0x80,
+	SYSCALL_ARG_RELATED_ARGUMENT_BASE = 0x100,
 };
 
 #define SYSCALL_RETURNS(arg) (0x20 * (arg))
@@ -173,6 +192,7 @@ struct loader_context {
 	struct loaded_binary *main;
 	struct loaded_binary *interpreter;
 	struct loader_stub *stubs;
+	pid_t pid;
 	uid_t uid;
 	gid_t gid;
 	uintptr_t vdso;
@@ -626,7 +646,6 @@ struct program_state {
 	struct recorded_syscalls syscalls;
 	struct known_symbols known_symbols;
 	uintptr_t main;
-	pid_t pid;
 	const char *ld_preload;
 	const char *ld_profile;
 	struct dlopen_path *dlopen;
@@ -666,5 +685,9 @@ static inline function_effects analyze_function(struct program_state *analysis, 
 
 __attribute__((nonnull(1)))
 void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects);
+
+#ifdef STATS
+extern intptr_t analyzed_instruction_count;
+#endif
 
 #endif
