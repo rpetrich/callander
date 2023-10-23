@@ -4320,6 +4320,9 @@ enum {
 
 static inline int read_rm_ref(const struct loader_context *loader, struct x86_ins_prefixes prefixes, ins_ptr *ins_modrm, size_t imm_size, struct registers *regs, int operation_size, int flags, struct register_state *out_state)
 {
+	if (UNLIKELY(prefixes.has_segment_override) && (flags & READ_RM_KEEP_MEM)) {
+		return REGISTER_INVALID;
+	}
 	x86_mod_rm_t modrm = x86_read_modrm(*ins_modrm);
 	int result;
 	if (x86_modrm_is_direct(modrm)) {
