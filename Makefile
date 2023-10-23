@@ -87,15 +87,15 @@ OBJECTS := attempt.o axon.o coverage.o darwin.o debugger.o defaultlibs.o \
 TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    loader.o proxy.o qsort.o remote.o search.o seccomp.o \
 		    stack.o texec.o time.o tls.o x86.o \
-		    callander.o patch_x86_64.o x86_64_length_disassembler.o
+		    callander.o callander_print.o patch_x86_64.o x86_64_length_disassembler.o
 THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table_target.o \
 			fork_target.o handler.o intercept_target.o malloc.o paths_target.o proxy_target.o \
 			remote.o remote_library_target.o sockets_target.o stack.o telemetry.o thandler.o tls.o
-COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o defaultlibs.o loader.o \
+COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o callander_print.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o
 LOOKUP_OBJECTS := defaultlibs.o loader.o lookup_main.o resolver.o
-LIBCALLBOX_OBJECTS := libcallbox.o attempt.o defaultlibs.o loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o proxy.o tls.o x86.o x86_64_length_disassembler.o
+LIBCALLBOX_OBJECTS := libcallbox.o attempt.o $(COMMON_CALLANDER_OBJECTS) defaultlibs.o loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o proxy.o tls.o x86.o x86_64_length_disassembler.o
 ifeq ($(STANDALONE),1)
 	CFLAGS += -DSTANDALONE=1
 	OBJECTS += malloc.o
