@@ -593,7 +593,7 @@ __attribute__((noinline))
 static void apply_sandbox(const struct link_map *libz_entry)
 {
 	struct program_state analysis = { 0 };
-	analysis.pid = fs_getpid();
+	analysis.loader.pid = fs_getpid();
 	analysis.loader.loaded_gconv_libraries = true;
 	analysis.loader.ignore_dlopen = true;
 	// analysis.syscalls.config[__NR_openat] |= SYSCALL_CONFIG_DEBUG;
