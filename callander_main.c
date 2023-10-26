@@ -1532,6 +1532,10 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		} else if (fs_strcmp(arg, "--log") == 0) {
 			should_log = true;
 #endif
+		} else if (fs_strcmp(arg, "--version") == 0) {
+#define VERSION "callander 0.1\n"
+			fs_write(1, VERSION, sizeof(VERSION)-1);
+			return 0;
 		} else if (fs_strcmp(arg, "--skip-running") == 0) {
 			if (skip_running) {
 				ERROR("--skip-running can only be specified once");
@@ -1555,6 +1559,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		ERROR_FLUSH();
 #define USAGE "usage: callander [command]\n"\
 		"Runs programs in an automatically generated seccomp sandbox\n"\
+		"Copyright (C) 2020-2023 Ryan Petrich\n"\
 		"\n"\
 		"  --block-exec                 blocks calls to execute new programs\n"\
 		"  --permit-syscall NAME        permits a specific system call by NAME (may be specified multiple times)\n"\
@@ -1562,8 +1567,10 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		"  --block-function NAME        blocks a specific function by symbol NAME (may be specified multiple times)\n"\
 		"  --block-debug-function NAME  blocks a specific function by debug symbol NAME (may be specified multiple times)\n"\
 		"  --main-function NAME         wait until the specified function is called before applying sandbox\n"\
+		"  --dlopen LIBRARY_PATH        load a specific library at startup, assuming it will be dynamically dlopened after startup\n"\
+		"  --ignore-dlopen              ignore calls to dlopen, assuming libraries will already be preloaded\n"\
 		"  --show-permitted             shows permitted syscalls before launching program\n"\
-		"  --attach-gdb                 attaches gdb on the program at startup\n"\
+		"  --attach-gdb                 attaches gdb to the program at startup\n"\
 		"  --                           stop processing command line arguments\n"
 		fs_write(2, USAGE, sizeof(USAGE)-1);
 		return 1;
