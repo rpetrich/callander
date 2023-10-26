@@ -23,7 +23,7 @@ mappings.
 ## Installation
 
 1. Download a .tgz from https://github.com/rpetrich/callander/releases/latest
-2. Extract with `tar xf callander-*.tgz` or a graphical decompression utility
+2. Extract with `tar xfz callander-*.tgz` or a graphical decompression utility
 3. Run `callander`
 
 ## Usage
