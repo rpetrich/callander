@@ -34,12 +34,12 @@ analyze, apply the sandbox, and run the program.
 ## Limitations
 
 Programs that launch other programs are not supported by callander, due to the
-limitations of seccomp. If asked to run a program that does exec other programs,
-callander will emit an error that can be overridden with the `--block-exec`
-option.
+limitations of seccomp. If asked to run a program that does `exec` other
+programs, callander will emit an error that can be overridden with the
+`--block-exec` option.
 
-Only x86-64 binaries are supported. A version for aarch64 is in development, but
-not yet available.
+Only x86-64 Linux binaries are supported. A version for aarch64 is in
+development, but not yet available.
 
 Additionally, callander is beta software and requires more real-world testing.
 If you have a program that it doesn't analyze properly or rejects, please open
