@@ -759,6 +759,63 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 	return result;
 }
 
+static inline size_t format_octal(uintptr_t value, char buffer[])
+{
+	buffer[0] = '0';
+	if (value == 0) {
+		buffer[1] = '\0';
+		return 1;
+	}
+	size_t i = 1;
+	while (value != 0) {
+		buffer[i++] = "0123456789"[(unsigned char)value & 0x7];
+		value = value >> 3;
+	}
+	buffer[i] = '\0';
+	fs_reverse(&buffer[1], i-1);
+	return i+1;
+}
+
+static char *copy_mode_description(struct register_state reg)
+{
+	if (reg.value == 0) {
+		if (reg.max == ~(uintptr_t)0) {
+			char *result = malloc(sizeof("any"));
+			memcpy(result, "any", sizeof("any"));
+			return result;
+		}
+		if (reg.max == 0xffffffff) {
+			char *result = malloc(sizeof("any u32"));
+			memcpy(result, "any u32", sizeof("any u32"));
+			return result;
+		}
+		if (reg.max == 0xffff) {
+			char *result = malloc(sizeof("any u16"));
+			memcpy(result, "any u16", sizeof("any u16"));
+			return result;
+		}
+		if (reg.max == 0xff) {
+			char *result = malloc(sizeof("any u8"));
+			memcpy(result, "any u8", sizeof("any u8"));
+			return result;
+		}
+	}
+	char buf[64];
+	size_t size;
+	if (register_is_exactly_known(&reg)) {
+		size = format_octal(reg.value, buf);
+	} else {
+		size_t prefix_size = format_octal(reg.value, buf);
+		buf[prefix_size] = '-';
+		size_t suffix_size = format_octal(reg.max, &buf[prefix_size+1]);
+		size = prefix_size + 1 + suffix_size;
+	}
+	char *result = malloc(size+1);
+	memcpy(result, buf, size+1);
+	return result;
+}
+
+
 __attribute__((unused))
 __attribute__((nonnull(1, 2, 4)))
 char *copy_call_description(const struct loader_context *context, const char *name, struct registers registers, const int *register_indexes, struct syscall_info info, bool include_symbol)
@@ -862,6 +919,10 @@ char *copy_call_description(const struct loader_context *context, const char *na
 					} else {
 						args[i] = copy_register_state_description(context, registers.registers[reg]);
 					}
+					break;
+				case SYSCALL_ARG_IS_MODE:
+				case SYSCALL_ARG_IS_MODEFLAGS:
+					args[i] = copy_mode_description(registers.registers[reg]);
 					break;
 				default:
 					args[i] = copy_register_state_description(context, registers.registers[reg]);
