@@ -174,6 +174,30 @@ __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 2)))
 enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump);
 
+enum x86_conditional_type {
+	X86_CONDITIONAL_TYPE_OVERFLOW = 0x0,
+	X86_CONDITIONAL_TYPE_NOT_OVERFLOW = 0x1,
+	X86_CONDITIONAL_TYPE_BELOW = 0x2,
+	X86_CONDITIONAL_TYPE_ABOVE_OR_EQUAL = 0x3,
+	X86_CONDITIONAL_TYPE_EQUAL = 0x4,
+	X86_CONDITIONAL_TYPE_NOT_EQUAL = 0x5,
+	X86_CONDITIONAL_TYPE_BELOW_OR_EQUAL = 0x6,
+	X86_CONDITIONAL_TYPE_ABOVE = 0x7,
+	X86_CONDITIONAL_TYPE_SIGN = 0x8,
+	X86_CONDITIONAL_TYPE_NOT_SIGN = 0x9,
+	X86_CONDITIONAL_TYPE_PARITY = 0xa,
+	X86_CONDITIONAL_TYPE_PARITY_ODD = 0xb,
+	X86_CONDITIONAL_TYPE_LOWER = 0xc,
+	X86_CONDITIONAL_TYPE_GREATER_OR_EQUAL = 0xd,
+	X86_CONDITIONAL_TYPE_NOT_GREATER = 0xe,
+	X86_CONDITIONAL_TYPE_GREATER = 0xf,
+};
+
+static inline int x86_get_conditional_type(const uint8_t *ins)
+{
+	return ins[*ins == 0x0f] & 0xf;
+}
+
 static inline bool x86_is_jo_instruction(const struct x86_instruction *ins)
 {
 	return *ins->unprefixed == 0x70 || (*ins->unprefixed == 0x0f && ins->unprefixed[1] == 0x80);
