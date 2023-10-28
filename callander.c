@@ -3603,6 +3603,26 @@ enum {
 static inline int read_rm_ref(const struct loader_context *loader, struct x86_ins_prefixes prefixes, ins_ptr *ins_modrm, size_t imm_size, struct registers *regs, int operation_size, int flags, struct register_state *out_state)
 {
 	if (UNLIKELY(prefixes.has_segment_override) && (flags & READ_RM_KEEP_MEM)) {
+	return_invalid:
+		if (out_state != NULL) {
+			clear_register(out_state);
+			switch (operation_size) {
+				case OPERATION_SIZE_DEFAULT:
+					truncate_to_size_prefixes(out_state, prefixes);
+					break;
+				case OPERATION_SIZE_8BIT:
+					truncate_to_8bit(out_state);
+					break;
+				case OPERATION_SIZE_16BIT:
+					truncate_to_16bit(out_state);
+					break;
+				case OPERATION_SIZE_32BIT:
+					truncate_to_32bit(out_state);
+					break;
+				case OPERATION_SIZE_64BIT:
+					break;
+			}
+		}
 		return REGISTER_INVALID;
 	}
 	x86_mod_rm_t modrm = x86_read_modrm(*ins_modrm);
@@ -3723,26 +3743,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 		}
 	}
 	if (flags & READ_RM_KEEP_MEM && !register_is_partially_known(&regs->registers[REGISTER_MEM])) {
-		if (out_state != NULL) {
-			clear_register(out_state);
-			switch (operation_size) {
-				case OPERATION_SIZE_DEFAULT:
-					truncate_to_size_prefixes(out_state, prefixes);
-					break;
-				case OPERATION_SIZE_8BIT:
-					truncate_to_8bit(out_state);
-					break;
-				case OPERATION_SIZE_16BIT:
-					truncate_to_16bit(out_state);
-					break;
-				case OPERATION_SIZE_32BIT:
-					truncate_to_32bit(out_state);
-					break;
-				case OPERATION_SIZE_64BIT:
-					break;
-			}
-		}
-		return REGISTER_INVALID;
+		goto return_invalid;
 	}
 	LOG("clearing old mem r/m", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
 	LOG("replacing with new mem r/m", temp_str(copy_decoded_rm_description(loader, decoded)));
