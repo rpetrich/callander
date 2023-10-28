@@ -43,7 +43,7 @@ fcntl(any u32, F_SETFD, any u32) @ libc.so.6+0x119b52(__fcntl64_nocancel_adjuste
 getcwd(non-NULL, any) @ libc.so.6+0x115453(getcwd+147)
 unlink(any) @ libc.so.6+0x116299(unlink+9)
 readlink(any, any, any) @ libc.so.6+0x116239(readlink+9)
-chmod(any, NULL-0x1ff) @ libc.so.6+0x114449(chmod+9)
+chmod(any, 0-0777) @ libc.so.6+0x114449(chmod+9)
 umask(any u32) @ libc.so.6+0x114439(umask+9)
 gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 sysinfo(any) @ libc.so.6+0x126fd9(sysinfo+9)

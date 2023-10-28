@@ -79,7 +79,7 @@ fcntl(NULL-0xfffffffe, F_SETFL, any u16) @ libc.so.6+0x119b52(__fcntl64_nocancel
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0x119b52(__fcntl64_nocancel_adjusted*+34)
 ftruncate(any u32, any) @ libc.so.6+0x11d1a9(ftruncate+9)
 getcwd(non-NULL, any) @ libc.so.6+0x115453(getcwd+147)
-mkdir(any, 448) @ libc.so.6+0x114649(mkdir+9)
+mkdir(any, 0700) @ libc.so.6+0x114649(mkdir+9)
 link(any, any) @ libc.so.6+0x116179(link+9)
 unlink(any) @ libc.so.6+0x116299(unlink+9)
 readlink(any, any, any) @ libc.so.6+0x116239(readlink+9)

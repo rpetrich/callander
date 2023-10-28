@@ -50,7 +50,7 @@ fcntl(any u32, F_SETFD, NULL-0xfffffffe) @ libc.so.6+0x119b52(__fcntl64_nocancel
 getcwd(non-NULL, any) @ libc.so.6+0x115453(getcwd+147)
 chdir(any) @ libc.so.6+0x115369(chdir+9)
 fchdir(any u32) @ libc.so.6+0x115399(fchdir+9)
-mkdir(non-NULL, 493) @ libc.so.6+0x114649(mkdir+9)
+mkdir(non-NULL, 0755) @ libc.so.6+0x114649(mkdir+9)
 rmdir(any) @ libc.so.6+0x1162f9(rmdir+9)
 unlink(any) @ libc.so.6+0x116299(unlink+9)
 symlink(any, any) @ libc.so.6+0x1161d9(symlink+9)

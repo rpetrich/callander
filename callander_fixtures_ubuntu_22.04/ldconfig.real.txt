@@ -61,13 +61,13 @@ fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x73e49
 getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x730d3
 chdir(/usr/sbin/ldconfig.real+0xeb33c) @ /usr/sbin/ldconfig.real+0x73019
 rename(any, any) @ /usr/sbin/ldconfig.real+0x1de09
-mkdir(any, 448) @ /usr/sbin/ldconfig.real+0x72cb9
+mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x72cb9
 unlink(any) @ /usr/sbin/ldconfig.real+0x737c9
 symlink(any, any) @ /usr/sbin/ldconfig.real+0x73769
 readlink(any, NULL-0xfffffffffffffff0, 4095) @ /usr/sbin/ldconfig.real+0x73799
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73799
 readlink(/usr/sbin/ldconfig.real+0x105558, any, 0x1000) @ /usr/sbin/ldconfig.real+0xc0361
-chmod(any, 420) @ /usr/sbin/ldconfig.real+0x72c89
+chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x72c89
 gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x75f39
 sched_getparam(any u32, any) @ /usr/sbin/ldconfig.real+0xabf19

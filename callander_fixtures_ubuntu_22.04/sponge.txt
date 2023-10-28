@@ -40,7 +40,7 @@ fcntl(any u32, F_GETFL, any) @ libc.so.6+0x119b52(__fcntl64_nocancel_adjusted*+3
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0x119b52(__fcntl64_nocancel_adjusted*+34)
 getcwd(non-NULL, any) @ libc.so.6+0x115453(getcwd+147)
 rename(any, any) @ libc.so.6+0x61ea9(rename+9)
-mkdir(any, 448) @ libc.so.6+0x114649(mkdir+9)
+mkdir(any, 0700) @ libc.so.6+0x114649(mkdir+9)
 unlink(non-NULL) @ libc.so.6+0x116299(unlink+9)
 chmod(any, any u32) @ libc.so.6+0x114449(chmod+9)
 umask(any u32) @ libc.so.6+0x114439(umask+9)
