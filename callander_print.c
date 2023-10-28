@@ -162,7 +162,7 @@ static const char *open_flags[64] = {
 	DESCRIBE_FLAG(O_TRUNC),
 };
 
-static struct enum_option access_modes[64] = {
+static struct enum_option access_modes[] = {
 	DESCRIBE_ENUM(F_OK),
 };
 
@@ -170,6 +170,12 @@ static const char *access_mode_flags[64] = {
 	DESCRIBE_FLAG(R_OK),
 	DESCRIBE_FLAG(W_OK),
 	DESCRIBE_FLAG(X_OK),
+};
+
+static struct enum_option shutdown_hows[] = {
+	DESCRIBE_ENUM(SHUT_RD),
+	DESCRIBE_ENUM(SHUT_WR),
+	DESCRIBE_ENUM(SHUT_RDWR),
 };
 
 static const char *accessat_flags[64] = {
@@ -194,6 +200,12 @@ static const char *removeat_flags[64] = {
 	DESCRIBE_FLAG(AT_STATX_DONT_SYNC),
 	DESCRIBE_FLAG(AT_RECURSIVE),
 	// DESCRIBE_FLAG(AT_HANDLE_FID), // conflicts with AT_REMOVEDIR
+};
+
+static const char *msync_flags[64] = {
+	DESCRIBE_FLAG(MS_ASYNC),
+	DESCRIBE_FLAG(MS_SYNC),
+	DESCRIBE_FLAG(MS_INVALIDATE),
 };
 
 // glibc defines these
@@ -886,11 +898,17 @@ char *copy_call_description(const struct loader_context *context, const char *na
 				case SYSCALL_ARG_IS_REMOVEAT_FLAGS:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, removeat_flags, false);
 					break;
+				case SYSCALL_ARG_IS_MSYNC_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, msync_flags, false);
+					break;
 				case SYSCALL_ARG_IS_OFLAGS:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, open_flags, false);
 					break;
 				case SYSCALL_ARG_IS_MSG_FLAGS:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, msg_flags, false);
+					break;
+				case SYSCALL_ARG_IS_SHUTDOWN_HOW:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], shutdown_hows, sizeof(shutdown_hows), NULL, false);
 					break;
 				case SYSCALL_ARG_IS_FUTEX_OP:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], futex_operations, sizeof(futex_operations), futex_flags, true);
@@ -924,6 +942,7 @@ char *copy_call_description(const struct loader_context *context, const char *na
 				case SYSCALL_ARG_IS_MODEFLAGS:
 					args[i] = copy_mode_description(registers.registers[reg]);
 					break;
+				case SYSCALL_ARG_IS_SOCKET_PROTOCOL:
 				default:
 					args[i] = copy_register_state_description(context, registers.registers[reg]);
 					break;
