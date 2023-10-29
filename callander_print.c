@@ -7,6 +7,7 @@
 #include <linux/fsmap.h>
 #include <linux/kd.h>
 #include <linux/memfd.h>
+#include <linux/module.h>
 #include <linux/nsfs.h>
 #include <linux/perf_event.h>
 #include <linux/seccomp.h>
@@ -28,9 +29,11 @@
 #include <sys/resource.h>
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
+#include <sys/random.h>
 #include <sys/shm.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/swap.h>
 #include <sys/time.h>
 #include <sys/timerfd.h>
@@ -729,6 +732,17 @@ static struct enum_option bpf_commands[] = {
 	DESCRIBE_ENUM(BPF_PROG_LOAD),
 };
 
+static struct enum_option membarrier_commands[] = {
+	DESCRIBE_ENUM(MEMBARRIER_CMD_QUERY),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_GLOBAL),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_GLOBAL_EXPEDITED),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_PRIVATE_EXPEDITED),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE),
+	DESCRIBE_ENUM(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE),
+};
+
 static const char *futex_flags[64] = {
 	DESCRIBE_FLAG(FUTEX_PRIVATE_FLAG),
 	DESCRIBE_FLAG(FUTEX_CLOCK_REALTIME),
@@ -944,6 +958,40 @@ static const char *perf_event_open_flags[64] = {
 	DESCRIBE_FLAG(PERF_FLAG_PID_CGROUP),
 };
 
+static const char *module_init_flags[64] = {
+	DESCRIBE_FLAG(MODULE_INIT_IGNORE_MODVERSIONS),
+	DESCRIBE_FLAG(MODULE_INIT_IGNORE_VERMAGIC),
+};
+
+static const char *getrandom_flags[64] = {
+	DESCRIBE_FLAG(GRND_RANDOM),
+	DESCRIBE_FLAG(GRND_NONBLOCK),
+};
+
+#ifndef STATX_MNT_ID
+#define STATX_MNT_ID 0x00001000U
+#endif
+#ifndef STATX_DIOALIGN
+#define STATX_DIOALIGN 0x00002000U
+#endif
+
+static const char *statx_mask[64] = {
+	DESCRIBE_FLAG(STATX_TYPE),
+	DESCRIBE_FLAG(STATX_MODE),
+	DESCRIBE_FLAG(STATX_NLINK),
+	DESCRIBE_FLAG(STATX_UID),
+	DESCRIBE_FLAG(STATX_GID),
+	DESCRIBE_FLAG(STATX_ATIME),
+	DESCRIBE_FLAG(STATX_MTIME),
+	DESCRIBE_FLAG(STATX_CTIME),
+	DESCRIBE_FLAG(STATX_INO),
+	DESCRIBE_FLAG(STATX_SIZE),
+	DESCRIBE_FLAG(STATX_BLOCKS),
+	DESCRIBE_FLAG(STATX_BTIME),
+	DESCRIBE_FLAG(STATX_MNT_ID),
+	DESCRIBE_FLAG(STATX_DIOALIGN),
+};
+
 __attribute__((nonnull(1)))
 static char *copy_register_state_description_simple(const struct loader_context *context, struct register_state reg)
 {
@@ -1097,6 +1145,130 @@ static char *copy_mode_description(struct register_state reg)
 	return strdup_fixed(buf, size+1);
 }
 
+static char *copy_argument_description(const struct loader_context *context, struct register_state state, uint8_t argument_type)
+{
+	switch (argument_type) {
+		case SYSCALL_ARG_IS_FD:
+			return copy_enum_flags_description(context, state, file_descriptors, sizeof(file_descriptors), NULL, false);
+		case SYSCALL_ARG_IS_PROT:
+			return copy_enum_flags_description(context, state, prots, sizeof(prots), prot_flags, false);
+		case SYSCALL_ARG_IS_MAP_FLAGS:
+			return copy_enum_flags_description(context, state, maps, sizeof(maps), map_flags, true);
+		case SYSCALL_ARG_IS_REMAP_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, remap_flags, false);
+		case SYSCALL_ARG_IS_OPEN_FLAGS:
+			return copy_enum_flags_description(context, state, opens, sizeof(opens), open_flags, true);
+		case SYSCALL_ARG_IS_SIGNUM:
+			return copy_enum_flags_description(context, state, signums, sizeof(signums), NULL, false);
+		case SYSCALL_ARG_IS_IOCTL:
+			return copy_enum_flags_description(context, state, ioctls, sizeof(ioctls), NULL, false);
+		case SYSCALL_ARG_IS_SIGHOW:
+			return copy_enum_flags_description(context, state, sighows, sizeof(sighows), NULL, false);
+		case SYSCALL_ARG_IS_MADVISE:
+			return copy_enum_flags_description(context, state, madvises, sizeof(madvises), NULL, false);
+		case SYSCALL_ARG_IS_FCNTL:
+			return copy_enum_flags_description(context, state, fcntls, sizeof(fcntls), NULL, false);
+		case SYSCALL_ARG_IS_RLIMIT:
+			return copy_enum_flags_description(context, state, rlimits, sizeof(rlimits), NULL, false);
+		case SYSCALL_ARG_IS_SOCKET_DOMAIN:
+			return copy_enum_flags_description(context, state, socket_domains, sizeof(socket_domains), NULL, false);
+		case SYSCALL_ARG_IS_SOCKET_TYPE:
+			return copy_enum_flags_description(context, state, socket_types, sizeof(socket_types), socket_flags, true);
+		case SYSCALL_ARG_IS_CLOCK_ID:
+			return copy_enum_flags_description(context, state, clock_ids, sizeof(clock_ids), NULL, false);
+		case SYSCALL_ARG_IS_SOCKET_LEVEL:
+			return copy_enum_flags_description(context, state, socket_levels, sizeof(socket_levels), NULL, false);
+		case SYSCALL_ARG_IS_SOCKET_OPTION:
+			return copy_enum_flags_description(context, state, socket_options, sizeof(socket_options), NULL, false);
+		case SYSCALL_ARG_IS_ACCESS_MODE:
+			return copy_enum_flags_description(context, state, access_modes, sizeof(access_modes), access_mode_flags, false);
+		case SYSCALL_ARG_IS_ACCESSAT_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, accessat_flags, false);
+		case SYSCALL_ARG_IS_REMOVEAT_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, removeat_flags, false);
+		case SYSCALL_ARG_IS_MSYNC_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, msync_flags, false);
+		case SYSCALL_ARG_IS_OFLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, open_flags, false);
+		case SYSCALL_ARG_IS_MSG_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, msg_flags, false);
+		case SYSCALL_ARG_IS_SHUTDOWN_HOW:
+			return copy_enum_flags_description(context, state, shutdown_hows, sizeof(shutdown_hows), NULL, false);
+		case SYSCALL_ARG_IS_FUTEX_OP:
+			return copy_enum_flags_description(context, state, futex_operations, sizeof(futex_operations), futex_flags, true);
+		case SYSCALL_ARG_IS_SIGNALFD_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, signalfd_flags, false);
+		case SYSCALL_ARG_IS_TIMERFD_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, timerfd_flags, false);
+		case SYSCALL_ARG_IS_SOCKET_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, socket_flags, false);
+		case SYSCALL_ARG_IS_PRCTL:
+			return copy_enum_flags_description(context, state, prctls, sizeof(prctls), NULL, false);
+		case SYSCALL_ARG_IS_CLONEFLAGS:
+			return copy_enum_flags_description(context, state, signums, sizeof(signums), clone_flags, true);
+		case SYSCALL_ARG_IS_SHM_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, shm_flags, true);
+		case SYSCALL_ARG_IS_EVENTFD_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, eventfd_flags, true);
+		case SYSCALL_ARG_IS_EPOLL_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, epoll_flags, true);
+		case SYSCALL_ARG_IS_XATTR_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, xattr_flags, true);
+		case SYSCALL_ARG_IS_TIMER_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, timer_flags, true);
+		case SYSCALL_ARG_IS_WAIT_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, wait_flags, true);
+		case SYSCALL_ARG_IS_WAITIDTYPE:
+			return copy_enum_flags_description(context, state, wait_idtypes, sizeof(wait_idtypes), NULL, false);
+		case SYSCALL_ARG_IS_INOTIFY_EVENT_MASK:
+			return copy_enum_flags_description(context, state, NULL, 0, inotify_event_flags, false);
+		case SYSCALL_ARG_IS_INOTIFY_INIT_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, inotify_init_flags, false);
+		case SYSCALL_ARG_IS_SECCOMP_OPERATION:
+			return copy_enum_flags_description(context, state, seccomp_operations, sizeof(seccomp_operations), NULL, false);
+		case SYSCALL_ARG_IS_MEMFD_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, memfd_flags, false);
+		case SYSCALL_ARG_IS_BPF_COMMAND:
+			return copy_enum_flags_description(context, state, bpf_commands, sizeof(bpf_commands), NULL, false);
+		case SYSCALL_ARG_IS_USERFAULTFD_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, userfaultfd_flags, false);
+		case SYSCALL_ARG_IS_MLOCKALL_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, mlockall_flags, false);
+		case SYSCALL_ARG_IS_UMOUNT_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, umount_flags, false);
+		case SYSCALL_ARG_IS_SWAP_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, swap_flags, false);
+		case SYSCALL_ARG_IS_SPLICE_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, splice_flags, false);
+		case SYSCALL_ARG_IS_SYNC_FILE_RANGE_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, sync_file_range_flags, false);
+		case SYSCALL_ARG_IS_TIMERFD_SETTIME_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, timerfd_settime_flags, false);
+		case SYSCALL_ARG_IS_PERF_EVENT_OPEN_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, perf_event_open_flags, false);
+		case SYSCALL_ARG_IS_MODULE_INIT_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, module_init_flags, false);
+		case SYSCALL_ARG_IS_GETRANDOM_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, getrandom_flags, false);
+		case SYSCALL_ARG_IS_MEMBARRIER_COMMAND:
+			return copy_enum_flags_description(context, state, membarrier_commands, sizeof(membarrier_commands), NULL, false);
+		case SYSCALL_ARG_IS_STATX_MASK:
+			return copy_enum_flags_description(context, state, NULL, 0, statx_mask, false);
+		case SYSCALL_ARG_IS_PID:
+			if (context->pid != 0 && register_is_exactly_known(&state) && state.value == (uintptr_t)context->pid) {
+				return strdup("getpid()");
+			} else {
+				return copy_register_state_description(context, state);
+			}
+		case SYSCALL_ARG_IS_MODE:
+		case SYSCALL_ARG_IS_MODEFLAGS:
+			return copy_mode_description(state);
+		case SYSCALL_ARG_IS_SOCKET_PROTOCOL:
+		default:
+			return copy_register_state_description(context, state);
+	}
+}
+
 
 __attribute__((unused))
 __attribute__((nonnull(1, 2, 4)))
@@ -1113,170 +1285,7 @@ char *copy_call_description(const struct loader_context *context, const char *na
 		}
 		int reg = register_indexes[i];
 		if (include_symbol) {
-			switch (info.arguments[i] & SYSCALL_ARG_TYPE_MASK) {
-				case SYSCALL_ARG_IS_FD:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], file_descriptors, sizeof(file_descriptors), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_PROT:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], prots, sizeof(prots), prot_flags, false);
-					break;
-				case SYSCALL_ARG_IS_MAP_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], maps, sizeof(maps), map_flags, true);
-					break;
-				case SYSCALL_ARG_IS_REMAP_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, remap_flags, false);
-					break;
-				case SYSCALL_ARG_IS_OPEN_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], opens, sizeof(opens), open_flags, true);
-					break;
-				case SYSCALL_ARG_IS_SIGNUM:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], signums, sizeof(signums), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_IOCTL:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], ioctls, sizeof(ioctls), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_SIGHOW:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], sighows, sizeof(sighows), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_MADVISE:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], madvises, sizeof(madvises), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_FCNTL:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], fcntls, sizeof(fcntls), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_RLIMIT:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], rlimits, sizeof(rlimits), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_SOCKET_DOMAIN:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], socket_domains, sizeof(socket_domains), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_SOCKET_TYPE:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], socket_types, sizeof(socket_types), socket_flags, true);
-					break;
-				case SYSCALL_ARG_IS_CLOCK_ID:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], clock_ids, sizeof(clock_ids), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_SOCKET_LEVEL:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], socket_levels, sizeof(socket_levels), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_SOCKET_OPTION:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], socket_options, sizeof(socket_options), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_ACCESS_MODE:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], access_modes, sizeof(access_modes), access_mode_flags, false);
-					break;
-				case SYSCALL_ARG_IS_ACCESSAT_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, accessat_flags, false);
-					break;
-				case SYSCALL_ARG_IS_REMOVEAT_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, removeat_flags, false);
-					break;
-				case SYSCALL_ARG_IS_MSYNC_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, msync_flags, false);
-					break;
-				case SYSCALL_ARG_IS_OFLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, open_flags, false);
-					break;
-				case SYSCALL_ARG_IS_MSG_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, msg_flags, false);
-					break;
-				case SYSCALL_ARG_IS_SHUTDOWN_HOW:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], shutdown_hows, sizeof(shutdown_hows), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_FUTEX_OP:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], futex_operations, sizeof(futex_operations), futex_flags, true);
-					break;
-				case SYSCALL_ARG_IS_SIGNALFD_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, signalfd_flags, false);
-					break;
-				case SYSCALL_ARG_IS_TIMERFD_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, timerfd_flags, false);
-					break;
-				case SYSCALL_ARG_IS_SOCKET_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, socket_flags, false);
-					break;
-				case SYSCALL_ARG_IS_PRCTL:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], prctls, sizeof(prctls), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_CLONEFLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], signums, sizeof(signums), clone_flags, true);
-					break;
-				case SYSCALL_ARG_IS_SHM_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, shm_flags, true);
-					break;
-				case SYSCALL_ARG_IS_EVENTFD_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, eventfd_flags, true);
-					break;
-				case SYSCALL_ARG_IS_EPOLL_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, epoll_flags, true);
-					break;
-				case SYSCALL_ARG_IS_XATTR_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, xattr_flags, true);
-					break;
-				case SYSCALL_ARG_IS_TIMER_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, timer_flags, true);
-					break;
-				case SYSCALL_ARG_IS_WAIT_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, wait_flags, true);
-					break;
-				case SYSCALL_ARG_IS_WAITIDTYPE:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], wait_idtypes, sizeof(wait_idtypes), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_INOTIFY_EVENT_MASK:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, inotify_event_flags, false);
-					break;
-				case SYSCALL_ARG_IS_INOTIFY_INIT_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, inotify_init_flags, false);
-					break;
-				case SYSCALL_ARG_IS_SECCOMP_OPERATION:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], seccomp_operations, sizeof(seccomp_operations), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_MEMFD_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, memfd_flags, false);
-					break;
-				case SYSCALL_ARG_IS_BPF_COMMAND:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], bpf_commands, sizeof(bpf_commands), NULL, false);
-					break;
-				case SYSCALL_ARG_IS_USERFAULTFD_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, userfaultfd_flags, false);
-					break;
-				case SYSCALL_ARG_IS_MLOCKALL_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, mlockall_flags, false);
-					break;
-				case SYSCALL_ARG_IS_UMOUNT_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, umount_flags, false);
-					break;
-				case SYSCALL_ARG_IS_SWAP_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, swap_flags, false);
-					break;
-				case SYSCALL_ARG_IS_SPLICE_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, splice_flags, false);
-					break;
-				case SYSCALL_ARG_IS_SYNC_FILE_RANGE_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, sync_file_range_flags, false);
-					break;
-				case SYSCALL_ARG_IS_TIMERFD_SETTIME_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, timerfd_settime_flags, false);
-					break;
-				case SYSCALL_ARG_IS_PERF_EVENT_OPEN_FLAGS:
-					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, perf_event_open_flags, false);
-					break;
-				case SYSCALL_ARG_IS_PID:
-					if (context->pid != 0 && register_is_exactly_known(&registers.registers[reg]) && registers.registers[reg].value == (uintptr_t)context->pid) {
-						args[i] = strdup("getpid()");
-					} else {
-						args[i] = copy_register_state_description(context, registers.registers[reg]);
-					}
-					break;
-				case SYSCALL_ARG_IS_MODE:
-				case SYSCALL_ARG_IS_MODEFLAGS:
-					args[i] = copy_mode_description(registers.registers[reg]);
-					break;
-				case SYSCALL_ARG_IS_SOCKET_PROTOCOL:
-				default:
-					args[i] = copy_register_state_description(context, registers.registers[reg]);
-					break;
-			}
+			args[i] = copy_argument_description(context, registers.registers[reg], info.arguments[i] & SYSCALL_ARG_TYPE_MASK);
 		} else {
 			args[i] = copy_register_state_description_simple(context, registers.registers[reg]);
 		}
