@@ -1,12 +1,14 @@
 #define _GNU_SOURCE
 #include "callander_print.h"
 
+#include <sys/mount.h>
 #include <linux/bpf.h>
 #include <linux/fs.h>
 #include <linux/fsmap.h>
 #include <linux/kd.h>
 #include <linux/memfd.h>
 #include <linux/nsfs.h>
+#include <linux/perf_event.h>
 #include <linux/seccomp.h>
 #include <linux/tiocl.h>
 #include <linux/userfaultfd.h>
@@ -29,6 +31,7 @@
 #include <sys/shm.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
+#include <sys/swap.h>
 #include <sys/time.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
@@ -50,14 +53,14 @@ __attribute__((nonnull(1)))
 char *copy_register_state_description(const struct loader_context *context, struct register_state reg)
 {
 	if (register_is_exactly_known(&reg)) {
-		if (reg.value == 0xffffff9c) {
-			return strdup("AT_FDCWD");
-		}
 		if (reg.value == ~(uintptr_t)0) {
 			return strdup("-1");
 		}
 		if (reg.value == 0xffffffff) {
 			return strdup("-1 as u32");
+		}
+		if (reg.value == 0x7fffffff) {
+			return strdup("INT_MAX");
 		}
 		if ((uintptr_t)reg.value < PAGE_SIZE) {
 			char *buf = malloc(5);
@@ -73,6 +76,9 @@ char *copy_register_state_description(const struct loader_context *context, stru
 		if (reg.value == 0) {
 			if (reg.max == 0xffffffff) {
 				return strdup("any u32");
+			}
+			if (reg.max == 0x7fffffff) {
+				return strdup("0-INT_MAX");
 			}
 			if (reg.max == 0xffff) {
 				return strdup("any u16");
@@ -104,6 +110,14 @@ struct enum_option {
 #define DESCRIBE_ENUM(x) { .value = x, .description = #x }
 
 #define DESCRIBE_FLAG(X) [(__builtin_popcount(X) == 1 ? (unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1) : (unsigned)-1)] = #X
+
+struct enum_option file_descriptors[] = {
+	DESCRIBE_ENUM(STDIN_FILENO),
+	DESCRIBE_ENUM(STDOUT_FILENO),
+	DESCRIBE_ENUM(STDERR_FILENO),
+	DESCRIBE_ENUM(AT_FDCWD),
+	{ .value = (uint32_t)AT_FDCWD, .description = "AT_FDCWD" },
+};
 
 struct enum_option prots[] = {
 	DESCRIBE_ENUM(PROT_NONE),
@@ -889,6 +903,47 @@ static const char *userfaultfd_flags[64] = {
 	DESCRIBE_FLAG(UFFD_USER_MODE_ONLY),
 };
 
+static const char *mlockall_flags[64] = {
+	DESCRIBE_FLAG(MCL_CURRENT),
+	DESCRIBE_FLAG(MCL_FUTURE),
+};
+
+static const char *umount_flags[64] = {
+	DESCRIBE_FLAG(MNT_FORCE),
+	DESCRIBE_FLAG(MNT_DETACH),
+	DESCRIBE_FLAG(MNT_EXPIRE),
+	DESCRIBE_FLAG(UMOUNT_NOFOLLOW),
+};
+
+static const char *swap_flags[64] = {
+	DESCRIBE_FLAG(SWAP_FLAG_DISCARD),
+};
+
+static const char *splice_flags[64] = {
+	DESCRIBE_FLAG(SPLICE_F_MOVE),
+	DESCRIBE_FLAG(SPLICE_F_NONBLOCK),
+	DESCRIBE_FLAG(SPLICE_F_MORE),
+	DESCRIBE_FLAG(SPLICE_F_GIFT),
+};
+
+static const char *sync_file_range_flags[64] = {
+	DESCRIBE_FLAG(SYNC_FILE_RANGE_WAIT_BEFORE),
+	DESCRIBE_FLAG(SYNC_FILE_RANGE_WRITE),
+	DESCRIBE_FLAG(SYNC_FILE_RANGE_WAIT_AFTER),
+};
+
+static const char *timerfd_settime_flags[64] = {
+	DESCRIBE_FLAG(TFD_TIMER_ABSTIME),
+	DESCRIBE_FLAG(TFD_TIMER_CANCEL_ON_SET),
+};
+
+static const char *perf_event_open_flags[64] = {
+	DESCRIBE_FLAG(PERF_FLAG_FD_CLOEXEC),
+	DESCRIBE_FLAG(PERF_FLAG_FD_NO_GROUP),
+	DESCRIBE_FLAG(PERF_FLAG_FD_OUTPUT),
+	DESCRIBE_FLAG(PERF_FLAG_PID_CGROUP),
+};
+
 __attribute__((nonnull(1)))
 static char *copy_register_state_description_simple(const struct loader_context *context, struct register_state reg)
 {
@@ -908,37 +963,20 @@ static char *copy_register_state_description_simple(const struct loader_context 
 	return result;
 }
 
-static char *copy_enum_flags_description(const struct loader_context *context, struct register_state state, const struct enum_option *options, size_t sizeof_options, const char *flags[64], bool always_enum)
+static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], bool always_enum)
 {
-	if (!register_is_exactly_known(&state)) {
-		if (state.value == 0) {
-			if (state.max == ~(uintptr_t)0) {
-				return strdup("any");
-			}
-			if (state.max == 0xffffffff) {
-				return strdup("any u32");
-			}
-			if (state.max == 0xffff) {
-				return strdup("any u16");
-			}
-			if (state.max == 0xff) {
-				return strdup("any u8");
-			}
-		}
-		return copy_register_state_description_simple(context, state);
-	}
 	if (flags == NULL) {
 		for (size_t i = 0; i < sizeof_options / sizeof(*options); i++) {
-			if (state.value == options[i].value) {
+			if (value == options[i].value) {
 				return strdup(options[i].description);
 			}
 		}
-		return copy_register_state_description_simple(context, state);
+		return copy_address_details(context, (const void *)value, false);
 	}
 	// calculate length
 	size_t length = 0;
 	uintptr_t remaining = 0;
-	for_each_bit(state.value, bit, i) {
+	for_each_bit(value, bit, i) {
 		if (flags[i] != NULL) {
 			length += fs_strlen(flags[i]) + 1;
 		} else {
@@ -947,6 +985,7 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 	}
 	const char *suffix = NULL;
 	size_t suffix_len = 0;
+	char num_buf[64];
 	if (length == 0 || remaining != 0 || always_enum) {
 		for (size_t i = 0; i < sizeof_options / sizeof(*options); i++) {
 			if (remaining == options[i].value) {
@@ -956,7 +995,6 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 				break;
 			}
 		}
-		char num_buf[64];
 		if (suffix == NULL && (length == 0 || remaining != 0)) {
 			suffix = num_buf;
 			suffix_len = remaining < PAGE_SIZE ? fs_utoa(remaining, num_buf) : fs_utoah(remaining, num_buf);
@@ -972,7 +1010,7 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 		next[suffix_len] = '|';
 		next += suffix_len + 1;
 	}
-	for_each_bit(state.value, bit, i) {
+	for_each_bit(value, bit, i) {
 		if (flags[i] != NULL) {
 			next = fs_strcpy(next, flags[i]);
 			*next++ = '|';
@@ -981,6 +1019,36 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 	next--;
 	*next = '\0';
 	return result;
+}
+
+static char *copy_enum_flags_description(const struct loader_context *context, struct register_state state, const struct enum_option *options, size_t sizeof_options, const char *flags[64], bool always_enum)
+{
+	if (register_is_exactly_known(&state)) {
+		return copy_enum_flags_value_description(context, state.value, options, sizeof_options, flags, always_enum);
+	}
+	if (state.value == 0) {
+		if (state.max == ~(uintptr_t)0) {
+			return strdup("any");
+		}
+		if (state.max == 0xffffffff) {
+			return strdup("any u32");
+		}
+		if (state.max == 0xffff) {
+			return strdup("any u16");
+		}
+		if (state.max == 0xff) {
+			return strdup("any u8");
+		}
+	}
+	char *low = copy_enum_flags_value_description(context, state.value, options, sizeof_options, flags, always_enum);
+	size_t low_size = strlen(low);
+	char *high = copy_enum_flags_value_description(context, state.max, options, sizeof_options, flags, always_enum);
+	size_t high_size = strlen(high);
+	char *buf = malloc(low_size + 1 + high_size + 1);
+	memcpy(buf, low, low_size);
+	buf[low_size] = '-';
+	memcpy(&buf[low_size + 1], high, high_size + 1);
+	return buf;
 }
 
 static inline size_t format_octal(uintptr_t value, char buffer[])
@@ -1046,6 +1114,9 @@ char *copy_call_description(const struct loader_context *context, const char *na
 		int reg = register_indexes[i];
 		if (include_symbol) {
 			switch (info.arguments[i] & SYSCALL_ARG_TYPE_MASK) {
+				case SYSCALL_ARG_IS_FD:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], file_descriptors, sizeof(file_descriptors), NULL, false);
+					break;
 				case SYSCALL_ARG_IS_PROT:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], prots, sizeof(prots), prot_flags, false);
 					break;
@@ -1168,6 +1239,27 @@ char *copy_call_description(const struct loader_context *context, const char *na
 					break;
 				case SYSCALL_ARG_IS_USERFAULTFD_FLAGS:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, userfaultfd_flags, false);
+					break;
+				case SYSCALL_ARG_IS_MLOCKALL_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, mlockall_flags, false);
+					break;
+				case SYSCALL_ARG_IS_UMOUNT_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, umount_flags, false);
+					break;
+				case SYSCALL_ARG_IS_SWAP_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, swap_flags, false);
+					break;
+				case SYSCALL_ARG_IS_SPLICE_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, splice_flags, false);
+					break;
+				case SYSCALL_ARG_IS_SYNC_FILE_RANGE_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, sync_file_range_flags, false);
+					break;
+				case SYSCALL_ARG_IS_TIMERFD_SETTIME_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, timerfd_settime_flags, false);
+					break;
+				case SYSCALL_ARG_IS_PERF_EVENT_OPEN_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, perf_event_open_flags, false);
 					break;
 				case SYSCALL_ARG_IS_PID:
 					if (context->pid != 0 && register_is_exactly_known(&registers.registers[reg]) && registers.registers[reg].value == (uintptr_t)context->pid) {
