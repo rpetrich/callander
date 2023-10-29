@@ -5190,6 +5190,29 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 	return POSSIBLY_MATCHES;
 }
 
+static bool is_async_cancel_function(ins_ptr addr)
+{
+	struct x86_instruction ins;
+	if (!x86_decode_instruction(addr, &ins)) {
+		return false;
+	}
+	if (x86_is_endbr64_instruction(&ins)) {
+		addr = x86_next_instruction(addr, &ins);
+		if (!x86_decode_instruction(addr, &ins)) {
+			return false;
+		}
+	}
+	// check for mov eax, [fs:CANCELHANDLING]
+	if (addr[0] == 0x64 && addr[1] == 0x8b && addr[2] == 0x04 && addr[3] == 0x25 && addr[4] == 0x08 && addr[5] == 0x03 && addr[6] == 0x00 && addr[7] == 0x00) {
+		return true;
+	}
+	// check for mov rcx, [fs:CANCELHANDLING]
+	if (addr[0] == 0x64 && addr[1] == 0x48 && addr[2] == 0x8b /*&& addr[3] == 0x0c*/ && addr[4] == 0x25 && addr[5] == 0x10 && addr[6] == 0x00 && addr[7] == 0x00 && addr[8] == 0x00) {
+		return true;
+	}
+	return false;
+}
+
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
 {
 	struct decoded_ins decoded;
@@ -6741,24 +6764,24 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				} else {
 					perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 				}
-				break;
+				goto skip_stack_clear;
 			}
 			case 0x32: // xor r8, r/m8
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
-				break;
+				goto skip_stack_clear;
 			case 0x33: // xor r, r/m
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_r_rm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
-				break;
+				goto skip_stack_clear;
 			case 0x34: // xor al, imm8
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_al_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
-				break;
+				goto skip_stack_clear;
 			case 0x35: // xor *ax, imm
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				perform_basic_op_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
-				break;
+				goto skip_stack_clear;
 			case 0x36: // null prefix
 				break;
 			case 0x37:
@@ -8058,10 +8081,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				clear_call_dirtied_registers(&analysis->loader, &self.current_state, ins);
 				pending_stack_clear = STACK_REGISTERS;
-				if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
+				if (binary_has_flags(binary, BINARY_IS_GOLANG) || (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD) && is_async_cancel_function((ins_ptr)dest))) {
 					// we should be able to track dirtied slots, but for now assume golang preserves
 					// the stack that's read immediately after the call
-					LOG("assuming golang call preserves stack", temp_str(copy_address_description(&analysis->loader, ins)));
+					LOG("assuming golang/__pthread_enable_asynccancel call preserves stack", temp_str(copy_address_description(&analysis->loader, ins)));
 					self.current_state.stack_address_taken = NULL;
 					goto skip_stack_clear;
 				}
