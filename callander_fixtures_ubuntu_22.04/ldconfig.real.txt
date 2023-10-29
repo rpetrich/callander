@@ -35,8 +35,8 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x73f69
 alarm(any u32) @ /usr/sbin/ldconfig.real+0xabd79
 getpid() @ /usr/sbin/ldconfig.real+0x6bf59
-socket(any u16, 0x80001-0x80002, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
-socket(0x1-0x2, 0x80801-0x80802, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
+socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
+socket(AF_UNIX-AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
 connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig.real+0xcfbd5
 connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xcfbd5
@@ -79,10 +79,10 @@ arch_prctl(0x3002, any u8) @ /usr/sbin/ldconfig.real+0xd803d
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x73d59
 gettid() @ /usr/sbin/ldconfig.real+0x2d695
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, NULL-0x40000000, any)
-futex(any, 0x0-0x80, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
+futex(any, FUTEX_WAIT-FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
 futex(any, any u8, NULL-0x1, 0, any, any)
 futex(any, any u8, 2, 0, NULL-0x80, any)
-futex(any, any u8, 0x7fffffff, 0, any, any)
+futex(any, any u8, INT_MAX, 0, any, any)
 futex(any, any u32, any u32, 0, 0, -1 as u32)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
 futex(/usr/sbin/ldconfig.real+0x12cb94, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, 2177)
@@ -90,7 +90,7 @@ futex(/usr/sbin/ldconfig.real+0x12cf6c, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig.real+0x75aa6
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xab575
 restart_syscall()
-clock_gettime(0x0-0x1, any) @ /usr/sbin/ldconfig.real+0x6b9fd
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig.real+0x6b9fd
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ /usr/sbin/ldconfig.real+0x6b9fd
 clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
 clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
@@ -113,5 +113,5 @@ newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real+0x7
 newfstatat(any u32, /usr/sbin/ldconfig.real+0x1023c1, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig.real+0x72c4c
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0xe3178
 sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0xe31bc
-getrandom(/usr/sbin/ldconfig.real+0x12c590, 8, 1) @ /usr/sbin/ldconfig.real+0x8c605
+getrandom(/usr/sbin/ldconfig.real+0x12c590, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x8c605
 getrandom(any, any, any u32) @ /usr/sbin/ldconfig.real+0x8c63d

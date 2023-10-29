@@ -103,8 +103,8 @@ socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x583bc
-accept(3, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-accept(3, any, any) @ ld-musl-x86_64.so.1+0x583bc
+accept(0x3, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+accept(0x3, any, any) @ ld-musl-x86_64.so.1+0x583bc
 sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendto(any, any, any, MSG_DONTWAIT, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -129,19 +129,19 @@ sendmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x583bc
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-recvmsg(3, any, MSG_PEEK) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmsg(0x3, any, MSG_PEEK) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x583bc
-recvmsg(3, any, MSG_PEEK) @ ld-musl-x86_64.so.1+0x583bc
+recvmsg(0x3, any, MSG_PEEK) @ ld-musl-x86_64.so.1+0x583bc
 shutdown(any, SHUT_WR) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
-listen(3, 1) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
+listen(0x3, 1) @ ld-musl-x86_64.so.1+0x3ccbb(listen+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3bedb(getpeername+18)
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair+43)
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
 setsockopt(any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-getsockopt(3, SOL_IP, SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
+getsockopt(0x3, SOL_IP, SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5837f
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 vfork() @ ld-musl-x86_64.so.1+0x425f1
@@ -170,7 +170,7 @@ fcntl(any, F_DUPFD, any u32) @ ld-musl-x86_64.so.1+0x1d271(fcntl+268)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d287(fcntl+290)
 fcntl(any, F_DUPFD, 64) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, NULL-0x1) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
-fcntl(any, 0x3-0x4, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, F_GETFL-F_SETFL, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETLK, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)
@@ -301,7 +301,7 @@ tkill(any, any) @ ld-musl-x86_64.so.1+0x4936a(raise+43)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
 tkill(any, SIGSYNCCALL) @ ld-musl-x86_64.so.1+0x5811e(__synccall*+287)
-futex(any, 0x0-0x87, any, any, any, any)
+futex(any, FUTEX_WAIT-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(any, any, any, any, 0, any)
 futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x98b60(lock*), any u32, any, any, 202, any u32)

@@ -1,8 +1,8 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-read(0, any, 1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+read(STDIN_FILENO, any, 1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, 8) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, 128) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-read(0, any, 1) @ ld-musl-x86_64.so.1+0x583bc
+read(STDIN_FILENO, any, 1) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 8) @ ld-musl-x86_64.so.1+0x583bc
 read(any, any, 128) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -47,8 +47,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x49228(__restore_s
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_sigaction*+155)
 rt_sigprocmask(any, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
-ioctl(0, TCSETSF, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(0, TIOCGPGRP, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(STDIN_FILENO, TCSETSF, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(STDIN_FILENO, TIOCGPGRP, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TCGETS, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TCSETSW, non-NULL) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TCFLSH, 0) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
@@ -82,7 +82,7 @@ tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x1cf1c(abort+101)
 tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x4936a(raise+43)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
-futex(any, 0x0-0x87, any, any, any, any)
+futex(any, FUTEX_WAIT-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(any, any, any, any, 0, any)
 futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)

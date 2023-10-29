@@ -24,7 +24,7 @@ rt_sigreturn(any) @ /usr/sbin/ldconfig+0x67897
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x81ba8
 ioctl(any u32, FIONREAD, any) @ /usr/sbin/ldconfig+0xa5f0d
 ioctl(any u32, SIOCGIFINDEX, any) @ /usr/sbin/ldconfig+0xa5f0d
-pread64(NULL-0xfffffffe, any, 511, any) @ /usr/sbin/ldconfig+0x81b4c
+pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ /usr/sbin/ldconfig+0x81b4c
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig+0x81b4c
 pread64(any u32, any, 384, any) @ /usr/sbin/ldconfig+0x81b4c
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52e42
@@ -38,7 +38,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x5317
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig+0x53179
 alarm(any u32) @ /usr/sbin/ldconfig+0x81199
 getpid() @ /usr/sbin/ldconfig+0x4b079
-socket(any u16, 0x80001-0x80002, 0) @ /usr/sbin/ldconfig+0xa5f59
+socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0xa5f59
 socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0xa5f59
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0xa5f59
 connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig+0xaf0a2
@@ -79,21 +79,21 @@ arch_prctl(0x3002, any u8) @ /usr/sbin/ldconfig+0xa4c61
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x52f69
 gettid() @ /usr/sbin/ldconfig+0x21a55
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any)
-futex(any, 0x0-0x80, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
+futex(any, FUTEX_WAIT-FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, any u8, NULL-0x1, 0, any, any)
 futex(any, any u8, 2, 0, NULL-0x80, any)
-futex(any, any u8, 0x7fffffff, 0, any u32, any)
-futex(any, any u8, 0x7fffffff, 0, any, any u32)
+futex(any, any u8, INT_MAX, 0, any u32, any)
+futex(any, any u8, INT_MAX, 0, any, any u32)
 futex(any, any u32, any u32, 0, 0, -1 as u32)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
-futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0x7fffffff, 0, any, any)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
 futex(/usr/sbin/ldconfig+0xf6a4c, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NULL-0x1, any)
 futex(/usr/sbin/ldconfig+0xf6dcc, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x54596
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x80b75
 restart_syscall()
-clock_gettime(0x0-0x1, any) @ /usr/sbin/ldconfig+0x4ac8d
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x4ac8d
 clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
 clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0x9c1e5
@@ -103,8 +103,8 @@ tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x21a38
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x21a38
 tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x21a69
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x21a69
-openat(AT_FDCWD, any, 0x0-0x80002, any) @ /usr/sbin/ldconfig+0x51ef3
-openat(AT_FDCWD, any, 0x0-0x80002, any) @ /usr/sbin/ldconfig+0x51f6e
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x51ef3
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x51f6e
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x52bb3
 openat(any u32, /usr/sbin/ldconfig+0xbb980, O_RDONLY, any) @ /usr/sbin/ldconfig+0x81461
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x814ee
@@ -113,5 +113,5 @@ newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x51e0c
 newfstatat(any u32, /usr/sbin/ldconfig+0xcb6a1, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x51e0c
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0xaf365
 sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig+0xaf3a4
-getrandom(/usr/sbin/ldconfig+0xf6450, 8, 1) @ /usr/sbin/ldconfig+0x67ad2
+getrandom(/usr/sbin/ldconfig+0xf6450, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x67ad2
 getrandom(any, any, any u32) @ /usr/sbin/ldconfig+0x67b0d

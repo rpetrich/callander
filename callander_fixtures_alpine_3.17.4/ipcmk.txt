@@ -57,7 +57,7 @@ getppid() @ ld-musl-x86_64.so.1+0x5b36c(getppid+5)
 gettid() @ ld-musl-x86_64.so.1+0x38702(syscall+153)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
-futex(any, 0x0-0x87, any, any, any, any)
+futex(any, FUTEX_WAIT-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(any, any, any, any, 0, any)
 futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)
@@ -71,5 +71,5 @@ clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)
-getrandom(any, non-NULL, 1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-getrandom(any, non-NULL, 1) @ ld-musl-x86_64.so.1+0x583bc
+getrandom(any, non-NULL, GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+getrandom(any, non-NULL, GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x583bc

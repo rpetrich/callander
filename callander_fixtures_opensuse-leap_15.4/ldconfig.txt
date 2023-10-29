@@ -13,7 +13,7 @@ lstat(any, any) @ /sbin/ldconfig:0x465623
 poll(any, 1, any u32) @ /sbin/ldconfig:0x4b3711
 poll(any, 1, any u32) @ /sbin/ldconfig:0x4b3747
 lseek(any u32, any, any) @ /sbin/ldconfig:0x465965
-mmap(0, any, PROT_READ, 0x1-0x2, any u32, 0) @ /sbin/ldconfig:0x466961
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /sbin/ldconfig:0x466961
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /sbin/ldconfig:0x466961
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x466961
 mmap(any, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1 as u32, 0) @ /sbin/ldconfig:0x466961
@@ -23,7 +23,7 @@ mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u
 mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /sbin/ldconfig:0x4669be
 mmap(0, any, any u32, MAP_PRIVATE|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /sbin/ldconfig:0x4669be
 mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /sbin/ldconfig:0x4669be
-mmap(0, any, PROT_READ, 0x1-0x42, any u32, 0) @ /sbin/ldconfig:0x4669be
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /sbin/ldconfig:0x4669be
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /sbin/ldconfig:0x4669be
 mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4669be
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4669be
@@ -37,11 +37,11 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /sbin/ldconfig:0x40ecb9
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /sbin/ldconfig:0x479764
 rt_sigreturn(any) @ /sbin/ldconfig:0x4794d7
 ioctl(any u32, TCGETS, any) @ /sbin/ldconfig:0x4989f6
-pread64(NULL-0xfffffffe, any, 0x20-0xffffffffffffffff, any) @ /sbin/ldconfig:0x498998
+pread64(STDIN_FILENO-0xfffffffe, any, 0x20-0xffffffffffffffff, any) @ /sbin/ldconfig:0x498998
 pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /sbin/ldconfig:0x498998
 pread64(any u32, any, 384, any) @ /sbin/ldconfig:0x498998
-writev(2, NULL-0xfffffffffffffff0, any u32) @ /sbin/ldconfig:0x466661
-writev(2, NULL-0xfffffffffffffff0, any u32) @ /sbin/ldconfig:0x466695
+writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any u32) @ /sbin/ldconfig:0x466661
+writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any u32) @ /sbin/ldconfig:0x466695
 writev(any u32, any, any) @ /sbin/ldconfig:0x4a66d6
 access(/sbin/ldconfig:0x4c0742, F_OK) @ /sbin/ldconfig:0x4982b5
 access(/sbin/ldconfig:0x4c0751, F_OK) @ /sbin/ldconfig:0x4982b5
@@ -82,7 +82,7 @@ futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
 getdents64(any u32, any, any) @ /sbin/ldconfig:0x497725
 restart_syscall()
-clock_gettime(0x0-0x1, any) @ /sbin/ldconfig:0x497622
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /sbin/ldconfig:0x497622
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ /sbin/ldconfig:0x497622
 clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
 clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)

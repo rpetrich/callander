@@ -13,7 +13,7 @@ lstat(any, any) @ /usr/sbin/ldconfig.real+0x73098
 poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xc3b55
 poll(any, any, any u32) @ /usr/sbin/ldconfig.real+0xc3b8d
 lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x733b9
-mmap(0, any, PROT_READ, 0x1-0x2, any u32, 0) @ /usr/sbin/ldconfig.real+0x74344
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/sbin/ldconfig.real+0x74344
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
 mmap(any, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
@@ -23,7 +23,7 @@ mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u
 mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, any, any u32, MAP_PRIVATE|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x7438e
-mmap(0, any, PROT_READ, 0x1-0x42, any u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
@@ -38,7 +38,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8ae09
 rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab97
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0xa7658
 pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xa75fc
-writev(2, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740b5
+writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740b5
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x740eb
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xb638f
 access(/usr/sbin/ldconfig.real+0xd3042, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
