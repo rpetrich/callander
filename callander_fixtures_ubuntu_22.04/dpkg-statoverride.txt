@@ -44,7 +44,7 @@ socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0x127d29(
 socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, 7) @ libc.so.6+0x127d29(socket+9)
 connect(any u32, any, 110) @ libc.so.6+0x1276e5(connect+21)
 connect(any u32, any, any u32) @ libc.so.6+0x127719(connect+73)
-sendto(any u32, NULL-0xfffffffffffffff0, any, 0x4000, 0, 0) @ libc.so.6+0x127a9e(__send+30)
+sendto(any u32, NULL-0xfffffffffffffff0, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x127a9e(__send+30)
 sendto(any u32, any, any, any u32, 0, 0) @ libc.so.6+0x127aec(__send+108)
 recvfrom(any u32, any, 1024, 0, any, any) @ libc.so.6+0x127918(recvfrom+24)
 recvfrom(any u32, any, any, any u32, any, any) @ libc.so.6+0x127972(recvfrom+114)

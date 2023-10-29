@@ -41,7 +41,7 @@ socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.
 connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig.real+0xcfbd5
 connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xcfbd5
 connect(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xcfc09
-sendto(any u32, any, any, 0x4000, 0, 0) @ /usr/sbin/ldconfig.real+0xcfd2e
+sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real+0xcfd2e
 sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig.real+0xcfd7c
 recvfrom(any u32, any, any, 0, any, any) @ /usr/sbin/ldconfig.real+0xe3038
 recvfrom(any u32, any, any, any u32, any, any) @ /usr/sbin/ldconfig.real+0xe3092
