@@ -96,7 +96,6 @@ unlinkat(any u32, any, 0) @ libc.so.6+0x1162c9(unlinkat+9)
 renameat(any u32, any, any u32, any) @ libc.so.6+0x61edc(renameat+12)
 linkat(any u32, any, any u32, any, any u32) @ libc.so.6+0x1161ac(linkat+12)
 symlinkat(any, any u32, any) @ libc.so.6+0x116209(symlinkat+9)
-set_robust_list(any, any) @ NULL
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0x11a4d2(getrlimit+18)
 getrandom(libc.so.6+0x2204d8(tcache_key*), 8, 1) @ libc.so.6+0x46c85(getrandom+21)
 getrandom(any, any, any u32) @ libc.so.6+0x46cbd(getrandom+77)

@@ -139,11 +139,10 @@ openat(any u32, libc.so.6+0x1da071, O_RDONLY, any) @ libc.so.6+0x1148a4(openat+6
 openat(any u32, any, any u32, any) @ libc.so.6+0x114931(openat+209)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x119c0a(__open_nocancel+74)
 mknodat(AT_FDCWD, any, any u16, any u32) @ libc.so.6+0x1142b3(mknodat+19)
-newfstatat(any u32, any, any, 256) @ libc.so.6+0x113f2c(fstatat64+12)
-newfstatat(any u32, libc.so.6+0x1d846f, any, 0x1000) @ libc.so.6+0x113f2c(fstatat64+12)
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x113f2c(fstatat64+12)
+newfstatat(any u32, libc.so.6+0x1d846f, any, AT_EMPTY_PATH) @ libc.so.6+0x113f2c(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0x113f2c(fstatat64+12)
 faccessat(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0x114e20(faccessat+368)
-set_robust_list(any, any) @ NULL
 set_robust_list(any, 24) @ libc.so.6+0xeab90(_Fork+96)
 timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC) @ libc.so.6+0x127069(timerfd_create+9)
 timerfd_settime(any u32, 0, any, 0) @ libc.so.6+0x1264ec(timerfd_settime+12)

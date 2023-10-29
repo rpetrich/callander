@@ -154,8 +154,8 @@ openat(any u32, libc.so.6+0x1da071, O_RDONLY, any) @ libc.so.6+0x1148a4(openat+6
 openat(any u32, any, any u32, any) @ libc.so.6+0x114931(openat+209)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x119c0a(__open_nocancel+74)
 newfstatat(any u32, any, any, 0) @ libc.so.6+0x113f2c(fstatat64+12)
-newfstatat(any u32, any, any, 256) @ libc.so.6+0x113f2c(fstatat64+12)
-newfstatat(any u32, libc.so.6+0x1d846f, any, 0x1000) @ libc.so.6+0x113f2c(fstatat64+12)
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x113f2c(fstatat64+12)
+newfstatat(any u32, libc.so.6+0x1d846f, any, AT_EMPTY_PATH) @ libc.so.6+0x113f2c(fstatat64+12)
 readlinkat(any u32, any, any, 4095) @ libc.so.6+0x11626c(readlinkat+12)
 faccessat(any u32, libblkid.so.1+0x27441, F_OK, 0) @ libc.so.6+0x114e20(faccessat+368)
 faccessat(any u32, libblkid.so.1+0x2a87f, F_OK, 0) @ libc.so.6+0x114e20(faccessat+368)
@@ -164,7 +164,6 @@ faccessat(any u32, libblkid.so.1+0x2a977, F_OK, 0) @ libc.so.6+0x114e20(faccessa
 faccessat(any u32, libblkid.so.1+0x2a98d, F_OK, 0) @ libc.so.6+0x114e20(faccessat+368)
 faccessat(any u32, libblkid.so.1+0x2a9a7, F_OK, 0) @ libc.so.6+0x114e20(faccessat+368)
 faccessat(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0x114e20(faccessat+368)
-set_robust_list(any, any) @ NULL
 set_robust_list(any, 24) @ libc.so.6+0xeab90(_Fork+96)
 pipe2(any, 0) @ libc.so.6+0x11526b(__pipe+11)
 inotify_init1(IN_NONBLOCK|IN_CLOEXEC) @ libc.so.6+0x126e59(inotify_init1+9)

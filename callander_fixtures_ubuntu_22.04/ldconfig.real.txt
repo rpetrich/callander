@@ -109,9 +109,8 @@ openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x739aa
 openat(any u32, /usr/sbin/ldconfig.real+0xf2630, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0xac094
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig.real+0xac121
 newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig.real+0x72c4c
-newfstatat(any u32, any, any, 256) @ /usr/sbin/ldconfig.real+0x72c4c
-newfstatat(any u32, /usr/sbin/ldconfig.real+0x1023c1, any, 0x1000) @ /usr/sbin/ldconfig.real+0x72c4c
-set_robust_list(any, any) @ NULL
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real+0x72c4c
+newfstatat(any u32, /usr/sbin/ldconfig.real+0x1023c1, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig.real+0x72c4c
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0xe3178
 sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0xe31bc
 getrandom(/usr/sbin/ldconfig.real+0x12c590, 8, 1) @ /usr/sbin/ldconfig.real+0x8c605
