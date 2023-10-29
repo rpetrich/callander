@@ -1,6 +1,16 @@
 #define _GNU_SOURCE
 #include "callander_print.h"
 
+#include <linux/bpf.h>
+#include <linux/fs.h>
+#include <linux/fsmap.h>
+#include <linux/kd.h>
+#include <linux/memfd.h>
+#include <linux/nsfs.h>
+#include <linux/seccomp.h>
+#include <linux/tiocl.h>
+#include <linux/userfaultfd.h>
+#include <linux/vt.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -15,6 +25,7 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/prctl.h>
+#include <sys/ptrace.h>
 #include <sys/shm.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
@@ -26,19 +37,27 @@
 #include <termios.h>
 #include <time.h>
 
+static inline char *strdup_fixed(const char *str, size_t size)
+{
+	char *buf = malloc(size);
+	memcpy(buf, str, size);
+	return buf;
+}
+
+#define strdup(x) _Generic((x), char *: strdup(x), const char*: strdup(x), const char[sizeof(x)]: strdup_fixed(x, sizeof(x)), char[sizeof(x)]: strdup_fixed(x, sizeof(x)))
+
 __attribute__((nonnull(1)))
 char *copy_register_state_description(const struct loader_context *context, struct register_state reg)
 {
 	if (register_is_exactly_known(&reg)) {
 		if (reg.value == 0xffffff9c) {
-			char *buf = malloc(sizeof("AT_FDCWD"));
-			fs_memcpy(buf, "AT_FDCWD", sizeof("AT_FDCWD"));
-			return buf;
+			return strdup("AT_FDCWD");
+		}
+		if (reg.value == ~(uintptr_t)0) {
+			return strdup("-1");
 		}
 		if (reg.value == 0xffffffff) {
-			char *buf = malloc(sizeof("-1 as u32"));
-			fs_memcpy(buf, "-1 as u32", sizeof("-1 as u32"));
-			return buf;
+			return strdup("-1 as u32");
 		}
 		if ((uintptr_t)reg.value < PAGE_SIZE) {
 			char *buf = malloc(5);
@@ -49,25 +68,17 @@ char *copy_register_state_description(const struct loader_context *context, stru
 	}
 	if (register_is_partially_known(&reg)) {
 		if (reg.value == 1 && reg.max == ~(uintptr_t)0) {
-			char *result = malloc(sizeof("non-NULL"));
-			memcpy(result, "non-NULL", sizeof("non-NULL"));
-			return result;
+			return strdup("non-NULL");
 		}
 		if (reg.value == 0) {
 			if (reg.max == 0xffffffff) {
-				char *result = malloc(sizeof("any u32"));
-				memcpy(result, "any u32", sizeof("any u32"));
-				return result;
+				return strdup("any u32");
 			}
 			if (reg.max == 0xffff) {
-				char *result = malloc(sizeof("any u16"));
-				memcpy(result, "any u16", sizeof("any u16"));
-				return result;
+				return strdup("any u16");
 			}
 			if (reg.max == 0xff) {
-				char *result = malloc(sizeof("any u8"));
-				memcpy(result, "any u8", sizeof("any u8"));
-				return result;
+				return strdup("any u8");
 			}
 		}
 		char *min = copy_address_description(context, (const void *)reg.value);
@@ -82,9 +93,7 @@ char *copy_register_state_description(const struct loader_context *context, stru
 		free(max);
 		return result;
 	}
-	char *result = malloc(sizeof("any"));
-	memcpy(result, "any", sizeof("any"));
-	return result;
+	return strdup("any");
 }
 
 struct enum_option {
@@ -218,6 +227,10 @@ static const char *msync_flags[64] = {
 #define SIGCANCEL       __SIGRTMIN
 #define SIGSETXID       (__SIGRTMIN + 1)
 
+#define SIGTIMER 32
+// #define SIGCANCEL 33
+#define SIGSYNCCALL 34
+
 static struct enum_option signums[] = {
 	DESCRIBE_ENUM(SIGHUP),
 	DESCRIBE_ENUM(SIGINT),
@@ -252,9 +265,25 @@ static struct enum_option signums[] = {
 	DESCRIBE_ENUM(SIGSYS),
 	DESCRIBE_ENUM(SIGCANCEL),
 	DESCRIBE_ENUM(SIGSETXID),
+	DESCRIBE_ENUM(SIGTIMER),
+	DESCRIBE_ENUM(SIGSYNCCALL),
 };
 
+#ifndef UFFDIO_WRITEPROTECT
+#define _UFFDIO_WRITEPROTECT (0x06)
+#define UFFDIO_WRITEPROTECT _IOWR(UFFDIO, _UFFDIO_WRITEPROTECT, void)
+#endif
+#ifndef UFFDIO_CONTINUE
+#define _UFFDIO_CONTINUE (0x07)
+#define UFFDIO_CONTINUE  _IOWR(UFFDIO, _UFFDIO_CONTINUE, void)
+#endif
+
+#ifndef SECCOMP_IOCTL_NOTIF_ADDFD
+#define SECCOMP_IOCTL_NOTIF_ADDFD SECCOMP_IOW(3, void)
+#endif
+
 static struct enum_option ioctls[] = {
+	// ioctl_tty
     DESCRIBE_ENUM(TCGETS),
     DESCRIBE_ENUM(TCSETS),
     DESCRIBE_ENUM(TCSETSW),
@@ -377,6 +406,86 @@ static struct enum_option ioctls[] = {
     DESCRIBE_ENUM(SIOCDELDLCI),
     DESCRIBE_ENUM(SIOCDEVPRIVATE),
     DESCRIBE_ENUM(SIOCPROTOPRIVATE),
+    // ioctl_userfaultfd
+    DESCRIBE_ENUM(UFFDIO_API),
+    DESCRIBE_ENUM(UFFDIO_REGISTER),
+    DESCRIBE_ENUM(UFFDIO_UNREGISTER),
+    DESCRIBE_ENUM(UFFDIO_WAKE),
+    DESCRIBE_ENUM(UFFDIO_COPY),
+    DESCRIBE_ENUM(UFFDIO_ZEROPAGE),
+    DESCRIBE_ENUM(UFFDIO_WRITEPROTECT),
+    DESCRIBE_ENUM(UFFDIO_CONTINUE),
+    // ioctl_console
+    DESCRIBE_ENUM(KDGETLED),
+    DESCRIBE_ENUM(KDSETLED),
+    DESCRIBE_ENUM(KDGKBLED),
+    DESCRIBE_ENUM(KDSKBLED),
+    DESCRIBE_ENUM(KDGKBTYPE),
+    DESCRIBE_ENUM(KDADDIO),
+    DESCRIBE_ENUM(KDDELIO),
+    DESCRIBE_ENUM(KDENABIO),
+    DESCRIBE_ENUM(KDDISABIO),
+    DESCRIBE_ENUM(KDSETMODE),
+    DESCRIBE_ENUM(KDGETMODE),
+    DESCRIBE_ENUM(KDMKTONE),
+    DESCRIBE_ENUM(KIOCSOUND),
+    DESCRIBE_ENUM(GIO_CMAP),
+    DESCRIBE_ENUM(PIO_CMAP),
+    DESCRIBE_ENUM(GIO_FONT),
+    DESCRIBE_ENUM(GIO_FONTX),
+    DESCRIBE_ENUM(PIO_FONT),
+    DESCRIBE_ENUM(PIO_FONTX),
+    DESCRIBE_ENUM(PIO_FONTRESET),
+    DESCRIBE_ENUM(GIO_SCRNMAP),
+    DESCRIBE_ENUM(GIO_UNISCRNMAP),
+    DESCRIBE_ENUM(PIO_SCRNMAP),
+    DESCRIBE_ENUM(PIO_UNISCRNMAP),
+    DESCRIBE_ENUM(GIO_UNIMAP),
+    DESCRIBE_ENUM(PIO_UNIMAP),
+    DESCRIBE_ENUM(PIO_UNIMAPCLR),
+    DESCRIBE_ENUM(KDGKBMODE),
+    DESCRIBE_ENUM(KDSKBMODE),
+    DESCRIBE_ENUM(KDGKBMETA),
+    DESCRIBE_ENUM(KDSKBMETA),
+    DESCRIBE_ENUM(KDGKBENT),
+    DESCRIBE_ENUM(KDSKBENT),
+    DESCRIBE_ENUM(KDGKBSENT),
+    DESCRIBE_ENUM(KDSKBSENT),
+    DESCRIBE_ENUM(KDGKBDIACR),
+    DESCRIBE_ENUM(KDGETKEYCODE),
+    DESCRIBE_ENUM(KDSETKEYCODE),
+    DESCRIBE_ENUM(KDSIGACCEPT),
+    DESCRIBE_ENUM(VT_OPENQRY),
+    DESCRIBE_ENUM(VT_GETMODE),
+    DESCRIBE_ENUM(VT_SETMODE),
+    DESCRIBE_ENUM(VT_GETSTATE),
+    DESCRIBE_ENUM(VT_RELDISP),
+    DESCRIBE_ENUM(VT_ACTIVATE),
+    DESCRIBE_ENUM(VT_WAITACTIVE),
+    DESCRIBE_ENUM(VT_DISALLOCATE),
+    DESCRIBE_ENUM(VT_RESIZE),
+    DESCRIBE_ENUM(VT_RESIZEX),
+    // ioctl_ficlone
+    DESCRIBE_ENUM(FICLONERANGE),
+    DESCRIBE_ENUM(FICLONE),
+    // ioctl_fideduperange
+    DESCRIBE_ENUM(FIDEDUPERANGE),
+    // ioctl_fslabel
+    DESCRIBE_ENUM(FS_IOC_GETFSLABEL),
+    DESCRIBE_ENUM(FS_IOC_SETFSLABEL),
+    // ioctl_getfsmap
+    DESCRIBE_ENUM(FS_IOC_GETFSMAP),
+    // ioctl_iflags
+    DESCRIBE_ENUM(FS_IOC_GETFLAGS),
+    DESCRIBE_ENUM(FS_IOC_SETFLAGS),
+    // ioctl_ns
+    DESCRIBE_ENUM(NS_GET_USERNS),
+    DESCRIBE_ENUM(NS_GET_PARENT),
+    // seccomp_unotify
+    DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_RECV),
+    DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_SEND),
+    DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ID_VALID),
+    DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ADDFD),
 };
 
 static struct enum_option sighows[] = {
@@ -591,6 +700,21 @@ static struct enum_option wait_idtypes[] = {
 	DESCRIBE_ENUM(P_ALL),
 };
 
+static struct enum_option seccomp_operations[] = {
+	DESCRIBE_ENUM(SECCOMP_SET_MODE_STRICT),
+	DESCRIBE_ENUM(SECCOMP_SET_MODE_FILTER),
+	DESCRIBE_ENUM(SECCOMP_GET_ACTION_AVAIL),
+};
+
+static struct enum_option bpf_commands[] = {
+	DESCRIBE_ENUM(BPF_MAP_CREATE),
+	DESCRIBE_ENUM(BPF_MAP_LOOKUP_ELEM),
+	DESCRIBE_ENUM(BPF_MAP_UPDATE_ELEM),
+	DESCRIBE_ENUM(BPF_MAP_DELETE_ELEM),
+	DESCRIBE_ENUM(BPF_MAP_GET_NEXT_KEY),
+	DESCRIBE_ENUM(BPF_PROG_LOAD),
+};
+
 static const char *futex_flags[64] = {
 	DESCRIBE_FLAG(FUTEX_PRIVATE_FLAG),
 	DESCRIBE_FLAG(FUTEX_CLOCK_REALTIME),
@@ -675,6 +799,7 @@ static const char *clone_flags[64] = {
 	DESCRIBE_FLAG(CLONE_UNTRACED),
 	DESCRIBE_FLAG(CLONE_VFORK),
 	DESCRIBE_FLAG(CLONE_VM),
+	DESCRIBE_FLAG(CLONE_DETACHED),
 };
 
 static const char *shm_flags[64] = {
@@ -746,6 +871,24 @@ static const char *inotify_init_flags[64] = {
 	DESCRIBE_FLAG(IN_CLOEXEC),
 };
 
+static const char *memfd_flags[64] = {
+	DESCRIBE_FLAG(MFD_CLOEXEC),
+	DESCRIBE_FLAG(MFD_ALLOW_SEALING),
+	DESCRIBE_FLAG(MFD_HUGETLB),
+	// DESCRIBE_FLAG(MFD_HUGE_2MB),
+	// DESCRIBE_FLAG(MFD_HUGE_1GB),
+};
+
+#ifndef UFFD_USER_MODE_ONLY
+#define UFFD_USER_MODE_ONLY 1
+#endif
+
+static const char *userfaultfd_flags[64] = {
+	DESCRIBE_FLAG(O_CLOEXEC),
+	DESCRIBE_FLAG(O_NONBLOCK),
+	DESCRIBE_FLAG(UFFD_USER_MODE_ONLY),
+};
+
 __attribute__((nonnull(1)))
 static char *copy_register_state_description_simple(const struct loader_context *context, struct register_state reg)
 {
@@ -770,24 +913,16 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 	if (!register_is_exactly_known(&state)) {
 		if (state.value == 0) {
 			if (state.max == ~(uintptr_t)0) {
-				char *result = malloc(sizeof("any"));
-				memcpy(result, "any", sizeof("any"));
-				return result;
+				return strdup("any");
 			}
 			if (state.max == 0xffffffff) {
-				char *result = malloc(sizeof("any u32"));
-				memcpy(result, "any u32", sizeof("any u32"));
-				return result;
+				return strdup("any u32");
 			}
 			if (state.max == 0xffff) {
-				char *result = malloc(sizeof("any u16"));
-				memcpy(result, "any u16", sizeof("any u16"));
-				return result;
+				return strdup("any u16");
 			}
 			if (state.max == 0xff) {
-				char *result = malloc(sizeof("any u8"));
-				memcpy(result, "any u8", sizeof("any u8"));
-				return result;
+				return strdup("any u8");
 			}
 		}
 		return copy_register_state_description_simple(context, state);
@@ -857,7 +992,7 @@ static inline size_t format_octal(uintptr_t value, char buffer[])
 	}
 	size_t i = 1;
 	while (value != 0) {
-		buffer[i++] = "0123456789"[(unsigned char)value & 0x7];
+		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0x7];
 		value = value >> 3;
 	}
 	buffer[i] = '\0';
@@ -869,24 +1004,16 @@ static char *copy_mode_description(struct register_state reg)
 {
 	if (reg.value == 0) {
 		if (reg.max == ~(uintptr_t)0) {
-			char *result = malloc(sizeof("any"));
-			memcpy(result, "any", sizeof("any"));
-			return result;
+			return strdup("any");
 		}
 		if (reg.max == 0xffffffff) {
-			char *result = malloc(sizeof("any u32"));
-			memcpy(result, "any u32", sizeof("any u32"));
-			return result;
+			return strdup("any u32");
 		}
 		if (reg.max == 0xffff) {
-			char *result = malloc(sizeof("any u16"));
-			memcpy(result, "any u16", sizeof("any u16"));
-			return result;
+			return strdup("any u16");
 		}
 		if (reg.max == 0xff) {
-			char *result = malloc(sizeof("any u8"));
-			memcpy(result, "any u8", sizeof("any u8"));
-			return result;
+			return strdup("any u8");
 		}
 	}
 	char buf[64];
@@ -899,9 +1026,7 @@ static char *copy_mode_description(struct register_state reg)
 		size_t suffix_size = format_octal(reg.max, &buf[prefix_size+1]);
 		size = prefix_size + 1 + suffix_size;
 	}
-	char *result = malloc(size+1);
-	memcpy(result, buf, size+1);
-	return result;
+	return strdup_fixed(buf, size+1);
 }
 
 
@@ -1031,6 +1156,18 @@ char *copy_call_description(const struct loader_context *context, const char *na
 					break;
 				case SYSCALL_ARG_IS_INOTIFY_INIT_FLAGS:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, inotify_init_flags, false);
+					break;
+				case SYSCALL_ARG_IS_SECCOMP_OPERATION:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], seccomp_operations, sizeof(seccomp_operations), NULL, false);
+					break;
+				case SYSCALL_ARG_IS_MEMFD_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, memfd_flags, false);
+					break;
+				case SYSCALL_ARG_IS_BPF_COMMAND:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], bpf_commands, sizeof(bpf_commands), NULL, false);
+					break;
+				case SYSCALL_ARG_IS_USERFAULTFD_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, userfaultfd_flags, false);
 					break;
 				case SYSCALL_ARG_IS_PID:
 					if (context->pid != 0 && register_is_exactly_known(&registers.registers[reg]) && registers.registers[reg].value == (uintptr_t)context->pid) {

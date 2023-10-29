@@ -1392,13 +1392,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	const char *profile_path = NULL;
 	enum attach_behavior attach = DETACH_AT_START;
 	bool skip_running = false;
-	record_syscall(&analysis, __NR_set_robust_list, (struct analysis_frame){
-		.address = NULL, .description = "permit", .next = NULL,
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	while (argv[executable_index] && *argv[executable_index] == '-') {
 		const char *arg = argv[executable_index];
 		bool is_permit = fs_strcmp(arg, "--permit-syscall") == 0;
