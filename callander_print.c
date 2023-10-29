@@ -7,6 +7,9 @@
 #include <sched.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
@@ -17,8 +20,11 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/timerfd.h>
+#include <sys/types.h>
 #include <sys/user.h>
+#include <sys/xattr.h>
 #include <termios.h>
+#include <time.h>
 
 __attribute__((nonnull(1)))
 char *copy_register_state_description(const struct loader_context *context, struct register_state reg)
@@ -574,6 +580,17 @@ static struct enum_option futex_operations[] = {
 	DESCRIBE_ENUM(FUTEX_WAIT_REQUEUE_PI),
 };
 
+#ifndef P_PIDFD
+#define P_PIDFD 3
+#endif
+
+static struct enum_option wait_idtypes[] = {
+	DESCRIBE_ENUM(P_PID),
+	DESCRIBE_ENUM(P_PIDFD),
+	DESCRIBE_ENUM(P_PGID),
+	DESCRIBE_ENUM(P_ALL),
+};
+
 static const char *futex_flags[64] = {
 	DESCRIBE_FLAG(FUTEX_PRIVATE_FLAG),
 	DESCRIBE_FLAG(FUTEX_CLOCK_REALTIME),
@@ -667,6 +684,61 @@ static const char *shm_flags[64] = {
 	// DESCRIBE_FLAG(SHM_HUGE_2MB),
 	// DESCRIBE_FLAG(SHM_HUGE_1GB),
 	DESCRIBE_FLAG(SHM_NORESERVE),
+};
+
+static const char *eventfd_flags[64] = {
+	DESCRIBE_FLAG(EFD_CLOEXEC),
+	DESCRIBE_FLAG(EFD_NONBLOCK),
+	DESCRIBE_FLAG(EFD_SEMAPHORE),
+};
+
+static const char *epoll_flags[64] = {
+	DESCRIBE_FLAG(EPOLL_CLOEXEC),
+};
+
+static const char *xattr_flags[64] = {
+	DESCRIBE_FLAG(XATTR_CREATE),
+	DESCRIBE_FLAG(XATTR_REPLACE),
+};
+
+static const char *timer_flags[64] = {
+	DESCRIBE_FLAG(TIMER_ABSTIME),
+};
+
+static const char *wait_flags[64] = {
+	DESCRIBE_FLAG(WNOHANG),
+	DESCRIBE_FLAG(WUNTRACED),
+	DESCRIBE_FLAG(WCONTINUED),
+};
+
+static const char *inotify_event_flags[64] = {
+	DESCRIBE_FLAG(IN_ACCESS),
+	DESCRIBE_FLAG(IN_ATTRIB),
+	DESCRIBE_FLAG(IN_CLOSE_WRITE),
+	DESCRIBE_FLAG(IN_CLOSE_NOWRITE),
+	DESCRIBE_FLAG(IN_CREATE),
+	DESCRIBE_FLAG(IN_DELETE),
+	DESCRIBE_FLAG(IN_DELETE_SELF),
+	DESCRIBE_FLAG(IN_MODIFY),
+	DESCRIBE_FLAG(IN_MOVE_SELF),
+	DESCRIBE_FLAG(IN_MOVED_FROM),
+	DESCRIBE_FLAG(IN_MOVED_TO),
+	DESCRIBE_FLAG(IN_OPEN),
+	DESCRIBE_FLAG(IN_DONT_FOLLOW),
+	DESCRIBE_FLAG(IN_EXCL_UNLINK),
+	DESCRIBE_FLAG(IN_MASK_ADD),
+	DESCRIBE_FLAG(IN_ONESHOT),
+	DESCRIBE_FLAG(IN_ONLYDIR),
+	DESCRIBE_FLAG(IN_MASK_CREATE),
+	DESCRIBE_FLAG(IN_IGNORED),
+	DESCRIBE_FLAG(IN_ISDIR),
+	DESCRIBE_FLAG(IN_Q_OVERFLOW),
+	DESCRIBE_FLAG(IN_UNMOUNT),
+};
+
+static const char *inotify_init_flags[64] = {
+	DESCRIBE_FLAG(IN_NONBLOCK),
+	DESCRIBE_FLAG(IN_CLOEXEC),
 };
 
 __attribute__((nonnull(1)))
@@ -930,6 +1002,30 @@ char *copy_call_description(const struct loader_context *context, const char *na
 					break;
 				case SYSCALL_ARG_IS_SHM_FLAGS:
 					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, shm_flags, true);
+					break;
+				case SYSCALL_ARG_IS_EVENTFD_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, eventfd_flags, true);
+					break;
+				case SYSCALL_ARG_IS_EPOLL_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, epoll_flags, true);
+					break;
+				case SYSCALL_ARG_IS_XATTR_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, xattr_flags, true);
+					break;
+				case SYSCALL_ARG_IS_TIMER_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, timer_flags, true);
+					break;
+				case SYSCALL_ARG_IS_WAIT_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, wait_flags, true);
+					break;
+				case SYSCALL_ARG_IS_WAITIDTYPE:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], wait_idtypes, sizeof(wait_idtypes), NULL, false);
+					break;
+				case SYSCALL_ARG_IS_INOTIFY_EVENT_MASK:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, inotify_event_flags, false);
+					break;
+				case SYSCALL_ARG_IS_INOTIFY_INIT_FLAGS:
+					args[i] = copy_enum_flags_description(context, registers.registers[reg], NULL, 0, inotify_init_flags, false);
 					break;
 				case SYSCALL_ARG_IS_PID:
 					if (context->pid != 0 && register_is_exactly_known(&registers.registers[reg]) && registers.registers[reg].value == (uintptr_t)context->pid) {

@@ -35,9 +35,9 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x73f69
 alarm(any u32) @ /usr/sbin/ldconfig.real+0xabd79
 getpid() @ /usr/sbin/ldconfig.real+0x6bf59
-socket(any u16, 0x80001-0x80002, CLOCK_REALTIME) @ /usr/sbin/ldconfig.real+0xcfdd9
-socket(0x1-0x2, 0x80801-0x80802, CLOCK_REALTIME) @ /usr/sbin/ldconfig.real+0xcfdd9
-socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, CLOCK_REALTIME) @ /usr/sbin/ldconfig.real+0xcfdd9
+socket(any u16, 0x80001-0x80002, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
+socket(0x1-0x2, 0x80801-0x80802, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
+socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0xcfdd9
 connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig.real+0xcfbd5
 connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xcfbd5
 connect(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xcfc09

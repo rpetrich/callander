@@ -36,7 +36,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x11ed69(madvis
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x11ed69(madvise+9)
 getpid() @ ld-linux-x86-64.so.2+0x26ee9(__GI___getpid*+9)
 getpid() @ libc.so.6+0xec049(__getpid+9)
-socket(0x1-0x2, any u32, CLOCK_REALTIME) @ libc.so.6+0x127d29(socket+9)
+socket(0x1-0x2, any u32, 0) @ libc.so.6+0x127d29(socket+9)
 connect(NULL-0xfffffffe, libc.so.6+0x1d6120(SyslogAddr*), 110) @ libc.so.6+0x1276e5(connect+21)
 connect(any u32, any, any u32) @ libc.so.6+0x127719(connect+73)
 sendto(any u32, any, any, 0x4000, 0, 0) @ libc.so.6+0x127a9e(__send+30)
