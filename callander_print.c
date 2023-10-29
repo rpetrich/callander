@@ -120,6 +120,8 @@ struct enum_option file_descriptors[] = {
 	DESCRIBE_ENUM(STDERR_FILENO),
 	DESCRIBE_ENUM(AT_FDCWD),
 	{ .value = (uint32_t)AT_FDCWD, .description = "AT_FDCWD" },
+	{ .value = -1, .description = "-1" },
+	{ .value = (uint32_t)-1, .description = "-1 as u32" },
 };
 
 struct enum_option prots[] = {
