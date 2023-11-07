@@ -803,6 +803,25 @@ static struct enum_option prctls[] = {
 	DESCRIBE_ENUM(PR_GET_TSC),
 };
 
+static struct enum_option flock_operations[] = {
+	DESCRIBE_ENUM(LOCK_SH),
+	DESCRIBE_ENUM(LOCK_EX),
+	DESCRIBE_ENUM(LOCK_UN),
+	DESCRIBE_ENUM(LOCK_MAND),
+};
+
+static const char *flock_flags[] = {
+	DESCRIBE_FLAG(LOCK_NB),
+	DESCRIBE_FLAG(LOCK_READ),
+	DESCRIBE_FLAG(LOCK_WRITE),
+};
+
+static struct enum_option itimer_whiches[] = {
+	DESCRIBE_ENUM(ITIMER_REAL),
+	DESCRIBE_ENUM(ITIMER_VIRTUAL),
+	DESCRIBE_ENUM(ITIMER_PROF),
+};
+
 static const char *clone_flags[64] = {
 	DESCRIBE_FLAG(CLONE_CHILD_CLEARTID),
 	DESCRIBE_FLAG(CLONE_CHILD_SETTID),
@@ -1261,6 +1280,10 @@ static char *copy_argument_description(const struct loader_context *context, str
 			return copy_enum_flags_description(context, state, membarrier_commands, sizeof(membarrier_commands), NULL, false);
 		case SYSCALL_ARG_IS_STATX_MASK:
 			return copy_enum_flags_description(context, state, NULL, 0, statx_mask, false);
+		case SYSCALL_ARG_IS_FLOCK_OPERATION:
+			return copy_enum_flags_description(context, state, flock_operations, sizeof(flock_operations), flock_flags, false);
+		case SYSCALL_ARG_IS_ITIMER_WHICH:
+			return copy_enum_flags_description(context, state, itimer_whiches, sizeof(itimer_whiches), NULL, false);
 		case SYSCALL_ARG_IS_PID:
 			if (context->pid != 0 && register_is_exactly_known(&state) && state.value == (uintptr_t)context->pid) {
 				return strdup("getpid()");
