@@ -965,9 +965,14 @@ static const char *module_init_flags[64] = {
 	DESCRIBE_FLAG(MODULE_INIT_IGNORE_VERMAGIC),
 };
 
+#ifndef GRND_INSECURE
+#define GRND_INSECURE 0x4
+#endif
+
 static const char *getrandom_flags[64] = {
 	DESCRIBE_FLAG(GRND_RANDOM),
 	DESCRIBE_FLAG(GRND_NONBLOCK),
+	DESCRIBE_FLAG(GRND_INSECURE),
 };
 
 #ifndef STATX_MNT_ID
