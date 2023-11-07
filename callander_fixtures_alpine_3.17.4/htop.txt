@@ -163,4 +163,4 @@ set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_o
 pipe2(any, O_CLOEXEC) @ ld-musl-x86_64.so.1+0x5b4d7(pipe2+29)
 prlimit64(0, any, 0, any) @ ld-musl-x86_64.so.1+0x376e8(getrlimit+30)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x20034(membarrier+26)
-faccessat2(AT_FDCWD, any, 0, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x5af70(faccessat+71)
+faccessat2(AT_FDCWD, any, F_OK, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x5af70(faccessat+71)

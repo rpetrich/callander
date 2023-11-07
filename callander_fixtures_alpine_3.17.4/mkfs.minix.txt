@@ -53,15 +53,15 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(m
 dup(any) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x583bc
-setitimer(0, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
+setitimer(ITIMER_REAL, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)
-flock(any, 2) @ ld-musl-x86_64.so.1+0x1ff07(flock+12)
-flock(any, 6) @ ld-musl-x86_64.so.1+0x1ff07(flock+12)
+flock(any, LOCK_EX) @ ld-musl-x86_64.so.1+0x1ff07(flock+12)
+flock(any, LOCK_EX|LOCK_NB) @ ld-musl-x86_64.so.1+0x1ff07(flock+12)
 fsync(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 fsync(any) @ ld-musl-x86_64.so.1+0x583bc
 unlink(/sbin/mkfs.minix+0x12887) @ ld-musl-x86_64.so.1+0x5ba2d(unlink+6)

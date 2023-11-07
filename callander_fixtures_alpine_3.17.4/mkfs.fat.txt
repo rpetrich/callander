@@ -52,7 +52,7 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 dup(any) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
-setitimer(0, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
+setitimer(ITIMER_REAL, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

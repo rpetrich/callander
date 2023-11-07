@@ -24,7 +24,7 @@ readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 dup2(any, any) @ ld-musl-x86_64.so.1+0x5ae2e(dup2+15)
-setitimer(0, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
+setitimer(ITIMER_REAL, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

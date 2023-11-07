@@ -74,7 +74,7 @@ fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3f40b(socket+140)
 fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49b88(fchmod+44)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, F_GETFD, any u32) @ ld-musl-x86_64.so.1+0x5b11f(fchown+51)
-flock(any, 1) @ ld-musl-x86_64.so.1+0x1ff07(flock+12)
+flock(any, LOCK_SH) @ ld-musl-x86_64.so.1+0x1ff07(flock+12)
 fdatasync(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 fdatasync(any) @ ld-musl-x86_64.so.1+0x583bc
 ftruncate(any, any) @ ld-musl-x86_64.so.1+0x5b1d0(ftruncate64+9)

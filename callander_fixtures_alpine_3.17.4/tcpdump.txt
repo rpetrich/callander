@@ -78,7 +78,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(m
 shmget(114, non-NULL, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
 shmget(114, non-NULL, 292|IPC_CREAT) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
 shmat(any, 0, SHM_NORESERVE) @ ld-musl-x86_64.so.1+0x1f0ef(shmat+11)
-setitimer(0, any, 0) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
+setitimer(ITIMER_REAL, any, 0) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
 getpid() @ ld-musl-x86_64.so.1+0x2049b(do_setgroups*+51)
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 getpid() @ ld-musl-x86_64.so.1+0x5b7fb(do_setxid*+54)

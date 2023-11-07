@@ -83,7 +83,7 @@ pause() @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 pause() @ ld-musl-x86_64.so.1+0x583bc
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x583bc
-setitimer(0, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
+setitimer(ITIMER_REAL, any, any) @ ld-musl-x86_64.so.1+0x49394(setitimer+9)
 getpid() @ ld-musl-x86_64.so.1+0x2049b(do_setgroups*+51)
 getpid() @ ld-musl-x86_64.so.1+0x5b7fb(do_setxid*+54)
 socket(any, SOCK_DGRAM|SOCK_CLOEXEC, 17) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
