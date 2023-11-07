@@ -2725,6 +2725,48 @@ static void handle_nss_usage(struct program_state *analysis, ins_ptr ins, __attr
 	*token = self.token;
 }
 
+static void *find_any_symbol_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol);
+
+static void handle_mprotect(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	// block creating executable stacks
+	int third_arg = sysv_argument_abi_register_indexes[2];
+	if (!register_is_exactly_known(&state->registers[third_arg])) {
+		if (caller != NULL) {
+			struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
+			const struct symbol_info *symbols;
+			const ElfW(Sym) *symbol;
+			if (find_any_symbol_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL, &symbols, &symbol) != NULL) {
+				const char *name = symbol_name(symbols, symbol);
+				if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+				}
+			}
+		}
+	}
+}
+
+static void handle_mmap(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	// block creating executable stacks
+	int third_arg = sysv_argument_abi_register_indexes[2];
+	int fourth_arg = sysv_argument_abi_register_indexes[3];
+	if (!register_is_exactly_known(&state->registers[third_arg])) {
+		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & MAP_STACK) == MAP_STACK) {
+			if (caller != NULL) {
+				struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
+				const struct symbol_info *symbols;
+				const ElfW(Sym) *symbol;
+				if (find_any_symbol_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL, &symbols, &symbol) != NULL) {
+					const char *name = symbol_name(symbols, symbol);
+					if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+						set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+					}
+				}
+			}
+		}
+	}
+}
 static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libseccomp syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
@@ -2956,6 +2998,15 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		ins_ptr nss_next2 = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_next2", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (nss_next2) {
 			find_and_add_callback(analysis, nss_next2, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
+		}
+		// block executable stacks
+		ins_ptr __mprotect = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__mprotect", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (__mprotect) {
+			find_and_add_callback(analysis, __mprotect, 0, 0, 0, EFFECT_NONE, handle_mprotect, NULL);
+		}
+		ins_ptr mmap = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "mmap", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (mmap) {
+			find_and_add_callback(analysis, mmap, 0, 0, 0, EFFECT_NONE, handle_mmap, NULL);
 		}
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
@@ -4459,7 +4510,6 @@ static void set_compare_from_operation(struct registers *regs, int reg, uintptr_
 }
 
 static bool find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address, struct address_and_size *out_symbol);
-static void *find_any_symbol_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol);
 
 static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader, struct loaded_binary *binary, const void *table, ins_ptr ins, int debug_symbol_types, const ElfW(Sym) **out_function_symbol)
 {
@@ -7768,7 +7818,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.current_state.registers[reg] = dest;
 				self.current_state.sources[reg] = 0;
 				clear_match(&analysis->loader, &self.current_state, reg, ins);
-				break;
+				goto skip_stack_clear;
 			}
 			case 0xb8: // mov r, imm
 			case 0xb9:
@@ -7795,7 +7845,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					// self.description = "mov";
 					// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)address, &self);
 				}
-				break;
+				goto skip_stack_clear;
 			}
 			case 0xc0: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, imm8
 				// TODO: read reg to know which in the family to dispatch
