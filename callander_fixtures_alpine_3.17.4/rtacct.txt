@@ -62,8 +62,8 @@ getsockopt(any, SOL_SOCKET, 0x11, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsoc
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-wait4(-1, any, 1, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-wait4(-1, any, 1, 0) @ ld-musl-x86_64.so.1+0x583bc
+wait4(-1, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(-1, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x583bc
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3f40b(socket+140)

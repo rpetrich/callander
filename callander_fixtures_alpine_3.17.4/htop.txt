@@ -87,7 +87,7 @@ exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 exit(1) @ ld-musl-x86_64.so.1+0x5aede(checker*+39)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
-wait4(any, any, 0x80000000, 0) @ ld-musl-x86_64.so.1+0x5b072(faccessat+329)
+wait4(any, any, __WCLONE, 0) @ ld-musl-x86_64.so.1+0x5b072(faccessat+329)
 kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)

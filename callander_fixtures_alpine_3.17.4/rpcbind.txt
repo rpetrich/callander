@@ -108,7 +108,7 @@ getsockopt(any, SOL_SOCKET, any, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsock
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-wait4(-1, 0, 1, 0) @ ld-musl-x86_64.so.1+0x2072e(wait4+15)
+wait4(-1, 0, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x2072e(wait4+15)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x204aa(do_setgroups*+66)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)

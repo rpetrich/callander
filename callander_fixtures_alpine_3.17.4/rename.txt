@@ -46,7 +46,7 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 exit(1) @ ld-musl-x86_64.so.1+0x5aede(checker*+39)
-wait4(any, any, 0x80000000, 0) @ ld-musl-x86_64.so.1+0x5b072(faccessat+329)
+wait4(any, any, __WCLONE, 0) @ ld-musl-x86_64.so.1+0x5b072(faccessat+329)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5b513(pipe2+89)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5b51c(pipe2+98)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x5b53a(pipe2+128)

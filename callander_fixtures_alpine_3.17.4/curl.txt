@@ -119,8 +119,8 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
-wait4(any, 0, 1, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-wait4(any, 0, 1, 0) @ ld-musl-x86_64.so.1+0x583bc
+wait4(any, 0, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(any, 0, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, SIGTERM) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
