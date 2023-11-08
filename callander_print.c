@@ -26,10 +26,12 @@
 #include <sys/ioctl.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
+#include <sys/msg.h>
 #include <sys/resource.h>
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
 #include <sys/random.h>
+#include <sys/sem.h>
 #include <sys/shm.h>
 #include <sys/signalfd.h>
 #include <sys/socket.h>
@@ -822,6 +824,81 @@ static struct enum_option itimer_whiches[] = {
 	DESCRIBE_ENUM(ITIMER_PROF),
 };
 
+static struct enum_option seek_whences[] = {
+	DESCRIBE_ENUM(SEEK_SET),
+	DESCRIBE_ENUM(SEEK_CUR),
+	DESCRIBE_ENUM(SEEK_END),
+	DESCRIBE_ENUM(SEEK_DATA),
+	DESCRIBE_ENUM(SEEK_HOLE),
+};
+
+static struct enum_option shmctl_commands[] = {
+	DESCRIBE_ENUM(IPC_STAT),
+	DESCRIBE_ENUM(IPC_SET),
+	DESCRIBE_ENUM(IPC_RMID),
+	DESCRIBE_ENUM(IPC_INFO),
+	DESCRIBE_ENUM(SHM_INFO),
+	DESCRIBE_ENUM(SHM_STAT),
+	DESCRIBE_ENUM(SHM_STAT_ANY),
+	DESCRIBE_ENUM(SHM_LOCK),
+	DESCRIBE_ENUM(SHM_UNLOCK),
+};
+
+static struct enum_option semctl_commands[] = {
+	DESCRIBE_ENUM(IPC_STAT),
+	DESCRIBE_ENUM(IPC_SET),
+	DESCRIBE_ENUM(IPC_RMID),
+	DESCRIBE_ENUM(IPC_INFO),
+	DESCRIBE_ENUM(SEM_INFO),
+	DESCRIBE_ENUM(SEM_STAT),
+	DESCRIBE_ENUM(SEM_STAT_ANY),
+	DESCRIBE_ENUM(GETALL),
+	DESCRIBE_ENUM(GETNCNT),
+	DESCRIBE_ENUM(GETPID),
+	DESCRIBE_ENUM(GETVAL),
+	DESCRIBE_ENUM(GETZCNT),
+	DESCRIBE_ENUM(SETALL),
+	DESCRIBE_ENUM(SETVAL),
+};
+
+static struct enum_option ptrace_requests[] = {
+	DESCRIBE_ENUM(PTRACE_TRACEME),
+	DESCRIBE_ENUM(PTRACE_PEEKTEXT),
+	DESCRIBE_ENUM(PTRACE_PEEKDATA),
+	DESCRIBE_ENUM(PTRACE_PEEKUSER),
+	DESCRIBE_ENUM(PTRACE_POKETEXT),
+	DESCRIBE_ENUM(PTRACE_POKEDATA),
+	DESCRIBE_ENUM(PTRACE_POKEUSER),
+	DESCRIBE_ENUM(PTRACE_GETREGS),
+	DESCRIBE_ENUM(PTRACE_GETFPREGS),
+	DESCRIBE_ENUM(PTRACE_GETREGSET),
+	DESCRIBE_ENUM(PTRACE_SETREGS),
+	DESCRIBE_ENUM(PTRACE_SETFPREGS),
+	DESCRIBE_ENUM(PTRACE_SETREGSET),
+	DESCRIBE_ENUM(PTRACE_GETSIGINFO),
+	DESCRIBE_ENUM(PTRACE_SETSIGINFO),
+	DESCRIBE_ENUM(PTRACE_PEEKSIGINFO),
+	DESCRIBE_ENUM(PTRACE_GETSIGMASK),
+	DESCRIBE_ENUM(PTRACE_SETSIGMASK),
+	DESCRIBE_ENUM(PTRACE_SETOPTIONS),
+	DESCRIBE_ENUM(PTRACE_GETEVENTMSG),
+	DESCRIBE_ENUM(PTRACE_CONT),
+	DESCRIBE_ENUM(PTRACE_SYSCALL),
+	DESCRIBE_ENUM(PTRACE_SINGLESTEP),
+	DESCRIBE_ENUM(PTRACE_SYSEMU),
+	DESCRIBE_ENUM(PTRACE_SYSEMU_SINGLESTEP),
+	DESCRIBE_ENUM(PTRACE_LISTEN),
+	DESCRIBE_ENUM(PTRACE_KILL),
+	DESCRIBE_ENUM(PTRACE_INTERRUPT),
+	DESCRIBE_ENUM(PTRACE_ATTACH),
+	DESCRIBE_ENUM(PTRACE_SEIZE),
+	DESCRIBE_ENUM(PTRACE_SECCOMP_GET_FILTER),
+	DESCRIBE_ENUM(PTRACE_DETACH),
+	DESCRIBE_ENUM(PTRACE_GET_THREAD_AREA),
+	DESCRIBE_ENUM(PTRACE_SET_THREAD_AREA),
+	DESCRIBE_ENUM(PTRACE_GET_SYSCALL_INFO),
+};
+
 static const char *clone_flags[64] = {
 	DESCRIBE_FLAG(CLONE_CHILD_CLEARTID),
 	DESCRIBE_FLAG(CLONE_CHILD_SETTID),
@@ -854,10 +931,15 @@ static const char *clone_flags[64] = {
 static const char *shm_flags[64] = {
 	DESCRIBE_FLAG(IPC_CREAT),
 	DESCRIBE_FLAG(IPC_EXCL),
+	// DESCRIBE_FLAG(IPC_NOWAIT),
 	DESCRIBE_FLAG(SHM_HUGETLB),
 	// DESCRIBE_FLAG(SHM_HUGE_2MB),
 	// DESCRIBE_FLAG(SHM_HUGE_1GB),
 	DESCRIBE_FLAG(SHM_NORESERVE),
+	// DESCRIBE_FLAG(SEM_UNDO),
+	// DESCRIBE_FLAG(MSG_COPY),
+	// DESCRIBE_FLAG(MSG_EXCEPT),
+	// DESCRIBE_FLAG(MSG_NOERROR),
 };
 
 static const char *eventfd_flags[64] = {
@@ -1284,6 +1366,14 @@ static char *copy_argument_description(const struct loader_context *context, str
 			return copy_enum_flags_description(context, state, flock_operations, sizeof(flock_operations), flock_flags, false);
 		case SYSCALL_ARG_IS_ITIMER_WHICH:
 			return copy_enum_flags_description(context, state, itimer_whiches, sizeof(itimer_whiches), NULL, false);
+		case SYSCALL_ARG_IS_SEEK_WHENCE:
+			return copy_enum_flags_description(context, state, seek_whences, sizeof(seek_whences), NULL, false);
+		case SYSCALL_ARG_IS_SHMCTL_COMMAND:
+			return copy_enum_flags_description(context, state, shmctl_commands, sizeof(shmctl_commands), NULL, false);
+		case SYSCALL_ARG_IS_SEMCTL_COMMAND:
+			return copy_enum_flags_description(context, state, semctl_commands, sizeof(semctl_commands), NULL, false);
+		case SYSCALL_ARG_IS_PTRACE_REQUEST:
+			return copy_enum_flags_description(context, state, ptrace_requests, sizeof(ptrace_requests), NULL, false);
 		case SYSCALL_ARG_IS_PID:
 			if (context->pid != 0 && register_is_exactly_known(&state) && state.value == (uintptr_t)context->pid) {
 				return strdup("getpid()");
