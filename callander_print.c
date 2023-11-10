@@ -11,6 +11,7 @@
 #include <linux/nsfs.h>
 #include <linux/perf_event.h>
 #include <linux/seccomp.h>
+#include <linux/socket.h>
 #include <linux/tiocl.h>
 #include <linux/userfaultfd.h>
 #include <linux/vt.h>
@@ -171,6 +172,14 @@ static const char *remap_flags[64] = {
 #undef O_LARGEFILE
 #endif
 #define O_LARGEFILE	00100000
+#ifdef __O_SYNC
+#undef __O_SYNC
+#endif
+#define __O_SYNC	04000000
+#ifdef __O_TMPFILE
+#undef __O_TMPFILE
+#endif
+#define __O_TMPFILE	020000000
 
 static struct enum_option opens[] = {
 	DESCRIBE_ENUM(O_RDONLY),
@@ -189,12 +198,12 @@ static const char *open_flags[64] = {
 	DESCRIBE_FLAG(O_EXCL),
 	DESCRIBE_FLAG(O_LARGEFILE),
 	DESCRIBE_FLAG(O_NOATIME),
-	// DESCRIBE_FLAG(O_NOCTTY),
+	DESCRIBE_FLAG(O_NOCTTY),
 	DESCRIBE_FLAG(O_NOFOLLOW),
 	DESCRIBE_FLAG(O_NONBLOCK),
 	DESCRIBE_FLAG(O_PATH),
-	// DESCRIBE_FLAG(O_SYNC),
-	// DESCRIBE_FLAG(O_TMPFILE),
+	DESCRIBE_FLAG(__O_SYNC),
+	DESCRIBE_FLAG(O_TMPFILE),
 	DESCRIBE_FLAG(O_TRUNC),
 };
 
@@ -680,19 +689,36 @@ static struct enum_option socket_options[] = {
 	DESCRIBE_ENUM(TCP_FASTOPEN_CONNECT),
 };
 
+#define MSG_PROBE 0x10
+#define MSG_CMSG_COMPAT 0x80000000
+
 static const char *msg_flags[64] = {
-	DESCRIBE_FLAG(MSG_CMSG_CLOEXEC),
-	DESCRIBE_FLAG(MSG_DONTWAIT),
-	DESCRIBE_FLAG(MSG_ERRQUEUE),
 	DESCRIBE_FLAG(MSG_OOB),
 	DESCRIBE_FLAG(MSG_PEEK),
-	DESCRIBE_FLAG(MSG_TRUNC),
-	DESCRIBE_FLAG(MSG_WAITALL),
-	DESCRIBE_FLAG(MSG_CONFIRM),
 	DESCRIBE_FLAG(MSG_DONTROUTE),
+	DESCRIBE_FLAG(MSG_CTRUNC),
+	DESCRIBE_FLAG(MSG_PROBE),
+	DESCRIBE_FLAG(MSG_TRUNC),
+	DESCRIBE_FLAG(MSG_DONTWAIT),
 	DESCRIBE_FLAG(MSG_EOR),
-	DESCRIBE_FLAG(MSG_MORE),
+	DESCRIBE_FLAG(MSG_WAITALL),
+	DESCRIBE_FLAG(MSG_FIN),
+	DESCRIBE_FLAG(MSG_SYN),
+	DESCRIBE_FLAG(MSG_CONFIRM),
+	DESCRIBE_FLAG(MSG_RST),
+	DESCRIBE_FLAG(MSG_ERRQUEUE),
 	DESCRIBE_FLAG(MSG_NOSIGNAL),
+	DESCRIBE_FLAG(MSG_MORE),
+	DESCRIBE_FLAG(MSG_WAITFORONE),
+	// DESCRIBE_FLAG(MSG_SENDPAGE_NOPOLICY),
+	DESCRIBE_FLAG(MSG_BATCH),
+	// DESCRIBE_FLAG(MSG_NO_SHARED_FRAGS),
+	// DESCRIBE_FLAG(MSG_SENDPAGE_DECRYPTED),
+	DESCRIBE_FLAG(MSG_ZEROCOPY),
+	// DESCRIBE_FLAG(MSG_SPLICE_PAGES),
+	DESCRIBE_FLAG(MSG_FASTOPEN),
+	DESCRIBE_FLAG(MSG_CMSG_CLOEXEC),
+	DESCRIBE_FLAG(MSG_CMSG_COMPAT),
 };
 
 static struct enum_option futex_operations[] = {
@@ -902,7 +928,7 @@ static struct enum_option ptrace_requests[] = {
 static const char *clone_flags[64] = {
 	DESCRIBE_FLAG(CLONE_CHILD_CLEARTID),
 	DESCRIBE_FLAG(CLONE_CHILD_SETTID),
-	// DESCRIBE_FLAG(CLONE_CLEAR_SIGHAND),
+	// DESCRIBE_FLAG(CLONE_CLEAR_SIGHAND), // clone3 only
 	DESCRIBE_FLAG(CLONE_FILES),
 	DESCRIBE_FLAG(CLONE_FS),
 	DESCRIBE_FLAG(CLONE_IO),
@@ -919,7 +945,6 @@ static const char *clone_flags[64] = {
 	DESCRIBE_FLAG(CLONE_PTRACE),
 	DESCRIBE_FLAG(CLONE_SETTLS),
 	DESCRIBE_FLAG(CLONE_SIGHAND),
-	// DESCRIBE_FLAG(CLONE_STOPPED),
 	DESCRIBE_FLAG(CLONE_SYSVSEM),
 	DESCRIBE_FLAG(CLONE_THREAD),
 	DESCRIBE_FLAG(CLONE_UNTRACED),
@@ -928,18 +953,65 @@ static const char *clone_flags[64] = {
 	DESCRIBE_FLAG(CLONE_DETACHED),
 };
 
+#define CLONE_NEWTIME 0x00000080
+
+static const char *unshare_flags[64] = {
+	DESCRIBE_FLAG(CLONE_CHILD_CLEARTID),
+	DESCRIBE_FLAG(CLONE_CHILD_SETTID),
+	// DESCRIBE_FLAG(CLONE_CLEAR_SIGHAND), // clone3 only
+	DESCRIBE_FLAG(CLONE_FILES),
+	DESCRIBE_FLAG(CLONE_FS),
+	DESCRIBE_FLAG(CLONE_IO),
+	DESCRIBE_FLAG(CLONE_NEWCGROUP),
+	DESCRIBE_FLAG(CLONE_NEWIPC),
+	DESCRIBE_FLAG(CLONE_NEWNET),
+	DESCRIBE_FLAG(CLONE_NEWNS),
+	DESCRIBE_FLAG(CLONE_NEWPID),
+	DESCRIBE_FLAG(CLONE_NEWUSER),
+	DESCRIBE_FLAG(CLONE_NEWUTS),
+	DESCRIBE_FLAG(CLONE_NEWTIME),
+	DESCRIBE_FLAG(CLONE_PARENT),
+	DESCRIBE_FLAG(CLONE_PARENT_SETTID),
+	DESCRIBE_FLAG(CLONE_PIDFD),
+	DESCRIBE_FLAG(CLONE_PTRACE),
+	DESCRIBE_FLAG(CLONE_SETTLS),
+	DESCRIBE_FLAG(CLONE_SIGHAND),
+	DESCRIBE_FLAG(CLONE_SYSVSEM),
+	DESCRIBE_FLAG(CLONE_THREAD),
+	DESCRIBE_FLAG(CLONE_UNTRACED),
+	DESCRIBE_FLAG(CLONE_VFORK),
+	DESCRIBE_FLAG(CLONE_VM),
+	DESCRIBE_FLAG(CLONE_DETACHED),
+};
+
+// #define SHM_HUGE_64KB	HUGETLB_FLAG_ENCODE_64KB
+// #define SHM_HUGE_512KB	HUGETLB_FLAG_ENCODE_512KB
+// #define SHM_HUGE_1MB	HUGETLB_FLAG_ENCODE_1MB
+// #define SHM_HUGE_2MB	HUGETLB_FLAG_ENCODE_2MB
+// #define SHM_HUGE_8MB	HUGETLB_FLAG_ENCODE_8MB
+// #define SHM_HUGE_16MB	HUGETLB_FLAG_ENCODE_16MB
+// #define SHM_HUGE_32MB	HUGETLB_FLAG_ENCODE_32MB
+// #define SHM_HUGE_256MB	HUGETLB_FLAG_ENCODE_256MB
+// #define SHM_HUGE_512MB	HUGETLB_FLAG_ENCODE_512MB
+// #define SHM_HUGE_1GB	HUGETLB_FLAG_ENCODE_1GB
+// #define SHM_HUGE_2GB	HUGETLB_FLAG_ENCODE_2GB
+// #define SHM_HUGE_16GB	HUGETLB_FLAG_ENCODE_16GB
+
 static const char *shm_flags[64] = {
 	DESCRIBE_FLAG(IPC_CREAT),
 	DESCRIBE_FLAG(IPC_EXCL),
-	// DESCRIBE_FLAG(IPC_NOWAIT),
 	DESCRIBE_FLAG(SHM_HUGETLB),
 	// DESCRIBE_FLAG(SHM_HUGE_2MB),
 	// DESCRIBE_FLAG(SHM_HUGE_1GB),
+	DESCRIBE_FLAG(SHM_R),
+	DESCRIBE_FLAG(SHM_W),
 	DESCRIBE_FLAG(SHM_NORESERVE),
-	// DESCRIBE_FLAG(SEM_UNDO),
-	// DESCRIBE_FLAG(MSG_COPY),
-	// DESCRIBE_FLAG(MSG_EXCEPT),
-	// DESCRIBE_FLAG(MSG_NOERROR),
+};
+
+static const char *sem_flags[64] = {
+	DESCRIBE_FLAG(IPC_CREAT),
+	DESCRIBE_FLAG(IPC_EXCL),
+	DESCRIBE_FLAG(SEM_UNDO),
 };
 
 static const char *eventfd_flags[64] = {
@@ -1119,13 +1191,42 @@ static char *copy_register_state_description_simple(const struct loader_context 
 	return result;
 }
 
-static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], bool always_enum)
+enum {
+	DESCRIBE_PRINT_ZERO_ENUMS = 0x1,
+	DESCRIBE_AS_FILE_MODE = 0x2,
+};
+
+typedef uint8_t description_format_options;
+
+static inline size_t format_octal(uintptr_t value, char buffer[])
 {
+	buffer[0] = '0';
+	if (value == 0) {
+		buffer[1] = '\0';
+		return 1;
+	}
+	size_t i = 1;
+	while (value != 0) {
+		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0x7];
+		value = value >> 3;
+	}
+	buffer[i] = '\0';
+	fs_reverse(&buffer[1], i-1);
+	return i+1;
+}
+
+static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], description_format_options description_options)
+{
+	char num_buf[64];
 	if (flags == NULL) {
 		for (size_t i = 0; i < sizeof_options / sizeof(*options); i++) {
 			if (value == options[i].value) {
 				return strdup(options[i].description);
 			}
+		}
+		if (description_options & DESCRIBE_AS_FILE_MODE) {
+			format_octal(value, num_buf);
+			return strdup(num_buf);
 		}
 		return copy_address_details(context, (const void *)value, false);
 	}
@@ -1141,8 +1242,7 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 	}
 	const char *suffix = NULL;
 	size_t suffix_len = 0;
-	char num_buf[64];
-	if (length == 0 || remaining != 0 || always_enum) {
+	if (length == 0 || remaining != 0 || (description_options & DESCRIBE_PRINT_ZERO_ENUMS)) {
 		for (size_t i = 0; i < sizeof_options / sizeof(*options); i++) {
 			if (remaining == options[i].value) {
 				suffix = options[i].description;
@@ -1153,7 +1253,7 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 		}
 		if (suffix == NULL && (length == 0 || remaining != 0)) {
 			suffix = num_buf;
-			suffix_len = remaining < PAGE_SIZE ? fs_utoa(remaining, num_buf) : fs_utoah(remaining, num_buf);
+			suffix_len = (description_options & DESCRIBE_AS_FILE_MODE) ? format_octal(remaining, num_buf) : (remaining < PAGE_SIZE ? fs_utoa(remaining, num_buf) : fs_utoah(remaining, num_buf));
 			length += suffix_len + 1;
 		}
 	}
@@ -1177,10 +1277,10 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 	return result;
 }
 
-static char *copy_enum_flags_description(const struct loader_context *context, struct register_state state, const struct enum_option *options, size_t sizeof_options, const char *flags[64], bool always_enum)
+static char *copy_enum_flags_description(const struct loader_context *context, struct register_state state, const struct enum_option *options, size_t sizeof_options, const char *flags[64], description_format_options description_options)
 {
 	if (register_is_exactly_known(&state)) {
-		return copy_enum_flags_value_description(context, state.value, options, sizeof_options, flags, always_enum);
+		return copy_enum_flags_value_description(context, state.value, options, sizeof_options, flags, description_options);
 	}
 	if (state.value == 0) {
 		if (state.max == ~(uintptr_t)0) {
@@ -1196,61 +1296,16 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 			return strdup("any u8");
 		}
 	}
-	char *low = copy_enum_flags_value_description(context, state.value, options, sizeof_options, flags, always_enum);
+	char *low = copy_enum_flags_value_description(context, state.value, options, sizeof_options, flags, description_options);
 	size_t low_size = strlen(low);
-	char *high = copy_enum_flags_value_description(context, state.max, options, sizeof_options, flags, always_enum);
+	char *high = copy_enum_flags_value_description(context, state.max, options, sizeof_options, flags, description_options);
 	size_t high_size = strlen(high);
-	char *buf = malloc(low_size + 1 + high_size + 1);
-	memcpy(buf, low, low_size);
+	char *buf = realloc(low, low_size + 1 + high_size + 1);
+	// memcpy(buf, low, low_size);
 	buf[low_size] = '-';
 	memcpy(&buf[low_size + 1], high, high_size + 1);
+	free(high);
 	return buf;
-}
-
-static inline size_t format_octal(uintptr_t value, char buffer[])
-{
-	buffer[0] = '0';
-	if (value == 0) {
-		buffer[1] = '\0';
-		return 1;
-	}
-	size_t i = 1;
-	while (value != 0) {
-		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0x7];
-		value = value >> 3;
-	}
-	buffer[i] = '\0';
-	fs_reverse(&buffer[1], i-1);
-	return i+1;
-}
-
-static char *copy_mode_description(struct register_state reg)
-{
-	if (reg.value == 0) {
-		if (reg.max == ~(uintptr_t)0) {
-			return strdup("any");
-		}
-		if (reg.max == 0xffffffff) {
-			return strdup("any u32");
-		}
-		if (reg.max == 0xffff) {
-			return strdup("any u16");
-		}
-		if (reg.max == 0xff) {
-			return strdup("any u8");
-		}
-	}
-	char buf[64];
-	size_t size;
-	if (register_is_exactly_known(&reg)) {
-		size = format_octal(reg.value, buf);
-	} else {
-		size_t prefix_size = format_octal(reg.value, buf);
-		buf[prefix_size] = '-';
-		size_t suffix_size = format_octal(reg.max, &buf[prefix_size+1]);
-		size = prefix_size + 1 + suffix_size;
-	}
-	return strdup_fixed(buf, size+1);
 }
 
 static char *copy_argument_description(const struct loader_context *context, struct register_state state, uint8_t argument_type)
@@ -1261,11 +1316,11 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_PROT:
 			return copy_enum_flags_description(context, state, prots, sizeof(prots), prot_flags, false);
 		case SYSCALL_ARG_IS_MAP_FLAGS:
-			return copy_enum_flags_description(context, state, maps, sizeof(maps), map_flags, true);
+			return copy_enum_flags_description(context, state, maps, sizeof(maps), map_flags, DESCRIBE_PRINT_ZERO_ENUMS);
 		case SYSCALL_ARG_IS_REMAP_FLAGS:
 			return copy_enum_flags_description(context, state, NULL, 0, remap_flags, false);
 		case SYSCALL_ARG_IS_OPEN_FLAGS:
-			return copy_enum_flags_description(context, state, opens, sizeof(opens), open_flags, true);
+			return copy_enum_flags_description(context, state, opens, sizeof(opens), open_flags, DESCRIBE_PRINT_ZERO_ENUMS);
 		case SYSCALL_ARG_IS_SIGNUM:
 			return copy_enum_flags_description(context, state, signums, sizeof(signums), NULL, false);
 		case SYSCALL_ARG_IS_IOCTL:
@@ -1281,7 +1336,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_SOCKET_DOMAIN:
 			return copy_enum_flags_description(context, state, socket_domains, sizeof(socket_domains), NULL, false);
 		case SYSCALL_ARG_IS_SOCKET_TYPE:
-			return copy_enum_flags_description(context, state, socket_types, sizeof(socket_types), socket_flags, true);
+			return copy_enum_flags_description(context, state, socket_types, sizeof(socket_types), socket_flags, DESCRIBE_PRINT_ZERO_ENUMS);
 		case SYSCALL_ARG_IS_CLOCK_ID:
 			return copy_enum_flags_description(context, state, clock_ids, sizeof(clock_ids), NULL, false);
 		case SYSCALL_ARG_IS_SOCKET_LEVEL:
@@ -1303,7 +1358,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_SHUTDOWN_HOW:
 			return copy_enum_flags_description(context, state, shutdown_hows, sizeof(shutdown_hows), NULL, false);
 		case SYSCALL_ARG_IS_FUTEX_OP:
-			return copy_enum_flags_description(context, state, futex_operations, sizeof(futex_operations), futex_flags, true);
+			return copy_enum_flags_description(context, state, futex_operations, sizeof(futex_operations), futex_flags, DESCRIBE_PRINT_ZERO_ENUMS);
 		case SYSCALL_ARG_IS_SIGNALFD_FLAGS:
 			return copy_enum_flags_description(context, state, NULL, 0, signalfd_flags, false);
 		case SYSCALL_ARG_IS_TIMERFD_FLAGS:
@@ -1313,19 +1368,21 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_PRCTL:
 			return copy_enum_flags_description(context, state, prctls, sizeof(prctls), NULL, false);
 		case SYSCALL_ARG_IS_CLONEFLAGS:
-			return copy_enum_flags_description(context, state, signums, sizeof(signums), clone_flags, true);
+			return copy_enum_flags_description(context, state, signums, sizeof(signums), clone_flags, DESCRIBE_PRINT_ZERO_ENUMS);
+		case SYSCALL_ARG_IS_UNSHARE_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, unshare_flags, false);
 		case SYSCALL_ARG_IS_SHM_FLAGS:
-			return copy_enum_flags_description(context, state, NULL, 0, shm_flags, true);
+			return copy_enum_flags_description(context, state, NULL, 0, shm_flags, DESCRIBE_AS_FILE_MODE);
 		case SYSCALL_ARG_IS_EVENTFD_FLAGS:
-			return copy_enum_flags_description(context, state, NULL, 0, eventfd_flags, true);
+			return copy_enum_flags_description(context, state, NULL, 0, eventfd_flags, false);
 		case SYSCALL_ARG_IS_EPOLL_FLAGS:
-			return copy_enum_flags_description(context, state, NULL, 0, epoll_flags, true);
+			return copy_enum_flags_description(context, state, NULL, 0, epoll_flags, false);
 		case SYSCALL_ARG_IS_XATTR_FLAGS:
-			return copy_enum_flags_description(context, state, NULL, 0, xattr_flags, true);
+			return copy_enum_flags_description(context, state, NULL, 0, xattr_flags, false);
 		case SYSCALL_ARG_IS_TIMER_FLAGS:
-			return copy_enum_flags_description(context, state, NULL, 0, timer_flags, true);
+			return copy_enum_flags_description(context, state, NULL, 0, timer_flags, false);
 		case SYSCALL_ARG_IS_WAIT_FLAGS:
-			return copy_enum_flags_description(context, state, NULL, 0, wait_flags, true);
+			return copy_enum_flags_description(context, state, NULL, 0, wait_flags, false);
 		case SYSCALL_ARG_IS_WAITIDTYPE:
 			return copy_enum_flags_description(context, state, wait_idtypes, sizeof(wait_idtypes), NULL, false);
 		case SYSCALL_ARG_IS_INOTIFY_EVENT_MASK:
@@ -1374,6 +1431,8 @@ static char *copy_argument_description(const struct loader_context *context, str
 			return copy_enum_flags_description(context, state, semctl_commands, sizeof(semctl_commands), NULL, false);
 		case SYSCALL_ARG_IS_PTRACE_REQUEST:
 			return copy_enum_flags_description(context, state, ptrace_requests, sizeof(ptrace_requests), NULL, false);
+		case SYSCALL_ARG_IS_SEM_FLAGS:
+			return copy_enum_flags_description(context, state, NULL, 0, sem_flags, DESCRIBE_AS_FILE_MODE);
 		case SYSCALL_ARG_IS_PID:
 			if (context->pid != 0 && register_is_exactly_known(&state) && state.value == (uintptr_t)context->pid) {
 				return strdup("getpid()");
@@ -1382,7 +1441,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 			}
 		case SYSCALL_ARG_IS_MODE:
 		case SYSCALL_ARG_IS_MODEFLAGS:
-			return copy_mode_description(state);
+			return copy_enum_flags_description(context, state, NULL, 0, NULL, DESCRIBE_AS_FILE_MODE);
 		case SYSCALL_ARG_IS_SOCKET_PROTOCOL:
 		default:
 			return copy_register_state_description(context, state);
