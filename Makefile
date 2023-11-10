@@ -251,9 +251,9 @@ ifeq ($(STANDALONE),1)
 else
 	$(CC) $(LDFLAGS) -g -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
 endif
-# 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
-# 	$(STRIP) -s -R .comment -D "$@"
-# 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
+	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
+	$(STRIP) -s -R .comment -D "$@"
+	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
