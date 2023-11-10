@@ -64,7 +64,7 @@ fcntl(any u32, F_GETFL, any) @ libc.so.6+0x10bc7e(__fcntl64_nocancel_adjusted+32
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0x10bc7e(__fcntl64_nocancel_adjusted+32)
 ftruncate(STDIN_FILENO-0xfffffffe, 0) @ libc.so.6+0x10f5a5(ftruncate64+7)
 getcwd(non-NULL, any) @ libc.so.6+0x107660(getcwd+178)
-mkdir(any, 0100) @ libc.so.6+0x106685(mkdir+5)
+mkdir(any, 0100-0500) @ libc.so.6+0x106685(mkdir+5)
 gettimeofday(any, any) @ libc.so.6+0xd03fa(__gettimeofday_syscall+12)
 gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 getrusage(0, any) @ libc.so.6+0x10c675(getrusage+5)

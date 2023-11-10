@@ -252,7 +252,7 @@ utimes(any) @ ld-musl-x86_64.so.1+0x4a222(utimensat+245)
 inotify_init() @ ld-musl-x86_64.so.1+0x1ff8a(inotify_init1+31)
 inotify_add_watch(any, any, any u32) @ ld-musl-x86_64.so.1+0x1ffa8(inotify_add_watch+11)
 inotify_rm_watch(any, any) @ ld-musl-x86_64.so.1+0x1ffc0(inotify_rm_watch+12)
-openat(any, any, 256|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-x86_64.so.1+0x49c3c(fchmodat+130)
+openat(any, any, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-x86_64.so.1+0x49c3c(fchmodat+130)
 openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 mkdirat(any, any, 0-07777) @ ld-musl-x86_64.so.1+0x49f49(mkdirat+11)

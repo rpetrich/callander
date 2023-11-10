@@ -110,7 +110,7 @@ fcntl(any u32, F_GETFL, any) @ libc.so.6+0x10bc7e(__fcntl64_nocancel_adjusted+32
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0x10bc7e(__fcntl64_nocancel_adjusted+32)
 ftruncate(any u32, any) @ libc.so.6+0x10f5a5(ftruncate64+7)
 getcwd(non-NULL, any) @ libc.so.6+0x107660(getcwd+178)
-mkdir(any, 0100) @ libc.so.6+0x106685(mkdir+5)
+mkdir(any, 0100-0500) @ libc.so.6+0x106685(mkdir+5)
 rmdir(any) @ libc.so.6+0x108875(rmdir+5)
 unlink(any) @ libc.so.6+0x108815(unlink+5)
 readlink(any, any, non-NULL) @ libc.so.6+0x1087b5(readlink+5)

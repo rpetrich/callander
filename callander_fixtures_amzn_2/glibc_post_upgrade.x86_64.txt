@@ -9,7 +9,7 @@ write(any, any, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x40af5e(_IO_new_file
 write(any, any, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x434812(__libc_write+18)
 write(any, any, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x434847(__libc_write+71)
 open(non-NULL, O_RDONLY, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x40371e(_nl_load_domain+190)
-open(/usr/sbin/glibc_post_upgrade.x86_64:0x471437, 258|O_NONBLOCK, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x409de6(__libc_message+646)
+open(/usr/sbin/glibc_post_upgrade.x86_64:0x471437, O_RDWR|O_NOCTTY|O_NONBLOCK, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x409de6(__libc_message+646)
 open(NULL-0xfffffffffffffff0, O_RDONLY, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x40b7b9(_IO_file_open+201)
 open(NULL-0xfffffffffffffff0, O_RDWR, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x40b7b9(_IO_file_open+201)
 open(NULL-0xfffffffffffffff0, O_RDONLY|O_EXCL, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x40b7b9(_IO_file_open+201)

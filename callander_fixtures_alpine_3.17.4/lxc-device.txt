@@ -319,7 +319,7 @@ fchmodat(any, /usr/bin/lxc-device+0xb23d2, 0775, 0) @ ld-musl-x86_64.so.1+0x49bd
 faccessat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x5af0b(checker*+84)
 faccessat(any, any, F_OK, any) @ ld-musl-x86_64.so.1+0x5af55(faccessat+44)
 faccessat(any, non-NULL, W_OK, any) @ ld-musl-x86_64.so.1+0x5af55(faccessat+44)
-unshare(128) @ ld-musl-x86_64.so.1+0x206cc(unshare+9)
+unshare(CLONE_NEWTIME) @ ld-musl-x86_64.so.1+0x206cc(unshare+9)
 unshare(CLONE_NEWNS) @ ld-musl-x86_64.so.1+0x206cc(unshare+9)
 unshare(CLONE_NEWCGROUP) @ ld-musl-x86_64.so.1+0x206cc(unshare+9)
 unshare(CLONE_NEWUSER) @ ld-musl-x86_64.so.1+0x206cc(unshare+9)
