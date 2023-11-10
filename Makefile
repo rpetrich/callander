@@ -69,8 +69,8 @@ ifeq ($(ADDRESS_SANITIZER),1)
 endif
 
 ifeq ($(UNDEFINED_SANITIZER),1)
-	CFLAGS += -fsanitize=undefined
-	LDFLAGS += -fsanitize=undefined
+	CFLAGS += -fsanitize=undefined -static-libubsan
+	LDFLAGS += -fsanitize=undefined -static-libubsan
 endif
 
 ifeq ($(ANALYZER),1)
