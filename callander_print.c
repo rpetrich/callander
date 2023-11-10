@@ -185,6 +185,7 @@ static struct enum_option opens[] = {
 	DESCRIBE_ENUM(O_RDONLY),
 	DESCRIBE_ENUM(O_WRONLY),
 	DESCRIBE_ENUM(O_RDWR),
+	DESCRIBE_ENUM(O_ACCMODE),
 };
 
 static const char *open_flags[64] = {
