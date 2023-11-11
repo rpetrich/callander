@@ -44,3 +44,16 @@ development, but not yet available.
 Additionally, callander is beta software and requires more real-world testing.
 If you have a program that it doesn't analyze properly or rejects, please open
 an issue.
+
+## Building
+
+Callander can be built by running make:
+
+```bash
+git clone git@github.com:rpetrich/callander.git
+cd callander
+make -j4
+```
+
+For best results, use gcc 9.4.0 on ubuntu 20.04 to produce completely static
+binaries that run on any recent Linux kernel.
