@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/lcf"
+Failed to parse input.

@@ -1,0 +1,104 @@
+callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig.real+0x73280
+read(any u32, any, any) @ /usr/sbin/ldconfig.real+0x732ba
+read(any u32, any, any) @ /usr/sbin/ldconfig.real+0x73f66
+write(any u32, any, any) @ /usr/sbin/ldconfig.real+0x73325
+write(any u32, any, any) @ /usr/sbin/ldconfig.real+0x7335d
+write(any u32, any, any) @ /usr/sbin/ldconfig.real+0x73f99
+close(any u32) @ /usr/sbin/ldconfig.real+0x733f5
+close(any u32) @ /usr/sbin/ldconfig.real+0x73419
+close(any u32) @ /usr/sbin/ldconfig.real+0x73ca9
+stat(any, any) @ /usr/sbin/ldconfig.real+0x72fd8
+fstat(any u32, any) @ /usr/sbin/ldconfig.real+0x73037
+lstat(any, any) @ /usr/sbin/ldconfig.real+0x73098
+poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xc3b55
+poll(any, any, any u32) @ /usr/sbin/ldconfig.real+0xc3b8d
+lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x733b9
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/sbin/ldconfig.real+0x74344
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
+mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
+mmap(any, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
+mmap(any, any, any u32, MAP_PRIVATE|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x74344
+mmap(any, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x74344
+mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x74344
+mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, any, any u32, MAP_PRIVATE|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x74409
+munmap(any, any) @ /usr/sbin/ldconfig.real+0x743d9
+brk(NULL-0xfffffffffffffffe) @ /usr/sbin/ldconfig.real+0xa7709
+rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8ac64
+rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig.real+0x8ac64
+rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /usr/sbin/ldconfig.real+0x208a8
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x208e9
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8ae09
+rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab97
+ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0xa7658
+pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xa75fc
+writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740b5
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x740eb
+writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xb638f
+access(/usr/sbin/ldconfig.real+0xd3042, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
+access(/usr/sbin/ldconfig.real+0xd3051, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
+sched_yield() @ /usr/sbin/ldconfig.real+0x72f39
+mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig.real+0x772bc
+madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x74439
+alarm(any u32) @ /usr/sbin/ldconfig.real+0xa6d49
+getpid() @ /usr/sbin/ldconfig.real+0x208b1
+getpid() @ /usr/sbin/ldconfig.real+0xc18f9
+socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0xc3e89
+connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xc3c95
+connect(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xc3cc9
+sendto(any u32, NULL-0xfffffffffffffff0, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real+0xc3dde
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig.real+0xc3e2a
+recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ /usr/sbin/ldconfig.real+0xc3d35
+recvmsg(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xc3d6b
+fcntl(any u32, F_SETFD, 1) @ /usr/sbin/ldconfig.real+0x73d13
+fcntl(any u32, F_GETFL, any) @ /usr/sbin/ldconfig.real+0x73d13
+fcntl(any u32, F_SETLKW, any) @ /usr/sbin/ldconfig.real+0x73d13
+fsync(any u32) @ /usr/sbin/ldconfig.real+0x74215
+fsync(any u32) @ /usr/sbin/ldconfig.real+0x74239
+fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x742a5
+fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x742c9
+getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x73520
+chdir(/usr/sbin/ldconfig.real+0xcd2b2) @ /usr/sbin/ldconfig.real+0x73479
+rename(any, any) @ /usr/sbin/ldconfig.real+0x22499
+mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x73119
+unlink(any) @ /usr/sbin/ldconfig.real+0x73c79
+symlink(any, any) @ /usr/sbin/ldconfig.real+0x73c19
+readlink(any, NULL-0xfffffffffffffff0, 4095) @ /usr/sbin/ldconfig.real+0x73c49
+readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73c49
+readlink(/usr/sbin/ldconfig.real+0xe63e3, any, 0x1000) @ /usr/sbin/ldconfig.real+0xb7ff1
+chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x730e9
+gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
+sysinfo(any) @ /usr/sbin/ldconfig.real+0x772e9
+arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60) @ /usr/sbin/ldconfig.real+0xc7a89
+arch_prctl(0x3002, NULL-0x2) @ /usr/sbin/ldconfig.real+0xc7acf
+chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x741d9
+gettid() @ /usr/sbin/ldconfig.real+0x208bb
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
+getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xa6449
+restart_syscall()
+clock_gettime(CLOCK_REALTIME, any) @ /usr/sbin/ldconfig.real+0xa636a
+clock_gettime(CLOCK_REALTIME_COARSE, any) @ /usr/sbin/ldconfig.real+0xa636a
+clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
+clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
+clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1712
+clock_nanosleep(any u32, 0, any, any) @ /usr/sbin/ldconfig.real+0xc179d
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc17e8
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1859
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc187f
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc18d2
+exit_group(any u32) @ /usr/sbin/ldconfig.real+0x6c034
+tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x208c7
+tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig.real+0x208c7
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x73199
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x73212
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x73e5a
+openat(any u32, /usr/sbin/ldconfig.real+0xd2cc4, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x73ef8
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real+0xa6efd

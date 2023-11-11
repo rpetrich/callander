@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/c_rehash"
+Failed to parse input.

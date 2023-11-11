@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/x86_64-redhat-linux-gnu-pkg-config"
+Failed to parse input.

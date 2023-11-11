@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/gdb-add-index"
+Failed to parse input.

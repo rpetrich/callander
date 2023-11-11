@@ -1,0 +1,34 @@
+#!/bin/bash
+
+file="$1"
+
+if [ ! -e "$file" ]; then
+	file=$(which "$file")
+	if [ -z "$file" ]; then
+		echo "could not find $1"
+		exit 1
+	fi
+fi
+
+file=$(readlink -f "$file")
+
+cp "$file" ./
+
+debug_path=./$(basename "$file").debug
+
+debuglink=$(readelf --string-dump=.gnu_debuglink "$file" | sed -n '/]/{s/.* //;p;q}')
+if [ ! -z "$debuglink" ]; then
+	if [ -e /usr/lib/debug/.build-id/*/"$debuglink" ]; then
+		cp /usr/lib/debug/.build-id/*/"$debuglink" "$debug_path"
+		exit 0
+	fi
+fi
+
+if [ -e "$path.debug" ]; then
+	cp "$path.debug" "$debug_path"
+	exit 0
+fi
+
+echo "could not find debuglink for $1"
+
+exit 1

@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/zcmp"
+Failed to parse input.

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec sudo callander --block-syscall execve -- ./nginx -p . -c nginx.conf

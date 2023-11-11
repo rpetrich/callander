@@ -1,0 +1,14 @@
+*.debug
+*.o
+*.gcno
+*.gcov
+*.gcda
+*.debug
+axon
+target
+target2
+target3
+texec
+thandler
+callander
+lookup

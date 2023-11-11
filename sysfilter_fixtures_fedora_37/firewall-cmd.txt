@@ -1,0 +1,2 @@
+Failed to parse input file "/usr/bin/firewall-cmd"
+Failed to parse input.
