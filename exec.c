@@ -10,8 +10,8 @@
 #include "loader.h"
 #include "paths.h"
 #include "seccomp.h"
-#include "telemetry.h"
 #include "tls.h"
+#include "tracer.h"
 
 #include <errno.h>
 #include <linux/binfmts.h>
@@ -26,8 +26,8 @@ struct fs_stat axon_stat;
 
 static int pid;
 
-#ifdef ENABLE_TELEMETRY
-uint32_t enabled_telemetry;
+#ifdef ENABLE_TRACER
+uint32_t enabled_traces;
 #endif
 
 pid_t get_self_pid(void)
@@ -148,15 +148,15 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 		memcpy(&comm_buf[sizeof(AXON_COMM) - 1], comm, comm_len);
 	}
 	comm_buf[sizeof(AXON_COMM) - 1 + comm_len] = '\0';
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 	char tele_buf[64];
-	memcpy(tele_buf, AXON_TELE, sizeof(AXON_TELE) - 1);
-	fs_utoah(enabled_telemetry, &tele_buf[sizeof(AXON_TELE) - 1]);
+	memcpy(tele_buf, AXON_TRACES, sizeof(AXON_TRACES) - 1);
+	fs_utoah(enabled_traces, &tele_buf[sizeof(AXON_TRACES) - 1]);
 #endif
 	int j = 0;
 	new_envp[j++] = addr_buf;
 	new_envp[j++] = comm_buf;
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 	new_envp[j++] = tele_buf;
 #endif
 	new_envp[j++] = exec_path_buf;
@@ -170,7 +170,7 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 			attempt_pop_free(&new_envp_cleanup);
 			return -EINVAL;
 		}
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 		if (fs_strncmp(envp[i], AXON_TELE, sizeof(AXON_TELE) - 1) != 0) {
 			new_envp[j++] = envp[i];
 		}
@@ -251,11 +251,6 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 	for (size_t i = 1; i <= argc; i++) {
 		*dest_argv++ = argv[i];
 	}
-	// WRITE_LITERAL(TELEMETRY_FD, "Executing script ");
-	// fs_write(TELEMETRY_FD, named_path, fs_strlen(named_path));
-	// WRITE_LITERAL(TELEMETRY_FD, " via ");
-	// fs_write(TELEMETRY_FD, arg0, fs_strlen(arg0));
-	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 	int interpreter_fd = fs_open(arg0, O_RDONLY, 0);
 	if (interpreter_fd < 0) {
 		fs_close(fd);
@@ -311,9 +306,9 @@ int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filenam
 			goto close_and_error;
 		}
 	}
-#ifdef ENABLE_TELEMETRY
-	// send the open read only telemetry event, if necessary
-	if (enabled_telemetry & TELEMETRY_TYPE_OPEN_READ_ONLY) {
+#ifdef ENABLE_TRACER
+	// send the open read only trace, if necessary
+	if (enabled_traces & TRACE_TYPE_OPEN_READ_ONLY) {
 		char path[PATH_MAX];
 		int len = fs_readlink_fd(fd, path, sizeof(path));
 		if (len > 0) {
@@ -329,9 +324,9 @@ int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filenam
 close_and_error:
 	attempt_pop_close(&state);
 error:
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 	// send the exec event, if failed
-	if (enabled_telemetry & TELEMETRY_TYPE_EXEC) {
+	if (enabled_traces & TRACE_TYPE_EXEC) {
 		send_exec_event(thread, filename, fs_strlen(filename), argv, result);
 	}
 #endif

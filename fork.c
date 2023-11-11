@@ -7,7 +7,7 @@
 #include "defaultlibs.h"
 #include "fd_table.h"
 #include "freestanding.h"
-#include "telemetry.h"
+#include "tracer.h"
 
 #include <sched.h>
 
@@ -21,8 +21,8 @@ pid_t wrapped_fork(struct thread_storage *thread)
 	finish_fd_table_fork();
 	fs_mutex_unlock(&malloc_lock);
 	if (result <= 0) {
-#ifdef ENABLE_TELEMETRY
-		if (enabled_telemetry & TELEMETRY_TYPE_CLONE) {
+#ifdef ENABLE_TRACER
+		if (enabled_traces & TRACE_TYPE_CLONE) {
 			send_clone_event(thread, fs_getpid(), 0, result);
 		}
 #else
@@ -49,8 +49,8 @@ pid_t wrapped_vfork(struct thread_storage *thread)
 #endif
 	finish_fd_table_fork();
 	fs_mutex_unlock(&malloc_lock);
-#ifdef ENABLE_TELEMETRY
-	if (result <= 0 && enabled_telemetry & TELEMETRY_TYPE_CLONE) {
+#ifdef ENABLE_TRACER
+	if (result <= 0 && enabled_traces & TRACE_TYPE_CLONE) {
 		send_clone_event(thread, fs_getpid(), CLONE_VFORK, result);
 	}
 #else
@@ -77,9 +77,9 @@ pid_t wrapped_clone(struct thread_storage *thread, unsigned long flags, void *st
 	intptr_t result = FS_SYSCALL(__NR_clone, flags & ~CLONE_VM, (intptr_t)stack, (intptr_t)parent_tid, (intptr_t)child_tid, tls, 0);
 	finish_fd_table_fork();
 	fs_mutex_unlock(&malloc_lock);
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 	if (result <= 0) {
-		if (enabled_telemetry & TELEMETRY_TYPE_CLONE) {
+		if (enabled_traces & TRACE_TYPE_CLONE) {
 			send_clone_event(thread, fs_getpid(), flags, result);
 		}
 	}

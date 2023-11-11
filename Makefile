@@ -83,14 +83,14 @@ OBJECTS := attempt.o axon.o coverage.o darwin.o debugger.o defaultlibs.o \
 			exec.o fd_table.o fork.o install.o intercept.o handler.o libraries.o \
 			loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o paths.o \
 			preload.o proxy.o qsort.o remote.o remote_library.o resolver.o search.o seccomp.o \
-			sockets.o stack.o telemetry.o time.o tls.o x86.o x86_64_length_disassembler.o
+			sockets.o stack.o time.o tls.o tracer.o x86.o x86_64_length_disassembler.o
 TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
 		    loader.o proxy.o qsort.o remote.o search.o seccomp.o \
 		    stack.o texec.o time.o tls.o x86.o \
 		    callander.o callander_print.o patch_x86_64.o x86_64_length_disassembler.o
 THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table_target.o \
 			fork_target.o handler.o intercept_target.o malloc.o paths_target.o proxy_target.o \
-			remote.o remote_library_target.o sockets_target.o stack.o telemetry.o thandler.o tls.o
+			remote.o remote_library_target.o sockets_target.o stack.o thandler.o tls.o tracer.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o callander_print.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o x86.o \
 			x86_64_length_disassembler.o

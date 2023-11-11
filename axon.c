@@ -14,7 +14,7 @@
 #include "proxy.h"
 #include "search.h"
 #include "seccomp.h"
-#include "telemetry.h"
+#include "tracer.h"
 #include "time.h"
 #include "tls.h"
 
@@ -34,8 +34,8 @@ typedef struct {
 	uintptr_t old_base_address;
 	size_t self_size;
 	size_t *sp;
-#ifdef ENABLE_TELEMETRY
-	uint32_t telemetry;
+#ifdef ENABLE_TRACER
+	uint32_t traces;
 #endif
 	const char *comm;
 	const char *exec_path;
@@ -63,8 +63,8 @@ noreturn void release(size_t *sp)
 		.sp = sp,
 		.comm = NULL,
 		.exec_path = NULL,
-#ifdef ENABLE_TELEMETRY
-		.telemetry = TELEMETRY_TYPE_PRETTY_PRINT,
+#ifdef ENABLE_TRACER
+		.traces = 0,
 #endif
 		.debug = NULL,
 		.debug_update = &_dl_debug_state,
@@ -95,14 +95,14 @@ noreturn void release(size_t *sp)
 				data.comm = &(*envp)[sizeof(AXON_COMM) - 1];
 			} else if (fs_strncmp(*envp, AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0) {
 				data.exec_path = &(*envp)[sizeof(AXON_EXEC) - 1];
-#ifdef ENABLE_TELEMETRY
-			} else if (fs_strncmp(*envp, AXON_TELE, sizeof(AXON_TELE) - 1) == 0) {
-				const char *telemetry_str = &(*envp)[sizeof(AXON_TELE) - 1];
-				uintptr_t telemetry;
-				if (UNLIKELY(fs_scanu(telemetry_str, &telemetry) == NULL)) {
+#ifdef ENABLE_TRACER
+			} else if (fs_strncmp(*envp, AXON_TRACER, sizeof(AXON_TRACER) - 1) == 0) {
+				const char *tracer_str = &(*envp)[sizeof(AXON_TRACER) - 1];
+				uintptr_t traces;
+				if (UNLIKELY(fs_scanu(tracer_str, &traces) == NULL)) {
 					DIE("failed to parse AXON_TELE");
 				}
-				data.telemetry = (uint32_t)telemetry;
+				data.traces = (uint32_t)traces;
 				*envp_copy++ = *envp;
 #endif
 			} else if (fs_strncmp(*envp, "AXON_PATCH_SYSCALLS=false", sizeof("AXON_PATCH_SYSCALLS=false")) == 0) {
@@ -145,8 +145,8 @@ noreturn void release(size_t *sp)
 			install();
 			fs_exit(0);
 		}
-#ifdef ENABLE_TELEMETRY
-		install_telemetry_client(&data.telemetry, argv+1);
+#ifdef ENABLE_TRACER
+		install_tracer(&data.traces, argv+1);
 #endif
 		// Prefer /proc/self/exe, if it exists
 		int self_fd;
@@ -246,8 +246,8 @@ noreturn static void bind_axon(bind_data data)
 	}
 #endif
 	// Set globals
-#ifdef ENABLE_TELEMETRY
-	enabled_telemetry = data.telemetry;
+#ifdef ENABLE_TRACER
+	enabled_traces = data.traces;
 #endif
 	int stat_result = fs_fstat(SELF_FD, &axon_stat);
 	if (UNLIKELY(stat_result != 0)) {
@@ -338,7 +338,7 @@ noreturn static void bind_axon(bind_data data)
 	clock_load(vdso);
 
 	// Setup seccomp and reexec if missing
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 	char filename[PATH_MAX+1];
 #endif
 	if (data.comm == NULL) {
@@ -348,9 +348,9 @@ noreturn static void bind_axon(bind_data data)
 			if (UNLIKELY(result != 0)) {
 				DIE("failed to apply seccomp filter", fs_strerror(result));
 			}
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 			// Send initial working directory
-			if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_WORKING_DIR) {
+			if (enabled_traces & TRACE_TYPE_UPDATE_WORKING_DIR) {
 				int result = fs_getcwd(filename, PATH_MAX);
 				if (UNLIKELY(result < 0)) {
 					DIE("unable to read working directory", fs_strerror(result));
@@ -437,9 +437,9 @@ noreturn static void bind_axon(bind_data data)
 	// Setup fd remapping
 	resurrect_fd_table();
 
-	// Send exec telemetry
-#ifdef ENABLE_TELEMETRY
-	if (enabled_telemetry & TELEMETRY_TYPE_EXEC) {
+	// Send exec trace
+#ifdef ENABLE_TRACER
+	if (enabled_traces & TRACE_TYPE_EXEC) {
 		struct fs_stat main_stat;
 		int result = fs_fstat(MAIN_FD, &main_stat);
 		if (result < 0) {
@@ -462,7 +462,7 @@ noreturn static void bind_axon(bind_data data)
 	}
 
 	// Send update credentials event
-	if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_CREDENTIALS) {
+	if (enabled_traces & TRACE_TYPE_UPDATE_CREDENTIALS) {
 		send_update_credentials_event(get_thread_storage(), startup_euid, startup_egid);
 	}
 #endif

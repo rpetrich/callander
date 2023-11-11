@@ -208,9 +208,6 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 		ERROR("too few bytes for ELF header", read_bytes);
 		return -ENOEXEC;
 	}
-	// WRITE_LITERAL(TELEMETRY_FD, "Read ELF header: ");
-	// write_int(TELEMETRY_FD, read_bytes);
-	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 	if (header.e_ident[EI_MAG0] != ELFMAG0 || header.e_ident[EI_MAG1] != ELFMAG1 || header.e_ident[EI_MAG2] != ELFMAG2 || header.e_ident[EI_MAG3] != ELFMAG3) {
 		ERROR("not an ELF binary");
 		return -ENOEXEC;
@@ -283,17 +280,14 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 				break;
 			}
 			case PT_DYNAMIC: {
-				// WRITE_LITERAL(TELEMETRY_FD, "Found dynamic header\n");
 				dynamic_ph = ph;
 				break;
 			}
 			case PT_INTERP: {
-				// WRITE_LITERAL(TELEMETRY_FD, "Found interpreter header, unsupported!\n");
 				off_interpreter = ph->p_offset;
 				break;
 			}
 			case PT_GNU_STACK: {
-				// WRITE_LITERAL(TELEMETRY_FD, "Found stack header\n");
 				out_info->executable_stack = ph->p_flags & PF_X ? EXECUTABLE_STACK_REQUIRED : EXECUTABLE_STACK_PROHIBITED;
 				break;
 			}
@@ -315,11 +309,6 @@ static int remote_load_binary(int fd, struct binary_info *out_info)
 		remote_munmap(mapped_address, end - start + off_start);
 		return -ENOEXEC;
 	}
-	// WRITE_LITERAL(TELEMETRY_FD, "Mapped at: ");
-	// write_int(TELEMETRY_FD, mapped_address);
-	// WRITE_LITERAL(TELEMETRY_FD, " : ");
-	// write_int(TELEMETRY_FD, mapped_address + (end - start) + off_start);
-	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 	uintptr_t map_offset = (uintptr_t)mapped_address - start + off_start;
 	for (int i = 0; i < header.e_phnum; i++) {
 		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header.e_phentsize * i];
@@ -1694,11 +1683,6 @@ static int remote_exec_fd_script(int fd, const char *named_path, const char *con
 	for (size_t i = 1; i <= argc; i++) {
 		*dest_argv++ = argv[i];
 	}
-	// WRITE_LITERAL(TELEMETRY_FD, "Executing script ");
-	// fs_write(TELEMETRY_FD, named_path, fs_strlen(named_path));
-	// WRITE_LITERAL(TELEMETRY_FD, " via ");
-	// fs_write(TELEMETRY_FD, arg0, fs_strlen(arg0));
-	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 	int interpreter_fd = fs_open(arg0, O_RDONLY, 0);
 	if (interpreter_fd < 0) {
 		fs_close(fd);

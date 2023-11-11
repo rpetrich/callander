@@ -14,8 +14,8 @@
 uid_t startup_euid;
 gid_t startup_egid;
 
-#ifdef ENABLE_TELEMETRY
-uint32_t enabled_telemetry;
+#ifdef ENABLE_TRACER
+uint32_t enabled_traces;
 #endif
 
 void set_tid_address(const void *tid_address)

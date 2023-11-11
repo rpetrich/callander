@@ -15,7 +15,7 @@
 #include "remote_library.h"
 #include "sockets.h"
 #include "target.h"
-#include "telemetry.h"
+#include "tracer.h"
 #include "tls.h"
 
 #include <arpa/inet.h>
@@ -78,10 +78,10 @@ static inline int translate_openat(int dirfd, const char *path, int flags, mode_
 __attribute__((warn_unused_result))
 static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *path, int flags, mode_t mode)
 {
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 	bool send_create;
 	int fd;
-	if (UNLIKELY(flags & O_CREAT) && UNLIKELY(enabled_telemetry & TELEMETRY_TYPE_CREATE)) {
+	if (UNLIKELY(flags & O_CREAT) && UNLIKELY(enabled_traces & TRACE_TYPE_CREATE)) {
 		fd = translate_openat(dirfd, path, flags & ~O_CREAT, mode);
 		send_create = fd == -ENOENT;
 		if (send_create) {
@@ -114,13 +114,13 @@ static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *
 				attempt_push_close(thread, &state, fd);
 			}
 		}
-#ifdef ENABLE_TELEMETRY
-		uint32_t mask = (flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY ? TELEMETRY_TYPE_OPEN_FOR_MODIFY : TELEMETRY_TYPE_OPEN_READ_ONLY;
+#ifdef ENABLE_TRACER
+		uint32_t mask = (flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY ? TRACE_TYPE_OPEN_FOR_MODIFY : TRACE_TYPE_OPEN_READ_ONLY;
 		if (send_create) {
-			mask |= TELEMETRY_TYPE_CREATE;
+			mask |= TRACE_TYPE_CREATE;
 		}
-		if (enabled_telemetry & (mask | TELEMETRY_TYPE_PTRACE)) {
-			// read file path, since it's required for enabled telemetry types
+		if (enabled_traces & (mask | TRACE_TYPE_PTRACE)) {
+			// read file path, since it's required for enabled trace types
 			char filename[PATH_MAX+1];
 			int result = fs_readlink_fd(fd, filename, sizeof(filename)-1);
 			if (result <= 0) {
@@ -132,11 +132,11 @@ static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *
 				send_create_event(thread, filename, result - 1, mode);
 			}
 			if ((flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY) {
-				if (enabled_telemetry & TELEMETRY_TYPE_OPEN_FOR_MODIFY) {
+				if (enabled_traces & TRACE_TYPE_OPEN_FOR_MODIFY) {
 					send_open_for_modify_event(thread, filename, result - 1, flags, (flags & O_CREAT) ? mode : 0);
 				}
 			} else {
-				if (enabled_telemetry & TELEMETRY_TYPE_OPEN_READ_ONLY) {
+				if (enabled_traces & TRACE_TYPE_OPEN_READ_ONLY) {
 					send_open_read_only_event(thread, filename, result - 1, flags);
 				}
 			}
@@ -197,7 +197,7 @@ static int wrapped_readlinkat(struct thread_storage *thread, int dirfd, const ch
 	return result;
 }
 
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 static int resolve_path_operation(struct thread_storage *thread, int dirfd, const char *path, char buffer[PATH_MAX], const char **out_filename, int *out_length)
 {
 	if (path == NULL) {
@@ -251,8 +251,8 @@ static int resolve_path_operation(struct thread_storage *thread, int dirfd, cons
 __attribute__((warn_unused_result))
 static int wrapped_unlinkat(struct thread_storage *thread, int dirfd, const char *path, int flags)
 {
-#ifdef ENABLE_TELEMETRY
-	if (enabled_telemetry & TELEMETRY_TYPE_DELETE) {
+#ifdef ENABLE_TRACER
+	if (enabled_traces & TRACE_TYPE_DELETE) {
 		// resolve path
 		char buffer[PATH_MAX];
 		int length;
@@ -278,8 +278,8 @@ static int wrapped_unlinkat(struct thread_storage *thread, int dirfd, const char
 __attribute__((warn_unused_result))
 static int wrapped_renameat(struct thread_storage *thread, int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
 {
-#ifdef ENABLE_TELEMETRY
-	if (enabled_telemetry & TELEMETRY_TYPE_RENAME) {
+#ifdef ENABLE_TRACER
+	if (enabled_traces & TRACE_TYPE_RENAME) {
 		// resolve old path
 		char old_buffer[PATH_MAX];
 		int old_length;
@@ -328,8 +328,8 @@ static int wrapped_renameat(struct thread_storage *thread, int old_dirfd, const 
 __attribute__((warn_unused_result))
 static int wrapped_linkat(struct thread_storage *thread, int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
 {
-#ifdef ENABLE_TELEMETRY
-	if (enabled_telemetry & TELEMETRY_TYPE_HARDLINK) {
+#ifdef ENABLE_TRACER
+	if (enabled_traces & TRACE_TYPE_HARDLINK) {
 		// resolve old path
 		char old_buffer[PATH_MAX];
 		int old_length;
@@ -366,8 +366,8 @@ static int wrapped_linkat(struct thread_storage *thread, int old_dirfd, const ch
 __attribute__((warn_unused_result))
 static int wrapped_symlinkat(struct thread_storage *thread, const char *old_path, int new_dirfd, const char *new_path)
 {
-#ifdef ENABLE_TELEMETRY
-	if (enabled_telemetry & TELEMETRY_TYPE_SYMLINK) {
+#ifdef ENABLE_TRACER
+	if (enabled_traces & TRACE_TYPE_SYMLINK) {
 		// resolve path
 		char buffer[PATH_MAX];
 		int length;
@@ -390,7 +390,7 @@ static int wrapped_symlinkat(struct thread_storage *thread, const char *old_path
 	return fs_symlinkat(old_path, new_dirfd, new_path);
 }
 
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 
 __attribute__((warn_unused_result))
 static int wrapped_chmodat(struct thread_storage *thread, int dirfd, const char *path, mode_t mode)
@@ -412,11 +412,11 @@ static int wrapped_chmodat(struct thread_storage *thread, int dirfd, const char 
 	}
 	int result = fs_fchmod(fd, mode);
 	fs_close(fd);
-	if (enabled_telemetry & TELEMETRY_TYPE_CHMOD) {
+	if (enabled_traces & TRACE_TYPE_CHMOD) {
 		send_chmod_event(thread, filename, filename_len, mode);
 	}
 	if (result == 0) {
-		if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
+		if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
 			send_attribute_change_event(thread, filename, filename_len);
 		}
 	}
@@ -467,7 +467,7 @@ static int wrapped_chownat(struct thread_storage *thread, int dirfd, const char 
 
 static void working_dir_changed(struct thread_storage *thread)
 {
-	if (enabled_telemetry & TELEMETRY_TYPE_UPDATE_WORKING_DIR) {
+	if (enabled_traces & TRACE_TYPE_UPDATE_WORKING_DIR) {
 		char path[PATH_MAX];
 		intptr_t result = fs_getcwd(path, sizeof(path));
 		if (result > 0) {
@@ -476,7 +476,7 @@ static void working_dir_changed(struct thread_storage *thread)
 	}
 }
 
-static bool decode_sockaddr(struct telemetry_sockaddr *out, const union copied_sockaddr *data, size_t size) {
+static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_sockaddr *data, size_t size) {
 	switch ((out->sa_family = data->addr.sa_family)) {
 		case AF_INET: {
 			out->sin_port = data->in.sin_port;
@@ -960,8 +960,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
 				return PROXY_CALL(__NR_fchmodat, proxy_value(real.fd), proxy_string(real.path), proxy_value(mode), proxy_value(0));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & (TELEMETRY_TYPE_ATTRIBUTE_CHANGE | TELEMETRY_TYPE_CHMOD)) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & (TRACE_TYPE_ATTRIBUTE_CHANGE | TRACE_TYPE_CHMOD)) {
 				return wrapped_chmodat(thread, real.fd, real.path, mode);
 			}
 #endif
@@ -989,8 +989,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(fd, &real_fd)) {
 				return PROXY_CALL(__NR_fchmod, proxy_value(real_fd), proxy_value(mode));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & (TELEMETRY_TYPE_ATTRIBUTE_CHANGE | TELEMETRY_TYPE_CHMOD)) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & (TRACE_TYPE_ATTRIBUTE_CHANGE | TRACE_TYPE_CHMOD)) {
 				return wrapped_chmodat(thread, real_fd, NULL, mode);
 			}
 #endif
@@ -1005,8 +1005,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
 				return PROXY_CALL(__NR_fchownat, proxy_value(real.fd), proxy_string(real.path), proxy_value(owner), proxy_value(group), proxy_value(0));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
 				return wrapped_chownat(thread, real.fd, real.path, owner, group, 0);
 			}
 #endif
@@ -1024,8 +1024,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(fd, &real_fd)) {
 				return PROXY_CALL(__NR_fchown, proxy_value(real_fd), proxy_value(owner), proxy_value(group));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
 				return wrapped_chownat(thread, real_fd, NULL, owner, group, 0);
 			}
 #endif
@@ -1040,8 +1040,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
 				return PROXY_CALL(__NR_fchownat, proxy_value(real.fd), proxy_string(real.path), proxy_value(owner), proxy_value(group), proxy_value(AT_SYMLINK_NOFOLLOW));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
 				return wrapped_chownat(thread, real.fd, real.path, owner, group, AT_SYMLINK_NOFOLLOW);
 			}
 #endif
@@ -1061,8 +1061,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(fd, path, &real)) {
 				return PROXY_CALL(__NR_fchownat, proxy_value(real.fd), proxy_string(real.path), proxy_value(owner), proxy_value(group), proxy_value(flags));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_ATTRIBUTE_CHANGE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
 				return wrapped_chownat(thread, real.fd, real.path, owner, group, flags);
 			}
 #endif
@@ -2156,8 +2156,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_path(fd, path, &real)) {
 				return PROXY_CALL(__NR_fchmodat, proxy_value(real.fd), proxy_string(real.path), proxy_value(mode));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & (TELEMETRY_TYPE_ATTRIBUTE_CHANGE | TELEMETRY_TYPE_CHMOD)) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & (TRACE_TYPE_ATTRIBUTE_CHANGE | TRACE_TYPE_CHMOD)) {
 				return wrapped_chmodat(thread, real.fd, real.path, mode);
 			}
 #endif
@@ -2284,8 +2284,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			// see musl's __pthread_exit function and the associated __unmapself helper
 			intptr_t sp = context != NULL ? (intptr_t)context->uc_mcontext.REG_SP : (intptr_t)&sp;
 			if (sp >= arg1 && sp <= arg1 + arg2) {
-#ifdef ENABLE_TELEMETRY
-				if (enabled_telemetry & TELEMETRY_TYPE_EXIT && fs_gettid() == get_self_pid()) {
+#ifdef ENABLE_TRACER
+				if (enabled_traces & TRACE_TYPE_EXIT && fs_gettid() == get_self_pid()) {
 					send_exit_event(thread, arg1);
 				}
 #endif
@@ -2303,8 +2303,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(__NR_munmap, arg1, arg2);
 		}
 		case __NR_exit:
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_EXIT && fs_gettid() == get_self_pid()) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_EXIT && fs_gettid() == get_self_pid()) {
 				send_exit_event(thread, arg1);
 			}
 #endif
@@ -2322,8 +2322,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			fs_exitthread(arg1);
 			__builtin_unreachable();
 		case __NR_exit_group:
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_EXIT) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_EXIT) {
 				send_exit_event(thread, arg1);
 			}
 #endif
@@ -2346,7 +2346,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return invalid_local_operation();
 			}
 			int result = chdir_become_local_path(real.path);
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 			if (result == 0) {
 				working_dir_changed(thread);
 			}
@@ -2372,7 +2372,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return chdir_become_remote_fd(new_remote_fd);
 			}
 			int result = chdir_become_local_fd(real_fd);
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 			if (result == 0) {
 				working_dir_changed(thread);
 			}
@@ -2390,24 +2390,24 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_ptrace: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_PTRACE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_PTRACE) {
 				send_ptrace_attempt_event(thread, (int)arg1, (pid_t)arg2, (void *)arg3, (void *)arg4);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
 		case __NR_process_vm_readv: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_PTRACE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_PTRACE) {
 				send_process_vm_readv_attempt_event(thread, (pid_t)arg1, (const struct iovec *)arg2, (unsigned long)arg3, (const struct iovec *)arg4, (unsigned long)arg5, (unsigned long)arg6);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
 		case __NR_process_vm_writev: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_PTRACE) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_PTRACE) {
 				send_process_vm_writev_attempt_event(thread, (pid_t)arg1, (const struct iovec *)arg2, (unsigned long)arg3, (const struct iovec *)arg4, (unsigned long)arg5, (unsigned long)arg6);
 			}
 #endif
@@ -2465,26 +2465,26 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (result < 0) {
 				return result;
 			}
-#ifdef ENABLE_TELEMETRY
-			struct telemetry_sockaddr telemetry;
-			memset(&telemetry, 0, sizeof(struct telemetry_sockaddr));
-			if (enabled_telemetry & (TELEMETRY_TYPE_CONNECT | TELEMETRY_TYPE_CONNECT_CLOUD | TELEMETRY_TYPE_CONNECT_UNIX) && decode_sockaddr(&telemetry, &copied, size)) {
+#ifdef ENABLE_TRACER
+			struct trace_sockaddr trace;
+			memset(&trace, 0, sizeof(struct trace_sockaddr));
+			if (enabled_traces & (TRACE_TYPE_CONNECT | TRACE_TYPE_CONNECT_CLOUD | TRACE_TYPE_CONNECT_UNIX) && decode_sockaddr(&trace, &copied, size)) {
 				// handle TCP first
 				if (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) {
-					if (enabled_telemetry & TELEMETRY_TYPE_CONNECT) {
-						send_connect_attempt_event(thread, arg1, telemetry);
+					if (enabled_traces & TRACE_TYPE_CONNECT) {
+						send_connect_attempt_event(thread, arg1, trace);
 					}
-					if (enabled_telemetry & TELEMETRY_TYPE_CONNECT_CLOUD) {
+					if (enabled_traces & TRACE_TYPE_CONNECT_CLOUD) {
 						// only IPv4 to 169.254.129.254:80
 						if (copied.addr.sa_family == AF_INET && copied.in.sin_addr.s_addr == fs_htonl(0xa9fea9fe) && copied.in.sin_port == fs_htons(80)) {
 							send_connect_aws_attempt_event(thread);
 						}
 					}
 				} else if (copied.addr.sa_family == AF_UNIX) {
-					send_connect_unix_attempt_event(thread, (uint64_t *)&telemetry.sun_path, size);
+					send_connect_unix_attempt_event(thread, (uint64_t *)&trace.sun_path, size);
 				}
 				intptr_t result = FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
-				if (enabled_telemetry & TELEMETRY_TYPE_CONNECT) {
+				if (enabled_traces & TRACE_TYPE_CONNECT) {
 					send_connect_result_event(thread, result);
 				}
 				return result;
@@ -2493,8 +2493,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
 		}
 		case __NR_bpf: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_BPF) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_BPF) {
 				send_bpf_attempt_event(thread, arg1, (union bpf_attr *)arg2, (unsigned int)arg3);
 			}
 #endif
@@ -2513,16 +2513,16 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case __NR_brk: {
 			intptr_t result = FS_SYSCALL(syscall, arg1);
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_BRK) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_BRK) {
 				send_brk_result_event(thread, result);
 			}
 #endif
 			return result;
 		}
 		case __NR_ioctl: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_IOCTL) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_IOCTL) {
 				send_ioctl_attempt_event(thread, (int)arg1, (unsigned long)arg2, arg3);
 			}
 #endif
@@ -2618,8 +2618,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (lookup_real_fd(arg1, &real_fd)) {
 				return PROXY_CALL(__NR_listen, proxy_value(real_fd), proxy_value(arg2));
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_LISTEN) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_LISTEN) {
 				send_listen_attempt_event(thread, arg1, arg2);
 				intptr_t result = FS_SYSCALL(syscall, real_fd, arg2);
 				send_listen_result_event(thread, result);
@@ -2649,10 +2649,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (result < 0) {
 				return result;
 			}
-#ifdef ENABLE_TELEMETRY
-			struct telemetry_sockaddr telemetry;
-			if (enabled_telemetry & TELEMETRY_TYPE_BIND && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&telemetry, &copied, size)) {
-				send_bind_attempt_event(thread, arg1, telemetry);
+#ifdef ENABLE_TRACER
+			struct trace_sockaddr trace;
+			if (enabled_traces & TRACE_TYPE_BIND && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&trace, &copied, size)) {
+				send_bind_attempt_event(thread, arg1, trace);
 				intptr_t result = FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
 				send_bind_result_event(thread, result);
 				return result;
@@ -2662,9 +2662,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case __NR_dup: {
 			intptr_t result = perform_dup(arg1, 0);
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 			if (result >= 0) {
-				if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
+				if (enabled_traces & TRACE_TYPE_DUP) {
 					// emulate a dup3
 					send_dup3_attempt_event(thread, arg1, result, 0);
 				}
@@ -2674,8 +2674,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 #ifdef __NR_dup2
 		case __NR_dup2: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_DUP) {
 				send_dup3_attempt_event(thread, arg1, arg2, 0);
 			}
 #endif
@@ -2689,8 +2689,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (arg1 == arg2) {
 				return -EINVAL;
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_DUP) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_DUP) {
 				send_dup3_attempt_event(thread, arg1, arg2, arg3);
 			}
 #endif
@@ -2701,8 +2701,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			switch (arg2) {
 				case F_DUPFD: {
 					intptr_t result = perform_dup(arg1, 0);
-#ifdef ENABLE_TELEMETRY
-					if ((enabled_telemetry & TELEMETRY_TYPE_DUP) && result >= 0) {
+#ifdef ENABLE_TRACER
+					if ((enabled_traces & TRACE_TYPE_DUP) && result >= 0) {
 						// emulate a dup3
 						send_dup3_attempt_event(thread, arg1, result, arg2 == F_DUPFD_CLOEXEC ? O_CLOEXEC : 0);
 					}
@@ -2711,8 +2711,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				case F_DUPFD_CLOEXEC: {
 					intptr_t result = perform_dup(arg1, O_CLOEXEC);
-#ifdef ENABLE_TELEMETRY
-					if ((enabled_telemetry & TELEMETRY_TYPE_DUP) && result >= 0) {
+#ifdef ENABLE_TRACER
+					if ((enabled_traces & TRACE_TYPE_DUP) && result >= 0) {
 						// emulate a dup3
 						send_dup3_attempt_event(thread, arg1, result, arg2 == F_DUPFD_CLOEXEC ? O_CLOEXEC : 0);
 					}
@@ -2766,8 +2766,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
 		case __NR_setrlimit: {
-#ifdef ENABLE_TELEMETRY
-			if (arg1 == RLIMIT_STACK && (enabled_telemetry & TELEMETRY_TYPE_RLIMIT) && arg2) {
+#ifdef ENABLE_TRACER
+			if (arg1 == RLIMIT_STACK && (enabled_traces & TRACE_TYPE_RLIMIT) && arg2) {
 				struct rlimit newlimit = *(const struct rlimit *)arg2;
 				if (newlimit.rlim_cur == 18446744073709551615ull) {
 					send_setrlimit_attempt_event(thread, 0, arg1, &newlimit);
@@ -2778,8 +2778,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_prlimit64: {
-#ifdef ENABLE_TELEMETRY
-			if (arg2 == RLIMIT_STACK && (enabled_telemetry & TELEMETRY_TYPE_RLIMIT) && arg3) {
+#ifdef ENABLE_TRACER
+			if (arg2 == RLIMIT_STACK && (enabled_traces & TRACE_TYPE_RLIMIT) && arg3) {
 				struct rlimit newlimit = *(const struct rlimit *)arg3;
 				if (newlimit.rlim_cur == 18446744073709551615ull) {
 					send_setrlimit_attempt_event(thread, arg1, arg2, &newlimit);
@@ -2790,32 +2790,32 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4);
 		}
 		case __NR_userfaultfd: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_USER_FAULT) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_USER_FAULT) {
 				send_userfaultfd_attempt_event(thread, arg1);
 			}
 #endif
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}
 		case __NR_setuid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETUID) {
 				send_setuid_attempt_event(thread, arg1);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_setreuid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETUID) {
 				send_setreuid_attempt_event(thread, arg1, arg2);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_setresuid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETUID) {
 				uid_t *ruid = (uid_t *)arg1;
 				uid_t *euid = (uid_t *)arg2;
 				uid_t *suid = (uid_t *)arg3;
@@ -2825,32 +2825,32 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
 		case __NR_setfsuid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETUID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETUID) {
 				send_setfsuid_attempt_event(thread, arg1);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_setgid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETGID) {
 				send_setgid_attempt_event(thread, arg1);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
 		case __NR_setregid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETGID) {
 				send_setregid_attempt_event(thread, arg1, arg2);
 			}
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
 		case __NR_setresgid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETGID) {
 				gid_t *rgid = (gid_t *)arg1;
 				gid_t *egid = (gid_t *)arg2;
 				gid_t *sgid = (gid_t *)arg3;
@@ -2860,8 +2860,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
 		case __NR_setfsgid: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_SETGID) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_SETGID) {
 				send_setfsgid_attempt_event(thread, arg1);
 			}
 #endif
@@ -2904,10 +2904,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					return result;
 				}
 			}
-#ifdef ENABLE_TELEMETRY
-			struct telemetry_sockaddr telemetry;
-			if (enabled_telemetry & TELEMETRY_TYPE_SENDTO && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&telemetry, &copied, size)) {
-				send_sendto_attempt_event(thread, arg1, telemetry);
+#ifdef ENABLE_TRACER
+			struct tracer_sockaddr trace;
+			if (enabled_traces & TRACE_TYPE_SENDTO && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&trace, &copied, size)) {
+				send_sendto_attempt_event(thread, arg1, trace);
 				intptr_t result = FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, addr != NULL ? (intptr_t)&copied : 0, size);
 				send_sendto_result_event(thread, result);
 				return result;
@@ -2916,8 +2916,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, (intptr_t)&copied, size);
 		}
 		case __NR_mprotect: {
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_MEMORY_PROTECTION && arg3 & PROT_EXEC) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_MEMORY_PROTECTION && arg3 & PROT_EXEC) {
 				send_mprotect_attempt_event(thread, (void *)arg1, arg2, arg3);
 			}
 #endif
@@ -2931,8 +2931,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				socklen_t *len = (socklen_t *)arg3;
 				return install_remote_fd(PROXY_CALL(__NR_accept4, proxy_value(real_fd), proxy_out(addr, len ? *len : 0), proxy_inout(len, sizeof(*len)), proxy_value(arg4 | O_CLOEXEC)), (arg4 & SOCK_CLOEXEC) ? O_CLOEXEC : 0);
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_ACCEPT) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_ACCEPT) {
 				send_accept_attempt_event(thread, arg1);
 				int result = FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 				send_accept_result_event(thread, result);
@@ -2949,8 +2949,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				socklen_t *len = (socklen_t *)arg3;
 				return install_remote_fd(PROXY_CALL(__NR_accept, proxy_value(real_fd), proxy_out(addr, len ? *len : 0), proxy_inout(len, sizeof(*len))), 0);
 			}
-#ifdef ENABLE_TELEMETRY
-			if (enabled_telemetry & TELEMETRY_TYPE_ACCEPT) {
+#ifdef ENABLE_TRACER
+			if (enabled_traces & TRACE_TYPE_ACCEPT) {
 				send_accept_attempt_event(thread, arg1);
 				int result = FS_SYSCALL(syscall, real_fd, arg2, arg3);
 				send_accept_result_event(thread, result);

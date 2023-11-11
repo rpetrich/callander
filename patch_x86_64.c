@@ -313,7 +313,6 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 		PATCH_LOG("Patching push", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
-	// WRITE_LITERAL(TELEMETRY_FD, "Failed to patch: not a known suffix instruction\n");
 	if (x86_is_return_instruction(addr)) {
 		PATCH_LOG("Patching address with ret", temp_str(formatter(ins, formatter_data)));
 		return true;

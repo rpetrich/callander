@@ -4,7 +4,7 @@
 
 #include "freestanding.h"
 #include "axon.h"
-#include "telemetry.h"
+#include "tracer.h"
 
 #include <errno.h>
 #include <linux/audit.h>
@@ -106,7 +106,7 @@ int apply_seccomp(void)
 // 		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_dup3, 0, 4),
 // 		BPF_STMT(BPF_LD+BPF_W+BPF_ABS, offsetof(struct seccomp_data, args) + 8),
 // 		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, SELF_FD, 1, 0),
-// 		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, TELEMETRY_FD, 0, 1),
+// 		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, TRACER_FD, 0, 1),
 // 		BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_ERRNO+EBADF),
 		// Allow if address matches our syscall function
 #ifdef __LP64__

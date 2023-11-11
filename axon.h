@@ -45,14 +45,13 @@ extern noreturn void abort();
 // nicely in top and can be killed by name
 #define AXON_COMM "AXON_COMM="
 // AXON_EXEC is an environment variable containing the program's intended
-// exec path value. This is used for tracing the intended program path in
-// telemetry
+// exec path value. This is used for tracing the intended program path 
 #define AXON_EXEC "AXON_EXEC="
 
-#ifdef ENABLE_TELEMETRY
-// AXON_TELE is an environment variable containing the telemetry to intercept
+#ifdef ENABLE_TRACER
+// AXON_TRACES is an environment variable containing the traces to intercept
 // and report to standard error.
-#define AXON_TELE "AXON_TELE="
+#define AXON_TRACES "AXON_TRACES="
 #endif
 
 #if 0

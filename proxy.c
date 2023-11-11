@@ -7,7 +7,6 @@
 #include "shared_mutex.h"
 #include "resolver.h"
 #include "remote.h"
-#include "telemetry.h"
 
 #include <errno.h>
 #include <limits.h>

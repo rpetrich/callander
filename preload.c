@@ -8,7 +8,7 @@
 #include <string.h>
 #include <sys/auxv.h>
 
-#ifdef ENABLE_TELEMETRY
+#ifdef ENABLE_TRACER
 
 #define LD_PRELOAD "LD_PRELOAD="
 #define BIN_AXON "/bin/axon"

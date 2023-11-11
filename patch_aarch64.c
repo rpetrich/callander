@@ -223,9 +223,6 @@ static enum patch_status patch_common(struct thread_storage *thread, uintptr_t i
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 	return PATCH_STATUS_INSTALLED_TRAMPOLINE;
-	// WRITE_LITERAL(TELEMETRY_FD, " to ");
-	// write_int(TELEMETRY_FD, stub_address);
-	// WRITE_LITERAL(TELEMETRY_FD, "\n");
 }
 
 enum patch_status patch_breakpoint(struct thread_storage *thread, intptr_t address, __attribute__((unused)) intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
