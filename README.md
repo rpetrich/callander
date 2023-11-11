@@ -20,6 +20,9 @@ a more restrictive policy that blocks calls that only occur during startup. This
 means many programs can run without the ability to forge executable memory
 mappings.
 
+Information on how callander works was presented at All Day DevOps 2023. Slides
+for this presentation are available [here](https://docs.google.com/presentation/d/1YHSBabFotD6UylVz8r4-DaJa5ZxxNUwmu-jf8bvyNgA/edit#slide=id.p).
+
 ## Installation
 
 1. Download a .tgz from https://github.com/rpetrich/callander/releases/latest
