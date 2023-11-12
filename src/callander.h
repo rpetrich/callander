@@ -453,8 +453,8 @@ enum {
 #endif
 };
 
-const int syscall_argument_abi_register_indexes[6];
-const int sysv_argument_abi_register_indexes[SYSV_REGISTER_ARGUMENT_COUNT];
+extern const int syscall_argument_abi_register_indexes[6];
+extern const int sysv_argument_abi_register_indexes[SYSV_REGISTER_ARGUMENT_COUNT];
 
 typedef uint64_t register_mask;
 
@@ -531,7 +531,7 @@ struct registers {
 #endif
 };
 
-const struct registers empty_registers;
+extern const struct registers empty_registers;
 
 struct analysis_frame {
 	const struct analysis_frame *next;
