@@ -16,3 +16,7 @@ jobs:
     - name: make
       run: make -j -k
       working-directory: src
+    - uses: actions/upload-artifact@v3
+      with:
+        name: callander
+        path: src/callander*
