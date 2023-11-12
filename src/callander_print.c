@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#define _XOPEN_SOURCE
 #include "callander_print.h"
 
 #include <sys/mount.h>
@@ -43,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/user.h>
 #include <sys/xattr.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <time.h>
 
@@ -839,7 +841,7 @@ static struct enum_option flock_operations[] = {
 	DESCRIBE_ENUM(LOCK_MAND),
 };
 
-static const char *flock_flags[] = {
+static const char *flock_flags[64] = {
 	DESCRIBE_FLAG(LOCK_NB),
 	DESCRIBE_FLAG(LOCK_READ),
 	DESCRIBE_FLAG(LOCK_WRITE),

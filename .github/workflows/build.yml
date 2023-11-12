@@ -1,0 +1,23 @@
+name: Build
+
+on:
+  push:
+    branches: 
+    - main
+  pull_request:
+    branches: 
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: make -j -k
+      working-directory: src
+    - run: tar cfz callander-$GITHUB_SHA.tgz callander callander.debug
+      working-directory: src
+    - uses: actions/upload-artifact@v3
+      with:
+        name: callander
+        path: src/callander-*.tgz
