@@ -841,7 +841,7 @@ static struct enum_option flock_operations[] = {
 	DESCRIBE_ENUM(LOCK_MAND),
 };
 
-static const char *flock_flags[] = {
+static const char *flock_flags[64] = {
 	DESCRIBE_FLAG(LOCK_NB),
 	DESCRIBE_FLAG(LOCK_READ),
 	DESCRIBE_FLAG(LOCK_WRITE),
