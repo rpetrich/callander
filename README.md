@@ -34,7 +34,7 @@ for this presentation are available [here](https://docs.google.com/presentation/
 Prefix any command you wish to run sandboxed with `callander`. Callander will
 analyze, apply the sandbox, and run the program.
 
-Add the --show-permitted option to see which system calls callander has
+Add the `--show-permitted` option to see which system calls callander has
 discovered your command uses:
 
 ```
