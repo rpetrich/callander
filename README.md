@@ -54,7 +54,7 @@ Callander can be built by running make:
 
 ```bash
 git clone git@github.com:rpetrich/callander.git
-cd callander
+cd callander/src
 make -j4
 ```
 
