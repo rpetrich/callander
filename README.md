@@ -27,7 +27,7 @@ for this presentation are available [here](https://docs.google.com/presentation/
 
 1. Download a .tgz from https://github.com/rpetrich/callander/releases/latest
 2. Extract with `tar xfz callander-*.tgz` or a graphical decompression utility
-3. Run `callander`
+3. Run a command prefixed with the path to `callander`
 
 ## Usage
 
