@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#define _XOPEN_SOURCE
 #include "callander_print.h"
 
 #include <sys/mount.h>
@@ -43,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/user.h>
 #include <sys/xattr.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <time.h>
 
