@@ -578,6 +578,8 @@ struct searched_instructions {
 	uint16_t generation;
 	uintptr_t *loaded_addresses;
 	int loaded_address_count;
+	struct register_state *fopen_modes;
+	size_t fopen_mode_count;
 };
 
 __attribute__((nonnull(1)))

@@ -1315,6 +1315,8 @@ void init_searched_instructions(struct searched_instructions *search)
 	search->generation = 0;
 	search->queue = (struct queued_instructions){ 0 };
 	search->lookup_base_addresses = (struct lookup_base_addresses){ 0 };
+	search->fopen_modes = NULL;
+	search->fopen_mode_count = 0;
 }
 
 void cleanup_searched_instructions(struct searched_instructions *search)
@@ -1335,6 +1337,8 @@ void cleanup_searched_instructions(struct searched_instructions *search)
 		}
 	}
 	LOG("block count", (intptr_t)count);
+	free(search->fopen_modes);
+	search->fopen_mode_count = 0;
 	free(table);
 	free(search->queue.queue);
 	search->table = NULL;
@@ -2767,6 +2771,78 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
 		}
 	}
 }
+
+static void handle_IO_file_fopen(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	// record fopen mode arguments
+	size_t i = analysis->search.fopen_mode_count;
+	size_t count = i + 1;
+	analysis->search.fopen_modes = realloc(analysis->search.fopen_modes, sizeof(*analysis->search.fopen_modes) * count);
+	analysis->search.fopen_mode_count = count;
+	int mode_arg = sysv_argument_abi_register_indexes[2];
+	analysis->search.fopen_modes[i] = state->registers[mode_arg];
+}
+
+static void handle_IO_file_open(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	// parse previously recorded fopen mode
+	size_t count = analysis->search.fopen_mode_count;
+	if (count == 0) {
+		return;
+	}
+	if (!register_is_exactly_known(&analysis->search.fopen_modes[count-1])) {
+		return;
+	}
+	const char *mode_str = (const char *)analysis->search.fopen_modes[count-1].value;
+	struct loaded_binary *binary;
+	int prot = protection_for_address(&analysis->loader, mode_str, &binary, NULL);
+	if ((prot & (PROT_READ | PROT_WRITE)) != PROT_READ) {
+		return;
+	}
+	int mode;
+	int flags = 0;
+	switch (mode_str[0]) {
+		case 'r':
+			mode = O_RDONLY;
+			break;
+		case 'w':
+			mode = O_WRONLY;
+			break;
+		case 'a':
+			mode = O_WRONLY;
+			flags = O_CREAT|O_APPEND;
+			break;
+		default:
+			return;
+	}
+	for (int i = 1; i < 7; ++i) {
+		switch (mode_str[i]) {
+			case '\0':
+				break;
+			case '+':
+				mode = O_RDWR;
+				continue;
+			case 'x':
+				flags |= O_EXCL;
+				continue;
+			case 'b':
+				continue;
+			case 'm':
+				continue;
+			case 'c':
+				continue;
+			case 'e':
+				flags |= O_CLOEXEC;
+				continue;
+			default:
+				continue;
+		}
+		break;
+	}
+	int mode_arg = sysv_argument_abi_register_indexes[2];
+	set_register(&state->registers[mode_arg], mode|flags);
+}
+
 static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libseccomp syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
@@ -3007,6 +3083,13 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		ins_ptr mmap = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "mmap", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (mmap) {
 			find_and_add_callback(analysis, mmap, 0, 0, 0, EFFECT_NONE, handle_mmap, NULL);
+		}
+		// special-case fopen's mode argument
+		ins_ptr _IO_file_fopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_IO_file_fopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		ins_ptr _IO_file_open = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_IO_file_open", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (_IO_file_fopen && _IO_file_open) {
+			find_and_add_callback(analysis, _IO_file_fopen, 0, 0, 0, EFFECT_NONE, handle_IO_file_fopen, NULL);
+			find_and_add_callback(analysis, _IO_file_open, 0, 0, 0, EFFECT_NONE, handle_IO_file_open, NULL);
 		}
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
