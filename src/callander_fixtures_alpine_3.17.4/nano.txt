@@ -4,7 +4,10 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(ld-musl-x86_64.so.1+0x94b63, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(ld-musl-x86_64.so.1+0x94cb9, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)

@@ -2,7 +2,8 @@ callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
 open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(any, O_RDWR, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(/usr/bin/isohybrid+0x7160, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(libuuid.so.1+0x6000, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(libuuid.so.1+0x6100, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(libuuid.so.1+0x610d, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)

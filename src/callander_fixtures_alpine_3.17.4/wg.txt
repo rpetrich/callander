@@ -5,7 +5,7 @@ open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1
 open(ld-musl-x86_64.so.1+0x94bc8, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4a451(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x94bd3, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4a451(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x94c58, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4a451(__fopen_rb_ca*+52)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/usr/bin/wg+0xa81e, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(/usr/bin/wg+0xa947, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(/usr/bin/wg+0xa81e, any, any) @ ld-musl-x86_64.so.1+0x583bc

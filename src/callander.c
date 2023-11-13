@@ -2731,6 +2731,18 @@ static void handle_nss_usage(struct program_state *analysis, ins_ptr ins, __attr
 
 static void *find_any_symbol_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol);
 
+static const char *find_any_symbol_name_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types)
+{
+	if (binary != NULL) {
+		const struct symbol_info *symbols;
+		const ElfW(Sym) *symbol;
+		if (find_any_symbol_by_address(loader, binary, addr, symbol_types, &symbols, &symbol) != NULL) {
+			return symbol_name(symbols, symbol);
+		}
+	}
+	return NULL;
+}
+
 static void handle_mprotect(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	// block creating executable stacks
@@ -2738,13 +2750,9 @@ static void handle_mprotect(struct program_state *analysis, __attribute__((unuse
 	if (!register_is_exactly_known(&state->registers[third_arg])) {
 		if (caller != NULL) {
 			struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
-			const struct symbol_info *symbols;
-			const ElfW(Sym) *symbol;
-			if (find_any_symbol_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL, &symbols, &symbol) != NULL) {
-				const char *name = symbol_name(symbols, symbol);
-				if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
-					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
-				}
+			const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
+			if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+				set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 			}
 		}
 	}
@@ -2759,13 +2767,9 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
 		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & MAP_STACK) == MAP_STACK) {
 			if (caller != NULL) {
 				struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
-				const struct symbol_info *symbols;
-				const ElfW(Sym) *symbol;
-				if (find_any_symbol_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL, &symbols, &symbol) != NULL) {
-					const char *name = symbol_name(symbols, symbol);
-					if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
-						set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
-					}
+				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
+				if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 				}
 			}
 		}
@@ -2841,6 +2845,31 @@ static void handle_IO_file_open(struct program_state *analysis, __attribute__((u
 	}
 	int mode_arg = sysv_argument_abi_register_indexes[2];
 	set_register(&state->registers[mode_arg], mode|flags);
+}
+
+static void handle_fopen(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	// record fopen mode arguments
+	size_t i = analysis->search.fopen_mode_count;
+	size_t count = i + 1;
+	analysis->search.fopen_modes = realloc(analysis->search.fopen_modes, sizeof(*analysis->search.fopen_modes) * count);
+	analysis->search.fopen_mode_count = count;
+	int mode_arg = sysv_argument_abi_register_indexes[1];
+	analysis->search.fopen_modes[i] = state->registers[mode_arg];
+}
+
+static int musl_fmodeflags(const char *mode)
+{
+	int flags;
+	if (*fs_strchr(mode, '+')) flags = O_RDWR;
+	else if (*mode == 'r') flags = O_RDONLY;
+	else flags = O_WRONLY;
+	if (*fs_strchr(mode, 'x')) flags |= O_EXCL;
+	if (*fs_strchr(mode, 'e')) flags |= O_CLOEXEC;
+	if (*mode != 'r') flags |= O_CREAT;
+	if (*mode == 'w') flags |= O_TRUNC;
+	if (*mode == 'a') flags |= O_APPEND;
+	return flags;
 }
 
 static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
@@ -3162,6 +3191,12 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			find_and_add_callback(analysis, setxid, (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], (register_mask)1 << sysv_argument_abi_register_indexes[0], EFFECT_NONE, handle_musl_setxid, NULL);
 		}
 		update_known_function(analysis, new_binary, "cancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
+	}
+	if (new_binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
+		ins_ptr fopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "fopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (fopen) {
+			find_and_add_callback(analysis, fopen, 0, 0, 0, EFFECT_NONE, handle_fopen, NULL);
+		}
 	}
 	// setxid signal handler callbacks
 	if (new_binary->special_binary_flags & (BINARY_IS_PTHREAD | BINARY_IS_LIBC)) {
@@ -4642,27 +4677,24 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 	}
 	// workaround for manual jump table in libc's __vfprintf_internal implementation
 	if (binary->special_binary_flags & BINARY_IS_LIBC) {
-		const ElfW(Sym) *symbol = NULL;
-		if (find_any_symbol_by_address(loader, binary, table, INTERNAL_COMMON_SYMBOL & DEBUG_SYMBOL_FORCING_LOAD, &symbols, &symbol)) {
-			const char *name = symbol_name(symbols, symbol);
-			if (fs_strncmp(name, "step", sizeof("step")-1) == 0) {
-				const char *jumps_text = &name[5];
-				switch (name[4]) {
-					case '3':
-						if (*jumps_text != 'a' && *jumps_text != 'b') {
-							break;
-						}
-						jumps_text++;
-						// fallthrough
-					case '0':
-					case '1':
-					case '2':
-					case '4':
-						if (fs_strncmp(jumps_text, "_jumps", sizeof("_jumps")-1) == 0) {
-							return 30;
-						}
+		const char *name = find_any_symbol_name_by_address(loader, binary, table, INTERNAL_COMMON_SYMBOL & DEBUG_SYMBOL_FORCING_LOAD);
+		if (name != NULL && fs_strncmp(name, "step", sizeof("step")-1) == 0) {
+			const char *jumps_text = &name[5];
+			switch (name[4]) {
+				case '3':
+					if (*jumps_text != 'a' && *jumps_text != 'b') {
 						break;
-				}
+					}
+					jumps_text++;
+					// fallthrough
+				case '0':
+				case '1':
+				case '2':
+				case '4':
+					if (fs_strncmp(jumps_text, "_jumps", sizeof("_jumps")-1) == 0) {
+						return 30;
+					}
+					break;
 			}
 		}
 	}
@@ -5810,6 +5842,25 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							self.description = NULL;
 							LOG("syscall address", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 							self.description = "syscall";
+							// special case musl's fopen
+							if (value == __NR_open && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[1]])) {
+								struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
+								if (binary != NULL && (binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN))) {
+									const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
+									if (name != NULL && (fs_strcmp(name, "fopen") == 0 || fs_strcmp(name, "fopen64") == 0)) {
+										size_t count = analysis->search.fopen_mode_count;
+										if (count != 0 && register_is_exactly_known(&analysis->search.fopen_modes[count-1])) {
+											const char *mode_str = (const char *)analysis->search.fopen_modes[count-1].value;
+											struct loaded_binary *mode_binary;
+											int prot = protection_for_address(&analysis->loader, mode_str, &mode_binary, NULL);
+											if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
+												int mode = musl_fmodeflags(mode_str);
+												set_register(&self.current_state.registers[syscall_argument_abi_register_indexes[1]], mode);
+											}
+										}
+									}
+								}
+							}
 							record_syscall(analysis, value, self, required_effects);
 							// syscalls always clear RAX and R11
 							clear_register(&self.current_state.registers[REGISTER_RAX]);
@@ -5871,37 +5922,31 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 								}
 								if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
-									const struct symbol_info *symbols;
-									const ElfW(Sym) *symbol;
-									if (find_any_symbol_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
-										const char *name = symbol_name(symbols, symbol);
-										if (name != NULL && fs_strcmp(name, "next_line") == 0) {
-											// this is a giant hack
-											self.current_state.registers[REGISTER_RAX].value = self.current_state.registers[REGISTER_RAX].max = __NR_read;
-											goto syscall_nr_is_known;
-										}
+									const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
+									if (name != NULL && fs_strcmp(name, "next_line") == 0) {
+										// this is a giant hack
+										self.current_state.registers[REGISTER_RAX].value = self.current_state.registers[REGISTER_RAX].max = __NR_read;
+										goto syscall_nr_is_known;
 									}
 									if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
 										for (const struct analysis_frame *frame = self.next; frame != NULL; frame = frame->next) {
-											if (find_any_symbol_by_address(&analysis->loader, binary, frame->entry, NORMAL_SYMBOL | LINKER_SYMBOL, &symbols, &symbol) != NULL) {
-												const char *name = symbol_name(symbols, symbol);
-												if (name != NULL) {
-													if (is_setxid_name(name)) {
-														if (analysis->loader.setxid_syscall == NULL) {
-															self.description = NULL;
-															analysis->loader.setxid_syscall = self.address;
-															analysis->loader.setxid_syscall_entry = self.entry;
-															LOG("found __nptl_setxid/do_setxid", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-															goto finish_syscall;
-														}
-													} else if (fs_strcmp(name, "pthread_create") == 0) {
-														if (analysis->loader.setxid_sighandler_syscall == NULL) {
-															self.description = NULL;
-															analysis->loader.setxid_sighandler_syscall = self.address;
-															analysis->loader.setxid_sighandler_syscall_entry = self.entry;
-															LOG("found __nptl_setxid_sighandler", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-															goto finish_syscall;
-														}
+											name = find_any_symbol_name_by_address(&analysis->loader, binary, frame->entry, NORMAL_SYMBOL | LINKER_SYMBOL);
+											if (name != NULL) {
+												if (is_setxid_name(name)) {
+													if (analysis->loader.setxid_syscall == NULL) {
+														self.description = NULL;
+														analysis->loader.setxid_syscall = self.address;
+														analysis->loader.setxid_syscall_entry = self.entry;
+														LOG("found __nptl_setxid/do_setxid", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+														goto finish_syscall;
+													}
+												} else if (fs_strcmp(name, "pthread_create") == 0) {
+													if (analysis->loader.setxid_sighandler_syscall == NULL) {
+														self.description = NULL;
+														analysis->loader.setxid_sighandler_syscall = self.address;
+														analysis->loader.setxid_sighandler_syscall_entry = self.entry;
+														LOG("found __nptl_setxid_sighandler", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+														goto finish_syscall;
 													}
 												}
 											}
