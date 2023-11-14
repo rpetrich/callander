@@ -545,8 +545,14 @@ static inline void clear_stack(struct registers *regs)
 	}
 }
 
-__attribute__((nonnull(1, 2, 3)))
-static inline void clear_call_dirtied_registers(const struct loader_context *loader, struct registers *regs, __attribute__((unused)) ins_ptr ins) {
+__attribute__((always_inline))
+static inline bool binary_has_flags(const struct loaded_binary *binary, int flags)
+{
+	return (binary != NULL) && ((binary->special_binary_flags & flags) == flags);
+}
+
+__attribute__((nonnull(1, 2, 4)))
+static inline void clear_call_dirtied_registers(const struct loader_context *loader, struct registers *regs, struct loaded_binary *binary, __attribute__((unused)) ins_ptr ins) {
 #if defined(__x86_64__)
 	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RAX])) {
 		LOG("clearing call dirtied register", name_for_register(REGISTER_RAX));
@@ -593,6 +599,18 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	}
 	clear_register(&regs->registers[REGISTER_R11]);
 	regs->sources[REGISTER_R11] = 0;
+	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
+		if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RBX])) {
+			LOG("clearing call dirtied register", name_for_register(REGISTER_RBX));
+		}
+		clear_register(&regs->registers[REGISTER_RBX]);
+		regs->sources[REGISTER_RBX] = 0;
+		if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RSI])) {
+			LOG("clearing call dirtied register", name_for_register(REGISTER_RSI));
+		}
+		clear_register(&regs->registers[REGISTER_RSI]);
+		regs->sources[REGISTER_RSI] = 0;
+	}
 	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_MEM])) {
 		LOG("clearing call dirtied register", name_for_register(REGISTER_MEM));
 	}
@@ -1415,12 +1433,6 @@ static void grow_already_searched_instructions(struct searched_instructions *sea
 
 __attribute__((nonnull(1, 2, 3)))
 static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, const struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects);
-
-__attribute__((always_inline))
-static inline bool binary_has_flags(const struct loaded_binary *binary, int flags)
-{
-	return (binary != NULL) && ((binary->special_binary_flags & flags) == flags);
-}
 
 struct loader_stub {
 	struct loader_stub *next;
@@ -5356,25 +5368,41 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 	return POSSIBLY_MATCHES;
 }
 
-static bool is_async_cancel_function(ins_ptr addr)
+static bool is_stack_preserving_function(struct loader_context *loader, struct loaded_binary *binary, ins_ptr addr)
 {
-	struct x86_instruction ins;
-	if (!x86_decode_instruction(addr, &ins)) {
+	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
+		const char *name = find_any_symbol_name_by_address(loader, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL);
+		if (name != NULL) {
+			if (fs_strcmp(name, "runtime.entersyscall") == 0 || fs_strcmp(name, "runtime.exitsyscall") == 0 || fs_strcmp(name, "runtime.Syscall6") == 0 || fs_strcmp(name, "runtime.RawSyscall6") == 0 || fs_strcmp(name, "runtime/internal/syscall.Syscall6") == 0) {
+				LOG("found golang stack preserving function", temp_str(copy_address_description(loader, addr)));
+				return true;
+			}
+		}
 		return false;
 	}
-	if (x86_is_endbr64_instruction(&ins)) {
-		addr = x86_next_instruction(addr, &ins);
+	if (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
+		// check for __pthread_enable_asynccancel
+		struct x86_instruction ins;
 		if (!x86_decode_instruction(addr, &ins)) {
 			return false;
 		}
-	}
-	// check for mov eax, [fs:CANCELHANDLING]
-	if (addr[0] == 0x64 && addr[1] == 0x8b && addr[2] == 0x04 && addr[3] == 0x25 && addr[4] == 0x08 && addr[5] == 0x03 && addr[6] == 0x00 && addr[7] == 0x00) {
-		return true;
-	}
-	// check for mov rcx, [fs:CANCELHANDLING]
-	if (addr[0] == 0x64 && addr[1] == 0x48 && addr[2] == 0x8b /*&& addr[3] == 0x0c*/ && addr[4] == 0x25 && addr[5] == 0x10 && addr[6] == 0x00 && addr[7] == 0x00 && addr[8] == 0x00) {
-		return true;
+		if (x86_is_endbr64_instruction(&ins)) {
+			addr = x86_next_instruction(addr, &ins);
+			if (!x86_decode_instruction(addr, &ins)) {
+				return false;
+			}
+		}
+		// check for mov eax, [fs:CANCELHANDLING]
+		if (addr[0] == 0x64 && addr[1] == 0x8b && addr[2] == 0x04 && addr[3] == 0x25 && addr[4] == 0x08 && addr[5] == 0x03 && addr[6] == 0x00 && addr[7] == 0x00) {
+			LOG("found pthread stack preserving function", temp_str(copy_address_description(loader, addr)));
+			return true;
+		}
+		// check for mov rcx, [fs:CANCELHANDLING]
+		if (addr[0] == 0x64 && addr[1] == 0x48 && addr[2] == 0x8b /*&& addr[3] == 0x0c*/ && addr[4] == 0x25 && addr[5] == 0x10 && addr[6] == 0x00 && addr[7] == 0x00 && addr[8] == 0x00) {
+			LOG("found pthread stack preserving function", temp_str(copy_address_description(loader, addr)));
+			return true;
+		}
+		return false;
 	}
 	return false;
 }
@@ -5623,11 +5651,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 				}
 				// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-				clear_call_dirtied_registers(&analysis->loader, &self.current_state, ins);
+				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 				clear_stack(&self.current_state);
 			} else if (modrm.reg == 3) {
 				LOG("found unsupported call*");
-				clear_call_dirtied_registers(&analysis->loader, &self.current_state, ins);
+				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 				clear_stack(&self.current_state);
 			} else if (modrm.reg == 4) {
 				// found jmp*
@@ -5888,7 +5916,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									LOG("completing from exit or rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
 									goto update_and_return;
 							}
-						} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && (analysis->loader.main->special_binary_flags & BINARY_IS_GOLANG)) {
+						} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && binary_has_flags(analysis->loader.main, BINARY_IS_GOLANG)) {
 							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
 						} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
 							self.description = "syscall";
@@ -8263,12 +8291,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 				}
-				clear_call_dirtied_registers(&analysis->loader, &self.current_state, ins);
+				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				pending_stack_clear = STACK_REGISTERS;
-				if (binary_has_flags(binary, BINARY_IS_GOLANG) || (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD) && is_async_cancel_function((ins_ptr)dest))) {
+				if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
 					// we should be able to track dirtied slots, but for now assume golang preserves
 					// the stack that's read immediately after the call
-					LOG("assuming golang/__pthread_enable_asynccancel call preserves stack", temp_str(copy_address_description(&analysis->loader, ins)));
+					LOG("target is stack-preserving function", temp_str(copy_address_description(&analysis->loader, ins)));
 					self.current_state.stack_address_taken = NULL;
 					goto skip_stack_clear;
 				}
