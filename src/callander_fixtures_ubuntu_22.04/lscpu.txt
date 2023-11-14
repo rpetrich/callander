@@ -20,7 +20,7 @@ rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x425f1(__libc_sigaction+193)
 rt_sigaction(SIGSEGV, any, any, 8) @ libc.so.6+0x425f1(__libc_sigaction+193)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1d2a60(sigall_set*), any, 8) @ libc.so.6+0x96933(pthread_kill+99)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x96980(pthread_kill+176)
-rt_sigprocmask(SIG_BLOCK, 0, any, 8) @ libc.so.6+0x9bc19(pthread_sigmask+73)
+rt_sigprocmask(SIG_BLOCK, 0, /usr/bin/lscpu+0x19088, 8) @ libc.so.6+0x9bc19(pthread_sigmask+73)
 rt_sigprocmask(SIG_UNBLOCK-SIG_SETMASK, any, 0, 8) @ libc.so.6+0x9bc19(pthread_sigmask+73)
 rt_sigreturn(any) @ libc.so.6+0x42527
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x11a138(tcgetattr+40)
