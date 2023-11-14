@@ -3,7 +3,6 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
-open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(ld-musl-x86_64.so.1+0x94bc8, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4a451(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x94bd3, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4a451(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x94c58, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4a451(__fopen_rb_ca*+52)
@@ -26,7 +25,6 @@ close(any) @ ld-musl-x86_64.so.1+0x58448(__map_file*+132)
 stat(any, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
 fstat(any, any) @ ld-musl-x86_64.so.1+0x583fb(__map_file*+55)
 lstat(any, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
-poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
 poll(any, 1, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 poll(any, 1, any) @ ld-musl-x86_64.so.1+0x583bc
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)

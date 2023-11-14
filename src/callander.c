@@ -4779,7 +4779,8 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 			}
 		} else {
 			ins_ptr jump_target;
-			if (ins_interpret_jump_behavior(&peek, &jump_target) != INS_JUMPS_ALWAYS) {
+			enum ins_jump_behavior jump = ins_interpret_jump_behavior(&peek, &jump_target);
+			if (jump != INS_JUMPS_ALWAYS && jump != INS_JUMPS_ALWAYS_INDIRECT) {
 				break;
 			}
 			if (jump_target == NULL || jump_target == ins || jump_target == ret) {
@@ -4822,7 +4823,7 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
 	pop_stack(&self->current_state, 2);
 	if (more_effects & EFFECT_PROCESSING) {
-		queue_instruction(&analysis->search.queue, call_target, required_effects, &call_state, call_target, self->description);
+		queue_instruction(&analysis->search.queue, call_target, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self->description);
 		more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
 	}
 	return more_effects;
@@ -5478,6 +5479,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		switch (ins_interpret_jump_behavior(&decoded, &jump_target)) {
 			case INS_JUMPS_NEVER:
 				break;
+			case INS_JUMPS_ALWAYS_INDIRECT:
+				// treat indirect jumps like calls for the purpose of the enter calls state
+				if ((required_effects & EFFECT_ENTER_CALLS) == 0) {
+					analysis->skipped_call = jump_target;
+					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					goto update_and_return;
+				}
+				// fallthrough
 			case INS_JUMPS_ALWAYS: {
 				LOG("found single jump");
 				struct loaded_binary *jump_binary;
@@ -5530,9 +5539,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		if (*decoded.unprefixed == 0xff) {
 			x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 			if (modrm.reg == 2) { // TODO: do we need this?
-				if (required_effects & EFFECT_ENTRY_POINT) {
-					required_effects |= EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS;
-				}
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				LOG("found call*");
 				if (x86_modrm_is_direct(modrm)) {
@@ -5558,7 +5564,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						analysis->skipped_call = (ins_ptr)address.value;
 					} else {
 						self.description = "indirect call";
-						function_effects more_effects = analyze_call(analysis, required_effects & ~EFFECT_ENTRY_POINT, ins, (ins_ptr)address.value, &self);
+						function_effects more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)address.value, &self);
 						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 						LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -5715,7 +5721,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 					LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
-					effects |= analyze_instructions(analysis, required_effects & ~EFFECT_ENTRY_POINT, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
 					LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
@@ -7735,6 +7741,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										// main
 										analysis->main = (uintptr_t)address;
 										LOG("rip-relative lea is to executable address, assuming it is the main function");
+										self.description = "load main address";
 										analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, address, &self);
 									} else if (reg == sysv_argument_abi_register_indexes[3]) {
 										// init, will be called before main, can skip it
@@ -8063,6 +8070,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if (rm == sysv_argument_abi_register_indexes[0]) {
 								// main
 								analysis->main = (uintptr_t)state.value;
+								self.description = "mov main";
 								LOG("mov is to executable address, assuming it is the main function");
 								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)state.value, &self);
 							} else if (rm == sysv_argument_abi_register_indexes[3]) {
@@ -8076,8 +8084,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 						} else {
 							LOG("mov is to executable address, assuming it could be called after startup");
-							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
-							// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)state.value, &self);
+							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, required_effects | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
 						}
 					} else {
 						LOG("mov is to non-executable value, assuming it is data");
@@ -8228,13 +8235,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+				} else if ((effects & EFFECT_ENTRY_POINT) && (ins_ptr)dest == next_ins(ins, &decoded)) {
+					LOG("calling self pattern in entrypoint");
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest;
 				} else {
-					if (required_effects & EFFECT_ENTRY_POINT) {
-						required_effects |= EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS;
-					}
 					self.description = "call";
 					function_effects more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);

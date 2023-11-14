@@ -5,6 +5,7 @@ enum ins_jump_behavior {
 	INS_JUMPS_NEVER,
 	INS_JUMPS_ALWAYS,
 	INS_JUMPS_OR_CONTINUES,
+	INS_JUMPS_ALWAYS_INDIRECT,
 };
 
 #if defined(__x86_64__)

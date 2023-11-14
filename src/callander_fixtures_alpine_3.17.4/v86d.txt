@@ -1,5 +1,4 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(ld-musl-x86_64.so.1+0x94a28, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(/sbin/v86d+0x15093, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(/sbin/v86d+0x150d0, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -13,7 +12,6 @@ close(any) @ ld-musl-x86_64.so.1+0x583bc
 close(any) @ ld-musl-x86_64.so.1+0x58412(__map_file*+78)
 close(any) @ ld-musl-x86_64.so.1+0x58448(__map_file*+132)
 fstat(any, any) @ ld-musl-x86_64.so.1+0x583fb(__map_file*+55)
-poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
 poll(any, 1, -1) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 poll(any, 1, -1) @ ld-musl-x86_64.so.1+0x583bc
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)

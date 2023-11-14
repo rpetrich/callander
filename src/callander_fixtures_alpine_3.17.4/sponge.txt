@@ -3,14 +3,12 @@ read(STDIN_FILENO, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, non-NULL, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(STDIN_FILENO, any, any) @ ld-musl-x86_64.so.1+0x583bc
 read(any, non-NULL, any) @ ld-musl-x86_64.so.1+0x583bc
-open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(non-NULL, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
 close(any) @ ld-musl-x86_64.so.1+0x4b74f(fopen64+158)
 lstat(non-NULL, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
-poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)

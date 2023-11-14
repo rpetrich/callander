@@ -1,5 +1,4 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-open(ld-musl-x86_64.so.1+0x94b63, O_RDWR|O_LARGEFILE, any) @ ld-musl-x86_64.so.1+0x1c981(__init_libc*+357)
 open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
@@ -9,15 +8,13 @@ close(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 close(any) @ ld-musl-x86_64.so.1+0x583bc
 stat(any, any) @ ld-musl-x86_64.so.1+0x49dbb(fstatat64+207)
 fstat(any, any) @ ld-musl-x86_64.so.1+0x49d23(fstatat64+55)
-poll(any, 3, 6) @ ld-musl-x86_64.so.1+0x1c95e(__init_libc*+322)
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(0, any, PROT_READ, MAP_PRIVATE, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(any, 0x1000, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mprotect(NULL-0xfffffffffffff000, any, PROT_READ|PROT_WRITE) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
-munmap(NULL-0xfffffffffffffffe, any) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
-munmap(any, non-NULL) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
+munmap(any, any) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x58350
 brk(0) @ ld-musl-x86_64.so.1+0x26e0a(__malloc_alloc_meta*+234)
 brk(any) @ ld-musl-x86_64.so.1+0x26e2f(__malloc_alloc_meta*+271)

@@ -423,6 +423,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 		switch (x86_decode_jump_instruction(&decoded, &jump)) {
 			case INS_JUMPS_NEVER:
 				break;
+			case INS_JUMPS_ALWAYS_INDIRECT:
 			case INS_JUMPS_ALWAYS: {
 				// jump instruction
 				ins = jump;
@@ -587,6 +588,7 @@ tail_call:
 		switch (x86_decode_jump_instruction(&decoded, &jump)) {
 			case INS_JUMPS_NEVER:
 				break;
+			case INS_JUMPS_ALWAYS_INDIRECT:
 			case INS_JUMPS_ALWAYS:
 				if (has_instruction) {
 					if ((uintptr_t)search.addr > (uintptr_t)out_block->start) {

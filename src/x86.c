@@ -101,7 +101,7 @@ enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction 
 				PATCH_LOG("jmpq *", (uintptr_t)unprefixed);
 				const uint8_t **address = (const uint8_t **)(unprefixed + 6 + *(const x86_int32 *)&unprefixed[2]);
 				*out_jump = *address;
-				return INS_JUMPS_ALWAYS;
+				return INS_JUMPS_ALWAYS_INDIRECT;
 			}
 			break;
 		case 0xe0: // loopne
