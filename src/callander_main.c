@@ -2083,18 +2083,13 @@ skip_analysis:
 	}
 	// map in anonymous pages to hold the program
 	size_t allocation_size = sizeof(struct sock_fprog) + sizeof(struct sock_filter) * BPF_MAXINSNS;
-	size_t ceiled_allocation_size = (allocation_size + PAGE_SIZE - 1) & -PAGE_SIZE;
-	intptr_t mmap_result = remote_perform_syscall(tracee, regs, __NR_mmap, 0, ceiled_allocation_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (fs_is_map_failed((void *)mmap_result)) {
-		DIE("failed to mmap in child", fs_strerror(result));
-	}
 	// set seccomp filters in the child
 	struct sock_fprog prog;
 	if (mutable_binary_mappings) {
-		remote_apply_seccomp_filter_or_split(tracee, regs, mmap_result, &analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0, &prog);
+		remote_apply_seccomp_filter_or_split(tracee, regs, regs.USER_REG_SP - allocation_size, &analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0, &prog);
 	} else {
 		struct mapped_region_info regions = copy_sorted_mapped_regions(&analysis.loader);
-		remote_apply_seccomp_filter_or_split(tracee, regs, mmap_result, &analysis.loader, &analysis.syscalls, &regions, 0, ~(uint32_t)0, &prog);
+		remote_apply_seccomp_filter_or_split(tracee, regs, regs.USER_REG_SP - allocation_size, &analysis.loader, &analysis.syscalls, &regions, 0, ~(uint32_t)0, &prog);
 #if 0
 		test_mprotect(prog, regions.list[0].start-0x2000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
 		test_mprotect(prog, regions.list[0].start-0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
