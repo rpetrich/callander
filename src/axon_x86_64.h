@@ -29,6 +29,7 @@
 #define USER_REG_ARG6 r9
 #define USER_REG_RESULT rax
 #define USER_REG_PC rip
+#define USER_REG_SP rsp
 
 #define STACK_DESCENDS
 

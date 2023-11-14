@@ -727,7 +727,7 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 		DIE("failed to peek under program counter", fs_strerror(result));
 	}
 #if defined(__x86_64__)
-	long new_bytes = (original_bytes & ~(long)0xffff) | 0x50f;
+	long new_bytes = 0xfdeb050f;
 #else
 #if defined(__aarch64__)
 	long new_bytes = 0xd4000001;
@@ -743,6 +743,8 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
 	// wait for syscall exit
 	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
+	// single step
+	wait_for_ptrace_event(PTRACE_SINGLESTEP, pid);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.USER_REG_PC, (void *)original_bytes);
 	if (result < 0) {
 		DIE("failed to poke the original data back", fs_strerror(result));
@@ -1921,11 +1923,6 @@ skip_analysis:
 		DIE("failed to set PTRACE_O_EXITKILL", fs_strerror(result));
 	}
 
-	// wait for syscall entry, should be exec
-	wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
-	// wait for syscall exit, should be after the exec completes
-	wait_for_ptrace_event(PTRACE_SYSCALL, tracee);
-
 	// no longer need the wakeup fd
 	fs_close(wakeup_child_fd);
 
@@ -2061,6 +2058,9 @@ skip_analysis:
 		DIE("failed to read registers", fs_strerror(result));
 	}
 	// rewind back to where the breakpoint was
+	if (regs.USER_REG_PC != child_main + BREAKPOINT_LEN) {
+		DIE("interrupted at wrong child address", (uintptr_t)regs.USER_REG_PC);
+	}
 	regs.USER_REG_PC -= BREAKPOINT_LEN;
 	for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 		struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
