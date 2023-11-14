@@ -1390,7 +1390,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	bool show_permitted = false;
 	bool show_binaries = false;
 	bool allow_unexpected = false;
-	bool mutable_binary_mappings = false;
+	bool mutable_binary_mappings = true;
 	const char *profile_path = NULL;
 	enum attach_behavior attach = DETACH_AT_START;
 	bool skip_running = false;
@@ -1498,6 +1498,8 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			allow_unexpected = true;
 		} else if (fs_strcmp(arg, "--mutable-binary-mappings") == 0) {
 			mutable_binary_mappings = true;
+		} else if (fs_strcmp(arg, "--immutable-binary-mappings") == 0) {
+			mutable_binary_mappings = false;
 		} else if (fs_strcmp(arg, "--profile") == 0) {
 			profile_path = argv[executable_index+1];
 			if (profile_path == NULL) {
