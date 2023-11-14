@@ -9521,14 +9521,45 @@ static bool find_skipped_symbol_for_address(struct loader_context *loader, struc
 	return true;
 }
 
-struct golang_init_task {
+struct golang_legacy_init_task {
 	uintptr_t state;
 	uintptr_t ndeps;
 	uintptr_t nfns;
 	const void *data[0];
 };
 
-static void analyze_golang_init_task(struct program_state *analysis, function_effects effects, const struct golang_init_task *task)
+static void analyze_legacy_golang_init_task(struct program_state *analysis, function_effects effects, const struct golang_legacy_init_task *task)
+{
+	struct effect_token token;
+	struct registers registers = empty_registers;
+	function_effects *entry = get_or_populate_effects(analysis, (void *)task, &registers, EFFECT_NONE, &token);
+	if ((*entry & effects) == effects) {
+		return;
+	}
+	*entry |= effects & ~EFFECT_PROCESSING;
+	LOG("analyzing legacy golang task", temp_str(copy_address_description(&analysis->loader, task)));
+	uintptr_t ndeps = task->ndeps;
+	uintptr_t nfns = task->nfns;
+	LOG("ndeps", (intptr_t)ndeps);
+	LOG("nfns", (intptr_t)nfns);
+	for (uintptr_t i = 0; i < ndeps; i++) {
+		analyze_legacy_golang_init_task(analysis, effects, task->data[i]);
+	}
+	for (uintptr_t i = 0; i < nfns; i++) {
+		LOG("found golang init function", temp_str(copy_address_description(&analysis->loader, task->data[ndeps+i])));
+		struct analysis_frame new_caller = { .address = &task->data[ndeps+i], .description = "golang task init", .next = NULL, .current_state = registers, .entry = (const void *)task, .entry_state = &registers, .token = { 0 }, .is_entry = true };
+		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, task->data[ndeps+i], &new_caller);
+	}
+}
+
+struct golang_modern_init_task {
+	uint32_t state;
+	uint32_t nfns;
+	const void *data[0];
+};
+
+__attribute__((noinline))
+static void analyze_golang_init_task(struct program_state *analysis, function_effects effects, const struct golang_modern_init_task *task)
 {
 	struct effect_token token;
 	struct registers registers = empty_registers;
@@ -9538,17 +9569,12 @@ static void analyze_golang_init_task(struct program_state *analysis, function_ef
 	}
 	*entry |= effects & ~EFFECT_PROCESSING;
 	LOG("analyzing golang task", temp_str(copy_address_description(&analysis->loader, task)));
-	uintptr_t ndeps = task->ndeps;
 	uintptr_t nfns = task->nfns;
-	LOG("ndeps", (intptr_t)ndeps);
 	LOG("nfns", (intptr_t)nfns);
-	for (uintptr_t i = 0; i < ndeps; i++) {
-		analyze_golang_init_task(analysis, effects, task->data[i]);
-	}
 	for (uintptr_t i = 0; i < nfns; i++) {
-		LOG("found golang init function", temp_str(copy_address_description(&analysis->loader, task->data[ndeps+i])));
-		struct analysis_frame new_caller = { .address = &task->data[ndeps+i], .description = "golang task init", .next = NULL, .current_state = registers, .entry = (const void *)task, .entry_state = &registers, .token = { 0 }, .is_entry = true };
-		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, task->data[ndeps+i], &new_caller);
+		LOG("found golang init function", temp_str(copy_address_description(&analysis->loader, task->data[i])));
+		struct analysis_frame new_caller = { .address = &task->data[i], .description = "golang task init", .next = NULL, .current_state = registers, .entry = (const void *)task, .entry_state = &registers, .token = { 0 }, .is_entry = true };
+		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, task->data[i], &new_caller);
 	}
 }
 
@@ -9663,9 +9689,20 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
 		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, fini_function, &new_caller);
 	}
-	void *golangInitTask = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "main..inittask", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-	if (golangInitTask) {
-		analyze_golang_init_task(analysis, effects | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, golangInitTask);
+	if (binary_has_flags(new_binary, BINARY_IS_GOLANG)) {
+		void *legacy_init_task = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "main..inittask", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (legacy_init_task) {
+			analyze_legacy_golang_init_task(analysis, effects | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, legacy_init_task);
+		} else {
+			const ElfW(Sym) *symbol;
+			struct golang_modern_init_task **modern_init_task_list = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "go:main.inittasks", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, &symbol);
+			if (modern_init_task_list) {
+				LOG("found golang init tasks", symbol->st_size / sizeof(*modern_init_task_list));
+				for (size_t i = 0; i < symbol->st_size / sizeof(*modern_init_task_list); i++) {
+					analyze_golang_init_task(analysis, effects | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, modern_init_task_list[i]);
+				}
+			}
+		}
 	}
 	// search for vtables that should go unsearched until they're referenced explicitly
 	static const struct { const char *name; size_t size; bool inner_call; } function_pointer_ignore_sources[] = {
