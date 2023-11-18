@@ -150,5 +150,6 @@ openat(AT_FDCWD, libc.so.6+0x172762(dot.2441), O_RDONLY|O_DIRECTORY, any) @ libc
 openat(AT_FDCWD, libc.so.6+0x172761, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe2080(getcwd+496)
 openat(any, libc.so.6+0x172761, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe22a3(getcwd+1043)
 openat(any, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY, any) @ libc.so.6+0xe362c(ftw_dir+604)
-newfstatat(any, any, any, any) @ libc.so.6+0xe0f09(__fxstatat+25)
+newfstatat(any, any, any, 0) @ libc.so.6+0xe0f09(__fxstatat+25)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xe0f09(__fxstatat+25)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xe644e(getrlimit+14)

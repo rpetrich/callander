@@ -76,7 +76,8 @@ chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x730e9
 gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x772e9
 arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60) @ /usr/sbin/ldconfig.real+0xc7a89
-arch_prctl(0x3002, NULL-0x2) @ /usr/sbin/ldconfig.real+0xc7acf
+arch_prctl(0x3002, 0) @ /usr/sbin/ldconfig.real+0xc7acf
+arch_prctl(0x3002, 2) @ /usr/sbin/ldconfig.real+0xc7acf
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x741d9
 gettid() @ /usr/sbin/ldconfig.real+0x208bb
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, any)

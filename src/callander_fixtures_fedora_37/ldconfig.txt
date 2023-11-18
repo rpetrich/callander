@@ -78,16 +78,20 @@ sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x813b9
 arch_prctl(0x3002, any u8) @ /usr/sbin/ldconfig+0xa4c61
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x52f69
 gettid() @ /usr/sbin/ldconfig+0x21a55
+futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any)
-futex(any, FUTEX_WAIT-FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
-futex(any, any u8, NULL-0x1, 0, any, any)
-futex(any, any u8, 2, 0, NULL-0x80, any)
+futex(any, any u8, 1, 0, any, any u32)
 futex(any, any u8, INT_MAX, 0, any u32, any)
 futex(any, any u8, INT_MAX, 0, any, any u32)
 futex(any, any u32, any u32, 0, 0, -1 as u32)
+futex(any, FUTEX_WAKE, 1, 0, any, any)
+futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
+futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(/usr/sbin/ldconfig+0xf6a4c, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NULL-0x1, any)
 futex(/usr/sbin/ldconfig+0xf6dcc, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x54596

@@ -4254,14 +4254,14 @@ static inline int decode_x86_comparisons(struct x86_instruction decoded, struct 
 		}
 		case 0xf6: {
 			x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
-			if (modrm.reg == 0) { // test r/m8, imm8
+			if (modrm.reg == 0 || modrm.reg == 1) { // test r/m8, imm8
 				return INVALID_COMPARISON;
 			}
 			break;
 		}
 		case 0xf7: {
 			x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
-			if (modrm.reg == 0) { // test r/m, imm
+			if (modrm.reg == 0 || modrm.reg == 1) { // test r/m, imm
 				return INVALID_COMPARISON;
 			}
 			break;
@@ -4283,14 +4283,22 @@ static uint8_t imm_size_for_prefixes(struct x86_ins_prefixes prefixes)
 
 #endif
 
-typedef void (*basic_op)(struct register_state *dest, const struct register_state *source, int dest_reg, int source_reg);
 
-static void basic_op_unknown(struct register_state *dest, __attribute__((unused)) const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+struct additional_result {
+	struct register_state state;
+	bool used;
+};
+
+#define BASIC_OP_ARGS struct register_state dest[static 1], const struct register_state source[static 1], __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg, __attribute__((unused)) struct additional_result additional[static 1]
+typedef void (*basic_op)(BASIC_OP_ARGS);
+
+static void basic_op_unknown(BASIC_OP_ARGS)
 {
+	(void)source;
 	clear_register(dest);
 }
 
-static void basic_op_add(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_add(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		dest->value = dest->max = dest->value + source->value;
@@ -4299,7 +4307,7 @@ static void basic_op_add(struct register_state *dest, const struct register_stat
 	}
 }
 
-static void basic_op_or(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_or(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		dest->value = dest->max = dest->value | source->value;
@@ -4315,7 +4323,7 @@ static void basic_op_or(struct register_state *dest, const struct register_state
 	dest->max |= source->max;
 }
 
-static void basic_op_adc(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_adc(BASIC_OP_ARGS)
 {
 	if (__builtin_add_overflow(dest->max, source->max, &dest->max)) {
 		clear_register(dest);
@@ -4328,19 +4336,36 @@ static void basic_op_adc(struct register_state *dest, const struct register_stat
 	dest->value += source->value;
 }
 
-static void basic_op_and(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_and(BASIC_OP_ARGS)
 {
-	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
-		dest->max = dest->value = dest->value & source->value;
-	} else {
-		dest->value = 0;
-		if (source->max < dest->max) {
-			dest->max = source->max;
+	if (register_is_exactly_known(source)) {
+		if (register_is_exactly_known(dest)) {
+			// both are known, compute exact value
+			dest->max = dest->value = dest->value & source->value;
+			return;
 		}
+		if ((source->value & (source->value - 1)) == 0 && source->value != 0 && dest->max >= source->value) {
+			// source is known and has single bit set, branch
+			set_register(dest, source->value);
+			set_register(&additional->state, 0);
+			additional->used = true;
+			return;
+		}
+	} else if (register_is_exactly_known(dest)) {
+		if ((dest->value & (dest->value - 1)) == 0 && dest->value != 0 && source->max >= dest->value) {
+			// source is known and has single bit set, branch
+			set_register(&additional->state, 0);
+			additional->used = true;
+			return;
+		}
+	}
+	dest->value = 0;
+	if (source->max < dest->max) {
+		dest->max = source->max;
 	}
 }
 
-static void basic_op_sbb(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_sbb(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		uintptr_t dest_value = dest->value;
@@ -4351,14 +4376,14 @@ static void basic_op_sbb(struct register_state *dest, const struct register_stat
 	}
 }
 
-static void basic_op_sub(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_sub(BASIC_OP_ARGS)
 {
 	if (__builtin_sub_overflow(dest->value, source->max, &dest->value) || __builtin_sub_overflow(dest->max, source->value, &dest->max)) {
 		clear_register(dest);
 	}
 }
 
-static void basic_op_xor(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_xor(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		dest->max = dest->value = dest->value ^ source->value;
@@ -4367,7 +4392,7 @@ static void basic_op_xor(struct register_state *dest, const struct register_stat
 	}
 }
 
-static void basic_op_shr(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_shr(BASIC_OP_ARGS)
 {
 	if (source->value > 64) {
 		clear_register(dest);
@@ -4381,7 +4406,7 @@ static void basic_op_shr(struct register_state *dest, const struct register_stat
 	dest->max = dest->max >> source->value;
 }
 
-static void basic_op_shl(struct register_state *dest, const struct register_state *source, __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg)
+static void basic_op_shl(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(source) && register_is_exactly_known(dest)) {
 		if (source->value > 64) {
@@ -4396,7 +4421,7 @@ static void basic_op_shl(struct register_state *dest, const struct register_stat
 
 #if defined(__x86_64__)
 
-static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state dest;
@@ -4405,6 +4430,7 @@ static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, bas
 	LOG("basic destination", name_for_register(rm));
 	LOG("basic operand", name_for_register(reg));
 	dump_registers(loader, regs, ((register_mask)1 << reg) | ((register_mask)1 << rm));
+	additional->used = false;
 	if (register_is_legacy_8bit_high(prefixes, &rm) || register_is_legacy_8bit_high(prefixes, &reg)) {
 		clear_register(&dest);
 		truncate_to_16bit(&dest);
@@ -4412,7 +4438,7 @@ static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, bas
 		struct register_state src = regs->registers[reg];
 		truncate_to_8bit(&src);
 		truncate_to_8bit(&dest);
-		op(&dest, &src, rm, reg);
+		op(&dest, &src, rm, reg, additional);
 		truncate_to_8bit(&dest);
 	}
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
@@ -4423,10 +4449,14 @@ static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, bas
 		regs->sources[rm] = 0;
 	}
 	clear_match(loader, regs, rm, ins_modrm);
+	if (additional->used) {
+		truncate_to_8bit(&additional->state);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return rm;
 }
 
-static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state dest;
@@ -4438,7 +4468,8 @@ static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic
 	struct register_state src = regs->registers[reg];
 	truncate_to_size_prefixes(&src, prefixes);
 	truncate_to_size_prefixes(&dest, prefixes);
-	op(&dest, &src, rm, reg);
+	additional->used = false;
+	op(&dest, &src, rm, reg, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
@@ -4448,10 +4479,14 @@ static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic
 		regs->sources[rm] = 0;
 	}
 	clear_match(loader, regs, rm, ins_modrm);
+	if (additional->used) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return rm;
 }
 
-static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state src;
@@ -4460,13 +4495,14 @@ static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, bas
 	LOG("basic destination", name_for_register(reg));
 	LOG("basic operand", name_for_register(rm));
 	struct register_state dest = regs->registers[reg];
+	additional->used = false;
 	if (register_is_legacy_8bit_high(prefixes, &rm) || register_is_legacy_8bit_high(prefixes, &reg)) {
 		clear_register(&dest);
 		truncate_to_16bit(&dest);
 	} else {
 		truncate_to_8bit(&src);
 		truncate_to_8bit(&dest);
-		op(&dest, &src, reg, rm);
+		op(&dest, &src, reg, rm, additional);
 		truncate_to_8bit(&dest);
 	}
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
@@ -4477,10 +4513,14 @@ static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, bas
 		regs->sources[reg] = 0;
 	}
 	clear_match(loader, regs, reg, ins_modrm);
+	if (additional->used) {
+		truncate_to_8bit(&additional->state);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return reg;
 }
 
-static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state src;
@@ -4492,7 +4532,8 @@ static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic
 	dump_registers(loader, regs, ((register_mask)1 << reg) | ((register_mask)1 << rm));
 	truncate_to_size_prefixes(&src, prefixes);
 	truncate_to_size_prefixes(&dest, prefixes);
-	op(&dest, &src, reg, rm);
+	additional->used = false;
+	op(&dest, &src, reg, rm, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
@@ -4502,16 +4543,21 @@ static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic
 		regs->sources[reg] = 0;
 	}
 	clear_match(loader, regs, reg, ins_modrm);
+	if (additional->used) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return reg;
 }
 
-static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
 	int rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(uint8_t), regs, OPERATION_SIZE_8BIT, READ_RM_REPLACE_MEM, &dest);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm));
 	dump_registers(loader, regs, (register_mask)1 << rm);
+	additional->used = false;
 	if (register_is_legacy_8bit_high(prefixes, &rm)) {
 		LOG("legacy 8 bit high");
 		clear_register(&dest);
@@ -4521,7 +4567,7 @@ static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, b
 		struct register_state src;
 		set_register(&src, *ins_modrm);
 		LOG("basic immediate", src.value);
-		op(&dest, &src, rm, -1);
+		op(&dest, &src, rm, -1, additional);
 		truncate_to_8bit(&dest);
 	}
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
@@ -4530,10 +4576,14 @@ static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, b
 		regs->sources[rm] = 0;
 	}
 	clear_match(loader, regs, rm, ins_modrm);
+	if (additional->used) {
+		truncate_to_8bit(&additional->state);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return rm;
 }
 
-static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr imm)
+static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr imm, struct additional_result *additional)
 {
 	LOG("basic operation", name);
 	int reg = REGISTER_RAX;
@@ -4544,7 +4594,8 @@ static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, b
 	struct register_state src;
 	set_register(&src, *imm);
 	LOG("basic immediate", src.value);
-	op(&dest, &src, reg, -1);
+	additional->used = false;
+	op(&dest, &src, reg, -1, additional);
 	truncate_to_8bit(&dest);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
@@ -4552,9 +4603,13 @@ static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, b
 		regs->sources[reg] = 0;
 	}
 	clear_match(loader, regs, reg, imm);
+	if (additional->used) {
+		truncate_to_8bit(&additional->state);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 }
 
-static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
 	int rm = read_rm_ref(loader, prefixes, &ins_modrm, imm_size_for_prefixes(prefixes), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest);
@@ -4565,7 +4620,8 @@ static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, bas
 	struct register_state src;
 	set_register(&src, read_imm(prefixes, ins_modrm));
 	LOG("basic immediate", src.value);
-	op(&dest, &src, rm, -1);
+	additional->used = false;
+	op(&dest, &src, rm, -1, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
@@ -4573,10 +4629,14 @@ static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, bas
 		regs->sources[rm] = 0;
 	}
 	clear_match(loader, regs, rm, ins_modrm);
+	if (additional->used) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return rm;
 }
 
-static int perform_basic_op_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, int reg, ins_ptr imm)
+static void perform_basic_op_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, int reg, ins_ptr imm, struct additional_result *additional)
 {
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(reg));
@@ -4586,7 +4646,8 @@ static int perform_basic_op_imm(__attribute__((unused)) const char *name, basic_
 	struct register_state src;
 	set_register(&src, read_imm(prefixes, imm));
 	LOG("basic immediate", src.value);
-	op(&dest, &src, reg, -1);
+	additional->used = false;
+	op(&dest, &src, reg, -1, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
@@ -4594,10 +4655,13 @@ static int perform_basic_op_imm(__attribute__((unused)) const char *name, basic_
 		regs->sources[reg] = 0;
 	}
 	clear_match(loader, regs, reg, imm);
-	return reg;
+	if (additional->used) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 }
 
-static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm)
+static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
 	int rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(int8_t), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest);
@@ -4614,7 +4678,8 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 		set_register(&src, (int32_t)*(const int8_t *)ins_modrm);
 	}
 	LOG("basic immediate", src.value);
-	op(&dest, &src, rm, -1);
+	additional->used = false;
+	op(&dest, &src, rm, -1, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
@@ -4622,6 +4687,10 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 		regs->sources[rm] = 0;
 	}
 	clear_match(loader, regs, rm, ins_modrm);
+	if (additional->used) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	}
 	return rm;
 }
 
@@ -5407,6 +5476,18 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 	return false;
 }
 
+#define CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg) do { \
+	if (UNLIKELY(additional.used)) { \
+		ins = next_ins(ins, &decoded); \
+		self.description = "primary result"; \
+		effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, jump_status, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS); \
+		self.current_state.registers[reg] = additional.state; \
+		self.description = "alternate result"; \
+		effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, jump_status, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS); \
+		goto update_and_return; \
+	} \
+} while(0)
+
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry)
 {
 	struct decoded_ins decoded;
@@ -5756,60 +5837,96 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 		}
 		switch (*decoded.unprefixed) {
-			case 0x00: // add r/m8, r8
-				perform_basic_op_rm_r_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			case 0x00: { // add r/m8, r8
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x01: // add r/m, r
-				perform_basic_op_rm_r("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			}
+			case 0x01: { // add r/m, r
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x02: // add r8, r/m8
-				perform_basic_op_r_rm_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			}
+			case 0x02: { // add r8, r/m8
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x03: // add r, r/m
-				perform_basic_op_r_rm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			}
+			case 0x03: { // add r, r/m
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x04: // add al, imm8
-				perform_basic_op_al_imm8("add", basic_op_add, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+			}
+			case 0x04: { // add al, imm8
+				struct additional_result additional;
+				perform_basic_op_al_imm8("add", basic_op_add, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
-			case 0x05: // add *ax, imm
-				perform_basic_op_imm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+			}
+			case 0x05: { // add *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
+			}
 			case 0x06:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
 			case 0x07:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
-			case 0x08: // or r/m8, r8
-				perform_basic_op_rm_r_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			case 0x08: { // or r/m8, r8
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x09: // or r/m, r
-				perform_basic_op_rm_r("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			}
+			case 0x09: { // or r/m, r
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x0a: // or r8, r/m8
-				perform_basic_op_r_rm_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			}
+			case 0x0a: { // or r8, r/m8
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x0b: // or r, r/m
-				perform_basic_op_r_rm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+			}
+			case 0x0b: { // or r, r/m
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x0c: // or al, imm8
-				perform_basic_op_al_imm8("or", basic_op_or, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+			}
+			case 0x0c: { // or al, imm8
+				struct additional_result additional;
+				perform_basic_op_al_imm8("or", basic_op_or, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
-			case 0x0d: // or *ax, imm
-				perform_basic_op_imm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+			}
+			case 0x0d: { // or *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
+			}
 			case 0x0e:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
@@ -6828,90 +6945,144 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						goto update_and_return;
 				}
 				break;
-			case 0x10: // adc r/m8, r8
+			case 0x10: { // adc r/m8, r8
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x11: // adc r/m, r
+			}
+			case 0x11: { // adc r/m, r
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x12: // adc r8, r/m8
+			}
+			case 0x12: { // adc r8, r/m8
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x13: // adc r, r/m
+			}
+			case 0x13: { // adc r, r/m
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x14: // adc al, imm8
+			}
+			case 0x14: { // adc al, imm8
+				struct additional_result additional;
+				perform_basic_op_al_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_al_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
-			case 0x15: // adc *ax, imm
+			}
+			case 0x15: { // adc *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
+			}
 			case 0x16:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
 			case 0x17:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
-			case 0x18: // sbb r/m8, r8
+			case 0x18: { // sbb r/m8, r8
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x19: // sbb r/m, r
+			}
+			case 0x19: { // sbb r/m, r
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x1a: // sbb r8, r/m8
+			}
+			case 0x1a: { // sbb r8, r/m8
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x1b: // sbb r, r/m
+			}
+			case 0x1b: { // sbb r, r/m
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x1c: // sbb al, imm8
+			}
+			case 0x1c: { // sbb al, imm8
+				struct additional_result additional;
+				perform_basic_op_al_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_al_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
-			case 0x1d: // sbb *ax, imm
+			}
+			case 0x1d: { // sbb *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
+			}
 			case 0x1e:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
 			case 0x1f:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
-			case 0x20: // and r/m8, r8
+			case 0x20: { // and r/m8, r8
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x21: // and r/m, r
+			}
+			case 0x21: { // and r/m, r
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
-			case 0x22: // and r8, r/m8
+			}
+			case 0x22: { // and r8, r/m8
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x23: // and r, r/m
+			}
+			case 0x23: { // and r, r/m
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
-			case 0x24: // and al, imm8
+			}
+			case 0x24: { // and al, imm8
+				struct additional_result additional;
+				perform_basic_op_al_imm8("and", basic_op_and, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_al_imm8("and", basic_op_and, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
-			case 0x25: // and *ax, imm
+			}
+			case 0x25: { // and *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
+			}
 			case 0x26:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
@@ -6919,39 +7090,51 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
 			case 0x28: { // sub r/m8, r8
-				int rm = perform_basic_op_rm_r_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, rm, 0xff);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x29: { // sub r/m, r
-				int rm = perform_basic_op_rm_r("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x2a: { // sub r8, r/m8
-				int reg = perform_basic_op_r_rm_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, reg, 0xff);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x2b: { // sub r, r/m
-				int reg = perform_basic_op_r_rm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, reg, mask_for_size_prefixes(decoded.prefixes));
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x2c: { // sub al, imm8
-				perform_basic_op_al_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+				struct additional_result additional;
+				perform_basic_op_al_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, REGISTER_RAX, 0xff);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
 			}
-			case 0x2d: {// sub *ax, imm
-				perform_basic_op_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+			case 0x2d: { // sub *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, REGISTER_RAX, mask_for_size_prefixes(decoded.prefixes));
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				break;
 			}
 			case 0x2e:
@@ -6960,56 +7143,80 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x2f:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
-			case 0x30: // xor r/m8, r8
+			case 0x30: { // xor r/m8, r8
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_rm_r_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
+			}
 			case 0x31: { // xor r/m, r
-				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				if (x86_modrm_is_direct(modrm) && reg == x86_read_rm(modrm, decoded.prefixes)) {
 					LOG("found xor with self, zeroing idiom", name_for_register(reg));
 					set_register(&self.current_state.registers[reg], 0);
+					self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 					self.current_state.sources[reg] = 0;
 					clear_match(&analysis->loader, &self.current_state, reg, ins);
 				} else {
-					perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+					struct additional_result additional;
+					int rm = perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
+					self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+					CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				}
 				goto skip_stack_clear;
 			}
-			case 0x32: // xor r8, r/m8
+			case 0x32: { // xor r8, r/m8
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				goto skip_stack_clear;
-			case 0x33: // xor r, r/m
+			}
+			case 0x33: { // xor r, r/m
+				struct additional_result additional;
+				int reg = perform_basic_op_r_rm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_r_rm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				goto skip_stack_clear;
-			case 0x34: // xor al, imm8
+			}
+			case 0x34: { // xor al, imm8
+				struct additional_result additional;
+				perform_basic_op_al_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_al_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				goto skip_stack_clear;
-			case 0x35: // xor *ax, imm
+			}
+			case 0x35: { // xor *ax, imm
+				struct additional_result additional;
+				perform_basic_op_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1], &additional);
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-				perform_basic_op_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, REGISTER_RAX, &decoded.unprefixed[1]);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_RAX);
 				goto skip_stack_clear;
+			}
 			case 0x36: // null prefix
 				break;
 			case 0x37:
 				LOG("invalid opcode", (uintptr_t)*decoded.unprefixed);
 				break;
 			case 0x38: // cmp r/m8, r8
+				// handled in decode_x86_comparisons
 				break;
 			case 0x39: // cmp r/m, r
+				// handled in decode_x86_comparisons
 				break;
 			case 0x3a: // cmp r8, r/m8
+				// handled in decode_x86_comparisons
 				break;
 			case 0x3b: // cmp r, r/m
+				// handled in decode_x86_comparisons
 				break;
 			case 0x3c: // cmp al, imm8
+				// handled in decode_x86_comparisons
 				break;
 			case 0x3d: // cmp r, imm
+				// handled in decode_x86_comparisons
 				break;
 			case 0x3e: // null prefix
 				break;
@@ -7338,79 +7545,89 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x80: {
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
+				struct additional_result additional;
+				int rm;
 				switch (modrm.reg) {
 					case 0: // add r/m, imm8
+						rm = perform_basic_op_rm8_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm8_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 1: // or r/m, imm8
+						rm = perform_basic_op_rm8_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm8_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 2: // adc r/m, imm8
+						rm = perform_basic_op_rm8_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm8_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 3: // sbb r/m, imm8
+						rm = perform_basic_op_rm8_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm8_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 4: // and r/m, imm8
+						rm = perform_basic_op_rm8_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm8_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
-					case 5: { // sub r/m, imm8
-						int rm = perform_basic_op_rm8_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+					case 5: // sub r/m, imm8
+						rm = perform_basic_op_rm8_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						set_compare_from_operation(&self.current_state, rm, 0xff);
 						break;
-					}
 					case 6: // xor r/m, imm8
+						rm = perform_basic_op_rm8_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm8_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 7: // cmp r/m, imm8
-						// TODO: handle cmp
+					default:
+						// handled in decode_x86_comparisons
+						additional.used = false;
+						rm = REGISTER_INVALID;
 						break;
 				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x81: {
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
+				struct additional_result additional;
+				int rm;
 				switch (modrm.reg) {
 					case 0: // add r/m, imm
+						rm = perform_basic_op_rm_imm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 1: // or r/m, imm
+						rm = perform_basic_op_rm_imm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 2: // adc r/m, imm
+						rm = perform_basic_op_rm_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 3: // sbb r/m, imm
+						rm = perform_basic_op_rm_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
-					case 4: // and r/m, imm
+					case 4: { // and r/m, imm
+						rm = perform_basic_op_rm_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
-						break;
-					case 5: { // sub r/m, imm
-						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						int rm = perform_basic_op_rm_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
-						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
 						break;
 					}
+					case 5: // sub r/m, imm
+						rm = perform_basic_op_rm_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
+						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
+						break;
 					case 6: // xor r/m, imm
+						rm = perform_basic_op_rm_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 7: // cmp r/m, imm
-						// TODO: handle cmp
+					default:
+						// handled in decode_x86_comparisons
+						additional.used = false;
+						rm = REGISTER_INVALID;
 						break;
 				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x82:
@@ -7418,9 +7635,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x83: {
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
+				struct additional_result additional;
+				int rm;
 				switch (modrm.reg) {
 					case 0: { // add r/m, imm8
-						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						if (decoded.prefixes.has_w && modrm.mod == 0x3 && x86_read_rm(modrm, decoded.prefixes) == REGISTER_SP) {
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
@@ -7432,33 +7650,36 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct register_state src;
 								set_register(&src, imm);
-								basic_op_add(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1);
+								(void)basic_op_add(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, NULL);
 								canonicalize_register(&self.current_state.registers[REGISTER_SP]);
 								dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+								additional.used = false;
+								rm = REGISTER_INVALID;
 								break;
 							}
 						}
-						perform_basic_op_rm_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
+						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						break;
 					}
 					case 1: // or r/m, imm8
+						rm = perform_basic_op_rm_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 2: // adc r/m, imm8
+						rm = perform_basic_op_rm_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 3: // sbb r/m, imm8
+						rm = perform_basic_op_rm_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 4: // and r/m, imm8
+						rm = perform_basic_op_rm_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
 					case 5: { // sub r/m, imm8
-						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 						if (decoded.prefixes.has_w && modrm.mod == 0x3 && x86_read_rm(modrm, decoded.prefixes) == REGISTER_SP) {
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
@@ -7470,31 +7691,38 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct register_state src;
 								set_register(&src, imm);
-								basic_op_sub(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1);
+								(void)basic_op_sub(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, NULL);
 								canonicalize_register(&self.current_state.registers[REGISTER_SP]);
 								dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
+								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+								additional.used = false;
+								rm = REGISTER_INVALID;
 								break;
 							}
 						}
-						int rm = perform_basic_op_rm_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
 						break;
 					}
 					case 6: // xor r/m, imm8
+						rm = perform_basic_op_rm_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-						perform_basic_op_rm_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
 						break;
+					default:
 					case 7: // cmp r/m, imm8
-						// TODO: handle cmp
+						// handled in decode_x86_comparisons
+						additional.used = false;
+						rm = REGISTER_INVALID;
 						break;
 				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x84: // test r/m8, r8
-				// TODO: handle test
+				// handled in decode_x86_comparisons
 				break;
 			case 0x85: // test r/m, r
-				// TODO: handle test
+				// handled in decode_x86_comparisons
 				break;
 			case 0x86: { // xchg r8, r/m8
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
@@ -7937,10 +8165,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				break;
 			case 0xa8: // test al, imm8
-				// TODO: implement test
+				// handled in decode_x86_comparisons
 				break;
 			case 0xa9: // test *ax, imm
-				// TODO: implement test
+				// handled in decode_x86_comparisons
 				break;
 			case 0xaa: // stos m8, al
 				break;
@@ -8012,42 +8240,48 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0xc0: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, imm8
 				// TODO: read reg to know which in the family to dispatch
-				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
+				struct additional_result additional;
+				int rm;
 				switch (modrm.reg) {
 					case 4:
-						perform_basic_op_rm8_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm8_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					case 5:
-						perform_basic_op_rm8_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm8_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					case 7:
-						perform_basic_op_rm8_imm8("sar", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm8_imm8("sar", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					default:
-						perform_basic_op_rm8_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm8_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 				}
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0xc1: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, imm8
 				// TODO: read reg to know which in the family to dispatch
-				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				struct additional_result additional;
+				int rm;
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				switch (modrm.reg) {
 					case 4:
-						perform_basic_op_rm_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					case 5:
-						perform_basic_op_rm_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					case 7:
-						perform_basic_op_rm_imm8("sar", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm_imm8("sar", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					default:
-						perform_basic_op_rm_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1]);
+						rm = perform_basic_op_rm_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 				}
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0xc2: // ret imm16
@@ -8343,7 +8577,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				switch (modrm.reg) {
 					case 0: 
 					case 1: // test r/m8, imm8
-						// TODO: implement test
+						// handled in decode_x86_comparisons
 						break;
 					case 2: { // not r/m8, imm8
 						// TODO: implement not
@@ -8396,9 +8630,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xf7: {
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				switch (modrm.reg) {
-					case 0: 
+					case 0:
 					case 1: // test r/m, imm
-						// TODO: implement test
+						// handled in decode_x86_comparisons
 						break;
 					case 2: { // not r/m, imm
 						// TODO: implement not

@@ -155,5 +155,6 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOFOLLOW, any) @ libc.so.6+0xe12d9(open+21
 openat(AT_FDCWD, libc.so.6+0x172761, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe2080(getcwd+496)
 openat(any, libc.so.6+0x172761, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe22a3(getcwd+1043)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xe0f09(__fxstatat+25)
-dup3(any u32, STDIN_FILENO-0xfffffffe, 0-O_CLOEXEC) @ libc.so.6+0xe1d15(dup3+5)
+dup3(any u32, STDIN_FILENO-0xfffffffe, 0) @ libc.so.6+0xe1d15(dup3+5)
+dup3(any u32, STDIN_FILENO-0xfffffffe, O_CLOEXEC) @ libc.so.6+0xe1d15(dup3+5)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xe644e(getrlimit+14)
