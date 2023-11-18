@@ -4304,94 +4304,120 @@ struct additional_result {
 	bool used;
 };
 
-#define BASIC_OP_ARGS struct register_state dest[static 1], const struct register_state source[static 1], __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg, __attribute__((unused)) struct additional_result additional[static 1]
-typedef void (*basic_op)(BASIC_OP_ARGS);
+enum basic_op_usage {
+	BASIC_OP_USED_NEITHER = 0,
+	BASIC_OP_USED_SOURCE = 1,
+	BASIC_OP_USED_DEST = 2,
+	BASIC_OP_USED_BOTH = 3,
+};
 
-static void basic_op_unknown(BASIC_OP_ARGS)
+#define BASIC_OP_ARGS struct register_state dest[static 1], const struct register_state source[static 1], __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg, __attribute__((unused)) struct additional_result additional[static 1]
+typedef __attribute__((warn_unused_result)) enum basic_op_usage (*basic_op)(BASIC_OP_ARGS);
+
+static enum basic_op_usage basic_op_unknown(BASIC_OP_ARGS)
 {
 	(void)source;
 	clear_register(dest);
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_add(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_add(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		dest->value = dest->max = dest->value + source->value;
-	} else if (__builtin_add_overflow(dest->value, source->value, &dest->value) || __builtin_add_overflow(dest->max, source->max, &dest->max)) {
-		clear_register(dest);
+		return BASIC_OP_USED_BOTH;
 	}
+	if (__builtin_add_overflow(dest->value, source->value, &dest->value) || __builtin_add_overflow(dest->max, source->max, &dest->max)) {
+		clear_register(dest);
+		return BASIC_OP_USED_BOTH;
+	}
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_or(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_or(BASIC_OP_ARGS)
 {
-	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
-		dest->value = dest->max = dest->value | source->value;
-		return;
+	if (dest->value == ~(uintptr_t)0) {
+		return BASIC_OP_USED_DEST;
 	}
 	if (source->value == ~(uintptr_t)0) {
 		dest->value = dest->max = ~(uintptr_t)0;
-		return;
+		return BASIC_OP_USED_SOURCE;
+	}
+	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
+		dest->value = dest->max = dest->value | source->value;
+		return BASIC_OP_USED_BOTH;
 	}
 	if (source->value < dest->value) {
 		dest->value = source->value;
 	}
 	dest->max |= source->max;
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_adc(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_adc(BASIC_OP_ARGS)
 {
 	if (__builtin_add_overflow(dest->max, source->max, &dest->max)) {
 		clear_register(dest);
-		return;
+		return BASIC_OP_USED_BOTH;
 	}
 	if (__builtin_add_overflow(dest->max, 1, &dest->max)) {
 		clear_register(dest);
-		return;
+		return BASIC_OP_USED_BOTH;
 	}
-	dest->value += source->value;
+	if (__builtin_add_overflow(dest->value, source->value, &dest->value)) {
+		clear_register(dest);
+	}
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_and(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_and(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(source)) {
 		if (register_is_exactly_known(dest)) {
 			// both are known, compute exact value
 			dest->max = dest->value = dest->value & source->value;
-			return;
+			return BASIC_OP_USED_BOTH;
 		}
 		if ((source->value & (source->value - 1)) == 0 && source->value != 0 && dest->max >= source->value) {
 			if (source->value == 1) {
 				dest->value = 0;
 				dest->max = 1;
-				return;
+				return BASIC_OP_USED_BOTH;
 			}
 			// source is known and has single bit set, branch
 			set_register(dest, source->value);
 			set_register(&additional->state, 0);
 			additional->used = true;
-			return;
+			return BASIC_OP_USED_BOTH;
 		}
 	} else if (register_is_exactly_known(dest)) {
 		if ((dest->value & (dest->value - 1)) == 0 && dest->value != 0 && source->max >= dest->value) {
 			if (dest->value == 1) {
 				dest->value = 0;
 				dest->max = 1;
-				return;
+				return BASIC_OP_USED_BOTH;
 			}
 			// source is known and has single bit set, branch
 			set_register(&additional->state, 0);
 			additional->used = true;
-			return;
+			return BASIC_OP_USED_BOTH;
 		}
 	}
 	dest->value = 0;
 	if (source->max < dest->max) {
 		dest->max = source->max;
 	}
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_sbb(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_sbb(BASIC_OP_ARGS)
 {
+	if (dest_reg == source_reg) {
+		set_register(dest, 0);
+		set_register(&additional->state, ~(uintptr_t)0);
+		additional->used = true;
+		return BASIC_OP_USED_NEITHER;
+	}
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		uintptr_t dest_value = dest->value;
 		dest->value = dest_value - (source->value + 1);
@@ -4399,29 +4425,39 @@ static void basic_op_sbb(BASIC_OP_ARGS)
 	} else {
 		clear_register(dest);
 	}
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_sub(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_sub(BASIC_OP_ARGS)
 {
 	if (__builtin_sub_overflow(dest->value, source->max, &dest->value) || __builtin_sub_overflow(dest->max, source->value, &dest->max)) {
 		clear_register(dest);
 	}
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_xor(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_xor(BASIC_OP_ARGS)
 {
+	if (dest_reg == source_reg) {
+		set_register(dest, 0);
+		return BASIC_OP_USED_NEITHER;
+	}
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		dest->max = dest->value = dest->value ^ source->value;
 	} else {
-		clear_register(dest);
+		if (source->max > dest->max) {
+			dest->max = source->max;
+		}
+		dest->value = 0;
 	}
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_shr(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_shr(BASIC_OP_ARGS)
 {
 	if (source->value > 64) {
 		clear_register(dest);
-		return;
+		return BASIC_OP_USED_BOTH;
 	}
 	if (register_is_exactly_known(source)) {
 		dest->value = dest->value >> source->value;
@@ -4429,9 +4465,10 @@ static void basic_op_shr(BASIC_OP_ARGS)
 		dest->value = 0;
 	}
 	dest->max = dest->max >> source->value;
+	return BASIC_OP_USED_BOTH;
 }
 
-static void basic_op_shl(BASIC_OP_ARGS)
+static enum basic_op_usage basic_op_shl(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(source) && register_is_exactly_known(dest)) {
 		if (source->value > 64) {
@@ -4442,9 +4479,30 @@ static void basic_op_shl(BASIC_OP_ARGS)
 	} else {
 		clear_register(dest);
 	}
+	return BASIC_OP_USED_BOTH;
 }
 
 #if defined(__x86_64__)
+
+static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int source_reg, enum basic_op_usage usage)
+{
+	if (source_reg == REGISTER_INVALID) {
+		usage &= ~BASIC_OP_USED_SOURCE;
+	}
+	switch (usage) {
+		case BASIC_OP_USED_NEITHER:
+			regs->sources[dest_reg] = 0;
+			break;
+		case BASIC_OP_USED_SOURCE:
+			regs->sources[dest_reg] = regs->sources[source_reg];
+			break;
+		case BASIC_OP_USED_DEST:
+			break;
+		case BASIC_OP_USED_BOTH:
+			regs->sources[dest_reg] |= regs->sources[source_reg];
+			break;
+	}
+}
 
 static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
@@ -4456,23 +4514,21 @@ static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, bas
 	LOG("basic operand", name_for_register(reg));
 	dump_registers(loader, regs, ((register_mask)1 << reg) | ((register_mask)1 << rm));
 	additional->used = false;
+	enum basic_op_usage usage;
 	if (register_is_legacy_8bit_high(prefixes, &rm) || register_is_legacy_8bit_high(prefixes, &reg)) {
+		usage = BASIC_OP_USED_NEITHER;
 		clear_register(&dest);
 		truncate_to_16bit(&dest);
 	} else {
 		struct register_state src = regs->registers[reg];
 		truncate_to_8bit(&src);
 		truncate_to_8bit(&dest);
-		op(&dest, &src, rm, reg, additional);
+		usage = op(&dest, &src, rm, reg, additional);
 		truncate_to_8bit(&dest);
 	}
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
-	if (register_is_partially_known_8bit(&dest)) {
-		regs->sources[rm] |= regs->sources[reg];
-	} else {
-		regs->sources[rm] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, rm, reg, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
 	if (additional->used) {
 		truncate_to_8bit(&additional->state);
@@ -4494,15 +4550,11 @@ static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic
 	truncate_to_size_prefixes(&src, prefixes);
 	truncate_to_size_prefixes(&dest, prefixes);
 	additional->used = false;
-	op(&dest, &src, rm, reg, additional);
+	enum basic_op_usage usage = op(&dest, &src, rm, reg, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
-	if (register_is_partially_known_size_prefixes(&dest, prefixes)) {
-		regs->sources[rm] |= regs->sources[reg];
-	} else {
-		regs->sources[rm] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, rm, reg, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
 	if (additional->used) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
@@ -4521,22 +4573,20 @@ static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, bas
 	LOG("basic operand", name_for_register(rm));
 	struct register_state dest = regs->registers[reg];
 	additional->used = false;
+	enum basic_op_usage usage;
 	if (register_is_legacy_8bit_high(prefixes, &rm) || register_is_legacy_8bit_high(prefixes, &reg)) {
+		usage = BASIC_OP_USED_NEITHER;
 		clear_register(&dest);
 		truncate_to_16bit(&dest);
 	} else {
 		truncate_to_8bit(&src);
 		truncate_to_8bit(&dest);
-		op(&dest, &src, reg, rm, additional);
+		usage = op(&dest, &src, reg, rm, additional);
 		truncate_to_8bit(&dest);
 	}
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
-	if (register_is_partially_known_8bit(&dest)) {
-		regs->sources[reg] |= regs->sources[rm];
-	} else {
-		regs->sources[reg] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, reg, rm, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, ins_modrm);
 	if (additional->used) {
 		truncate_to_8bit(&additional->state);
@@ -4558,15 +4608,11 @@ static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic
 	truncate_to_size_prefixes(&src, prefixes);
 	truncate_to_size_prefixes(&dest, prefixes);
 	additional->used = false;
-	op(&dest, &src, reg, rm, additional);
+	enum basic_op_usage usage = op(&dest, &src, reg, rm, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
-	if (register_is_partially_known_size_prefixes(&dest, prefixes)) {
-		regs->sources[reg] |= regs->sources[rm];
-	} else {
-		regs->sources[reg] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, reg, rm, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, ins_modrm);
 	if (additional->used) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
@@ -4583,7 +4629,9 @@ static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, b
 	LOG("basic destination", name_for_register(rm));
 	dump_registers(loader, regs, (register_mask)1 << rm);
 	additional->used = false;
+	enum basic_op_usage usage;
 	if (register_is_legacy_8bit_high(prefixes, &rm)) {
+		usage = BASIC_OP_USED_NEITHER;
 		LOG("legacy 8 bit high");
 		clear_register(&dest);
 		truncate_to_16bit(&dest);
@@ -4592,14 +4640,12 @@ static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, b
 		struct register_state src;
 		set_register(&src, *ins_modrm);
 		LOG("basic immediate", src.value);
-		op(&dest, &src, rm, -1, additional);
+		usage = op(&dest, &src, rm, -1, additional);
 		truncate_to_8bit(&dest);
 	}
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
-	if (!register_is_partially_known_8bit(&dest)) {
-		regs->sources[rm] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, rm, REGISTER_INVALID, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
 	if (additional->used) {
 		truncate_to_8bit(&additional->state);
@@ -4620,13 +4666,11 @@ static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, b
 	set_register(&src, *imm);
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	op(&dest, &src, reg, -1, additional);
+	enum basic_op_usage usage = op(&dest, &src, reg, -1, additional);
 	truncate_to_8bit(&dest);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
-	if (!register_is_partially_known_8bit(&dest)) {
-		regs->sources[reg] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, reg, REGISTER_INVALID, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, imm);
 	if (additional->used) {
 		truncate_to_8bit(&additional->state);
@@ -4646,13 +4690,11 @@ static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, bas
 	set_register(&src, read_imm(prefixes, ins_modrm));
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	op(&dest, &src, rm, -1, additional);
+	enum basic_op_usage usage = op(&dest, &src, rm, -1, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
-	if (!register_is_partially_known_size_prefixes(&dest, prefixes)) {
-		regs->sources[rm] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, rm, rm, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
 	if (additional->used) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
@@ -4672,13 +4714,11 @@ static void perform_basic_op_imm(__attribute__((unused)) const char *name, basic
 	set_register(&src, read_imm(prefixes, imm));
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	op(&dest, &src, reg, -1, additional);
+	enum basic_op_usage usage = op(&dest, &src, reg, -1, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[reg] = dest;
-	if (!register_is_partially_known_size_prefixes(&dest, prefixes)) {
-		regs->sources[reg] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, reg, REGISTER_INVALID, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, imm);
 	if (additional->used) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
@@ -4704,13 +4744,11 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 	}
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	op(&dest, &src, rm, -1, additional);
+	enum basic_op_usage usage = op(&dest, &src, rm, -1, additional);
 	truncate_to_size_prefixes(&dest, prefixes);
 	LOG("result", temp_str(copy_register_state_description(loader, dest)));
 	regs->registers[rm] = dest;
-	if (!register_is_partially_known_size_prefixes(&dest, prefixes)) {
-		regs->sources[rm] = 0;
-	}
+	update_sources_for_basic_op_usage(regs, rm, REGISTER_INVALID, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
 	if (additional->used) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
@@ -7176,20 +7214,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0x31: { // xor r/m, r
-				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
-				int reg = x86_read_reg(modrm, decoded.prefixes);
-				if (x86_modrm_is_direct(modrm) && reg == x86_read_rm(modrm, decoded.prefixes)) {
-					LOG("found xor with self, zeroing idiom", name_for_register(reg));
-					set_register(&self.current_state.registers[reg], 0);
-					self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-					self.current_state.sources[reg] = 0;
-					clear_match(&analysis->loader, &self.current_state, reg, ins);
-				} else {
-					struct additional_result additional;
-					int rm = perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
-					self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
-					CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
-				}
+				struct additional_result additional;
+				int rm = perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
+				self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				goto skip_stack_clear;
 			}
 			case 0x32: { // xor r8, r/m8
