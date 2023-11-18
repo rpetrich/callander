@@ -2775,13 +2775,28 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
 	// block creating executable stacks
 	int third_arg = sysv_argument_abi_register_indexes[2];
 	int fourth_arg = sysv_argument_abi_register_indexes[3];
-	if (!register_is_exactly_known(&state->registers[third_arg])) {
+	if (!register_is_exactly_known(&state->registers[third_arg]) || state->registers[third_arg].value == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
 		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & MAP_STACK) == MAP_STACK) {
 			if (caller != NULL) {
 				struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
 				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
 				if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
 					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+					clear_match(&analysis->loader, state, third_arg, ins);
+				} else {
+					while (binary_has_flags(binary, BINARY_IS_LIBC)) {
+						if (name != NULL && fs_strcmp(name, "posix_spawnp") == 0) {
+							set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+							clear_match(&analysis->loader, state, third_arg, ins);
+							break;
+						}
+						caller = caller->next;
+						if (caller == NULL) {
+							break;
+						}
+						binary = binary_for_address(&analysis->loader, caller->entry);
+						name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
+					}
 				}
 			}
 		}
@@ -5567,7 +5582,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		self.current_state.sources[i] = (register_mask)1 << i;
 	}
-	LOG("entering block", temp_str(copy_function_call_description(&analysis->loader, ins, *self.entry_state)));
+	LOG("entering block", temp_str(copy_function_call_description(&analysis->loader, ins, self.current_state)));
 	register_mask pending_stack_clear = 0;
 	for (;;) {
 		self.address = ins;
