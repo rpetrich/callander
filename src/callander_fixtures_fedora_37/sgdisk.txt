@@ -98,7 +98,7 @@ sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xf1149(sched_setscheduler
 sched_getscheduler(any u32) @ libc.so.6+0xf1179(__sched_getscheduler+9)
 sched_get_priority_max(1) @ libc.so.6+0xf11d9(__sched_get_priority_max+9)
 sched_get_priority_min(1) @ libc.so.6+0xf1209(sched_get_priority_min+9)
-arch_prctl(0x3002, any u8) @ ld-linux-x86-64.so.2+0x16ef2(dl_cet_check+722)
+arch_prctl(0x3002, NULL-0x3) @ ld-linux-x86-64.so.2+0x16ef2(dl_cet_check+722)
 sync() @ libc.so.6+0x101d69(sync+9)
 gettid() @ libc.so.6+0x8ceb5(__pthread_kill_implementation+245)
 gettid() @ libc.so.6+0x1049cb(syscall+27)
