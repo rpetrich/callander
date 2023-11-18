@@ -70,7 +70,7 @@ char *copy_register_state_description(const struct loader_context *context, stru
 		if (reg.value == 0x7fffffff) {
 			return strdup("INT_MAX");
 		}
-		if ((uintptr_t)reg.value < PAGE_SIZE) {
+		if ((uintptr_t)reg.value < 4096) {
 			char *buf = malloc(5);
 			fs_utoa(reg.value, buf);
 			return buf;
@@ -147,7 +147,9 @@ static struct enum_option maps[] = {
 };
 
 static const char *map_flags[64] = {
+#ifdef MAP_32BIT
 	DESCRIBE_FLAG(MAP_32BIT),
+#endif
 	DESCRIBE_FLAG(MAP_ANONYMOUS),
 	DESCRIBE_FLAG(MAP_DENYWRITE),
 	DESCRIBE_FLAG(MAP_EXECUTABLE),
@@ -898,11 +900,19 @@ static struct enum_option ptrace_requests[] = {
 	DESCRIBE_ENUM(PTRACE_POKETEXT),
 	DESCRIBE_ENUM(PTRACE_POKEDATA),
 	DESCRIBE_ENUM(PTRACE_POKEUSER),
+#ifdef PTRACE_GETREGS
 	DESCRIBE_ENUM(PTRACE_GETREGS),
+#endif
+#ifdef PTRACE_GETFPREGS
 	DESCRIBE_ENUM(PTRACE_GETFPREGS),
+#endif
 	DESCRIBE_ENUM(PTRACE_GETREGSET),
+#ifdef PTRACE_SETREGS
 	DESCRIBE_ENUM(PTRACE_SETREGS),
+#endif
+#ifdef PTRACE_SETFPREGS
 	DESCRIBE_ENUM(PTRACE_SETFPREGS),
+#endif
 	DESCRIBE_ENUM(PTRACE_SETREGSET),
 	DESCRIBE_ENUM(PTRACE_GETSIGINFO),
 	DESCRIBE_ENUM(PTRACE_SETSIGINFO),
@@ -914,8 +924,12 @@ static struct enum_option ptrace_requests[] = {
 	DESCRIBE_ENUM(PTRACE_CONT),
 	DESCRIBE_ENUM(PTRACE_SYSCALL),
 	DESCRIBE_ENUM(PTRACE_SINGLESTEP),
+#ifdef PTRACE_SYSEMU
 	DESCRIBE_ENUM(PTRACE_SYSEMU),
+#endif
+#ifdef PTRACE_SYSEMU_SINGLESTEP
 	DESCRIBE_ENUM(PTRACE_SYSEMU_SINGLESTEP),
+#endif
 	DESCRIBE_ENUM(PTRACE_LISTEN),
 	DESCRIBE_ENUM(PTRACE_KILL),
 	DESCRIBE_ENUM(PTRACE_INTERRUPT),
@@ -923,8 +937,12 @@ static struct enum_option ptrace_requests[] = {
 	DESCRIBE_ENUM(PTRACE_SEIZE),
 	DESCRIBE_ENUM(PTRACE_SECCOMP_GET_FILTER),
 	DESCRIBE_ENUM(PTRACE_DETACH),
+#ifdef PTRACE_GET_THREAD_AREA
 	DESCRIBE_ENUM(PTRACE_GET_THREAD_AREA),
+#endif
+#ifdef PTRACE_SET_THREAD_AREA
 	DESCRIBE_ENUM(PTRACE_SET_THREAD_AREA),
+#endif
 	DESCRIBE_ENUM(PTRACE_GET_SYSCALL_INFO),
 };
 
@@ -1256,7 +1274,7 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 		}
 		if (suffix == NULL && (length == 0 || remaining != 0)) {
 			suffix = num_buf;
-			suffix_len = (description_options & DESCRIBE_AS_FILE_MODE) ? format_octal(remaining, num_buf) : (remaining < PAGE_SIZE ? fs_utoa(remaining, num_buf) : fs_utoah(remaining, num_buf));
+			suffix_len = (description_options & DESCRIBE_AS_FILE_MODE) ? format_octal(remaining, num_buf) : (remaining < 4096 ? fs_utoa(remaining, num_buf) : fs_utoah(remaining, num_buf));
 			length += suffix_len + 1;
 		}
 	}

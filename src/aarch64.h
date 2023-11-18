@@ -70,6 +70,6 @@ static inline bool aarch64_is_jbe_instruction(const uint32_t *ins)
 
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 2)))
-enum ins_jump_behavior aarch64_decode_jump_instruction(const uint32_t *ins, const uint32_t **out_jump);
+enum ins_jump_behavior aarch64_decode_jump_instruction(const struct aarch64_instruction *ins, const uint32_t **out_jump);
 
 #endif

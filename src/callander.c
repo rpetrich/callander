@@ -599,7 +599,8 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	}
 	clear_register(&regs->registers[REGISTER_R11]);
 	regs->sources[REGISTER_R11] = 0;
-	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
+	bool isGo = binary_has_flags(binary, BINARY_IS_GOLANG);
+	if (isGo) {
 		if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RBX])) {
 			LOG("clearing call dirtied register", name_for_register(REGISTER_RBX));
 		}
@@ -616,7 +617,13 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	}
 #else
 #if defined(__aarch64__)
-	// TODO: clear call dirtied registers
+	for (int r = REGISTER_X9; r <= REGISTER_X17; r++) {
+		if (SHOULD_LOG && register_is_partially_known(&regs->registers[r])) {
+			LOG("clearing call dirtied register", name_for_register(r));
+		}
+		clear_register(&regs->registers[r]);
+		regs->sources[r] = 0;
+	}
 #else
 #error "Unknown architecture"
 #endif
@@ -633,9 +640,17 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	clear_match(loader, regs, REGISTER_R9, ins);
 	clear_match(loader, regs, REGISTER_R10, ins);
 	clear_match(loader, regs, REGISTER_R11, ins);
+	if (isGo) {
+		clear_match(loader, regs, REGISTER_RBX, ins);
+		clear_match(loader, regs, REGISTER_RSI, ins);
+	}
 #else
 #if defined(__aarch64__)
-	// TODO: clear matches for call dirtied registers
+	for (int r = REGISTER_X9; r <= REGISTER_X17; r++) {
+		clear_match(loader, regs, r, ins);
+	}
+	// TODO: support golang's internal ABI on arm64
+	(void)binary;
 #else
 #error "Unknown architecture"
 #endif
@@ -4907,7 +4922,7 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 	// skip over function stubs that simply call into a target function
 	ins_ptr ret = ins;
 	struct decoded_ins peek;
-	if (!x86_decode_instruction(ins, &peek)) {
+	if (!decode_ins(ins, &peek)) {
 		return NULL;
 	}
 	*decoded = peek;
@@ -4918,7 +4933,7 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next);
 #endif
 			ins = next;
-			if (!x86_decode_instruction(ins, &peek)) {
+			if (!decode_ins(ins, &peek)) {
 				return NULL;
 			}
 		} else {
@@ -4939,7 +4954,7 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 #endif
 			ins = jump_target;
 			ret = jump_target;
-			if (!x86_decode_instruction(ins, decoded)) {
+			if (!decode_ins(ins, decoded)) {
 				return NULL;
 			}
 		}
