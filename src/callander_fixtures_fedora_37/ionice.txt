@@ -74,7 +74,7 @@ tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8ce97(__pthread_kill_implementat
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8ce97(__pthread_kill_implementation+215)
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8ceca(__pthread_kill_implementation+266)
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8ceca(__pthread_kill_implementation+266)
-ioprio_set(NULL-0x3, any u32, any u32) @ libc.so.6+0x1049cb(syscall+27)
+ioprio_set(any u32, any u32, any u32) @ libc.so.6+0x1049cb(syscall+27)
 ioprio_get(NULL-0x3, any u32) @ libc.so.6+0x1049cb(syscall+27)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xfafd3(__open+83)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xfb04e(__open+206)

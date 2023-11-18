@@ -128,7 +128,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x4315a(setcontext+26)
 rt_sigprocmask(SIG_SETMASK, any, any, 8) @ libc.so.6+0x43478(swapcontext+136)
 rt_sigreturn(any) @ libpthread.so.0+0x118e7
 rt_sigreturn(any) @ libc.so.6+0x33d17
-ioctl(any, TCSETSW-TCSETSF, any) @ libc.so.6+0xe6048(tcsetattr+200)
+ioctl(any, TCSETS-TCSETSF, any) @ libc.so.6+0xe6048(tcsetattr+200)
+ioctl(any, TCGETS, any) @ libc.so.6+0xe6084(tcsetattr+260)
 ioctl(any, TCGETS, any) @ libc.so.6+0xe6139(tcgetattr+41)
 ioctl(any u32, any, any) @ libc.so.6+0xe69a5(ioctl+5)
 pread64(any u32, any, any u32, any) @ libpthread.so.0+0x10ff1(__pread64+17)
