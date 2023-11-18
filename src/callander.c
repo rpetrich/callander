@@ -4360,6 +4360,11 @@ static void basic_op_and(BASIC_OP_ARGS)
 			return;
 		}
 		if ((source->value & (source->value - 1)) == 0 && source->value != 0 && dest->max >= source->value) {
+			if (source->value == 1) {
+				dest->value = 0;
+				dest->max = 1;
+				return;
+			}
 			// source is known and has single bit set, branch
 			set_register(dest, source->value);
 			set_register(&additional->state, 0);
@@ -4368,6 +4373,11 @@ static void basic_op_and(BASIC_OP_ARGS)
 		}
 	} else if (register_is_exactly_known(dest)) {
 		if ((dest->value & (dest->value - 1)) == 0 && dest->value != 0 && source->max >= dest->value) {
+			if (dest->value == 1) {
+				dest->value = 0;
+				dest->max = 1;
+				return;
+			}
 			// source is known and has single bit set, branch
 			set_register(&additional->state, 0);
 			additional->used = true;
