@@ -214,5 +214,5 @@ openat(any, libc.so.6+0x172761, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe22a3(get
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xe0f09(__fxstatat+25)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xe0f09(__fxstatat+25)
 faccessat(AT_FDCWD, any, any, any) @ libc.so.6+0xe17e0(faccessat+64)
-prlimit64(0, any u32, 0, any) @ libc.so.6+0xe644e(getrlimit+14)
-prlimit64(0, any u32, any, 0) @ libc.so.6+0xe647f(setrlimit+15)
+prlimit64(0, any u8, 0, any) @ libc.so.6+0xe644e(getrlimit+14)
+prlimit64(0, any u8, any, 0) @ libc.so.6+0xe647f(setrlimit+15)

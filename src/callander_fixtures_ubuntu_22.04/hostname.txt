@@ -69,7 +69,7 @@ sched_setscheduler(any u32, any u32, any) @ libc.so.6+0x108c39(__sched_setschedu
 sched_getscheduler(any u32) @ libc.so.6+0x108c69(sched_getscheduler+9)
 sched_get_priority_max(1) @ libc.so.6+0x108cc9(sched_get_priority_max+9)
 sched_get_priority_min(1) @ libc.so.6+0x108cf9(__sched_get_priority_min+9)
-sethostname(any, 0x1-0xffffffff) @ libc.so.6+0x11b569(sethostname+9)
+sethostname(any, any u32) @ libc.so.6+0x11b569(sethostname+9)
 setdomainname(any, any) @ libc.so.6+0x11b6a9(setdomainname+9)
 gettid() @ libc.so.6+0x969e5(pthread_kill+277)
 futex(any, any u8, 1, 0, any u32, any)

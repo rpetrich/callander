@@ -169,7 +169,7 @@ faccessat(AT_FDCWD, non-NULL, X_OK-W_OK, any) @ libc.so.6+0x10e3b8(faccessat+264
 faccessat(AT_FDCWD, non-NULL, R_OK, any) @ libc.so.6+0x10e3b8(faccessat+264)
 pselect6(any u32, any, 0, 0, 0, any) @ libc.so.6+0x115079(pselect+89)
 pselect6(any u32, any, 0, 0, 0, any) @ libc.so.6+0x1150e4(pselect+196)
-prlimit64(0, any u32, 0, any) @ libc.so.6+0x113d72(getrlimit+18)
+prlimit64(0, any u8, 0, any) @ libc.so.6+0x113d72(getrlimit+18)
 prlimit64(0, any u8, any, 0) @ libc.so.6+0x113db3(setrlimit+19)
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x120c48(sendmmsg+24)
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x120c8c(sendmmsg+92)
