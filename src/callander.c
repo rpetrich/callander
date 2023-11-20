@@ -5038,240 +5038,297 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 				continue_state.registers[target_register].value &= compare_mask;
 				continue_state.registers[target_register].max &= compare_mask;
 			}
-			if (is_jb_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jb comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; jb
-				if (jump_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
-					skip_jump_mask |= (register_mask)1 << target_register;
-					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-				} else if (jump_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
-					jump_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
-				}
-				if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
-					skip_continue_mask |= (register_mask)1 << target_register;
-					LOG("continue jump", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-				} else if (continue_state.registers[target_register].value < self->current_state.compare_state.value.value) {
-					continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
-				}
-			}
-			if (is_jae_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jae comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; jae
-				if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
-					skip_jump_mask |= (register_mask)1 << target_register;
-					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-				} else if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
-					jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
-				}
-				if (continue_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
-					skip_continue_mask |= (register_mask)1 << target_register;
-					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-				} else if (continue_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
-					continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
-				}
-			}
-			if (is_je_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
-				LOG("found je comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; je
-				if (jump_state.registers[target_register].value <= self->current_state.compare_state.value.value && self->current_state.compare_state.value.value <= jump_state.registers[target_register].max) {
-					jump_state.registers[target_register] = self->current_state.compare_state.value;
-					jump_state.sources[target_register] = self->current_state.compare_state.sources;
-					// remove value from edge of ranges
-					if (continue_state.registers[target_register].value == self->current_state.compare_state.value.value) {
-						if (register_is_exactly_known(&continue_state.registers[target_register])) {
-							skip_continue_mask |= (register_mask)1 << target_register;
-							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-						} else {
-							continue_state.registers[target_register].value++;
-						}
-					} else if (continue_state.registers[target_register].max == self->current_state.compare_state.value.value) {
-						continue_state.registers[target_register].max--;
-					}
-				} else {
-					skip_jump_mask |= (register_mask)1 << target_register;
-					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-				}
-			}
-			if (is_jne_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY)) {
-				LOG("found jne comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; jne
-				if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value && self->current_state.compare_state.value.value <= continue_state.registers[target_register].max) {
-					continue_state.registers[target_register] = self->current_state.compare_state.value;
-					continue_state.sources[target_register] = self->current_state.compare_state.sources;
-					// remove value from edge of ranges
-					if (jump_state.registers[target_register].value == self->current_state.compare_state.value.value) {
-						if (register_is_exactly_known(&jump_state.registers[target_register])) {
+			switch (ins_get_conditional_type(decoded)) {
+				case INS_CONDITIONAL_TYPE_BELOW:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jb comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; jb
+						if (jump_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
 							skip_jump_mask |= (register_mask)1 << target_register;
 							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-						} else {
-							jump_state.registers[target_register].value++;
+						} else if (jump_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
+							jump_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
 						}
-					} else if (jump_state.registers[target_register].max == self->current_state.compare_state.value.value) {
-						jump_state.registers[target_register].max--;
-					}
-				} else {
-					skip_continue_mask |= (register_mask)1 << target_register;
-					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-				}
-			}
-			if (is_jbe_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jbe comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; jbe
-				if (jump_state.registers[target_register].value > self->current_state.compare_state.value.value) {
-					skip_jump_mask |= (register_mask)1 << target_register;
-					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-				} else if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
-					jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
-				}
-				if (continue_state.registers[target_register].max <= self->current_state.compare_state.value.value) {
-					skip_continue_mask |= (register_mask)1 << target_register;
-					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-				} else if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
-					continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
-				}
-			}
-			if (is_ja_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found ja comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; ja
-				if (jump_state.registers[target_register].max <= self->current_state.compare_state.value.value) {
-					skip_jump_mask |= (register_mask)1 << target_register;
-					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-				} else if (jump_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
-					jump_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
-				}
-				if (continue_state.registers[target_register].value > self->current_state.compare_state.value.value) {
-					skip_continue_mask |= (register_mask)1 << target_register;
-					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-				} else if (continue_state.registers[target_register].max > self->current_state.compare_state.value.value) {
-					continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
-				}
-			}
-			if (is_js_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found js comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				if (self->current_state.compare_state.value.value == 0) {
-					uintptr_t msb = most_significant_bit(self->current_state.compare_state.mask);
-					// test %target_register; ja
-					if (jump_state.registers[target_register].max < msb) {
-						skip_jump_mask |= (register_mask)1 << target_register;
-						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-					} else if (jump_state.registers[target_register].value < msb) {
-						jump_state.registers[target_register].value = msb;
-					}
-					if (continue_state.registers[target_register].value >= msb) {
-						skip_continue_mask |= (register_mask)1 << target_register;
-						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-					} else if (continue_state.registers[target_register].max >= msb) {
-						continue_state.registers[target_register].max = msb - 1;
-					}
-				}
-			}
-			if (is_jns_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jns comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				if (self->current_state.compare_state.value.value == 0) {
-					uintptr_t msb = most_significant_bit(self->current_state.compare_state.mask);
-					// test %target_register; ja
-					if (jump_state.registers[target_register].value >= msb) {
-						skip_jump_mask |= (register_mask)1 << target_register;
-						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-					} else if (jump_state.registers[target_register].max >= msb) {
-						jump_state.registers[target_register].max = msb - 1;
-					}
-					if (continue_state.registers[target_register].max < msb) {
-						skip_continue_mask |= (register_mask)1 << target_register;
-						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-					} else if (continue_state.registers[target_register].value < msb) {
-						continue_state.registers[target_register].value = msb;
-					}
-				}
-			}
-			if (is_jl_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jl comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				// test %target_register; jl
-				if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
-					LOG("signed comparison on potentially negative value, skipping narrowing");
-				} else {
-					if (jump_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
-						skip_jump_mask |= (register_mask)1 << target_register;
-						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-					} else if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
-						jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
-					}
-					if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
-						skip_continue_mask |= (register_mask)1 << target_register;
-						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-					} else if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
-						continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
-					}
-				}
-			}
-			if (is_jge_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jge comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
-					LOG("signed comparison on potentially negative value, skipping narrowing");
-				} else {
-					// test %target_register; jge
-					if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
-						skip_jump_mask |= (register_mask)1 << target_register;
-						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
-					} else if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
-						jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
-					}
-					if (continue_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
-						skip_continue_mask |= (register_mask)1 << target_register;
-						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
-					} else if (continue_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
-						continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
-					}
-				}
-			}
-			if (is_jg_ins(decoded) && (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE)) {
-				LOG("found jg comparing", name_for_register(target_register));
-				dump_register(&analysis->loader, continue_state.registers[target_register]);
-				LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
-				if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
-					LOG("signed comparison on potentially negative value, skipping narrowing");
-				} else {
-					// test %target_register; jg
-					if (register_is_partially_known(&continue_state.registers[target_register])) {
-						if (continue_state.registers[target_register].max > self->current_state.compare_state.value.value) {
-							continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
-						}
-						if (continue_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+						if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+							skip_continue_mask |= (register_mask)1 << target_register;
+							LOG("continue jump", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						} else if (continue_state.registers[target_register].value < self->current_state.compare_state.value.value) {
 							continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
 						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_ABOVE_OR_EQUAL:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jae comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; jae
 						if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
-							jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
-						}
-						if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+							skip_jump_mask |= (register_mask)1 << target_register;
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+						} else if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
 							jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
 						}
-					} else {
-						continue_state.registers[target_register].value = 0;
-						continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
-						jump_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
-						jump_state.registers[target_register].max = ~(uintptr_t)0;
+						if (continue_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+							skip_continue_mask |= (register_mask)1 << target_register;
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						} else if (continue_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
+							continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
+						}
 					}
-				}
+					break;
+				case INS_CONDITIONAL_TYPE_EQUAL:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY) {
+						LOG("found je comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; je
+						if (jump_state.registers[target_register].value <= self->current_state.compare_state.value.value && self->current_state.compare_state.value.value <= jump_state.registers[target_register].max) {
+							jump_state.registers[target_register] = self->current_state.compare_state.value;
+							jump_state.sources[target_register] = self->current_state.compare_state.sources;
+							// remove value from edge of ranges
+							if (continue_state.registers[target_register].value == self->current_state.compare_state.value.value) {
+								if (register_is_exactly_known(&continue_state.registers[target_register])) {
+									skip_continue_mask |= (register_mask)1 << target_register;
+									LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+								} else {
+									continue_state.registers[target_register].value++;
+								}
+							} else if (continue_state.registers[target_register].max == self->current_state.compare_state.value.value) {
+								continue_state.registers[target_register].max--;
+							}
+						} else {
+							skip_jump_mask |= (register_mask)1 << target_register;
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_NOT_EQUAL:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_EQUALITY) {
+						LOG("found jne comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; jne
+						if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value && self->current_state.compare_state.value.value <= continue_state.registers[target_register].max) {
+							continue_state.registers[target_register] = self->current_state.compare_state.value;
+							continue_state.sources[target_register] = self->current_state.compare_state.sources;
+							// remove value from edge of ranges
+							if (jump_state.registers[target_register].value == self->current_state.compare_state.value.value) {
+								if (register_is_exactly_known(&jump_state.registers[target_register])) {
+									skip_jump_mask |= (register_mask)1 << target_register;
+									LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+								} else {
+									jump_state.registers[target_register].value++;
+								}
+							} else if (jump_state.registers[target_register].max == self->current_state.compare_state.value.value) {
+								jump_state.registers[target_register].max--;
+							}
+						} else {
+							skip_continue_mask |= (register_mask)1 << target_register;
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_BELOW_OR_EQUAL:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jbe comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; jbe
+						if (jump_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+							skip_jump_mask |= (register_mask)1 << target_register;
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+						} else if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+							jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+						}
+						if (continue_state.registers[target_register].max <= self->current_state.compare_state.value.value) {
+							skip_continue_mask |= (register_mask)1 << target_register;
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						} else if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
+							continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_ABOVE:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found ja comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; ja
+						if (jump_state.registers[target_register].max <= self->current_state.compare_state.value.value) {
+							skip_jump_mask |= (register_mask)1 << target_register;
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+						} else if (jump_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
+							jump_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+						}
+						if (continue_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+							skip_continue_mask |= (register_mask)1 << target_register;
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						} else if (continue_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+							continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_SIGN:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found js comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						if (self->current_state.compare_state.value.value == 0) {
+							uintptr_t msb = most_significant_bit(self->current_state.compare_state.mask);
+							// test %target_register; ja
+							if (jump_state.registers[target_register].max < msb) {
+								skip_jump_mask |= (register_mask)1 << target_register;
+								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+							} else if (jump_state.registers[target_register].value < msb) {
+								jump_state.registers[target_register].value = msb;
+							}
+							if (continue_state.registers[target_register].value >= msb) {
+								skip_continue_mask |= (register_mask)1 << target_register;
+								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+							} else if (continue_state.registers[target_register].max >= msb) {
+								continue_state.registers[target_register].max = msb - 1;
+							}
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_NOT_SIGN:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jns comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						if (self->current_state.compare_state.value.value == 0) {
+							uintptr_t msb = most_significant_bit(self->current_state.compare_state.mask);
+							// test %target_register; ja
+							if (jump_state.registers[target_register].value >= msb) {
+								skip_jump_mask |= (register_mask)1 << target_register;
+								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+							} else if (jump_state.registers[target_register].max >= msb) {
+								jump_state.registers[target_register].max = msb - 1;
+							}
+							if (continue_state.registers[target_register].max < msb) {
+								skip_continue_mask |= (register_mask)1 << target_register;
+								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+							} else if (continue_state.registers[target_register].value < msb) {
+								continue_state.registers[target_register].value = msb;
+							}
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_LOWER:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jl comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						// test %target_register; jl
+						if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+							LOG("signed comparison on potentially negative value, skipping narrowing");
+						} else {
+							if (jump_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+								skip_jump_mask |= (register_mask)1 << target_register;
+								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+							} else if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+								jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+							}
+							if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+								skip_continue_mask |= (register_mask)1 << target_register;
+								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+							} else if (continue_state.registers[target_register].value <= self->current_state.compare_state.value.value) {
+								continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+							}
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_GREATER_OR_EQUAL:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jge comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+							LOG("signed comparison on potentially negative value, skipping narrowing");
+						} else {
+							// test %target_register; jge
+							if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+								skip_jump_mask |= (register_mask)1 << target_register;
+								LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+							} else if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+								jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
+							}
+							if (continue_state.registers[target_register].value >= self->current_state.compare_state.value.value) {
+								skip_continue_mask |= (register_mask)1 << target_register;
+								LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+							} else if (continue_state.registers[target_register].max >= self->current_state.compare_state.value.value) {
+								continue_state.registers[target_register].max = self->current_state.compare_state.value.value - 1;
+							}
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_NOT_GREATER:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jng comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+							LOG("signed comparison on potentially negative value, skipping narrowing");
+						} else {
+							// test %target_register; jng
+							if (register_is_partially_known(&continue_state.registers[target_register])) {
+								if (jump_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+									jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+								}
+								if (jump_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+									jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
+								}
+								if (continue_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+									continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+								}
+								if (continue_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+									continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
+								}
+							} else {
+								jump_state.registers[target_register].value = 0;
+								jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+								continue_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+								continue_state.registers[target_register].max = ~(uintptr_t)0;
+							}
+						}
+					}
+					break;
+				case INS_CONDITIONAL_TYPE_GREATER:
+					if (self->current_state.compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
+						LOG("found jg comparing", name_for_register(target_register));
+						dump_register(&analysis->loader, continue_state.registers[target_register]);
+						LOG("with", temp_str(copy_register_state_description(&analysis->loader, self->current_state.compare_state.value)));
+						if ((intptr_t)jump_state.registers[target_register].max < 0 && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+							LOG("signed comparison on potentially negative value, skipping narrowing");
+						} else {
+							// test %target_register; jg
+							if (register_is_partially_known(&continue_state.registers[target_register])) {
+								if (continue_state.registers[target_register].max > self->current_state.compare_state.value.value) {
+									continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+								}
+								if (continue_state.registers[target_register].value > self->current_state.compare_state.value.value) {
+									continue_state.registers[target_register].value = self->current_state.compare_state.value.value;
+								}
+								if (jump_state.registers[target_register].max < self->current_state.compare_state.value.value) {
+									jump_state.registers[target_register].max = self->current_state.compare_state.value.value;
+								}
+								if (jump_state.registers[target_register].value < self->current_state.compare_state.value.value) {
+									jump_state.registers[target_register].value = self->current_state.compare_state.value.value;
+								}
+							} else {
+								continue_state.registers[target_register].value = 0;
+								continue_state.registers[target_register].max = self->current_state.compare_state.value.value;
+								jump_state.registers[target_register].value = self->current_state.compare_state.value.value + 1;
+								jump_state.registers[target_register].max = ~(uintptr_t)0;
+							}
+						}
+					}
+					break;
+				default:
+					break;
 			}
 			canonicalize_register(&jump_state.registers[target_register]);
 			canonicalize_register(&continue_state.registers[target_register]);
@@ -5414,10 +5471,10 @@ enum possible_conditions {
 	POSSIBLY_MATCHES = 0x3,
 };
 
-static inline enum possible_conditions calculate_possible_conditions(enum x86_conditional_type cond, struct registers *current_state)
+static inline enum possible_conditions calculate_possible_conditions(ins_conditional_type cond, struct registers *current_state)
 {
 	switch (cond) {
-		case X86_CONDITIONAL_TYPE_BELOW:
+		case INS_CONDITIONAL_TYPE_BELOW:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
 				if (current_state->registers[current_state->compare_state.target_register].value >= current_state->compare_state.value.value) {
 					return NEVER_MATCHES;
@@ -5427,7 +5484,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_ABOVE_OR_EQUAL:
+		case INS_CONDITIONAL_TYPE_ABOVE_OR_EQUAL:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
 				if (current_state->registers[current_state->compare_state.target_register].max < current_state->compare_state.value.value) {
 					return NEVER_MATCHES;
@@ -5437,7 +5494,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_EQUAL:
+		case INS_CONDITIONAL_TYPE_EQUAL:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_EQUALITY) {
 				if (current_state->registers[current_state->compare_state.target_register].value <= current_state->compare_state.value.value && current_state->compare_state.value.value <= current_state->registers[current_state->compare_state.target_register].max) {
 					if (current_state->registers[current_state->compare_state.target_register].value == current_state->compare_state.value.value) {
@@ -5450,7 +5507,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_NOT_EQUAL:
+		case INS_CONDITIONAL_TYPE_NOT_EQUAL:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_EQUALITY) {
 				if (current_state->registers[current_state->compare_state.target_register].value <= current_state->compare_state.value.value && current_state->compare_state.value.value <= current_state->registers[current_state->compare_state.target_register].max) {
 					if (current_state->registers[current_state->compare_state.target_register].value == current_state->compare_state.value.value) {
@@ -5463,7 +5520,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_BELOW_OR_EQUAL:
+		case INS_CONDITIONAL_TYPE_BELOW_OR_EQUAL:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
 				if (current_state->registers[current_state->compare_state.target_register].value > current_state->compare_state.value.value) {
 					return NEVER_MATCHES;
@@ -5473,7 +5530,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_ABOVE:
+		case INS_CONDITIONAL_TYPE_ABOVE:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
 				if (current_state->registers[current_state->compare_state.target_register].max <= current_state->compare_state.value.value) {
 					return NEVER_MATCHES;
@@ -5483,7 +5540,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_SIGN:
+		case INS_CONDITIONAL_TYPE_SIGN:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
 				if (current_state->compare_state.value.value == 0) {
 					uintptr_t msb = most_significant_bit(current_state->compare_state.mask);
@@ -5496,7 +5553,7 @@ static inline enum possible_conditions calculate_possible_conditions(enum x86_co
 				}
 			}
 			break;
-		case X86_CONDITIONAL_TYPE_NOT_SIGN:
+		case INS_CONDITIONAL_TYPE_NOT_SIGN:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
 				if (current_state->compare_state.value.value == 0) {
 					uintptr_t msb = most_significant_bit(current_state->compare_state.mask);
@@ -5529,13 +5586,13 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 	}
 	if (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
 		// check for __pthread_enable_asynccancel
-		struct x86_instruction ins;
-		if (!x86_decode_instruction(addr, &ins)) {
+		struct decoded_ins ins;
+		if (!decode_ins(addr, &ins)) {
 			return false;
 		}
-		if (x86_is_endbr64_instruction(&ins)) {
-			addr = x86_next_instruction(addr, &ins);
-			if (!x86_decode_instruction(addr, &ins)) {
+		if (is_landing_pad_ins(&ins)) {
+			addr = next_ins(addr, &ins);
+			if (!decode_ins(addr, &ins)) {
 				return false;
 			}
 		}
@@ -5710,7 +5767,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto update_and_return;
 			}
 		}
-		switch (decode_x86_comparisons(decoded, &self.current_state, &analysis->loader, &self.current_state.compare_state)) {
+		switch (ins_interpret_comparisons(decoded, &self.current_state, &analysis->loader, &self.current_state.compare_state)) {
 			case INVALID_COMPARISON:
 				if (self.current_state.compare_state.validity != COMPARISON_IS_INVALID) {
 					self.current_state.compare_state.validity = COMPARISON_IS_INVALID;

@@ -18,29 +18,35 @@ typedef const uint8_t *ins_ptr;
 #define decode_ins x86_decode_instruction
 #define next_ins x86_next_instruction
 
-#define is_jo_ins x86_is_jo_instruction
-#define is_jno_ins x86_is_jno_instruction
-#define is_jb_ins x86_is_jb_instruction
-#define is_jae_ins x86_is_jae_instruction
-#define is_je_ins x86_is_je_instruction
-#define is_jne_ins x86_is_jne_instruction
-#define is_jbe_ins x86_is_jbe_instruction
-#define is_ja_ins x86_is_ja_instruction
-#define is_js_ins x86_is_js_instruction
-#define is_jns_ins x86_is_jns_instruction
-#define is_jp_ins x86_is_jp_instruction
-#define is_jpo_ins x86_is_jpo_instruction
-#define is_jl_ins x86_is_jl_instruction
-#define is_jge_ins x86_is_jge_instruction
-#define is_jng_ins x86_is_jng_instruction
-#define is_jg_ins x86_is_jg_instruction
-
 #define is_return_ins x86_is_return_instruction
 
 #define is_landing_pad_ins x86_is_endbr64_instruction
 
 #define ins_interpret_jump_behavior x86_decode_jump_instruction
 #define ins_interpret_comparisons decode_x86_comparisons
+
+#define ins_conditional_type enum x86_conditional_type
+#define INS_CONDITIONAL_TYPE_OVERFLOW X86_CONDITIONAL_TYPE_OVERFLOW
+#define INS_CONDITIONAL_TYPE_NOT_OVERFLOW X86_CONDITIONAL_TYPE_NOT_OVERFLOW
+#define INS_CONDITIONAL_TYPE_BELOW X86_CONDITIONAL_TYPE_BELOW
+#define INS_CONDITIONAL_TYPE_ABOVE_OR_EQUAL X86_CONDITIONAL_TYPE_ABOVE_OR_EQUAL
+#define INS_CONDITIONAL_TYPE_EQUAL X86_CONDITIONAL_TYPE_EQUAL
+#define INS_CONDITIONAL_TYPE_NOT_EQUAL X86_CONDITIONAL_TYPE_NOT_EQUAL
+#define INS_CONDITIONAL_TYPE_BELOW_OR_EQUAL X86_CONDITIONAL_TYPE_BELOW_OR_EQUAL
+#define INS_CONDITIONAL_TYPE_ABOVE X86_CONDITIONAL_TYPE_ABOVE
+#define INS_CONDITIONAL_TYPE_SIGN X86_CONDITIONAL_TYPE_SIGN
+#define INS_CONDITIONAL_TYPE_NOT_SIGN X86_CONDITIONAL_TYPE_NOT_SIGN
+#define INS_CONDITIONAL_TYPE_PARITY X86_CONDITIONAL_TYPE_PARITY
+#define INS_CONDITIONAL_TYPE_PARITY_ODD X86_CONDITIONAL_TYPE_PARITY_ODD
+#define INS_CONDITIONAL_TYPE_LOWER X86_CONDITIONAL_TYPE_LOWER
+#define INS_CONDITIONAL_TYPE_GREATER_OR_EQUAL X86_CONDITIONAL_TYPE_GREATER_OR_EQUAL
+#define INS_CONDITIONAL_TYPE_NOT_GREATER X86_CONDITIONAL_TYPE_NOT_GREATER
+#define INS_CONDITIONAL_TYPE_GREATER X86_CONDITIONAL_TYPE_GREATER
+
+static inline ins_conditional_type ins_get_conditional_type(const struct decoded_ins *decoded)
+{
+	return x86_get_conditional_type(decoded->unprefixed);
+}
 
 #else
 #if defined(__aarch64__)
@@ -52,28 +58,35 @@ typedef const uint32_t *ins_ptr;
 #define decode_ins aarch64_decode_instruction
 #define next_ins(ins, unused) (&(ins)[1])
 
-#define is_jo_ins aarch64_is_jo_instruction
-#define is_jno_ins aarch64_is_jno_instruction
-#define is_jb_ins aarch64_is_jb_instruction
-#define is_jae_ins aarch64_is_jae_instruction
-#define is_je_ins aarch64_is_je_instruction
-#define is_jne_ins aarch64_is_jne_instruction
-#define is_jbe_ins aarch64_is_jbe_instruction
-#define is_ja_ins aarch64_is_ja_instruction
-#define is_js_ins aarch64_is_js_instruction
-#define is_jns_ins aarch64_is_jns_instruction
-#define is_jp_ins aarch64_is_jp_instruction
-#define is_jpo_ins aarch64_is_jpo_instruction
-#define is_jl_ins aarch64_is_jl_instruction
-#define is_jge_ins aarch64_is_jge_instruction
-#define is_jng_ins aarch64_is_jng_instruction
-#define is_jg_ins aarch64_is_jg_instruction
-
 #define is_return_ins aarch64_is_return_instruction
 
 #define is_landing_pad_ins(ins) false
 
 #define ins_interpret_jump_behavior aarch64_decode_jump_instruction
+#define ins_interpret_comparisons aarch64_decode_comparisons
+
+#define ins_conditional_type enum Condition
+#define INS_CONDITIONAL_TYPE_OVERFLOW COND_VS
+#define INS_CONDITIONAL_TYPE_NOT_OVERFLOW COND_VC
+#define INS_CONDITIONAL_TYPE_BELOW COND_CS
+#define INS_CONDITIONAL_TYPE_ABOVE_OR_EQUAL COND_CC
+#define INS_CONDITIONAL_TYPE_EQUAL COND_EQ
+#define INS_CONDITIONAL_TYPE_NOT_EQUAL COND_NE
+#define INS_CONDITIONAL_TYPE_BELOW_OR_EQUAL COND_LE
+#define INS_CONDITIONAL_TYPE_ABOVE COND_GT
+#define INS_CONDITIONAL_TYPE_SIGN COND_PL
+#define INS_CONDITIONAL_TYPE_NOT_SIGN COND_MI
+#define INS_CONDITIONAL_TYPE_PARITY /* not present */
+#define INS_CONDITIONAL_TYPE_PARITY_ODD /* not present */
+#define INS_CONDITIONAL_TYPE_LOWER COND_LT
+#define INS_CONDITIONAL_TYPE_GREATER_OR_EQUAL COND_GE
+#define INS_CONDITIONAL_TYPE_NOT_GREATER COND_LS
+#define INS_CONDITIONAL_TYPE_GREATER COND_HI
+
+static inline ins_conditional_type ins_get_conditional_type(const struct decoded_ins *decoded)
+{
+	return (ins_conditional_type)decoded->decomposed.operation;
+}
 
 #else
 #error "Unsupported architecture"

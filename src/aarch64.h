@@ -44,13 +44,13 @@ enum aarch64_register_index {
 };
 
 struct aarch64_instruction {
+	Instruction decomposed;
 };
 
+__attribute__((always_inline))
 static inline bool aarch64_decode_instruction(const uint32_t *ins, struct aarch64_instruction *out_decoded)
 {
-	(void)ins;
-	*out_decoded = (struct aarch64_instruction){};
-	return false;
+	return aarch64_decompose(*ins, &out_decoded->decomposed, (uintptr_t)ins) == 0;
 }
 
 static inline bool aarch64_is_conditional_branch(uint32_t ins)
