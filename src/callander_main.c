@@ -25,9 +25,11 @@
 
 #if defined(__x86_64__)
 #define BREAKPOINT_LEN 1
+#define BREAKS_AFTER_BREAKPOINT 1
 #else
 #if defined(__aarch64__)
 #define BREAKPOINT_LEN 4
+#define BREAKS_AFTER_BREAKPOINT 0
 #else
 #error "Unknown architecture"
 #endif
@@ -2060,10 +2062,13 @@ skip_analysis:
 		DIE("failed to read registers", fs_strerror(result));
 	}
 	// rewind back to where the breakpoint was
-	if (regs.USER_REG_PC != child_main + BREAKPOINT_LEN) {
-		DIE("interrupted at wrong child address", (uintptr_t)regs.USER_REG_PC);
+	if (regs.USER_REG_PC != (BREAKS_AFTER_BREAKPOINT ? (child_main + BREAKPOINT_LEN) : child_main)) {
+		ERROR("interrupted at wrong child address", (uintptr_t)regs.USER_REG_PC);
+		ERROR("expected", (uintptr_t)child_main + BREAKPOINT_LEN);
 	}
-	regs.USER_REG_PC -= BREAKPOINT_LEN;
+	if (BREAKS_AFTER_BREAKPOINT) {
+		regs.USER_REG_PC -= BREAKPOINT_LEN;
+	}
 	for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 		struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
 		if (symbol.value == NULL) {

@@ -74,14 +74,6 @@ long int strtol(__attribute__((unused)) const char *str, __attribute__((unused))
 	return 0;
 }
 
-char *strcpy(char *destination, const char *source)
-{
-	char *result = destination;
-	while ((*destination++ = *source++)) {
-	}
-	return result;
-}
-
 int __popcountdi2(unsigned long a)
 {
 	// don't call the intrinsic, since it calls back into __popcountdi2!

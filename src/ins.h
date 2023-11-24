@@ -23,7 +23,6 @@ typedef const uint8_t *ins_ptr;
 #define is_landing_pad_ins x86_is_endbr64_instruction
 
 #define ins_interpret_jump_behavior x86_decode_jump_instruction
-#define ins_interpret_comparisons decode_x86_comparisons
 
 #define ins_conditional_type enum x86_conditional_type
 #define INS_CONDITIONAL_TYPE_OVERFLOW X86_CONDITIONAL_TYPE_OVERFLOW
@@ -60,10 +59,9 @@ typedef const uint32_t *ins_ptr;
 
 #define is_return_ins aarch64_is_return_instruction
 
-#define is_landing_pad_ins(ins) false
+#define is_landing_pad_ins aarch64_is_bti_instruction
 
 #define ins_interpret_jump_behavior aarch64_decode_jump_instruction
-#define ins_interpret_comparisons aarch64_decode_comparisons
 
 #define ins_conditional_type enum Condition
 #define INS_CONDITIONAL_TYPE_OVERFLOW COND_VS

@@ -38,11 +38,16 @@ LDFLAGS += -flto -fvisibility=hidden -Wl,--gc-sections
 
 CFLAGS += -fno-omit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -fcf-protection=none
 ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Software Foundation)
-	CFLAGS += -mgeneral-regs-only -Wold-style-declaration -Wmissing-parameter-type
+	# cannot use floating point registers in trap handlers!
+	# CFLAGS += -mgeneral-regs-only
+	CFLAGS += -Wold-style-declaration -Wmissing-parameter-type
 ifeq ($(TARGETMACHINE),aarch64)
-	CFLAGS += -Wno-psabi
-	LDFLAGS += -Wno-psabi
+	CFLAGS += -Wno-psabi -march=armv8-a+lse
+	LDFLAGS += -Wno-psabi -march=armv8-a+lse
 	CFLAGS += -Wno-unused-function
+	CFLAGS += -Wno-unused-parameter -Wno-strict-aliasing -Wno-shadow -Wno-int-in-bool-context -Wno-implicit-fallthrough -Wno-sign-compare -Wno-maybe-uninitialized
+	CFLAGS += -Wno-double-promotion
+	CFLAGS += -Wno-format
 endif
 else
 ifeq ($(CC),clang)
@@ -92,8 +97,18 @@ THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table_target
 			fork_target.o handler.o intercept_target.o malloc.o paths_target.o proxy_target.o \
 			remote.o remote_library_target.o sockets_target.o stack.o thandler.o tls.o tracer.o
 COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o callander_print.o defaultlibs.o loader.o \
-			mapped.o qsort.o search.o x86.o \
-			x86_64_length_disassembler.o
+			mapped.o qsort.o search.o
+ifeq ($(TARGETMACHINE),aarch64)
+	COMMON_CALLANDER_OBJECTS += arch-arm64/disassembler/decode.o arch-arm64/disassembler/decode0.o \
+			arch-arm64/disassembler/decode1.o arch-arm64/disassembler/decode2.o \
+			arch-arm64/disassembler/decode_scratchpad.o arch-arm64/disassembler/encodings_dec.o \
+			arch-arm64/disassembler/pcode.o arch-arm64/disassembler/decode_fields32.o \
+			arch-arm64/disassembler/sysregs.o arch-arm64/disassembler/operations.o \
+			arch-arm64/disassembler/format.o arch-arm64/disassembler/regs.o
+endif
+ifeq ($(TARGETMACHINE),x86_64)
+	COMMON_CALLANDER_OBJECTS += x86.o x86_64_length_disassembler.o
+endif
 LOOKUP_OBJECTS := defaultlibs.o loader.o lookup_main.o resolver.o
 LIBCALLBOX_OBJECTS := libcallbox.o attempt.o $(COMMON_CALLANDER_OBJECTS) defaultlibs.o loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o proxy.o tls.o x86.o x86_64_length_disassembler.o
 ifeq ($(STANDALONE),1)

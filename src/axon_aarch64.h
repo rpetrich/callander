@@ -92,5 +92,5 @@ static inline const void *read_thread_register(void)
 	reg3 = arg3; \
 	register __typeof__(stack) reg_stack asm("x3"); \
 	reg_stack = stack; \
-	__asm__ __volatile__("mov x9, sp; mov sp, x3; bl "#func : "=r"(reg1) : "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg_stack) : "cc", "memory", "x4", "x5", "x6", "x7", "x9"); \
+	__asm__ __volatile__("mov x19, sp; mov sp, x3; bl "#func"; mov sp, x19" : "=r"(reg1) : "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg_stack) : "cc", "memory", "x4", "x5", "x6", "x7", "x9", "x19", "x30"); \
 } while(0)

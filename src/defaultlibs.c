@@ -88,6 +88,27 @@ char *strdup(const char *str)
 }
 
 __attribute__((used, visibility("hidden")))
+char *strcpy(char *destination, const char *source)
+{
+	char *result = destination;
+	while ((*destination++ = *source++)) {
+	}
+	return result;
+}
+
+__attribute__((used, visibility("hidden")))
+char *__strcpy_chk(char *destination, const char *source, size_t destlen)
+{
+	char *result = destination;
+	while ((*destination++ = *source++)) {
+		if (UNLIKELY(destination == &result[destlen-1])) {
+			abort();
+		}
+	}
+	return result;
+}
+
+__attribute__((used, visibility("hidden")))
 void *memchr(const void *str, int c, size_t n)
 {
 	return (void *)fs_memchr(str, c, n);
