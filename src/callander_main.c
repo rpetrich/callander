@@ -39,6 +39,7 @@
 #ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
 #else
+#ifdef __x86_64__
 __asm__(
 ".text\n"
 ".global __restore\n"
@@ -48,6 +49,18 @@ __asm__(
 "	mov $15, %rax\n"
 ); \
 FS_DEFINE_SYSCALL
+#endif
+#ifdef __aarch64__
+__asm__( \
+".text\n" \
+".global __restore\n" \
+".hidden __restore\n" \
+".type __restore,@function\n" \
+"__restore:\n" \
+"	mov x8, #139\n" \
+); \
+FS_DEFINE_SYSCALL
+#endif
 #endif
 
 #ifndef SA_RESTORER
@@ -2210,7 +2223,7 @@ skip_analysis:
 					DIE("failed to get signal info", fs_strerror(result));
 				}
 				if (siginfo.si_signo == SIGSYS) {
-					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - 2;
+					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - SYSCALL_INSTRUCTION_SIZE;
 					ins_ptr analysis_addr = NULL;
 					result = ptrace_getregs(tracee, &regs);
 					if (result < 0) {

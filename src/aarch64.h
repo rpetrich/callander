@@ -48,6 +48,10 @@ enum aarch64_register_index {
 	AARCH64_REGISTER_SP,
 };
 
+enum {
+	SYSCALL_INSTRUCTION_SIZE = 4,
+};
+
 struct aarch64_instruction {
 	Instruction decomposed;
 };
@@ -81,14 +85,21 @@ static inline enum aarch64_register_index register_index_from_operand(const stru
 	}
 }
 
-static inline uintptr_t mask_for_operand_size(size_t operand_size)
+enum aarch64_operand_size {
+	OPERAND_SIZE_BYTE = 1,
+	OPERAND_SIZE_HALF = 2,
+	OPERAND_SIZE_WORD = 4,
+	OPERAND_SIZE_DWORD = 8,
+};
+
+static inline uintptr_t mask_for_operand_size(enum aarch64_operand_size operand_size)
 {
 	switch (operand_size) {
-		case 1:
+		case OPERAND_SIZE_BYTE:
 			return 0xff;
-		case 2:
+		case OPERAND_SIZE_HALF:
 			return 0xffff;
-		case 4:
+		case OPERAND_SIZE_WORD:
 			return 0xffffffff;
 		default:
 			return ~(uintptr_t)0;
@@ -96,7 +107,8 @@ static inline uintptr_t mask_for_operand_size(size_t operand_size)
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void truncate_to_mask(struct register_state *reg, uintptr_t mask) {
+static inline void truncate_to_operand_size(struct register_state *reg, enum aarch64_operand_size operand_size) {
+	uintptr_t mask = mask_for_operand_size(operand_size);
 	if ((reg->max & ~mask) == (reg->value & ~mask)) {
 		reg->value &= mask;
 		reg->max &= mask;
@@ -108,39 +120,84 @@ static inline void truncate_to_mask(struct register_state *reg, uintptr_t mask) 
 	reg->max = mask;
 }
 
-static inline bool apply_shift(const struct InstructionOperand *operand, struct register_state *reg)
+static bool apply_operand_shift(struct register_state *reg, const struct InstructionOperand *operand)
 {
+	if (operand->shiftValue == 0) {
+		return false;
+	}
 	switch (operand->shiftType) {
 		case ShiftType_NONE:
 			return false;
-		case ShiftType_LSL:
-			if (reg->value == reg->max) {
-				set_register(reg, reg->value << operand->shiftValueUsed);
-			} else {
+		case ShiftType_UXTX:
+		case ShiftType_UXTW:
+		case ShiftType_UXTB:
+		case ShiftType_UXTH:
+		case ShiftType_LSL: {
+			if (register_is_exactly_known(reg)) {
+				set_register(reg, reg->value << operand->shiftValue);
+			} else if (__builtin_ffs(reg->max) + operand->shiftValue >= 64) {
 				clear_register(reg);
+			} else {
+				reg->max <<= operand->shiftValue;
+				reg->value <<= operand->shiftValue;
 			}
 			return true;
-		case ShiftType_LSR:
+		}
+		case ShiftType_LSR: {
 			if (reg->value == reg->max) {
 				set_register(reg, reg->value >> operand->shiftValueUsed);
 			} else {
 				clear_register(reg);
 			}
 			return true;
-		case ShiftType_ASR:
+		}
+		case ShiftType_ASR: {
 			if (reg->value == reg->max) {
 				set_register(reg, (uintptr_t)(((intptr_t)reg->value) >> operand->shiftValueUsed));
 			} else {
 				clear_register(reg);
 			}
 			return true;
+		}
+		case ShiftType_ROR: {
+			if (register_is_exactly_known(reg)) {
+				set_register(reg, (reg->value >> operand->shiftValue) | (reg->value << (64 - operand->shiftValue)));
+			} else {
+				clear_register(reg);
+			}
+			return true;
+		}
+		case ShiftType_SXTW: {
+			if (register_is_exactly_known(reg) || operand->shiftValue <= 32) {
+				set_register(reg, (uintptr_t)(intptr_t)(int32_t)reg->value << operand->shiftValue);
+			} else {
+				clear_register(reg);
+			}
+			return true;
+		}
+		case ShiftType_SXTH: {
+			if (register_is_exactly_known(reg) || operand->shiftValue <= 48) {
+				set_register(reg, (uintptr_t)(intptr_t)(int16_t)reg->value << operand->shiftValue);
+			} else {
+				clear_register(reg);
+			}
+			return true;
+		}
+		case ShiftType_SXTB: {
+			if (register_is_exactly_known(reg) || operand->shiftValue <= 56) {
+				set_register(reg, (uintptr_t)(intptr_t)(int8_t)reg->value << operand->shiftValue);
+			} else {
+				clear_register(reg);
+			}
+			return true;
+		}
 		default:
 			clear_register(reg);
 			return true;
 	}
 }
 
-static inline int read_operand(const struct InstructionOperand *operand, const struct register_state *regs, const uint32_t *ins, struct register_state *out_state, uintptr_t *out_mask)
+static inline int read_operand(const struct InstructionOperand *operand, const struct register_state *regs, const uint32_t *ins, struct register_state *out_state, enum aarch64_operand_size *out_size)
 {
 	switch (operand->operandClass) {
 		case REG: {
@@ -175,7 +232,7 @@ static inline int read_operand(const struct InstructionOperand *operand, const s
 			return AARCH64_REGISTER_INVALID;
 		}
 		case LABEL: {
-			set_register(out_state, (uintptr_t)ins + operand->immediate);
+			set_register(out_state, operand->immediate);
 			if (out_mask != NULL) {
 				*out_mask = ~(uintptr_t)0;
 			}
@@ -271,11 +328,13 @@ static inline enum ins_jump_behavior aarch64_decode_jump_instruction(const struc
 		case ARM64_B_LT:
 		case ARM64_B_GT:
 		case ARM64_B_LE:
+			*out_jump = (const uint32_t *)ins->decomposed.operands[0].immediate;
+			return INS_JUMPS_OR_CONTINUES;
 		case ARM64_CBNZ:
 		case ARM64_CBZ:
 		case ARM64_TBNZ:
 		case ARM64_TBZ:
-			*out_jump = (const uint32_t *)ins->decomposed.operands[0].immediate;
+			*out_jump = (const uint32_t *)ins->decomposed.operands[1].immediate;
 			return INS_JUMPS_OR_CONTINUES;
 		case ARM64_B_AL:
 		case ARM64_B_NV:
@@ -287,8 +346,49 @@ static inline enum ins_jump_behavior aarch64_decode_jump_instruction(const struc
 	}
 }
 
+static inline enum Condition aarch64_get_conditional_type(const struct aarch64_instruction *ins)
+{
+	switch (ins->decomposed.operation) {
+		case ARM64_B_EQ:
+			return COND_EQ;
+		case ARM64_B_NE:
+			return COND_NE;
+		case ARM64_B_CS:
+			return COND_CS;
+		case ARM64_B_CC:
+			return COND_CC;
+		case ARM64_B_MI:
+			return COND_MI;
+		case ARM64_B_PL:
+			return COND_PL;
+		case ARM64_B_VS:
+			return COND_VS;
+		case ARM64_B_VC:
+			return COND_VC;
+		case ARM64_B_HI:
+			return COND_HI;
+		case ARM64_B_LS:
+			return COND_LS;
+		case ARM64_B_GE:
+			return COND_GE;
+		case ARM64_B_LT:
+			return COND_LT;
+		case ARM64_B_GT:
+			return COND_GT;
+		case ARM64_B_LE:
+			return COND_LE;
+		default:
+			return COND_AL;
+	}
+}
+
 #define UNSUPPORTED_INSTRUCTION() do { \
-	self.description = operation_to_str(decoded.decomposed.operation); \
+	char *buf = malloc(4096); \
+	if (aarch64_disassemble(&decoded.decomposed, buf, 4096) != DISASM_SUCCESS) { \
+		self.description = operation_to_str(decoded.decomposed.operation); \
+	} else { \
+		self.description = buf; \
+	} \
 	DIE("unsupported instruction", temp_str(copy_call_trace_description(&analysis->loader, &self))); \
 } while(0)
 

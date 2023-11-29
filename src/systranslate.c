@@ -16,7 +16,7 @@ FS_DEFINE_SYSCALL
 #define SYSCALL_DEF_EMPTY() 1+
 enum {
 	SYSCALL_DEFINED_COUNT = 
-#include "syscall_defs_x86_64.h"
+#include "syscall_defs.h"
 	0,
 };
 #undef SYSCALL_DEF
@@ -25,7 +25,7 @@ enum {
 #define SYSCALL_DEF(name, argc, flags) #name,
 #define SYSCALL_DEF_EMPTY() NULL,
 const char *syscall_list[] = {
-#include "syscall_defs_x86_64.h"
+#include "syscall_defs.h"
 };
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY

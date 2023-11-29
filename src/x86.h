@@ -232,6 +232,10 @@ enum x86_register_index {
 	X86_REGISTER_15,
 };
 
+enum {
+	SYSCALL_INSTRUCTION_SIZE = 2,
+};
+
 static inline int x86_read_reg(x86_mod_rm_t modrm, struct x86_ins_prefixes rex) {
 	return modrm.reg + (rex.has_r << 3);
 }

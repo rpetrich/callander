@@ -109,6 +109,15 @@ char *__strcpy_chk(char *destination, const char *source, size_t destlen)
 }
 
 __attribute__((used, visibility("hidden")))
+char *strcat(char *destination, const char *source)
+{
+	size_t destlen = fs_strlen(destination);
+	size_t srclen = fs_strlen(source);
+	memcpy(&destination[destlen], source, srclen+1);
+	return destination;
+}
+
+__attribute__((used, visibility("hidden")))
 void *memchr(const void *str, int c, size_t n)
 {
 	return (void *)fs_memchr(str, c, n);

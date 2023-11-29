@@ -104,7 +104,8 @@ ifeq ($(TARGETMACHINE),aarch64)
 			arch-arm64/disassembler/decode_scratchpad.o arch-arm64/disassembler/encodings_dec.o \
 			arch-arm64/disassembler/pcode.o arch-arm64/disassembler/decode_fields32.o \
 			arch-arm64/disassembler/sysregs.o arch-arm64/disassembler/operations.o \
-			arch-arm64/disassembler/format.o arch-arm64/disassembler/regs.o
+			arch-arm64/disassembler/format.o arch-arm64/disassembler/regs.o \
+			printf.o printf_inject.o
 endif
 ifeq ($(TARGETMACHINE),x86_64)
 	COMMON_CALLANDER_OBJECTS += x86.o x86_64_length_disassembler.o

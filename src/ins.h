@@ -81,10 +81,7 @@ typedef const uint32_t *ins_ptr;
 #define INS_CONDITIONAL_TYPE_NOT_GREATER COND_LS
 #define INS_CONDITIONAL_TYPE_GREATER COND_HI
 
-static inline ins_conditional_type ins_get_conditional_type(const struct decoded_ins *decoded)
-{
-	return (ins_conditional_type)decoded->decomposed.operation;
-}
+#define ins_get_conditional_type aarch64_get_conditional_type
 
 #else
 #error "Unsupported architecture"

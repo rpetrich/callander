@@ -57,7 +57,7 @@ bool should_log;
 #define SYSCALL_DEF(name, attributes, ...) { #name, { SYSCALL_DEF_(0, ##__VA_ARGS__, 6, 5, 4, 3, 2, 1, 0) | ((attributes) & ~SYSCALL_ARGC_MASK), { __VA_ARGS__ } } },
 #define SYSCALL_DEF_EMPTY() {NULL, 6, {}},
 struct syscall_decl const syscall_list[] = {
-#include "syscall_defs_x86_64.h"
+#include "syscall_defs.h"
 };
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY
@@ -745,12 +745,10 @@ static inline struct registers copy_call_argument_registers(const struct loader_
 	clear_match(loader, &result, REGISTER_R13, ins);
 	clear_match(loader, &result, REGISTER_R14, ins);
 	clear_match(loader, &result, REGISTER_R15, ins);
-	// Clear match state for REGISTER_MEM without invalidating stack
-	// clear_match(loader, &result, REGISTER_MEM, ins);
 #else
 #if defined(__aarch64__)
-	// TODO: clear call dirtied registers
-	for (int i = REGISTER_X0; i <= REGISTER_X18; i++) {
+	// TODO: copy call registers
+	for (int i = REGISTER_X9; i <= REGISTER_X30; i++) {
 		clear_register(&result.registers[i]);
 		result.sources[i] = 0;
 	}
@@ -758,13 +756,16 @@ static inline struct registers copy_call_argument_registers(const struct loader_
 	result.sources[REGISTER_SP] = 0;
 	clear_register(&result.registers[REGISTER_MEM]);
 	result.sources[REGISTER_MEM] = 0;
-	for (int i = REGISTER_X0; i <= REGISTER_X18; i++) {
+	for (int i = REGISTER_X9; i <= REGISTER_X30; i++) {
 		clear_match(loader, &result, i, ins);
 	}
+	// TODO: clear RSP matches without clearing the stack
+	// clear_match(loader, &result, REGISTER_SP, ins);
 #else
 #error "Unknown architecture"
 #endif
 #endif
+	// Clear match state for REGISTER_MEM without invalidating stack
 	register_mask mask = result.matches[REGISTER_MEM];
 	if (UNLIKELY(mask != 0)) {
 		LOG("clearing matches for", name_for_register(REGISTER_MEM));
@@ -1718,7 +1719,8 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	}
 	// this is super janky. find and collapse loops
 	register_mask widenable_registers = relevant_registers & ~data->preserved_registers;
-	if (widenable_registers != 0 || total_processing_count > 50) {
+	register_mask profitable_registers = 0;
+	if (widenable_registers != 0 || total_processing_count > 60) {
 		LOG("loop heuristics");
 		dump_registers(loader, registers, widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
@@ -1757,6 +1759,9 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				if (((widenable_registers & bit) == 0) && (processing_count < 25)) {
 					goto continue_search;
 				}
+				if (out_registers->registers[r].value != registers->registers[r].value || out_registers->registers[r].max != registers->registers[r].max) {
+					profitable_registers |= bit;
+				}
 				if (entry->widen_count[r] < 4) {
 					if (combine_register_states(&out_registers->registers[r], &registers->registers[r], r)) {
 						dump_register(loader, out_registers->registers[r]);
@@ -1788,7 +1793,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 						}
 					} else {
 						LOG("couldn't widen", name_for_register(r));
-						dump_register(loader, registers->registers[r]);
+						dump_register(loader, out_registers->registers[r]);
 						goto continue_search;
 					}
 				} else {
@@ -1838,19 +1843,25 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	}
 	if (count > 60) {
 		LOG("too many entries, widening all registers");
-		if (widenable_registers != 0) {
+		if (profitable_registers != 0) {
 			*out_registers = *registers;
 			if (SHOULD_LOG) {
 				for (int i = 0; i < REGISTER_COUNT; i++) {
-					if (widenable_registers & ((register_mask)1 << i)) {
+					if (profitable_registers & ((register_mask)1 << i)) {
 						LOG("widening register", name_for_register(i));
 					} else if (relevant_registers & ((register_mask)1 << i)) {
 						LOG("skipping widening register", name_for_register(i));
 					}
 				}
 			}
-			for_each_bit(widenable_registers & ALL_REGISTERS, bit, i) {
-				clear_register(&out_registers->registers[i]);
+			for_each_bit(profitable_registers & ALL_REGISTERS, bit, i) {
+				if (registers->registers[i].max < 0xff) {
+					out_registers->registers[i].max = 0xff;
+				} else if (registers->registers[i].max < 0xffff) {
+					out_registers->registers[i].max = 0xffff;
+				} else if (registers->registers[i].max < 0xffffffff) {
+					out_registers->registers[i].max = 0xffffffff;
+				}
 				out_registers->sources[i] = 0;
 			}
 			*out_wrote_registers = true;
@@ -4063,16 +4074,18 @@ static enum basic_op_usage basic_op_unknown(BASIC_OP_ARGS)
 	return BASIC_OP_USED_BOTH;
 }
 
-static enum basic_op_usage basic_op_add(BASIC_OP_ARGS)
+static inline void add_registers(struct register_state *dest, const struct register_state *source)
 {
 	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
 		dest->value = dest->max = dest->value + source->value;
-		return BASIC_OP_USED_BOTH;
-	}
-	if (__builtin_add_overflow(dest->value, source->value, &dest->value) || __builtin_add_overflow(dest->max, source->max, &dest->max)) {
+	} else if (__builtin_add_overflow(dest->value, source->value, &dest->value) || __builtin_add_overflow(dest->max, source->max, &dest->max)) {
 		clear_register(dest);
-		return BASIC_OP_USED_BOTH;
 	}
+}
+
+static enum basic_op_usage basic_op_add(BASIC_OP_ARGS)
+{
+	add_registers(dest, source);
 	return BASIC_OP_USED_BOTH;
 }
 
@@ -4172,8 +4185,17 @@ static enum basic_op_usage basic_op_sbb(BASIC_OP_ARGS)
 
 static enum basic_op_usage basic_op_sub(BASIC_OP_ARGS)
 {
-	if (__builtin_sub_overflow(dest->value, source->max, &dest->value) || __builtin_sub_overflow(dest->max, source->value, &dest->max)) {
-		clear_register(dest);
+	bool value_overflowed = __builtin_sub_overflow(dest->value, source->max, &dest->value);
+	bool max_overflowed = __builtin_sub_overflow(dest->max, source->value, &dest->max);
+	if (value_overflowed || max_overflowed) {
+		if (value_overflowed && !max_overflowed && (register_is_exactly_known(source) ^ register_is_exactly_known(dest))) {
+			additional->used = true;
+			additional->state.value = dest->value;
+			additional->state.max = ~(uintptr_t)0;
+			dest->value = 0;
+		} else {
+			clear_register(dest);
+		}
 	}
 	return BASIC_OP_USED_BOTH;
 }
@@ -4503,6 +4525,36 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 
 #ifdef __aarch64__
 
+static inline uintptr_t read_memory(const void *addr, enum aarch64_operand_size size)
+{
+	switch (size) {
+		case OPERAND_SIZE_BYTE:
+			return *(__attribute__((aligned(1))) const uint8_t *)addr;
+		case OPERAND_SIZE_HALF:
+			return *(__attribute__((aligned(1))) const uint16_t *)addr;
+		case OPERAND_SIZE_WORD:
+			return *(__attribute__((aligned(1))) const uint32_t *)addr;
+		case OPERAND_SIZE_DWORD:
+		default:
+			return *(__attribute__((aligned(1))) const uintptr_t *)addr;
+	}
+}
+
+static inline intptr_t read_memory_signed(const void *addr, enum aarch64_operand_size size)
+{
+	switch (size) {
+		case OPERAND_SIZE_BYTE:
+			return *(__attribute__((aligned(1))) const int8_t *)addr;
+		case OPERAND_SIZE_HALF:
+			return *(__attribute__((aligned(1))) const int16_t *)addr;
+		case OPERAND_SIZE_WORD:
+			return *(__attribute__((aligned(1))) const int32_t *)addr;
+		case OPERAND_SIZE_DWORD:
+		default:
+			return *(__attribute__((aligned(1))) const intptr_t *)addr;
+	}
+}
+
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int left_reg, int right_reg, enum basic_op_usage usage)
 {
 	if (left_reg == REGISTER_INVALID) {
@@ -4527,14 +4579,14 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 	}
 }
 
-static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, uintptr_t *out_mask, struct additional_result *additional)
+static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, enum aarch64_operand_size *out_size, struct additional_result *additional)
 {
 	struct register_state dest_state;
-	uintptr_t mask;
-	int dest = read_operand(&decoded->decomposed.operands[0], regs->registers, ins, &dest_state, &mask);
+	enum aarch64_operand_size size;
+	int dest = read_operand(&decoded->decomposed.operands[0], regs->registers, ins, &dest_state, &size);
 	if (dest == REGISTER_INVALID) {
-		if (out_mask != NULL) {
-			*out_mask = ~(uintptr_t)0;
+		if (out_size != NULL) {
+			*out_size = OPERAND_SIZE_DWORD;
 		}
 		return REGISTER_INVALID;
 	}
@@ -4551,10 +4603,11 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	if (right != REGISTER_INVALID) {
 		LOG("right source", name_for_register(right));
 	}
+	bool applied_shift = apply_operand_shift(&right_state, &decoded->decomposed.operands[2]);
 	LOG("right", temp_str(copy_register_state_description(loader, right_state)));
 	additional->used = false;
-	enum basic_op_usage usage = op(&left_state, &right_state, left, right, additional);
-	truncate_to_mask(&left_state, mask);
+	enum basic_op_usage usage = op(&left_state, &right_state, left, applied_shift ? REGISTER_INVALID : right, additional);
+	truncate_to_operand_size(&left_state, size);
 	LOG("result", temp_str(copy_register_state_description(loader, left_state)));
 	regs->registers[dest] = left_state;
 	if (register_is_partially_known(&left_state)) {
@@ -4566,11 +4619,11 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	}
 	clear_match(loader, regs, dest, ins);
 	if (additional->used) {
-		truncate_to_mask(&additional->state, mask);
+		truncate_to_operand_size(&additional->state, size);
 		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
 	}
-	if (out_mask != NULL) {
-		*out_mask = mask;
+	if (out_size != NULL) {
+		*out_size = size;
 	}
 	return dest;
 }
@@ -4578,17 +4631,18 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 static void perform_unknown_op(__attribute__((unused)) const char *name, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded)
 {
 	LOG("unsupported op", name);
-	uintptr_t mask;
+	enum aarch64_operand_size size;
 	struct register_state dest_state;
-	int dest = read_operand(&decoded->decomposed.operands[0], regs->registers, ins, &dest_state, &mask);
+	int dest = read_operand(&decoded->decomposed.operands[0], regs->registers, ins, &dest_state, &size);
 	if (dest == REGISTER_INVALID) {
 		return;
 	}
 	LOG("target", name_for_register(dest));
 	clear_register(&regs->registers[dest]);
-	truncate_to_mask(&regs->registers[dest], mask);
+	truncate_to_operand_size(&regs->registers[dest], size);
 	regs->sources[dest] = 0;
 	clear_match(loader, regs, dest, ins);
+	dump_registers(loader, regs, (register_mask)1 << dest);
 }
 
 #endif
@@ -8888,6 +8942,25 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_ERROR:
 				DIE("error decoding instruction", temp_str(copy_address_description(&analysis->loader, ins)));
 				break;
+			case ARM64_ADC: {
+				struct additional_result additional;
+				int dest = perform_basic_op("adc", basic_op_adc, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
+			case ARM64_ADCS: {
+				struct additional_result additional;
+				int dest = perform_basic_op("adcs", basic_op_adc, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				clear_comparison_state(&self.current_state);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_ADD: {
 				struct additional_result additional;
 				int dest = perform_basic_op("add", basic_op_add, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
@@ -8904,12 +8977,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_ADDS: {
 				struct additional_result additional;
 				int dest = perform_basic_op("adds", basic_op_add, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				clear_comparison_state(&self.current_state);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					UNSUPPORTED_INSTRUCTION();
 				}
-				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
+			}
+			case ARM64_ADDV: {
+				LOG("addv");
+				break;
 			}
 			case ARM64_AND: {
 				struct additional_result additional;
@@ -8917,22 +8994,32 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					break;
 				}
+				// hack to represent matches in lower parts of registers
+				if (!additional.used) {
+					if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
+						if (decoded.decomposed.operands[2].immediate == 0xff || decoded.decomposed.operands[2].immediate == 0xffff) {
+							struct register_state source_state;
+							int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
+							add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+						}
+					}
+				}
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
 			case ARM64_ANDS: {
 				struct additional_result additional;
 				int dest = perform_basic_op("ands", basic_op_and, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				clear_comparison_state(&self.current_state);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					UNSUPPORTED_INSTRUCTION();
 				}
-				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
 			case ARM64_ADR: {
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
@@ -8941,20 +9028,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.current_state.registers[dest] = dest_state;
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_ADRP: {
 				// TODO: mask off the lower bits
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
 				read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, NULL);
 				LOG("adrp", name_for_register(dest));
-				self.current_state.registers[dest] = dest_state;
+				set_register(&self.current_state.registers[dest], dest_state.value & ~(uintptr_t)0xFFF);
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_ASR: {
@@ -8967,8 +9056,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_BTI: {
-				LOG("bti");
+			case ARM64_BIC: {
+				struct additional_result additional;
+				int dest = perform_basic_op("bic", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
+			case ARM64_BICS: {
+				struct additional_result additional;
+				int dest = perform_basic_op("bics", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				clear_comparison_state(&self.current_state);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
+			case ARM64_BIT: {
+				LOG("bit");
 				break;
 			}
 			case ARM64_BFI: {
@@ -8979,25 +9087,37 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("bfxil", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
-			case ARM64_BIC: {
-				struct additional_result additional;
-				int dest = perform_basic_op("bic", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
-				if (UNLIKELY(dest == REGISTER_INVALID)) {
-					UNSUPPORTED_INSTRUCTION();
-				}
-				clear_comparison_state(&self.current_state);
-				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
-				goto skip_stack_clear;
-			}
 			case ARM64_BL: {
-				uintptr_t mask;
-				read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				clear_comparison_state(&self.current_state);
 				if (!register_is_exactly_known(&dest_state)) {
 					UNSUPPORTED_INSTRUCTION();
 				}
 				ins_ptr dest = (ins_ptr)dest_state.value;
 				LOG("found bl", temp_str(copy_function_call_description(&analysis->loader, dest, self.current_state)));
+				if (required_effects & EFFECT_ENTRY_POINT) {
+					int main_reg = sysv_argument_abi_register_indexes[0];
+					if (register_is_exactly_known(&self.current_state.registers[main_reg]) && self.current_state.registers[main_reg].value != 0) {
+						analysis->main = self.current_state.registers[main_reg].value;
+						LOG("bl in init, assuming arg 0 is the main function");
+						self.description = "main";
+						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)self.current_state.registers[main_reg].value, &self);
+					}
+					int fini_reg = sysv_argument_abi_register_indexes[4];
+					if (register_is_exactly_known(&self.current_state.registers[fini_reg]) && self.current_state.registers[fini_reg].value != 0) {
+						LOG("bl in init, assuming arg 4 is the fini function");
+						self.description = "fini";
+						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)self.current_state.registers[fini_reg].value, &self);
+					}
+					int rtld_fini_reg = sysv_argument_abi_register_indexes[4];
+					if (register_is_exactly_known(&self.current_state.registers[rtld_fini_reg]) && self.current_state.registers[rtld_fini_reg].value != 0) {
+						LOG("bl in init, assuming arg 4 is the rtld_fini function");
+						self.description = "rtld_fini";
+						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)self.current_state.registers[rtld_fini_reg].value, &self);
+					}
+					goto update_and_return;
+				}
 				struct loaded_binary *binary = NULL;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
@@ -9040,9 +9160,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_BLR: {
-				uintptr_t mask;
+				enum aarch64_operand_size size;
 				clear_comparison_state(&self.current_state);
-				int target = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				int target = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				self.description = "blr";
 				LOG("blr to address in register", name_for_register(target));
 				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, (register_mask)1 << target, 0, 0, required_effects);
@@ -9133,25 +9253,145 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				goto update_and_return;
 			}
+			case ARM64_BRK: {
+				effects |= EFFECT_EXITS;
+				LOG("completing from brk", temp_str(copy_address_description(&analysis->loader, self.entry)));
+				goto update_and_return;
+			}
+			case ARM64_BTI: {
+				LOG("bti");
+				break;
+			}
+			case ARM64_CAS: {
+				perform_unknown_op("cas", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_CASA: {
+				perform_unknown_op("casa", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_CASAL: {
+				perform_unknown_op("casal", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_CASL: {
+				perform_unknown_op("casl", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_CMEQ: {
+				LOG("cmgt");
+				break;
+			}
+			case ARM64_CMGT: {
+				LOG("cmgt");
+				break;
+			}
+			case ARM64_CMHI: {
+				LOG("cmhi");
+				break;
+			}
+			case ARM64_CMHS: {
+				LOG("cmhs");
+				break;
+			}
+			case ARM64_CMLE: {
+				LOG("cmle");
+				break;
+			}
+			case ARM64_CMLT: {
+				LOG("cmlt");
+				break;
+			}
+			case ARM64_CMTST: {
+				LOG("cmtst");
+				break;
+			}
 			case ARM64_CMP: {
-				uintptr_t mask;
-				int left = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int left = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (left == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					LOG("cmp with unsupported operand");
+					clear_comparison_state(&self.current_state);
+					break;
 				}
 				struct register_state right_state;
 				int right = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &right_state, NULL);
-				truncate_to_mask(&right_state, mask);
+				truncate_to_operand_size(&right_state, size);
+				bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
 				LOG("cmp", name_for_register(left));
 				LOG("with", name_for_register(right));
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
-					.target_register = left,
-					.value = right_state,
-					.mask = mask,
-					.mem_rm = self.current_state.mem_rm,
-					.sources = self.current_state.sources[right],
-					.validity = COMPARISON_SUPPORTS_ANY,
-				});
+				if (applied_shift) {
+					clear_comparison_state(&self.current_state);
+				} else {
+					set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+						.target_register = left,
+						.value = right_state,
+						.mask = mask_for_operand_size(size),
+						.mem_rm = self.current_state.mem_rm,
+						.sources = right == REGISTER_INVALID ? 0 : self.current_state.sources[right],
+						.validity = COMPARISON_SUPPORTS_ANY,
+					});
+				}
+				break;
+			}
+			case ARM64_CMPEQ: {
+				// TODO
+				LOG("cmpeq");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPGT: {
+				// TODO
+				LOG("cmpgt");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPGE: {
+				// TODO
+				LOG("cmpge");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPHI: {
+				// TODO
+				LOG("cmphi");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPHS: {
+				// TODO
+				LOG("cmphs");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPLO: {
+				// TODO
+				LOG("cmplo");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPLS: {
+				// TODO
+				LOG("cmpls");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPLT: {
+				// TODO
+				LOG("cmplt");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPLE: {
+				// TODO
+				LOG("cmple");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_CMPNE: {
+				// TODO
+				LOG("cmpne");
+				clear_comparison_state(&self.current_state);
 				break;
 			}
 			case ARM64_CMN: {
@@ -9172,8 +9412,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_comparison_state(&self.current_state);
 				break;
 			}
-			case ARM64_CMEQ: {
-				LOG("cmeq");
+			case ARM64_CNT: {
+				LOG("cnt");
 				break;
 			}
 			case ARM64_CSEL: {
@@ -9191,6 +9431,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.current_state.registers[dest].max = 1;
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_CSETM: {
@@ -9201,6 +9442,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("cinc", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_CINV: {
+				perform_unknown_op("cinv", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
 			case ARM64_CLS: {
 				perform_unknown_op("cls", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
@@ -9209,22 +9454,31 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("clz", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_CNEG: {
+				perform_unknown_op("cneg", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
 			case ARM64_CSINC: {
 				// TODO
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
 				LOG("csinc", name_for_register(dest));
 				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], mask);
+				truncate_to_operand_size(&self.current_state.registers[dest], size);
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_CSINV: {
 				perform_unknown_op("csinv", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_CSNEG: {
+				perform_unknown_op("csneg", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
 			case ARM64_DC: {
@@ -9242,110 +9496,516 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_EOR: {
 				struct additional_result additional;
 				int dest = perform_basic_op("eor", basic_op_xor, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
-				if (UNLIKELY(dest == REGISTER_INVALID)) {
-					UNSUPPORTED_INSTRUCTION();
-				}
 				clear_comparison_state(&self.current_state);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
+			case ARM64_EXT: {
+				LOG("ext");
+				break;
+			}
+			case ARM64_EXTR: {
+				LOG("extr");
+				break;
+			}
+			case ARM64_FABD: {
+				LOG("fabd");
+				break;
+			}
+			case ARM64_FABS: {
+				LOG("fabs");
+				break;
+			}
+			case ARM64_FACGE: {
+				LOG("fadd");
+				break;
+			}
+			case ARM64_FACGT: {
+				LOG("fadd");
+				break;
+			}
+			case ARM64_FADD: {
+				LOG("fadd");
+				break;
+			}
+			case ARM64_FADDP: {
+				LOG("faddp");
+				break;
+			}
+			case ARM64_FCMP: {
+				LOG("fcmp");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_FCMPE: {
+				LOG("fcmpe");
+				clear_comparison_state(&self.current_state);
+				break;
+			}
+			case ARM64_FCVTZS: {
+				LOG("fcvtzs");
+				break;
+			}
+			case ARM64_FCVTZU: {
+				LOG("fcvtzu");
+				break;
+			}
+			case ARM64_FDIV: {
+				LOG("fdiv");
+				break;
+			}
 			case ARM64_FMOV: {
-				perform_unknown_op("fmov", &analysis->loader, &self.current_state, ins, &decoded);
+				LOG("fmov");
+				break;
+			}
+			case ARM64_FMUL: {
+				LOG("fmul");
+				break;
+			}
+			case ARM64_FMULX: {
+				LOG("fmulx");
+				break;
+			}
+			case ARM64_FNEG: {
+				LOG("fneg");
+				break;
+			}
+			case ARM64_FRECPE: {
+				LOG("frecpe");
+				break;
+			}
+			case ARM64_FRECPS: {
+				LOG("frecps");
+				break;
+			}
+			case ARM64_FRINTA: {
+				LOG("frinta");
+				break;
+			}
+			case ARM64_FSUB: {
+				LOG("fsub");
 				break;
 			}
 			case ARM64_IC: {
 				LOG("ic");
 				break;
 			}
+			case ARM64_INS: {
+				LOG("ins");
+				break;
+			}
 			case ARM64_ISB: {
 				LOG("isb");
 				break;
 			}
-			case ARM64_LD1: {
+			case ARM64_LD1:
+			case ARM64_LD1B:
+			case ARM64_LD1D:
+			case ARM64_LD1H:
+			case ARM64_LD1Q:
+			case ARM64_LD1R:
+			case ARM64_LD1W: {
 				LOG("ld1");
 				break;
 			}
+			case ARM64_LDPSW:
 			case ARM64_LDP: {
-				uintptr_t mask;
-				int dest0 = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
-				if (dest0 == REGISTER_INVALID) {
-					break;
+				enum aarch64_operand_size size;
+				int dest0 = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				if (dest0 != REGISTER_INVALID) {
+					LOG("ldp dest0", name_for_register(dest0));
+					clear_register(&self.current_state.registers[dest0]);
+					truncate_to_operand_size(&self.current_state.registers[dest0], size);
+					self.current_state.sources[dest0] = 0;
+					clear_match(&analysis->loader, &self.current_state, dest0, ins);
+					dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest0);
 				}
-				int dest1 = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, NULL);
-				if (dest1 == REGISTER_INVALID) {
-					break;
+				int dest1 = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				if (dest1 != REGISTER_INVALID) {
+					LOG("ldp dest1", name_for_register(dest1));
+					clear_register(&self.current_state.registers[dest1]);
+					truncate_to_operand_size(&self.current_state.registers[dest1], size);
+					self.current_state.sources[dest1] = 0;
+					clear_match(&analysis->loader, &self.current_state, dest1, ins);
+					dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest1);
 				}
-				LOG("ldp dest0", name_for_register(dest0));
-				LOG("ldp dest1", name_for_register(dest1));
-				clear_register(&self.current_state.registers[dest0]);
-				truncate_to_mask(&self.current_state.registers[dest0], mask);
-				self.current_state.sources[dest0] = 0;
-				clear_match(&analysis->loader, &self.current_state, dest0, ins);
-				clear_register(&self.current_state.registers[dest1]);
-				truncate_to_mask(&self.current_state.registers[dest1], mask);
-				self.current_state.sources[dest1] = 0;
-				clear_match(&analysis->loader, &self.current_state, dest1, ins);
 				break;
 			}
-			case ARM64_LDR: {
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+			case ARM64_LDADD:
+			case ARM64_LDADDA:
+			case ARM64_LDADDAL:
+			case ARM64_LDADDL:
+			case ARM64_LDADDB:
+			case ARM64_LDADDAB:
+			case ARM64_LDADDALB:
+			case ARM64_LDADDLB:
+			case ARM64_LDADDH:
+			case ARM64_LDADDAH:
+			case ARM64_LDADDALH:
+			case ARM64_LDADDLH: {
+				LOG("ldadd*");
+				enum aarch64_operand_size size;
+				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				if (loaded == REGISTER_INVALID) {
+					UNSUPPORTED_INSTRUCTION();
+				}
+				self.current_state.registers[loaded].value = 0;
+				self.current_state.registers[loaded].max = mask_for_operand_size(size);
+				self.current_state.sources[loaded] = 0;
+				clear_match(&analysis->loader, &self.current_state, loaded, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << loaded);
+				goto skip_stack_clear;
+			}
+			case ARM64_LDSET:
+			case ARM64_LDSETA:
+			case ARM64_LDSETAL:
+			case ARM64_LDSETL:
+			case ARM64_LDSETB:
+			case ARM64_LDSETAB:
+			case ARM64_LDSETALB:
+			case ARM64_LDSETLB:
+			case ARM64_LDSETH:
+			case ARM64_LDSETAH:
+			case ARM64_LDSETALH:
+			case ARM64_LDSETLH: {
+				LOG("ldset*");
+				enum aarch64_operand_size size;
+				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				if (loaded == REGISTER_INVALID) {
+					UNSUPPORTED_INSTRUCTION();
+				}
+				self.current_state.registers[loaded].value = 0;
+				self.current_state.registers[loaded].max = mask_for_operand_size(size);
+				self.current_state.sources[loaded] = 0;
+				clear_match(&analysis->loader, &self.current_state, loaded, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << loaded);
+				goto skip_stack_clear;
+			}
+			case ARM64_LDAR:
+			case ARM64_LDARB:
+			case ARM64_LDARH:
+			case ARM64_LDAXR:
+			case ARM64_LDR:
+			case ARM64_LDRB:
+			case ARM64_LDRH:
+			case ARM64_LDXR:
+			case ARM64_LDXRB:
+			case ARM64_LDXRH: {
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
+				enum aarch64_operand_size mem_size = decoded.decomposed.operation == ARM64_LDRB ? OPERAND_SIZE_BYTE : decoded.decomposed.operation == ARM64_LDRH ? OPERAND_SIZE_HALF : size;
 				LOG("ldr", name_for_register(dest));
-				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], mask);
-				self.current_state.sources[dest] = 0;
-				clear_match(&analysis->loader, &self.current_state, dest, ins);
-				break;
-			}
-			case ARM64_LDRB: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
-				if (dest == REGISTER_INVALID) {
-					break;
+				int reg = register_index_from_register(decoded.decomposed.operands[1].reg[0]);
+				if (reg == REGISTER_INVALID) {
+					LOG("invalid MEM_OFFSET reg");
+					UNSUPPORTED_INSTRUCTION();
 				}
-				LOG("ldrb", name_for_register(dest));
-				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], 0xff);
-				self.current_state.sources[dest] = 0;
-				clear_match(&analysis->loader, &self.current_state, dest, ins);
-				break;
-			}
-			case ARM64_LDRH: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
-				if (dest == REGISTER_INVALID) {
-					break;
+				struct register_state source_state = self.current_state.registers[reg];
+				register_mask used_registers = self.current_state.sources[reg];
+				switch (decoded.decomposed.operands[1].operandClass) {
+					case MEM_REG: {
+						LOG("MEM_REG");
+						break;
+					}
+					case MEM_OFFSET: {
+						struct register_state imm;
+						set_register(&imm, decoded.decomposed.operands[1].immediate);
+						add_registers(&source_state, &imm);
+						LOG("MEM_OFFSET");
+						break;
+					}
+					case MEM_PRE_IDX: {
+						struct register_state imm;
+						set_register(&imm, decoded.decomposed.operands[1].immediate);
+						add_registers(&source_state, &imm);
+						self.current_state.registers[reg] = source_state;
+						LOG("MEM_PRE_IDX");
+						break;
+					}
+					case MEM_POST_IDX: {
+						struct register_state imm;
+						set_register(&imm, decoded.decomposed.operands[1].immediate);
+						add_registers(&self.current_state.registers[reg], &imm);
+						LOG("MEM_POST_IDX");
+						break;
+					}
+					case MEM_EXTENDED: {
+						int index = register_index_from_register(decoded.decomposed.operands[1].reg[1]);
+						if (index == REGISTER_INVALID) {
+							LOG("invalid MEM_EXTENDED index");
+							UNSUPPORTED_INSTRUCTION();
+						}
+						used_registers |= self.current_state.sources[index];
+						struct register_state index_state = self.current_state.registers[index];
+						if (register_is_exactly_known(&source_state)) {
+							struct loaded_binary *binary;
+							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
+							const ElfW(Shdr) *section;
+							int prot = protection_for_address(&analysis->loader, (const void *)source_state.value, &binary, &section);
+							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
+								if (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE) {
+									LOG("lookup table rejected because range of index is too large", index_state.max - index_state.value);
+									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << reg) | ((register_mask)1 << index));
+									self.description = "rejected lookup table";
+									LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+									jump_status = binary && !binary->has_debuglink_symbols ? DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS : DISALLOW_JUMPS_INTO_THE_ABYSS;
+								} else {
+									self.description = "lookup table";
+									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, ((register_mask)1 << reg) | ((register_mask)1 << index), (register_mask)1 << reg | ((register_mask)1 << index), (register_mask)1 << reg/* | ((register_mask)1 << index)*/, required_effects);
+									LOG("lookup table from known base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
+									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << reg) | ((register_mask)1 << index));
+									uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - source_state.value) >> decoded.decomposed.operands[1].shiftValue;
+									if (index_state.max >= max_in_section) {
+										index_state.max = max_in_section - 1;
+										if (index_state.value >= max_in_section) {
+											LOG("somehow in a jump table without a proper value, bailing");
+											goto update_and_return;
+										}
+									}
+									struct frame_details frame_details = { 0 };
+									bool has_frame_details = binary->has_frame_info ? find_containing_frame_info(&binary->frame_info, ins, &frame_details) : false;
+									const ElfW(Sym) *function_symbol = NULL;
+									uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)source_state.value, ins, (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
+									if (override_size != 0) {
+										index_state.max = ((override_size - 1) * 4) >> decoded.decomposed.operands[1].shiftValue;
+										LOG("overwrote maximum of lookup table to", index_state.max);
+									}
+									struct registers copy = self.current_state;
+									copy.sources[dest] = used_registers;
+									clear_match(&analysis->loader, &copy, dest, ins);
+									ins_ptr continue_target = next_ins(ins, &decoded);
+									for (uintptr_t i = index_state.value; i <= index_state.max; i++) {
+										LOG("processing table index", (intptr_t)i);
+										struct register_state index_single_state;
+										set_register(&index_single_state, i);
+										apply_operand_shift(&index_single_state, &decoded.decomposed.operands[1]);
+										struct register_state source_single_state = source_state;
+										add_registers(&source_single_state, &index_single_state);
+										if (!register_is_exactly_known(&source_single_state)) {
+											DIE("expected table entry address to be exactly known", (intptr_t)i);
+										}
+										if (index != dest) {
+											set_register(&copy.registers[index], i);
+											for_each_bit(copy.matches[index], bit, r) {
+												set_register(&copy.registers[r], i);
+											}
+										}
+										uintptr_t value = read_memory((const void *)source_single_state.value, mem_size) & mask_for_operand_size(size);
+										set_register(&copy.registers[dest], value);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
+									}
+									LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
+									goto update_and_return;
+								}
+							}
+						}
+						apply_operand_shift(&index_state, &decoded.decomposed.operands[1]);
+						add_registers(&source_state, &index_state);
+						LOG("MEM_EXTENDED");
+						break;
+					}
+					default:
+						LOG("invalid operand class", (intptr_t)decoded.decomposed.operands[1].operandClass);
+						UNSUPPORTED_INSTRUCTION();
+						break;
 				}
-				LOG("ldrh", name_for_register(dest));
-				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], 0xffff);
+				if (register_is_exactly_known(&source_state)) {
+					uintptr_t addr = source_state.value;
+					struct loaded_binary *binary;
+					int prot = protection_for_address(&analysis->loader, (const void *)addr, &binary, NULL);
+					if (prot & PROT_READ) {
+						uintptr_t value = read_memory((const void *)addr, mem_size) & mask_for_operand_size(size);
+						if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
+							set_register(&self.current_state.registers[dest], value);
+							self.current_state.sources[dest] = used_registers;
+							LOG("loaded memory constant", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[dest])));
+							LOG("from", temp_str(copy_address_description(&analysis->loader, (const void *)addr)));
+							clear_match(&analysis->loader, &self.current_state, dest, ins);
+							dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
+							break;
+						}
+					}
+				}
+				LOG("value is unknown, clearing register");
+				clear_register(&source_state);
+				truncate_to_operand_size(&source_state, mem_size);
+				truncate_to_operand_size(&source_state, size);
+				self.current_state.registers[dest] = source_state;
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
+			case ARM64_LDRSB:
+			case ARM64_LDRSH:
 			case ARM64_LDRSW: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
-				LOG("ldrsw", name_for_register(dest));
-				clear_register(&self.current_state.registers[dest]);
+				enum aarch64_operand_size mem_size = decoded.decomposed.operation == ARM64_LDRSB ? 0xff : decoded.decomposed.operation == ARM64_LDRSH ? 0xffff : 0xffffffff;
+				LOG("ldrs", name_for_register(dest));
+				int reg = register_index_from_register(decoded.decomposed.operands[1].reg[0]);
+				if (reg == REGISTER_INVALID) {
+					LOG("invalid MEM_OFFSET reg");
+					UNSUPPORTED_INSTRUCTION();
+				}
+				struct register_state source_state = self.current_state.registers[reg];
+				register_mask used_registers = self.current_state.sources[reg];
+				switch (decoded.decomposed.operands[1].operandClass) {
+					case MEM_REG: {
+						LOG("MEM_REG");
+						break;
+					}
+					case MEM_OFFSET: {
+						struct register_state imm;
+						set_register(&imm, decoded.decomposed.operands[1].immediate);
+						add_registers(&source_state, &imm);
+						LOG("MEM_OFFSET");
+						break;
+					}
+					case MEM_PRE_IDX: {
+						struct register_state imm;
+						set_register(&imm, decoded.decomposed.operands[1].immediate);
+						add_registers(&source_state, &imm);
+						self.current_state.registers[reg] = source_state;
+						LOG("MEM_PRE_IDX");
+						break;
+					}
+					case MEM_POST_IDX: {
+						struct register_state imm;
+						set_register(&imm, decoded.decomposed.operands[1].immediate);
+						add_registers(&self.current_state.registers[reg], &imm);
+						LOG("MEM_POST_IDX");
+						break;
+					}
+					case MEM_EXTENDED: {
+						int index = register_index_from_register(decoded.decomposed.operands[1].reg[1]);
+						if (index == REGISTER_INVALID) {
+							LOG("invalid MEM_EXTENDED index");
+							UNSUPPORTED_INSTRUCTION();
+						}
+						used_registers |= self.current_state.sources[index];
+						struct register_state index_state = self.current_state.registers[index];
+						if (register_is_exactly_known(&source_state)) {
+							struct loaded_binary *binary;
+							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
+							const ElfW(Shdr) *section;
+							int prot = protection_for_address(&analysis->loader, (const void *)source_state.value, &binary, &section);
+							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
+								if (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE) {
+									LOG("lookup table rejected because range of index is too large", index_state.max - index_state.value);
+									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << reg) | ((register_mask)1 << index));
+									self.description = "rejected lookup table";
+									LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+									jump_status = binary && !binary->has_debuglink_symbols ? DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS : DISALLOW_JUMPS_INTO_THE_ABYSS;
+								} else {
+									self.description = "lookup table";
+									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, ((register_mask)1 << reg) | ((register_mask)1 << index), (register_mask)1 << reg | ((register_mask)1 << index), (register_mask)1 << reg/* | ((register_mask)1 << index)*/, required_effects);
+									LOG("lookup table from known base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
+									dump_registers(&analysis->loader, &self.current_state, ((register_mask)1 << reg) | ((register_mask)1 << index));
+									uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - source_state.value) >> decoded.decomposed.operands[1].shiftValue;
+									if (index_state.max >= max_in_section) {
+										index_state.max = max_in_section - 1;
+										if (index_state.value >= max_in_section) {
+											LOG("somehow in a jump table without a proper value, bailing");
+											goto update_and_return;
+										}
+									}
+									struct frame_details frame_details = { 0 };
+									bool has_frame_details = binary->has_frame_info ? find_containing_frame_info(&binary->frame_info, ins, &frame_details) : false;
+									const ElfW(Sym) *function_symbol = NULL;
+									uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)source_state.value, ins, (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
+									if (override_size != 0) {
+										index_state.max = ((override_size - 1) * 4) >> decoded.decomposed.operands[1].shiftValue;
+										LOG("overwrote maximum of lookup table to", index_state.max);
+									}
+									struct registers copy = self.current_state;
+									copy.sources[dest] = used_registers;
+									clear_match(&analysis->loader, &copy, dest, ins);
+									ins_ptr continue_target = next_ins(ins, &decoded);
+									for (uintptr_t i = index_state.value; i <= index_state.max; i++) {
+										LOG("processing table index", (intptr_t)i);
+										struct register_state index_single_state;
+										set_register(&index_single_state, i);
+										apply_operand_shift(&index_single_state, &decoded.decomposed.operands[1]);
+										struct register_state source_single_state = source_state;
+										add_registers(&source_single_state, &index_single_state);
+										if (!register_is_exactly_known(&source_single_state)) {
+											DIE("expected table entry address to be exactly known", (intptr_t)i);
+										}
+										if (index != dest) {
+											set_register(&copy.registers[index], i);
+											for_each_bit(copy.matches[index], bit, r) {
+												set_register(&copy.registers[r], i);
+											}
+										}
+										uintptr_t value = read_memory_signed((const void *)source_single_state.value, mem_size) & mask_for_operand_size(size);
+										set_register(&copy.registers[dest], value);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, DISALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
+									}
+									LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
+									goto update_and_return;
+								}
+							}
+						}
+						apply_operand_shift(&index_state, &decoded.decomposed.operands[1]);
+						add_registers(&source_state, &index_state);
+						LOG("MEM_EXTENDED");
+						break;
+					}
+					default:
+						LOG("invalid operand class", (intptr_t)decoded.decomposed.operands[1].operandClass);
+						UNSUPPORTED_INSTRUCTION();
+						break;
+				}
+				if (register_is_exactly_known(&source_state)) {
+					uintptr_t addr = source_state.value;
+					struct loaded_binary *binary;
+					int prot = protection_for_address(&analysis->loader, (const void *)addr, &binary, NULL);
+					if (prot & PROT_READ) {
+						uintptr_t value = read_memory_signed((const void *)addr, mem_size) & mask_for_operand_size(size);
+						if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
+							set_register(&self.current_state.registers[dest], value);
+							self.current_state.sources[dest] = used_registers;
+							LOG("loaded memory constant", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[dest])));
+							LOG("from", temp_str(copy_address_description(&analysis->loader, (const void *)addr)));
+							clear_match(&analysis->loader, &self.current_state, dest, ins);
+							dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
+							break;
+						}
+					}
+				}
+				LOG("value is unknown, clearing register");
+				clear_register(&source_state);
+				truncate_to_operand_size(&source_state, size);
+				self.current_state.registers[dest] = source_state;
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_LDUR: {
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				LOG("ldur", name_for_register(dest));
 				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], mask);
+				truncate_to_operand_size(&self.current_state.registers[dest], size);
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_LDURB: {
@@ -9355,9 +10015,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				LOG("ldurb", name_for_register(dest));
 				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], 0xff);
+				truncate_to_operand_size(&self.current_state.registers[dest], OPERAND_SIZE_BYTE);
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_LDURH: {
@@ -9367,9 +10028,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				LOG("ldurh", name_for_register(dest));
 				clear_register(&self.current_state.registers[dest]);
-				truncate_to_mask(&self.current_state.registers[dest], 0xffff);
+				truncate_to_operand_size(&self.current_state.registers[dest], OPERAND_SIZE_HALF);
 				self.current_state.sources[dest] = 0;
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				break;
 			}
 			case ARM64_LSL: {
@@ -9393,10 +10055,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto skip_stack_clear;
 			}
 			case ARM64_MOV: {
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				struct register_state source_state;
 				int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
@@ -9410,15 +10072,20 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
 					self.current_state.sources[dest] = 0;
 				}
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				pending_stack_clear &= ~((register_mask)1 << dest);
 				goto skip_stack_clear;
 			}
+			case ARM64_MOVI: {
+				LOG("movi");
+				break;
+			}
 			case ARM64_MOVK: {
 				// TODO: support movk properly overriding only the appropriate bits
-				uintptr_t mask;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &mask);
+				enum aarch64_operand_size size;
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				struct register_state source_state;
 				int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
@@ -9432,6 +10099,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
 					self.current_state.sources[dest] = 0;
 				}
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
 				pending_stack_clear &= ~((register_mask)1 << dest);
 				goto skip_stack_clear;
 			}
@@ -9443,8 +10111,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("madd", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_MNEG: {
+				perform_unknown_op("mneg", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
 			case ARM64_MSUB: {
 				perform_unknown_op("msub", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_MSR: {
+				LOG("msr");
 				break;
 			}
 			case ARM64_MUL: {
@@ -9453,6 +10129,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_MVN: {
 				perform_unknown_op("mvn", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_MVNI: {
+				perform_unknown_op("mvni", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
 			case ARM64_NEG: {
@@ -9471,6 +10151,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_ORR: {
 				struct additional_result additional;
 				int dest = perform_basic_op("orr", basic_op_or, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					UNSUPPORTED_INSTRUCTION();
+				}
+				clear_comparison_state(&self.current_state);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
+			case ARM64_ORN: {
+				struct additional_result additional;
+				int dest = perform_basic_op("orn", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					UNSUPPORTED_INSTRUCTION();
 				}
@@ -9502,6 +10192,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("rev", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_ROR: {
+				struct additional_result additional;
+				int dest = perform_basic_op("ror", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				clear_comparison_state(&self.current_state);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_SBFX: {
 				perform_unknown_op("sbfx", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
@@ -9514,6 +10214,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("sdiv", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_SMADDL: {
+				perform_unknown_op("smaddl", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
 			case ARM64_SMULH: {
 				perform_unknown_op("smulh", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
@@ -9522,8 +10226,21 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("smull", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_ST1:
+			case ARM64_ST1B:
+			case ARM64_ST1D:
+			case ARM64_ST1H:
+			case ARM64_ST1Q:
+			case ARM64_ST1W:
+				LOG("st1, memory not supported yet");
+				break;
 			case ARM64_STP:
 				LOG("stp, memory not supported yet");
+				break;
+			case ARM64_STLR:
+			case ARM64_STLRB:
+			case ARM64_STLRH:
+				LOG("stlr, memory not supported yet");
 				break;
 			case ARM64_STR:
 				LOG("str, memory not supported yet");
@@ -9540,6 +10257,39 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_STURB:
 				LOG("sturb, memory not supported yet");
 				break;
+			case ARM64_STURH:
+				LOG("sturh, memory not supported yet");
+				break;
+			case ARM64_STXR:
+			case ARM64_STXRB:
+			case ARM64_STXRH:
+			case ARM64_STLXR:
+			case ARM64_STLXRB:
+			case ARM64_STLXRH:
+				LOG("stlxr, memory not supported yet");
+				// TODO
+				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				if (dest == REGISTER_INVALID) {
+					UNSUPPORTED_INSTRUCTION();
+				}
+				self.current_state.registers[dest].value = 0;
+				self.current_state.registers[dest].max = 1;
+				self.current_state.sources[dest] = 0;
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << dest);
+				break;
+			case ARM64_SBC: {
+				perform_unknown_op("sbc", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_SBCS: {
+				perform_unknown_op("sbcs", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_SCVTF: {
+				LOG("scvtf");
+				break;
+			}
 			case ARM64_SUB: {
 				struct additional_result additional;
 				int dest = perform_basic_op("sub", basic_op_sub, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
@@ -9553,12 +10303,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_SUBS: {
 				struct additional_result additional;
-				uintptr_t mask;
-				int dest = perform_basic_op("subs", basic_op_sub, &analysis->loader, &self.current_state, ins, &decoded, &mask, &additional);
+				enum aarch64_operand_size size;
+				int dest = perform_basic_op("subs", basic_op_sub, &analysis->loader, &self.current_state, ins, &decoded, &size, &additional);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					UNSUPPORTED_INSTRUCTION();
 				}
-				set_compare_from_operation(&self.current_state, dest, mask);
+				set_compare_from_operation(&self.current_state, dest, mask_for_operand_size(size));
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				pending_stack_clear &= ~((register_mask)1 << dest);
 				goto skip_stack_clear;
@@ -9709,6 +10459,31 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			finish_syscall:
 				break;
 			}
+			case ARM64_SWP:
+			case ARM64_SWPA:
+			case ARM64_SWPAL:
+			case ARM64_SWPL:
+			case ARM64_SWPB:
+			case ARM64_SWPAB:
+			case ARM64_SWPALB:
+			case ARM64_SWPLB:
+			case ARM64_SWPH:
+			case ARM64_SWPAH:
+			case ARM64_SWPALH:
+			case ARM64_SWPLH: {
+				LOG("swp*");
+				enum aarch64_operand_size size;
+				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				if (loaded == REGISTER_INVALID) {
+					UNSUPPORTED_INSTRUCTION();
+				}
+				self.current_state.registers[loaded].value = 0;
+				self.current_state.registers[loaded].max = mask_for_operand_size(size);
+				self.current_state.sources[loaded] = 0;
+				clear_match(&analysis->loader, &self.current_state, loaded, ins);
+				dump_registers(&analysis->loader, &self.current_state, (register_mask)1 << loaded);
+				goto skip_stack_clear;
+			}
 			case ARM64_SXTB: {
 				perform_unknown_op("sxtb", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
@@ -9730,6 +10505,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("ubfx", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_UBFIZ: {
+				perform_unknown_op("ubfiz", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_UCVTF: {
+				LOG("ucvtf");
+				break;
+			}
 			case ARM64_UDIV: {
 				perform_unknown_op("udiv", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
@@ -9738,12 +10521,32 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op("umaddl", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_UMAXP: {
+				LOG("umaxp");
+				break;
+			}
+			case ARM64_UMSUBL: {
+				perform_unknown_op("umsubl", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
 			case ARM64_UMULH: {
 				perform_unknown_op("umulh", &analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
 			case ARM64_UMULL: {
 				perform_unknown_op("umull", &analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
+			case ARM64_XPACD: {
+				LOG("xpacd");
+				break;
+			}
+			case ARM64_XPACI: {
+				LOG("xpaci");
+				break;
+			}
+			case ARM64_XPACLRI: {
+				LOG("xpaclri");
 				break;
 			}
 			default:
@@ -9865,7 +10668,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				}
 #endif
 #if defined(__aarch64__)
-			} else if (type != R_AARCH64_RELATIVE && type != R_AARCH64_IRELATIVE && type != R_AARCH64_TLS_DTPREL && type != R_AARCH64_TLS_DTPMOD && type != R_AARCH64_TLS_TPREL) {
+			} else if (type != R_AARCH64_RELATIVE && type != R_AARCH64_IRELATIVE && type != R_AARCH64_TLS_DTPREL && type != R_AARCH64_TLS_DTPMOD && type != R_AARCH64_TLS_TPREL && type != R_AARCH64_TLSDESC) {
 				struct loaded_binary *other_binary = NULL;
 				struct symbol_version_info version = binary->symbols.symbol_versions != NULL ? symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index] & 0x7fff) : (struct symbol_version_info){ 0 };
 				value = (uintptr_t)resolve_loaded_symbol(context, textual_name, version.version_name, NORMAL_SYMBOL, &other_binary, NULL);
@@ -11035,7 +11838,7 @@ static int protection_for_address_definitely_in_binary(const struct loaded_binar
 						if (flags & SHF_EXECINSTR) {
 							result |= PROT_EXEC;
 						}
-						if ((flags & SHF_WRITE) && (fs_strcmp(section_name, ".data.rel.ro") != 0) && (fs_strcmp(section_name, ".got") != 0)) {
+						if ((flags & SHF_WRITE) && (fs_strcmp(section_name, ".data.rel.ro") != 0) && (fs_strcmp(section_name, ".got") != 0) && (fs_strcmp(section_name, ".got.plt") != 0)) {
 							result |= PROT_WRITE;
 						}
 						return result;
@@ -11735,7 +12538,7 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, const 
 				if (record_descriptions) {
 					push_description(&descriptions, &descriptions_cap, pos, strdup("load high part of instruction_pointer"));
 				}
-				uintptr_t addr = translate_analysis_address_to_child(loader, list[i].ins) + 2; // +2 for the syscall instruction
+				uintptr_t addr = translate_analysis_address_to_child(loader, list[i].ins) + SYSCALL_INSTRUCTION_SIZE;
 				// compare high part of instruction pointer
 				size_t hi_pos = pos;
 				push_bpf_insn(&filter, &filter_cap, &pos, (struct bpf_insn)BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, addr >> 32, 0, 0));
@@ -11855,7 +12658,7 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, const 
 						if (i == count) {
 							break;
 						}
-						next_addr = translate_analysis_address_to_child(loader, list[i].ins) + 2;
+						next_addr = translate_analysis_address_to_child(loader, list[i].ins) + SYSCALL_INSTRUCTION_SIZE;
 					} while(low_addr == next_addr && list[i].nr == nr);
 					// else to next address
 					filter[low_pos].jf = pos - low_pos - 1;
