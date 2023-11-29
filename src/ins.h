@@ -1,12 +1,97 @@
 #ifndef INS_H
 #define INS_H
 
+typedef int16_t ins_int16 __attribute__((aligned(1)));
+typedef uint16_t ins_uint16 __attribute__((aligned(1)));
+typedef int32_t ins_int32 __attribute__((aligned(1)));
+typedef uint32_t ins_uint32 __attribute__((aligned(1)));
+typedef int64_t ins_int64 __attribute__((aligned(1)));
+typedef uint64_t ins_uint64 __attribute__((aligned(1)));
+
 enum ins_jump_behavior {
 	INS_JUMPS_NEVER,
 	INS_JUMPS_ALWAYS,
 	INS_JUMPS_OR_CONTINUES,
 	INS_JUMPS_ALWAYS_INDIRECT,
 };
+
+enum ins_operand_size {
+	OPERATION_SIZE_BYTE = 1,
+	OPERATION_SIZE_HALF = 2,
+	OPERATION_SIZE_WORD = 4,
+	OPERATION_SIZE_DWORD = 8,
+};
+
+__attribute__((always_inline))
+static inline uintptr_t mask_for_operand_size(enum ins_operand_size operand_size)
+{
+	switch (operand_size) {
+		case OPERATION_SIZE_BYTE:
+			return 0xff;
+		case OPERATION_SIZE_HALF:
+			return 0xffff;
+		case OPERATION_SIZE_WORD:
+			return 0xffffffff;
+		default:
+			return ~(uintptr_t)0;
+	}
+}
+
+#include "ins.h"
+
+__attribute__((nonnull(1))) __attribute__((always_inline))
+static inline void truncate_to_8bit(struct register_state *reg) {
+	if ((reg->max >> 8) == (reg->value >> 8)) {
+		reg->value &= 0xff;
+		reg->max &= 0xff;
+		if (reg->value <= reg->max) {
+			return;
+		}
+	}
+	reg->value = 0;
+	reg->max = 0xff;
+}
+
+__attribute__((nonnull(1))) __attribute__((always_inline))
+static inline void truncate_to_16bit(struct register_state *reg) {
+	if ((reg->max >> 16) == (reg->value >> 16)) {
+		reg->value &= 0xffff;
+		reg->max &= 0xffff;
+		if (reg->value <= reg->max) {
+			return;
+		}
+	}
+	reg->value = 0;
+	reg->max = 0xffff;
+}
+
+__attribute__((nonnull(1))) __attribute__((always_inline))
+static inline void truncate_to_32bit(struct register_state *reg) {
+	if ((reg->max >> 32) == (reg->value >> 32)) {
+		reg->value &= 0xffffffff;
+		reg->max &= 0xffffffff;
+		if (reg->value <= reg->max) {
+			return;
+		}
+	}
+	reg->value = 0;
+	reg->max = 0xffffffff;
+}
+
+
+__attribute__((nonnull(1))) __attribute__((always_inline))
+static inline void truncate_to_operand_size(struct register_state *reg, enum ins_operand_size operand_size) {
+	uintptr_t mask = mask_for_operand_size(operand_size);
+	if ((reg->max & ~mask) == (reg->value & ~mask)) {
+		reg->value &= mask;
+		reg->max &= mask;
+		if (reg->value <= reg->max) {
+			return;
+		}
+	}
+	reg->value = 0;
+	reg->max = mask;
+}
 
 #if defined(__x86_64__)
 

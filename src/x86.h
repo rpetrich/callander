@@ -7,13 +7,6 @@
 
 #include "x86_64_length_disassembler.h"
 
-typedef int16_t x86_int16 __attribute__((aligned(1)));
-typedef uint16_t x86_uint16 __attribute__((aligned(1)));
-typedef int32_t x86_int32 __attribute__((aligned(1)));
-typedef uint32_t x86_uint32 __attribute__((aligned(1)));
-typedef int64_t x86_int64 __attribute__((aligned(1)));
-typedef uint64_t x86_uint64 __attribute__((aligned(1)));
-
 // x86_is_syscall_instruction checks if the instruction at address is a syscall
 bool x86_is_syscall_instruction(const uint8_t *addr);
 

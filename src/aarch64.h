@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "callander.h"
+#include "ins.h"
+#include "axon.h"
 
 #define context context_
 #include "arch-arm64/disassembler/decode.h"
@@ -85,41 +86,6 @@ static inline enum aarch64_register_index register_index_from_operand(const stru
 	}
 }
 
-enum aarch64_operand_size {
-	OPERAND_SIZE_BYTE = 1,
-	OPERAND_SIZE_HALF = 2,
-	OPERAND_SIZE_WORD = 4,
-	OPERAND_SIZE_DWORD = 8,
-};
-
-static inline uintptr_t mask_for_operand_size(enum aarch64_operand_size operand_size)
-{
-	switch (operand_size) {
-		case OPERAND_SIZE_BYTE:
-			return 0xff;
-		case OPERAND_SIZE_HALF:
-			return 0xffff;
-		case OPERAND_SIZE_WORD:
-			return 0xffffffff;
-		default:
-			return ~(uintptr_t)0;
-	}
-}
-
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void truncate_to_operand_size(struct register_state *reg, enum aarch64_operand_size operand_size) {
-	uintptr_t mask = mask_for_operand_size(operand_size);
-	if ((reg->max & ~mask) == (reg->value & ~mask)) {
-		reg->value &= mask;
-		reg->max &= mask;
-		if (reg->value <= reg->max) {
-			return;
-		}
-	}
-	reg->value = 0;
-	reg->max = mask;
-}
-
 static bool apply_operand_shift(struct register_state *reg, const struct InstructionOperand *operand)
 {
 	if (operand->shiftValue == 0) {
@@ -197,7 +163,7 @@ static bool apply_operand_shift(struct register_state *reg, const struct Instruc
 	}
 }
 
-static inline int read_operand(const struct InstructionOperand *operand, const struct register_state *regs, const uint32_t *ins, struct register_state *out_state, enum aarch64_operand_size *out_size)
+static inline int read_operand(const struct InstructionOperand *operand, const struct register_state *regs, const uint32_t *ins, struct register_state *out_state, enum ins_operand_size *out_size)
 {
 	switch (operand->operandClass) {
 		case REG: {
@@ -209,42 +175,42 @@ static inline int read_operand(const struct InstructionOperand *operand, const s
 			} else {
 				break;
 			}
-			uintptr_t mask = mask_for_operand_size(get_register_size(operand->reg[0]));
-			truncate_to_mask(out_state, mask);
-			if (out_mask != NULL) {
-				*out_mask = mask;
+			enum ins_operand_size size = get_register_size(operand->reg[0]);
+			truncate_to_operand_size(out_state, size);
+			if (out_size != NULL) {
+				*out_size = size;
 			}
 			return reg;
 		}
 		case IMM32: {
 			set_register(out_state, operand->immediate);
-			truncate_to_mask(out_state, 0xffffffff);
-			if (out_mask != NULL) {
-				*out_mask = 0xffffffff;
+			truncate_to_operand_size(out_state, OPERATION_SIZE_WORD);
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_WORD;
 			}
 			return AARCH64_REGISTER_INVALID;
 		}
 		case IMM64: {
 			set_register(out_state, operand->immediate);
-			if (out_mask != NULL) {
-				*out_mask = ~(uintptr_t)0;
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_DWORD;
 			}
 			return AARCH64_REGISTER_INVALID;
 		}
 		case LABEL: {
 			set_register(out_state, operand->immediate);
-			if (out_mask != NULL) {
-				*out_mask = ~(uintptr_t)0;
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_DWORD;
 			}
 			return AARCH64_REGISTER_INVALID;
 		}
 		default:
 			break;
 	}
-	if (out_mask != NULL) {
-		*out_mask = ~(uintptr_t)0;
-	}
 	clear_register(out_state);
+	if (out_size != NULL) {
+		*out_size = OPERATION_SIZE_DWORD;
+	}
 	return AARCH64_REGISTER_INVALID;
 }
 

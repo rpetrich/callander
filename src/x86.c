@@ -94,12 +94,12 @@ enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction 
 			return INS_JUMPS_ALWAYS;
 		case INS_JMP_32_IMM:
 			PATCH_LOG("jmpq", (uintptr_t)unprefixed);
-			*out_jump = unprefixed + 5 + *(const x86_int32 *)&unprefixed[1];
+			*out_jump = unprefixed + 5 + *(const ins_int32 *)&unprefixed[1];
 			return INS_JUMPS_ALWAYS;
 		case 0xff:
 			if (unprefixed[1] == 0x25) {
 				PATCH_LOG("jmpq *", (uintptr_t)unprefixed);
-				const uint8_t **address = (const uint8_t **)(unprefixed + 6 + *(const x86_int32 *)&unprefixed[2]);
+				const uint8_t **address = (const uint8_t **)(unprefixed + 6 + *(const ins_int32 *)&unprefixed[2]);
 				*out_jump = *address;
 				return INS_JUMPS_ALWAYS_INDIRECT;
 			}
@@ -118,7 +118,7 @@ enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction 
 			switch (unprefixed[1]) {
 				case INS_CONDITIONAL_JMP_32_IMM_1_START ... INS_CONDITIONAL_JMP_32_IMM_1_END:
 					PATCH_LOG("conditional jmpq", (uintptr_t)unprefixed);
-					*out_jump = unprefixed + 6 + *(const x86_int32 *)&unprefixed[2];
+					*out_jump = unprefixed + 6 + *(const ins_int32 *)&unprefixed[2];
 					return INS_JUMPS_OR_CONTINUES;
 			}
 			break;

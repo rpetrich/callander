@@ -809,7 +809,7 @@ size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, si
 		switch (*decoded.unprefixed) {
 			case 0xe9: {
 				PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
-				x86_int32 *disp = (x86_int32 *)&ins[1];
+				ins_int32 *disp = (ins_int32 *)&ins[1];
 				PATCH_LOG("was", *disp);
 				*disp += delta;
 				PATCH_LOG("is now", *disp);
@@ -820,7 +820,7 @@ size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, si
 				ins[0] = INS_CONDITIONAL_JMP_32_IMM_0;
 				ins[1] = *decoded.unprefixed + 0x10;
 				int8_t old_disp = ((const int8_t *)decoded.unprefixed)[1];
-				x86_int32 *disp = (x86_int32 *)&ins[2];
+				ins_int32 *disp = (ins_int32 *)&ins[2];
 				PATCH_LOG("was", (intptr_t)old_disp);
 				*disp = (int32_t)old_disp + delta - 4;
 				PATCH_LOG("is now", *disp);
@@ -831,7 +831,7 @@ size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, si
 			case INS_CONDITIONAL_JMP_32_IMM_0:
 				if (decoded.unprefixed[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && decoded.unprefixed[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
 					PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
-					x86_int32 *disp = (x86_int32 *)&ins[2];
+					ins_int32 *disp = (ins_int32 *)&ins[2];
 					PATCH_LOG("was", *disp);
 					*disp += delta;
 					PATCH_LOG("is now", *disp);
@@ -847,7 +847,7 @@ size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, si
 						case X86_REGISTER_BP:
 						case X86_REGISTER_13: {
 							PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
-							x86_int32 *disp = (x86_int32 *)&ins[2];
+							ins_int32 *disp = (ins_int32 *)&ins[2];
 							PATCH_LOG("was", *disp);
 							*disp += delta;
 							PATCH_LOG("is now", *disp);
