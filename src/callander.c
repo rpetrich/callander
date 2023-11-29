@@ -4649,7 +4649,7 @@ static void perform_unknown_op(__attribute__((unused)) const char *name, struct 
 
 static void set_compare_from_operation(struct registers *regs, int reg, uintptr_t mask)
 {
-	regs->compare_state = (struct x86_comparison){
+	regs->compare_state = (struct register_comparison){
 		.target_register = reg,
 		.value = 0,
 		.mask = mask,
@@ -5509,7 +5509,7 @@ static void clear_comparison_state(struct registers *state)
 	}
 }
 
-static void set_comparison_state(struct loader_context *loader, struct registers *state, struct x86_comparison comparison)
+static void set_comparison_state(__attribute__((unused)) struct loader_context *loader, struct registers *state, struct register_comparison comparison)
 {
 	state->compare_state = comparison;
 	LOG("comparing", name_for_register(state->compare_state.target_register));
@@ -7010,7 +7010,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				ins_ptr remaining = &decoded.unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = rm,
 					.value = comparator,
 					.mask = mask,
@@ -7028,7 +7028,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				ins_ptr remaining = &decoded.unprefixed[1];
 				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = rm,
 					.value = comparator,
 					.mask = mask,
@@ -7051,7 +7051,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (register_is_legacy_8bit_high(decoded.prefixes, &reg)) {
 					return INVALID_COMPARISON;
 				}
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = reg,
 					.value = comparator,
 					.mask = 0xff,
@@ -7069,7 +7069,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				truncate_to_size_prefixes(&comparator, decoded.prefixes);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = reg,
 					.value = comparator,
 					.mask = mask,
@@ -7082,7 +7082,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x3c: { // cmp al, imm8
 				struct register_state comparator;
 				comparator.value = comparator.max = (uintptr_t)*(const int8_t *)&decoded.unprefixed[1] & 0xff;
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = REGISTER_RAX,
 					.value = comparator,
 					.mask = 0xff,
@@ -7101,7 +7101,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					comparator.value = (decoded.prefixes.has_w ? (uintptr_t)*(const x86_int32 *)&decoded.unprefixed[1] : (uintptr_t)*(const x86_uint32 *)&decoded.unprefixed[1]) & mask;
 				}
 				comparator.max = comparator.value;
-				set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = REGISTER_RAX,
 					.value = comparator,
 					.mask = mask,
@@ -7477,7 +7477,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						} else {
 							struct register_state comparator;
 							comparator.value = comparator.max = *(ins_ptr)remaining;
-							set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+							set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 								.target_register = rm,
 								.value = comparator,
 								.mask = 0xff,
@@ -7539,7 +7539,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int32_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 							comparator.value = comparator.max = (decoded.prefixes.has_w ? (uintptr_t)*(const x86_int32 *)remaining : (uintptr_t)*(const x86_uint32 *)remaining) & mask;
 						}
-						set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+						set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 							.target_register = rm,
 							.value = comparator,
 							.mask = mask,
@@ -7639,7 +7639,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 						struct register_state comparator;
 						comparator.value = comparator.max = (uintptr_t)*(const int8_t *)remaining & mask;
-						set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+						set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 							.target_register = rm,
 							.value = comparator,
 							.mask = mask,
@@ -7665,7 +7665,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("found test", name_for_register(reg));
 						struct register_state comparator;
 						comparator.value = comparator.max = 0;
-						set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+						set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 							.target_register = reg,
 							.value = comparator,
 							.mask = 0xff,
@@ -7686,7 +7686,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("found test", name_for_register(reg));
 					struct register_state comparator;
 					comparator.value = comparator.max = 0;
-					set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+					set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 						.target_register = reg,
 						.value = comparator,
 						.mask = mask_for_size_prefixes(decoded.prefixes),
@@ -9323,7 +9323,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (applied_shift) {
 					clear_comparison_state(&self.current_state);
 				} else {
-					set_comparison_state(&analysis->loader, &self.current_state, (struct x86_comparison){
+					set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 						.target_register = left,
 						.value = right_state,
 						.mask = mask_for_operand_size(size),

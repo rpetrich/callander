@@ -516,7 +516,7 @@ enum {
 
 typedef uint8_t comparison_validity;
 
-struct x86_comparison {
+struct register_comparison {
 	struct register_state value;
 	uintptr_t mask;
 	struct decoded_rm mem_rm;
@@ -536,7 +536,7 @@ struct registers {
 	ins_ptr last_modify_syscall_register;
 #endif
 	struct decoded_rm mem_rm;
-	struct x86_comparison compare_state;
+	struct register_comparison compare_state;
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
 	ins_ptr stack_address_taken;
 #else
