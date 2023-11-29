@@ -3783,6 +3783,38 @@ static void record_stack_address_taken(__attribute__((unused)) const struct load
 #endif
 }
 
+static inline uintptr_t read_memory(const void *addr, enum ins_operand_size size)
+{
+	switch (size) {
+		case OPERATION_SIZE_BYTE:
+			return *(__attribute__((aligned(1))) const uint8_t *)addr;
+		case OPERATION_SIZE_HALF:
+			return *(__attribute__((aligned(1))) const uint16_t *)addr;
+		case OPERATION_SIZE_WORD:
+			return *(__attribute__((aligned(1))) const uint32_t *)addr;
+		case OPERATION_SIZE_DWORD:
+		default:
+			return *(__attribute__((aligned(1))) const uintptr_t *)addr;
+	}
+}
+
+#ifdef __aarch64__
+
+static inline intptr_t read_memory_signed(const void *addr, enum ins_operand_size size)
+{
+	switch (size) {
+		case OPERATION_SIZE_BYTE:
+			return *(__attribute__((aligned(1))) const int8_t *)addr;
+		case OPERATION_SIZE_HALF:
+			return *(__attribute__((aligned(1))) const int16_t *)addr;
+		case OPERATION_SIZE_WORD:
+			return *(__attribute__((aligned(1))) const int32_t *)addr;
+		case OPERATION_SIZE_DWORD:
+		default:
+			return *(__attribute__((aligned(1))) const intptr_t *)addr;
+	}
+}
+
 #if defined(__x86_64__)
 
 enum {
@@ -4158,7 +4190,7 @@ static enum basic_op_usage basic_op_xor(BASIC_OP_ARGS)
 
 static enum basic_op_usage basic_op_shr(BASIC_OP_ARGS)
 {
-	if (source->value > 64) {
+	if (source->value > operand_size * 8) {
 		clear_register(dest);
 		return BASIC_OP_USED_BOTH;
 	}
@@ -4174,7 +4206,7 @@ static enum basic_op_usage basic_op_shr(BASIC_OP_ARGS)
 static enum basic_op_usage basic_op_shl(BASIC_OP_ARGS)
 {
 	if (register_is_exactly_known(source) && register_is_exactly_known(dest)) {
-		if (source->value > 64) {
+		if (source->value > operand_size * 8) {
 			dest->value = dest->max = 0;
 		} else {
 			dest->value = dest->max = dest->value << source->value;
@@ -4184,6 +4216,22 @@ static enum basic_op_usage basic_op_shl(BASIC_OP_ARGS)
 	}
 	return BASIC_OP_USED_BOTH;
 }
+
+static enum basic_op_usage basic_op_sar(BASIC_OP_ARGS)
+{
+	if (source->value > operand_size * 8) {
+		clear_register(dest);
+		return BASIC_OP_USED_BOTH;
+	}
+	if (register_is_exactly_known(source)) {
+		dest->value = (uintptr_t)(sign_extend(dest->value, operand_size) >> (intptr_t)source->value);
+	} else {
+		dest->value = 0;
+	}
+	dest->max = (uintptr_t)(sign_extend(dest->max, operand_size) >> source->value);
+	return BASIC_OP_USED_BOTH;
+}
+
 
 #if defined(__x86_64__)
 
@@ -4438,12 +4486,13 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 	dump_registers(loader, regs, (register_mask)1 << rm);
 	truncate_to_size_prefixes(&dest, prefixes);
 	struct register_state src;
+	int8_t imm = *(const int8_t *)ins_modrm;
 	if (prefixes.has_w) { // sign extend to 64-bits
-		set_register(&src, (int64_t)*(const int8_t *)ins_modrm);
+		set_register(&src, (int64_t)imm);
 	} else if (prefixes.has_operand_size_override) {  // sign extend to 16-bits
-		set_register(&src, (int16_t)*(const int8_t *)ins_modrm);
+		set_register(&src, (int16_t)imm);
 	} else { // sign extend to 32-bits
-		set_register(&src, (int32_t)*(const int8_t *)ins_modrm);
+		set_register(&src, (int32_t)imm);
 	}
 	LOG("basic immediate", src.value);
 	additional->used = false;
@@ -4461,38 +4510,6 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 }
 
 #endif
-
-static inline uintptr_t read_memory(const void *addr, enum ins_operand_size size)
-{
-	switch (size) {
-		case OPERATION_SIZE_BYTE:
-			return *(__attribute__((aligned(1))) const uint8_t *)addr;
-		case OPERATION_SIZE_HALF:
-			return *(__attribute__((aligned(1))) const uint16_t *)addr;
-		case OPERATION_SIZE_WORD:
-			return *(__attribute__((aligned(1))) const uint32_t *)addr;
-		case OPERATION_SIZE_DWORD:
-		default:
-			return *(__attribute__((aligned(1))) const uintptr_t *)addr;
-	}
-}
-
-#ifdef __aarch64__
-
-static inline intptr_t read_memory_signed(const void *addr, enum ins_operand_size size)
-{
-	switch (size) {
-		case OPERATION_SIZE_BYTE:
-			return *(__attribute__((aligned(1))) const int8_t *)addr;
-		case OPERATION_SIZE_HALF:
-			return *(__attribute__((aligned(1))) const int16_t *)addr;
-		case OPERATION_SIZE_WORD:
-			return *(__attribute__((aligned(1))) const int32_t *)addr;
-		case OPERATION_SIZE_DWORD:
-		default:
-			return *(__attribute__((aligned(1))) const intptr_t *)addr;
-	}
-}
 
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int left_reg, int right_reg, enum basic_op_usage usage)
 {
@@ -7288,11 +7305,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, &source);
 				if (register_is_exactly_known(&source)) {
 					if (decoded.prefixes.has_operand_size_override) {
-						int16_t truncated = (int16_t)source.value;
-						set_register(&self.current_state.registers[reg], (uintptr_t)(intptr_t)truncated);
+						set_register(&self.current_state.registers[reg], sign_extend(source.value, OPERATION_SIZE_HALF));
 					} else {
-						int32_t truncated = (int32_t)source.value;
-						set_register(&self.current_state.registers[reg], (uintptr_t)(intptr_t)truncated);
+						set_register(&self.current_state.registers[reg], sign_extend(source.value, OPERATION_SIZE_WORD));
 					}
 					// TODO: read sources for case where rm is REGISTER_INVALID
 					self.current_state.sources[reg] = rm != REGISTER_INVALID ? self.current_state.sources[rm] : 0;
@@ -8008,7 +8023,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							self.current_state.sources[REGISTER_RAX] = 0;
 						}
 						if (self.current_state.registers[REGISTER_RAX].max >= 0x80000000) {
-							self.current_state.registers[REGISTER_RAX].max = (intptr_t)(int32_t)self.current_state.registers[REGISTER_RAX].max;
+							self.current_state.registers[REGISTER_RAX].max = sign_extend(self.current_state.registers[REGISTER_RAX].max, OPERATION_SIZE_WORD);
 						}
 						clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
 					}
@@ -8019,7 +8034,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							self.current_state.sources[REGISTER_RAX] = 0;
 						}
 						if (self.current_state.registers[REGISTER_RAX].max >= 0x80) {
-							self.current_state.registers[REGISTER_RAX].max = (intptr_t)(int8_t)self.current_state.registers[REGISTER_RAX].max;
+							self.current_state.registers[REGISTER_RAX].max = sign_extend(self.current_state.registers[REGISTER_RAX].max, OPERATION_SIZE_BYTE);
 							truncate_to_size_prefixes(&self.current_state.registers[REGISTER_RAX], decoded.prefixes);
 						}
 						clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
@@ -8157,7 +8172,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						rm = perform_basic_op_rm8_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					case 7:
-						rm = perform_basic_op_rm8_imm8("sar", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
+						rm = perform_basic_op_rm8_imm8("sar", basic_op_sar, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					default:
 						rm = perform_basic_op_rm8_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
@@ -8180,7 +8195,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						rm = perform_basic_op_rm_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					case 7:
-						rm = perform_basic_op_rm_imm8("sar", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
+						rm = perform_basic_op_rm_imm8("sar", basic_op_sar, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
 						break;
 					default:
 						rm = perform_basic_op_rm_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional);
@@ -9000,7 +9015,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_ASR: {
 				struct additional_result additional;
-				int dest = perform_basic_op("asr", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				int dest = perform_basic_op("asr", basic_op_sar, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					UNSUPPORTED_INSTRUCTION();
 				}
