@@ -8968,6 +8968,20 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				}
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				// check for address-forming idiom
+				if (decoded.decomposed.operands[1].operandClass == IMM32 || decoded.decomposed.operands[1].operandClass == IMM64) {
+					if (register_is_exactly_known(&self.current_state.registers[dest])) {
+						const void *address = (const void *)self.current_state.registers[dest].value;
+						struct loaded_binary *binary;
+						int prot = protection_for_address(&analysis->loader, address, &binary, NULL);
+						if (prot & PROT_EXEC) {
+							LOG("formed executable address, assuming it could be called after startup");
+							if (effects & EFFECT_ENTER_CALLS) {
+								queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
+							}
+						}
+					}
+				}
 				goto skip_stack_clear;
 			}
 			case ARM64_ADDP: {
