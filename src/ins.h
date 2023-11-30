@@ -55,7 +55,7 @@ static inline intptr_t sign_extend(uintptr_t value, enum ins_operand_size operan
 	}
 }
 
-#include "ins.h"
+#include "callander.h"
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
 static inline void truncate_to_8bit(struct register_state *reg) {
