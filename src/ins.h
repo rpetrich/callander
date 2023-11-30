@@ -1,6 +1,8 @@
 #ifndef INS_H
 #define INS_H
 
+#include <stdint.h>
+
 typedef int16_t ins_int16 __attribute__((aligned(1)));
 typedef uint16_t ins_uint16 __attribute__((aligned(1)));
 typedef int32_t ins_int32 __attribute__((aligned(1)));
@@ -34,6 +36,22 @@ static inline uintptr_t mask_for_operand_size(enum ins_operand_size operand_size
 			return 0xffffffff;
 		default:
 			return ~(uintptr_t)0;
+	}
+}
+
+__attribute__((always_inline))
+static inline intptr_t sign_extend(uintptr_t value, enum ins_operand_size operand_size)
+{
+	switch (operand_size) {
+		case OPERATION_SIZE_BYTE:
+			return (intptr_t)(int8_t)value;
+		case OPERATION_SIZE_HALF:
+			return (intptr_t)(int16_t)value;
+		case OPERATION_SIZE_WORD:
+			return (intptr_t)(int32_t)value;
+		case OPERATION_SIZE_DWORD:
+		default:
+			return (intptr_t)(int64_t)value;
 	}
 }
 
