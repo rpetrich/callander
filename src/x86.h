@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "ins.h"
+#include "axon.h"
 #include "x86_64_length_disassembler.h"
 
 // x86_is_syscall_instruction checks if the instruction at address is a syscall

@@ -179,33 +179,6 @@ enum {
 	OVERRIDE_ACCESS_SLOT_COUNT = 3,
 };
 
-struct register_state {
-	uintptr_t value;
-	uintptr_t max;
-};
-
-__attribute__((nonnull(1)))
-static inline void clear_register(struct register_state *reg) {
-	reg->value = (uintptr_t)0;
-	reg->max = ~(uintptr_t)0;
-}
-
-__attribute__((nonnull(1)))
-static inline void set_register(struct register_state *reg, uintptr_t value) {
-	reg->value = value;
-	reg->max = value;
-}
-
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool register_is_exactly_known(const struct register_state *reg) {
-	return reg->value == reg->max;
-}
-
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool register_is_partially_known(const struct register_state *reg) {
-	return reg->value != (uintptr_t)0 || reg->max != ~(uintptr_t)0;
-}
-
 #include "ins.h"
 
 struct address_and_size {

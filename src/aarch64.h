@@ -13,6 +13,8 @@
 #include "arch-arm64/disassembler/regs.h"
 #undef context
 
+#include "callander.h"
+
 enum aarch64_register_index {
 	AARCH64_REGISTER_INVALID = -10000000,
 	AARCH64_REGISTER_X0 = 0,
