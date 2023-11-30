@@ -7482,7 +7482,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct register_state src;
 								set_register(&src, imm);
-								(void)basic_op_add(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, OPERATION_SIZE_DWORD, NULL);
+								additional.used = false;
+								(void)basic_op_add(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, OPERATION_SIZE_DWORD, &additional);
+								if (additional.used) {
+									clear_register(&self.current_state.registers[REGISTER_SP]);
+								}
 								canonicalize_register(&self.current_state.registers[REGISTER_SP]);
 								dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 								clear_comparison_state(&self.current_state);
@@ -7523,7 +7527,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct register_state src;
 								set_register(&src, imm);
-								(void)basic_op_sub(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, OPERATION_SIZE_DWORD, NULL);
+								additional.used = false;
+								(void)basic_op_sub(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, OPERATION_SIZE_DWORD, &additional);
+								if (additional.used) {
+									clear_register(&self.current_state.registers[REGISTER_SP]);
+								}
 								canonicalize_register(&self.current_state.registers[REGISTER_SP]);
 								dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
