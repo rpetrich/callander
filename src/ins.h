@@ -1,6 +1,7 @@
 #ifndef INS_H
 #define INS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef int16_t ins_int16 __attribute__((aligned(1)));

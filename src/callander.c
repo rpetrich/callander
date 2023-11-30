@@ -29,7 +29,6 @@
 #include "search.h"
 
 #if defined(__x86_64__)
-#include "x86.h"
 #define ARCH_NAME "x86_64"
 #else
 #if defined(__aarch64__)
@@ -88,15 +87,6 @@ struct syscall_info info_for_syscall(uintptr_t nr)
 }
 
 #define ABORT_AT_NON_EXECUTABLE_ADDRESS 0
-
-#define INS_MOVL_START 0xb8
-#define INS_MOVL_END 0xbf
-
-#define INS_LEA 0x8d
-
-#define INS_REX_W_PREFIX 0x48
-#define INS_REX_WR_PREFIX 0x4c
-#define INS_REX_WRXB_PREFIX 0x4f
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
 static inline void canonicalize_register(struct register_state *reg) {
@@ -360,24 +350,11 @@ const struct registers empty_registers = {
 
 static inline bool registers_are_subset_of_registers(const struct register_state potential_subset[REGISTER_COUNT], const struct register_state potential_superset[REGISTER_COUNT], register_mask valid_registers)
 {
-#if 0
-	if (valid_registers != 0) {
-#pragma GCC unroll 64
-		for (int i = 0; i < REGISTER_COUNT; i++) {
-			if (valid_registers & ((register_mask)1 << i)) {
-				if (!register_is_subset_of_register(&potential_subset[i], &potential_superset[i])) {
-					return false;
-				}
-			}
-		}
-	}
-#else
 	for_each_bit(valid_registers, bit, i) {
 		if (!register_is_subset_of_register(&potential_subset[i], &potential_superset[i])) {
 			return false;
 		}
 	}
-#endif
 	return true;
 }
 
@@ -1474,17 +1451,6 @@ __attribute__((always_inline))
 __attribute__((nonnull(1)))
 static inline bool collapse_registers(struct searched_instruction_data_entry *entry, const struct register_state full[REGISTER_COUNT])
 {
-#if 0
-	register_mask used_registers = entry->used_registers;
-	int j = 0;
-#pragma GCC unroll 64
-	for (int i = 0; i < REGISTER_COUNT; i++) {
-		if (used_registers & ((register_mask)1 << i)) {
-			entry->registers[j++] = full[i];
-		}
-	}
-	return true;
-#else
 	int old_count = entry->used_count;
 	int new_count = 0;
 	register_mask used_registers = 0;
@@ -1504,7 +1470,6 @@ static inline bool collapse_registers(struct searched_instruction_data_entry *en
 		entry->registers[j++] = full[i];
 	}
 	return true;
-#endif
 }
 
 __attribute__((always_inline))
@@ -1534,7 +1499,6 @@ static inline bool entry_registers_are_subset_of_registers(const struct searched
 	register_mask used_registers = entry->used_registers;
 	if (valid_registers != 0) {
 		int j = 0;
-#pragma GCC unroll 64
 		for_each_bit(used_registers | valid_registers, bit, i) {
 			if (valid_registers & bit) {
 				if ((used_registers & bit) && !register_is_subset_of_register(&entry->registers[j], &potential_superset[i])) {
@@ -1879,15 +1843,11 @@ retry:
 static inline bool validate_offset(__attribute__((unused)) struct searched_instruction_data *data, __attribute__((unused)) int entry_offset)
 {
 #ifdef CLEAR_PROCESSED_ENTRIES
-#if 0
-	return LIKELY(data->end_offset > (uint32_t)entry_offset);
-#else
 	if (LIKELY(data->end_offset >= (uint32_t)entry_offset + sizeof(struct searched_instruction_data_entry))) {
 		struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 		return LIKELY(data->end_offset >= (uint32_t)entry_offset + sizeof(struct searched_instruction_data_entry) + entry->used_count * sizeof(entry->registers[0]));
 	}
 	return false;
-#endif
 #else
 	return true;
 #endif
@@ -1998,21 +1958,10 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 	}
 	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 	if (SHOULD_LOG) {
-#if 0
-		for (uint32_t i = 0; i < data->count; i++) {
-			if (i == token->entry_index) {
-				ERROR("existing values (index)", (intptr_t)i);
-			} else {
-				ERROR("existing values", (intptr_t)i);
-			}
-			dump_registers(loader, &data->entries[i], data->relevant_registers);
-		}
-#else
 		ERROR("existing values (index)", (intptr_t)token->entry_offset);
 		struct registers regs = { 0 };
 		expand_registers(regs.registers, entry);
 		dump_registers(loader, &regs, data->relevant_registers);
-#endif
 	}
 	function_effects effects;
 	if (registers_are_subset_of_entry_registers(registers->registers, entry, data->relevant_registers)) {
@@ -3815,6 +3764,8 @@ static inline intptr_t read_memory_signed(const void *addr, enum ins_operand_siz
 	}
 }
 
+#endif
+
 #if defined(__x86_64__)
 
 enum {
@@ -3914,7 +3865,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 		struct loaded_binary *binary;
 		int prot = protection_for_address(loader, (const void *)addr, &binary, NULL);
 		if (prot & PROT_READ) {
-			uintptr_t value = read_memory(addr, operation_size == OPERATION_SIZE_DEFAULT ? operand_size_from_prefixes(prefixes) : operation_size);
+			uintptr_t value = read_memory((const void *)addr, operation_size == OPERATION_SIZE_DEFAULT ? operand_size_from_prefixes(prefixes) : (enum ins_operand_size)operation_size);
 			LOG("read value", value);
 			if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
 				if (flags & READ_RM_KEEP_MEM && !register_is_partially_known(&regs->registers[REGISTER_MEM])) {
@@ -4510,6 +4461,8 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 }
 
 #endif
+
+#ifdef __aarch64__
 
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int left_reg, int right_reg, enum basic_op_usage usage)
 {
@@ -7529,7 +7482,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct register_state src;
 								set_register(&src, imm);
-								(void)basic_op_add(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, NULL);
+								(void)basic_op_add(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, OPERATION_SIZE_DWORD, NULL);
 								canonicalize_register(&self.current_state.registers[REGISTER_SP]);
 								dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 								clear_comparison_state(&self.current_state);
@@ -7570,7 +7523,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct register_state src;
 								set_register(&src, imm);
-								(void)basic_op_sub(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, NULL);
+								(void)basic_op_sub(&self.current_state.registers[REGISTER_SP], &src, REGISTER_SP, -1, OPERATION_SIZE_DWORD, NULL);
 								canonicalize_register(&self.current_state.registers[REGISTER_SP]);
 								dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 								self.current_state.compare_state.validity = COMPARISON_IS_INVALID;
