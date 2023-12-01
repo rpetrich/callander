@@ -4184,7 +4184,7 @@ static enum basic_op_usage basic_op_sar(BASIC_OP_ARGS)
 }
 
 
-static void merge_and_log_additional_result(struct loader_context *loader, struct register_state *dest, struct additional_result *additional, int reg)
+static void merge_and_log_additional_result(__attribute__((unused)) struct loader_context *loader, struct register_state *dest, struct additional_result *additional, int reg)
 {
 	LOG("primary result", temp_str(copy_register_state_description(loader, *dest)));
 	LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
