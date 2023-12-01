@@ -65,18 +65,17 @@ void callander_perform_analysis(struct program_state *analysis, callander_main_f
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
 	// analyze the main function
-	struct analysis_frame new_caller = { .address = NULL, .description = "main", .next = NULL, .current_state = empty_registers, .entry = NULL, .entry_state = &empty_registers, .token = { 0 }, .is_entry = true };
+	struct analysis_frame new_caller = { .address = NULL, .description = "main", .next = NULL, .current_state = empty_registers, .entry = NULL, .entry_state = &empty_registers, .token = { 0 } };
 	set_register(&new_caller.current_state.registers[sysv_argument_abi_register_indexes[0]], (uintptr_t)data);
-	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)main, &new_caller, DISALLOW_JUMPS_INTO_THE_ABYSS, true);
+	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)main, &new_caller, 0);
 
 	// analyze the return from exit
 	new_caller.description = "exit";
 	set_register(&new_caller.current_state.registers[REGISTER_RAX], (uintptr_t)SYS_exit_group);
-	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)&fs_syscall, &new_caller, DISALLOW_JUMPS_INTO_THE_ABYSS, true);
+	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)&fs_syscall, &new_caller, 0);
 
 	LOG("finished initial pass, dequeuing instructions");
 	ERROR_FLUSH();

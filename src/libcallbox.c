@@ -483,7 +483,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
 	record_syscall(analysis, SYS_futex, (struct analysis_frame){
@@ -494,7 +493,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	record_syscall(analysis, SYS_read, (struct analysis_frame){
 		.next = NULL,
@@ -504,7 +502,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	record_syscall(analysis, SYS_write, (struct analysis_frame){
 		.next = NULL,
@@ -514,7 +511,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	record_syscall(analysis, SYS_writev, (struct analysis_frame){
 		.next = NULL,
@@ -524,7 +520,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	record_syscall(analysis, SYS_exit_group, (struct analysis_frame){
 		.next = NULL,
@@ -534,7 +529,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	record_syscall(analysis, SYS_mmap, (struct analysis_frame){
 		.next = NULL,
@@ -544,7 +538,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 	record_syscall(analysis, SYS_munmap, (struct analysis_frame){
 		.next = NULL,
@@ -554,7 +547,6 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.entry = NULL,
 		.entry_state = &empty_registers,
 		.token = { 0 },
-		.is_entry = true,
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
 	struct loaded_binary *binary = register_dlopen(analysis, libz_entry->l_name, NULL, false, true, false);
@@ -568,7 +560,7 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		if (addr == NULL) {
 			DIE("could not analyze", zlib_symbols[i].name);
 		}
-		struct analysis_frame new_caller = { .address = addr, .description = zlib_symbols[i].name, .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, .is_entry = false, };
+		struct analysis_frame new_caller = { .address = addr, .description = zlib_symbols[i].name, .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, };
 		analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, addr, &new_caller);
 	}
 

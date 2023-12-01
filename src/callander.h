@@ -14,7 +14,6 @@
 #define STORE_LAST_MODIFIED 0
 #define BREAK_ON_UNREACHABLES 0
 #define RECORD_WHERE_STACK_ADDRESS_TAKEN 0
-#define RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY 1
 
 // #define LOGGING
 // #define STATS
@@ -527,7 +526,6 @@ struct analysis_frame {
 	ins_ptr entry;
 	const struct registers *entry_state;
 	struct effect_token token;
-	bool is_entry:1;
 };
 
 enum effects {
@@ -577,9 +575,6 @@ struct recorded_syscall {
 	uintptr_t nr;
 	ins_ptr ins;
 	ins_ptr entry;
-#if RECORDED_SYSCALL_INCLUDES_FUNCTION_ENTRY
-	ins_ptr function_entry;
-#endif
 	struct registers registers;
 };
 
@@ -699,20 +694,18 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
-enum jump_table_status {
-	DISALLOW_JUMPS_INTO_THE_ABYSS = 0,
+enum {
 	ALLOW_JUMPS_INTO_THE_ABYSS = 1,
-	DISALLOW_AND_PROMPT_FOR_DEBUG_SYMBOLS = 2,
 };
 
 __attribute__((nonnull(1, 3, 4, 5)))
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, enum jump_table_status jump_status, bool is_entry);
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 3, 4, 5)))
 static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller)
 {
-	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, true);
+	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS);
 }
 
 __attribute__((nonnull(1)))
