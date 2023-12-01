@@ -4080,8 +4080,9 @@ static enum basic_op_usage basic_op_and(BASIC_OP_ARGS)
 			return BASIC_OP_USED_BOTH;
 		}
 	}
+	// use the smallest maximum, but not if it looks like an alignment operation
 	dest->value = 0;
-	if (source->max < dest->max) {
+	if (source->max < dest->max && source->max < (uintptr_t)0xfffffffffffffff0) {
 		dest->max = source->max;
 	}
 	return BASIC_OP_USED_BOTH;
