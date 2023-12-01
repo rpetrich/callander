@@ -559,7 +559,7 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	}
 #else
 #if defined(__aarch64__)
-	for (int r = REGISTER_X9; r <= REGISTER_X17; r++) {
+	for (int r = REGISTER_X0; r <= REGISTER_X17; r++) {
 		if (SHOULD_LOG && register_is_partially_known(&regs->registers[r])) {
 			LOG("clearing call dirtied register", name_for_register(r));
 		}
@@ -588,7 +588,7 @@ static inline void clear_call_dirtied_registers(const struct loader_context *loa
 	}
 #else
 #if defined(__aarch64__)
-	for (int r = REGISTER_X9; r <= REGISTER_X17; r++) {
+	for (int r = REGISTER_X0; r <= REGISTER_X17; r++) {
 		clear_match(loader, regs, r, ins);
 	}
 	// TODO: support golang's internal ABI on arm64
