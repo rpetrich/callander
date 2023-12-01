@@ -34,7 +34,7 @@ rt_sigreturn(any) @ libc.so.6+0x3cb67
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x100518(tcgetattr+40)
 pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ libc.so.6+0x1001ec(__pread64_nocancel+12)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xc89d(_dl_debug_vdprintf+301)
-writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any) @ libc.so.6+0x8105e(__libc_message+510)
+writev(STDERR_FILENO, any, any) @ libc.so.6+0x8105e(__libc_message+510)
 writev(any u32, any, any u32) @ libc.so.6+0x100f02(writev+18)
 writev(any u32, any, any u32) @ libc.so.6+0x100f3b(writev+75)
 access(any, F_OK-W_OK) @ libc.so.6+0xfb3e9(access+9)

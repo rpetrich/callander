@@ -38,7 +38,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8ae09
 rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab97
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0xa7658
 pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xa75fc
-writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any u32) @ /usr/sbin/ldconfig.real+0x740b5
+writev(STDERR_FILENO, any, any u32) @ /usr/sbin/ldconfig.real+0x740b5
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x740eb
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xb638f
 access(/usr/sbin/ldconfig.real+0xd3042, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
@@ -52,7 +52,7 @@ getpid() @ /usr/sbin/ldconfig.real+0xc18f9
 socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0xc3e89
 connect(any u32, any, 110) @ /usr/sbin/ldconfig.real+0xc3c95
 connect(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xc3cc9
-sendto(any u32, NULL-0xfffffffffffffff0, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real+0xc3dde
+sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real+0xc3dde
 sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig.real+0xc3e2a
 recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ /usr/sbin/ldconfig.real+0xc3d35
 recvmsg(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0xc3d6b
@@ -69,7 +69,7 @@ rename(any, any) @ /usr/sbin/ldconfig.real+0x22499
 mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x73119
 unlink(any) @ /usr/sbin/ldconfig.real+0x73c79
 symlink(any, any) @ /usr/sbin/ldconfig.real+0x73c19
-readlink(any, NULL-0xfffffffffffffff0, 4095) @ /usr/sbin/ldconfig.real+0x73c49
+readlink(any, any, 4095) @ /usr/sbin/ldconfig.real+0x73c49
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73c49
 readlink(/usr/sbin/ldconfig.real+0xe63e3, any, 0x1000) @ /usr/sbin/ldconfig.real+0xb7ff1
 chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x730e9

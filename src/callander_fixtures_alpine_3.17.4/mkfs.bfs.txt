@@ -7,8 +7,8 @@ write(any, any, 512) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 write(any, any, 16) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, 64) @ ld-musl-x86_64.so.1+0x583bc
 write(any, any, 512) @ ld-musl-x86_64.so.1+0x583bc
-open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+open(any, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+open(any, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
 close(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -75,10 +75,10 @@ futex(140, FUTEX_WAKE, 1, any, any u32, 202)
 futex(140, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any u32, 202)
 futex(ld-musl-x86_64.so.1+0x9714c(__stderr_FILE*+140), FUTEX_WAKE, 1, any, any u32, 202)
 futex(ld-musl-x86_64.so.1+0x9714c(__stderr_FILE*+140), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any u32, 202)
-futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99848(ctor_cond*+8), FUTEX_WAKE, INT_MAX, any, 202, any)
-futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, any, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAKE, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)

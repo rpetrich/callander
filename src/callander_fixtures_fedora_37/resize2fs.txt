@@ -54,7 +54,7 @@ pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ libc.so.6+0x1001ec(__pread64_n
 pwrite64(any u32, any, any, any) @ libc.so.6+0xf9335(__libc_pwrite+21)
 pwrite64(any u32, any, any, any) @ libc.so.6+0xf9375(__libc_pwrite+85)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xc89d(_dl_debug_vdprintf+301)
-writev(STDERR_FILENO, NULL-0xfffffffffffffff0, any) @ libc.so.6+0x8105e(__libc_message+510)
+writev(STDERR_FILENO, any, any) @ libc.so.6+0x8105e(__libc_message+510)
 access(non-NULL, W_OK) @ libc.so.6+0xfb3e9(access+9)
 access(/usr/sbin/resize2fs+0xd4d8, F_OK) @ libc.so.6+0xfb3e9(access+9)
 access(/usr/sbin/resize2fs+0xdd80, R_OK) @ libc.so.6+0xfb3e9(access+9)

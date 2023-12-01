@@ -24,9 +24,7 @@ rt_sigreturn(any) @ /usr/sbin/ldconfig+0x67897
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x81ba8
 ioctl(any u32, FIONREAD, any) @ /usr/sbin/ldconfig+0xa5f0d
 ioctl(any u32, SIOCGIFINDEX, any) @ /usr/sbin/ldconfig+0xa5f0d
-pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ /usr/sbin/ldconfig+0x81b4c
-pread64(any u32, NULL-0xfffffffffffffff0, any, any) @ /usr/sbin/ldconfig+0x81b4c
-pread64(any u32, any, 384, any) @ /usr/sbin/ldconfig+0x81b4c
+pread64(any u32, any, any, any) @ /usr/sbin/ldconfig+0x81b4c
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52e42
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x52e7b
 writev(any u32, any, any) @ /usr/sbin/ldconfig+0x91cb5
@@ -63,7 +61,7 @@ chdir(/usr/sbin/ldconfig+0xb6286) @ /usr/sbin/ldconfig+0x521d9
 rename(any, any) @ /usr/sbin/ldconfig+0x13709
 mkdir(any, 0700) @ /usr/sbin/ldconfig+0x51e79
 unlink(any) @ /usr/sbin/ldconfig+0x529d9
-symlink(any, NULL-0xfffffffffffffff0) @ /usr/sbin/ldconfig+0x52979
+symlink(any, any) @ /usr/sbin/ldconfig+0x52979
 readlink(any, any, 4095) @ /usr/sbin/ldconfig+0x529a9
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig+0x529a9
 readlink(/usr/sbin/ldconfig+0xcf4f8, any, 0x1000) @ /usr/sbin/ldconfig+0x91a61

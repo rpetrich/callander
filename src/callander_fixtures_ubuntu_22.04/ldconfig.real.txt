@@ -64,7 +64,7 @@ rename(any, any) @ /usr/sbin/ldconfig.real+0x1de09
 mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x72cb9
 unlink(any) @ /usr/sbin/ldconfig.real+0x737c9
 symlink(any, any) @ /usr/sbin/ldconfig.real+0x73769
-readlink(any, NULL-0xfffffffffffffff0, 4095) @ /usr/sbin/ldconfig.real+0x73799
+readlink(any, any, 4095) @ /usr/sbin/ldconfig.real+0x73799
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73799
 readlink(/usr/sbin/ldconfig.real+0x105558, any, 0x1000) @ /usr/sbin/ldconfig.real+0xc0361
 chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x72c89

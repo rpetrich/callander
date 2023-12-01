@@ -1,10 +1,10 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
-open(ld-musl-x86_64.so.1+0x94a28, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-open(/sbin/v86d+0x15093, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-open(/sbin/v86d+0x150d0, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-open(ld-musl-x86_64.so.1+0x94a28, any, any) @ ld-musl-x86_64.so.1+0x583bc
-open(/sbin/v86d+0x15093, any, any) @ ld-musl-x86_64.so.1+0x583bc
-open(/sbin/v86d+0x150d0, any, any) @ ld-musl-x86_64.so.1+0x583bc
+open(ld-musl-x86_64.so.1+0x94a28, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+open(/sbin/v86d+0x15093, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+open(/sbin/v86d+0x150d0, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+open(ld-musl-x86_64.so.1+0x94a28, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+open(/sbin/v86d+0x15093, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+open(/sbin/v86d+0x150d0, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
 close(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -46,8 +46,10 @@ socket(AF_UNIX, SOCK_DGRAM, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 socket(AF_NETLINK, SOCK_DGRAM, 11) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 connect(any, ld-musl-x86_64.so.1+0x937a0(log_addr*), 12) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 connect(any, ld-musl-x86_64.so.1+0x937a0(log_addr*), 12) @ ld-musl-x86_64.so.1+0x583bc
-sendto(any, any, any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, NULL-0x4000, MSG_DONTROUTE|MSG_PROBE-MSG_PROBE|MSG_TRUNC|MSG_DONTWAIT|MSG_EOR|MSG_WAITALL|MSG_FIN|MSG_SYN|MSG_CONFIRM|MSG_RST|MSG_ERRQUEUE, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, NULL-0x4000, MSG_DONTROUTE|MSG_PROBE-MSG_PROBE|MSG_TRUNC|MSG_DONTWAIT|MSG_EOR|MSG_WAITALL|MSG_FIN|MSG_SYN|MSG_CONFIRM|MSG_RST|MSG_ERRQUEUE, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 recvfrom(any, any, 0x4000, MSG_RST, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvfrom(any, any, 0x4000, MSG_RST, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, 12) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
@@ -79,11 +81,11 @@ futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 128, any u32)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(ld-musl-x86_64.so.1+0x9714c(__stderr_FILE*+140), FUTEX_WAKE, 1, any, any u32, 202)
 futex(ld-musl-x86_64.so.1+0x9714c(__stderr_FILE*+140), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any u32, 202)
-futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x98b60(lock*), any u32, any, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x98b60(lock*), any u32, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99848(ctor_cond*+8), FUTEX_WAKE, INT_MAX, any, 202, any)
-futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, any, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAKE, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)

@@ -4,8 +4,8 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/sbin/zramctl+0x12cf4, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/sbin/zramctl+0x12d01, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x583bc
+open(any, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+open(any, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x1c470(opendir+47)
 close(any) @ ld-musl-x86_64.so.1+0x4a624(__stdio_close*+17)
@@ -81,10 +81,10 @@ futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any u32, 202)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-x86_64.so.1+0x99884(init_fini_lock*+4), 202)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 128, any u32)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, any, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, any, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99848(ctor_cond*+8), FUTEX_WAKE, INT_MAX, any, 202, any)
-futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, any, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAKE, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
@@ -98,15 +98,15 @@ clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
-openat(any, /sbin/zramctl+0x12029, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12071, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x120f5, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12104, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x1282b, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12029, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12071, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x120f5, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12104, any, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x1282b, any, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)
