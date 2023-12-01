@@ -15,6 +15,7 @@ jobs:
     - uses: actions/checkout@v3
     - run: make -j -k
       working-directory: src
+    - run: src/callander --show-permitted echo hi
     - run: tar cfz callander-$GITHUB_SHA.tgz callander callander.debug
       working-directory: src
     - uses: actions/upload-artifact@v3
