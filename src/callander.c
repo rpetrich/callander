@@ -4184,6 +4184,16 @@ static enum basic_op_usage basic_op_sar(BASIC_OP_ARGS)
 }
 
 
+static void merge_and_log_additional_result(struct loader_context *loader, struct register_state *dest, struct additional_result *additional, int reg)
+{
+	LOG("primary result", temp_str(copy_register_state_description(loader, *dest)));
+	LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
+	if (combine_register_states(dest, &additional->state, reg)) {
+		additional->used = false;
+		LOG("merged result", temp_str(copy_register_state_description(loader, *dest)));
+	}
+}
+
 #if defined(__x86_64__)
 
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int source_reg, enum basic_op_usage usage)
@@ -4206,6 +4216,7 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 	}
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
@@ -4228,17 +4239,19 @@ static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, bas
 		usage = op(&dest, &src, rm, reg, OPERATION_SIZE_BYTE, additional);
 		truncate_to_8bit(&dest);
 	}
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_8bit(&additional->state);
+		merge_and_log_additional_result(loader, &dest, additional, rm);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[rm] = dest;
 	update_sources_for_basic_op_usage(regs, rm, reg, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
-	if (additional->used) {
-		truncate_to_8bit(&additional->state);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return rm;
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
@@ -4254,17 +4267,19 @@ static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic
 	additional->used = false;
 	enum basic_op_usage usage = op(&dest, &src, rm, reg, operand_size_from_prefixes(prefixes), additional);
 	truncate_to_size_prefixes(&dest, prefixes);
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		merge_and_log_additional_result(loader, &dest, additional, rm);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[rm] = dest;
 	update_sources_for_basic_op_usage(regs, rm, reg, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
-	if (additional->used) {
-		truncate_to_size_prefixes(&additional->state, prefixes);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return rm;
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
@@ -4286,17 +4301,19 @@ static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, bas
 		usage = op(&dest, &src, reg, rm, OPERATION_SIZE_BYTE,  additional);
 		truncate_to_8bit(&dest);
 	}
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_8bit(&additional->state);
+		merge_and_log_additional_result(loader, &dest, additional, reg);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[reg] = dest;
 	update_sources_for_basic_op_usage(regs, reg, rm, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, ins_modrm);
-	if (additional->used) {
-		truncate_to_8bit(&additional->state);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return reg;
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
@@ -4312,17 +4329,19 @@ static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic
 	additional->used = false;
 	enum basic_op_usage usage = op(&dest, &src, reg, rm, operand_size_from_prefixes(prefixes), additional);
 	truncate_to_size_prefixes(&dest, prefixes);
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		merge_and_log_additional_result(loader, &dest, additional, reg);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[reg] = dest;
 	update_sources_for_basic_op_usage(regs, reg, rm, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, ins_modrm);
-	if (additional->used) {
-		truncate_to_size_prefixes(&additional->state, prefixes);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return reg;
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
@@ -4345,14 +4364,15 @@ static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, b
 		usage = op(&dest, &src, rm, -1, OPERATION_SIZE_BYTE, additional);
 		truncate_to_8bit(&dest);
 	}
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_8bit(&additional->state);
+		merge_and_log_additional_result(loader, &dest, additional, rm);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[rm] = dest;
 	update_sources_for_basic_op_usage(regs, rm, REGISTER_INVALID, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
-	if (additional->used) {
-		truncate_to_8bit(&additional->state);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return rm;
 }
 
@@ -4370,16 +4390,18 @@ static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, b
 	additional->used = false;
 	enum basic_op_usage usage = op(&dest, &src, reg, -1, OPERATION_SIZE_BYTE, additional);
 	truncate_to_8bit(&dest);
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_8bit(&additional->state);
+		merge_and_log_additional_result(loader, &dest, additional, REGISTER_RAX);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[reg] = dest;
 	update_sources_for_basic_op_usage(regs, reg, REGISTER_INVALID, register_is_partially_known_8bit(&dest) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, imm);
-	if (additional->used) {
-		truncate_to_8bit(&additional->state);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
@@ -4394,14 +4416,15 @@ static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, bas
 	additional->used = false;
 	enum basic_op_usage usage = op(&dest, &src, rm, -1, operand_size_from_prefixes(prefixes), additional);
 	truncate_to_size_prefixes(&dest, prefixes);
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		merge_and_log_additional_result(loader, &dest, additional, rm);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[rm] = dest;
 	update_sources_for_basic_op_usage(regs, rm, rm, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
-	if (additional->used) {
-		truncate_to_size_prefixes(&additional->state, prefixes);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return rm;
 }
 
@@ -4418,16 +4441,18 @@ static void perform_basic_op_imm(__attribute__((unused)) const char *name, basic
 	additional->used = false;
 	enum basic_op_usage usage = op(&dest, &src, reg, -1, operand_size_from_prefixes(prefixes), additional);
 	truncate_to_size_prefixes(&dest, prefixes);
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		merge_and_log_additional_result(loader, &dest, additional, reg);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[reg] = dest;
 	update_sources_for_basic_op_usage(regs, reg, REGISTER_INVALID, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, reg, imm);
-	if (additional->used) {
-		truncate_to_size_prefixes(&additional->state, prefixes);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
@@ -4449,14 +4474,15 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 	additional->used = false;
 	enum basic_op_usage usage = op(&dest, &src, rm, -1, operand_size_from_prefixes(prefixes), additional);
 	truncate_to_size_prefixes(&dest, prefixes);
-	LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		merge_and_log_additional_result(loader, &dest, additional, rm);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, dest)));
+	}
 	regs->registers[rm] = dest;
 	update_sources_for_basic_op_usage(regs, rm, REGISTER_INVALID, register_is_partially_known_size_prefixes(&dest, prefixes) ? usage : BASIC_OP_USED_NEITHER);
 	clear_match(loader, regs, rm, ins_modrm);
-	if (additional->used) {
-		truncate_to_size_prefixes(&additional->state, prefixes);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	return rm;
 }
 
@@ -4488,6 +4514,7 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 	}
 }
 
+__attribute__((warn_unused_result))
 static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, enum ins_operand_size *out_size, struct additional_result *additional)
 {
 	struct register_state dest_state;
@@ -4517,20 +4544,19 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	additional->used = false;
 	enum basic_op_usage usage = op(&left_state, &right_state, left, applied_shift ? REGISTER_INVALID : right, size, additional);
 	truncate_to_operand_size(&left_state, size);
-	LOG("result", temp_str(copy_register_state_description(loader, left_state)));
+	if (UNLIKELY(additional->used)) {
+		truncate_to_operand_size(&additional->state, size);
+		merge_and_log_additional_result(loader, &left_state, additional, left);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, left_state)));
+	}
 	regs->registers[dest] = left_state;
 	if (register_is_partially_known(&left_state)) {
-		LOG("value is known", temp_str(copy_register_state_description(loader, left_state)));
 		update_sources_for_basic_op_usage(regs, dest, left, right, usage);
 	} else {
-		LOG("value is unknown", temp_str(copy_register_state_description(loader, left_state)));
 		regs->sources[dest] = 0;
 	}
 	clear_match(loader, regs, dest, ins);
-	if (additional->used) {
-		truncate_to_operand_size(&additional->state, size);
-		LOG("additional result", temp_str(copy_register_state_description(loader, additional->state)));
-	}
 	if (out_size != NULL) {
 		*out_size = size;
 	}
@@ -7256,13 +7282,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				ins_ptr remaining = &decoded.unprefixed[1];
 				struct register_state source;
 				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, &source);
+				truncate_to_32bit(&source);
 				if (register_is_exactly_known(&source)) {
-					if (decoded.prefixes.has_operand_size_override) {
-						set_register(&self.current_state.registers[reg], sign_extend(source.value, OPERATION_SIZE_HALF));
-					} else {
-						set_register(&self.current_state.registers[reg], sign_extend(source.value, OPERATION_SIZE_WORD));
-					}
+					set_register(&self.current_state.registers[reg], sign_extend(source.value, OPERATION_SIZE_WORD));
 					// TODO: read sources for case where rm is REGISTER_INVALID
+					self.current_state.sources[reg] = rm != REGISTER_INVALID ? self.current_state.sources[rm] : 0;
+				} else if (source.max < 0x80000000) {
+					self.current_state.registers[reg] = source;
+					self.current_state.sources[reg] = rm != REGISTER_INVALID ? self.current_state.sources[rm] : 0;
+				} else if (source.value & source.max & 0x80000000) {
+					self.current_state.registers[reg].value = sign_extend(source.value, OPERATION_SIZE_WORD);
+					self.current_state.registers[reg].max = sign_extend(source.max, OPERATION_SIZE_WORD);
 					self.current_state.sources[reg] = rm != REGISTER_INVALID ? self.current_state.sources[rm] : 0;
 				} else {
 					clear_register(&self.current_state.registers[reg]);
