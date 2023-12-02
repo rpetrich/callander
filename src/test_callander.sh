@@ -2,8 +2,13 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-source /etc/os-release
-FIXTURE_PATH="$SCRIPT_DIR/callander_fixtures_"$ID"_"$VERSION_ID
+if [ -z "$full_image" ]; then
+	export full_image="$image-$(uname -m)"
+fi
+FIXTURE_PATH="callander_fixtures/$full_image"
+if [ "$SCRIPT_DIR" != "$PWD" ]; then
+	FIXTURE_PATH="$SCRIPT_DIR/$FIXTURE_PATH"
+fi
 
 test_program () {
 	local prog="$1"
@@ -187,6 +192,7 @@ else
 	# fi
 
 	# exit 0
+	echo Testing $full_image:
 	mkdir -p "$FIXTURE_PATH"
 	paths="/usr/bin/ /sbin/"
 	if [ `readlink -f /bin` == "/bin" ]; then
@@ -194,7 +200,7 @@ else
 	fi
 	binaries=$(find $paths -executable -type f | grep -v callander)
 	# note: this is the moreutils parallel instead of GNU parallel
-	if [ -e /usr/bin/parallel-moreutils ]; then
+	if command -v parallel-moreutils >/dev/null; then
 		parallel-moreutils "$0" -- $binaries
 	else
 		if command -v parallel >/dev/null; then
