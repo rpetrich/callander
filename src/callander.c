@@ -1685,6 +1685,10 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					goto continue_search;
 				}
 				if (out_registers->registers[r].value != registers->registers[r].value || out_registers->registers[r].max != registers->registers[r].max) {
+					if ((profitable_registers & bit) == 0) {
+						LOG("found register to be profitable", name_for_register(r));
+						dump_registers(loader, out_registers, bit);
+					}
 					profitable_registers |= bit;
 				}
 				if (entry->widen_count[r] < 4) {
@@ -1767,9 +1771,15 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 		}
 	}
 	if (count > 60) {
-		LOG("too many entries, widening all registers");
-		if (profitable_registers != 0) {
-			profitable_registers = widenable_registers & ALL_REGISTERS;
+		if (profitable_registers == 0) {
+			if (count > 256) {
+				profitable_registers = widenable_registers & ALL_REGISTERS;
+				LOG("too many entries, widening all registers");
+			} else {
+				LOG("numerous entries, but no profitable registers");
+			}
+		} else {
+			LOG("too many entries, widening profitable registers");
 		}
 		if (profitable_registers != 0) {
 			*out_registers = *registers;
@@ -1792,6 +1802,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				} else {
 					out_registers->registers[i].max = ~(uintptr_t)0;
 				}
+				out_registers->registers[i].value = 0;
 				out_registers->sources[i] = 0;
 			}
 			*out_wrote_registers = true;
