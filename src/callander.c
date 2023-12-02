@@ -2936,10 +2936,16 @@ static void intercept_jump_slot(struct program_state *analysis, struct loaded_bi
 	}
 	if (relaent && jmprel && pltrelsz) {
 		uintptr_t rela_base = (uintptr_t)apply_base_address(&binary->info, jmprel);
+#ifdef __x86_64__
+		Elf32_Word required_type = R_X86_64_JUMP_SLOT;
+#endif
+#ifdef __aarch64__
+		Elf32_Word required_type = R_AARCH64_JUMP_SLOT;
+#endif
 		for (uintptr_t rel_off = 0; rel_off < pltrelsz; rel_off += relaent) {
 			const ElfW(Rela) *rel = (const ElfW(Rela) *)(rela_base + rel_off);
 			uintptr_t info = rel->r_info;
-			if (ELF64_R_TYPE(info) == R_X86_64_JUMP_SLOT) {
+			if (ELF64_R_TYPE(info) == required_type) {
 				Elf64_Word symbol_index = ELF64_R_SYM(info);
 				const ElfW(Sym) *symbol = (const ElfW(Sym) *)(binary->symbols.symbols + symbol_index * binary->symbols.symbol_stride);
 				const char *textual_name = symbol_name(&binary->symbols, symbol);
