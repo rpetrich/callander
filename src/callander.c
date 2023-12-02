@@ -10193,6 +10193,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										uintptr_t value = read_memory((const void *)source_single_state.value, mem_size) & mask_for_operand_size(size);
 										set_register(&copy.registers[dest], value);
+										if (mem_size == OPERATION_SIZE_DWORD && (protection_for_address(&analysis->loader, (ins_ptr)value, &binary, NULL) & PROT_EXEC) == 0) {
+											LOG("discovered non-executable address, cancelling lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
+											goto cancel_lookup_table;
+										}
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, (flags + 2) & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 									}
@@ -10201,6 +10205,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
+					cancel_lookup_table:
 						apply_operand_shift(&index_state, &decoded.decomposed.operands[1]);
 						add_registers(&source_state, &index_state);
 						LOG("MEM_EXTENDED");
