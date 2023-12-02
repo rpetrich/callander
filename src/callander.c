@@ -10293,7 +10293,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									const ElfW(Sym) *function_symbol = NULL;
 									uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)source_state.value, ins, (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
 									if (override_size != 0) {
-										index_state.max = ((override_size - 1) * 4) >> decoded.decomposed.operands[1].shiftValue;
+										index_state.max = ((override_size - 1) * 4) / mem_size;
 										LOG("overwrote maximum of lookup table to", index_state.max);
 									}
 									struct registers copy = self.current_state;
