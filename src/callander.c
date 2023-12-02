@@ -1769,6 +1769,9 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	if (count > 60) {
 		LOG("too many entries, widening all registers");
 		if (profitable_registers != 0) {
+			profitable_registers = widenable_registers & ALL_REGISTERS;
+		}
+		if (profitable_registers != 0) {
 			*out_registers = *registers;
 			if (SHOULD_LOG) {
 				for (int i = 0; i < REGISTER_COUNT; i++) {
@@ -1779,7 +1782,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					}
 				}
 			}
-			for_each_bit(profitable_registers & ALL_REGISTERS, bit, i) {
+			for_each_bit(profitable_registers, bit, i) {
 				if (registers->registers[i].max < 0xff) {
 					out_registers->registers[i].max = 0xff;
 				} else if (registers->registers[i].max < 0xffff) {
