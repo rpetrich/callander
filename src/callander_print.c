@@ -3,6 +3,7 @@
 #include "callander_print.h"
 
 #include <sys/mount.h>
+#include <asm/ptrace.h>
 #include <linux/bpf.h>
 #include <linux/fs.h>
 #include <linux/fsmap.h>
@@ -137,6 +138,9 @@ static const char *prot_flags[64] = {
 	DESCRIBE_FLAG(PROT_READ),
 	DESCRIBE_FLAG(PROT_WRITE),
 	DESCRIBE_FLAG(PROT_EXEC),
+#ifdef __aarch64__
+	DESCRIBE_FLAG(PROT_MTE),
+#endif
 };
 
 static struct enum_option maps[] = {
@@ -836,6 +840,13 @@ static struct enum_option prctls[] = {
 	DESCRIBE_ENUM(PR_GET_TIMING),
 	DESCRIBE_ENUM(PR_SET_TSC),
 	DESCRIBE_ENUM(PR_GET_TSC),
+#ifdef __aarch64__
+	DESCRIBE_ENUM(PR_SET_TAGGED_ADDR_CTRL),
+	DESCRIBE_ENUM(PR_GET_TAGGED_ADDR_CTRL),
+	DESCRIBE_ENUM(PR_PAC_RESET_KEYS),
+	DESCRIBE_ENUM(PR_SVE_SET_VL),
+	DESCRIBE_ENUM(PR_SVE_GET_VL),
+#endif
 };
 
 static struct enum_option flock_operations[] = {
@@ -938,6 +949,14 @@ static struct enum_option ptrace_requests[] = {
 	DESCRIBE_ENUM(PTRACE_SET_THREAD_AREA),
 #endif
 	DESCRIBE_ENUM(PTRACE_GET_SYSCALL_INFO),
+#ifdef __aarch64__
+	DESCRIBE_ENUM(PTRACE_PEEKMTETAGS),
+#endif
+#ifdef __aarch64__
+	DESCRIBE_ENUM(PTRACE_POKEMTETAGS),
+#define COMPAT_PTRACE_SET_SYSCALL 23
+	DESCRIBE_ENUM(COMPAT_PTRACE_SET_SYSCALL),
+#endif
 };
 
 static const char *clone_flags[64] = {

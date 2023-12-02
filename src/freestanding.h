@@ -91,7 +91,7 @@ static inline pid_t fs_fork(void)
 #ifdef SYS_fork
 	return (pid_t)FS_SYSCALL(SYS_fork);
 #else
-	return (pid_t)FS_SYSCALL(SYS_clone, SIGCHLD, 0);
+	return (pid_t)FS_SYSCALL(SYS_clone, SIGCHLD, 0, 0, 0);
 #endif
 }
 
