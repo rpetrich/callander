@@ -10931,6 +10931,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_STLRH:
 				LOG("stlr, memory not supported yet");
 				break;
+			case ARM64_STNP:
+				LOG("stnp, memory not supported yet");
+				break;
 			case ARM64_STR:
 				LOG("str, memory not supported yet");
 				break;
