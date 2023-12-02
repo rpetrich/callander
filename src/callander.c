@@ -28,16 +28,6 @@
 #include "qsort.h"
 #include "search.h"
 
-#if defined(__x86_64__)
-#define ARCH_NAME "x86_64"
-#else
-#if defined(__aarch64__)
-#define ARCH_NAME "aarch64"
-#else
-#error "Unknown architecture"
-#endif
-#endif
-
 #define SKIP_SHIFT
 
 #define CLEAR_PROCESSED_ENTRIES

@@ -141,6 +141,7 @@ static inline void truncate_to_operand_size(struct register_state *reg, enum ins
 
 #include "x86.h"
 
+#define ARCH_NAME "x86_64"
 typedef const uint8_t *ins_ptr;
 #define decoded_ins x86_instruction
 
@@ -185,6 +186,8 @@ static inline bool address_is_call_aligned(__attribute__((unused)) uintptr_t add
 #if defined(__aarch64__)
 
 #include "aarch64.h"
+
+#define ARCH_NAME "aarch64"
 typedef const uint32_t *ins_ptr;
 #define decoded_ins aarch64_instruction
 

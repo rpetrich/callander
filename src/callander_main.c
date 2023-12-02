@@ -15,6 +15,7 @@
 
 #include "bpf_debug.h"
 #include "exec.h"
+#include "ins.h"
 #include "dlmalloc.h"
 #include "freestanding.h"
 #include "axon.h"
@@ -1093,9 +1094,10 @@ static bool parse_version_components(char *version_output, const char **out_majo
 	cur++;
 	*out_major = cur;
 	cur = (char *)fs_strchr(cur, '.');
-	if (*cur == '\0') {
+	if (*cur != '.') {
 		return false;
 	}
+	*cur = '\0';
 	cur++;
 	*out_minor = cur;
 	for (;; cur++) {
@@ -1189,7 +1191,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		MAKE_VERSION_BUF(dynload64_buf, "/usr/lib64/python", ".", "/lib-dynload");
 		MAKE_VERSION_BUF(site_packages_buf, "/usr/lib/python", ".", "/site-packages");
 		MAKE_VERSION_BUF(site_packages64_buf, "/usr/lib64/python", ".", "/site-packages");
-		MAKE_VERSION_BUF(suffix_buf, ".cpython-", "", "-x86_64-linux-gnu.so:.abi3.so");
+		MAKE_VERSION_BUF(suffix_buf, ".cpython-", "", "-"ARCH_NAME"-linux-gnu.so:.abi3.so");
 		free(version_string);
 		result = add_dlopen_paths_recursively(analysis, dynload_buf, suffix_buf);
 		if (result < 0) {
