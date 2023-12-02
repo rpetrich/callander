@@ -396,7 +396,7 @@ static void register_changed(struct registers *regs, int register_index, __attri
 		if (UNLIKELY(decoded_rm_references_register(&regs->mem_rm, register_index))) {
 			if (SHOULD_LOG) {
 				if (register_is_partially_known(&regs->registers[REGISTER_MEM])) {
-					ERROR("clearing mem since register changed", name_for_register(register_index));
+					ERROR_NOPREFIX("clearing mem since register changed", name_for_register(register_index));
 				}
 			}
 			clear_register(&regs->registers[REGISTER_MEM]);
@@ -420,14 +420,14 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 			if (SHOULD_LOG) {
 				if (register_is_partially_known(&regs->registers[i])) {
 					if (register_index == REGISTER_SP) {
-						ERROR("clearing stack slot since stack pointer changed", name_for_register(i));
+						ERROR_NOPREFIX("clearing stack slot since stack pointer changed", name_for_register(i));
 					} else {
-						ERROR("clearing stack slot since memory was written", name_for_register(i));
-						ERROR("memory r/m is", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
+						ERROR_NOPREFIX("clearing stack slot since memory was written", name_for_register(i));
+						ERROR_NOPREFIX("memory r/m is", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
-						ERROR("stack address was taken previously at", temp_str(copy_address_description(loader, regs->stack_address_taken)));
+						ERROR_NOPREFIX("stack address was taken previously at", temp_str(copy_address_description(loader, regs->stack_address_taken)));
 #else
-						ERROR("stack address was taken previously");
+						ERROR_NOPREFIX("stack address was taken previously");
 #endif
 					}
 				}
@@ -444,7 +444,7 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 		for_each_bit(mask & ALL_REGISTERS, bit, i) {
 			if (SHOULD_LOG) {
 				if (regs->matches[i] & ~mask_off) {
-					ERROR("clearing match", name_for_register(i));
+					ERROR_NOPREFIX("clearing match", name_for_register(i));
 				}
 			}
 			regs->matches[i] &= mask_off;
@@ -713,7 +713,7 @@ static inline struct registers copy_call_argument_registers(const struct loader_
 		for (int i = 0; i < REGISTER_COUNT; i++) {
 			if (SHOULD_LOG) {
 				if (result.matches[i] &~mask) {
-					ERROR("clearing match", name_for_register(i));
+					ERROR_NOPREFIX("clearing match", name_for_register(i));
 				}
 			}
 			result.matches[i] &= mask;
@@ -862,167 +862,167 @@ static inline void dump_registers(const struct loader_context *loader, const str
 				switch (i) {
 #if defined(__x86_64__)
 					case REGISTER_RAX:
-						ERROR("rax", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rax", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_RCX:
-						ERROR("rcx", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rcx", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_RDX:
-						ERROR("rdx", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rdx", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_RBX:
-						ERROR("rbx", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rbx", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_RBP:
-						ERROR("rbp", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rbp", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_RSI:
-						ERROR("rsi", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rsi", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_RDI:
-						ERROR("rdi", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("rdi", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R8:
-						ERROR("r8", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r8", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R9:
-						ERROR("r9", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r9", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R10:
-						ERROR("r10", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r10", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R11:
-						ERROR("r11", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r11", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R12:
-						ERROR("r12", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r12", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R13:
-						ERROR("r13", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r13", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R14:
-						ERROR("r14", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r14", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_R15:
-						ERROR("r15", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r15", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 #else
 #if defined(__aarch64__)
 					case REGISTER_X0:
-						ERROR("r0", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r0", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X1:
-						ERROR("r1", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r1", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X2:
-						ERROR("r2", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r2", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X3:
-						ERROR("r3", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r3", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X4:
-						ERROR("r4", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r4", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X5:
-						ERROR("r5", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r5", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X6:
-						ERROR("r6", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r6", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X7:
-						ERROR("r7", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r7", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X8:
-						ERROR("r8", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r8", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X9:
-						ERROR("r9", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r9", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X10:
-						ERROR("r10", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r10", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X11:
-						ERROR("r11", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r11", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X12:
-						ERROR("r12", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r12", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X13:
-						ERROR("r13", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r13", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X14:
-						ERROR("r14", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r14", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X15:
-						ERROR("r15", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r15", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X16:
-						ERROR("r16", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r16", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X17:
-						ERROR("r17", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r17", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X18:
-						ERROR("r18", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r18", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X19:
-						ERROR("r19", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r19", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X20:
-						ERROR("r20", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r20", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X21:
-						ERROR("r21", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r21", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X22:
-						ERROR("r22", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r22", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X23:
-						ERROR("r23", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r23", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X24:
-						ERROR("r24", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r24", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X25:
-						ERROR("r25", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r25", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X26:
-						ERROR("r26", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r26", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X27:
-						ERROR("r27", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r27", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X28:
-						ERROR("r28", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r28", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X29:
-						ERROR("r29", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r29", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_X30:
-						ERROR("r30", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("r30", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 #else
 #error "Unsupported architecture"
 #endif
 #endif
 					case REGISTER_SP:
-						ERROR("sp", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("sp", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
 					case REGISTER_MEM:
-						ERROR("mem", temp_str(copy_register_state_description(loader, state->registers[i])));
+						ERROR_NOPREFIX("mem", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
-#define PER_STACK_REGISTER_IMPL(offset) case REGISTER_STACK_##offset: ERROR("stack+"#offset, temp_str(copy_register_state_description(loader, state->registers[i]))); break;
+#define PER_STACK_REGISTER_IMPL(offset) case REGISTER_STACK_##offset: ERROR_NOPREFIX("stack+"#offset, temp_str(copy_register_state_description(loader, state->registers[i]))); break;
 	GENERATE_PER_STACK_REGISTER()
 #undef PER_STACK_REGISTER_IMPL
 				}
 #if STORE_LAST_MODIFIED
 				if (state->last_modify_ins[i] != NULL) {
-					ERROR("last modified at", temp_str(copy_address_description(loader, state->last_modify_ins[i])));
+					ERROR_NOPREFIX("last modified at", temp_str(copy_address_description(loader, state->last_modify_ins[i])));
 				}
 #else
 				if (i == REGISTER_SYSCALL_NR) {
 					if (state->last_modify_syscall_register != NULL) {
-						ERROR("last modified at", temp_str(copy_address_description(loader, state->last_modify_syscall_register)));
+						ERROR_NOPREFIX("last modified at", temp_str(copy_address_description(loader, state->last_modify_syscall_register)));
 					}
 				}
 #endif
@@ -1591,7 +1591,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 		if (registers_are_subset_of_entry_registers(registers->registers, entry, relevant_registers)) {
 			// new register values are a subset of an existing entry, reuse it
 			if (SHOULD_LOG) {
-				ERROR("subset of existing at offset, reusing effects", (intptr_t)offset);
+				ERROR_NOPREFIX("subset of existing at offset, reusing effects", (intptr_t)offset);
 				dump_registers(loader, registers, relevant_registers);
 				expand_registers(out_registers->registers, entry);
 				dump_registers(loader, out_registers, relevant_registers);
@@ -1809,7 +1809,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 		} else {
 			if (SHOULD_LOG) {
 				for_each_bit(relevant_registers, bit, i) {
-					ERROR("skipping widening register", name_for_register(i));
+					ERROR_NOPREFIX("skipping widening register", name_for_register(i));
 				}
 			}
 		}
@@ -1974,7 +1974,7 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 	}
 	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 	if (SHOULD_LOG) {
-		ERROR("existing values (index)", (intptr_t)token->entry_offset);
+		ERROR_NOPREFIX("existing values (index)", (intptr_t)token->entry_offset);
 		struct registers regs = { 0 };
 		expand_registers(regs.registers, entry);
 		dump_registers(loader, &regs, data->relevant_registers);
@@ -3398,9 +3398,9 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 		if (new_relevant_registers == 0) {
 			if (SHOULD_LOG) {
-				ERROR("first entry point without varying arguments", temp_str(copy_address_description(loader, ancestor->entry)));
+				ERROR_NOPREFIX("first entry point without varying arguments", temp_str(copy_address_description(loader, ancestor->entry)));
 				for_each_bit(relevant_registers, bit, i) {
-					ERROR("relevant register", name_for_register(i));
+					ERROR_NOPREFIX("relevant register", name_for_register(i));
 				}
 			}
 			break;
@@ -3414,30 +3414,30 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 		new_preserved_and_kept_registers &= ~((register_mask)1 << REGISTER_SP);
 		if (SHOULD_LOG) {
-			ERROR("marking", temp_str(copy_address_description(loader, ancestor->entry)));
+			ERROR_NOPREFIX("marking", temp_str(copy_address_description(loader, ancestor->entry)));
 			for_each_bit(new_relevant_registers, bit, i) {
 				if (new_preserved_and_kept_registers & bit) {
-					ERROR("as preserving and keeping", name_for_register(i));
+					ERROR_NOPREFIX("as preserving and keeping", name_for_register(i));
 				} else if (new_preserved_registers & bit) {
-					ERROR("as preserving", name_for_register(i));
+					ERROR_NOPREFIX("as preserving", name_for_register(i));
 				} else {
-					ERROR("as requiring", name_for_register(i));
+					ERROR_NOPREFIX("as requiring", name_for_register(i));
 				}
 				dump_register(loader, ancestor->entry_state->registers[i]);
 			}
-			ERROR("from ins at", temp_str(copy_address_description(loader, ancestor->address)));
+			ERROR_NOPREFIX("from ins at", temp_str(copy_address_description(loader, ancestor->address)));
 		}
 		struct previous_register_masks existing = add_relevant_registers(search, loader, ancestor->entry, ancestor->entry_state, required_effects, new_relevant_registers, new_preserved_registers, new_preserved_and_kept_registers, (struct effect_token *)&ancestor->token);
 		if ((existing.relevant_registers & new_relevant_registers) == new_relevant_registers && (existing.preserved_and_kept_registers & new_preserved_and_kept_registers) == new_preserved_and_kept_registers) {
 			if (SHOULD_LOG) {
-				ERROR("relevant and preserved registers have already been added");
+				ERROR_NOPREFIX("relevant and preserved registers have already been added");
 			}
 			break;
 		}
 		ancestor = ancestor->next;
 		if (ancestor == NULL) {
 			if (SHOULD_LOG) {
-				ERROR("all ancestors had arguments");
+				ERROR_NOPREFIX("all ancestors had arguments");
 			}
 			break;
 		}
@@ -5156,11 +5156,11 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			canonicalize_register(&continue_state.registers[target_register]);
 			// if (SHOULD_LOG) {
 			// 	if (self->current_state.registers[target_register].value != jump_state.registers[target_register].value || self->current_state.registers[target_register].max != jump_state.registers[target_register].max) {
-			// 		ERROR("narrowed register for jump", name_for_register(target_register));
+			// 		ERROR_NOPREFIX("narrowed register for jump", name_for_register(target_register));
 			// 		dump_register(&analysis->loader, jump_state.registers[target_register]);
 			// 	}
 			// 	if (self->current_state.registers[target_register].value != continue_state.registers[target_register].value || self->current_state.registers[target_register].max != continue_state.registers[target_register].max) {
-			// 		ERROR("narrowed register for continue", name_for_register(target_register));
+			// 		ERROR_NOPREFIX("narrowed register for continue", name_for_register(target_register));
 			// 		dump_register(&analysis->loader, continue_state.registers[target_register]);
 			// 	}
 			// }
@@ -5869,16 +5869,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if (SHOULD_LOG) {
 								register_mask relevant_registers = 1 << REGISTER_SYSCALL_NR;
 								for (const struct analysis_frame *ancestor = &self;;) {
-									ERROR("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
+									ERROR_NOPREFIX("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
 									register_mask new_relevant_registers = 0;
 									for_each_bit(relevant_registers, bit, i) {
 										new_relevant_registers |= ancestor->current_state.sources[i];
 									}
 									if (new_relevant_registers == 0) {
-										ERROR("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
+										ERROR_NOPREFIX("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
 										break;
 									}
-									ERROR("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
+									ERROR_NOPREFIX("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
 									dump_registers(&analysis->loader, &ancestor->current_state, new_relevant_registers);
 									ancestor = (struct analysis_frame *)ancestor->next;
 									if (ancestor == NULL) {
@@ -11138,16 +11138,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (SHOULD_LOG) {
 						register_mask relevant_registers = 1 << REGISTER_SYSCALL_NR;
 						for (const struct analysis_frame *ancestor = &self;;) {
-							ERROR("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
+							ERROR_NOPREFIX("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
 							register_mask new_relevant_registers = 0;
 							for_each_bit(relevant_registers, bit, i) {
 								new_relevant_registers |= ancestor->current_state.sources[i];
 							}
 							if (new_relevant_registers == 0) {
-								ERROR("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
+								ERROR_NOPREFIX("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
 								break;
 							}
-							ERROR("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
+							ERROR_NOPREFIX("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
 							dump_registers(&analysis->loader, &ancestor->current_state, new_relevant_registers);
 							ancestor = (struct analysis_frame *)ancestor->next;
 							if (ancestor == NULL) {
@@ -11438,7 +11438,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			LOG("clearing stack after call");
 			for_each_bit(pending_stack_clear, bit, i) {
 				if (SHOULD_LOG && register_is_partially_known(&self.current_state.registers[i])) {
-					ERROR("clearing", name_for_register(i));
+					ERROR_NOPREFIX("clearing", name_for_register(i));
 				}
 				clear_register(&self.current_state.registers[i]);
 				self.current_state.sources[i] = 0;

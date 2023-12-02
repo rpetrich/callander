@@ -170,7 +170,7 @@ static inline void error_write_char_range(const char *prefix, size_t prefix_len,
 #endif
 
 #define ERROR_MESSAGE_(message) do { \
-	ERROR_WRITE_LITERAL(PRODUCT_NAME ": " message "\n"); \
+	ERROR_WRITE_LITERAL(message "\n"); \
 } while(0)
 #define ERROR_MESSAGE_WITH_VALUE_(message, value) do { \
 	_Generic((value), \
@@ -182,11 +182,12 @@ static inline void error_write_char_range(const char *prefix, size_t prefix_len,
 		char *: error_write_str, \
 		struct char_range: error_write_char_range, \
 		struct temp_str: error_write_temp_str \
-	)(PRODUCT_NAME ": " message ": ", sizeof(PRODUCT_NAME ": " message ": ")-1, value); \
+	)(message ": ", sizeof(message ": ")-1, value); \
 } while(0)
 #define ERROR_(skip0, skip1, actual, ...) actual
 // ERROR is a macro that logs its arguments. it accepts either a constant or a constant and a value
-#define ERROR(...) ERROR_(__VA_ARGS__, ERROR_MESSAGE_WITH_VALUE_(__VA_ARGS__), ERROR_MESSAGE_(__VA_ARGS__))
+#define ERROR(...) ERROR_(__VA_ARGS__, ERROR_MESSAGE_WITH_VALUE_(PRODUCT_NAME ": " __VA_ARGS__), ERROR_MESSAGE_(PRODUCT_NAME ": " __VA_ARGS__))
+#define ERROR_NOPREFIX(...) ERROR_(__VA_ARGS__, ERROR_MESSAGE_WITH_VALUE_(__VA_ARGS__), ERROR_MESSAGE_(__VA_ARGS__))
 
 // UNLIKELY is a macro that hints code generation that a value is unlikely
 #define UNLIKELY(val) __builtin_expect(!!(val), 0)

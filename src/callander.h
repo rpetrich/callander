@@ -21,7 +21,7 @@
 #ifdef LOGGING
 extern bool should_log;
 #define SHOULD_LOG UNLIKELY(should_log)
-#define LOG(...) do { if (UNLIKELY(should_log)) { ERROR(__VA_ARGS__); } } while(0)
+#define LOG(...) do { if (UNLIKELY(should_log)) { ERROR_NOPREFIX(__VA_ARGS__); } } while(0)
 #else
 #define SHOULD_LOG false
 #define LOG(...) do { } while(0)
