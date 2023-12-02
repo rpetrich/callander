@@ -9278,7 +9278,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					encountered_non_executable_address(&analysis->loader, "jump*", &self, new_ins);
 					LOG("completing from br to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
-					effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, caller, flags | ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
+					self.description = "br";
+					effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, &self, flags | ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
 					LOG("completing from br", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
