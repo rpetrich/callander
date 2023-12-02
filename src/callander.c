@@ -7934,7 +7934,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									int size = symbol.size / sizeof(uintptr_t);
 									for (int i = 0; i < size; i++) {
 										uintptr_t data = symbol_data[i];
-										if (protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
+										if (address_is_call_aligned(data) && protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
 											LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
 											LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
 											self.description = "load address";
@@ -12605,7 +12605,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 					int size = section->sh_size / sizeof(uintptr_t);
 					for (int j = 0; j < size; j++) {
 						uintptr_t data = section_data[j];
-						if (protection_for_address_in_binary(new_binary, data, NULL) & PROT_EXEC) {
+						if (address_is_call_aligned(data) && protection_for_address_in_binary(new_binary, data, NULL) & PROT_EXEC) {
 							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[j])));
 							LOG("value of address is, assuming callable", data);
 							struct address_and_size symbol;

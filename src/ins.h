@@ -176,6 +176,11 @@ static inline ins_conditional_type ins_get_conditional_type(const struct decoded
 	return x86_get_conditional_type(decoded->unprefixed);
 }
 
+static inline bool address_is_call_aligned(__attribute__((unused)) uintptr_t address)
+{
+	return true;
+}
+
 #else
 #if defined(__aarch64__)
 
@@ -211,6 +216,11 @@ typedef const uint32_t *ins_ptr;
 #define INS_CONDITIONAL_TYPE_GREATER COND_HI
 
 #define ins_get_conditional_type aarch64_get_conditional_type
+
+static inline bool address_is_call_aligned(uintptr_t address)
+{
+	return (address & 0x3) == 0;
+}
 
 #else
 #error "Unsupported architecture"
