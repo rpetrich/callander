@@ -1619,7 +1619,9 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					// widened too many times
 					goto continue_search_initial;
 				}
-				entry->widen_count[i]++;
+				if (!register_is_exactly_known(&registers->registers[i])) {
+					entry->widen_count[i]++;
+				}
 			}
 			if (!collapse_registers(entry, registers->registers)) {
 				goto continue_search_initial;
