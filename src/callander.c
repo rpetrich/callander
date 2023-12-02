@@ -1786,6 +1786,8 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					out_registers->registers[i].max = 0xffff;
 				} else if (registers->registers[i].max < 0xffffffff) {
 					out_registers->registers[i].max = 0xffffffff;
+				} else {
+					out_registers->registers[i].max = ~(uintptr_t)0;
 				}
 				out_registers->sources[i] = 0;
 			}
