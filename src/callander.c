@@ -1562,6 +1562,10 @@ static inline bool combine_register_states(struct register_state *out_state, con
 	return false;
 }
 
+__attribute__((nonnull(1, 3)))
+static int protection_for_address(const struct loader_context *context, const void *address, struct loaded_binary **out_binary, const ElfW(Shdr) **out_section);
+static int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section);
+
 __attribute__((nonnull(1, 2, 3, 5, 6, 7))) __attribute__((always_inline))
 static inline size_t entry_offset_for_registers(struct searched_instruction_entry *table_entry, const struct registers *registers, struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr addr, struct registers *out_registers, bool *out_wrote_registers)
 {
@@ -1683,8 +1687,15 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				}
 				if (entry->widen_count[r] < 4) {
 					if (combine_register_states(&out_registers->registers[r], &registers->registers[r], r)) {
+						LOG("combined", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
 					} else if (UNLIKELY(processing_count > 40) && register_is_exactly_known(&registers->registers[r])) {
+						struct loaded_binary *binary;
+						if (count < 256 && address_is_call_aligned(registers->registers[r].value) && protection_for_address(loader, (ins_ptr)registers->registers[r].value, &binary, NULL) & PROT_EXEC) {
+							LOG("couldn't widen because executable address in register", name_for_register(r));
+							dump_register(loader, out_registers->registers[r]);
+							goto continue_search;
+						}
 						LOG("too many actively unwidened exact", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
 						clear_register(&out_registers->registers[r]);
@@ -1762,13 +1773,14 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 	}
 	if (count > 60) {
 		if (profitable_registers == 0) {
-			if (count > 256) {
+			if (count >= 256) {
 				profitable_registers = widenable_registers & ALL_REGISTERS;
 				LOG("too many entries, widening all registers");
 			} else {
 				LOG("numerous entries, but no profitable registers");
 			}
 		} else {
+			profitable_registers &= widenable_registers;
 			LOG("too many entries, widening profitable registers");
 		}
 		if (profitable_registers != 0) {
@@ -1783,6 +1795,11 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				}
 			}
 			for_each_bit(profitable_registers, bit, i) {
+				struct loaded_binary *binary;
+				if (count < 256 && register_is_exactly_known(&registers->registers[i]) && address_is_call_aligned(registers->registers[i].value) && protection_for_address(loader, (ins_ptr)registers->registers[i].value, &binary, NULL) & PROT_EXEC) {
+					LOG("skipping widening executable address in register", name_for_register(i));
+					continue;
+				}
 				if (registers->registers[i].max < 0xff) {
 					out_registers->registers[i].max = 0xff;
 				} else if (registers->registers[i].max < 0xffff) {
@@ -2128,10 +2145,6 @@ struct loaded_binary *find_loaded_binary(const struct loader_context *context, c
 	}
 	return NULL;
 }
-
-__attribute__((nonnull(1, 3)))
-static int protection_for_address(const struct loader_context *context, const void *address, struct loaded_binary **out_binary, const ElfW(Shdr) **out_section);
-static int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section);
 
 __attribute__((nonnull(1)))
 const struct recorded_syscall *find_recorded_syscall(const struct recorded_syscalls *syscalls, uintptr_t nr)
