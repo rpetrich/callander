@@ -4633,7 +4633,7 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 	}
 	// workaround for manual jump table in libc's __vfprintf_internal implementation
 	if (binary->special_binary_flags & BINARY_IS_LIBC) {
-		const char *name = find_any_symbol_name_by_address(loader, binary, table, INTERNAL_COMMON_SYMBOL & DEBUG_SYMBOL_FORCING_LOAD);
+		const char *name = find_any_symbol_name_by_address(loader, binary, table, INTERNAL_COMMON_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD);
 		if (name != NULL && fs_strncmp(name, "step", sizeof("step")-1) == 0) {
 			const char *jumps_text = &name[5];
 			switch (name[4]) {
