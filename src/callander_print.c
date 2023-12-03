@@ -3,7 +3,6 @@
 #include "callander_print.h"
 
 #include <sys/mount.h>
-#include <asm/ptrace.h>
 #include <linux/bpf.h>
 #include <linux/fs.h>
 #include <linux/fsmap.h>

@@ -6457,7 +6457,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												}
 											}
 											set_register(&copy.registers[dest], dest);
-											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+											effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 											LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										}
 										LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -7125,7 +7125,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x5f: {
 				int reg = x86_read_opcode_register_index(*decoded.unprefixed, 0x58, decoded.prefixes);
 				LOG("pop", name_for_register(reg));
-				flags &= ~ALLOW_JUMPS_INTO_THE_ABYSS;
 				self.current_state.registers[reg] = self.current_state.registers[REGISTER_STACK_0];
 				self.current_state.sources[reg] = self.current_state.sources[REGISTER_STACK_0];
 				if (decoded.prefixes.has_operand_size_override) {
@@ -8849,7 +8848,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							encountered_non_executable_address(&analysis->loader, "jump*", &self, new_ins);
 							LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						} else {
-							effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS, false) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
+							effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
 							LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						}
 						goto update_and_return;
