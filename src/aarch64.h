@@ -47,7 +47,7 @@ enum aarch64_register_index {
 	AARCH64_REGISTER_X27,
 	AARCH64_REGISTER_X28,
 	AARCH64_REGISTER_X29,
-	AARCH64_REGISTER_X30,
+	// AARCH64_REGISTER_X30,
 	AARCH64_REGISTER_SP,
 };
 
@@ -62,13 +62,13 @@ struct aarch64_instruction {
 static inline enum aarch64_register_index register_index_from_register(enum Register reg)
 {
 	switch (reg) {
-		case REG_W0...REG_W30:
+		case REG_W0...REG_W29:
 			return (enum aarch64_register_index)(reg - REG_W0);
-		case REG_X0...REG_X30:
+		case REG_X0...REG_X29:
 			return (enum aarch64_register_index)(reg - REG_X0);
-		case REG_B0...REG_B30:
+		case REG_B0...REG_B29:
 			return (enum aarch64_register_index)(reg - REG_B0);
-		case REG_H0...REG_H30:
+		case REG_H0...REG_H29:
 			return (enum aarch64_register_index)(reg - REG_H0);
 		case REG_WSP:
 		case REG_SP:
@@ -163,57 +163,6 @@ static bool apply_operand_shift(struct register_state *reg, const struct Instruc
 			clear_register(reg);
 			return true;
 	}
-}
-
-static inline int read_operand(const struct InstructionOperand *operand, const struct register_state *regs, const uint32_t *ins, struct register_state *out_state, enum ins_operand_size *out_size)
-{
-	switch (operand->operandClass) {
-		case REG: {
-			int reg = register_index_from_register(operand->reg[0]);
-			if (reg != AARCH64_REGISTER_INVALID) {
-				*out_state = regs[reg];
-			} else if (operand->reg[0] == REG_WZR || operand->reg[0] == REG_XZR) {
-				clear_register(out_state);
-			} else {
-				break;
-			}
-			enum ins_operand_size size = get_register_size(operand->reg[0]);
-			truncate_to_operand_size(out_state, size);
-			if (out_size != NULL) {
-				*out_size = size;
-			}
-			return reg;
-		}
-		case IMM32: {
-			set_register(out_state, operand->immediate);
-			truncate_to_operand_size(out_state, OPERATION_SIZE_WORD);
-			if (out_size != NULL) {
-				*out_size = OPERATION_SIZE_WORD;
-			}
-			return AARCH64_REGISTER_INVALID;
-		}
-		case IMM64: {
-			set_register(out_state, operand->immediate);
-			if (out_size != NULL) {
-				*out_size = OPERATION_SIZE_DWORD;
-			}
-			return AARCH64_REGISTER_INVALID;
-		}
-		case LABEL: {
-			set_register(out_state, operand->immediate);
-			if (out_size != NULL) {
-				*out_size = OPERATION_SIZE_DWORD;
-			}
-			return AARCH64_REGISTER_INVALID;
-		}
-		default:
-			break;
-	}
-	clear_register(out_state);
-	if (out_size != NULL) {
-		*out_size = OPERATION_SIZE_DWORD;
-	}
-	return AARCH64_REGISTER_INVALID;
 }
 
 __attribute__((always_inline))
