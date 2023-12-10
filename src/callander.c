@@ -432,7 +432,6 @@ static void register_changed(struct registers *regs, int register_index, __attri
 __attribute__((nonnull(1)))
 static char *copy_decoded_rm_description(const struct loader_context *loader, struct decoded_rm rm);
 
-// __attribute__((always_inline))
 __attribute__((nonnull(1, 2, 4)))
 static inline void clear_match(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
