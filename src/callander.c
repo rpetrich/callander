@@ -1682,6 +1682,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 		dump_registers(loader, registers, widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
 		size_t processing_count = 0;
+		register_mask definitely_widenable_registers = relevant_registers & ~data->preserved_and_kept_registers;
 		for (size_t offset = 0; offset < end_offset; ) {
 			struct searched_instruction_data_entry *entry = entry_for_offset(data, offset);
 			if ((entry->effects & required_effects) != required_effects) {
@@ -1713,7 +1714,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
 					continue;
 				}
-				if (((widenable_registers & bit) == 0) && (processing_count < 25)) {
+				if (((widenable_registers & bit) == 0) && (processing_count < (definitely_widenable_registers & bit ? 40 : 60))) {
 					goto continue_search;
 				}
 				if (out_registers->registers[r].value != registers->registers[r].value || out_registers->registers[r].max != registers->registers[r].max) {
@@ -1727,7 +1728,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					if (combine_register_states(&out_registers->registers[r], &registers->registers[r], r)) {
 						LOG("combined", name_for_register(r));
 						dump_register(loader, out_registers->registers[r]);
-					} else if (UNLIKELY(processing_count > 40) && register_is_exactly_known(&registers->registers[r])) {
+					} else if (UNLIKELY(processing_count > 45) && register_is_exactly_known(&registers->registers[r])) {
 						struct loaded_binary *binary;
 						if (count < 256 && address_is_call_aligned(registers->registers[r].value) && protection_for_address(loader, (ins_ptr)registers->registers[r].value, &binary, NULL) & PROT_EXEC) {
 							LOG("couldn't widen because executable address in register", name_for_register(r));
@@ -1783,6 +1784,8 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 			for (int r = 0; r < REGISTER_COUNT; r++) {
 				if (widened & mask_for_register(r)) {
 					entry->widen_count[r]++;
+				} else if (data->preserved_registers & mask_for_register(r)) {
+					out_registers->registers[r] = registers->registers[r];
 				} else {
 					out_registers->registers[r] = union_of_register_states(registers->registers[r], out_registers->registers[r]);
 				}
