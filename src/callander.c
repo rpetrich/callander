@@ -3779,14 +3779,23 @@ static inline uintptr_t read_memory(const void *addr, enum ins_operand_size size
 {
 	switch (size) {
 		case OPERATION_SIZE_BYTE:
-			return *(__attribute__((aligned(1))) const uint8_t *)addr;
+			return *(const uint8_t *)addr;
 		case OPERATION_SIZE_HALF:
-			return *(__attribute__((aligned(1))) const uint16_t *)addr;
+			return *(const ins_uint16 *)addr;
 		case OPERATION_SIZE_WORD:
-			return *(__attribute__((aligned(1))) const uint32_t *)addr;
+			return *(const ins_uint32 *)addr;
 		case OPERATION_SIZE_DWORD:
 		default:
-			return *(__attribute__((aligned(1))) const uintptr_t *)addr;
+			return *(const ins_uint64 *)addr;
+	}
+}
+
+static inline void add_registers(struct register_state *dest, const struct register_state *source)
+{
+	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
+		dest->value = dest->max = dest->value + source->value;
+	} else if (__builtin_add_overflow(dest->value, source->value, &dest->value) || __builtin_add_overflow(dest->max, source->max, &dest->max)) {
+		clear_register(dest);
 	}
 }
 
@@ -3807,13 +3816,39 @@ static inline intptr_t read_memory_signed(const void *addr, enum ins_operand_siz
 	}
 }
 
-static inline int read_operand(const struct InstructionOperand *operand, const struct register_state *regs, const uint32_t *ins, struct register_state *out_state, enum ins_operand_size *out_size)
+static inline bool stack_offset_for_imm(int64_t imm, int64_t *out_offset)
+{
+	if (imm & 0x3) {
+		return false;
+	}
+	*out_offset = imm >> 2;
+	return true;
+}
+
+static bool add_to_stack(const struct loader_context *loader, struct registers *registers, int64_t amount, const ins_ptr ins)
+{
+	clear_register(&registers->registers[REGISTER_SP]);
+	int64_t offset;
+	if (!stack_offset_for_imm(amount, &offset)) {
+		clear_match(loader, registers, REGISTER_SP, ins);
+		return false;
+	}
+	clear_match_keep_stack(loader, registers, REGISTER_SP, ins);
+	if (amount < 0) {
+		push_stack(registers, -amount);
+	} else if (amount > 0) {
+		pop_stack(registers, amount);
+	}
+	return true;
+}
+
+static inline int read_operand(struct loader_context *loader, const struct InstructionOperand *operand, struct registers *regs, const ins_ptr ins, struct register_state *out_state, enum ins_operand_size *out_size)
 {
 	switch (operand->operandClass) {
 		case REG: {
 			int reg = register_index_from_register(operand->reg[0]);
 			if (reg != AARCH64_REGISTER_INVALID) {
-				*out_state = regs[reg];
+				*out_state = regs->registers[reg];
 			} else if (operand->reg[0] == REG_WZR || operand->reg[0] == REG_XZR) {
 				clear_register(out_state);
 			} else {
@@ -3850,6 +3885,7 @@ static inline int read_operand(const struct InstructionOperand *operand, const s
 		}
 		case MEM_REG: {
 			if (operand->reg[0] == REG_SP) {
+				*out_state = regs->registers[REGISTER_STACK_0];
 				if (out_size != NULL) {
 					*out_size = OPERATION_SIZE_DWORD;
 				}
@@ -3861,14 +3897,41 @@ static inline int read_operand(const struct InstructionOperand *operand, const s
 			if (operand->reg[0] == REG_SP && (operand->immediate & 0x7) == 0) {
 				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
 				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
+					*out_state = regs->registers[reg];
 					if (out_size != NULL) {
 						*out_size = OPERATION_SIZE_DWORD;
 					}
-					*out_state = regs[reg];
 					return reg;
 				}
 			}
 			break;
+		}
+		case MEM_PRE_IDX: {
+			if (operand->reg[0] == REG_SP) {
+				// adjust the stack
+				add_to_stack(loader, regs, operand->immediate, ins);
+				*out_state = regs->registers[REGISTER_STACK_0];
+				if (out_size != NULL) {
+					*out_size = OPERATION_SIZE_DWORD;
+				}
+				// and reference the data at the stack pointer
+				return REGISTER_STACK_0;
+			}
+			// fallthrough
+		}
+		case MEM_POST_IDX: {
+			int reg = register_index_from_register(operand->reg[0]);
+			if (reg != REGISTER_INVALID) {
+				struct register_state imm;
+				set_register(&imm, operand->immediate);
+				add_registers(&regs->registers[reg], &imm);
+				clear_match(loader, regs, reg, ins);
+			}
+			clear_register(out_state);
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_DWORD;
+			}
+			return AARCH64_REGISTER_INVALID;
 		}
 		default:
 			break;
@@ -4110,15 +4173,6 @@ static enum basic_op_usage basic_op_unknown(BASIC_OP_ARGS)
 	(void)source;
 	clear_register(dest);
 	return BASIC_OP_USED_BOTH;
-}
-
-static inline void add_registers(struct register_state *dest, const struct register_state *source)
-{
-	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
-		dest->value = dest->max = dest->value + source->value;
-	} else if (__builtin_add_overflow(dest->value, source->value, &dest->value) || __builtin_add_overflow(dest->max, source->max, &dest->max)) {
-		clear_register(dest);
-	}
 }
 
 static enum basic_op_usage basic_op_add(BASIC_OP_ARGS)
@@ -4636,7 +4690,7 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 {
 	struct register_state dest_state;
 	enum ins_operand_size size;
-	int dest = read_operand(&decoded->decomposed.operands[0], regs->registers, ins, &dest_state, &size);
+	int dest = read_operand(loader, &decoded->decomposed.operands[0], regs, ins, &dest_state, &size);
 	if (dest == REGISTER_INVALID) {
 		if (out_size != NULL) {
 			*out_size = OPERATION_SIZE_DWORD;
@@ -4646,13 +4700,13 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(dest));
 	struct register_state left_state;
-	int left = read_operand(&decoded->decomposed.operands[1], regs->registers, ins, &left_state, NULL);
+	int left = read_operand(loader, &decoded->decomposed.operands[1], regs, ins, &left_state, NULL);
 	if (left != REGISTER_INVALID) {
 		LOG("left source", name_for_register(left));
 	}
 	LOG("left", temp_str(copy_register_state_description(loader, left_state)));
 	struct register_state right_state;
-	int right = read_operand(&decoded->decomposed.operands[2], regs->registers, ins, &right_state, NULL);
+	int right = read_operand(loader, &decoded->decomposed.operands[2], regs, ins, &right_state, NULL);
 	if (right != REGISTER_INVALID) {
 		LOG("right source", name_for_register(right));
 	}
@@ -4685,7 +4739,7 @@ static void perform_unknown_op(struct loader_context *loader, struct registers *
 	LOG("unsupported op", get_operation(&decoded->decomposed));
 	enum ins_operand_size size;
 	struct register_state dest_state;
-	int dest = read_operand(&decoded->decomposed.operands[0], regs->registers, ins, &dest_state, &size);
+	int dest = read_operand(loader, &decoded->decomposed.operands[0], regs, ins, &dest_state, &size);
 	if (dest == REGISTER_INVALID) {
 		return;
 	}
@@ -9024,6 +9078,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto skip_stack_clear;
 			}
 			case ARM64_ADD: {
+				if (register_index_from_register(decoded.decomposed.operands[0].reg[0]) == AARCH64_REGISTER_SP && register_index_from_register(decoded.decomposed.operands[1].reg[0]) == AARCH64_REGISTER_SP) {
+					if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
+						int64_t imm = (int64_t)decoded.decomposed.operands[2].immediate;
+						add_to_stack(&analysis->loader, &self.current_state, imm, ins);
+						goto skip_stack_clear;
+					}
+				}
 				struct additional_result additional;
 				int dest = perform_basic_op("add", basic_op_add, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
@@ -9066,11 +9127,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_ADR: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
-				read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, NULL);
+				read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, NULL);
 				LOG("adr", name_for_register(dest));
 				self.current_state.registers[dest] = dest_state;
 				self.current_state.sources[dest] = 0;
@@ -9080,11 +9141,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_ADRP: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
-				read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, NULL);
+				read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, NULL);
 				LOG("adrp", name_for_register(dest));
 				set_register(&self.current_state.registers[dest], dest_state.value & ~(uintptr_t)0xFFF);
 				self.current_state.sources[dest] = 0;
@@ -9119,7 +9180,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
 						if (decoded.decomposed.operands[2].immediate == 0xff || decoded.decomposed.operands[2].immediate == 0xffff) {
 							struct register_state source_state;
-							int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
+							int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
 							add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
 						}
 					}
@@ -9149,7 +9210,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto skip_stack_clear;
 			}
 			case ARM64_AT: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
@@ -9164,12 +9225,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_AUTIA:
 			case ARM64_AUTIB: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				struct register_state source_state;
-				int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
 				if (source == dest) {
 					break;
 				}
@@ -9191,7 +9252,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_AUTDZB:
 			case ARM64_AUTIZA:
 			case ARM64_AUTIZB: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
@@ -9249,7 +9310,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_BL: {
 				enum ins_operand_size size;
-				read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				clear_comparison_state(&self.current_state);
 				if (!register_is_exactly_known(&dest_state)) {
 					UNSUPPORTED_INSTRUCTION();
@@ -9580,14 +9641,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_CMP: {
 				enum ins_operand_size size;
-				int left = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (left == REGISTER_INVALID) {
 					LOG("cmp with unsupported operand");
 					clear_comparison_state(&self.current_state);
 					break;
 				}
 				struct register_state right_state;
-				int right = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &right_state, NULL);
+				int right = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &right_state, NULL);
 				truncate_to_operand_size(&right_state, size);
 				bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
 				LOG("cmp", name_for_register(left));
@@ -9704,19 +9765,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_CSEL: {
 				// TODO
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				LOG("csel", name_for_register(dest));
 				struct register_state left_state;
-				int left = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &left_state, NULL);
+				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &left_state, NULL);
 				if (left != REGISTER_INVALID) {
 					LOG("left source", name_for_register(left));
 				}
 				LOG("left", temp_str(copy_register_state_description(&analysis->loader, left_state)));
 				struct register_state right_state;
-				int right = read_operand(&decoded.decomposed.operands[2], self.current_state.registers, ins, &right_state, NULL);
+				int right = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &right_state, NULL);
 				if (right != REGISTER_INVALID) {
 					LOG("right source", name_for_register(right));
 				}
@@ -9754,7 +9815,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_CSET: {
 				// TODO
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -9773,7 +9834,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_CSINC: {
 				// TODO
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10146,24 +10207,60 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_LDPSW:
 			case ARM64_LDP: {
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &source_state, NULL);
 				enum ins_operand_size size;
-				int dest0 = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
-				if (dest0 != REGISTER_INVALID) {
-					LOG("ldp dest0", name_for_register(dest0));
-					clear_register(&self.current_state.registers[dest0]);
-					truncate_to_operand_size(&self.current_state.registers[dest0], size);
-					self.current_state.sources[dest0] = 0;
-					clear_match(&analysis->loader, &self.current_state, dest0, ins);
-					dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest0));
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				int dest2 = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
+				if (decoded.decomposed.operation == ARM64_LDPSW) {
+					truncate_to_operand_size(&source_state, OPERATION_SIZE_WORD);
+					sign_extend_from_operand_size(&source_state, OPERATION_SIZE_WORD);
+				} else {
+					truncate_to_operand_size(&source_state, size);
 				}
-				int dest1 = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
-				if (dest1 != REGISTER_INVALID) {
-					LOG("ldp dest1", name_for_register(dest1));
-					clear_register(&self.current_state.registers[dest1]);
-					truncate_to_operand_size(&self.current_state.registers[dest1], size);
-					self.current_state.sources[dest1] = 0;
-					clear_match(&analysis->loader, &self.current_state, dest1, ins);
-					dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest1));
+				LOG("ldp to", name_for_register(dest));
+				LOG("and", name_for_register(dest2));
+				LOG("from", name_for_register(source));
+				if (dest != REGISTER_INVALID) {
+					if (source != REGISTER_INVALID) {
+						add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+						self.current_state.registers[dest] = source_state;
+						if (register_is_partially_known(&source_state)) {
+							LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+						} else {
+							LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+							self.current_state.sources[dest] = 0;
+						}
+					} else {
+						LOG("not on the stack");
+						clear_register(&self.current_state.registers[dest]);
+						truncate_to_operand_size(&self.current_state.registers[dest], size);
+						self.current_state.sources[dest] = 0;
+						clear_match(&analysis->loader, &self.current_state, dest, ins);
+						dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+					}
+				}
+				if (dest2 != REGISTER_INVALID) {
+					if (mask_for_register(source) & (STACK_REGISTERS & (STACK_REGISTERS >> 1)) && decoded.decomposed.operation == ARM64_LDP && size == OPERATION_SIZE_DWORD) {
+						int source2 = source + 1;
+						LOG("loading second value from stack", name_for_register(source2));
+						source_state = self.current_state.registers[source2];
+						add_match_and_copy_sources(&analysis->loader, &self.current_state, dest2, source2, ins);
+						self.current_state.registers[dest2] = source_state;
+						if (register_is_partially_known(&source_state)) {
+							LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+						} else {
+							LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+							self.current_state.sources[dest2] = 0;
+						}
+					} else {
+						LOG("second source not on the stack");
+						clear_register(&self.current_state.registers[dest2]);
+						truncate_to_operand_size(&self.current_state.registers[dest2], size);
+						self.current_state.sources[dest2] = 0;
+						clear_match(&analysis->loader, &self.current_state, dest2, ins);
+						dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest2));
+					}
 				}
 				break;
 			}
@@ -10181,7 +10278,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDADDLH: {
 				LOG("ldadd*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
 				if (loaded == REGISTER_INVALID) {
 					UNSUPPORTED_INSTRUCTION();
 				}
@@ -10211,17 +10308,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDXRB:
 			case ARM64_LDXRH: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				enum ins_operand_size mem_size = decoded.decomposed.operation == ARM64_LDRB ? OPERATION_SIZE_BYTE : decoded.decomposed.operation == ARM64_LDRH ? OPERATION_SIZE_HALF : size;
 				LOG("ldr", name_for_register(dest));
 				struct register_state source_state;
-				int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, &size);
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, &size);
 				if (source != REGISTER_INVALID) {
 					LOG("from", name_for_register(source));
 					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+					truncate_to_operand_size(&source_state, mem_size);
+					truncate_to_operand_size(&source_state, size);
 					self.current_state.registers[dest] = source_state;
 					if (register_is_partially_known(&source_state)) {
 						LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -10235,7 +10334,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				int reg = register_index_from_register(decoded.decomposed.operands[1].reg[0]);
 				if (reg == REGISTER_INVALID) {
-					LOG("invalid MEM_OFFSET reg, clearing register");
+					LOG("invalid source, clearing register");
 					goto clear_ldr;
 				}
 				LOG("base", name_for_register(reg));
@@ -10263,6 +10362,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						set_register(&imm, decoded.decomposed.operands[1].immediate);
 						add_registers(&source_state, &imm);
 						self.current_state.registers[reg] = source_state;
+						clear_match(&analysis->loader, &self.current_state, reg, ins);
 						LOG("preindex", imm.value);
 						break;
 					}
@@ -10270,6 +10370,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						struct register_state imm;
 						set_register(&imm, decoded.decomposed.operands[1].immediate);
 						add_registers(&self.current_state.registers[reg], &imm);
+						clear_match(&analysis->loader, &self.current_state, reg, ins);
 						LOG("postindex", imm.value);
 						break;
 					}
@@ -10432,9 +10533,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDCLRLH: {
 				LOG("ldclr*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
 				if (loaded == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				self.current_state.registers[loaded].value = 0;
 				self.current_state.registers[loaded].max = mask_for_operand_size(size);
@@ -10457,9 +10558,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDEORLH: {
 				LOG("ldeor*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
 				if (loaded == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				self.current_state.registers[loaded].value = 0;
 				self.current_state.registers[loaded].max = mask_for_operand_size(size);
@@ -10486,9 +10587,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDSETLH: {
 				LOG("ldset*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
 				if (loaded == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				self.current_state.registers[loaded].value = 0;
 				self.current_state.registers[loaded].max = mask_for_operand_size(size);
@@ -10501,7 +10602,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDRSH:
 			case ARM64_LDRSW: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10657,7 +10758,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_LDUR: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10670,7 +10771,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURB: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10683,7 +10784,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURH: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10696,7 +10797,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURSB: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10708,7 +10809,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURSH: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10720,7 +10821,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURSW: {
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10771,12 +10872,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_MOV: {
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				struct register_state source_state;
-				int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
 				LOG("mov to", name_for_register(dest));
 				LOG("from", name_for_register(source));
 				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
@@ -10798,12 +10899,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_MOVK: {
 				// TODO: support movk properly overriding only the appropriate bits
 				enum ins_operand_size size;
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				struct register_state source_state;
-				int source = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &source_state, NULL);
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
 				LOG("movk to", name_for_register(dest));
 				LOG("from", name_for_register(source));
 				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
@@ -11252,44 +11353,116 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_ST4H:
 			case ARM64_ST4W:
 				LOG("st2, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			case ARM64_STG: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
 			case ARM64_STGM: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
 			case ARM64_STGP: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
-			case ARM64_STP:
-				LOG("stp, memory not supported yet");
-				break;
+			case ARM64_STP: {
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					LOG("stp");
+					break;
+				}
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &source_state, NULL);
+				struct register_state source2_state;
+				int source2 = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source2_state, NULL);
+				LOG("stp to", name_for_register(dest));
+				LOG("from", name_for_register(source));
+				LOG("and", name_for_register(source2));
+				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				self.current_state.registers[dest] = source_state;
+				if (register_is_partially_known(&source_state)) {
+					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				} else {
+					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+					self.current_state.sources[dest] = 0;
+				}
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+				if (mask_for_register(dest) & (STACK_REGISTERS & (STACK_REGISTERS >> 1))) {
+					int dest2 = dest + 1;
+					LOG("storing second value to stack", name_for_register(dest2));
+					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest2, source2, ins);
+					self.current_state.registers[dest2] = source2_state;
+					if (register_is_partially_known(&source2_state)) {
+						LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source2_state)));
+					} else {
+						LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source2_state)));
+						self.current_state.sources[dest2] = 0;
+					}
+					dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest2));
+				} else {
+					LOG("second dest not on the stack");
+				}
+				// TODO: support other types of stores
+				effects |= EFFECT_MODIFIES_STACK;
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_STLR:
 			case ARM64_STLRB:
 			case ARM64_STLRH:
 				LOG("stlr, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			case ARM64_STNP:
 				LOG("stnp, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
-			case ARM64_STR:
-				LOG("str, memory not supported yet");
-				break;
+			case ARM64_STR: {
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					LOG("str");
+					break;
+				}
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &source_state, NULL);
+				LOG("str to", name_for_register(dest));
+				LOG("from", name_for_register(source));
+				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				self.current_state.registers[dest] = source_state;
+				if (register_is_partially_known(&source_state)) {
+					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				} else {
+					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+					self.current_state.sources[dest] = 0;
+				}
+				// TODO: support other types of stores
+				effects |= EFFECT_MODIFIES_STACK;
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_STRB:
 				LOG("strb, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			case ARM64_STRH:
 				LOG("strh, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			case ARM64_STUR:
 				LOG("stur, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			case ARM64_STURB:
 				LOG("sturb, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			case ARM64_STURH:
 				LOG("sturh, memory not supported yet");
@@ -11301,10 +11474,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_STLXRB:
 			case ARM64_STLXRH: {
 				LOG("stlxr, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				// TODO
-				int dest = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				self.current_state.registers[dest].value = 0;
 				self.current_state.registers[dest].max = 1;
@@ -11315,14 +11489,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_STZ2G: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
 			case ARM64_STZG: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
 			case ARM64_STZGM: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
 			case ARM64_SCVTF: {
@@ -11330,6 +11507,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_SUB: {
+				if (register_index_from_register(decoded.decomposed.operands[0].reg[0]) == AARCH64_REGISTER_SP && register_index_from_register(decoded.decomposed.operands[1].reg[0]) == AARCH64_REGISTER_SP) {
+					if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
+						int64_t imm = (int64_t)decoded.decomposed.operands[2].immediate;
+						add_to_stack(&analysis->loader, &self.current_state, -imm, ins);
+						goto skip_stack_clear;
+					}
+				}
 				struct additional_result additional;
 				int dest = perform_basic_op("sub", basic_op_sub, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
@@ -11511,9 +11695,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_SWPLH: {
 				LOG("swp*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&decoded.decomposed.operands[1], self.current_state.registers, ins, &dest_state, &size);
+				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
 				if (loaded == REGISTER_INVALID) {
-					UNSUPPORTED_INSTRUCTION();
+					break;
 				}
 				self.current_state.registers[loaded].value = 0;
 				self.current_state.registers[loaded].max = mask_for_operand_size(size);
