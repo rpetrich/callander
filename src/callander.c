@@ -5612,6 +5612,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		if (!validate_offset(table_entry->data, entry_offset)) {
 			effects_entry = &table_entry->data->sticky_effects;
 		} else {
+			// gdb command to get the data entry: p *(struct searched_instruction_data_entry *)((uintptr_t)analysis->search.table[self.token.index].data->entries + self.token.entry_offset)
 			struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 			self.token.entry_generation = entry->generation;
 			if (entry->effects & EFFECT_PROCESSING) {
