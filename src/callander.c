@@ -9508,10 +9508,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_BRAAZ:
 			case ARM64_BRAB:
 			case ARM64_BRABZ: {
-				int target = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, NULL);
+				int target = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				self.description = get_operation(&decoded.decomposed);
 				LOG("br to address in register", name_for_register(target));
-				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), 0, 0, required_effects);
+				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), required_effects);
 				if (!register_is_exactly_known(&dest_state)) {
 					if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
 						LOG("br to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
@@ -9524,7 +9524,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							fs_exit(1);
 						}
 						ERROR("br to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
-						self.description = "jump*";
+						self.description = get_operation(&decoded.decomposed);
 						DIE("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 					}
 					// could have any effect
@@ -10658,7 +10658,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 						used_registers |= self.current_state.sources[index];
 						struct register_state index_state = self.current_state.registers[index];
-						if (register_is_exactly_known(&source_state)) {
+						if (register_is_exactly_known(&source_state) && flags < 4) {
 							struct loaded_binary *binary;
 							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
 							const ElfW(Shdr) *section;
@@ -10713,7 +10713,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										uintptr_t value = read_memory_signed((const void *)source_single_state.value, mem_size) & mask_for_operand_size(size);
 										set_register(&copy.registers[dest], value);
-										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, flags & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, (flags + 2) & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 									}
 									LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
