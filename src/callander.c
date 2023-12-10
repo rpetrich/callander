@@ -4903,11 +4903,11 @@ static void analyze_libcrypto_dlopen(struct program_state *analysis)
 __attribute__((always_inline))
 static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, ins_ptr ins, ins_ptr call_target, struct analysis_frame *self)
 {
-	push_stack(&self->current_state, 2);
 	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
+	push_stack(&call_state, 2);
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
-	pop_stack(&self->current_state, 2);
+	// pop_stack(&self->current_state, 2);
 	if (more_effects & EFFECT_PROCESSING) {
 		queue_instruction(&analysis->search.queue, call_target, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self->description);
 		more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
