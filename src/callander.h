@@ -586,9 +586,11 @@ enum effects {
 	EFFECT_AFTER_STARTUP = 1 << 5, // set if the function could run after startup
 	EFFECT_ENTRY_POINT   = 1 << 6, // set if the function is run as the program entrypoint
 	EFFECT_ENTER_CALLS   = 1 << 7, // set if should traverse calls instead of recording loads
-	VALID_EFFECTS        = (EFFECT_ENTER_CALLS << 1) - 1,
+	EFFECT_MODIFIES_STACK = 1 << 8, // set if the function could potentially modify the stack
+	VALID_EFFECTS        = (EFFECT_MODIFIES_STACK << 1) - 1,
+	DEFAULT_EFFECTS = EFFECT_EXITS | EFFECT_RETURNS | EFFECT_MODIFIES_STACK,
 };
-typedef uint8_t function_effects;
+typedef uint16_t function_effects;
 
 struct program_state;
 

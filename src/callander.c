@@ -458,7 +458,26 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 			regs->matches[i] = 0;
 		}
 	}
-#endif
+	if (UNLIKELY(mask != 0)) {
+		LOG("clearing matches for", name_for_register(register_index));
+		regs->matches[register_index] = 0;
+		register_mask mask_off = ~mask_for_register(register_index);
+		for_each_bit(mask & ALL_REGISTERS, bit, i) {
+			if (SHOULD_LOG) {
+				if (regs->matches[i] & ~mask_off) {
+					ERROR_NOPREFIX("clearing match", name_for_register(i));
+				}
+			}
+			regs->matches[i] &= mask_off;
+		}
+	}
+	register_changed(regs, register_index, ins);
+}
+
+__attribute__((nonnull(1, 2, 4)))
+static inline void clear_match_keep_stack(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
+{
+	register_mask mask = regs->matches[register_index];
 	if (UNLIKELY(mask != 0)) {
 		LOG("clearing matches for", name_for_register(register_index));
 		regs->matches[register_index] = 0;
@@ -1138,58 +1157,34 @@ static char *copy_decoded_rm_description(const struct loader_context *loader, st
 #endif
 }
 
-static inline const char *name_for_effect(function_effects effects)
+static inline void log_effects(__attribute__((unused)) function_effects effects)
 {
-	effects &= ~(EFFECT_PROCESSED | EFFECT_PROCESSING | EFFECT_STICKY_EXITS | EFFECT_ENTER_CALLS) & VALID_EFFECTS;
-	if (effects == EFFECT_NONE) {
-		return "none";
+	if (SHOULD_LOG) {
+		if (effects & EFFECT_RETURNS) {
+			ERROR_NOPREFIX("returns");
+		}
+		if (effects & EFFECT_EXITS) {
+			ERROR_NOPREFIX("exits");
+		}
+		if (effects & EFFECT_STICKY_EXITS) {
+			ERROR_NOPREFIX("sticky exits");
+		}
+		if (effects & EFFECT_PROCESSED) {
+			ERROR_NOPREFIX("processed");
+		}
+		if (effects & EFFECT_PROCESSING) {
+			ERROR_NOPREFIX("processing");
+		}
+		if (effects & EFFECT_AFTER_STARTUP) {
+			ERROR_NOPREFIX("after startup");
+		}
+		if (effects & EFFECT_ENTRY_POINT) {
+			ERROR_NOPREFIX("as entry point");
+		}
+		if (effects & EFFECT_MODIFIES_STACK) {
+			ERROR_NOPREFIX("modifies stack");
+		}
 	}
-	if (effects == EFFECT_RETURNS) {
-		return "returns";
-	}
-	if (effects == EFFECT_EXITS) {
-		return "exits";
-	}
-	if (effects == (EFFECT_EXITS | EFFECT_RETURNS)) {
-		return "returns or exits";
-	}
-	if (effects == (EFFECT_AFTER_STARTUP | EFFECT_NONE)) {
-		return "none, potentially after startup";
-	}
-	if (effects == (EFFECT_AFTER_STARTUP | EFFECT_RETURNS)) {
-		return "returns, potentially after startup";
-	}
-	if (effects == (EFFECT_AFTER_STARTUP | EFFECT_EXITS)) {
-		return "exits, potentially after startup";
-	}
-	if (effects == (EFFECT_AFTER_STARTUP | EFFECT_EXITS | EFFECT_RETURNS)) {
-		return "returns or exits, potentially after startup";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_NONE)) {
-		return "none, inside entrypoint";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_RETURNS)) {
-		return "returns, inside entrypoint";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_EXITS)) {
-		return "exits, inside entrypoint";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_EXITS | EFFECT_RETURNS)) {
-		return "returns or exits, inside entrypoint";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_AFTER_STARTUP | EFFECT_NONE)) {
-		return "none, inside entrypoint and potentially after startup";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_AFTER_STARTUP | EFFECT_RETURNS)) {
-		return "returns, inside entrypoint and potentially after startup";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_AFTER_STARTUP | EFFECT_EXITS)) {
-		return "exits, inside entrypoint and potentially after startup";
-	}
-	if (effects == (EFFECT_ENTRY_POINT | EFFECT_AFTER_STARTUP | EFFECT_EXITS | EFFECT_RETURNS)) {
-		return "returns or exits, inside entrypoint and potentially after startup";
-	}
-	return "invalid effects";
 }
 
 struct queued_instruction {
@@ -5329,8 +5324,8 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 		jump_effects = EFFECT_NONE;
 	} else if ((jump_prot & PROT_EXEC) == 0) {
 		encountered_non_executable_address(&analysis->loader, "conditional jump", self, jump_target);
-		LOG("found conditional jump to non-executable address, assuming all effects");
-		jump_effects = EFFECT_EXITS | EFFECT_RETURNS;
+		LOG("found conditional jump to non-executable address, assuming default effects");
+		jump_effects = DEFAULT_EFFECTS;
 	} else {
 		LOG("taking jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
 		self->description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
@@ -5579,7 +5574,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 	struct decoded_ins decoded;
 	ins = skip_prefix_jumps(analysis, ins, &decoded);
 	if (ins == NULL) {
-		return EFFECT_RETURNS | EFFECT_EXITS;
+		return DEFAULT_EFFECTS;
 	}
 	struct analysis_frame self;
 	function_effects effects;
@@ -5631,8 +5626,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		effects = *effects_entry;
 		if ((effects & required_effects) == required_effects) {
 			LOG("skip", temp_str(copy_function_call_description(&analysis->loader, ins, *entry_state)));
-			LOG("effects", name_for_effect(effects));
-			LOG("passed search for effects", name_for_effect(required_effects));
+			LOG("has effects:");
+			log_effects(effects);
+			LOG("was searching for effects:");
+			log_effects(required_effects);
 			return (effects & EFFECT_STICKY_EXITS) ? (effects & ~(EFFECT_STICKY_EXITS | EFFECT_RETURNS)) : effects;
 		}
 		if (!wrote_registers) {
@@ -5673,7 +5670,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				// treat indirect jumps like calls for the purpose of the enter calls state
 				if ((required_effects & EFFECT_ENTER_CALLS) == 0) {
 					analysis->skipped_call = jump_target;
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 					goto update_and_return;
 				}
 				// fallthrough
@@ -5682,14 +5679,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct loaded_binary *jump_binary;
 				if (jump_target == NULL) {
 					LOG("found jump to unfilled address, assuming either exit or return!");
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 				} else if (jump_target == next_ins(ins, &decoded)) {
 					LOG("jumping to next instruction, continuing");
 					goto skip_stack_clear;
 				} else if ((protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "jump", &self, jump_target);
 					LOG("completing from jump to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 				} else if (jump_target >= self.entry && jump_target <= ins) {
 					// infinite loop, consider this an exit
 					LOG("appears to be an infinite loop");
@@ -7973,6 +7970,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					// 	LOG("ignoring address of stack (since it's to rbp)", temp_str(copy_address_description(&analysis->loader, self.address)));
 					// } else
 					record_stack_address_taken(&analysis->loader, self.address, &self.current_state);
+					effects |= EFFECT_MODIFIES_STACK;
 				}
 				self.current_state.registers[reg] = new_value.state;
 				self.current_state.sources[reg] = new_value.source;
@@ -8520,12 +8518,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				uintptr_t dest = (uintptr_t)next_ins(ins, &decoded) + *(const ins_int32 *)&decoded.unprefixed[1];
 				LOG("found call", temp_str(copy_function_call_description(&analysis->loader, (void *)dest, self.current_state)));
 				struct loaded_binary *binary = NULL;
+				function_effects more_effects = EFFECT_NONE;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 				} else if ((effects & EFFECT_ENTRY_POINT) && (ins_ptr)dest == next_ins(ins, &decoded)) {
 					LOG("calling self pattern in entrypoint");
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
@@ -8533,7 +8532,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					analysis->skipped_call = (ins_ptr)dest;
 				} else {
 					self.description = "call";
-					function_effects more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)dest, &self);
+					more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					LOG("resuming from call", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -8542,7 +8541,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 						goto update_and_return;
 					}
-					LOG("function may return, proceeding", name_for_effect(more_effects));
+					LOG("function may return, proceeding with effects:");
+					log_effects(more_effects);
 					struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
 					if (caller_binary != NULL) {
 						struct frame_details frame;
@@ -8806,7 +8806,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if (!register_is_exactly_known(&address)) {
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
-								// effects |= EFFECT_EXITS | EFFECT_RETURNS;
+								// effects |= DEFAULT_EFFECTS;
 							} else if ((protection_for_address(&analysis->loader, (const void *)address.value, &call_binary, NULL) & PROT_EXEC) == 0) {
 								encountered_non_executable_address(&analysis->loader, "call*", &self, (ins_ptr)address.value);
 								LOG("call* to non-executable address, assuming all effects", address.value);
@@ -8824,7 +8824,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 									goto update_and_return;
 								}
-								LOG("function may return, proceeding", name_for_effect(more_effects));
+								LOG("function may return, proceeding with effects:");
+								log_effects(more_effects);
 							}
 						} else {
 							bool is_null;
@@ -8835,7 +8836,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if (!register_is_exactly_known(&address.state)) {
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
-								// effects |= EFFECT_EXITS | EFFECT_RETURNS;
+								// effects |= DEFAULT_EFFECTS;
 							} else if (is_null) {
 								LOG("indirecting through null, assuming read of data that is populated at runtime");
 							} else if ((protection_for_address(&analysis->loader, (const void *)address.state.value, &call_address_binary, NULL) & PROT_READ) == 0) {
@@ -8849,7 +8850,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 										encountered_non_executable_address(&analysis->loader, "call*", &self, dest);
 										LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
-										effects |= EFFECT_EXITS | EFFECT_RETURNS;
+										effects |= DEFAULT_EFFECTS;
 									} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 										LOG("skipping call when searching for address loads");
 										analysis->skipped_call = dest;
@@ -8864,7 +8865,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 											goto update_and_return;
 										}
-										LOG("function may return, proceeding", name_for_effect(more_effects));
+										LOG("function may return, proceeding with effects:");
+										log_effects(more_effects);
 									}
 								}
 							}
@@ -8904,7 +8906,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									DIE("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								}
 								// could have any effect
-								effects |= EFFECT_EXITS | EFFECT_RETURNS;
+								effects |= DEFAULT_EFFECTS;
 								LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								goto update_and_return;
 							}
@@ -8915,14 +8917,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							if (is_null) {
 								LOG("indirecting through null, assuming read of data that is populated at runtime");
 								// could have any effect
-								effects |= EFFECT_EXITS | EFFECT_RETURNS;
+								effects |= DEFAULT_EFFECTS;
 								LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								goto update_and_return;
 							}
 							if (!register_is_exactly_known(&address.state)) {
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
-								effects |= EFFECT_EXITS | EFFECT_RETURNS;
+								effects |= DEFAULT_EFFECTS;
 								LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								goto update_and_return;
 							}
@@ -8944,7 +8946,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									DIE("at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								}
 								// could have any effect
-								effects |= EFFECT_EXITS | EFFECT_RETURNS;
+								effects |= DEFAULT_EFFECTS;
 								LOG("completing from jmpq*", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								goto update_and_return;
 							}
@@ -8953,11 +8955,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						struct loaded_binary *call_binary;
 						if (new_ins == NULL) {
 							LOG("address is known, but only filled at runtime, assuming all effects");
-							effects |= EFFECT_EXITS | EFFECT_RETURNS;
+							effects |= DEFAULT_EFFECTS;
 							LOG("completing from jmpq* to known, but unfilled address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						} else if ((protection_for_address(&analysis->loader, new_ins, &call_binary, NULL) & PROT_EXEC) == 0) {
 							dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
-							effects |= EFFECT_EXITS | EFFECT_RETURNS;
+							effects |= DEFAULT_EFFECTS;
 							encountered_non_executable_address(&analysis->loader, "jump*", &self, new_ins);
 							LOG("completing from jmpq* to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						} else {
@@ -9277,15 +9279,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					goto update_and_return;
 				}
 				struct loaded_binary *binary = NULL;
+				function_effects more_effects = DEFAULT_EFFECTS;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 				} else {
 					self.description = "bl";
-					function_effects more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
+					more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					LOG("resuming from bl", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -9294,7 +9297,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 						goto update_and_return;
 					}
-					LOG("function may return, proceeding", name_for_effect(more_effects));
+					LOG("function may return, proceeding with effects:");
+					log_effects(more_effects);
 					struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
 					if (caller_binary != NULL) {
 						struct frame_details frame;
@@ -9307,13 +9311,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 				}
 				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
-				pending_stack_clear = STACK_REGISTERS;
-				if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
-					// we should be able to track dirtied slots, but for now assume golang preserves
-					// the stack that's read immediately after the call
-					LOG("target is stack-preserving function", temp_str(copy_address_description(&analysis->loader, ins)));
-					self.current_state.stack_address_taken = NULL;
-					goto skip_stack_clear;
+				if (more_effects & EFFECT_MODIFIES_STACK) {
+					pending_stack_clear = STACK_REGISTERS;
+					if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
+						// we should be able to track dirtied slots, but for now assume golang preserves
+						// the stack that's read immediately after the call
+						LOG("target is stack-preserving function", temp_str(copy_address_description(&analysis->loader, ins)));
+						self.current_state.stack_address_taken = NULL;
+						goto skip_stack_clear;
+					}
 				}
 				break;
 			}
@@ -9324,15 +9330,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_BLRABZ: {
 				enum ins_operand_size size;
 				clear_comparison_state(&self.current_state);
-				int target = read_operand(&decoded.decomposed.operands[0], self.current_state.registers, ins, &dest_state, &size);
+				int target = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				self.description = "blr";
 				LOG("blr to address in register", name_for_register(target));
 				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), 0, 0, required_effects);
 				struct loaded_binary *binary = NULL;
+				function_effects more_effects = DEFAULT_EFFECTS;
 				if (!register_is_exactly_known(&dest_state)) {
 					LOG("address isn't exactly known, assuming all effects");
 					// could have any effect
-					// effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					// effects |= DEFAULT_EFFECTS;
 				} else {
 					ins_ptr dest = (ins_ptr)dest_state.value;
 					LOG("found blr", temp_str(copy_function_call_description(&analysis->loader, dest, self.current_state)));
@@ -9341,10 +9348,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 						encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 						LOG("found call to non-executable address, assuming all effects");
-						effects |= EFFECT_EXITS | EFFECT_RETURNS;
+						effects |= DEFAULT_EFFECTS;
 					} else {
 						self.description = "bl";
-						function_effects more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
+						more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
 						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 						LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						LOG("resuming from bl", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -9353,7 +9360,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 							goto update_and_return;
 						}
-						LOG("function may return, proceeding", name_for_effect(more_effects));
+						LOG("function may return, proceeding with effects:");
+						log_effects(more_effects);
 						struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
 						if (caller_binary != NULL) {
 							struct frame_details frame;
@@ -9367,7 +9375,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 				}
 				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
-				pending_stack_clear = STACK_REGISTERS;
+				if (more_effects & EFFECT_MODIFIES_STACK) {
+					pending_stack_clear = STACK_REGISTERS;
+				}
 				break;
 			}
 			case ARM64_BR:
@@ -9395,7 +9405,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						DIE("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 					}
 					// could have any effect
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 					LOG("completing from br", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					goto update_and_return;
 				}
@@ -9403,11 +9413,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct loaded_binary *call_binary;
 				if (new_ins == NULL) {
 					LOG("address is known, but only filled at runtime, assuming all effects");
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 					LOG("completing from br to known, but unfilled address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else if ((protection_for_address(&analysis->loader, new_ins, &call_binary, NULL) & PROT_EXEC) == 0) {
 					dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
-					effects |= EFFECT_EXITS | EFFECT_RETURNS;
+					effects |= DEFAULT_EFFECTS;
 					encountered_non_executable_address(&analysis->loader, get_operation(&decoded.decomposed), &self, new_ins);
 					LOG("completing from br to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
@@ -11779,7 +11789,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		LOG("instruction", temp_str(copy_address_description(&analysis->loader, ins)));
 		if (!decode_ins(ins, &decoded)) {
 			LOG("invalid instruction, assuming all effects");
-			effects |= EFFECT_RETURNS | EFFECT_EXITS;
+			effects |= DEFAULT_EFFECTS;
 			LOG("completing from invalid", temp_str(copy_address_description(&analysis->loader, self.entry)));
 			decoded = (struct decoded_ins){ 0 };
 			break;
@@ -11791,12 +11801,14 @@ update_and_return:
 		if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == 0) {
 			effects |= EFFECT_RETURNS;
 		}
-		LOG("final effects", name_for_effect(effects));
+		LOG("final effects:");
+		log_effects(effects);
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		set_effects(&analysis->search, self.entry, &self.token, effects);
 	} else {
 		effects &= ~EFFECT_RETURNS;
-		LOG("final effects (sticky exit)", name_for_effect(effects));
+		LOG("final effects:");
+		log_effects(effects);
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		set_effects(&analysis->search, self.entry, &self.token, effects);
 		effects &= ~EFFECT_STICKY_EXITS;
