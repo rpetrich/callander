@@ -7721,7 +7721,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						if (decoded.prefixes.has_w && modrm.mod == 0x3 && x86_read_rm(modrm, decoded.prefixes) == REGISTER_SP) {
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
-							if ((imm & 0x3) == 0 && imm >= 0) {
+							if ((imm & 0x3) == 0) {
 								if (imm <= 0) {
 									pop_stack(&self.current_state, -(imm >> 2));
 								} else {
