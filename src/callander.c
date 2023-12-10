@@ -28,7 +28,9 @@
 #include "qsort.h"
 #include "search.h"
 
+#ifdef __x86_64__
 #define SKIP_SHIFT
+#endif
 
 #define CLEAR_PROCESSED_ENTRIES
 
@@ -1385,7 +1387,11 @@ static void grow_already_searched_instructions(struct searched_instructions *sea
 	uint32_t old_size = search->mask + 1;
 #endif
 	uint32_t new_size = old_size * 2;
+#ifdef SKIP_SHIFT
 	uint32_t mask = (new_size - 1) * sizeof(struct searched_instruction_entry);
+#else
+	uint32_t mask = new_size - 1;
+#endif
 	struct searched_instruction_entry *new_table = calloc(new_size, sizeof(*new_table));
 	uint32_t remaining_slots = (new_size * 3) / 4;
 	for (uint32_t i = 0; i < old_size; i++) {
