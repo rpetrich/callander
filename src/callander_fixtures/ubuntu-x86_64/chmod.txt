@@ -105,7 +105,7 @@ openat(AT_FDCWD, libc.so.6+0x1db609, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x11
 newfstatat(any u32, any, any, 0) @ libc.so.6+0x113f2c(fstatat64+12)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x113f2c(fstatat64+12)
 newfstatat(any u32, libc.so.6+0x1d846f, any, AT_EMPTY_PATH) @ libc.so.6+0x113f2c(fstatat64+12)
-fchmodat(any u32, any, any u32, any) @ libc.so.6+0x1145b5(fchmodat+245)
+fchmodat(any u32, any, any u32) @ libc.so.6+0x1145b5(fchmodat+245)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0x11a4d2(getrlimit+18)
 getrandom(libc.so.6+0x2204d8(tcache_key*), 8, GRND_NONBLOCK) @ libc.so.6+0x46c85(getrandom+21)
 getrandom(libc.so.6+0x2204d8(tcache_key*), 8, GRND_NONBLOCK) @ libc.so.6+0x46cbd(getrandom+77)
