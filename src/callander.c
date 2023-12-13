@@ -4987,30 +4987,29 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 	LOG("found conditional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
 	struct loaded_binary *jump_binary = NULL;
 	int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
-	if ((self->current_state.compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&self->current_state.compare_state.value)) {
+	int compare_register = ins_get_conditional_override_register(decoded);
+	if (UNLIKELY(compare_register != REGISTER_INVALID) || ((self->current_state.compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&self->current_state.compare_state.value))) {
 		// include matching registers
-		if (jump_state.compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
-			LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.mem_rm)));
-			LOG("replacing with new mem r/m", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.compare_state.mem_rm)));
-			jump_state.mem_rm = continue_state.mem_rm = jump_state.compare_state.mem_rm;
-			jump_state.registers[REGISTER_MEM].value = continue_state.registers[REGISTER_MEM].value = 0;
-			jump_state.registers[REGISTER_MEM].max = continue_state.registers[REGISTER_MEM].max = jump_state.compare_state.mask;
-			clear_match(&analysis->loader, &jump_state, REGISTER_MEM, self->address);
+		if (LIKELY(compare_register == REGISTER_INVALID)) {
+			compare_register = self->current_state.compare_state.target_register;
+			if (compare_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
+				LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.mem_rm)));
+				LOG("replacing with new mem r/m", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.compare_state.mem_rm)));
+				jump_state.mem_rm = continue_state.mem_rm = jump_state.compare_state.mem_rm;
+				jump_state.registers[REGISTER_MEM].value = continue_state.registers[REGISTER_MEM].value = 0;
+				jump_state.registers[REGISTER_MEM].max = continue_state.registers[REGISTER_MEM].max = jump_state.compare_state.mask;
+				clear_match(&analysis->loader, &jump_state, REGISTER_MEM, self->address);
+			}
 		}
-		register_mask target_registers = jump_state.matches[self->current_state.compare_state.target_register] | mask_for_register(self->current_state.compare_state.target_register);
+		register_mask target_registers = jump_state.matches[compare_register] | mask_for_register(compare_register);
 		register_mask skip_jump_mask = 0;
 		register_mask skip_continue_mask = 0;
 		if (SHOULD_LOG) {
-			for (int target_register = 0; target_register < REGISTER_COUNT; target_register++) {
-				if (target_registers & mask_for_register(target_register)) {
-					LOG("comparing", name_for_register(target_register));
-				}
+			for_each_bit(target_registers, bit, target_register) {
+				LOG("comparing", name_for_register(target_register));
 			}
 		}
-		for (int target_register = 0; target_register < REGISTER_COUNT; target_register++) {
-			if ((target_registers & mask_for_register(target_register)) == 0) {
-				continue;
-			}
+		for_each_bit(target_registers, bit, target_register) {
 			uintptr_t compare_mask = self->current_state.compare_state.mask;
 			if ((jump_state.registers[target_register].value & ~compare_mask) != (jump_state.registers[target_register].max & ~compare_mask)) {
 				jump_state.registers[target_register].value = 0;
@@ -5315,6 +5314,48 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 						}
 					}
 					break;
+#ifdef INS_CONDITIONAL_TYPE_ZERO
+				case INS_CONDITIONAL_TYPE_ZERO:
+					LOG("found cbz comparing", name_for_register(target_register));
+					dump_register(&analysis->loader, continue_state.registers[target_register]);
+					// cbz %target_register
+					if (jump_state.registers[target_register].value == 0) {
+						set_register(&jump_state.registers[target_register], 0);
+						jump_state.sources[target_register] = 0;
+						// remove 0 from edge of ranges
+						if (continue_state.registers[target_register].max == 0) {
+							skip_continue_mask |= mask_for_register(target_register);
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state.registers[target_register])));
+						} else {
+							continue_state.registers[target_register].value = 1;
+						}
+					} else {
+						skip_jump_mask |= mask_for_register(target_register);
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+					}
+					break;
+#endif
+#ifdef INS_CONDITIONAL_TYPE_NOT_ZERO
+				case INS_CONDITIONAL_TYPE_NOT_ZERO:
+					LOG("found cbnz comparing", name_for_register(target_register));
+					dump_register(&analysis->loader, continue_state.registers[target_register]);
+					// cbnz %target_register
+					if (continue_state.registers[target_register].value == 0) {
+						set_register(&continue_state.registers[target_register], 0);
+						continue_state.sources[target_register] = 0;
+						// remove 0 from edge of ranges
+						if (jump_state.registers[target_register].max == 0) {
+							skip_jump_mask |= mask_for_register(target_register);
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+						} else {
+							jump_state.registers[target_register].value = 1;
+						}
+					} else {
+						skip_continue_mask |= mask_for_register(target_register);
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, jump_state.registers[target_register])));
+					}
+					break;
+#endif
 				default:
 					break;
 			}
@@ -5332,7 +5373,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			// }
 		}
 		if (skip_jump_mask) {
-			if (skip_jump_mask & mask_for_register(self->current_state.compare_state.target_register)) {
+			if (skip_jump_mask & mask_for_register(compare_register)) {
 				skip_jump = true;
 				LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
 				self->description = "skip conditional jump";
@@ -5345,7 +5386,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 		}
 		if (skip_continue_mask) {
 			// if (skip_continue_mask == target_registers) {
-			if (skip_continue_mask & mask_for_register(self->current_state.compare_state.target_register)) {
+			if (skip_continue_mask & mask_for_register(compare_register)) {
 				skip_continue = true;
 				LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
 				self->description = "skip conditional continue";

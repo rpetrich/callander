@@ -137,6 +137,14 @@ static inline void truncate_to_operand_size(struct register_state *reg, enum ins
 	reg->max = mask;
 }
 
+__attribute__((nonnull(1))) __attribute__((always_inline))
+static inline void sign_extend_from_operand_size(struct register_state *reg, enum ins_operand_size operand_size)
+{
+	if (reg->max & ((uintptr_t)1 << (operand_size * 8 - 1))) {
+		reg->max |= ~(uintptr_t)0 << (operand_size * 8 - 1);
+	}
+}
+
 #if defined(__x86_64__)
 
 #include "x86.h"
@@ -177,6 +185,11 @@ static inline ins_conditional_type ins_get_conditional_type(const struct decoded
 	return x86_get_conditional_type(decoded->unprefixed);
 }
 
+static inline int ins_get_conditional_override_register(__attribute__((unused)) const struct decoded_ins *decoded)
+{
+	return -1;
+}
+
 static inline bool address_is_call_aligned(__attribute__((unused)) uintptr_t address)
 {
 	return true;
@@ -211,14 +224,16 @@ typedef const uint32_t *ins_ptr;
 #define INS_CONDITIONAL_TYPE_ABOVE COND_GT
 #define INS_CONDITIONAL_TYPE_SIGN COND_PL
 #define INS_CONDITIONAL_TYPE_NOT_SIGN COND_MI
-#define INS_CONDITIONAL_TYPE_PARITY /* not present */
-#define INS_CONDITIONAL_TYPE_PARITY_ODD /* not present */
 #define INS_CONDITIONAL_TYPE_LOWER COND_LT
 #define INS_CONDITIONAL_TYPE_GREATER_OR_EQUAL COND_GE
 #define INS_CONDITIONAL_TYPE_NOT_GREATER COND_LS
 #define INS_CONDITIONAL_TYPE_GREATER COND_HI
+#define INS_CONDITIONAL_TYPE_ZERO COND_AL
+#define INS_CONDITIONAL_TYPE_NOT_ZERO COND_NV
 
 #define ins_get_conditional_type aarch64_get_conditional_type
+
+#define ins_get_conditional_override_register aarch64_get_conditional_override_register
 
 static inline bool address_is_call_aligned(uintptr_t address)
 {

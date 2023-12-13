@@ -294,8 +294,23 @@ static inline enum Condition aarch64_get_conditional_type(const struct aarch64_i
 			return COND_GT;
 		case ARM64_B_LE:
 			return COND_LE;
-		default:
+		case ARM64_CBZ:
 			return COND_AL;
+		case ARM64_CBNZ:
+			return COND_NV;
+		default:
+			return END_CONDITION;
+	}
+}
+
+static inline int aarch64_get_conditional_override_register(const struct aarch64_instruction *ins)
+{
+	switch (ins->decomposed.operation) {
+		case ARM64_CBZ:
+		case ARM64_CBNZ:
+			return register_index_from_register(ins->decomposed.operands[0].reg[0]);
+		default:
+			return AARCH64_REGISTER_INVALID;
 	}
 }
 
