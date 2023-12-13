@@ -146,12 +146,41 @@ limitations of seccomp. If asked to run a program that does `exec` other
 programs, callander will emit an error that can be overridden with the
 `--block-exec` option.
 
-Only x86-64 Linux binaries are supported. A version for aarch64 is in
-development, but not yet available.
+Only x86-64 Linux binaries are supported. A version for aarch64 is available to
+build from source, but not ready for general consumption.
 
 Additionally, callander is beta software and requires more real-world testing.
 If you have a program that it doesn't analyze properly or rejects, please open
 an issue.
+
+## Architecture
+
+Callander's high-level architecture is a hybrid of patterns found in binary
+analysis tools, debuggers, and simple compilers.
+
+```mermaid
+flowchart 
+    AnalyzeProgram --> CoalesceSyscalls
+    Launch(Launch\nCallander) --> ResolveProgram(Resolve Program Path) --> LoadProgram(Map Program into Memory) --> LoadLibraries
+    subgraph AnalyzeProgram [Analyze Program]
+        DisassembleInstructions -.-> |Discover Function\nPointer or Call| AnalyzeFunction
+        LoadLibraries(Load Dependent Libraries) --> AnalyzeDataSections
+        LoadLibraries -.->|Parse DT_NEEDED| LoadLibraries
+        AnalyzeDataSections(Scan Data Sections) -->|Discover\nFunction Pointer| AnalyzeFunction
+        LoadLibraries -->|Analyze Initializers| AnalyzeFunction
+        AnalyzeFunction(Analyze Function) --> DisassembleInstructions
+        DisassembleInstructions(Disassemble & Simulate\nInstructions) -->|Discover\nsyscall instruction| ExtractArgs(Extract\nSyscall Arguments) --> RecordSyscall(Record Syscall)
+    end
+    %%subgraph PrepareSeccomp [Prepare Seccomp]
+        CoalesceSyscalls(Coalesce\nSyscall List) --> GenerateSeccompProgram(Generate\nSeccomp Program) --> OptimizeSeccompProgram(Peephole Optimize\nand Split\nSeccomp Program) --> InjectSeccompProgram(Inject\nSeccomp Programs)
+    %%end
+    LoadProgram --> ForkChild
+    subgraph ChildProcess [Child Process]
+        ForkChild(Fork Child\nProcess) --> Ptrace(Ptrace\nChild Process) --> ExecAndPause(Exec Target Program\nand Pause in\nChild Process) --> SetBreakpoint(Set Breakpoint\non Main Function) --> ResumeChild(Resume and\nWait for Break) --> InjectSeccompProgram
+    end
+    LoadProgram -->|Locate entrypoint| AnalyzeFunction
+    InjectSeccompProgram --> ResumeProgram(Resume the now\nSandboxed\nChild Process)
+```
 
 ## Building
 
@@ -163,5 +192,5 @@ cd callander/src
 make -j4
 ```
 
-For best results, use gcc 9.4.0 on ubuntu 20.04 to produce completely static
+For best results, use a modern version of gcc to produce completely static
 binaries that run on any recent Linux kernel.
