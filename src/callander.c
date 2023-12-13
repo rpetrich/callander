@@ -5006,7 +5006,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 		register_mask skip_continue_mask = 0;
 		if (SHOULD_LOG) {
 			for_each_bit(target_registers, bit, target_register) {
-				LOG("comparing", name_for_register(target_register));
+				ERROR_NOPREFIX("comparing", name_for_register(target_register));
 			}
 		}
 		for_each_bit(target_registers, bit, target_register) {
