@@ -475,7 +475,7 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 }
 
 __attribute__((nonnull(1, 2, 4)))
-static inline void clear_match_keep_stack(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
+static inline void clear_match_keep_stack(__attribute__((unused)) const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
 	register_mask mask = regs->matches[register_index];
 	if (UNLIKELY(mask != 0)) {
@@ -6036,7 +6036,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							self.description = NULL;
 							ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
 							if (SHOULD_LOG) {
-								register_mask relevant_registers = mask_for_register(REGISTER_SYSCALL_NR);
+								register_mask relevant_registers = mask_for_register((enum register_index)REGISTER_SYSCALL_NR);
 								for (const struct analysis_frame *ancestor = &self;;) {
 									ERROR_NOPREFIX("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
 									register_mask new_relevant_registers = 0;
