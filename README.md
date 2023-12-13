@@ -1,4 +1,4 @@
-# callander
+# ![callander](callander-logo.png)
 
 Callander is a simple system sandboxing tool for Linux. It uses program analysis
 to generate and apply right-sized seccomp sandboxes to programs. It can help you
@@ -22,6 +22,8 @@ mappings.
 
 Information on how callander works was presented at All Day DevOps 2023. Slides
 for this presentation are available [here](https://docs.google.com/presentation/d/1YHSBabFotD6UylVz8r4-DaJa5ZxxNUwmu-jf8bvyNgA/edit#slide=id.p).
+
+![demo of callander protecting nginx from attack](callander-demo.gif)
 
 ## Installation
 
