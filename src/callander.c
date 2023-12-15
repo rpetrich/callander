@@ -4988,6 +4988,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 	struct loaded_binary *jump_binary = NULL;
 	int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
 	int compare_register = ins_get_conditional_override_register(decoded);
+	uintptr_t compare_mask = self->current_state.compare_state.mask;
 	if (UNLIKELY(compare_register != REGISTER_INVALID) || ((self->current_state.compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&self->current_state.compare_state.value))) {
 		// include matching registers
 		if (LIKELY(compare_register == REGISTER_INVALID)) {
@@ -5000,6 +5001,8 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 				jump_state.registers[REGISTER_MEM].max = continue_state.registers[REGISTER_MEM].max = jump_state.compare_state.mask;
 				clear_match(&analysis->loader, &jump_state, REGISTER_MEM, self->address);
 			}
+		} else {
+			compare_mask = ~(uintptr_t)0;
 		}
 		register_mask target_registers = jump_state.matches[compare_register] | mask_for_register(compare_register);
 		register_mask skip_jump_mask = 0;
@@ -5010,7 +5013,6 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			}
 		}
 		for_each_bit(target_registers, bit, target_register) {
-			uintptr_t compare_mask = self->current_state.compare_state.mask;
 			if ((jump_state.registers[target_register].value & ~compare_mask) != (jump_state.registers[target_register].max & ~compare_mask)) {
 				jump_state.registers[target_register].value = 0;
 				jump_state.registers[target_register].max = compare_mask;
