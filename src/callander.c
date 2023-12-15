@@ -9554,7 +9554,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int target = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				self.description = get_operation(&decoded.decomposed);
 				LOG("br to address in register", name_for_register(target));
-				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), required_effects);
+				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), 0, required_effects);
 				if (!register_is_exactly_known(&dest_state)) {
 					if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
 						LOG("br to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
