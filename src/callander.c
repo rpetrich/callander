@@ -11916,15 +11916,85 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto skip_stack_clear;
 			}
 			case ARM64_SXTB: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
+				LOG("sxtb to", name_for_register(dest));
+				LOG("from", name_for_register(source));
+				if (sign_extend_from_operand_size(&source_state, OPERATION_SIZE_BYTE)) {
+					self.current_state.sources[dest] = self.current_state.sources[source];
+					clear_match(&analysis->loader, &self.current_state, dest, ins);
+				} else {
+					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				}
+				self.current_state.registers[dest] = source_state;
+				if (register_is_partially_known(&source_state)) {
+					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				} else {
+					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+					self.current_state.sources[dest] = 0;
+				}
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
 			}
 			case ARM64_SXTH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
+				LOG("sxth to", name_for_register(dest));
+				LOG("from", name_for_register(source));
+				if (sign_extend_from_operand_size(&source_state, OPERATION_SIZE_HALF)) {
+					self.current_state.sources[dest] = self.current_state.sources[source];
+					clear_match(&analysis->loader, &self.current_state, dest, ins);
+				} else {
+					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				}
+				self.current_state.registers[dest] = source_state;
+				if (register_is_partially_known(&source_state)) {
+					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				} else {
+					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+					self.current_state.sources[dest] = 0;
+				}
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
 			}
 			case ARM64_SXTW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
+				LOG("sxtw to", name_for_register(dest));
+				LOG("from", name_for_register(source));
+				if (sign_extend_from_operand_size(&source_state, OPERATION_SIZE_WORD)) {
+					self.current_state.sources[dest] = self.current_state.sources[source];
+					clear_match(&analysis->loader, &self.current_state, dest, ins);
+				} else {
+					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				}
+				self.current_state.registers[dest] = source_state;
+				if (register_is_partially_known(&source_state)) {
+					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				} else {
+					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+					self.current_state.sources[dest] = 0;
+				}
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
 				break;
 			}
 			case ARM64_SXTL: {

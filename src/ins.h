@@ -138,11 +138,18 @@ static inline void truncate_to_operand_size(struct register_state *reg, enum ins
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void sign_extend_from_operand_size(struct register_state *reg, enum ins_operand_size operand_size)
+static inline bool sign_extend_from_operand_size(struct register_state *reg, enum ins_operand_size operand_size)
 {
+	if (reg->value & ((uintptr_t)1 << (operand_size * 8 - 1))) {
+		reg->value |= ~(uintptr_t)0 << (operand_size * 8 - 1);
+		reg->max |= ~(uintptr_t)0 << (operand_size * 8 - 1);
+		return true;
+	}
 	if (reg->max & ((uintptr_t)1 << (operand_size * 8 - 1))) {
 		reg->max |= ~(uintptr_t)0 << (operand_size * 8 - 1);
+		return true;
 	}
+	return false;
 }
 
 #if defined(__x86_64__)
