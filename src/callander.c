@@ -10951,12 +10951,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
 				LOG("movk to", name_for_register(dest));
 				LOG("from", name_for_register(source));
-				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
-				self.current_state.registers[dest] = source_state;
-				if (register_is_partially_known(&source_state)) {
-					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				if (register_is_exactly_known(&dest_state) && register_is_exactly_known(&source_state)) {
+					uint32_t shift = decoded.decomposed.operands[1].shiftValue;
+					set_register(&dest_state, (dest_state.value & ~((uintptr_t)0xffff << shift)) | (source_state.value << shift));
+					if (source != REGISTER_INVALID) {
+						self.current_state.sources[dest] |= self.current_state.sources[source];
+					}
 				} else {
-					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+					clear_register(&dest_state);
+				}
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				self.current_state.registers[dest] = dest_state;
+				if (register_is_partially_known(&source_state)) {
+					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, dest_state)));
+				} else {
+					LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, dest_state)));
 					self.current_state.sources[dest] = 0;
 				}
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
