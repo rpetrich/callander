@@ -1,0 +1,62 @@
+callander: permitted syscalls: getcwd(0x1-0xffffffff, any) @ /sbin/ldconfig:0x42fc60
+fcntl(any, any, any) @ /sbin/ldconfig:0x43042c
+ioctl(any, TCGETS, any) @ /sbin/ldconfig:0x454684
+unlinkat(AT_FDCWD, any, 0) @ /sbin/ldconfig:0x430390
+symlinkat(any, AT_FDCWD, any) @ /sbin/ldconfig:0x4302fc
+renameat(AT_FDCWD, any, AT_FDCWD, any) @ /sbin/ldconfig:0x40ec68
+chdir(/sbin/ldconfig:0x4714b0) @ /sbin/ldconfig:0x42fbc4
+chroot(0x1-0xffffffff) @ /sbin/ldconfig:0x4309d4
+fchmodat(AT_FDCWD, any, 0644) @ /sbin/ldconfig:0x42f77c
+openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x42f860
+openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x42f8ec
+openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x430578
+openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x4305d0
+openat(any, any, any, any) @ /sbin/ldconfig:0x430648
+openat(any, any, any, any) @ /sbin/ldconfig:0x4306a0
+close(any) @ /sbin/ldconfig:0x42fb38
+close(any) @ /sbin/ldconfig:0x42fb68
+close(any) @ /sbin/ldconfig:0x4303c8
+getdents64(any, any, any) @ /sbin/ldconfig:0x453324
+lseek(any, any, any) @ /sbin/ldconfig:0x42fadc
+read(any, any, any) @ /sbin/ldconfig:0x42f968
+read(any, any, any) @ /sbin/ldconfig:0x42f9ac
+read(any, any, any) @ /sbin/ldconfig:0x4306d8
+write(any, any, any) @ /sbin/ldconfig:0x42fa30
+write(any, any, any) @ /sbin/ldconfig:0x42fa74
+writev(any, any, any) @ /sbin/ldconfig:0x43087c
+writev(any, any, any) @ /sbin/ldconfig:0x4308c4
+writev(any, any, any) @ /sbin/ldconfig:0x461218
+pread64(any, any, any, any) @ /sbin/ldconfig:0x454618
+readlinkat(AT_FDCWD, any, any, 4095) @ /sbin/ldconfig:0x43034c
+readlinkat(AT_FDCWD, /sbin/ldconfig:0x474130, any, 0x1000) @ /sbin/ldconfig:0x462718
+newfstatat(AT_FDCWD, any, any, 0) @ /sbin/ldconfig:0x42f658
+newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ /sbin/ldconfig:0x42f718
+newfstatat(any, any, any, any) @ /sbin/ldconfig:0x453e68
+fstat(any, any) @ /sbin/ldconfig:0x42f6b8
+fsync(any) @ /sbin/ldconfig:0x430a10
+fsync(any) @ /sbin/ldconfig:0x430a40
+exit_group(any) @ /sbin/ldconfig:0x429300
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
+clock_gettime(any, any) @ /sbin/ldconfig:0x453244
+clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
+clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
+clock_nanosleep(any, any, any, any) @ /sbin/ldconfig:0x465c48
+clock_nanosleep(any, any, any, any) @ /sbin/ldconfig:0x465c9c
+restart_syscall()
+tgkill(any, any, any) @ /sbin/ldconfig:0x40d0dc
+rt_sigaction(any, any, 0, 8) @ /sbin/ldconfig:0x4436f8
+rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /sbin/ldconfig:0x40d0b4
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /sbin/ldconfig:0x40d100
+rt_sigprocmask(any, any, 0, 8) @ /sbin/ldconfig:0x40d1b4
+rt_sigprocmask(any, any, 0, 8) @ /sbin/ldconfig:0x40d21c
+getpid() @ /sbin/ldconfig:0x40d0bc
+getpid() @ /sbin/ldconfig:0x453dc4
+gettid() @ /sbin/ldconfig:0x40d0c8
+sysinfo(any) @ /sbin/ldconfig:0x432694
+brk(any) @ /sbin/ldconfig:0x454728
+munmap(any, any) @ /sbin/ldconfig:0x430bc4
+mremap(any, any, any, MREMAP_MAYMOVE, any) @ /sbin/ldconfig:0x432674
+mmap(any, any, any, any, any, any) @ /sbin/ldconfig:0x430b70
+mprotect(any, any, any u32) @ /sbin/ldconfig:0x430be4
+madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig:0x430c04
