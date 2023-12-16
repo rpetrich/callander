@@ -208,25 +208,6 @@ static inline x86_mod_rm_t x86_read_modrm(const uint8_t *byte) {
 	return pun.modrm;
 }
 
-enum x86_register_index {
-	X86_REGISTER_AX,
-	X86_REGISTER_CX,
-	X86_REGISTER_DX,
-	X86_REGISTER_BX,
-	X86_REGISTER_SP,
-	X86_REGISTER_BP,
-	X86_REGISTER_SI,
-	X86_REGISTER_DI,
-	X86_REGISTER_8,
-	X86_REGISTER_9,
-	X86_REGISTER_10,
-	X86_REGISTER_11,
-	X86_REGISTER_12,
-	X86_REGISTER_13,
-	X86_REGISTER_14,
-	X86_REGISTER_15,
-};
-
 enum {
 	SYSCALL_INSTRUCTION_SIZE = 2,
 };

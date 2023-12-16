@@ -13,44 +13,6 @@
 #include "arch-arm64/disassembler/regs.h"
 #undef context
 
-#include "callander.h"
-
-enum aarch64_register_index {
-	AARCH64_REGISTER_INVALID = -1,
-	AARCH64_REGISTER_X0 = 0,
-	AARCH64_REGISTER_X1,
-	AARCH64_REGISTER_X2,
-	AARCH64_REGISTER_X3,
-	AARCH64_REGISTER_X4,
-	AARCH64_REGISTER_X5,
-	AARCH64_REGISTER_X6,
-	AARCH64_REGISTER_X7,
-	AARCH64_REGISTER_X8,
-	AARCH64_REGISTER_X9,
-	AARCH64_REGISTER_X10,
-	AARCH64_REGISTER_X11,
-	AARCH64_REGISTER_X12,
-	AARCH64_REGISTER_X13,
-	AARCH64_REGISTER_X14,
-	AARCH64_REGISTER_X15,
-	AARCH64_REGISTER_X16,
-	AARCH64_REGISTER_X17,
-	AARCH64_REGISTER_X18,
-	AARCH64_REGISTER_X19,
-	AARCH64_REGISTER_X20,
-	AARCH64_REGISTER_X21,
-	AARCH64_REGISTER_X22,
-	AARCH64_REGISTER_X23,
-	AARCH64_REGISTER_X24,
-	AARCH64_REGISTER_X25,
-	AARCH64_REGISTER_X26,
-	AARCH64_REGISTER_X27,
-	AARCH64_REGISTER_X28,
-	AARCH64_REGISTER_X29,
-	// AARCH64_REGISTER_X30,
-	AARCH64_REGISTER_SP,
-};
-
 enum {
 	SYSCALL_INSTRUCTION_SIZE = 4,
 };
@@ -249,9 +211,11 @@ static inline enum ins_jump_behavior aarch64_decode_jump_instruction(const struc
 			return INS_JUMPS_OR_CONTINUES;
 		case ARM64_CBNZ:
 		case ARM64_CBZ:
+			*out_jump = (const uint32_t *)ins->decomposed.operands[1].immediate;
+			return INS_JUMPS_OR_CONTINUES;
 		case ARM64_TBNZ:
 		case ARM64_TBZ:
-			*out_jump = (const uint32_t *)ins->decomposed.operands[1].immediate;
+			*out_jump = (const uint32_t *)ins->decomposed.operands[2].immediate;
 			return INS_JUMPS_OR_CONTINUES;
 		case ARM64_B_AL:
 		case ARM64_B_NV:
@@ -263,54 +227,102 @@ static inline enum ins_jump_behavior aarch64_decode_jump_instruction(const struc
 	}
 }
 
-static inline enum Condition aarch64_get_conditional_type(const struct aarch64_instruction *ins)
+enum aarch64_conditional_type {
+	AARCH64_CONDITIONAL_TYPE_EQ = COND_EQ,
+	AARCH64_CONDITIONAL_TYPE_NE = COND_NE,
+	AARCH64_CONDITIONAL_TYPE_CS = COND_CS,
+	AARCH64_CONDITIONAL_TYPE_CC = COND_CC,
+	AARCH64_CONDITIONAL_TYPE_MI = COND_MI,
+	AARCH64_CONDITIONAL_TYPE_PL = COND_PL,
+	AARCH64_CONDITIONAL_TYPE_VS = COND_VS,
+	AARCH64_CONDITIONAL_TYPE_VC = COND_VC,
+	AARCH64_CONDITIONAL_TYPE_HI = COND_HI,
+	AARCH64_CONDITIONAL_TYPE_LS = COND_LS,
+	AARCH64_CONDITIONAL_TYPE_GE = COND_GE,
+	AARCH64_CONDITIONAL_TYPE_LT = COND_LT,
+	AARCH64_CONDITIONAL_TYPE_GT = COND_GT,
+	AARCH64_CONDITIONAL_TYPE_LE = COND_LE,
+	AARCH64_CONDITIONAL_TYPE_BC, // pseudo-type used by TBZ
+	AARCH64_CONDITIONAL_TYPE_BS, // pseudo-type used by TBNZ
+};
+
+static inline enum aarch64_conditional_type aarch64_get_conditional_type(const struct aarch64_instruction *ins, struct register_comparison *out_compare_state)
 {
 	switch (ins->decomposed.operation) {
 		case ARM64_B_EQ:
-			return COND_EQ;
+			return AARCH64_CONDITIONAL_TYPE_EQ;
 		case ARM64_B_NE:
-			return COND_NE;
+			return AARCH64_CONDITIONAL_TYPE_NE;
 		case ARM64_B_CS:
-			return COND_CS;
+			return AARCH64_CONDITIONAL_TYPE_CS;
 		case ARM64_B_CC:
-			return COND_CC;
+			return AARCH64_CONDITIONAL_TYPE_CC;
 		case ARM64_B_MI:
-			return COND_MI;
+			return AARCH64_CONDITIONAL_TYPE_MI;
 		case ARM64_B_PL:
-			return COND_PL;
+			return AARCH64_CONDITIONAL_TYPE_PL;
 		case ARM64_B_VS:
-			return COND_VS;
+			return AARCH64_CONDITIONAL_TYPE_VS;
 		case ARM64_B_VC:
-			return COND_VC;
+			return AARCH64_CONDITIONAL_TYPE_VC;
 		case ARM64_B_HI:
-			return COND_HI;
+			return AARCH64_CONDITIONAL_TYPE_HI;
 		case ARM64_B_LS:
-			return COND_LS;
+			return AARCH64_CONDITIONAL_TYPE_LS;
 		case ARM64_B_GE:
-			return COND_GE;
+			return AARCH64_CONDITIONAL_TYPE_GE;
 		case ARM64_B_LT:
-			return COND_LT;
+			return AARCH64_CONDITIONAL_TYPE_LT;
 		case ARM64_B_GT:
-			return COND_GT;
+			return AARCH64_CONDITIONAL_TYPE_GT;
 		case ARM64_B_LE:
-			return COND_LE;
+			return AARCH64_CONDITIONAL_TYPE_LE;
 		case ARM64_CBZ:
-			return COND_AL;
+			*out_compare_state = (struct register_comparison){
+				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.value = { 0, 0 },
+				.mask = ~(uintptr_t)0,
+				.mem_rm = out_compare_state->mem_rm,
+				.sources = 0,
+				.validity = COMPARISON_SUPPORTS_ANY,
+			};
+			return AARCH64_CONDITIONAL_TYPE_EQ;
 		case ARM64_CBNZ:
-			return COND_NV;
+			*out_compare_state = (struct register_comparison){
+				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.value = { 0, 0 },
+				.mask = ~(uintptr_t)0,
+				.mem_rm = out_compare_state->mem_rm,
+				.sources = 0,
+				.validity = COMPARISON_SUPPORTS_ANY,
+			};
+			return AARCH64_CONDITIONAL_TYPE_NE;
+		case ARM64_TBZ: {
+			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;
+			*out_compare_state = (struct register_comparison){
+				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.value = { bit, bit },
+				.mask = ~(uintptr_t)0,
+				.mem_rm = out_compare_state->mem_rm,
+				.sources = 0,
+				.validity = COMPARISON_SUPPORTS_ANY,
+			};
+			return AARCH64_CONDITIONAL_TYPE_BC;
+		}
+		case ARM64_TBNZ: {
+			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;
+			*out_compare_state = (struct register_comparison){
+				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.value = { bit, bit },
+				.mask = ~(uintptr_t)0,
+				.mem_rm = out_compare_state->mem_rm,
+				.sources = 0,
+				.validity = COMPARISON_SUPPORTS_ANY,
+			};
+			return AARCH64_CONDITIONAL_TYPE_BS;
+		}
 		default:
-			return END_CONDITION;
-	}
-}
-
-static inline int aarch64_get_conditional_override_register(const struct aarch64_instruction *ins)
-{
-	switch (ins->decomposed.operation) {
-		case ARM64_CBZ:
-		case ARM64_CBNZ:
-			return register_index_from_register(ins->decomposed.operands[0].reg[0]);
-		default:
-			return AARCH64_REGISTER_INVALID;
+			abort();
 	}
 }
 
