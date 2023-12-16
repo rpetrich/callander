@@ -10419,6 +10419,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					goto clear_ldr;
 				}
 				LOG("base", name_for_register(reg));
+				register_mask dump_mask = mask_for_register(dest) | mask_for_register(reg);
 				if (SHOULD_LOG) {
 					for_each_bit(self.current_state.matches[reg], bit, i) {
 						ERROR_NOPREFIX("matching", name_for_register(i));
@@ -10461,6 +10462,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							LOG("invalid extended index, clearing register");
 							goto clear_ldr;
 						}
+						dump_mask |= mask_for_register(index);
 						LOG("extended", name_for_register(index));
 						if (SHOULD_LOG) {
 							for_each_bit(self.current_state.matches[index], bit, i) {
@@ -10498,7 +10500,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						scrounged_base:
 							;
 						}
-						if (flags < 4 && register_is_exactly_known(&source_state)) {
+						if (flags < 6 && register_is_exactly_known(&source_state)) {
+							dump_registers(&analysis->loader, &self.current_state, dump_mask);
 							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
 							int prot = protection_for_address(&analysis->loader, (const void *)source_state.value, &binary, &section);
 							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
@@ -10579,6 +10582,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (prot & PROT_READ) {
 						uintptr_t value = read_memory((const void *)addr, mem_size) & mask_for_operand_size(size);
 						if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
+							dump_registers(&analysis->loader, &self.current_state, dump_mask);
 							set_register(&self.current_state.registers[dest], value);
 							self.current_state.sources[dest] = used_registers;
 							LOG("loaded memory constant", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[dest])));
@@ -10591,6 +10595,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				LOG("value is unknown, clearing register");
 			clear_ldr:
+				dump_registers(&analysis->loader, &self.current_state, dump_mask);
 				clear_register(&source_state);
 				truncate_to_operand_size(&source_state, mem_size);
 				truncate_to_operand_size(&source_state, size);
