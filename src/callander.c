@@ -10378,7 +10378,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
-				enum ins_operand_size mem_size = decoded.decomposed.operation == ARM64_LDRB ? OPERATION_SIZE_BYTE : decoded.decomposed.operation == ARM64_LDRH ? OPERATION_SIZE_HALF : size;
+				enum ins_operand_size mem_size;
+				switch (decoded.decomposed.operation) {
+					case ARM64_LDARB:
+					case ARM64_LDXRB:
+					case ARM64_LDAXRB:
+						mem_size = OPERATION_SIZE_BYTE;
+						break;
+					case ARM64_LDARH:
+					case ARM64_LDXRH:
+					case ARM64_LDAXRH:
+						mem_size = OPERATION_SIZE_HALF;
+						break;
+					default:
+						mem_size = size;
+						break;
+				}
 				LOG("ldr", name_for_register(dest));
 				struct register_state source_state;
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, &size);
