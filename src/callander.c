@@ -9738,9 +9738,32 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_CMN: {
-				// TODO
-				LOG("cmn");
-				clear_comparison_state(&self.current_state);
+				enum ins_operand_size size;
+				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				if (left == REGISTER_INVALID) {
+					LOG("cmp with unsupported operand");
+					clear_comparison_state(&self.current_state);
+					break;
+				}
+				struct register_state right_state;
+				int right = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &right_state, NULL);
+				set_register(&right_state, -right_state.value);
+				truncate_to_operand_size(&right_state, size);
+				bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
+				LOG("cmn", name_for_register(left));
+				LOG("with", name_for_register(right));
+				if (right != REGISTER_INVALID || applied_shift || right_state.value == 0) {
+					clear_comparison_state(&self.current_state);
+				} else {
+					set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
+						.target_register = left,
+						.value = right_state,
+						.mask = mask_for_operand_size(size),
+						.mem_rm = self.current_state.mem_rm,
+						.sources = 0,
+						.validity = COMPARISON_SUPPORTS_ANY,
+					});
+				}
 				break;
 			}
 			case ARM64_CMP: {
