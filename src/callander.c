@@ -9725,7 +9725,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				enum ins_operand_size size;
 				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (left == REGISTER_INVALID) {
-					LOG("cmp with unsupported operand");
+					LOG("cmn with unsupported operand");
 					clear_comparison_state(&self.current_state);
 					break;
 				}
@@ -9736,6 +9736,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
 				LOG("cmn", name_for_register(left));
 				LOG("with", name_for_register(right));
+				LOG("value", temp_str(copy_register_state_description(&analysis->loader, right_state)));
 				if (right != REGISTER_INVALID || applied_shift || right_state.value == 0) {
 					clear_comparison_state(&self.current_state);
 				} else {
@@ -9764,6 +9765,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
 				LOG("cmp", name_for_register(left));
 				LOG("with", name_for_register(right));
+				LOG("value", temp_str(copy_register_state_description(&analysis->loader, right_state)));
 				if (applied_shift) {
 					clear_comparison_state(&self.current_state);
 				} else {
