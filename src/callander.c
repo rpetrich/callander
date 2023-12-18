@@ -1414,6 +1414,7 @@ __attribute__((nonnull(1, 2, 3)))
 static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, const struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects);
 
 struct loader_stub {
+	uintptr_t dummy;
 	struct loader_stub *next;
 };
 
@@ -3009,6 +3010,7 @@ static void intercept_jump_slot(struct program_state *analysis, struct loaded_bi
 					uintptr_t *target = (uintptr_t *)apply_base_address(&binary->info, offset);
 					uintptr_t old_value = *target;
 					struct loader_stub *stub = malloc(sizeof(struct loader_stub));
+					stub->dummy = 0;
 					stub->next = analysis->loader.stubs;
 					analysis->loader.stubs = stub;
 					*target = (uintptr_t)stub;
