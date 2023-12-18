@@ -29,7 +29,7 @@ ioctl(any u32, PIO_UNIMAP, /usr/bin/showconsolefont+0x62b0) @ libc.so.6+0x100e0d
 ioctl(any u32, PIO_UNIMAPCLR, any) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any u32, GIO_UNISCRNMAP, /usr/bin/showconsolefont+0x62e0) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any u32, PIO_UNISCRNMAP, any) @ libc.so.6+0x100e0d(ioctl+61)
-ioctl(any u32, 0x4b72, any) @ libc.so.6+0x100e0d(ioctl+61)
+ioctl(any u32, _IO(75,114), any) @ libc.so.6+0x100e0d(ioctl+61)
 pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ libc.so.6+0x1001ec(__pread64_nocancel+12)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xcb4d(_dl_debug_vdprintf+301)
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x8105e(__libc_message+510)

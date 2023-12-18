@@ -42,7 +42,7 @@ rt_sigreturn(any) @ libc.so.6+0x4adc7
 ioctl(any u32, TCSETS-TCSETSF, any) @ libc.so.6+0x10ca03(tcsetattr+181)
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x10ca76(tcgetattr+40)
 ioctl(STDIN_FILENO-STDOUT_FILENO, TIOCGWINSZ, any) @ libc.so.6+0x10d4a5(ioctl+7)
-ioctl(STDIN_FILENO-0xfffffffe, 0x5441, 258) @ libc.so.6+0x10d4a5(ioctl+7)
+ioctl(STDIN_FILENO-0xfffffffe, _IO(84,65), 258) @ libc.so.6+0x10d4a5(ioctl+7)
 ioctl(STDIN_FILENO-0xfffffffe, TIOCSPTLCK, any) @ libc.so.6+0x10d4a5(ioctl+7)
 ioctl(STDIN_FILENO-0xfffffffe, TIOCGPTN, any) @ libc.so.6+0x10d4a5(ioctl+7)
 ioctl(any u32, TIOCSCTTY, 1) @ libc.so.6+0x10d4a5(ioctl+7)

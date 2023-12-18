@@ -36,7 +36,7 @@ ioctl(any u32, TIOCGETD, /usr/sbin/slattach+0xad14) @ libc.so.6+0x100e0d(ioctl+6
 ioctl(any u32, SIOCGIFNAME, any) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any u32, SIOCSIFENCAP, any) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any u32, SIOCDEVPRIVATE, /usr/sbin/slattach+0x9cec) @ libc.so.6+0x100e0d(ioctl+61)
-ioctl(any u32, 0x89f2, /usr/sbin/slattach+0x9ce8) @ libc.so.6+0x100e0d(ioctl+61)
+ioctl(any u32, _IO(137,242), /usr/sbin/slattach+0x9ce8) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any u32, TIOCSPTLCK, any) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any u32, TIOCGPTN, any) @ libc.so.6+0x100e0d(ioctl+61)
 ioctl(any, TIOCSETD, any) @ libc.so.6+0x100e0d(ioctl+61)

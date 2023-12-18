@@ -49,8 +49,8 @@ rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ libpthread.so.0+0x13074(pth
 rt_sigreturn(any) @ libc.so.6+0x4adc7
 ioctl(any u32, TCSETSW-TCSETSF, any) @ libc.so.6+0x10ca03(tcsetattr+181)
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x10ca76(tcgetattr+40)
-ioctl(STDIN_FILENO-0xfffffffe, 0x5309, any) @ libc.so.6+0x10d4a5(ioctl+7)
-ioctl(STDIN_FILENO-0xfffffffe, 0x5319, any) @ libc.so.6+0x10d4a5(ioctl+7)
+ioctl(STDIN_FILENO-0xfffffffe, _IO(83,9), any) @ libc.so.6+0x10d4a5(ioctl+7)
+ioctl(STDIN_FILENO-0xfffffffe, _IO(83,25), any) @ libc.so.6+0x10d4a5(ioctl+7)
 ioctl(STDIN_FILENO-0xfffffffe, FIONBIO, any) @ libc.so.6+0x10d4a5(ioctl+7)
 ioctl(any u32, TCGETA, libcrypto.so.1.1+0x33d6a0) @ libc.so.6+0x10d4a5(ioctl+7)
 ioctl(any u32, TCSETA, libcrypto.so.1.1+0x33d680) @ libc.so.6+0x10d4a5(ioctl+7)

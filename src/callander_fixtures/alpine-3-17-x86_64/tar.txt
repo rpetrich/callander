@@ -52,7 +52,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_siga
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
-ioctl(STDIN_FILENO-0x3fffffff, 0x40086d01, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(STDIN_FILENO-0x3fffffff, _IOW(109,1,8), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, SIOCGIFINDEX, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)

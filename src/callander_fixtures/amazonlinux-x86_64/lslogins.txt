@@ -103,7 +103,7 @@ rt_sigreturn(any) @ libc.so.6+0x33d17
 ioctl(any, TCGETS, any) @ libc.so.6+0xe6139(tcgetattr+41)
 ioctl(any u32, SIOCGIFINDEX, any) @ libc.so.6+0xe69a5(ioctl+5)
 ioctl(any u32, FS_IOC_SETFLAGS, any) @ libc.so.6+0xe69a5(ioctl+5)
-ioctl(any u32, 0x50009402, 0) @ libc.so.6+0xe69a5(ioctl+5)
+ioctl(any u32, _IOW(148,2,4096), 0) @ libc.so.6+0xe69a5(ioctl+5)
 ioctl(any u32, FS_IOC_GETFLAGS, any) @ libc.so.6+0xe69a5(ioctl+5)
 ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ libc.so.6+0xe69a5(ioctl+5)
 pread64(any u32, any, any, any) @ libc.so.6+0xdfcc1(pread+17)

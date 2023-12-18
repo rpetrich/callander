@@ -37,7 +37,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x4b054(sigprocmask+70)
 rt_sigreturn(any) @ libc.so.6+0x4adc7
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x10ca76(tcgetattr+40)
 ioctl(any u32, FICLONE, any u32) @ libc.so.6+0x10d4a5(ioctl+7)
-ioctl(any u32, 0xc020660b, any) @ libc.so.6+0x10d4a5(ioctl+7)
+ioctl(any u32, _IOWR(102,11,32), any) @ libc.so.6+0x10d4a5(ioctl+7)
 readv(any u32, any, 1) @ libc.so.6+0x10d4f1(readv+19)
 readv(any u32, any, 3) @ libc.so.6+0x10d4f1(readv+19)
 readv(any u32, any, 1) @ libc.so.6+0x10d525(readv+71)

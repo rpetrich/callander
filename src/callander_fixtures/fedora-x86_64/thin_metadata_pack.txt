@@ -53,7 +53,7 @@ rt_sigreturn(any) @ ld-linux-x86-64.so.2+0x21f97
 rt_sigreturn(any) @ libc.so.6+0x3cb67
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x100518(tcgetattr+40)
 ioctl(any u32, FIOCLEX, any) @ libc.so.6+0x100e0d(ioctl+61)
-ioctl(any u32, 0x80081272, any) @ libc.so.6+0x100e0d(ioctl+61)
+ioctl(any u32, _IOR(18,114,8), any) @ libc.so.6+0x100e0d(ioctl+61)
 pread64(any u32, any, any, any) @ ld-linux-x86-64.so.2+0x21b2c(__pread64_nocancel+12)
 pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ libc.so.6+0x1001ec(__pread64_nocancel+12)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xcb4d(_dl_debug_vdprintf+301)

@@ -28,7 +28,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x48f29(__libc_siga
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x5745f(pthread_sigmask+29)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x5745f(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x495ae(__restore_rt*+7)
-ioctl(any, 0xffffffffc0045877-0xffffffffc0045878, 0) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
+ioctl(any, _IOWR(88,119,4)-_IOWR(88,120,4), 0) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a36a(__stdout_write*+48)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a2bb(__stdio_write*+81)

@@ -38,7 +38,7 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x43009(raise+201)
 rt_sigprocmask(SIG_BLOCK-SIG_UNBLOCK, any, any, 8) @ libc.so.6+0x43309(sigprocmask+73)
 rt_sigreturn(any) @ libc.so.6+0x43097
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x113c38(tcgetattr+40)
-ioctl(STDIN_FILENO-0xfffffffe, 0x80045200, any) @ libc.so.6+0x1145c9(ioctl+9)
+ioctl(STDIN_FILENO-0xfffffffe, _IOR(82,0,4), any) @ libc.so.6+0x1145c9(ioctl+9)
 ioctl(any u32, FIONREAD, any) @ libc.so.6+0x1145c9(ioctl+9)
 ioctl(any u32, SIOCGIFINDEX, any) @ libc.so.6+0x1145c9(ioctl+9)
 pread64(any u32, any, 12, 2) @ libc.so.6+0x10c388(pread+24)
