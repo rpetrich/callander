@@ -11407,6 +11407,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
+			case ARM64_SMOV: {
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			}
 			case ARM64_SMSUBL: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
