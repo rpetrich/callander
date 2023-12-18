@@ -30,7 +30,7 @@ jobs:
     - run: sudo apt-get install gcc-aarch64-linux-gnu
     - uses: actions/checkout@v3
     - run: git submodule update --init
-    - run: make -j -k TARGETMACHINE=aarch64
+    - run: make -j -k callander TARGETMACHINE=aarch64
       working-directory: src
     - run: tar cfz callander-aarch64-$GITHUB_SHA.tgz callander callander.debug
       working-directory: src
