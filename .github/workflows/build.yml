@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - run: sudo apt-get update
-    - run: sudo apt-get install apt-get install gcc-aarch64-linux-gnu
+    - run: sudo apt-get install gcc-aarch64-linux-gnu
     - uses: actions/checkout@v3
     - run: make -j -k TARGETMACHINE=aarch64
       working-directory: src
