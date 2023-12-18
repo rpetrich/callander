@@ -9,16 +9,31 @@ on:
     - main
 
 jobs:
-  build:
+  build-x86_64:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - run: make -j -k
       working-directory: src
     - run: src/callander --show-permitted echo hi
-    - run: tar cfz callander-$GITHUB_SHA.tgz callander callander.debug
+    - run: tar cfz callander-x86_64-$GITHUB_SHA.tgz callander callander.debug
       working-directory: src
     - uses: actions/upload-artifact@v3
       with:
-        name: callander
-        path: src/callander-*.tgz
+        name: callander-x86_64
+        path: src/callander-x86_64-*.tgz
+
+  build-aarch64:
+    runs-on: ubuntu-latest
+    steps:
+    - run: apt-get update
+    - run: apt-get install apt-get install gcc-aarch64-linux-gnu
+    - uses: actions/checkout@v3
+    - run: make -j -k TARGETMACHINE=aarch64
+      working-directory: src
+    - run: tar cfz callander-aarch64-$GITHUB_SHA.tgz callander callander.debug
+      working-directory: src
+    - uses: actions/upload-artifact@v3
+      with:
+        name: callander-aarch64
+        path: src/callander-aarch64-*.tgz
