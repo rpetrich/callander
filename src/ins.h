@@ -1,6 +1,8 @@
 #ifndef INS_H
 #define INS_H
 
+#define MORE_STACK_SLOTS 0
+
 #include <stdbool.h>
 #include <stdint.h>
 
