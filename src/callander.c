@@ -10475,7 +10475,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							add_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins, source_state.value);
 						} else {
 							uintptr_t base_addr = find_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins);
-							int prot = protection_for_address(&analysis->loader, (const void *)source_state.value, &binary, &section);
+							int prot = protection_for_address(&analysis->loader, (const void *)base_addr, &binary, &section);
 							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
 								if (false) {
 									LOG("reusing previous base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
