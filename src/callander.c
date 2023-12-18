@@ -10498,6 +10498,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							;
 						}
 						if (flags < 6 && register_is_exactly_known(&source_state)) {
+							ins_ptr lookahead = next_ins(ins, &decoded);
+							struct decoded_ins lookahead_decoded;
+							if (decode_ins(lookahead, &lookahead_decoded) && lookahead_decoded.decomposed.operation == decoded.decomposed.operation) {
+								// lookahead = next_ins(lookahead, &lookahead_decoded);
+								// if (decode_ins(lookahead, &lookahead_decoded) && lookahead_decoded.decomposed.operation == decoded.decomposed.operation) {
+									flags |= 6;
+									goto cancel_lookup_table;
+								// }
+							}
 							dump_registers(&analysis->loader, &self.current_state, dump_mask);
 							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
 							int prot = protection_for_address(&analysis->loader, (const void *)source_state.value, &binary, &section);
