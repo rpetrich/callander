@@ -179,14 +179,26 @@ static const char *remap_flags[64] = {
 #undef O_LARGEFILE
 #endif
 #define O_LARGEFILE	00100000
+
 #ifdef __O_SYNC
 #undef __O_SYNC
 #endif
 #define __O_SYNC	04000000
+
 #ifdef __O_TMPFILE
 #undef __O_TMPFILE
 #endif
 #define __O_TMPFILE	020000000
+
+#ifdef O_DSYNC
+#undef O_DSYNC
+#endif
+#define O_DSYNC		00010000
+
+#ifdef O_NOFOLLOW
+#undef O_NOFOLLOW
+#endif
+#define O_NOFOLLOW	00400000
 
 static struct enum_option opens[] = {
 	DESCRIBE_ENUM(O_RDONLY),
@@ -204,16 +216,14 @@ static const char *open_flags[64] = {
 	DESCRIBE_FLAG(O_DIRECTORY),
 	DESCRIBE_FLAG(O_DSYNC),
 	DESCRIBE_FLAG(O_EXCL),
-#ifdef __x86_64__
 	DESCRIBE_FLAG(O_LARGEFILE),
-#endif
 	DESCRIBE_FLAG(O_NOATIME),
 	DESCRIBE_FLAG(O_NOCTTY),
 	DESCRIBE_FLAG(O_NOFOLLOW),
 	DESCRIBE_FLAG(O_NONBLOCK),
 	DESCRIBE_FLAG(O_PATH),
 	DESCRIBE_FLAG(__O_SYNC),
-	DESCRIBE_FLAG(O_TMPFILE),
+	DESCRIBE_FLAG(__O_TMPFILE),
 	DESCRIBE_FLAG(O_TRUNC),
 };
 
@@ -1227,6 +1237,7 @@ static char *copy_register_state_description_simple(const struct loader_context 
 enum {
 	DESCRIBE_PRINT_ZERO_ENUMS = 0x1,
 	DESCRIBE_AS_FILE_MODE = 0x2,
+	DESCRIBE_AS_IOCTL = 0x4,
 };
 
 typedef uint8_t description_format_options;
@@ -1248,6 +1259,34 @@ static inline size_t format_octal(uintptr_t value, char buffer[])
 	return i+1;
 }
 
+static void fill_ioctl_description(uintptr_t value, char buf[])
+{
+	uintptr_t nr = (value >> _IOC_NRSHIFT) & _IOC_TYPEMASK;
+	uintptr_t type = (value >> _IOC_TYPESHIFT) & _IOC_TYPEMASK;
+	uintptr_t size = (value >> _IOC_SIZESHIFT) & _IOC_SIZEMASK;
+	uintptr_t dir = (value >> _IOC_DIRSHIFT) & _IOC_DIRMASK;
+	int i = 0;
+	buf[i++] = '_';
+	buf[i++] = 'I';
+	buf[i++] = 'O';
+	if (dir & _IOC_WRITE) {
+		buf[i++] = 'W';
+	}
+	if (dir & _IOC_READ) {
+		buf[i++] = 'R';
+	}
+	buf[i++] = '(';
+	i += fs_utoa(type, &buf[i]);
+	buf[i++] = ',';
+	i += fs_itoa((intptr_t)nr, &buf[i]);
+	if (dir != 0 || size != 0) {
+		buf[i++] = ',';
+		i += fs_itoa((intptr_t)size, &buf[i]);
+	}
+	buf[i++] = ')';
+	buf[i++] = '\0';
+}
+
 static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], description_format_options description_options)
 {
 	char num_buf[64];
@@ -1259,6 +1298,10 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 		}
 		if (description_options & DESCRIBE_AS_FILE_MODE) {
 			format_octal(value, num_buf);
+			return strdup(num_buf);
+		}
+		if (description_options & DESCRIBE_AS_IOCTL) {
+			fill_ioctl_description(value, num_buf);
 			return strdup(num_buf);
 		}
 		return copy_address_details(context, (const void *)value, false);
@@ -1357,7 +1400,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_SIGNUM:
 			return copy_enum_flags_description(context, state, signums, sizeof(signums), NULL, false);
 		case SYSCALL_ARG_IS_IOCTL:
-			return copy_enum_flags_description(context, state, ioctls, sizeof(ioctls), NULL, false);
+			return copy_enum_flags_description(context, state, ioctls, sizeof(ioctls), NULL, DESCRIBE_AS_IOCTL);
 		case SYSCALL_ARG_IS_SIGHOW:
 			return copy_enum_flags_description(context, state, sighows, sizeof(sighows), NULL, false);
 		case SYSCALL_ARG_IS_MADVISE:
