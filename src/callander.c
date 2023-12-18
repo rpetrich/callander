@@ -10304,7 +10304,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 				}
 				if (dest2 != REGISTER_INVALID) {
-					if (mask_for_register(source) & (STACK_REGISTERS & (STACK_REGISTERS >> 1)) && decoded.decomposed.operation == ARM64_LDP && size == OPERATION_SIZE_DWORD) {
+					if (source != REGISTER_INVALID && (mask_for_register(source) & (STACK_REGISTERS & (STACK_REGISTERS >> 1))) && decoded.decomposed.operation == ARM64_LDP && size == OPERATION_SIZE_DWORD) {
 						int source2 = source + 1;
 						LOG("loading second value from stack", name_for_register(source2));
 						source_state = self.current_state.registers[source2];
