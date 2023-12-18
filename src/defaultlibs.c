@@ -37,9 +37,34 @@ __attribute__((used, visibility("hidden")))
 void *memset(void *s, int c, size_t n)
 {
 	char *buf = s;
-	for (int i = 0; i < (int)n; i++) {
+#if 0
+	ssize_t i = 0;
+	if (LIKELY(c == 0)) {
+		ssize_t n_trunc = (ssize_t)(n & ~((sizeof(uint64_t) * 2) - 1));
+		for (; i < n_trunc; i += sizeof(uint64_t) * 2) {
+			*(uint64_t *)&buf[i] = 0;
+			*(uint64_t *)&buf[i+sizeof(uint64_t)] = 0;
+		}
+	}
+	for (; i < (ssize_t)n; i++) {
 		buf[i] = c;
 	}
+#else
+	char *end = &((char *)s)[n];
+	if (LIKELY(c == 0)) {
+		char *end_trunc = &buf[(ssize_t)(n & ~((sizeof(uint64_t) * 2) - 1))];
+		while (buf != end_trunc) {
+			*(uint64_t *)buf = 0;
+			buf += sizeof(uint64_t);
+			*(uint64_t *)buf = 0;
+			buf += sizeof(uint64_t);
+		}
+	}
+	while (buf != end) {
+		*buf = c;
+		buf++;
+	}
+#endif
 	return s;
 }
 
