@@ -4939,7 +4939,7 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 		}
 	}
 	if (UNLIKELY(ins != ret)) {
-		if (UNLIKELY(!decode_ins(ins, decoded))) {
+		if (UNLIKELY(!decode_ins(ret, decoded))) {
 			return NULL;
 		}
 	}
