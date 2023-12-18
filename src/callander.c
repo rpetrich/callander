@@ -4902,24 +4902,22 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 {
 	// skip over function stubs that simply call into a target function
 	ins_ptr ret = ins;
-	struct decoded_ins peek;
-	if (!decode_ins(ins, &peek)) {
+	if (UNLIKELY(!decode_ins(ins, decoded))) {
 		return NULL;
 	}
-	*decoded = peek;
 	for (;;) {
-		if (is_landing_pad_ins(&peek)) {
-			ins_ptr next = next_ins(ins, &peek);
+		if (is_landing_pad_ins(decoded)) {
+			ins_ptr next = next_ins(ins, decoded);
 #if BREAK_ON_UNREACHABLES
 			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next);
 #endif
 			ins = next;
-			if (!decode_ins(ins, &peek)) {
+			if (UNLIKELY(!decode_ins(ins, decoded))) {
 				return NULL;
 			}
 		} else {
 			ins_ptr jump_target;
-			enum ins_jump_behavior jump = ins_interpret_jump_behavior(&peek, &jump_target);
+			enum ins_jump_behavior jump = ins_interpret_jump_behavior(decoded, &jump_target);
 			if (jump != INS_JUMPS_ALWAYS && jump != INS_JUMPS_ALWAYS_INDIRECT) {
 				break;
 			}
@@ -4931,13 +4929,18 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 				break;
 			}
 #if BREAK_ON_UNREACHABLES
-			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, &peek));
+			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, decoded));
 #endif
 			ins = jump_target;
 			ret = jump_target;
-			if (!decode_ins(ins, decoded)) {
+			if (UNLIKELY(!decode_ins(ins, decoded))) {
 				return NULL;
 			}
+		}
+	}
+	if (UNLIKELY(ins != ret)) {
+		if (UNLIKELY(!decode_ins(ins, decoded))) {
+			return NULL;
 		}
 	}
 	return ret;
