@@ -148,8 +148,8 @@ limitations of seccomp. If asked to run a program that does `exec` other
 programs, callander will emit an error that can be overridden with the
 `--block-exec` option.
 
-Only x86-64 Linux binaries are supported. A version for aarch64 is available to
-build from source, but not ready for general consumption.
+x86_64 and aarch64 linux binaries are available. No support for other
+architectures is planned.
 
 Additionally, callander is beta software and requires more real-world testing.
 If you have a program that it doesn't analyze properly or rejects, please open
@@ -196,3 +196,11 @@ make -j4
 
 For best results, use a modern version of gcc to produce completely static
 binaries that run on any recent Linux kernel.
+
+## Special Thanks
+
+The logo was generously provided by my frequent collaborator, [Kelly Shortridge](https://kellyshortridge.com/). Without this and other contributions, Callander would not exist.
+
+aarch64 disassembly uses Vector35's [arch-arm64](https://github.com/Vector35/arch-arm64) disassembler.
+
+x86 disassembly uses length disassembler by Stefan Johnson.
