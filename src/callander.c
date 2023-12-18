@@ -692,7 +692,7 @@ static inline void pop_stack(struct registers *regs, int pop_count)
 	}
 	// shift the matching bits around
 	for (int i = 0; i < REGISTER_COUNT; i++) {
-		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | ((regs->matches[i] >> pop_count) & STACK_REGISTERS);
+		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | (pop_count > REGISTER_COUNT ? 0 : ((regs->matches[i] >> pop_count) & STACK_REGISTERS));
 	}
 }
 
