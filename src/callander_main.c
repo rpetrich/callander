@@ -1431,6 +1431,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	bool allow_unexpected = false;
 	bool mutable_binary_mappings = true;
 	const char *profile_path = NULL;
+	bool strict_profile = false;
 	enum attach_behavior attach = DETACH_AT_START;
 	bool skip_running = false;
 	while (argv[executable_index] && *argv[executable_index] == '-') {
@@ -1547,6 +1548,15 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 				return 1;
 			}
 			executable_index++;
+		} else if (fs_strcmp(arg, "--read-profile") == 0) {
+			profile_path = argv[executable_index+1];
+			if (profile_path == NULL) {
+				ERROR("--read-profile requires an argument");
+				ERROR_FLUSH();
+				return 1;
+			}
+			executable_index++;
+			strict_profile = true;
 		} else if (fs_strcmp(arg, "--attach-gdb") == 0) {
 			if (attach) {
 				ERROR("--attach-gdb overrides previous attachment behavior");
@@ -1814,6 +1824,9 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			analysis.main = profile_analysis.main;
 			has_read_profile = true;
 			goto skip_analysis;
+		}
+		if (strict_profile) {
+			DIE("profile at path does not match", profile_path);
 		}
 	}
 
