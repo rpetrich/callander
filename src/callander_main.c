@@ -1807,6 +1807,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	bool has_read_profile = false;
 	if (profile_path != NULL) {
 		struct program_state profile_analysis = { 0 };
+		profile_analysis.loader.vdso = analysis.loader.vdso;
 		if (read_profile(&profile_analysis, profile_path)) {
 			analysis.loader = profile_analysis.loader;
 			analysis.syscalls = profile_analysis.syscalls;
