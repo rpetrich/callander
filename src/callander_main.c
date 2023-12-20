@@ -1793,7 +1793,10 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			return 0;
 		}
 		tracee = result;
-		analysis.loader.pid = tracee;
+		if (profile_path == NULL) {
+			// analyze with understanding of the child pid if we aren't going to save this analysis as a profile
+			analysis.loader.pid = tracee;
+		}
 		wakeup_child_fd = pipe_fds[1];
 		fs_close(pipe_fds[0]);
 	}
