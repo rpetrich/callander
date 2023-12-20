@@ -75,7 +75,7 @@ enum attach_behavior {
 	ATTACH_STRACE,
 };
 
-#define PROFILE_HEADER_LINE "callander profile 0.0.1"
+#define PROFILE_HEADER_LINE "callander profile 0.0.2"
 
 static void write_profile(const struct loader_context *loader, const struct recorded_syscalls *syscalls, ins_ptr main, const char *path)
 {
@@ -108,8 +108,8 @@ static void write_profile(const struct loader_context *loader, const struct reco
 		goto error_write;
 	}
 	// separator
-	result = fs_write_all(fd, "\n", 1);
-	if (result < 0) {
+	result = fs_write_all(fd, "\n\n", 2);
+	if (result != 2) {
 		goto error_write;
 	}
 	// syscalls
@@ -207,22 +207,44 @@ static struct loaded_binary *parse_and_load_library_line(struct program_state *a
 		free(name);
 		return NULL;
 	}
-	// open the executable
-	char path_buf[PATH_MAX];
-	const char *full_path;
-	int library_fd = find_executable_in_paths(path, NULL, false, analysis->loader.uid, analysis->loader.gid, path_buf, &full_path);
-	if (library_fd < 0) {
+	if (fs_strcmp(name, "[vdso]") == 0 && analysis->loader.vdso != 0) {
 		free(name);
-		return NULL;
-	}
-	int result = load_binary_into_analysis(analysis, name, full_path, library_fd, NULL, &binary);
-	fs_close(library_fd);
-	if (result < 0) {
-		free(name);
-		return NULL;
+		int result = load_binary_into_analysis(analysis, "[vdso]", "[vdso]", -1, (const void *)analysis->loader.vdso, &binary);
+		if (result < 0) {
+			return NULL;
+		}
+	} else {
+		// open the executable
+		char path_buf[PATH_MAX];
+		const char *full_path;
+		int library_fd = find_executable_in_paths(path, NULL, false, analysis->loader.uid, analysis->loader.gid, path_buf, &full_path);
+		if (library_fd < 0) {
+			free(name);
+			return NULL;
+		}
+		int result = load_binary_into_analysis(analysis, name, full_path, library_fd, NULL, &binary);
+		fs_close(library_fd);
+		if (result < 0) {
+			free(name);
+			return NULL;
+		}
 	}
 	binary->special_binary_flags |= special_binary_flags;
-	// TODO: check hash!
+	// check build-id
+	for (size_t i = path_end + 1, j = 16; i < len - 1; i += 2, j++) {
+		if (j == binary->build_id_size) {
+			// mismatch!
+			return NULL;
+		}
+		int hi = fs_hexval(buf[i]);
+		int low = fs_hexval(buf[i + 1]);
+		if (hi < 0 || low < 0) {
+			break;
+		}
+		if (binary->build_id[j] != (char)(hi << 4 | low)) {
+			return NULL;
+		}
+	}
 	return binary;
 }
 
