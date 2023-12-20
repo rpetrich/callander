@@ -1615,6 +1615,8 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		"  --main-function NAME         wait until the specified function is called before applying sandbox\n"\
 		"  --dlopen LIBRARY_PATH        load a specific library at startup, assuming it will be dynamically dlopened after startup\n"\
 		"  --ignore-dlopen              ignore calls to dlopen, assuming libraries will already be preloaded\n"\
+		"  --profile PROFILE_PATH       read and write syscall profile file at specified path\n"\
+		"  --read-profile PROFILE_PATH  read syscall profile file at specified path, rejecting stale profiles\n"\
 		"  --show-permitted             shows permitted syscalls before launching program\n"\
 		"  --attach-gdb                 attaches gdb to the program at startup\n"\
 		"  --                           stop processing command line arguments\n"
