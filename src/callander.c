@@ -9400,10 +9400,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_BIF: {
+			case ARM64_BIF:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
 			case ARM64_BIT: {
 				LOG("bit");
 				break;
@@ -9692,14 +9691,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("clrex");
 				break;
 			}
-			case ARM64_CLS: {
+			case ARM64_CLS:
+			case ARM64_CLZ:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_CLZ: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_CMEQ: {
 				LOG("cmgt");
 				break;
@@ -9851,30 +9846,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_comparison_state(&self.current_state);
 				break;
 			}
-			case ARM64_CNEG: {
+			case ARM64_CNEG:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
 			case ARM64_CNT: {
 				LOG("cnt");
 				break;
 			}
-			case ARM64_CNTB: {
+			case ARM64_CNTB:
+			case ARM64_CNTD:
+			case ARM64_CNTH:
+			case ARM64_CNTW:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_CNTD: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_CNTH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_CNTW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_CPP:
 				// no speculation!
 				break;
@@ -9959,10 +9943,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
 			}
-			case ARM64_CSETM: {
+			case ARM64_CSETM:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
 			case ARM64_CSINC: {
 				// TODO
 				enum ins_operand_size size;
@@ -10046,22 +10029,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_EOR3: {
+			case ARM64_EOR3:
+			case ARM64_EORBT:
+			case ARM64_EORTB:
+			case ARM64_EORV:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_EORBT: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_EORTB: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_EORV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_ERET:
 			case ARM64_ERETAA:
 			case ARM64_ERETAB:
@@ -10176,19 +10149,47 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_FMULX:
 			case ARM64_FMSUB:
 			case ARM64_FNEG:
+			case ARM64_FNMAD:
 			case ARM64_FNMADD:
+			case ARM64_FNMLA:
+			case ARM64_FNMLS:
+			case ARM64_FNMSB:
 			case ARM64_FNMSUB:
 			case ARM64_FNMUL:
 			case ARM64_FRECPE:
 			case ARM64_FRECPS:
+			case ARM64_FRECPX:
+			case ARM64_FRINT32X:
+			case ARM64_FRINT32Z:
+			case ARM64_FRINT64X:
+			case ARM64_FRINT64Z:
 			case ARM64_FRINTA:
 			case ARM64_FRINTI:
+			case ARM64_FRINTN:
 			case ARM64_FRINTM:
 			case ARM64_FRINTP:
 			case ARM64_FRINTX:
 			case ARM64_FRINTZ:
+			case ARM64_FRSQRTE:
+			case ARM64_FRSQRTS:
+			case ARM64_FSCALE:
 			case ARM64_FSUB:
+			case ARM64_FSUBR:
 			case ARM64_FSQRT:
+			case ARM64_FTMAD:
+			case ARM64_FTSMUL:
+			case ARM64_FTSSEL:
+			case ARM64_HISTCNT:
+			case ARM64_HISTSEG:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_HVC:
+				// invalid in userland
+				effects |= EFFECT_EXITS;
+				LOG("completing from hvc", temp_str(copy_address_description(&analysis->loader, self.entry)));
+				goto update_and_return;
+			case ARM64_INCP:
+			case ARM64_INSR:
 			case ARM64_GMI:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
@@ -10201,75 +10202,103 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("completing from hlt", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				goto update_and_return;
 			}
-			case ARM64_IC: {
+			case ARM64_IC:
+			case ARM64_INCB:
+			case ARM64_INCD:
+			case ARM64_INCH:
+			case ARM64_INCW:
+			case ARM64_INDEX:
+			case ARM64_INS:
+			case ARM64_IRG:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_INCB: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_INCD: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_INCH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_INCW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_INDEX: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_INS: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_IRG: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_ISB: {
 				LOG("isb");
 				break;
 			}
+			case ARM64_LASTA:
+			case ARM64_LASTB:
 			case ARM64_LD1:
 			case ARM64_LD1B:
 			case ARM64_LD1D:
 			case ARM64_LD1H:
 			case ARM64_LD1Q:
 			case ARM64_LD1R:
-			case ARM64_LD1W: {
+			case ARM64_LD1RB:
+			case ARM64_LD1RD:
+			case ARM64_LD1RH:
+			case ARM64_LD1ROB:
+			case ARM64_LD1ROD:
+			case ARM64_LD1ROH:
+			case ARM64_LD1ROW:
+			case ARM64_LD1RQB:
+			case ARM64_LD1RQD:
+			case ARM64_LD1RQH:
+			case ARM64_LD1RQW:
+			case ARM64_LD1RSB:
+			case ARM64_LD1RSH:
+			case ARM64_LD1RSW:
+			case ARM64_LD1RW:
+			case ARM64_LD1SB:
+			case ARM64_LD1SH:
+			case ARM64_LD1SW:
+			case ARM64_LD1W:
+			case ARM64_LD2:
+			case ARM64_LD2B:
+			case ARM64_LD2D:
+			case ARM64_LD2H:
+			case ARM64_LD2R:
+			case ARM64_LD2W:
+			case ARM64_LD3:
+			case ARM64_LD3B:
+			case ARM64_LD3D:
+			case ARM64_LD3H:
+			case ARM64_LD3R:
+			case ARM64_LD3W:
+			case ARM64_LD4:
+			case ARM64_LD4B:
+			case ARM64_LD4D:
+			case ARM64_LD4H:
+			case ARM64_LD4R:
+			case ARM64_LD4W:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_LD2: {
+			case ARM64_LD64B:
+				DIE("ld64b instruction is not supported", temp_str(copy_address_description(&analysis->loader, ins)));
+				break;
+			case ARM64_LDFF1B:
+			case ARM64_LDFF1D:
+			case ARM64_LDFF1H:
+			case ARM64_LDFF1SB:
+			case ARM64_LDFF1SH:
+			case ARM64_LDFF1SW:
+			case ARM64_LDFF1W:
+			case ARM64_LDGM:
+			case ARM64_LDNF1B:
+			case ARM64_LDNF1D:
+			case ARM64_LDNF1H:
+			case ARM64_LDNF1SB:
+			case ARM64_LDNF1SH:
+			case ARM64_LDNF1SW:
+			case ARM64_LDNF1W:
+			case ARM64_LDNT1B:
+			case ARM64_LDNT1D:
+			case ARM64_LDNT1H:
+			case ARM64_LDNT1SB:
+			case ARM64_LDNT1SH:
+			case ARM64_LDNT1SW:
+			case ARM64_LDNT1W:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_LD3: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_LD3R: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_LD4: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_LDAXP: {
 				// TODO: handle LDAXP correctly
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
 			case ARM64_LDPSW:
-			case ARM64_LDP: {
+			case ARM64_LDNP:
+			case ARM64_LDP:
+			case ARM64_LDXP: {
 				struct register_state source_state;
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &source_state, NULL);
 				enum ins_operand_size size;
@@ -10354,17 +10383,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_LDAPR:
 			case ARM64_LDAPRB:
-			case ARM64_LDAPRH: {
+			case ARM64_LDAPRH:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
+			case ARM64_LDAPUR:
+			case ARM64_LDAPURB:
+			case ARM64_LDAPURH:
+			case ARM64_LDAPURSB:
+			case ARM64_LDAPURSH:
+			case ARM64_LDAPURSW:
 			case ARM64_LDAR:
 			case ARM64_LDARB:
 			case ARM64_LDARH:
 			case ARM64_LDAXR:
 			case ARM64_LDAXRB:
 			case ARM64_LDAXRH:
+			case ARM64_LDLAR:
+			case ARM64_LDLARB:
+			case ARM64_LDLARH:
 			case ARM64_LDR:
+			case ARM64_LDRAA:
+			case ARM64_LDRAB:
 			case ARM64_LDRB:
 			case ARM64_LDRH:
 			case ARM64_LDXR:
@@ -10376,16 +10415,31 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				}
 				enum ins_operand_size mem_size;
+				bool is_signed = false;
 				switch (decoded.decomposed.operation) {
+					case ARM64_LDAPURB:
+					case ARM64_LDAPURSB:
+						is_signed = true;
+						// fallthrough
 					case ARM64_LDARB:
+					case ARM64_LDLARB:
 					case ARM64_LDXRB:
 					case ARM64_LDAXRB:
 						mem_size = OPERATION_SIZE_BYTE;
 						break;
+					case ARM64_LDAPURH:
+					case ARM64_LDAPURSH:
+						is_signed = true;
+						// fallthrough
 					case ARM64_LDARH:
+					case ARM64_LDLARH:
 					case ARM64_LDXRH:
 					case ARM64_LDAXRH:
 						mem_size = OPERATION_SIZE_HALF;
+						break;
+					case ARM64_LDAPURSW:
+						is_signed = true;
+						mem_size = OPERATION_SIZE_WORD;
 						break;
 					default:
 						mem_size = size;
@@ -10398,6 +10452,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("from", name_for_register(source));
 					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
 					truncate_to_operand_size(&source_state, mem_size);
+					if (is_signed) {
+						sign_extend_from_operand_size(&source_state, mem_size);
+					}
 					truncate_to_operand_size(&source_state, size);
 					self.current_state.registers[dest] = source_state;
 					if (register_is_partially_known(&source_state)) {
@@ -10558,8 +10615,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												set_register(&copy.registers[r], i);
 											}
 										}
-										uintptr_t value = read_memory((const void *)source_single_state.value, mem_size) & mask_for_operand_size(size);
+										uintptr_t value = (is_signed ? read_memory_signed((const void *)source_single_state.value, mem_size) : read_memory((const void *)source_single_state.value, mem_size)) & mask_for_operand_size(size);
 										set_register(&copy.registers[dest], value);
+										truncate_to_operand_size(&copy.registers[dest], size);
 										if (mem_size == OPERATION_SIZE_DWORD && (protection_for_address(&analysis->loader, (ins_ptr)value, &binary, NULL) & PROT_EXEC) == 0) {
 											LOG("discovered non-executable address, cancelling lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
 											goto cancel_lookup_table;
@@ -10661,10 +10719,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(loaded));
 				goto skip_stack_clear;
 			}
-			case ARM64_LDG: {
+			case ARM64_LDG:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
 			case ARM64_LDSET:
 			case ARM64_LDSETA:
 			case ARM64_LDSETAL:
@@ -10690,6 +10747,34 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(loaded));
 				goto skip_stack_clear;
 			}
+			case ARM64_LDSMAX:
+			case ARM64_LDSMAXA:
+			case ARM64_LDSMAXAB:
+			case ARM64_LDSMAXAH:
+			case ARM64_LDSMAXAL:
+			case ARM64_LDSMAXALB:
+			case ARM64_LDSMAXALH:
+			case ARM64_LDSMAXB:
+			case ARM64_LDSMAXH:
+			case ARM64_LDSMAXL:
+			case ARM64_LDSMAXLB:
+			case ARM64_LDSMAXLH:
+				DIE("ldsmax* instruction is not supported", temp_str(copy_address_description(&analysis->loader, ins)));
+				break;
+			case ARM64_LDSMIN:
+			case ARM64_LDSMINA:
+			case ARM64_LDSMINAB:
+			case ARM64_LDSMINAH:
+			case ARM64_LDSMINAL:
+			case ARM64_LDSMINALB:
+			case ARM64_LDSMINALH:
+			case ARM64_LDSMINB:
+			case ARM64_LDSMINH:
+			case ARM64_LDSMINL:
+			case ARM64_LDSMINLB:
+			case ARM64_LDSMINLH:
+				DIE("ldsmin* instruction is not supported", temp_str(copy_address_description(&analysis->loader, ins)));
+				break;
 			case ARM64_LDRSB:
 			case ARM64_LDRSH:
 			case ARM64_LDRSW: {
@@ -10849,6 +10934,42 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
 			}
+			case ARM64_LDTR:
+			case ARM64_LDTRB:
+			case ARM64_LDTRH:
+			case ARM64_LDTRSB:
+			case ARM64_LDTRSH:
+			case ARM64_LDTRSW:
+				DIE("ldtr* instruction is not supported", temp_str(copy_address_description(&analysis->loader, ins)));
+				break;
+			case ARM64_LDUMAX:
+			case ARM64_LDUMAXA:
+			case ARM64_LDUMAXAB:
+			case ARM64_LDUMAXAH:
+			case ARM64_LDUMAXAL:
+			case ARM64_LDUMAXALB:
+			case ARM64_LDUMAXALH:
+			case ARM64_LDUMAXB:
+			case ARM64_LDUMAXH:
+			case ARM64_LDUMAXL:
+			case ARM64_LDUMAXLB:
+			case ARM64_LDUMAXLH:
+				DIE("ldumax* instruction is not supported", temp_str(copy_address_description(&analysis->loader, ins)));
+				break;
+			case ARM64_LDUMIN:
+			case ARM64_LDUMINA:
+			case ARM64_LDUMINAB:
+			case ARM64_LDUMINAH:
+			case ARM64_LDUMINAL:
+			case ARM64_LDUMINALB:
+			case ARM64_LDUMINALH:
+			case ARM64_LDUMINB:
+			case ARM64_LDUMINH:
+			case ARM64_LDUMINL:
+			case ARM64_LDUMINLB:
+			case ARM64_LDUMINLH:
+				DIE("ldumin* instruction is not supported", temp_str(copy_address_description(&analysis->loader, ins)));
+				break;
 			case ARM64_LDUR: {
 				enum ins_operand_size size;
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
@@ -10936,6 +11057,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
+			case ARM64_LSLR:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
 			case ARM64_LSR:
 			case ARM64_LSRV: {
 				struct additional_result additional;
@@ -10947,22 +11071,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_MADD: {
+			case ARM64_LSRR:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_MLA: {
+			case ARM64_MAD:
+			case ARM64_MADD:
+			case ARM64_MATCH:
+			case ARM64_MLA:
+			case ARM64_MLS:
+			case ARM64_MNEG:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_MLS: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_MNEG: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_MOV: {
 				enum ins_operand_size size;
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
@@ -10985,10 +11104,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				pending_stack_clear &= ~mask_for_register(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_MOVI: {
-				LOG("movi");
+			case ARM64_MOVA:
+			case ARM64_MOVI:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
 			case ARM64_MOVK: {
 				// TODO: support movk properly overriding only the appropriate bits
 				enum ins_operand_size size;
@@ -11022,60 +11141,75 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				pending_stack_clear &= ~mask_for_register(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_MOVN: {
+			case ARM64_MOVPRFX:
+				// prefixes!? in my riscy ISA?
+				break;
+			case ARM64_MOVN:
+			case ARM64_MOVS:
+			case ARM64_MOVZ:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_MOVZ: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_MRS: {
+				// move system register clears output reg
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			}
-			case ARM64_MSUB: {
+			case ARM64_MSB:
+			case ARM64_MSUB:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
 			case ARM64_MSR: {
 				LOG("msr");
 				break;
 			}
-			case ARM64_MUL: {
+			case ARM64_MUL:
+			case ARM64_MVN:
+			case ARM64_MVNI:
+			case ARM64_NAND:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_MVN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_MVNI: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_NEG: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_NEGS: {
+			case ARM64_NANDS:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
 				break;
-			}
-			case ARM64_NGC: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_NGCS: {
+			case ARM64_NBSL:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
 				break;
-			}
+			case ARM64_NEG:
+			case ARM64_NEGS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_NGC:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_NGCS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_NMATCH:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
 			case ARM64_NOP: {
 				LOG("nop");
 				break;
 			}
+			case ARM64_NOR:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_NORS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_NOT:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_NOTS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
 			case ARM64_ORR: {
 				struct additional_result additional;
 				int dest = perform_basic_op("orr", basic_op_or, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
@@ -11114,6 +11248,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
+			case ARM64_ORV:
+			case ARM64_PACGA:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
 			case ARM64_PACDA:
 			case ARM64_PACDB:
 			case ARM64_PACDZA:
@@ -11131,71 +11269,93 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("pac");
 				break;
 			}
-			case ARM64_PMULL: {
+			case ARM64_PFALSE:
+			case ARM64_PFIRST:
+			case ARM64_PMUL:
+			case ARM64_PMULL:
+			case ARM64_PMULL2:
+			case ARM64_PMULLB:
+			case ARM64_PMULLT:
+			case ARM64_PNEXT:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_PMULL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+			case ARM64_PRFB:
+				LOG("prfb");
 				break;
-			}
-			case ARM64_PRFM: {
+			case ARM64_PRFD:
+				LOG("prfd");
+				break;
+			case ARM64_PRFH:
+				LOG("prfh");
+				break;
+			case ARM64_PRFM:
 				LOG("prfm");
 				break;
-			}
-			case ARM64_PRFUM: {
+			case ARM64_PRFUM:
 				LOG("prfum");
 				break;
-			}
-			case ARM64_PSB: {
+			case ARM64_PRFW:
+				LOG("prfw");
+				break;
+			case ARM64_PSB:
 				LOG("psb");
 				break;
-			}
-			case ARM64_PTRUE: {
+			case ARM64_PSSBB:
+				LOG("pssbb");
+				break;
+			case ARM64_PTEST:
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_PTRUE:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_PTRUES: {
+			case ARM64_PTRUES:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
 				break;
-			}
-			case ARM64_RBIT: {
+			case ARM64_PUNPKHI:
+			case ARM64_PUNPKLO:
+			case ARM64_RADDHN:
+			case ARM64_RADDHN2:
+			case ARM64_RADDHNB:
+			case ARM64_RADDHNT:
+			case ARM64_RAX1:
+			case ARM64_RBIT:
+			case ARM64_RDFFR:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_REV16: {
+			case ARM64_RDFFRS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_RDVL:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_REV32: {
+			case ARM64_RET:
+			case ARM64_RETAA:
+			case ARM64_RETAB:
+				// handled earlier in is_return_ins check
+				UNSUPPORTED_INSTRUCTION();
+				break;
+			case ARM64_REV16:
+			case ARM64_REV32:
+			case ARM64_REV64:
+			case ARM64_REV:
+			case ARM64_REVB:
+			case ARM64_REVD:
+			case ARM64_REVH:
+			case ARM64_REVW:
+			case ARM64_RMIF:
+			case ARM64_RSHRN:
+			case ARM64_RSHRN2:
+			case ARM64_RSHRNB:
+			case ARM64_RSHRNT:
+			case ARM64_RSUBHN:
+			case ARM64_RSUBHN2:
+			case ARM64_RSUBHNB:
+			case ARM64_RSUBHNT:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_REV64: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_REV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_REVB: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_REVD: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_REVH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_REVW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_ROR:
 			case ARM64_RORV: {
 				struct additional_result additional;
@@ -11206,395 +11366,232 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_SADDL: {
+			case ARM64_SABA:
+			case ARM64_SABAL:
+			case ARM64_SABAL2:
+			case ARM64_SABALB:
+			case ARM64_SABALT:
+			case ARM64_SABD:
+			case ARM64_SABDL:
+			case ARM64_SABDL2:
+			case ARM64_SABDLB:
+			case ARM64_SABDLT:
+			case ARM64_SADALP:
+			case ARM64_SADDL:
+			case ARM64_SADDL2:
+			case ARM64_SADDLB:
+			case ARM64_SADDLBT:
+			case ARM64_SADDLP:
+			case ARM64_SADDLT:
+			case ARM64_SADDLV:
+			case ARM64_SADDW:
+			case ARM64_SADDWB:
+			case ARM64_SADDWT:
+			case ARM64_SADDW2:
+			case ARM64_SADDV:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_SADDL2: {
+			case ARM64_SB:
+				LOG("sb");
+				break;
+			case ARM64_SBC:
+			case ARM64_SBCLB:
+			case ARM64_SBCLT:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_SADDW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SADDW2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SADDV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SBC: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SBCS: {
+			case ARM64_SBCS:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
 				break;
-			}
-			case ARM64_SBFIZ: {
+			case ARM64_SBFIZ:
+			case ARM64_SBFM:
+			case ARM64_SBFX:
+			case ARM64_SCLAMP:
+			case ARM64_SDIV:
+			case ARM64_SDIVR:
+			case ARM64_SDOT:
+			case ARM64_SEL:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_SBFM: {
+			case ARM64_SETF16:
+			case ARM64_SETF8:
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_SETFFR:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_SBFX: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SDIV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SEV: {
+			case ARM64_SEV:
 				LOG("sev");
 				break;
-			}
-			case ARM64_SEVL: {
+			case ARM64_SEVL:
 				LOG("sevl");
 				break;
-			}
-			case ARM64_SHA1C: {
+			case ARM64_SHA1C:
+			case ARM64_SHA1H:
+			case ARM64_SHA1M:
+			case ARM64_SHA1P:
+			case ARM64_SHA1SU0:
+			case ARM64_SHA1SU1:
+			case ARM64_SHA256SU0:
+			case ARM64_SHA256SU1:
+			case ARM64_SHA256H:
+			case ARM64_SHA256H2:
+			case ARM64_SHA512SU0:
+			case ARM64_SHA512SU1:
+			case ARM64_SHA512H:
+			case ARM64_SHA512H2:
+			case ARM64_SHADD:
+			case ARM64_SHL:
+			case ARM64_SHLL:
+			case ARM64_SHLL2:
+			case ARM64_SHRN:
+			case ARM64_SHRN2:
+			case ARM64_SHRNB:
+			case ARM64_SHRNT:
+			case ARM64_SHSUB:
+			case ARM64_SHSUBR:
+			case ARM64_SLI:
+			case ARM64_SM3PARTW1:
+			case ARM64_SM3PARTW2:
+			case ARM64_SM3SS1:
+			case ARM64_SM3TT1A:
+			case ARM64_SM3TT1B:
+			case ARM64_SM3TT2A:
+			case ARM64_SM3TT2B:
+			case ARM64_SM4E:
+			case ARM64_SM4EKEY:
+			case ARM64_SMAX:
+			case ARM64_SMAXP:
+			case ARM64_SMAXV:
+			case ARM64_SMADDL:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_SMC:
+				// invalid in userland
+				effects |= EFFECT_EXITS;
+				LOG("completing from hvc", temp_str(copy_address_description(&analysis->loader, self.entry)));
+				goto update_and_return;
+			case ARM64_SMIN:
+			case ARM64_SMINP:
+			case ARM64_SMINV:
+			case ARM64_SMLAL:
+			case ARM64_SMLAL2:
+			case ARM64_SMLALB:
+			case ARM64_SMLALT:
+			case ARM64_SMLSL:
+			case ARM64_SMLSL2:
+			case ARM64_SMLSLB:
+			case ARM64_SMLSLT:
+			case ARM64_SMMLA:
+			case ARM64_SMNEGL:
+			case ARM64_SMOPA:
+			case ARM64_SMOPS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_SMSTART:
+				LOG("smstart");
+				break;
+			case ARM64_SMSTOP:
+				LOG("smstop");
+				break;
+			case ARM64_SMOV:
+			case ARM64_SMSUBL:
+			case ARM64_SMULH:
+			case ARM64_SMULL:
+			case ARM64_SMULL2:
+			case ARM64_SMULLB:
+			case ARM64_SMULLT:
+			case ARM64_SPLICE:
+			case ARM64_SQABS:
+			case ARM64_SQADD:
+			case ARM64_SQCADD:
+			case ARM64_SQDECB:
+			case ARM64_SQDECD:
+			case ARM64_SQDECH:
+			case ARM64_SQDECP:
+			case ARM64_SQDECW:
+			case ARM64_SQDMLAL:
+			case ARM64_SQDMLAL2:
+			case ARM64_SQDMLALB:
+			case ARM64_SQDMLALBT:
+			case ARM64_SQDMLALT:
+			case ARM64_SQDMLSL:
+			case ARM64_SQDMLSL2:
+			case ARM64_SQDMLSLB:
+			case ARM64_SQDMLSLBT:
+			case ARM64_SQDMLSLT:
+			case ARM64_SQDMULH:
+			case ARM64_SQDMULL:
+			case ARM64_SQDMULL2:
+			case ARM64_SQDMULLB:
+			case ARM64_SQDMULLT:
+			case ARM64_SQINCB:
+			case ARM64_SQINCD:
+			case ARM64_SQINCH:
+			case ARM64_SQINCP:
+			case ARM64_SQINCW:
+			case ARM64_SQNEG:
+			case ARM64_SQRDCMLAH:
+			case ARM64_SQRDMLAH:
+			case ARM64_SQRDMLSH:
+			case ARM64_SQRDMULH:
+			case ARM64_SQRSHL:
+			case ARM64_SQRSHLR:
+			case ARM64_SQRSHRN:
+			case ARM64_SQRSHRN2:
+			case ARM64_SQRSHRNB:
+			case ARM64_SQRSHRNT:
+			case ARM64_SQRSHRUN:
+			case ARM64_SQRSHRUN2:
+			case ARM64_SQRSHRUNB:
+			case ARM64_SQRSHRUNT:
+			case ARM64_SQSHL:
+			case ARM64_SQSHLR:
+			case ARM64_SQSHLU:
+			case ARM64_SQSHRN:
+			case ARM64_SQSHRN2:
+			case ARM64_SQSHRNB:
+			case ARM64_SQSHRNT:
+			case ARM64_SQSHRUN:
+			case ARM64_SQSHRUN2:
+			case ARM64_SQSHRUNB:
+			case ARM64_SQSHRUNT:
+			case ARM64_SQSUB:
+			case ARM64_SQSUBR:
+			case ARM64_SQXTN:
+			case ARM64_SQXTN2:
+			case ARM64_SQXTNB:
+			case ARM64_SQXTNT:
+			case ARM64_SQXTUN:
+			case ARM64_SQXTUN2:
+			case ARM64_SQXTUNB:
+			case ARM64_SQXTUNT:
+			case ARM64_SRHADD:
+			case ARM64_SRI:
+			case ARM64_SRSHL:
+			case ARM64_SRSHLR:
+			case ARM64_SRSHR:
+			case ARM64_SRSRA:
+			case ARM64_SSBB:
+			case ARM64_SSHL:
+			case ARM64_SSHLL:
+			case ARM64_SSHLL2:
+			case ARM64_SSHLLB:
+			case ARM64_SSHLLT:
+			case ARM64_SSHR:
+			case ARM64_SSRA:
+			case ARM64_SSUBL:
+			case ARM64_SSUBL2:
+			case ARM64_SSUBLB:
+			case ARM64_SSUBLBT:
+			case ARM64_SSUBLT:
+			case ARM64_SSUBLTB:
+			case ARM64_SSUBW:
+			case ARM64_SSUBW2:
+			case ARM64_SSUBWB:
+			case ARM64_SSUBWT:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_SHA1H: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA1M: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA1P: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA1SU0: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA1SU1: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA256SU0: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA256SU1: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA256H: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA256H2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA512SU0: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA512SU1: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA512H: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHA512H2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHLL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHLL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHRN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SHRN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SLI: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3PARTW1: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3PARTW2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3SS1: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3TT1A: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3TT1B: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3TT2A: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM3TT2B: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM4E: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SM4EKEY: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMAX: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMAXP: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMAXV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMADDL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMIN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMINP: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMINV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMNEGL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMOV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMSUBL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMULH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMULL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SMULL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQABS: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQADD: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMLAL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMLAL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMLSL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMLSL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMULH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMULL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQDMULL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQNEG: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRDMLAH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRDMLSH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRDMULH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRSHL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRSHLR: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRSHRN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRSHRN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRSHRUN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQRSHRUN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSHL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSHLU: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSHRN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSHRN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSHRUN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSHRUN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQSUB: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQXTN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SQXTN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SRHADD: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SRI: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SRSHL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SRSHR: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SRSRA: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSHL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSHLL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSHLL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSHR: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSRA: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSUBL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSUBL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSUBW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_SSUBW2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_ST1:
 			case ARM64_ST1B:
 			case ARM64_ST1D:
@@ -11629,6 +11626,39 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("st2, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
+			case ARM64_ST64B:
+			case ARM64_ST64BV:
+			case ARM64_ST64BV0:
+				LOG("st64b*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STADD:
+			case ARM64_STADDB:
+			case ARM64_STADDH:
+			case ARM64_STADDL:
+			case ARM64_STADDLB:
+			case ARM64_STADDLH:
+				LOG("stadd*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STCLR:
+			case ARM64_STCLRB:
+			case ARM64_STCLRH:
+			case ARM64_STCLRL:
+			case ARM64_STCLRLB:
+			case ARM64_STCLRLH:
+				LOG("stclr*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STEOR:
+			case ARM64_STEORB:
+			case ARM64_STEORH:
+			case ARM64_STEORL:
+			case ARM64_STEORLB:
+			case ARM64_STEORLH:
+				LOG("steor*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
 			case ARM64_STG: {
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
@@ -11644,6 +11674,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
 			}
+			case ARM64_STLLR:
+			case ARM64_STLLRB:
+			case ARM64_STLLRH:
+			case ARM64_STLUR:
+			case ARM64_STLURB:
+			case ARM64_STLURH:
+				LOG("stl*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
 			case ARM64_STP: {
 				enum ins_operand_size size;
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &dest_state, &size);
@@ -11697,6 +11736,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("stnp, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
+			case ARM64_STNT1B:
+			case ARM64_STNT1D:
+			case ARM64_STNT1H:
+			case ARM64_STNT1W:
+				LOG("stnt1*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
 			case ARM64_STR: {
 				enum ins_operand_size size;
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, &size);
@@ -11730,6 +11776,57 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("strh, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
+			case ARM64_STSET:
+			case ARM64_STSETB:
+			case ARM64_STSETH:
+			case ARM64_STSETL:
+			case ARM64_STSETLB:
+			case ARM64_STSETLH:
+				LOG("stset*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STSMAX:
+			case ARM64_STSMAXB:
+			case ARM64_STSMAXH:
+			case ARM64_STSMAXL:
+			case ARM64_STSMAXLB:
+			case ARM64_STSMAXLH:
+				LOG("stsmax*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STSMIN:
+			case ARM64_STSMINB:
+			case ARM64_STSMINH:
+			case ARM64_STSMINL:
+			case ARM64_STSMINLB:
+			case ARM64_STSMINLH:
+				LOG("stsmin*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STTR:
+			case ARM64_STTRB:
+			case ARM64_STTRH:
+				LOG("sttr*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STUMAX:
+			case ARM64_STUMAXB:
+			case ARM64_STUMAXH:
+			case ARM64_STUMAXL:
+			case ARM64_STUMAXLB:
+			case ARM64_STUMAXLH:
+				LOG("stumax*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
+			case ARM64_STUMIN:
+			case ARM64_STUMINB:
+			case ARM64_STUMINH:
+			case ARM64_STUMINL:
+			case ARM64_STUMINLB:
+			case ARM64_STUMINLH:
+				LOG("stumin*, memory not supported yet");
+				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				break;
 			case ARM64_STUR:
 				LOG("stur, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
@@ -11744,9 +11841,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_STXR:
 			case ARM64_STXRB:
 			case ARM64_STXRH:
+			case ARM64_STXP:
 			case ARM64_STLXR:
 			case ARM64_STLXRB:
-			case ARM64_STLXRH: {
+			case ARM64_STLXRH:
+			case ARM64_STLXP: {
 				LOG("stlxr, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				// TODO
@@ -11797,6 +11896,21 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				pending_stack_clear &= ~mask_for_register(dest);
 				goto skip_stack_clear;
 			}
+			case ARM64_SUBG:
+			case ARM64_SUBHN:
+			case ARM64_SUBHN2:
+			case ARM64_SUBHNB:
+			case ARM64_SUBHNT:
+			case ARM64_SUBP:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_SUBPS:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_SUBR:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
 			case ARM64_SUBS: {
 				struct additional_result additional;
 				enum ins_operand_size size;
@@ -11809,6 +11923,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				pending_stack_clear &= ~mask_for_register(dest);
 				goto skip_stack_clear;
 			}
+			case ARM64_SUDOT:
+			case ARM64_SUMOPA:
+			case ARM64_SUMOPS:
+			case ARM64_SUNPKHI:
+			case ARM64_SUNPKLO:
+			case ARM64_SUQADD:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
 			case ARM64_SVC: {
 				clear_comparison_state(&self.current_state);
 				if (register_is_exactly_known(&self.current_state.registers[REGISTER_SYSCALL_NR])) {
@@ -12062,249 +12184,223 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto skip_stack_clear;
 				break;
 			}
-			case ARM64_SXTL: {
+			case ARM64_SXTL:
+			case ARM64_SXTL2:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_SXTL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_SYS: {
 				LOG("sys");
 				break;
 			}
-			case ARM64_SYSL: {
+			case ARM64_SYSL:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_TBX: {
+			case ARM64_TBNZ:
+			case ARM64_TBZ:
+				// handled in aarch64_decode_jump_instruction
+				UNSUPPORTED_INSTRUCTION();
+				break;
+			case ARM64_TBX:
+			case ARM64_TBL:
+			case ARM64_TCANCEL:
+			case ARM64_TCOMMIT:
+			case ARM64_TSTART:
+			case ARM64_TTEST:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_TBL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
 			case ARM64_TLBI: {
 				LOG("tlbi");
 				break;
 			}
-			case ARM64_TRN1: {
+			case ARM64_TRN1:
+			case ARM64_TRN2:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_TRN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+			case ARM64_TSB:
+				LOG("tsb");
 				break;
-			}
-			case ARM64_TST: {
+			case ARM64_TST:
 				// TODO
 				clear_comparison_state(&self.current_state);
 				break;
-			}
-			case ARM64_UADALP: {
+			case ARM64_UABA:
+			case ARM64_UABAL:
+			case ARM64_UABAL2:
+			case ARM64_UABALB:
+			case ARM64_UABALT:
+			case ARM64_UABD:
+			case ARM64_UABDL:
+			case ARM64_UABDL2:
+			case ARM64_UABDLB:
+			case ARM64_UABDLT:
+			case ARM64_UADALP:
+			case ARM64_UADDL:
+			case ARM64_UADDL2:
+			case ARM64_UADDLB:
+			case ARM64_UADDLT:
+			case ARM64_UADDLP:
+			case ARM64_UADDLV:
+			case ARM64_UADDV:
+			case ARM64_UADDW:
+			case ARM64_UADDW2:
+			case ARM64_UADDWB:
+			case ARM64_UADDWT:
+			case ARM64_UBFIZ:
+			case ARM64_UBFM:
+			case ARM64_UBFX:
+			case ARM64_UCLAMP:
+			case ARM64_UCVTF:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_UADDLP: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UADDLV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UADDW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UADDW2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UBFIZ: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UBFM: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UBFX: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UCVTF: {
-				LOG("ucvtf");
-				break;
-			}
-			case ARM64_UDF: {
+			case ARM64_UDF:
 				LOG("udf");
 				break;
-			}
-			case ARM64_UDIV: {
+			case ARM64_UDIV:
+			case ARM64_UDIVR:
+			case ARM64_UDOT:
+			case ARM64_UHADD:
+			case ARM64_UHSUB:
+			case ARM64_UHSUBR:
+			case ARM64_UMADDL:
+			case ARM64_UMLALB:
+			case ARM64_UMLALT:
+			case ARM64_UMLSL:
+			case ARM64_UMLSL2:
+			case ARM64_UMLSLB:
+			case ARM64_UMLSLT:
+			case ARM64_UMAX:
+			case ARM64_UMAXP:
+			case ARM64_UMAXV:
+			case ARM64_UMIN:
+			case ARM64_UMINP:
+			case ARM64_UMINV:
+			case ARM64_UMMLA:
+			case ARM64_UMOPA:
+			case ARM64_UMOPS:
+			case ARM64_UMOV:
+			case ARM64_UMLAL:
+			case ARM64_UMLAL2:
+			case ARM64_UMNEGL:
+			case ARM64_UMSUBL:
+			case ARM64_UMULH:
+			case ARM64_UMULL:
+			case ARM64_UMULL2:
+			case ARM64_UMULLB:
+			case ARM64_UMULLT:
+			case ARM64_UQADD:
+			case ARM64_UQDECB:
+			case ARM64_UQDECD:
+			case ARM64_UQDECH:
+			case ARM64_UQDECP:
+			case ARM64_UQDECW:
+			case ARM64_UQINCB:
+			case ARM64_UQINCD:
+			case ARM64_UQINCH:
+			case ARM64_UQINCP:
+			case ARM64_UQINCW:
+			case ARM64_UQRSHL:
+			case ARM64_UQRSHLR:
+			case ARM64_UQRSHRN:
+			case ARM64_UQRSHRN2:
+			case ARM64_UQRSHRNB:
+			case ARM64_UQRSHRNT:
+			case ARM64_UQSHL:
+			case ARM64_UQSHLR:
+			case ARM64_UQSHRN:
+			case ARM64_UQSHRN2:
+			case ARM64_UQSHRNB:
+			case ARM64_UQSHRNT:
+			case ARM64_UQSUB:
+			case ARM64_UQSUBR:
+			case ARM64_UQXTN:
+			case ARM64_UQXTN2:
+			case ARM64_UQXTNB:
+			case ARM64_UQXTNT:
+			case ARM64_URECPE:
+			case ARM64_URHADD:
+			case ARM64_URSHL:
+			case ARM64_URSHLR:
+			case ARM64_URSHR:
+			case ARM64_URSQRTE:
+			case ARM64_URSRA:
+			case ARM64_USDOT:
+			case ARM64_USHL:
+			case ARM64_USHLL:
+			case ARM64_USHLL2:
+			case ARM64_USHLLB:
+			case ARM64_USHLLT:
+			case ARM64_USHR:
+			case ARM64_USMMLA:
+			case ARM64_USMOPA:
+			case ARM64_USMOPS:
+			case ARM64_USQADD:
+			case ARM64_USUBL:
+			case ARM64_USUBL2:
+			case ARM64_USUBLB:
+			case ARM64_USUBLT:
+			case ARM64_USUBWB:
+			case ARM64_USUBWT:
+			case ARM64_USRA:
+			case ARM64_USUBW:
+			case ARM64_USUBW2:
+			case ARM64_UUNPKHI:
+			case ARM64_UUNPKLO:
+			case ARM64_UXTB:
+			case ARM64_UXTH:
+			case ARM64_UXTL:
+			case ARM64_UXTL2:
+			case ARM64_UXTW:
+			case ARM64_UZP1:
+			case ARM64_UZP2:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_UMADDL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMAX: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMAXP: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMAXV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMIN: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMINP: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMINV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMOV: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMLAL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMLAL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMNEGL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMSUBL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMULH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMULL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UMULL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USHL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USHLL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USHLL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USHR: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USRA: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USUBW: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_USUBW2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UXTB: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UXTH: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UXTL: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UXTL2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UZP1: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_UZP2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_WFE: {
+			case ARM64_WFE:
+			case ARM64_WFET:
 				LOG("wfe");
 				break;
-			}
-			case ARM64_WFI: {
+			case ARM64_WFI:
+			case ARM64_WFIT:
 				LOG("wfi");
 				break;
-			}
-			case ARM64_XAR: {
+			case ARM64_WHILEGE:
+			case ARM64_WHILEGT:
+			case ARM64_WHILEHI:
+			case ARM64_WHILEHS:
+			case ARM64_WHILELE:
+			case ARM64_WHILELO:
+			case ARM64_WHILELS:
+			case ARM64_WHILELT:
+			case ARM64_WHILERW:
+			case ARM64_WHILEWR:
+			case ARM64_WRFFR:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_XPACD: {
+			case ARM64_XAFLAG:
+				clear_comparison_state(&self.current_state);
+				break;
+			case ARM64_XAR:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_XPACD:
 				LOG("xpacd");
 				break;
-			}
-			case ARM64_XPACI: {
+			case ARM64_XPACI:
 				LOG("xpaci");
 				break;
-			}
-			case ARM64_XPACLRI: {
+			case ARM64_XPACLRI:
 				LOG("xpaclri");
 				break;
-			}
-			case ARM64_XTN: {
+			case ARM64_XTN:
+			case ARM64_XTN2:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			}
-			case ARM64_XTN2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_YIELD: {
+			case ARM64_YIELD:
 				LOG("yield");
 				break;
-			}
-			case ARM64_ZIP1: {
+			case ARM64_ZERO:
+			case ARM64_ZIP1:
+			case ARM64_ZIP2:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			case ARM64_ZIP2: {
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
-			}
-			default:
-				UNSUPPORTED_INSTRUCTION();
 				break;
 		}
 #else
