@@ -9146,6 +9146,38 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
+					} else if (prot & PROT_READ) {
+						if ((effects & EFFECT_ENTER_CALLS) == 0) {
+							if (analysis->address_loaded != NULL) {
+								analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
+							}
+						} else {
+							add_loaded_address(&analysis->search, (uintptr_t)address);
+							LOG("rip-relative lea is to readable address, assuming it is data");
+							struct address_and_size symbol;
+							if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
+								if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+									analysis->loader.searching_libcrypto_dlopen = true;
+								}
+								typedef uintptr_t unaligned_uintptr __attribute__((aligned(1)));
+								const unaligned_uintptr *symbol_data = (const unaligned_uintptr *)symbol.address;
+								int size = symbol.size / sizeof(uintptr_t);
+								for (int i = 0; i < size; i++) {
+									uintptr_t data = symbol_data[i];
+									if (address_is_call_aligned(data) && protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
+										LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
+										LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
+										self.description = "load address";
+										struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
+										analyze_function(analysis, effects, &empty_registers, (ins_ptr)data, &new_caller);
+									}
+								}
+								if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+									analyze_libcrypto_dlopen(analysis);
+									analysis->loader.searching_libcrypto_dlopen = false;
+								}
+							}
+						}
 					}
 				}
 				goto skip_stack_clear;
@@ -9446,6 +9478,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= DEFAULT_EFFECTS;
+				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
+					LOG("skipping call when searching for address loads");
+					analysis->skipped_call = (ins_ptr)dest;
 				} else {
 					self.description = "bl";
 					more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
@@ -9500,6 +9535,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("address isn't exactly known, assuming all effects");
 					// could have any effect
 					// effects |= DEFAULT_EFFECTS;
+				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
+					LOG("skipping call when searching for address loads");
+					analysis->skipped_call = (ins_ptr)dest_state.value;
 				} else {
 					ins_ptr dest = (ins_ptr)dest_state.value;
 					LOG("found blr", temp_str(copy_function_call_description(&analysis->loader, dest, self.current_state)));
@@ -13577,9 +13615,15 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 			LOG("at", temp_str(copy_address_description(&analysis->loader, func)));
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = function_pointer_ignore_sources[i].name, .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analyze_function_for_ignored_load(analysis, &new_caller.current_state, func, &new_caller, function_pointer_ignore_sources[i].size);
-			if (function_pointer_ignore_sources[i].inner_call && analysis->skipped_call) {
-				new_caller.current_state = empty_registers;
-				analyze_function_for_ignored_load(analysis, &new_caller.current_state, analysis->skipped_call, &new_caller, function_pointer_ignore_sources[i].size);
+			if (function_pointer_ignore_sources[i].inner_call) {
+				if (analysis->skipped_call) {
+					LOG("found skipped call in", function_pointer_ignore_sources[i].name);
+					LOG("to", temp_str(copy_address_description(&analysis->loader, analysis->skipped_call)));
+					new_caller.current_state = empty_registers;
+					analyze_function_for_ignored_load(analysis, &new_caller.current_state, analysis->skipped_call, &new_caller, function_pointer_ignore_sources[i].size);
+				} else {
+					LOG("missing skipped call in", function_pointer_ignore_sources[i].name);
+				}
 			}
 			analysis->skipped_call = NULL;
 		}
