@@ -123,7 +123,6 @@ accept(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 accept(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

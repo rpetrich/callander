@@ -59,6 +59,7 @@ pread64(STDIN_FILENO-0xfffffffffffffffe, any, non-NULL, any) @ libc.so.6+0xcfff0
 pread64(any, any, 400, any) @ libc.so.6+0xd7030(__pread64_nocancel+8)
 ppoll(any, 1, any, 0, 0) @ libc.so.6+0xd6298(poll+144)
 ppoll(any, any, any, 0, 0) @ libc.so.6+0xd62fc(poll+244)
+readlinkat(AT_FDCWD, any, non-NULL, 511) @ libc.so.6+0xd3984(readlink+28)
 readlinkat(AT_FDCWD, non-NULL, any, 4095) @ libc.so.6+0xd3984(readlink+28)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xd1098(__xstat+16)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd1158(__lxstat64+16)

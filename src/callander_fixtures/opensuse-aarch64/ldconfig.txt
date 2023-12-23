@@ -40,6 +40,7 @@ pread64(any, any, any, any) @ /sbin/ldconfig:0x454618
 ppoll(any, 1, any, 0, 0) @ /sbin/ldconfig:0x466bd8
 ppoll(any, any, any, 0, 0) @ /sbin/ldconfig:0x466c3c
 readlinkat(AT_FDCWD, any, any, 4095) @ /sbin/ldconfig:0x43034c
+readlinkat(AT_FDCWD, any, non-NULL, 511) @ /sbin/ldconfig:0x43034c
 readlinkat(AT_FDCWD, /sbin/ldconfig:0x474130, any, 0x1000) @ /sbin/ldconfig:0x462718
 newfstatat(AT_FDCWD, any, any, 0) @ /sbin/ldconfig:0x42f658
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ /sbin/ldconfig:0x42f718

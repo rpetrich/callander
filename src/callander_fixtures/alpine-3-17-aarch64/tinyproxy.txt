@@ -5,7 +5,6 @@ fcntl(AT_FDCWD, F_GETFD, 0xffffffffffffff9c) @ ld-musl-aarch64.so.1+0x50854(fsta
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x50db8(fdopen+176)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x50f90(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x5257c(fopen64+148)
-ioctl(any, SIOCGIFNAME, any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x50e34(fdopen+300)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
 unlinkat(AT_FDCWD, non-NULL, 0) @ ld-musl-aarch64.so.1+0x65190(unlink+24)
@@ -21,7 +20,6 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CL
 openat(AT_FDCWD, non-NULL, O_RDWR-O_RDWR|O_APPEND|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x612b0(__map_file*+44)
-close(any) @ ld-musl-aarch64.so.1+0x41e58(if_indextoname+84)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52598(fopen64+176)
 close(any) @ ld-musl-aarch64.so.1+0x5d210
@@ -118,7 +116,6 @@ accept(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5d210
 accept(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41cf8(getsockname+28)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)

@@ -57,7 +57,9 @@ fstat(AT_FDCWD, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
-exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(NULL-0x2) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(4) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(111) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, any u32, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
 futex(any, any, any, 0, 0, 0)

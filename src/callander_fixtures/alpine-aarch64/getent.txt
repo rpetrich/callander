@@ -36,7 +36,7 @@ ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
-exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(NULL-0x1) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, any u32, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
 futex(any, any, any, 0, 0, 0)

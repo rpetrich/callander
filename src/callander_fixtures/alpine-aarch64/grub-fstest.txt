@@ -41,7 +41,6 @@ readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x65808(readlink
 newfstatat(AT_FDCWD, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
 newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
-newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 fstat(AT_FDCWD, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 fsync(any) @ ld-musl-aarch64.so.1+0x5dc8c
 fsync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

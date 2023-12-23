@@ -70,6 +70,7 @@ pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xe727c(__pr
 ppoll(any, 1, any, 0, 0) @ libc.so.6+0xe6068(__poll+152)
 ppoll(any, 1, any, 0, 0) @ libc.so.6+0xe60cc(__poll+252)
 readlinkat(AT_FDCWD, ld-linux-aarch64.so.1+0x20620, any, 0x1000) @ ld-linux-aarch64.so.1+0xbaf8(_dl_get_origin+56)
+readlinkat(AT_FDCWD, any, non-NULL, 31) @ libc.so.6+0xe397c(readlink+28)
 readlinkat(AT_FDCWD, libaudit.so.1+0xb110, any, 0x1000) @ libc.so.6+0xe397c(readlink+28)
 readlinkat(AT_FDCWD, libglib-2.0.so.0+0xc87d8, any, any) @ libc.so.6+0xe397c(readlink+28)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-linux-aarch64.so.1+0x1bf30(__GI___fstatat64+16)

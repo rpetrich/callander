@@ -22,16 +22,13 @@ ioctl(any, TCSBRK, 1) @ ld-musl-aarch64.so.1+0x5d210
 ioctl(any, TCSBRK, 1) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ioctl(STDIN_FILENO, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x6494c(isatty+24)
 flock(any, any) @ ld-musl-aarch64.so.1+0x242b4(flock+20)
-unlinkat(AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x65190(unlink+24)
 faccessat(AT_FDCWD, any, F_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20548(__init_libc*+380)
 openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b71d, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, non-NULL, any, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(AT_FDCWD, non-NULL, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x612b0(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x1ff28(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)

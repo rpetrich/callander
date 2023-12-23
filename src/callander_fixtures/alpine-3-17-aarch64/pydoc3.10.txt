@@ -159,7 +159,7 @@ ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(0, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 splice(any, any, any, any, any, any u32) @ ld-musl-aarch64.so.1+0x24aa8(splice+16)
-readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
+readlinkat(AT_FDCWD, any, any, 0x1-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
 readlinkat(any, any, any, 0x1000) @ ld-musl-aarch64.so.1+0x64d1c(readlinkat+32)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x506f4(fchmodat+104)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x5076c(fchmodat+224)
