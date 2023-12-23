@@ -35,6 +35,7 @@ ioctl(any, TIOCSPTLCK, any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, _IOW(148,14,4096)-_IOW(148,15,4096), any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, _IOW(148,23,4096), any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, _IOR(84,48,4), any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
+ioctl(any, _IOWR(148,20,16), any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, _IOWR(148,17,4096)-_IOWR(148,18,4096), any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x50e34(fdopen+300)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
@@ -60,18 +61,11 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDWR|O_NOFOLLOW, any) @ ld-musl
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, 0666) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
-openat(any, non-NULL, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC-O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/lxc-copy+0xe3f39, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/lxc-copy+0xe3f8f, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/lxc-copy+0xe4a04, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW|O_CLOEXEC, 0660) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, non-NULL, any, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/lxc-copy+0xc860f, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC-O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, /usr/bin/lxc-copy+0xe3f39, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, /usr/bin/lxc-copy+0xe3f39, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/lxc-copy+0xe3f8f, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, /usr/bin/lxc-copy+0xe4a04, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, /usr/bin/lxc-copy+0xe4a04, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW|O_CLOEXEC, 0660) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
