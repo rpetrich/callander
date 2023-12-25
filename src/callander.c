@@ -5601,6 +5601,12 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 		return false;
 	}
 	if (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
+		const char *name = find_any_symbol_name_by_address(loader, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL);
+		if (name != NULL) {
+			if (fs_strcmp(name, "read_int") == 0) {
+				return true;
+			}
+		}
 		// check for __pthread_enable_asynccancel
 		struct decoded_ins ins;
 		if (!decode_ins(addr, &ins)) {
@@ -9507,7 +9513,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				if (more_effects & EFFECT_MODIFIES_STACK) {
-					pending_stack_clear = STACK_REGISTERS;
 					if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
 						// we should be able to track dirtied slots, but for now assume golang preserves
 						// the stack that's read immediately after the call
@@ -9515,6 +9520,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						self.current_state.stack_address_taken = NULL;
 						goto skip_stack_clear;
 					}
+					pending_stack_clear = STACK_REGISTERS;
 				}
 				break;
 			}
