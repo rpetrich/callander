@@ -4,27 +4,16 @@ set -e
 shopt -s extglob
 
 # find architecture
-arch=$(uname -m)
+arch="${arch:-$(uname -m)}"
 if [ "$arch" = arm64 ]; then
 	arch=aarch64
 fi
 
-if [ -z "$1" ]; then
-	echo "usage: $0 test_callander.sh" >&2
-	exit 1
-fi
-
-build_and_test () {
-	docker build --quiet --tag "callander-test-$2-$arch:latest" --file "Dockerfile.$2" . > /dev/null
-	docker run -it --mount type=bind,source=$(pwd),target=$(pwd) --env image=$2 --workdir $(pwd) --security-opt seccomp=unconfined callander-test-$2-$arch $(pwd)/$1
-}
-
-if [ -z "$2" ]; then
+if [ -z "$image" ]; then
 	for file in Dockerfile.*; do
-		build_and_test "$1" ${file#Dockerfile.}
+		image=${file#Dockerfile.} "$0" "$@"
 	done
 else
-	build_and_test "$1" "$2"
+	docker build --platform=linux/$arch --quiet --tag "callander-test-$image-$arch:latest" --file "Dockerfile.$image" . > /dev/null
+	exec docker run --platform=linux/$arch -it --mount type=bind,source=$(pwd),target=$(pwd) --env image=$image --workdir $(pwd) --security-opt seccomp=unconfined callander-test-$image-$arch "$@"
 fi
-
-# docker run -it --mount type=bind,source=$(pwd),target=$(pwd) --workdir $(pwd) --security-opt seccomp=unconfined callander-test-$1
