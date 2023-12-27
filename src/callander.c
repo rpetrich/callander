@@ -9590,16 +9590,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				self.description = get_operation(&decoded.decomposed);
 				LOG("br to address in register", name_for_register(target));
 				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), 0, required_effects);
+				struct frame_details caller_frame;
 				if (!register_is_exactly_known(&dest_state)) {
 					if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
 						LOG("br to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
 						dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 					} else {
-						const struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-						if (binary && !binary->has_debuglink_symbols) {
-							print_debug_symbol_requirement(binary);
-							ERROR_FLUSH();
-							fs_exit(1);
+						struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
+						if (caller_binary != NULL && caller_binary->has_frame_info && find_containing_frame_info(&caller_binary->frame_info, ins, &caller_frame)) {
+							if ((uintptr_t)caller_frame.address + caller_frame.size == (uintptr_t)next_ins(ins, &decoded)) {
+								// if last instruction in function, ignore br to unknown address on the assumption that it's a tail call
+								effects |= DEFAULT_EFFECTS;
+								goto update_and_return;
+							}
 						}
 						ERROR("br to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
 						self.description = get_operation(&decoded.decomposed);
