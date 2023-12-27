@@ -3166,6 +3166,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
 		force_protection_for_symbol(&analysis->loader, new_binary, "_rtld_global_ro", NORMAL_SYMBOL | LINKER_SYMBOL, 0);
+		force_protection_for_symbol(&analysis->loader, new_binary, "mtag_mmap_flags", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
 		// libc exit functions
 		update_known_function(analysis, new_binary, "_dl_signal_error", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "__fortify_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
