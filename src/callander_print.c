@@ -1309,11 +1309,13 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 	// calculate length
 	size_t length = 0;
 	uintptr_t remaining = 0;
-	for_each_bit(value, bit, i) {
-		if (flags[i] != NULL) {
-			length += fs_strlen(flags[i]) + 1;
-		} else {
-			remaining |= bit;
+	{
+		for_each_bit(value, bit, i) {
+			if (flags[i] != NULL) {
+				length += fs_strlen(flags[i]) + 1;
+			} else {
+				remaining |= bit;
+			}
 		}
 	}
 	const char *suffix = NULL;
@@ -1342,10 +1344,12 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 		next[suffix_len] = '|';
 		next += suffix_len + 1;
 	}
-	for_each_bit(value, bit, i) {
-		if (flags[i] != NULL) {
-			next = fs_strcpy(next, flags[i]);
-			*next++ = '|';
+	{
+		for_each_bit(value, bit, i) {
+			if (flags[i] != NULL) {
+				next = fs_strcpy(next, flags[i]);
+				*next++ = '|';
+			}
 		}
 	}
 	next--;

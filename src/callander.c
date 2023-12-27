@@ -3432,18 +3432,22 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
-		for_each_bit(relevant_registers & ALL_REGISTERS, bit, i) {
-			if (register_is_partially_known(&ancestor->current_state.registers[i])) {
-				new_relevant_registers |= ancestor->current_state.sources[i];
+		{
+			for_each_bit(relevant_registers & ALL_REGISTERS, bit, i) {
+				if (register_is_partially_known(&ancestor->current_state.registers[i])) {
+					new_relevant_registers |= ancestor->current_state.sources[i];
+				}
 			}
 		}
 		new_relevant_registers &= ~mask_for_register(REGISTER_SP);
 		register_mask discarded_registers = mask_for_register(REGISTER_SP);
-		for_each_bit(new_relevant_registers & ALL_REGISTERS, bit, i) {
-			if (!register_is_partially_known(&ancestor->entry_state->registers[i])) {
-				LOG("register is not known, skipping requiring", name_for_register(i));
-				new_relevant_registers &= ~bit;
-				discarded_registers |= bit;
+		{
+			for_each_bit(new_relevant_registers & ALL_REGISTERS, bit, i) {
+				if (!register_is_partially_known(&ancestor->entry_state->registers[i])) {
+					LOG("register is not known, skipping requiring", name_for_register(i));
+					new_relevant_registers &= ~bit;
+					discarded_registers |= bit;
+				}
 			}
 		}
 		if (new_relevant_registers == 0) {
@@ -3455,12 +3459,16 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 			}
 			break;
 		}
-		for_each_bit(preserved_registers, bit, i) {
-			new_preserved_registers |= ancestor->current_state.sources[i];
+		{
+			for_each_bit(preserved_registers, bit, i) {
+				new_preserved_registers |= ancestor->current_state.sources[i];
+			}
 		}
 		new_preserved_registers &= ~discarded_registers;
-		for_each_bit(preserved_and_kept_registers, bit, i) {
-			new_preserved_and_kept_registers |= ancestor->current_state.sources[i];
+		{
+			for_each_bit(preserved_and_kept_registers, bit, i) {
+				new_preserved_and_kept_registers |= ancestor->current_state.sources[i];
+			}
 		}
 		new_preserved_and_kept_registers &= ~mask_for_register(REGISTER_SP);
 		if (SHOULD_LOG) {
