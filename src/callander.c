@@ -8993,17 +8993,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						if (x86_modrm_is_direct(modrm)) {
 							if (!register_is_exactly_known(&self.current_state.registers[reg])) {
 								if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
-									LOG("jmpq* to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
+									LOG("jmp* to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
 									dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 								} else {
-									const struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-									if (binary && !binary->has_debuglink_symbols) {
-										print_debug_symbol_requirement(binary);
-										ERROR_FLUSH();
-										fs_exit(1);
-									}
-									ERROR("jmpq* to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
-									self.description = "jump*";
+									ERROR("jmp* to unknown address", temp_str(copy_address_description(&analysis->loader, self.address)));
+									self.description = "jmp*";
 									DIE("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								}
 								// could have any effect
@@ -9032,18 +9026,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							struct loaded_binary *call_address_binary;
 							if ((protection_for_address(&analysis->loader, (const void *)address.state.value, &call_address_binary, NULL) & PROT_READ) == 0) {
 								if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
-									LOG("jmpq* indirect to known, but unreadable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.state.value)));
+									LOG("jmp* indirect to known, but unreadable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.state.value)));
 									self.description = NULL;
 									LOG("at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								} else {
-									const struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-									if (binary && !binary->has_debuglink_symbols) {
-										print_debug_symbol_requirement(binary);
-										ERROR_FLUSH();
-										fs_exit(1);
-									}
-									ERROR("jmpq* indirect to known, but unreadable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.state.value)));
-									self.description = NULL;
+									ERROR("jmp* indirect to known, but unreadable address", temp_str(copy_address_description(&analysis->loader, (const void *)address.state.value)));
+									self.description = "jmp*";
 									DIE("at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 								}
 								// could have any effect
