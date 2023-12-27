@@ -10594,13 +10594,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						struct register_state index_state = self.current_state.registers[index];
 						struct loaded_binary *binary;
 						const ElfW(Shdr) *section;
+						uintptr_t base_addr = 0;
 						if (register_is_exactly_known(&source_state)) {
-							LOG("storing base address", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
-							add_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins, source_state.value);
-						} else {
-							uintptr_t base_addr = find_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins);
-							int prot = protection_for_address(&analysis->loader, (const void *)base_addr, &binary, &section);
-							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
+							base_addr = source_state.value;
+							LOG("storing base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
+							add_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins, base_addr);
+						}
+						struct registers copy = self.current_state;
+						if (base_addr == 0) {
+							base_addr = find_lookup_table_base_address(&analysis->search.lookup_base_addresses, ins);
+							if (base_addr != 0) {
 								if (false) {
 									LOG("reusing previous base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
 								} else {
@@ -10609,19 +10612,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									goto update_and_return;
 								}
 							}
-							// this is an ugly hack
-							for_each_bit(self.current_state.matches[reg] & STACK_REGISTERS, bit, i) {
-								for (const struct analysis_frame *f = self.next; f != NULL; f = f->next) {
-									if (register_is_exactly_known(&f->current_state.registers[i])) {
-										source_state = f->current_state.registers[i];
-										goto scrounged_base;
-									}
-								}
-							}
-						scrounged_base:
-							;
+							set_register(&copy.registers[reg], base_addr);
+							clear_match(&analysis->loader, &copy, reg, ins);
+							copy.sources[reg] = 0;
+							clear_match(&analysis->loader, &self.current_state, reg, ins);
+							self.current_state.sources[reg] = 0;
 						}
-						if (flags < 6 && register_is_exactly_known(&source_state)) {
+						if (flags < 6 && base_addr != 0) {
 							ins_ptr lookahead = next_ins(ins, &decoded);
 							struct decoded_ins lookahead_decoded;
 							if (decode_ins(lookahead, &lookahead_decoded) && lookahead_decoded.decomposed.operation == decoded.decomposed.operation) {
@@ -10632,8 +10629,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								// }
 							}
 							dump_registers(&analysis->loader, &self.current_state, dump_mask);
-							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
-							int prot = protection_for_address(&analysis->loader, (const void *)source_state.value, &binary, &section);
+							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
+							int prot = protection_for_address(&analysis->loader, (const void *)base_addr, &binary, &section);
 							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
 								if (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE) {
 									LOG("lookup table rejected because range of index is too large", index_state.max - index_state.value);
@@ -10644,9 +10641,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								} else {
 									self.description = "lookup table";
 									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(reg) | mask_for_register(index), mask_for_register(reg) | mask_for_register(index), mask_for_register(reg)/* | mask_for_register(index)*/, required_effects);
-									LOG("lookup table from known base", temp_str(copy_address_description(&analysis->loader, (const void *)source_state.value)));
+									LOG("lookup table from known base", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
 									dump_registers(&analysis->loader, &self.current_state, mask_for_register(reg) | mask_for_register(index));
-									uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - source_state.value) >> decoded.decomposed.operands[1].shiftValue;
+									// enforce max range from other ldr instructions
+									uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+									if (((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) <= index_state.max) {
+										LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
+										index_state.max = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) - 1;
+									}
+									uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - base_addr) >> decoded.decomposed.operands[1].shiftValue;
 									if (index_state.max >= max_in_section) {
 										index_state.max = max_in_section - 1;
 										if (index_state.value >= max_in_section) {
@@ -10657,12 +10660,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									struct frame_details frame_details = { 0 };
 									bool has_frame_details = binary->has_frame_info ? find_containing_frame_info(&binary->frame_info, ins, &frame_details) : false;
 									const ElfW(Sym) *function_symbol = NULL;
-									uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)source_state.value, ins, (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
+									uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader, binary, (const void *)base_addr, ins, (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
 									if (override_size != 0) {
 										index_state.max = ((override_size - 1) * 4) >> decoded.decomposed.operands[1].shiftValue;
 										LOG("overwrote maximum of lookup table to", index_state.max);
 									}
-									struct registers copy = self.current_state;
 									copy.sources[dest] = used_registers;
 									clear_match(&analysis->loader, &copy, dest, ins);
 									ins_ptr continue_target = next_ins(ins, &decoded);
@@ -10671,7 +10673,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										struct register_state index_single_state;
 										set_register(&index_single_state, i);
 										apply_operand_shift(&index_single_state, &decoded.decomposed.operands[1]);
-										struct register_state source_single_state = source_state;
+										struct register_state source_single_state;
+										set_register(&source_single_state, base_addr);
 										add_registers(&source_single_state, &index_single_state);
 										if (!register_is_exactly_known(&source_single_state)) {
 											DIE("expected table entry address to be exactly known", (intptr_t)i);
@@ -10684,6 +10687,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										uintptr_t value = (is_signed ? read_memory_signed((const void *)source_single_state.value, mem_size) : read_memory((const void *)source_single_state.value, mem_size)) & mask_for_operand_size(size);
 										set_register(&copy.registers[dest], value);
+										if (is_signed) {
+											LOG("processing table value", (intptr_t)value);
+										} else {
+											LOG("processing table value", value);
+										}
 										truncate_to_operand_size(&copy.registers[dest], size);
 										if (mem_size == OPERATION_SIZE_DWORD && (protection_for_address(&analysis->loader, (ins_ptr)value, &binary, NULL) & PROT_EXEC) == 0) {
 											LOG("discovered non-executable address, cancelling lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -10691,6 +10699,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, (flags + 2) & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
+										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
+										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+										if ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue <= index_state.max) {
+											index_state.max = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) - 1;
+										}
 									}
 									LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
 									goto update_and_return;
@@ -10956,6 +10969,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											}
 										}
 										uintptr_t value = read_memory_signed((const void *)source_single_state.value, mem_size) & mask_for_operand_size(size);
+										LOG("processing table value", (intptr_t)value);
 										set_register(&copy.registers[dest], value);
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, (flags + 2) & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
