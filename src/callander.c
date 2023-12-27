@@ -1931,7 +1931,7 @@ static inline function_effects *get_or_populate_effects(struct program_state *an
 }
 
 __attribute__((always_inline))
-static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects)
+static inline struct searched_instruction_entry *table_entry_for_token(struct searched_instructions *search, ins_ptr addr, struct effect_token *token)
 {
 	// optimistically assume the generation hasn't changed
 	struct searched_instruction_entry *table = search->table;
@@ -1945,14 +1945,21 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 		token->generation = table_generation;
 		for (;; index = next_index(index)) {
 			index &= mask;
-			if (entry_for_index(table, index)->address == addr) {
+			struct searched_instruction_entry *entry = entry_for_index(table, index);
+			if (entry->address == addr) {
 				token->index = index;
-				break;
+				return entry;
 			}
 		}
 	}
+	return entry_for_index(table, index);
+}
+
+__attribute__((always_inline))
+static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects)
+{
+	struct searched_instruction_entry *table_entry = table_entry_for_token(search, addr, token);
 	uint32_t entry_offset = token->entry_offset;
-	struct searched_instruction_entry *table_entry = entry_for_index(table, index);
 	if (!validate_offset(table_entry->data, entry_offset)) {
 		// deleted by hack for lower memory usage!
 		return;
@@ -9625,6 +9632,27 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					encountered_non_executable_address(&analysis->loader, get_operation(&decoded.decomposed), &self, new_ins);
 					LOG("completing from br to non-executable address", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				} else {
+					if ((flags & ALLOW_JUMPS_INTO_THE_ABYSS) == 0 && call_binary->has_frame_info) {
+						struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
+						if (caller_binary != NULL && caller_binary->has_frame_info) {
+							struct frame_details call_frame;
+							if (find_containing_frame_info(&call_binary->frame_info, new_ins, &call_frame) && find_containing_frame_info(&caller_binary->frame_info, ins, &caller_frame)) {
+								struct searched_instruction_data *data = table_entry_for_token(&analysis->search, self.entry, &self.token)->data;
+								if (call_frame.address != caller_frame.address) {
+									LOG("jump into a different function from a function that already is jumping into self, ignoring");
+									if (data->sticky_effects & EFFECT_STICKY_JUMPS_TO_SELF) {
+										// block previously jumped into itself, but now doesn't
+										// assume we've read off the end of a jump table and ignore
+										effects |= DEFAULT_EFFECTS;
+										goto update_and_return;
+									}
+								} else {
+									// jumping into the same frame, mark block as jumping into itself
+									data->sticky_effects |= EFFECT_STICKY_JUMPS_TO_SELF;
+								}
+							}
+						}
+					}
 					self.description = get_operation(&decoded.decomposed);
 					effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, &self, flags | ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
 					LOG("completing from br", temp_str(copy_address_description(&analysis->loader, self.entry)));
