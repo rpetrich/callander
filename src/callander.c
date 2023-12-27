@@ -9156,7 +9156,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 						} else {
 							add_loaded_address(&analysis->search, (uintptr_t)address);
-							LOG("rip-relative lea is to readable address, assuming it is data");
+							LOG("formed address is readable, assuming it is data");
 							struct address_and_size symbol;
 							if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
 								if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
