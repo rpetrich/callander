@@ -362,4 +362,58 @@ void error_flush(void)
 	}
 }
 
+__attribute__((used))
+__uint128_t __ashlti3(__uint128_t a, int b)
+{
+    const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
+	union {
+		__uint128_t all;
+		struct {
+			uint64_t low;
+			uint64_t high;
+		} s;
+	} input, result;
+    input.all = a;
+    if (b & bits_in_dword)  /* bits_in_dword <= b < bits_in_tword */
+    {
+        result.s.low = 0;
+        result.s.high = input.s.low << (b - bits_in_dword);
+    }
+    else  /* 0 <= b < bits_in_dword */
+    {
+        if (b == 0)
+            return a;
+        result.s.low  = input.s.low << b;
+        result.s.high = (input.s.high << b) | (input.s.low >> (bits_in_dword - b));
+    }
+    return result.all;
+}
+
+__attribute__((used))
+__uint128_t __lshrti3(__uint128_t a, int b)
+{
+    const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
+	union {
+		__uint128_t all;
+		struct {
+			uint64_t low;
+			uint64_t high;
+		} s;
+	} input, result;
+    input.all = a;
+    if (b & bits_in_dword)  /* bits_in_dword <= b < bits_in_tword */
+    {
+        result.s.high = 0;
+        result.s.low = input.s.high >> (b - bits_in_dword);
+    }
+    else  /* 0 <= b < bits_in_dword */
+    {
+        if (b == 0)
+            return a;
+        result.s.high  = input.s.high >> b;
+        result.s.low = (input.s.high << (bits_in_dword - b)) | (input.s.low >> b);
+    }
+    return result.all;
+}
+
 #endif

@@ -14034,7 +14034,7 @@ static bool merge_recorded_syscall(const struct recorded_syscall *source, struct
 	register_mask mismatched = ~matching_registers(source->registers.registers, target->registers.registers) & relevant_registers;
 	if ((mismatched != 0) && ((mismatched & -mismatched) == mismatched)) {
 		// source and target differ by only a single register
-		int i = __builtin_ctzl(mismatched);
+		int i = first_set_register_in_mask(mismatched);
 		return combine_register_states(&target->registers.registers[i], &source->registers.registers[i], i);
 	}
 	return false;

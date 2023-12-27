@@ -10,6 +10,6 @@ extern char *copy_call_description(const struct loader_context *context, const c
 __attribute__((nonnull(1)))
 extern char *copy_register_state_description(const struct loader_context *context, struct register_state reg);
 
-#define for_each_bit(value, bit_name, index) for (__typeof__(value) bit_name, index, temp = value; temp != 0;) if ((bit_name = temp & -temp), (index = __builtin_ctzl(temp)), (temp ^= bit_name), true)
+#define for_each_bit(value, bit_name, index) for (__typeof__(value) bit_name, index, temp = value; temp != 0;) if ((bit_name = temp & -temp), (index = first_set_register_in_mask(temp)), (temp ^= bit_name), true)
 
 #endif
