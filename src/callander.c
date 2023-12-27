@@ -7422,7 +7422,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
 								if ((next_base_address - base_addr) / sizeof(int32_t) <= max) {
 									LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
-									max = ((next_base_address - base_addr) / sizeof(int32_t)) - 1;
+									max = ((next_base_address - base_addr) >> operand->shiftValue) - 1;
 								}
 								uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - base_addr) / 4;
 								if (max >= max_in_section) {
