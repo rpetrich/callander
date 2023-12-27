@@ -3861,7 +3861,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			if (reg != AARCH64_REGISTER_INVALID) {
 				*out_state = regs->registers[reg];
 			} else if (operand->reg[0] == REG_WZR || operand->reg[0] == REG_XZR) {
-				clear_register(out_state);
+				set_register(out_state, 0);
 			} else {
 				break;
 			}
