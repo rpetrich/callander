@@ -10487,9 +10487,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						is_signed = true;
 						// fallthrough
 					case ARM64_LDARB:
-					case ARM64_LDLARB:
-					case ARM64_LDXRB:
 					case ARM64_LDAXRB:
+					case ARM64_LDLARB:
+					case ARM64_LDRB:
+					case ARM64_LDXRB:
 						mem_size = OPERATION_SIZE_BYTE;
 						break;
 					case ARM64_LDAPURH:
@@ -10497,9 +10498,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						is_signed = true;
 						// fallthrough
 					case ARM64_LDARH:
-					case ARM64_LDLARH:
-					case ARM64_LDXRH:
 					case ARM64_LDAXRH:
+					case ARM64_LDLARH:
+					case ARM64_LDRH:
+					case ARM64_LDXRH:
 						mem_size = OPERATION_SIZE_HALF;
 						break;
 					case ARM64_LDAPURSW:
