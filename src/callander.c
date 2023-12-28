@@ -64,6 +64,16 @@ static inline register_mask mask_for_register(enum register_index index)
 	return mask_for_conditional_register(true, index);
 }
 
+__attribute__((always_inline))
+static inline void check_register_mask(__attribute__((unused)) register_mask mask)
+{
+#ifdef LOGGING
+	if (mask & ~ALL_REGISTERS) {
+		DIE("invalid register mask", mask);
+	}
+#endif
+}
+
 #ifdef LOGGING
 bool should_log;
 #endif
@@ -436,6 +446,7 @@ __attribute__((nonnull(1, 2, 4)))
 static inline void clear_match(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
 	register_mask mask = regs->matches[register_index];
+	check_register_mask(mask);
 	if (UNLIKELY(register_index == REGISTER_SP || (register_index == REGISTER_MEM && regs->stack_address_taken && !decoded_rm_cannot_reference_stack_slot(&regs->mem_rm)))) {
 		for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
 			if (SHOULD_LOG) {
@@ -479,10 +490,11 @@ static inline void clear_match_keep_stack(__attribute__((unused)) const struct l
 {
 	register_mask mask = regs->matches[register_index];
 	if (UNLIKELY(mask != 0)) {
+		check_register_mask(mask);
 		LOG("clearing matches for", name_for_register(register_index));
 		regs->matches[register_index] = 0;
 		register_mask mask_off = ~mask_for_register(register_index);
-		for_each_bit(mask & ALL_REGISTERS, bit, i) {
+		for_each_bit(mask, bit, i) {
 			if (SHOULD_LOG) {
 				if (regs->matches[i] & ~mask_off) {
 					ERROR_NOPREFIX("clearing match", name_for_register(i));
@@ -503,6 +515,7 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 		regs->sources[dest_reg] = 0;
 	} else {
 		register_mask mask = regs->matches[source_reg];
+		check_register_mask(mask);
 		regs->matches[source_reg] = mask | mask_for_register(dest_reg);
 		regs->matches[dest_reg] = mask | mask_for_register(source_reg);
 		LOG("matching", name_for_register(source_reg));
@@ -511,6 +524,7 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 			LOG("existing match", name_for_register(i));
 			regs->matches[i] |= mask_for_register(dest_reg);
 		}
+		check_register_mask(regs->sources[source_reg]);
 		regs->sources[dest_reg] = regs->sources[source_reg];
 	}
 }
@@ -667,7 +681,9 @@ static inline void push_stack(struct registers *regs, int push_count)
 	}
 	// shift the matching bits around
 	for (int i = 0; i < REGISTER_COUNT; i++) {
-		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | ((regs->matches[i] & STACK_REGISTERS) << push_count);
+		check_register_mask(regs->matches[i]);
+		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | (((regs->matches[i] & STACK_REGISTERS) << push_count) & ALL_REGISTERS);
+		check_register_mask(regs->matches[i]);
 	}
 }
 
@@ -692,7 +708,9 @@ static inline void pop_stack(struct registers *regs, int pop_count)
 	}
 	// shift the matching bits around
 	for (int i = 0; i < REGISTER_COUNT; i++) {
-		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | (pop_count > REGISTER_COUNT ? 0 : ((regs->matches[i] >> pop_count) & STACK_REGISTERS));
+		check_register_mask(regs->matches[i]);
+		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | (pop_count > REGISTER_COUNT ? 0 : ((regs->matches[i] >> pop_count) & ALL_REGISTERS));
+		check_register_mask(regs->matches[i]);
 	}
 }
 
@@ -1458,10 +1476,16 @@ __attribute__((nonnull(2)))
 static inline void expand_registers(struct register_state full[REGISTER_COUNT], const struct searched_instruction_data_entry *entry)
 {
 	register_mask used_registers = entry->used_registers;
+	check_register_mask(used_registers);
 	int j = 0;
-#pragma GCC unroll 64
+#pragma GCC unroll 128
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		if (used_registers & mask_for_register(i)) {
+#ifdef LOGGING
+			if (UNLIKELY(j == entry->used_count)) {
+				DIE("invalid register mask", used_registers);
+			}
+#endif
 			full[i] = entry->registers[j++];
 		} else {
 			clear_register(&full[i]);
@@ -1499,6 +1523,7 @@ __attribute__((nonnull(2)))
 static inline bool registers_are_subset_of_entry_registers(const struct register_state potential_subset[REGISTER_COUNT], const struct searched_instruction_data_entry *entry, register_mask valid_registers)
 {
 	register_mask used_registers = entry->used_registers;
+	check_register_mask(used_registers);
 	valid_registers &= used_registers;
 	if (UNLIKELY(valid_registers != 0)) {
 		int j = 0;
@@ -1518,7 +1543,9 @@ __attribute__((always_inline))
 __attribute__((nonnull(1)))
 static inline bool entry_registers_are_subset_of_registers(const struct searched_instruction_data_entry *entry, const struct register_state potential_superset[REGISTER_COUNT], register_mask valid_registers)
 {
+	check_register_mask(valid_registers);
 	register_mask used_registers = entry->used_registers;
+	check_register_mask(used_registers);
 	if (valid_registers != 0) {
 		int j = 0;
 		for_each_bit(used_registers | valid_registers, bit, i) {
@@ -1737,6 +1764,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 						out_registers->sources[r] = 0;
 						register_mask match_mask = out_registers->matches[r];
 						if (match_mask != 0) {
+							check_register_mask(match_mask);
 							if ((widenable_registers & match_mask) == match_mask) {
 								LOG("widening a register in tandem with another, preserving match", name_for_register(r));
 							} else {
@@ -1750,6 +1778,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 						out_registers->sources[r] = 0;
 						register_mask match_mask = out_registers->matches[r];
 						if (match_mask != 0) {
+							check_register_mask(match_mask);
 							if ((widenable_registers & match_mask) == match_mask) {
 								LOG("widening a register in tandem with another, preserving match", name_for_register(r));
 							} else {
@@ -1768,6 +1797,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 					out_registers->sources[r] = 0;
 					register_mask match_mask = out_registers->matches[r];
 					if (match_mask != 0) {
+						check_register_mask(match_mask);
 						if ((widenable_registers & match_mask) == match_mask) {
 							LOG("widening a register in tandem with another, preserving match", name_for_register(r));
 						} else {
@@ -3432,17 +3462,20 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
+		check_register_mask(relevant_registers);
 		{
-			for_each_bit(relevant_registers & ALL_REGISTERS, bit, i) {
+			for_each_bit(relevant_registers, bit, i) {
 				if (register_is_partially_known(&ancestor->current_state.registers[i])) {
+					check_register_mask(ancestor->current_state.sources[i]);
 					new_relevant_registers |= ancestor->current_state.sources[i];
 				}
 			}
 		}
+		check_register_mask(new_relevant_registers);
 		new_relevant_registers &= ~mask_for_register(REGISTER_SP);
 		register_mask discarded_registers = mask_for_register(REGISTER_SP);
 		{
-			for_each_bit(new_relevant_registers & ALL_REGISTERS, bit, i) {
+			for_each_bit(new_relevant_registers, bit, i) {
 				if (!register_is_partially_known(&ancestor->entry_state->registers[i])) {
 					LOG("register is not known, skipping requiring", name_for_register(i));
 					new_relevant_registers &= ~bit;
@@ -3461,15 +3494,19 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 		{
 			for_each_bit(preserved_registers, bit, i) {
+				check_register_mask(ancestor->current_state.sources[i]);
 				new_preserved_registers |= ancestor->current_state.sources[i];
 			}
 		}
+		check_register_mask(new_preserved_registers);
 		new_preserved_registers &= ~discarded_registers;
 		{
 			for_each_bit(preserved_and_kept_registers, bit, i) {
+				check_register_mask(ancestor->current_state.sources[i]);
 				new_preserved_and_kept_registers |= ancestor->current_state.sources[i];
 			}
 		}
+		check_register_mask(new_preserved_and_kept_registers);
 		new_preserved_and_kept_registers &= ~mask_for_register(REGISTER_SP);
 		if (SHOULD_LOG) {
 			ERROR_NOPREFIX("marking", temp_str(copy_address_description(loader, ancestor->entry)));
@@ -4694,12 +4731,15 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 			break;
 		case BASIC_OP_USED_RIGHT:
 			regs->sources[dest_reg] = regs->sources[right_reg];
+			check_register_mask(regs->sources[dest_reg]);
 			break;
 		case BASIC_OP_USED_LEFT:
 			regs->sources[dest_reg] = regs->sources[left_reg];
+			check_register_mask(regs->sources[dest_reg]);
 			break;
 		case BASIC_OP_USED_BOTH:
 			regs->sources[dest_reg] = regs->sources[left_reg] | regs->sources[right_reg];
+			check_register_mask(regs->sources[dest_reg]);
 			break;
 	}
 }
@@ -5012,6 +5052,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 	struct register_comparison compare_state = self->current_state.compare_state;
 	ins_conditional_type conditional_type = ins_get_conditional_type(decoded, &compare_state);
 	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value)) {
+		check_register_mask(compare_state.sources);
 		// include matching registers
 		if (compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
 			LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, jump_state.mem_rm)));
@@ -5022,6 +5063,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			clear_match(&analysis->loader, &jump_state, REGISTER_MEM, self->address);
 		}
 		register_mask target_registers = jump_state.matches[compare_state.target_register] | mask_for_register(compare_state.target_register);
+		check_register_mask(target_registers);
 		register_mask skip_jump_mask = 0;
 		register_mask skip_continue_mask = 0;
 		if (SHOULD_LOG) {
@@ -5382,6 +5424,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			// }
 		}
 		if (skip_jump_mask) {
+			check_register_mask(skip_jump_mask);
 			if (skip_jump_mask & mask_for_register(compare_state.target_register)) {
 				skip_jump = true;
 				LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
@@ -5394,6 +5437,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 			}
 		}
 		if (skip_continue_mask) {
+			check_register_mask(skip_continue_mask);
 			if (skip_continue_mask & mask_for_register(compare_state.target_register)) {
 				skip_continue = true;
 				LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
@@ -6102,6 +6146,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										ERROR_NOPREFIX("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
 										break;
 									}
+									check_register_mask(new_relevant_registers);
 									ERROR_NOPREFIX("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
 									dump_registers(&analysis->loader, &ancestor->current_state, new_relevant_registers);
 									ancestor = (struct analysis_frame *)ancestor->next;
@@ -6671,6 +6716,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											LOG("processing table target (if jump table)", temp_str(copy_address_description(&analysis->loader, (void *)base_addr + ((ins_ptr)base_addr)[i])));
 											if (index != dest) {
 												set_register(&copy.registers[index], i);
+												check_register_mask(copy.matches[index]);
 												for_each_bit(copy.matches[index], bit, r) {
 													set_register(&copy.registers[r], i);
 												}
@@ -7474,6 +7520,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										if (index != reg) {
 											set_register(&copy.registers[index], i);
+											check_register_mask(copy.matches[index]);
 											for_each_bit(copy.matches[index], bit, r) {
 												set_register(&copy.registers[r], i);
 											}
@@ -9597,7 +9644,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int target = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				self.description = get_operation(&decoded.decomposed);
 				LOG("br to address in register", name_for_register(target));
-				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), 0, required_effects);
+				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, target == REGISTER_INVALID ? 0 : mask_for_register(target), (flags & ALLOW_JUMPS_INTO_THE_ABYSS) || target == REGISTER_INVALID ? 0 : mask_for_register(target), 0, required_effects);
 				struct frame_details caller_frame;
 				if (!register_is_exactly_known(&dest_state)) {
 					if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
@@ -10550,12 +10597,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("base", name_for_register(reg));
 				register_mask dump_mask = mask_for_register(dest) | mask_for_register(reg);
 				if (SHOULD_LOG) {
+					check_register_mask(self.current_state.matches[reg]);
 					for_each_bit(self.current_state.matches[reg], bit, i) {
 						ERROR_NOPREFIX("matching", name_for_register(i));
 					}
 				}
 				source_state = self.current_state.registers[reg];
 				register_mask used_registers = self.current_state.sources[reg];
+				check_register_mask(used_registers);
 				switch (decoded.decomposed.operands[1].operandClass) {
 					case MEM_REG: {
 						LOG("no offset");
@@ -10594,11 +10643,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						dump_mask |= mask_for_register(index);
 						LOG("extended", name_for_register(index));
 						if (SHOULD_LOG) {
+							check_register_mask(self.current_state.matches[index]);
 							for_each_bit(self.current_state.matches[index], bit, i) {
 								ERROR_NOPREFIX("matching", name_for_register(i));
 							}
 						}
 						used_registers |= self.current_state.sources[index];
+						check_register_mask(used_registers);
 						struct register_state index_state = self.current_state.registers[index];
 						struct loaded_binary *binary;
 						const ElfW(Shdr) *section;
@@ -10689,6 +10740,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										if (index != dest) {
 											set_register(&copy.registers[index], i);
+											check_register_mask(copy.matches[index]);
 											for_each_bit(copy.matches[index], bit, r) {
 												set_register(&copy.registers[r], i);
 											}
@@ -10887,6 +10939,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				source_state = self.current_state.registers[reg];
 				register_mask used_registers = self.current_state.sources[reg];
+				check_register_mask(used_registers);
 				switch (decoded.decomposed.operands[1].operandClass) {
 					case MEM_REG: {
 						LOG("MEM_REG");
@@ -10922,6 +10975,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							break;
 						}
 						used_registers |= self.current_state.sources[index];
+						check_register_mask(used_registers);
 						struct register_state index_state = self.current_state.registers[index];
 						if (register_is_exactly_known(&source_state) && flags < 4) {
 							struct loaded_binary *binary;
@@ -10958,6 +11012,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 									struct registers copy = self.current_state;
 									copy.sources[dest] = used_registers;
+									check_register_mask(used_registers);
 									clear_match(&analysis->loader, &copy, dest, ins);
 									ins_ptr continue_target = next_ins(ins, &decoded);
 									for (uintptr_t i = index_state.value; i <= index_state.max; i++) {
@@ -10972,6 +11027,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										}
 										if (index != dest) {
 											set_register(&copy.registers[index], i);
+											check_register_mask(copy.matches[index]);
 											for_each_bit(copy.matches[index], bit, r) {
 												set_register(&copy.registers[r], i);
 											}
