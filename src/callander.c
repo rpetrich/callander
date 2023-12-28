@@ -4719,7 +4719,10 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int left_reg, int right_reg, enum basic_op_usage usage)
 {
-	if (left_reg == REGISTER_INVALID) {
+	if (UNLIKELY(dest_reg == REGISTER_INVALID)) {
+		return;
+	}
+	if (UNLIKELY(left_reg == REGISTER_INVALID)) {
 		usage &= ~BASIC_OP_USED_LEFT;
 	}
 	if (right_reg == REGISTER_INVALID) {
@@ -9586,7 +9589,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int target = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				self.description = "blr";
 				LOG("blr to address in register", name_for_register(target));
-				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), 0, 0, required_effects);
+				if (target != REGISTER_INVALID) {
+					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, 0, 0, 0, required_effects);
+				}
 				struct loaded_binary *binary = NULL;
 				function_effects more_effects = DEFAULT_EFFECTS;
 				if (!register_is_exactly_known(&dest_state)) {
@@ -9644,7 +9649,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int target = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				self.description = get_operation(&decoded.decomposed);
 				LOG("br to address in register", name_for_register(target));
-				vary_effects_by_registers(&analysis->search, &analysis->loader, &self, target == REGISTER_INVALID ? 0 : mask_for_register(target), (flags & ALLOW_JUMPS_INTO_THE_ABYSS) || target == REGISTER_INVALID ? 0 : mask_for_register(target), 0, required_effects);
+				if (target != REGISTER_INVALID) {
+					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(target), flags & ALLOW_JUMPS_INTO_THE_ABYSS ? 0 : mask_for_register(target), 0, required_effects);
+				}
 				struct frame_details caller_frame;
 				if (!register_is_exactly_known(&dest_state)) {
 					if (flags & ALLOW_JUMPS_INTO_THE_ABYSS) {
@@ -9668,7 +9675,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("completing from br", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					goto update_and_return;
 				}
-				ins_ptr new_ins = (ins_ptr)self.current_state.registers[target].value;
+				ins_ptr new_ins = (ins_ptr)dest_state.value;
 				struct loaded_binary *call_binary;
 				if (new_ins == NULL) {
 					LOG("address is known, but only filled at runtime, assuming all effects");
@@ -12258,7 +12265,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("sxtb to", name_for_register(dest));
 				LOG("from", name_for_register(source));
 				if (sign_extend_from_operand_size(&source_state, OPERATION_SIZE_BYTE)) {
-					self.current_state.sources[dest] = self.current_state.sources[source];
+					self.current_state.sources[dest] = source != REGISTER_INVALID ? self.current_state.sources[source] : 0;
 					clear_match(&analysis->loader, &self.current_state, dest, ins);
 				} else {
 					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
@@ -12285,7 +12292,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("sxth to", name_for_register(dest));
 				LOG("from", name_for_register(source));
 				if (sign_extend_from_operand_size(&source_state, OPERATION_SIZE_HALF)) {
-					self.current_state.sources[dest] = self.current_state.sources[source];
+					self.current_state.sources[dest] = source != REGISTER_INVALID ? self.current_state.sources[source] : 0;
 					clear_match(&analysis->loader, &self.current_state, dest, ins);
 				} else {
 					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
@@ -12312,7 +12319,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("sxtw to", name_for_register(dest));
 				LOG("from", name_for_register(source));
 				if (sign_extend_from_operand_size(&source_state, OPERATION_SIZE_WORD)) {
-					self.current_state.sources[dest] = self.current_state.sources[source];
+					self.current_state.sources[dest] = source != REGISTER_INVALID ? self.current_state.sources[source] : 0;
 					clear_match(&analysis->loader, &self.current_state, dest, ins);
 				} else {
 					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
