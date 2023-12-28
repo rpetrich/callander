@@ -81,14 +81,14 @@ extern void error_flush(void);
 static inline void error_write_uint(const char *prefix, size_t prefix_len, uintptr_t value)
 {
 	char buf[32];
-	struct iovec vec[3];
+	struct iovec vec[2];
 	vec[0].iov_base = (void *)prefix;
 	vec[0].iov_len = prefix_len;
 	vec[1].iov_base = buf;
-	vec[1].iov_len = fs_utoah(value, buf);
-	vec[2].iov_base = "\n";
-	vec[2].iov_len = 1;
-	ERROR_WRITEV(vec, 3);
+	size_t len = fs_utoah(value, buf);
+	buf[len] = '\n';
+	vec[1].iov_len = len + 1;
+	ERROR_WRITEV(vec, 2);
 }
 // error_write_int is a helper that writes a uintptr_t in decimal notation
 static inline void error_write_int(const char *prefix, size_t prefix_len, intptr_t value)
@@ -98,10 +98,10 @@ static inline void error_write_int(const char *prefix, size_t prefix_len, intptr
 	vec[0].iov_base = (void *)prefix;
 	vec[0].iov_len = prefix_len;
 	vec[1].iov_base = buf;
-	vec[1].iov_len = fs_itoa(value, buf);
-	vec[2].iov_base = "\n";
-	vec[2].iov_len = 1;
-	ERROR_WRITEV(vec, 3);
+	size_t len = fs_itoa(value, buf);
+	buf[len] = '\n';
+	vec[1].iov_len = len + 1;
+	ERROR_WRITEV(vec, 2);
 }
 // error_write_str is a helper that writes a null-terminated string
 static inline void error_write_str(const char *prefix, size_t prefix_len, const char *value)
@@ -114,6 +114,26 @@ static inline void error_write_str(const char *prefix, size_t prefix_len, const 
 	vec[2].iov_base = "\n";
 	vec[2].iov_len = 1;
 	ERROR_WRITEV(vec, 3);
+}
+// error_write_uint128 is a helper that writes a __uint128_t in hex notation
+static inline void error_write_uint128(const char *prefix, size_t prefix_len, __uint128_t value)
+{
+	char buffer[64];
+	buffer[0] = '0';
+	buffer[1] = 'x';
+	size_t i = 2;
+	do {
+		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0xf];
+		value = value >> 4;
+	} while(value);
+	fs_reverse(&buffer[2], i-2);
+	buffer[i] = '\n';
+	struct iovec vec[2];
+	vec[0].iov_base = (void *)prefix;
+	vec[0].iov_len = prefix_len;
+	vec[1].iov_base = buffer;
+	vec[1].iov_len = i + 1;
+	ERROR_WRITEV(vec, 2);
 }
 
 struct temp_str {
@@ -178,6 +198,7 @@ static inline void error_write_char_range(const char *prefix, size_t prefix_len,
 		int: error_write_int, \
 		long unsigned: error_write_uint, \
 		unsigned: error_write_uint, \
+		__uint128_t: error_write_uint128, \
 		const char *: error_write_str, \
 		char *: error_write_str, \
 		struct char_range: error_write_char_range, \
