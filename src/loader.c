@@ -97,6 +97,12 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		ERROR("ELF binary version is not current", header.e_version);
 		return -ENOEXEC;
 	}
+	struct fs_stat stat;
+	int result = fs_fstat(fd, &stat);
+	if (result < 0) {
+		ERROR("could not stat binary", fs_strerror(result));
+		return -ENOEXEC;
+	}
 	size_t phsize = header.e_phentsize * header.e_phnum;
 	out_info->header_entry_size = header.e_phentsize;
 	out_info->header_entry_count = header.e_phnum;
@@ -181,7 +187,12 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 			protection |= PROT_EXEC;
 		}
 		if (this_max-this_min) {
-			void *section_mapping = fs_mmap((void *)(map_offset + this_min), this_max-this_min, ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection, MAP_PRIVATE|MAP_FIXED, fd, ph->p_offset & -PAGE_SIZE);
+			ssize_t offset = ph->p_offset & -PAGE_SIZE;
+			size_t len = this_max-this_min;
+			if (offset + len > stat.st_size) {
+				len = ((stat.st_size - offset) + PAGE_SIZE-1) & -PAGE_SIZE;
+			}
+			void *section_mapping = fs_mmap((void *)(map_offset + this_min), len, ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection, MAP_PRIVATE|MAP_FIXED, fd, offset);
 			if (fs_is_map_failed(section_mapping)) {
 				ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
 				return -ENOEXEC;
