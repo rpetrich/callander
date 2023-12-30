@@ -277,47 +277,52 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			return AARCH64_CONDITIONAL_TYPE_GT;
 		case ARM64_B_LE:
 			return AARCH64_CONDITIONAL_TYPE_LE;
-		case ARM64_CBZ:
+		case ARM64_CBZ: {
+			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
-				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.target_register = reg,
 				.value = { 0, 0 },
 				.mask = ~(uintptr_t)0,
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
-				.validity = COMPARISON_SUPPORTS_ANY,
+				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
 			};
 			return AARCH64_CONDITIONAL_TYPE_EQ;
+		}
 		case ARM64_CBNZ:
+			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
-				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.target_register = reg,
 				.value = { 0, 0 },
 				.mask = ~(uintptr_t)0,
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
-				.validity = COMPARISON_SUPPORTS_ANY,
+				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
 			};
 			return AARCH64_CONDITIONAL_TYPE_NE;
 		case ARM64_TBZ: {
+			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;
 			*out_compare_state = (struct register_comparison){
-				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.target_register = reg,
 				.value = { bit, bit },
 				.mask = ~(uintptr_t)0,
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
-				.validity = COMPARISON_SUPPORTS_ANY,
+				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
 			};
 			return AARCH64_CONDITIONAL_TYPE_BC;
 		}
 		case ARM64_TBNZ: {
+			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;
 			*out_compare_state = (struct register_comparison){
-				.target_register = register_index_from_register(ins->decomposed.operands[0].reg[0]),
+				.target_register = reg,
 				.value = { bit, bit },
 				.mask = ~(uintptr_t)0,
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
-				.validity = COMPARISON_SUPPORTS_ANY,
+				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
 			};
 			return AARCH64_CONDITIONAL_TYPE_BS;
 		}
