@@ -12,6 +12,6 @@ extern char *copy_register_state_description(const struct loader_context *contex
 
 #define for_each_bit(value, bit_name, index) int index; \
 	for (__typeof__(value) bit_name, temp = value; temp != 0;) \
-		if ((bit_name = temp & -temp), (index = _Generic(temp, register_mask: first_set_register_in_mask(temp), default: _Generic(temp, unsigned int: __builtin_ctz(temp), unsigned long: __builtin_ctzl(temp), unsigned long long: __builtin_ctzll(temp)))), (temp ^= bit_name), true)
+		if ((bit_name = temp & -temp), (index = _Generic(temp, register_mask: first_set_register_in_mask(temp), default: _Generic(temp, unsigned int: __builtin_ctz(temp), unsigned long: __builtin_ctzl(temp), unsigned long long: __builtin_ctzll(temp), __uint128_t: ctzuint128(temp)))), (temp ^= bit_name), true)
 
 #endif

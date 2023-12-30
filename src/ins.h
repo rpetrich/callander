@@ -418,19 +418,24 @@ enum {
 
 #define REGISTER_COUNT (BASE_REGISTER_COUNT + 1 + STACK_SLOT_COUNT)
 
-#if REGISTER_COUNT > 64
-typedef __uint128_t register_mask;
 __attribute__((always_inline))
-static inline int first_set_register_in_mask(register_mask mask) {
+static inline int ctzuint128(__uint128_t value) {
 	union {
-		register_mask mask;
+		__uint128_t value;
 		struct {
 			uint64_t low;
 			uint64_t high;
 		} parts;
 	} temp;
-	temp.mask = mask;
-	return (temp.parts.high != 0) ? (64 + __builtin_ctzll(temp.parts.high)) : __builtin_ctzll(temp.parts.low);
+	temp.value = value;
+	return (temp.parts.low != 0) ? __builtin_ctzll(temp.parts.low) : (64 + __builtin_ctzll(temp.parts.high));
+}
+
+#if REGISTER_COUNT > 64
+typedef __uint128_t register_mask;
+__attribute__((always_inline))
+static inline int first_set_register_in_mask(register_mask mask) {
+	return ctzuint128(mask);
 }
 #else
 typedef uint64_t register_mask;
