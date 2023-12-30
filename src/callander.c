@@ -28,6 +28,8 @@
 #include "qsort.h"
 #include "search.h"
 
+#define CALL_TRACE_WITH_RANGE
+
 #ifdef __x86_64__
 #define SKIP_SHIFT
 #endif
