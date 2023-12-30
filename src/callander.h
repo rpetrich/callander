@@ -309,9 +309,6 @@ struct registers {
 	register_mask matches[REGISTER_COUNT];
 #if STORE_LAST_MODIFIED
 	ins_ptr last_modify_ins[REGISTER_COUNT];
-#define last_modify_syscall_register last_modify_ins[REGISTER_SYSCALL_NR]
-#else
-	ins_ptr last_modify_syscall_register;
 #endif
 	struct decoded_rm mem_rm;
 	struct register_comparison compare_state;

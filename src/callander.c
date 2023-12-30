@@ -370,8 +370,6 @@ const struct registers empty_registers = {
 	.matches = { 0 },
 #if STORE_LAST_MODIFIED
 	.last_modify_ins = { 0 },
-#else
-	.last_modify_syscall_register = NULL,
 #endif
 #if defined(__x86_64__)
 	.mem_rm = invalid_decoded_rm,
@@ -407,10 +405,6 @@ static void register_changed(struct registers *regs, int register_index, __attri
 {
 #if STORE_LAST_MODIFIED
 	regs->last_modify_ins[register_index] = ins;
-#else
-	if (register_index == REGISTER_SYSCALL_NR) {
-		regs->last_modify_syscall_register = ins;
-	}
 #endif
 	if (UNLIKELY(regs->compare_state.validity != COMPARISON_IS_INVALID)) {
 		int compare_register = regs->compare_state.target_register;
@@ -1078,12 +1072,6 @@ static inline void dump_registers(const struct loader_context *loader, const str
 				if (state->last_modify_ins[i] != NULL) {
 					ERROR_NOPREFIX("last modified at", temp_str(copy_address_description(loader, state->last_modify_ins[i])));
 				}
-#else
-				if (i == REGISTER_SYSCALL_NR) {
-					if (state->last_modify_syscall_register != NULL) {
-						ERROR_NOPREFIX("last modified at", temp_str(copy_address_description(loader, state->last_modify_syscall_register)));
-					}
-				}
 #endif
 			}
 		}
@@ -1658,9 +1646,6 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 			}
-#if !STORE_LAST_MODIFIED
-			out_registers->last_modify_syscall_register = registers->last_modify_syscall_register;
-#endif
 #pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
@@ -1722,10 +1707,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				out_registers->last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 			}
-#if !STORE_LAST_MODIFIED
-			out_registers->last_modify_syscall_register = registers->last_modify_syscall_register;
-#endif
-#pragma GCC unroll 64
+#pragma GCC unroll 128
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
 			}
@@ -2076,9 +2058,6 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 			copy.last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 		}
-#if !STORE_LAST_MODIFIED
-		copy.last_modify_syscall_register = registers->last_modify_syscall_register;
-#endif
 		copy.mem_rm = registers->mem_rm;
 		copy.compare_state = registers->compare_state;
 		copy.stack_address_taken = registers->stack_address_taken;
