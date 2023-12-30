@@ -5033,7 +5033,7 @@ static function_effects analyze_conditional_branch(struct program_state *analysi
 	int jump_prot = protection_for_address(&analysis->loader, jump_target, &jump_binary, NULL);
 	struct register_comparison compare_state = self->current_state.compare_state;
 	ins_conditional_type conditional_type = ins_get_conditional_type(decoded, &compare_state);
-	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value)) {
+	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value) && compare_state.target_register != REGISTER_INVALID) {
 		check_register_mask(compare_state.sources);
 		// include matching registers
 		if (compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&jump_state.compare_state.mem_rm, &jump_state.mem_rm)) {
