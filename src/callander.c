@@ -12955,6 +12955,9 @@ static int special_binary_flags_for_path(const char *path)
 			if (path[4] == 't' && path[5] == 'h' && path[6] == 'r' && path[7] == 'e' && path[8] == 'a' && path[9] == 'd' && path[10] == '.') { // libpthread.
 				result |= BINARY_IS_PTHREAD;
 			}
+			if (path[4] == 'y' && path[5] == 't' && path[6] == 'h' && path[7] == 'o' && path[8] == 'n') {
+				result |= BINARY_IS_LIBPYTHON;
+			}
 		} else if (path[3] == 'r' && path[4] == 'e' && path[5] == 'a' && path[6] == 'd') {
 			// result |= BINARY_IS_LIBREADLINE;
 		} else if (path[3] == 's') {
@@ -13465,7 +13468,7 @@ static int load_all_needed_and_relocate(struct program_state *analysis)
 
 static bool find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address, struct address_and_size *out_symbol)
 {
-	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBCRYPTO)) == 0) {
+	if ((binary->special_binary_flags & (BINARY_IS_MAIN | BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBCRYPTO | BINARY_IS_LIBPYTHON)) == 0) {
 		return false;
 	}
 	for (size_t i = 0; i < binary->skipped_symbol_count; i++) {
@@ -13486,6 +13489,8 @@ static bool find_skipped_symbol_for_address(struct loader_context *loader, struc
 		LOG("skipping _rtld_global_ro, since it's assumed dlopen and dlclose won't be called");
 	} else if (fs_strcmp(name, "link_hash_ops") == 0) {
 		LOG("skipping link_hash_ops, since it's assumed that it will be referenced");
+	} else if (fs_strcmp(name, "_PyEval_EvalFrameDefault") == 0) {
+		LOG("skipping _PyEval_EvalFrameDefault, since it's assumed that it will be referenced");
 	} else {
 		LOG("callable address in symbol", name);
 		LOG("of binary", binary->path);
@@ -13748,7 +13753,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 							LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &section_data[j])));
 							LOG("value of address is, assuming callable", data);
 							struct address_and_size symbol;
-							if (!find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j], &symbol)) {
+							if (!find_skipped_symbol_for_address(&analysis->loader, new_binary, &section_data[j], &symbol) && !find_skipped_symbol_for_address(&analysis->loader, new_binary, (const void *)data, &symbol)) {
 								struct analysis_frame new_caller = { .address = &section_data[j], .description = name, .next = NULL, .current_state = empty_registers, .entry = (void *)&section_data[j], .entry_state = &empty_registers, .token = { 0 }};
 								analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | effects, &registers, (ins_ptr)data, &new_caller);
 							}
