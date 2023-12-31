@@ -666,6 +666,7 @@ static inline void push_stack(struct registers *regs, int push_count)
 #if STORE_LAST_MODIFIED
 			regs->last_modify_ins[i] = regs->last_modify_ins[i-push_count];
 #endif
+			regs->matches[i] = regs->sources[i-push_count];
 		}
 	}
 	for (int i = 0; i < push_count; i++) {
@@ -674,6 +675,7 @@ static inline void push_stack(struct registers *regs, int push_count)
 #if STORE_LAST_MODIFIED
 		regs->last_modify_ins[REGISTER_STACK_0 + i] = NULL;
 #endif
+		regs->matches[REGISTER_STACK_0 + i] = 0;
 	}
 	// shift the matching bits around
 	for (int i = 0; i < REGISTER_COUNT; i++) {
@@ -694,12 +696,14 @@ static inline void pop_stack(struct registers *regs, int pop_count)
 #if STORE_LAST_MODIFIED
 			regs->last_modify_ins[i] = NULL;
 #endif
+			regs->matches[i] = 0;
 		} else {
 			regs->registers[i] = regs->registers[i+pop_count];
 			regs->sources[i] = regs->sources[i+pop_count];
 #if STORE_LAST_MODIFIED
 			regs->last_modify_ins[i] = regs->last_modify_ins[i+pop_count];
 #endif
+			regs->matches[i] = regs->matches[i+pop_count];
 		}
 	}
 	// shift the matching bits around
