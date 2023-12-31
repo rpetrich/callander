@@ -3,7 +3,7 @@
 file="$1"
 
 if [ ! -e "$file" ]; then
-	file=$(which "$file")
+	file=$(command -v "$file")
 	if [ -z "$file" ]; then
 		echo "could not find $1"
 		exit 1
@@ -20,6 +20,14 @@ debuglink=$(readelf --string-dump=.gnu_debuglink "$file" | sed -n '/]/{s/.* //;p
 if [ ! -z "$debuglink" ]; then
 	if [ -e /usr/lib/debug/.build-id/*/"$debuglink" ]; then
 		cp /usr/lib/debug/.build-id/*/"$debuglink" "$debug_path"
+		exit 0
+	fi
+fi
+
+if [ ! -z "$(command -v debuginfod-find)" ]; then
+	found_path="$(debuginfod-find debuginfo "$file")"
+	if [ -e "$found_path" ]; then
+		cp "$found_path" "$debug_path"
 		exit 0
 	fi
 fi
