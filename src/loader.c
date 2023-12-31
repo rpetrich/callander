@@ -187,10 +187,10 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 			protection |= PROT_EXEC;
 		}
 		if (this_max-this_min) {
-			ssize_t offset = ph->p_offset & -PAGE_SIZE;
+			size_t offset = ph->p_offset & -PAGE_SIZE;
 			size_t len = this_max-this_min;
-			if (offset + len > stat.st_size) {
-				len = ((stat.st_size - offset) + PAGE_SIZE-1) & -PAGE_SIZE;
+			if (offset + len > (size_t)stat.st_size) {
+				len = (((size_t)stat.st_size - offset) + PAGE_SIZE-1) & -PAGE_SIZE;
 			}
 			void *section_mapping = fs_mmap((void *)(map_offset + this_min), len, ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection, MAP_PRIVATE|MAP_FIXED, fd, offset);
 			if (fs_is_map_failed(section_mapping)) {
@@ -203,7 +203,7 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 			size_t pgbrk = (brk+PAGE_SIZE-1) & -PAGE_SIZE;
 			memset((void *)brk, 0, (pgbrk-brk) & (PAGE_SIZE-1));
 			if (this_max-this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
-				int result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
+				result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
 				if (result < 0) {
 					ERROR("failed remapping section with new protection", fs_strerror(result));
 					return -ENOEXEC;

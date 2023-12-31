@@ -1791,13 +1791,13 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 				}
 				widened |= bit;
 			}
-			for (int r = 0; r < REGISTER_COUNT; r++) {
-				if (widened & mask_for_register(r)) {
-					entry->widen_count[r]++;
-				} else if (data->preserved_registers & mask_for_register(r)) {
-					out_registers->registers[r] = registers->registers[r];
+			for (int i = 0; i < REGISTER_COUNT; i++) {
+				if (widened & mask_for_register(i)) {
+					entry->widen_count[i]++;
+				} else if (data->preserved_registers & mask_for_register(i)) {
+					out_registers->registers[i] = registers->registers[i];
 				} else {
-					out_registers->registers[r] = union_of_register_states(registers->registers[r], out_registers->registers[r]);
+					out_registers->registers[i] = union_of_register_states(registers->registers[i], out_registers->registers[i]);
 				}
 			}
 			if (!collapse_registers(entry, out_registers->registers)) {
@@ -5431,8 +5431,10 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 	}
 	function_effects jump_effects;
 	function_effects continue_effects = EFFECT_NONE;
-	for_each_bit(target_registers, bit, r) {
-		self->current_state.sources[r] |= additional_sources;
+	{
+		for_each_bit(target_registers, bit, r) {
+			self->current_state.sources[r] |= additional_sources;
+		}
 	}
 	bool continue_first = continue_target < jump_target;
 	if (continue_first) {
@@ -7463,7 +7465,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
 								if ((next_base_address - base_addr) / sizeof(int32_t) <= max) {
 									LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
-									max = ((next_base_address - base_addr) >> operand->shiftValue) - 1;
+									max = ((next_base_address - base_addr) / 4) - 1;
 								}
 								uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - base_addr) / 4;
 								if (max >= max_in_section) {
@@ -12547,13 +12549,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 #endif
 		if (UNLIKELY(pending_stack_clear)) {
 			LOG("clearing stack after call");
-			for_each_bit(pending_stack_clear, bit, i) {
-				if (SHOULD_LOG && register_is_partially_known(&self.current_state.registers[i])) {
-					ERROR_NOPREFIX("clearing", name_for_register(i));
+			{
+				for_each_bit(pending_stack_clear, bit, i) {
+					if (SHOULD_LOG && register_is_partially_known(&self.current_state.registers[i])) {
+						ERROR_NOPREFIX("clearing", name_for_register(i));
+					}
+					clear_register(&self.current_state.registers[i]);
+					self.current_state.sources[i] = 0;
+					self.current_state.matches[i] = 0;
 				}
-				clear_register(&self.current_state.registers[i]);
-				self.current_state.sources[i] = 0;
-				self.current_state.matches[i] = 0;
 			}
 			for (int i = 0; i < REGISTER_STACK_0; i++) {
 				self.current_state.matches[i] &= ~pending_stack_clear;
