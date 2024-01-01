@@ -9118,7 +9118,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 						struct register_state state = self.current_state.registers[rm];
 						if (rm >= REGISTER_STACK_0) {
-							if (rm == REGISTER_COUNT-1) {
+							if (rm >= REGISTER_COUNT-2) {
+								// check for cases like push QWORD PTR [rsp+0x70] where source stack register will be pushed out of existence
 								push_stack(&self.current_state, 2);
 								break;
 							}
