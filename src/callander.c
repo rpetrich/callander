@@ -506,6 +506,11 @@ static inline void clear_match_keep_stack(__attribute__((unused)) const struct l
 __attribute__((nonnull(1, 2, 5)))
 static void add_match_and_copy_sources(const struct loader_context *loader, struct registers *regs, int dest_reg, int source_reg, __attribute__((unused)) ins_ptr ins)
 {
+#ifdef LOGGING
+	if (UNLIKELY(dest_reg < 0 || dest_reg >= REGISTER_COUNT)) {
+		DIE("invalid destination register", (intptr_t)dest_reg);
+	}
+#endif
 	clear_match(loader, regs, dest_reg, ins);
 	if (source_reg == REGISTER_INVALID) {
 		regs->sources[dest_reg] = 0;
