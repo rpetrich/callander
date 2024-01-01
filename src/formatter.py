@@ -44,7 +44,7 @@ class BitflagPrinter:
     regs = []
     while val != 0:
       bit = val & (~val+1)
-      i = math.log2(bit)
+      i = math.log(bit, 2)
       regs.append(self.converter(int(i)))
       val ^= bit
     return '|'.join(regs)
