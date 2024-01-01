@@ -27,56 +27,18 @@ read(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, /usr/bin/scanelf+0xecfd, 1) @ ld-musl-aarch64.so.1+0x5d210
 write(any, /usr/bin/scanelf+0xf2f2, 5) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf2f8, 8) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf301, 7) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf309, 12) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf316, 8) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf31f, 6) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf326, 6) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf32d, 7) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf335, 7) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf33d, 5) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf343, 5) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf349, 7) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf351, 4) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf356, 4) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf35b, 9) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf365, 8) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf36e, 5) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf374, 6) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf37b, 5) @ ld-musl-aarch64.so.1+0x5d210
-write(any, /usr/bin/scanelf+0xf381, 5) @ ld-musl-aarch64.so.1+0x5d210
 write(any, /usr/bin/scanelf+0xf387, 7) @ ld-musl-aarch64.so.1+0x5d210
 write(any, /usr/bin/scanelf+0xecfd, 1) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, /usr/bin/scanelf+0xf2f2, 5) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf2f8, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf301, 7) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf309, 12) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf316, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf31f, 6) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf326, 6) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf32d, 7) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf335, 7) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf33d, 5) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf343, 5) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf349, 7) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf351, 4) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf356, 4) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf35b, 9) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf365, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf36e, 5) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf374, 6) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf37b, 5) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, /usr/bin/scanelf+0xf381, 5) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, /usr/bin/scanelf+0xf387, 7) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readv(any, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 readlinkat(AT_FDCWD, any, ld-musl-aarch64.so.1+0xb2e1b(buf.0*), 32) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
-newfstatat(STDIN_FILENO-0xfffffffffffffffe, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
@@ -115,7 +77,6 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6e520(app_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fb18(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sigaction*+376)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 prctl(PR_SET_SECUREBITS, 47, 0, any, any) @ ld-musl-aarch64.so.1+0x24740(prctl+104)
 prctl(PR_SET_NO_NEW_PRIVS, 1, 0, any, any) @ ld-musl-aarch64.so.1+0x24740(prctl+104)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
@@ -124,8 +85,9 @@ brk(any) @ ld-musl-aarch64.so.1+0x2b5d4(__malloc_alloc_meta*+328)
 brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+440)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5d1a8
+mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e818(mremap+140)
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
-mmap(0, any, PROT_READ-PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, STDIN_FILENO-0xfffffffffffffffe, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
+mmap(0, any, PROT_READ-PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, any, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
