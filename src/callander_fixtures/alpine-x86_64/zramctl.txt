@@ -1,6 +1,8 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x57f61
+write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(/sbin/zramctl+0x12cf4, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(/sbin/zramctl+0x12d01, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
@@ -102,11 +104,15 @@ openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(_
 openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)

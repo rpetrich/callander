@@ -52,7 +52,7 @@ fcntl(any u32, F_GETFL-F_SETFL, any) @ libc.so.6+0x113662(__fcntl64_nocancel_adj
 getcwd(non-NULL, any) @ libc.so.6+0x10ed10(getcwd+128)
 gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 sysinfo(any) @ libc.so.6+0x11ffe9(sysinfo+9)
-fstatfs(STDIN_FILENO-0xfffffffe, any) @ libc.so.6+0x10dc59(fstatfs64+9)
+fstatfs(any u32, any) @ libc.so.6+0x10dc59(fstatfs64+9)
 gettid() @ libc.so.6+0x42fdb(raise+155)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0, 0, any, any u32)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, any)

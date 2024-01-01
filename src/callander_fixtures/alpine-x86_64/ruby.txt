@@ -116,7 +116,7 @@ sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
-shutdown(any, SHUT_RD-SHUT_RDWR) @ ld-musl-x86_64.so.1+0x3ecda(shutdown+23)
+shutdown(any, any) @ ld-musl-x86_64.so.1+0x3ecda(shutdown+23)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 listen(any, any) @ ld-musl-x86_64.so.1+0x3be9a(listen+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3b411(getsockname+18)
@@ -313,13 +313,14 @@ openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-m
 openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 futimesat(AT_FDCWD, any, any) @ ld-musl-x86_64.so.1+0x49cf2(utimensat+222)
-newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
-newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW-AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
+newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
+newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
+newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 fchmodat(AT_FDCWD, any, any u32) @ ld-musl-x86_64.so.1+0x49784(fchmodat+237)
 faccessat(any, any, any) @ ld-musl-x86_64.so.1+0x5aac6(checker*+84)
 faccessat(AT_FDCWD, any, any) @ ld-musl-x86_64.so.1+0x5ab10(faccessat+44)
-pselect6(0x1-0x400, any, 0, any, 0, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-pselect6(0x1-0x400, any, 0, any, any, 0x1-0xffffffff) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+pselect6(0x1-0x400, any, 0, any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 pselect6(0x1-0x400, any, 0, any, 0, any) @ ld-musl-x86_64.so.1+0x57f61
 ppoll(any, any, any, 0, 8) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 ppoll(any, any, any, 0, 8) @ ld-musl-x86_64.so.1+0x57f61

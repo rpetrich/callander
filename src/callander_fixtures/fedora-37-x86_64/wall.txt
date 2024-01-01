@@ -22,8 +22,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8ce58(__pthread_kill_implem
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x91ef6(pthread_sigmask+70)
 rt_sigreturn(any) @ libc.so.6+0x3cb67
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x100518(tcgetattr+40)
-pread64(STDIN_FILENO-0xfffffffe, any, 511, any) @ libc.so.6+0x1001ec(__pread64_nocancel+12)
 pread64(any u32, any, 384, any) @ libc.so.6+0x1001ec(__pread64_nocancel+12)
+pread64(any u32, any, 511, any) @ libc.so.6+0x1001ec(__pread64_nocancel+12)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xcb4d(_dl_debug_vdprintf+301)
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x8105e(__libc_message+510)
 writev(any u32, any, any u32) @ libc.so.6+0x100f02(writev+18)
@@ -35,7 +35,6 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x104cb9(madvis
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x104cb9(madvise+9)
 dup(any u32) @ libc.so.6+0xfba69(dup+9)
 alarm(any u32) @ libc.so.6+0xd6709(alarm+9)
-getpid() @ ld-linux-x86-64.so.2+0x21e69(__GI___getpid+9)
 getpid() @ libc.so.6+0xd8029(getpid+9)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, any, 0) @ libc.so.6+0xd6d35(_Fork+37)
 exit(0) @ libc.so.6+0x27574(__libc_start_call_main+164)

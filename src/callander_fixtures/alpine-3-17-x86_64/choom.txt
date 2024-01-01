@@ -1,4 +1,6 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
+write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
 open(non-NULL, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(non-NULL, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)
@@ -36,6 +38,8 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 dup(any) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
+nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x583bc
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
@@ -75,8 +79,12 @@ restart_syscall()
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x59619(clock_gettime+49)
 clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
 clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
+clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
+openat(any, /usr/bin/choom+0x900c, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /usr/bin/choom+0x928a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /usr/bin/choom+0x900c, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /usr/bin/choom+0x928a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)

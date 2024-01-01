@@ -149,6 +149,7 @@ openat(any, libblkid.so.1+0x36de7, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, libblkid.so.1+0x3995c, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, libblkid.so.1+0x39e93, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x49d54(fstatat64+104)
+newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d68, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x49dcd(fstatat64+225)
 faccessat(any, any, F_OK) @ ld-musl-x86_64.so.1+0x5af55(faccessat+44)

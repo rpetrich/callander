@@ -47,6 +47,7 @@ write(any, /usr/bin/scanelf+0xd5bd, 5) @ ld-musl-x86_64.so.1+0x57f61
 write(any, /usr/bin/scanelf+0xd5c3, 5) @ ld-musl-x86_64.so.1+0x57f61
 write(any, /usr/bin/scanelf+0xd5c9, 7) @ ld-musl-x86_64.so.1+0x57f61
 write(any, any, 4) @ ld-musl-x86_64.so.1+0x5aadf(checker*+109)
+open(non-NULL, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(non-NULL, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
@@ -86,6 +87,7 @@ readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a2bb(__stdio_write*+81)
 access(any, R_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b069(pipe+6)
+mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x382ba(mremap+124)
 dup2(any, any) @ ld-musl-x86_64.so.1+0x5aa3f(dup3+79)
 clone(0, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f24
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
@@ -153,7 +155,9 @@ exit_group(any) @ ld-musl-x86_64.so.1+0x1bf8c(_Exit+8)
 openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
+newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
+newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 faccessat(any, any, any) @ ld-musl-x86_64.so.1+0x5aac6(checker*+84)
 faccessat(any, /usr/bin/scanelf+0x12100, F_OK) @ ld-musl-x86_64.so.1+0x5ab10(faccessat+44)
 unshare(any) @ ld-musl-x86_64.so.1+0x1f7a8(unshare+9)

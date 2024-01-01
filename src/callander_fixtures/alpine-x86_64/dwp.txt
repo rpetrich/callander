@@ -4,7 +4,7 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 write(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
-open(non-NULL, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
+open(any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x57f81(__map_file*+24)

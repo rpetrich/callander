@@ -67,8 +67,8 @@ pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
-select(0x1-0x400, any, any, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-select(0x1-0x400, any, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
+select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 shmget(114, non-NULL, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)

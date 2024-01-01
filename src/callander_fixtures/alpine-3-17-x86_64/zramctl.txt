@@ -1,6 +1,8 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
+write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/sbin/zramctl+0x12cf4, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/sbin/zramctl+0x12d01, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
@@ -102,11 +104,15 @@ openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x55594(_
 openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)

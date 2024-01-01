@@ -57,7 +57,7 @@ rt_sigreturn(any) @ libpthread.so.0+0x16917
 rt_sigreturn(any) @ libc.so.6+0x4adc7
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x10ca76(tcgetattr+40)
 ioctl(any, any, any) @ libc.so.6+0x10d4a5(ioctl+7)
-readv(any, any, any u32) @ libc.so.6+0x10d4f1(readv+19)
+readv(any u32, any, any u32) @ libc.so.6+0x10d4f1(readv+19)
 readv(any u32, any, any u32) @ libc.so.6+0x10d525(readv+71)
 writev(any u32, any, NULL-0x40) @ ld-linux-x86-64.so.2+0x11e16(_dl_debug_vdprintf+296)
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x90b2e(__libc_message+448)

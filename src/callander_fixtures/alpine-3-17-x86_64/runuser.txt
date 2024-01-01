@@ -43,6 +43,7 @@ rt_sigaction(SIGINT-SIGQUIT, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sig
 rt_sigaction(SIGALRM-SIGTERM, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
 rt_sigaction(SIGCHLD, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
 rt_sigaction(SIGSETXID-SIGSYNCCALL, any, 0, 8) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
+rt_sigaction(SIGINT-SIGQUIT, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
 rt_sigaction(SIGALRM-SIGTERM, any, any, 8) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
 rt_sigprocmask(SIG_UNBLOCK, any, 8, 8) @ ld-musl-x86_64.so.1+0x1cf36(abort+127)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x491f6(__block_all_sigs*+23)

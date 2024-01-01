@@ -133,7 +133,9 @@ mknod(any, any u32, any) @ ld-musl-x86_64.so.1+0x49a5b(mknod+8)
 getpriority(0, 0) @ ld-musl-x86_64.so.1+0x36724(getpriority+11)
 setpriority(0, 0, any) @ ld-musl-x86_64.so.1+0x376a3(setpriority+14)
 mlock(any, any) @ ld-musl-x86_64.so.1+0x38129(mlock+6)
+munlock(any, any) @ ld-musl-x86_64.so.1+0x38301(munlock+6)
 mlockall(MCL_CURRENT|MCL_FUTURE) @ ld-musl-x86_64.so.1+0x3813e(mlockall+9)
+munlockall() @ ld-musl-x86_64.so.1+0x38313(munlockall+6)
 gettid() @ ld-musl-x86_64.so.1+0x57c50(__synccall*+172)
 tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x1bfff(abort+101)
 tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x48e47(raise+43)
@@ -186,6 +188,7 @@ openat(any, libblkid.so.1+0x33de7, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, libblkid.so.1+0x3695c, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, libblkid.so.1+0x36e93, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
+newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 faccessat(any, any, F_OK) @ ld-musl-x86_64.so.1+0x5ab10(faccessat+44)

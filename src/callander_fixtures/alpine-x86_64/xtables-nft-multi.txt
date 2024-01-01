@@ -6,10 +6,7 @@ open(ld-musl-x86_64.so.1+0x94beb, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl
 open(ld-musl-x86_64.so.1+0x94c70, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
 open(any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
-open(libxtables.so.12+0xb270, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
-open(/sbin/xtables-nft-multi+0x22690, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
-open(/sbin/xtables-nft-multi+0x226b0, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
-open(/sbin/xtables-nft-multi+0x226d0, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
+open(non-NULL, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x57f81(__map_file*+24)

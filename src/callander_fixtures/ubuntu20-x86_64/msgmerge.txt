@@ -38,7 +38,7 @@ brk(NULL-0xfffffffffffffffe) @ libc.so.6+0x1144a9(brk+9)
 rt_sigaction(any u32, any, any, 8) @ libc.so.6+0x43164(__libc_sigaction*+196)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ libc.so.6+0x42fc8(raise+136)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x43009(raise+201)
-rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, 0, 8) @ libc.so.6+0x43309(sigprocmask+73)
+rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ libc.so.6+0x43309(sigprocmask+73)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libpthread.so.0+0x874f(start_thread+543)
 rt_sigprocmask(SIG_SETMASK, any, any, 8) @ libpthread.so.0+0x10e89(pthread_sigmask+73)
 rt_sigreturn(any) @ libc.so.6+0x43097

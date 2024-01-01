@@ -123,7 +123,7 @@ fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4b218(fopen64+132)
 fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x57f61
 fcntl(any, F_GETFD, any u32) @ ld-musl-x86_64.so.1+0x5acda(fchown+51)
-flock(any, LOCK_SH) @ ld-musl-x86_64.so.1+0x1efe3(flock+12)
+flock(any, LOCK_SH-LOCK_EX) @ ld-musl-x86_64.so.1+0x1efe3(flock+12)
 fsync(any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 fsync(any) @ ld-musl-x86_64.so.1+0x57f61
 fdatasync(any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)

@@ -155,6 +155,7 @@ openat(any, libfdisk.so.1+0x4190f, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, /sbin/sfdisk+0x192f1, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 openat(any, /sbin/sfdisk+0x1931d, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
+newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 faccessat(any, any, F_OK) @ ld-musl-x86_64.so.1+0x5ab10(faccessat+44)

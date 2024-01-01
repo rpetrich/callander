@@ -44,12 +44,20 @@ mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x57f61
 getpid() @ ld-musl-x86_64.so.1+0x5af1f(getpid+5)
+sendfile(any, any, 0, any) @ ld-musl-x86_64.so.1+0x1f512(sendfile64+14)
+socket(AF_ALG, SOCK_SEQPACKET, 0) @ ld-musl-x86_64.so.1+0x3ed28(socket+27)
+socket(AF_ALG, SOCK_SEQPACKET, 0) @ ld-musl-x86_64.so.1+0x3ed58(socket+75)
+accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
+bind(any, any, 88) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
 fcntl(STDIN_FILENO-0x7fffffff, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(STDIN_FILENO-0x7fffffff, F_GETFL, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(STDIN_FILENO-0x7fffffff, F_SETLK, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
+fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3ed7f(socket+114)
+fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3ed99(socket+140)
 fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49665(fchmod+44)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49822(fstatat64+79)
 fcntl(any, F_GETFD, any u32) @ ld-musl-x86_64.so.1+0x5acda(fchown+51)

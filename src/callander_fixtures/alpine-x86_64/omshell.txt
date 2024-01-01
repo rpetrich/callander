@@ -61,6 +61,7 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a2bb(__stdio_write*+81)
 select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x382ba(mremap+124)
+dup(any) @ ld-musl-x86_64.so.1+0x5a9c4(dup+9)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x57f61
 getpid() @ ld-musl-x86_64.so.1+0x5af1f(getpid+5)

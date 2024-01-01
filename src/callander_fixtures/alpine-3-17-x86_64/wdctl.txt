@@ -99,11 +99,9 @@ exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
 openat(any, /bin/wdctl+0xb038, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /bin/wdctl+0xb6aa, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /bin/wdctl+0xb74c, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /bin/wdctl+0xb9b3, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /bin/wdctl+0xb038, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /bin/wdctl+0xb6aa, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /bin/wdctl+0xb74c, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /bin/wdctl+0xb9b3, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 faccessat(any, /bin/wdctl+0xb038, F_OK) @ ld-musl-x86_64.so.1+0x5af55(faccessat+44)
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)

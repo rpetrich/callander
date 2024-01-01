@@ -72,9 +72,11 @@ socket(any, any, any) @ ld-musl-x86_64.so.1+0x3ed28(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3ed58(socket+75)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+sendto(any, any, any u32, 0, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
+sendto(any, any, any u32, 0, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
+sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
