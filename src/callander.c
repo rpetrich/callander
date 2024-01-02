@@ -10720,13 +10720,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									dump_registers(&analysis->loader, &self.current_state, mask_for_register(reg) | mask_for_register(index));
 									// enforce max range from other ldr instructions
 									uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
-									if (((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) <= index_state.max) {
+									uintptr_t next_base_index = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue);
+									if (next_base_index <= index_state.max) {
 										LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
-										index_state.max = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) - 1;
+										index_state.max = next_base_index - 1;
+										LOG("new range", temp_str(copy_register_state_description(&analysis->loader, index_state)));
 									}
 									uintptr_t max_in_section = ((uintptr_t)apply_base_address(&binary->info, section->sh_addr) + section->sh_size - base_addr) >> decoded.decomposed.operands[1].shiftValue;
 									if (index_state.max >= max_in_section) {
 										index_state.max = max_in_section - 1;
+										LOG("truncating to new maximum", temp_str(copy_register_state_description(&analysis->loader, index_state)));
 										if (index_state.value >= max_in_section) {
 											LOG("somehow in a jump table without a proper value, bailing");
 											goto update_and_return;
@@ -10777,8 +10780,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
 										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
-										if ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue <= index_state.max) {
-											index_state.max = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) - 1;
+										next_base_index = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue);
+										if (next_base_index <= index_state.max) {
+											index_state.max = next_base_index - 1;
 										}
 									}
 									LOG("completing from lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
