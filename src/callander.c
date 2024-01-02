@@ -9216,7 +9216,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-					} else if (prot & PROT_READ) {
+					} else if (prot & PROT_READ && binary_for_address(&analysis->loader, ins) == binary) {
 						if ((effects & EFFECT_ENTER_CALLS) == 0) {
 							if (analysis->address_loaded != NULL) {
 								analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
