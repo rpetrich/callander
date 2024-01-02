@@ -3901,6 +3901,14 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 				break;
 			}
 			enum ins_operand_size size = get_register_size(operand->reg[0]);
+			if (size != OPERATION_SIZE_DWORD && out_state->value > 0xffffffff) {
+				// if truncating an address, consider the value unknown
+				struct loaded_binary *binary = binary_for_address(loader, (const void *)out_state->value);
+				if (binary != NULL) {
+					clear_register(out_state);
+					clear_match(loader, regs, reg, ins);
+				}
+			}
 			truncate_to_operand_size(out_state, size);
 			if (out_size != NULL) {
 				*out_size = size;
