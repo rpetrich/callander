@@ -3974,12 +3974,17 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			// fallthrough
 		}
 		case MEM_POST_IDX: {
-			int reg = register_index_from_register(operand->reg[0]);
-			if (reg != REGISTER_INVALID) {
-				struct register_state imm;
-				set_register(&imm, operand->immediate);
-				add_registers(&regs->registers[reg], &imm);
-				clear_match(loader, regs, reg, ins);
+			if (operand->reg[0] == REG_SP) {
+				// adjust the stack
+				add_to_stack(loader, regs, operand->immediate, ins);
+			} else {
+				int reg = register_index_from_register(operand->reg[0]);
+				if (reg != REGISTER_INVALID) {
+					struct register_state imm;
+					set_register(&imm, operand->immediate);
+					add_registers(&regs->registers[reg], &imm);
+					clear_match(loader, regs, reg, ins);
+				}
 			}
 			clear_register(out_state);
 			if (out_size != NULL) {
