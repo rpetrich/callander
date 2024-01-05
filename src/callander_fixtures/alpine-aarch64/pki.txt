@@ -1,6 +1,6 @@
 callander: permitted syscalls: fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
 fcntl(any, F_SETFL, NULL-0xfffffffe) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
-ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
+ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
 chroot(any) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
 openat(AT_FDCWD, libstrongswan.so.0+0x57010, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
@@ -10,11 +10,11 @@ close(any) @ ld-musl-aarch64.so.1+0x5dc8c
 close(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 pipe2(any, 0) @ ld-musl-aarch64.so.1+0x65620(pipe+16)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x65550(lseek64+12)
-read(any, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
+read(any u32, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-readv(any, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
-writev(any, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
+readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
+writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
 capget(any, 0) @ ld-musl-aarch64.so.1+0x24144(capget+12)
 capset(any, any) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)

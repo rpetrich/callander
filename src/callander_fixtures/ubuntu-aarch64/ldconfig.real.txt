@@ -13,10 +13,10 @@ chdir(/usr/sbin/ldconfig.real+0x91e90) @ /usr/sbin/ldconfig.real+0x37dc8
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x38c48
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig.real+0x37960
 openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, any) @ /usr/sbin/ldconfig.real+0x37a44
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, 0600) @ /usr/sbin/ldconfig.real+0x37a44
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37a44
 openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, any) @ /usr/sbin/ldconfig.real+0x37ad0
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, 0600) @ /usr/sbin/ldconfig.real+0x37ad0
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37ad0
 openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x38798
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x38798
@@ -39,7 +39,7 @@ write(any, any, any) @ /usr/sbin/ldconfig.real+0x37c60
 write(any, any, non-NULL) @ /usr/sbin/ldconfig.real+0x38938
 writev(STDERR_FILENO, any, any) @ /usr/sbin/ldconfig.real+0x38ad4
 writev(STDERR_FILENO, any, any) @ /usr/sbin/ldconfig.real+0x38b14
-writev(any, any, any) @ /usr/sbin/ldconfig.real+0x6cc48
+writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0x6cc48
 pread64(any, any, 400, any) @ /usr/sbin/ldconfig.real+0x5bbe8
 pread64(any, any, 511, any) @ /usr/sbin/ldconfig.real+0x5bbe8
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x745dc
@@ -80,8 +80,8 @@ sched_yield() @ /usr/sbin/ldconfig.real+0x37808
 sched_get_priority_max(1) @ /usr/sbin/ldconfig.real+0x5b388
 sched_get_priority_min(1) @ /usr/sbin/ldconfig.real+0x5b3c8
 restart_syscall()
-tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x25ba8
-tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x25ba8
+tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x25ba8
+tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig.real+0x25ba8
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x25bdc
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x25bdc
 rt_sigaction(SIGABRT, any, any, 8) @ /usr/sbin/ldconfig.real+0x4baac

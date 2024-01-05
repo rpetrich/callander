@@ -32,7 +32,7 @@ write(any, any, any) @ /sbin/ldconfig:0x42fa74
 write(any, any, non-NULL) @ /sbin/ldconfig:0x430710
 writev(STDERR_FILENO, any, 0x1-0x2) @ /sbin/ldconfig:0x43087c
 writev(STDERR_FILENO, any, any) @ /sbin/ldconfig:0x4308c4
-writev(any, any, any) @ /sbin/ldconfig:0x461218
+writev(any u32, any, any) @ /sbin/ldconfig:0x461218
 pread64(any, any, 400, any) @ /sbin/ldconfig:0x454618
 ppoll(any, 1, any, 0, 0) @ /sbin/ldconfig:0x466bd8
 ppoll(any, any, any, 0, 0) @ /sbin/ldconfig:0x466c3c

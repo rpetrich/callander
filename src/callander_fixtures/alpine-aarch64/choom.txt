@@ -1,7 +1,7 @@
 callander: permitted syscalls: fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21204(open+136)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x517f0(fdopen+176)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x5186c(fdopen+300)
-ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
+ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
 openat(any, non-NULL, O_RDONLY-O_ACCMODE|O_TRUNC|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, /usr/bin/choom+0xa81a, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
@@ -12,11 +12,11 @@ close(any) @ ld-musl-aarch64.so.1+0x51bb8(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x5dc8c
 close(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x65550(lseek64+12)
-read(any, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
+read(any u32, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dc8c
 write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-readv(any, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
-writev(any, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
+readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
+writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)

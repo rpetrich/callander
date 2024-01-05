@@ -9,7 +9,7 @@ ioctl(any, TIOCSWINSZ, non-NULL) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, TIOCSPTLCK, any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, _IOR(84,48,4), any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x50e34(fdopen+300)
-ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
+ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
 ioctl(STDIN_FILENO, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x6494c(isatty+24)
 faccessat(AT_FDCWD, non-NULL, X_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20548(__init_libc*+380)
@@ -21,15 +21,15 @@ close(any) @ ld-musl-aarch64.so.1+0x52598(fopen64+176)
 close(any) @ ld-musl-aarch64.so.1+0x5d210
 close(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x64a28(lseek64+12)
-read(any, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
+read(any u32, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 read(any, any, 128) @ ld-musl-aarch64.so.1+0x5d210
 read(any, any, 1024) @ ld-musl-aarch64.so.1+0x5d210
 read(any, any, 128) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 read(any, any, 1024) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5d210
 write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-readv(any, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
-writev(any, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
+readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
+writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210

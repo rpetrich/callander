@@ -11,7 +11,7 @@ fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x52fd4(fopen64+148)
 ioctl(any, SIOCGIFNAME, any) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
 ioctl(any, SIOCGIFINDEX, any) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x5186c(fdopen+300)
-ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
+ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c06a, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x519a8(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c075, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x519a8(__fopen_rb_ca*+64)
@@ -27,7 +27,7 @@ openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-a
 close(any) @ ld-musl-aarch64.so.1+0x20014(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x41ff4(if_indextoname+84)
 close(any) @ ld-musl-aarch64.so.1+0x42368(if_nametoindex+116)
-close(any) @ ld-musl-aarch64.so.1+0x45340(__res_msend_rc*+2672)
+close(any u32) @ ld-musl-aarch64.so.1+0x45340(__res_msend_rc*+2672)
 close(any) @ ld-musl-aarch64.so.1+0x51bb8(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52ff0(fopen64+176)
 close(any) @ ld-musl-aarch64.so.1+0x5dc8c
@@ -36,18 +36,18 @@ close(any) @ ld-musl-aarch64.so.1+0x61de4(__map_file*+84)
 close(any) @ ld-musl-aarch64.so.1+0x61e30(__map_file*+160)
 pipe2(/usr/bin/lsof+0x4016c, 0) @ ld-musl-aarch64.so.1+0x65620(pipe+16)
 pipe2(/usr/bin/lsof+0x40174, 0) @ ld-musl-aarch64.so.1+0x65620(pipe+16)
-getdents64(any, any, 2048) @ ld-musl-aarch64.so.1+0x2005c(readdir64+44)
+getdents64(any u32, any, 2048) @ ld-musl-aarch64.so.1+0x2005c(readdir64+44)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x65550(lseek64+12)
-read(any, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
+read(any u32, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-readv(any, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
-writev(any, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
+readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
+writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
-ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
-ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, 0x1000) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
 newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
@@ -117,8 +117,8 @@ bind(any, any, any u32) @ ld-musl-aarch64.so.1+0x3fd4c(bind+32)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
-sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
+sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
