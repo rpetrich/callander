@@ -9,6 +9,8 @@
 #include <stdnoreturn.h>
 #include <sys/uio.h>
 
+#define PROXY_SUPPORT_DARWIN
+
 // PROXY_FD is the connection to the victim target
 #define PROXY_FD 0x3fc
 #define SHARED_PAGE_FD 0x3fb

@@ -17,15 +17,25 @@
 ".type fs_syscall_ret,@function\n" \
 "fs_syscall_ret:\n" \
 "	ret\n" \
+".cfi_endproc\n" \
 );
 #endif
 
 #include <stdnoreturn.h>
 
+#ifdef __linux__
+#define FS_SYSCALL_REG "x8"
+#elif defined(__APPLE__)
+#define FS_SYSCALL_REG "x16"
+#else
+#error "unsupported target"
+#endif
+
+
 __attribute__((always_inline))
 static inline intptr_t fs_syscall0(intptr_t id)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0");
 	asm __volatile__ (
 		FS_CALL_SYSCALL
@@ -39,7 +49,7 @@ static inline intptr_t fs_syscall0(intptr_t id)
 __attribute__((always_inline))
 static inline intptr_t fs_syscall1(intptr_t id, intptr_t arg1)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	asm __volatile__ (
 		FS_CALL_SYSCALL
@@ -53,7 +63,7 @@ static inline intptr_t fs_syscall1(intptr_t id, intptr_t arg1)
 __attribute__((always_inline))
 noreturn static inline void fs_syscall_noreturn1(intptr_t id, intptr_t arg1)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	asm __volatile__ (
 		FS_JUMP_SYSCALL
@@ -67,7 +77,7 @@ noreturn static inline void fs_syscall_noreturn1(intptr_t id, intptr_t arg1)
 __attribute__((always_inline))
 static inline intptr_t fs_syscall2(intptr_t id, intptr_t arg1, intptr_t arg2)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	register intptr_t r1 __asm__("x1") = arg2;
 	asm __volatile__ (
@@ -82,7 +92,7 @@ static inline intptr_t fs_syscall2(intptr_t id, intptr_t arg1, intptr_t arg2)
 __attribute__((always_inline))
 static inline intptr_t fs_syscall3(intptr_t id, intptr_t arg1, intptr_t arg2, intptr_t arg3)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	register intptr_t r1 __asm__("x1") = arg2;
 	register intptr_t r2 __asm__("x2") = arg3;
@@ -98,7 +108,7 @@ static inline intptr_t fs_syscall3(intptr_t id, intptr_t arg1, intptr_t arg2, in
 __attribute__((always_inline))
 static inline intptr_t fs_syscall4(intptr_t id, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	register intptr_t r1 __asm__("x1") = arg2;
 	register intptr_t r2 __asm__("x2") = arg3;
@@ -115,7 +125,7 @@ static inline intptr_t fs_syscall4(intptr_t id, intptr_t arg1, intptr_t arg2, in
 __attribute__((always_inline))
 static inline intptr_t fs_syscall5(intptr_t id, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	register intptr_t r1 __asm__("x1") = arg2;
 	register intptr_t r2 __asm__("x2") = arg3;
@@ -133,7 +143,7 @@ static inline intptr_t fs_syscall5(intptr_t id, intptr_t arg1, intptr_t arg2, in
 __attribute__((always_inline))
 static inline intptr_t fs_syscall6(intptr_t id, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
 {
-	register intptr_t r8 __asm__("x8") = id;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = id;
 	register intptr_t r0 __asm__("x0") = arg1;
 	register intptr_t r1 __asm__("x1") = arg2;
 	register intptr_t r2 __asm__("x2") = arg3;
@@ -153,7 +163,7 @@ static inline intptr_t fs_syscall6(intptr_t id, intptr_t arg1, intptr_t arg2, in
 __attribute__((always_inline))
 static inline intptr_t fs_clone(unsigned long flags, void *child_stack, void *ptid, void *ctid, void *regs, void *fn)
 {
-	register intptr_t r8 __asm__("x8") = __NR_clone;
+	register intptr_t r8 __asm__(FS_SYSCALL_REG) = __NR_clone;
 	register intptr_t r0 __asm__("x0") = flags;
 	register intptr_t r1 __asm__("x1") = (intptr_t)child_stack;
 	register intptr_t r2 __asm__("x2") = (intptr_t)ptid;
@@ -194,5 +204,5 @@ struct fs_stat {
 	long st_mtime_nsec;
 	long st_ctime_sec;
 	long st_ctime_nsec;
-	unsigned __unused[2];
+	unsigned __unused_padding[2];
 };

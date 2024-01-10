@@ -289,7 +289,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			};
 			return AARCH64_CONDITIONAL_TYPE_EQ;
 		}
-		case ARM64_CBNZ:
+		case ARM64_CBNZ: {
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
@@ -300,6 +300,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
 			};
 			return AARCH64_CONDITIONAL_TYPE_NE;
+		}
 		case ARM64_TBZ: {
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;

@@ -3,6 +3,10 @@
 #define FS_INLINE_MUTEX_SLOW_PATH
 #include "freestanding.h"
 
+#ifdef __APPLE__
+#include "darwin.h"
+#endif
+
 #include "axon.h"
 
 #include <arpa/inet.h>
@@ -249,6 +253,9 @@ noreturn static void process_data(void)
 					response.result = fs_clone(values[0], (void *)values[1], (void *)values[2], (void *)values[3], (void *)values[4], (void *)values[5]);
 #endif
 				} else {
+#ifdef __APPLE__
+					syscall |= DARWIN_SYSCALL_BASE;
+#endif
 					response.result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
 				}
 				break;

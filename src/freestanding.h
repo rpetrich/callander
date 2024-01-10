@@ -19,6 +19,7 @@
 #elif defined(__APPLE__)
 #define __APPLE_API_PRIVATE
 #include <sys/syscall.h>
+#include <os/lock.h>
 #else
 #error "unsupported target"
 #endif
@@ -795,7 +796,7 @@ static inline int fs_tkill(int tid, int sig)
 __attribute__((warn_unused_result))
 static inline int fs_kill(int pid, int sig)
 {
-	return (int)FS_SYSCALL(__NR_kill, pid, sig);
+	return (int)FS_SYSCALL(SYS_kill, pid, sig);
 }
 
 __attribute__((warn_unused_result))
@@ -856,19 +857,24 @@ static inline int fs_memfd_create(const char *name, unsigned int flags)
 
 static inline long fs_ptrace(int request, pid_t pid, void *addr, void *data)
 {
-	return (long)FS_SYSCALL(__NR_ptrace, request, pid, (intptr_t)addr, (intptr_t)data);
+	return (long)FS_SYSCALL(SYS_ptrace, request, pid, (intptr_t)addr, (intptr_t)data);
 }
 
+#ifdef __NR_process_vm_readv
 static inline ssize_t fs_process_vm_readv(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags)
 {
 	return (ssize_t)FS_SYSCALL(__NR_process_vm_readv, pid, (intptr_t)local_iov, (intptr_t)liovcnt, (intptr_t)remote_iov, (intptr_t)riovcnt, (intptr_t)flags);
 }
+#endif
 
+#ifdef __NR_process_vm_writev
 static inline ssize_t fs_process_vm_writev(pid_t pid, const struct iovec *local_iov, unsigned long liovcnt, const struct iovec *remote_iov, unsigned long riovcnt, unsigned long flags)
 {
 	return (ssize_t)FS_SYSCALL(__NR_process_vm_writev, pid, (intptr_t)local_iov, (intptr_t)liovcnt, (intptr_t)remote_iov, (intptr_t)riovcnt, (intptr_t)flags);
 }
+#endif
 
+#ifdef __NR_process_vm_readv
 static inline ssize_t fs_process_vm_read(pid_t pid, void *buf, size_t size, uintptr_t remote)
 {
 	struct iovec local_iov = {
@@ -881,7 +887,9 @@ static inline ssize_t fs_process_vm_read(pid_t pid, void *buf, size_t size, uint
 	};
 	return fs_process_vm_readv(pid, &local_iov, 1, &remote_iov, 1, 0);
 }
+#endif
 
+#ifdef __NR_process_vm_writev
 static inline ssize_t fs_process_vm_write(pid_t pid, const void *buf, size_t size, uintptr_t remote)
 {
 	struct iovec local_iov = {
@@ -894,6 +902,7 @@ static inline ssize_t fs_process_vm_write(pid_t pid, const void *buf, size_t siz
 	};
 	return fs_process_vm_writev(pid, &local_iov, 1, &remote_iov, 1, 0);
 }
+#endif
 
 struct fs_fd_set {
 	long int bits[FD_SETSIZE/sizeof(long int)];
@@ -1336,6 +1345,26 @@ static inline void fs_mutex_unlock(struct fs_mutex *mutex)
 		fs_mutex_unlock_slow_path(mutex);
 	}
 }
+#else
+
+struct fs_mutex {
+	os_unfair_lock state;
+};
+
+__attribute__((always_inline))
+__attribute__((nonnull(1)))
+static inline void fs_mutex_lock(struct fs_mutex *mutex)
+{
+	os_unfair_lock_lock(&mutex->state);
+}
+
+__attribute__((always_inline))
+__attribute__((nonnull(1)))
+static inline void fs_mutex_unlock(struct fs_mutex *mutex)
+{
+	os_unfair_lock_unlock(&mutex->state);
+}
+
 #endif
 
 static inline const char *fs_strerror(int err)

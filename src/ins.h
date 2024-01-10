@@ -448,8 +448,7 @@ static inline int first_set_register_in_mask(register_mask mask) {
 #define ALL_REGISTERS ((~(register_mask)0) >> (sizeof(register_mask) * 8 - REGISTER_COUNT))
 #define STACK_REGISTERS ((~(register_mask)0 << (BASE_REGISTER_COUNT + 1)) & ALL_REGISTERS)
 
-__attribute__((packed))
-struct decoded_rm {
+struct __attribute__((packed)) decoded_rm {
 #if defined(__x86_64__)
 	uintptr_t addr;
 	uint8_t rm:6;

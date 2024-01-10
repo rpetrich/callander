@@ -1,5 +1,11 @@
 NATIVEMACHINE ?= $(shell uname -m)
+ifeq ($(NATIVEMACHINE),arm64)
+	NATIVEMACHINE = aarch64
+endif
 TARGETMACHINE ?= $(shell uname -m)
+ifeq ($(TARGETMACHINE),arm64)
+	TARGETMACHINE = aarch64
+endif
 TARGETOS ?= linux
 
 ifneq ($(TARGETMACHINE),i386)
@@ -30,7 +36,10 @@ STRIP ?= strip
 CFLAGS += -DPRODUCT_NAME='"callander"'
 
 CFLAGS += -flto -fvisibility=hidden -ffunction-sections -fdata-sections
-LDFLAGS += -flto -fvisibility=hidden -Wl,--gc-sections
+LDFLAGS += -flto -fvisibility=hidden
+ifeq ($(TARGETOS),linux)
+	LDFLAGS += -Wl,--gc-sections
+endif
 
 DEBUG_FLAGS := -gdwarf-2 -g1
 
@@ -59,6 +68,7 @@ else
 	CFLAGS += -mno-sse
 endif
 endif
+CFLAGS += -Wno-gnu-null-pointer-arithmetic -Wno-unused-but-set-variable
 endif
 
 ifeq ($(COVERAGE),1)
@@ -166,11 +176,13 @@ $(objdir)/%.o: %.c *.h Makefile
 $(objdir)/callander.o: callander.c *.h Makefile
 	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu17 $(DEBUG_FLAGS) $(CALLANDER_OPT) -o "$@" -c "$<"
 
+ifeq ($(TARGETOS),linux)
 $(objdir)/target.o: callander.c *.h Makefile
 	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -I/usr/local/include -Wno-error=frame-address -fPIC -ffreestanding -std=gnu17 $(DEBUG_FLAGS) -Oz -fno-toplevel-reorder -o "$@" -c "$<"
+endif
 
 $(objdir)/malloc.o: malloc.c *.h Makefile
-	$(CC) $(CFLAGS) -fPIC -ffreestanding -std=gnu17 $(DEBUG_FLAGS) -Os -DHAVE_MORECORE=0 -DHAVE_MMAP=1 -DUSE_DL_PREFIX=1 -DNO_MALLOC_STATS=1 -DUSE_LOCKS=0 '-DMALLOC_FAILURE_ACTION=abort();' -DLACKS_TIME_H -DHAVE_MREMAP=0 '-DDLMALLOC_EXPORT=__attribute__((visibility("hidden")))' -include axon.h -Dmalloc_getpagesize=PAGE_SIZE -o "$@" -c "$<"
+	mkdir -p $(dir $@) && $(CC) $(CFLAGS) -fPIC -ffreestanding -std=gnu17 $(DEBUG_FLAGS) -Os -DHAVE_MORECORE=0 -DHAVE_MMAP=1 -DUSE_DL_PREFIX=1 -DNO_MALLOC_STATS=1 -DUSE_LOCKS=0 '-DMALLOC_FAILURE_ACTION=abort();' -DLACKS_TIME_H -DHAVE_MREMAP=0 '-DDLMALLOC_EXPORT=__attribute__((visibility("hidden")))' -include axon.h -Dmalloc_getpagesize=PAGE_SIZE -o "$@" -c "$<"
 
 axon: $(foreach obj,$(OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) -Wno-lto-type-mismatch -Wl,--exclude-libs,ALL -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $(DEBUG_FLAGS) $^ -o "$@"

@@ -471,8 +471,23 @@ intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, st
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_statx, proxy_value(fd), proxy_string(path), proxy_value(flags), proxy_value(mask), proxy_inout(statxbuf, sizeof(struct statx)));
-		case TARGET_PLATFORM_DARWIN:
-			return -EINVAL;
+		case TARGET_PLATFORM_DARWIN: {
+			struct darwin_stat dstat;
+			intptr_t result;
+			if ((flags & AT_EMPTY_PATH) && (path == NULL || *path == '\0')) {
+				if (fd == AT_FDCWD) {
+					result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstatat64, proxy_value(translate_at_fd_to_darwin(fd)), proxy_string("."), proxy_out(&dstat, sizeof(struct darwin_stat)), proxy_value(translate_at_flags_to_darwin(flags))));
+				} else {
+					result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstat, proxy_value(fd), proxy_out(&dstat, sizeof(struct darwin_stat))));
+				}
+			} else {
+				result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstatat64, proxy_value(translate_at_fd_to_darwin(fd)), proxy_string(path), proxy_out(&dstat, sizeof(struct darwin_stat)), proxy_value(translate_at_flags_to_darwin(flags))));
+			}
+			if (result >= 0) {
+				translate_darwin_statx(statxbuf, dstat, mask);
+			}
+			return result;
+		}
 		default:
 			unknown_target();
 	}

@@ -367,6 +367,88 @@ struct fs_stat translate_darwin_stat(struct darwin_stat stat)
 	return result;
 }
 
+void translate_darwin_statx(struct statx *out_statx, struct darwin_stat stat, unsigned int mask)
+{
+	unsigned int filled = 0;
+	if (mask & STATX_TYPE) {
+		filled |= STATX_TYPE;
+		out_statx->stx_mode = (out_statx->stx_mode & ~S_IFMT) | (stat.st_mode & S_IFMT);
+	}
+	if (mask & STATX_MODE) {
+		filled |= STATX_MODE;
+		out_statx->stx_mode = (out_statx->stx_mode & S_IFMT) | (stat.st_mode & ~S_IFMT);
+	}
+	if (mask & STATX_NLINK) {
+		filled |= STATX_NLINK;
+		out_statx->stx_nlink = stat.st_nlink;
+	}
+	if (mask & STATX_UID) {
+		filled |= STATX_UID;
+		out_statx->stx_uid = stat.st_uid;
+	}
+	if (mask & STATX_GID) {
+		filled |= STATX_GID;
+		out_statx->stx_gid = stat.st_gid;
+	}
+	if (mask & STATX_ATIME) {
+		filled |= STATX_ATIME;
+		out_statx->stx_atime.tv_sec = stat.st_atimespec.tv_sec;
+		out_statx->stx_atime.tv_nsec = stat.st_atimespec.tv_nsec;
+	}
+	if (mask & STATX_MTIME) {
+		filled |= STATX_MTIME;
+		out_statx->stx_mtime.tv_sec = stat.st_mtimespec.tv_sec;
+		out_statx->stx_mtime.tv_nsec = stat.st_mtimespec.tv_nsec;
+	}
+	if (mask & STATX_CTIME) {
+		filled |= STATX_CTIME;
+		out_statx->stx_ctime.tv_sec = stat.st_ctimespec.tv_sec;
+		out_statx->stx_ctime.tv_nsec = stat.st_ctimespec.tv_nsec;
+	}
+	if (mask & STATX_INO) {
+		filled |= STATX_INO;
+		out_statx->stx_ino = stat.st_ino;
+	}
+	if (mask & STATX_SIZE) {
+		filled |= STATX_SIZE;
+		out_statx->stx_size = stat.st_size;
+	}
+	if (mask & STATX_BLOCKS) {
+		filled |= STATX_BLOCKS;
+		out_statx->stx_blocks = stat.st_blocks;
+	}
+	out_statx->stx_mask = filled;
+#if 0
+	if (mask & STATX_BTIME) {
+		// using ctime instead
+		out_statx->stx_btime.tv_sec = stat.st_ctimespec.tv_sec;
+		out_statx->stx_btime.tv_nsec = stat.st_ctimespec.tv_nsec;
+	}
+	if (mask & STATX_MNT_ID) {
+		out_statx->stx_mnt_id = 0;
+	}
+#ifdef STATX_DIOALIGN
+	if (mask & STATX_DIOALIGN) {
+		out_statx->stx_dio_mem_align = 0;
+		out_statx->stx_dio_offset_align = 0;
+	}
+#endif
+#endif
+}
+
 int translate_at_flags_to_darwin(int flags) {
-	return flags;
+	int result = 0;
+	if (flags & AT_EACCESS) {
+		flags &= AT_SYMLINK_NOFOLLOW;
+		result |= 0x0010;
+	}
+	if (flags & AT_SYMLINK_NOFOLLOW) {
+		flags &= AT_SYMLINK_NOFOLLOW;
+		result |= 0x0020;
+	}
+	if (flags & AT_EMPTY_PATH) {
+		flags &= AT_EMPTY_PATH;
+		result |= 0x0400;
+	}
+	return result;
 }
