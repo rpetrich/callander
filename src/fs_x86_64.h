@@ -15,6 +15,7 @@
 ".global fs_syscall\n" \
 ".hidden fs_syscall\n" \
 ".type fs_syscall,@function\n" \
+".cfi_startproc\n" \
 "fs_syscall:\n" \
 "	syscall\n" \
 ".global fs_syscall_ret\n" \
@@ -22,6 +23,7 @@
 ".type fs_syscall_ret,@function\n" \
 "fs_syscall_ret:" FS_SYSCALL_POSTPROCESS "\n" \
 "	ret\n" \
+".cfi_endproc\n" \
 );
 #endif
 

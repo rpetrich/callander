@@ -90,5 +90,5 @@ static inline void set_thread_register(const void *value)
 	reg3 = arg3; \
 	register __typeof__(stack) reg_stack asm("rcx"); \
 	reg_stack = stack; \
-	__asm__ __volatile__("mov %%rsp,%%rbp; mov %%rcx,%%rsp; call "#func"; mov %%rbp,%%rsp" : "=r"(reg1) : "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg_stack) : "cc", "memory", "rax", "r8", "r9", "r10", "r11", "rbp"); \
+	__asm__ __volatile__("mov %%rsp,%%rbp; .cfi_def_cfa_register %%rbp; mov %%rcx,%%rsp; call "#func"; mov %%rbp,%%rsp" : "=r"(reg1) : "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg_stack) : "cc", "memory", "rax", "r8", "r9", "r10", "r11", "rbp"); \
 } while(0)

@@ -10,6 +10,7 @@
 ".global fs_syscall\n" \
 ".hidden fs_syscall\n" \
 ".type fs_syscall,@function\n" \
+".cfi_startproc\n" \
 "fs_syscall:\n" \
 "	svc 0\n" \
 ".global fs_syscall_ret\n" \
