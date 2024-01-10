@@ -1,5 +1,3 @@
-#if defined(__x86_64__)
-
 #define PATCH_EXPOSE_INTERNALS
 #include "patch_x86_64.h"
 
@@ -18,6 +16,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define INS_JMP_32_IMM 0xe9
 
 __asm__(
 ".text\n"
@@ -38,10 +37,11 @@ __asm__(
 "	push %rdi\n"
 "	push %r11\n"
 "	mov %rsp, %rdi\n"
-".global trampoline_call_handler_call\n"
-".hidden trampoline_call_handler_call\n"
-".type trampoline_call_handler_call,@function\n" \
-"trampoline_call_handler_call:"
+"   movabs 0x6666666666666666, %rcx\n"
+".global trampoline_call_handler_address\n"
+".hidden trampoline_call_handler_address\n"
+".type trampoline_call_handler_address,@function\n" \
+"trampoline_call_handler_address:"
 "	call *%rcx\n"
 "	pop %rcx\n"
 "	pop %rdi\n"
@@ -62,7 +62,7 @@ __asm__(
 );
 
 void trampoline_call_handler_start();
-void trampoline_call_handler_call();
+void trampoline_call_handler_address();
 void trampoline_call_handler_end();
 
 __asm__(
@@ -85,10 +85,11 @@ __asm__(
 "	push %rsi\n"
 "	push %rdi\n"
 "	mov %rsp, %rdi\n"
-".global breakpoint_call_handler_call\n"
-".hidden breakpoint_call_handler_call\n"
-".type breakpoint_call_handler_call,@function\n" \
-"breakpoint_call_handler_call:"
+"   movabs 0x6666666666666666, %rcx\n"
+".global breakpoint_call_handler_address\n"
+".hidden breakpoint_call_handler_address\n"
+".type breakpoint_call_handler_address,@function\n" \
+"breakpoint_call_handler_address:"
 "	call *%rcx\n"
 "	pop %rdi\n"
 "	pop %rsi\n"
@@ -110,7 +111,7 @@ __asm__(
 );
 
 void breakpoint_call_handler_start();
-void breakpoint_call_handler_call();
+void breakpoint_call_handler_address();
 void breakpoint_call_handler_end();
 
 __asm__(
@@ -127,10 +128,11 @@ __asm__(
 "	push %rdi\n"
 "	mov %rsp, %rdi\n"
 "	push %rax\n"
-".global function_call_handler_call\n"
-".hidden function_call_handler_call\n"
-".type function_call_handler_call,@function\n" \
-"function_call_handler_call:"
+"   movabs 0x6666666666666666, %rcx\n"
+".global function_call_handler_address\n"
+".hidden function_call_handler_address\n"
+".type function_call_handler_address,@function\n" \
+"function_call_handler_address:"
 "	lea function_call_handler_end(%rip), %rsi\n"
 "	call *%rcx\n"
 "	lea 0x38(%rsp), %rsp\n"
@@ -142,7 +144,7 @@ __asm__(
 );
 
 void function_call_handler_start();
-void function_call_handler_call();
+void function_call_handler_address();
 void function_call_handler_end();
 
 #define INS_OPERAND_SIZE_PREFIX 0x66
@@ -699,7 +701,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 }
 
 __attribute__((warn_unused_result))
-static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd);
+static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *address_template, void *end_template, void *handler, bool skip, int self_fd);
 
 static char *naive_address_formatter(const uint8_t *address, void *unused)
 {
@@ -789,7 +791,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		basic_block.end = (const uint8_t *)args->pc;
 	}
 	// Actually patch
-	args->patched = patch_common(thread, args->pc - 2, basic_block, &trampoline_call_handler_start, &trampoline_call_handler_call, &trampoline_call_handler_end, &receive_trampoline, true, args->self_fd);
+	args->patched = patch_common(thread, args->pc - 2, basic_block, &trampoline_call_handler_start, &trampoline_call_handler_address, &trampoline_call_handler_end, &receive_trampoline, true, args->self_fd);
 }
 
 // migrate_instruction copies and relocates instructions
@@ -865,7 +867,7 @@ size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, si
 }
 
 __attribute__((always_inline))
-static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *call_template, void *end_template, void *handler, bool skip, int self_fd)
+static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *address_template, void *end_template, void *handler, bool skip, int self_fd)
 {
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
@@ -960,17 +962,15 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	}
 	trampoline += head_size;
 	// Copy the prefix part of the trampoline
-	size_t prefix_size = (uintptr_t)call_template - (uintptr_t)start_template;
+	size_t prefix_size = (uintptr_t)address_template - (uintptr_t)start_template - sizeof(uintptr_t);
 	memcpy(trampoline, start_template, prefix_size);
 	trampoline += prefix_size;
 	// Move address of receive_trampoline into rcx
-	*trampoline++ = INS_MOV_RCX_64_IMM_0;
-	*trampoline++ = INS_MOV_RCX_64_IMM_1;
 	*(uintptr_t *)trampoline = (uintptr_t)handler;
 	trampoline += sizeof(uintptr_t);
 	// Copy the suffix part of the trampoline
-	size_t suffix_size = (uintptr_t)end_template - (uintptr_t)call_template;
-	memcpy(trampoline, call_template, suffix_size);
+	size_t suffix_size = (uintptr_t)end_template - (uintptr_t)address_template;
+	memcpy(trampoline, address_template, suffix_size);
 	trampoline += suffix_size;
 	// Copy the patched instructions from the original basic block
 	uintptr_t tail_start = instruction;
@@ -996,9 +996,8 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	// Construct a jump back to the original function
 	intptr_t return_offset = (uintptr_t)patch_target.end - (intptr_t)&trampoline[PCREL_JUMP_SIZE];
 	// PC-relative jump
-	*trampoline++ = INS_JMP_32_IMM;
-	*(int32_t *)trampoline = return_offset;
-	trampoline += sizeof(int32_t);
+	patch_write_pc_relative_jump(trampoline, return_offset);
+	trampoline += PCREL_JUMP_SIZE;
 	// Make the target function writable
 	size_t protect_size = (((uintptr_t)patch_target.end + PAGE_SIZE - 1) & -PAGE_SIZE) - start_page;
 	if (fs_mprotect((void *)start_page, protect_size, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
@@ -1027,9 +1026,8 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	uint8_t *ins = (uint8_t *)patch_target.start;
 	bool patch_with_ill = (uintptr_t)patch_target.end - (uintptr_t)patch_target.start < PCREL_JUMP_SIZE;
 	if (!patch_with_ill) {
-		int32_t offset = stub_address - (intptr_t)&patch_target.start[5];
-		*(int32_t *)&ins[1] = offset;
-		atomic_store((_Atomic uint8_t *)ins, INS_JMP_32_IMM);
+		int32_t offset = stub_address - (intptr_t)&patch_target.start[PCREL_JUMP_SIZE];
+		patch_write_pc_relative_jump(ins, offset);
 	}
 	// Install nops in any trailing bytes, so that it's clean in the debugger
 	for (ins += patch_with_ill ? 1 : PCREL_JUMP_SIZE; ins < patch_target.end; ++ins) {
@@ -1088,7 +1086,7 @@ bool patch_handle_illegal_instruction(struct thread_storage *thread, ucontext_t 
 	return args.result;
 }
 
-enum patch_status patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
+enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
 {
 	PATCH_LOG("patching breakpoint", (uintptr_t)address);
 	// Construct the basic block that contains the address. Need to do a full
@@ -1108,10 +1106,10 @@ enum patch_status patch_breakpoint(struct thread_storage *thread, intptr_t addre
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, address, basic_block, &breakpoint_call_handler_start, &breakpoint_call_handler_call, &breakpoint_call_handler_end, handler, false, self_fd);
+	return patch_common(thread, address, basic_block, &breakpoint_call_handler_start, &breakpoint_call_handler_address, &breakpoint_call_handler_end, handler, false, self_fd);
 }
 
-enum patch_status patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
+enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
 {
 	PATCH_LOG("patching function", (uintptr_t)function);
 	// Construct the entry basic block. Need to do a full analysis of the
@@ -1132,7 +1130,11 @@ enum patch_status patch_function(struct thread_storage *thread, intptr_t functio
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, function, basic_block, &function_call_handler_start, &function_call_handler_call, &function_call_handler_end, handler, false, self_fd);
+	return patch_common(thread, function, basic_block, &function_call_handler_start, &function_call_handler_address, &function_call_handler_end, handler, false, self_fd);
 }
 
-#endif
+void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump)
+{
+	*(int32_t *)&buf[1] = relative_jump;
+	atomic_store((_Atomic uint8_t *)buf, INS_JMP_32_IMM);
+}

@@ -67,12 +67,19 @@ __asm__( \
 "	b release\n" \
 );
 
+#define NAKED_FUNCTION
+
 __attribute__((warn_unused_result))
 static inline const void *read_thread_register(void)
 {
 	void *result;
 	__asm__("mrs %0,tpidr_el0":"=r"(result));
 	return result;
+}
+
+static inline void set_thread_register(const void *value)
+{
+	__asm__("msr tpidr_el0,%0"::"r"(value));
 }
 
 #define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2) do { \

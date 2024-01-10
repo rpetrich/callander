@@ -42,12 +42,12 @@ struct patch_state_shard {
 	// carefully laid out to take exactly one cache line
 	struct fs_mutex lock;
 	uint8_t next_invalid;
-	intptr_t invalid_addresses[7];
+	ins_ptr invalid_addresses[7];
 };
 static struct patch_state_shard patch_state_shards[16];
 
 // pc_is_known_invalid checks if a pc is known to be unpatchable
-static bool pc_is_known_invalid(intptr_t pc, const struct patch_state_shard *state_shard)
+static bool pc_is_known_invalid(ins_ptr pc, const struct patch_state_shard *state_shard)
 {
 	for (int i = 0; i < 7; i++) {
 		if (state_shard->invalid_addresses[i] == pc) {
@@ -59,7 +59,7 @@ static bool pc_is_known_invalid(intptr_t pc, const struct patch_state_shard *sta
 
 // make_pc_known_invalid sets a pc as known unpatchable
 // because the unpatchable cache allows few entries it's possible that old entries will be evicted
-static void make_pc_known_invalid(intptr_t pc, struct patch_state_shard *state_shard)
+static void make_pc_known_invalid(ins_ptr pc, struct patch_state_shard *state_shard)
 {
 	uint8_t next_invalid = state_shard->next_invalid;
 	state_shard->invalid_addresses[next_invalid] = pc;
@@ -69,7 +69,7 @@ static void make_pc_known_invalid(intptr_t pc, struct patch_state_shard *state_s
 
 // patch_syscall attempts to patch a syscall instruction and returns the new
 // program counter that the syscall should return to
-void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intptr_t bp, int self_fd)
+void patch_syscall(struct thread_storage *thread, ins_ptr pc, intptr_t sp, intptr_t bp, int self_fd)
 {
 	if (!patch_syscalls) {
 		// ERROR("ignoring syscall patch at", (uintptr_t)pc);

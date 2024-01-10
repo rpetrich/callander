@@ -91,9 +91,9 @@ uintptr_t *debug_field_for_self(const struct binary_info *self_info)
 void debug_init(struct r_debug *main_debug, void (*update_callback)(void))
 {
 	debug = main_debug;
-	debug->r_version = 1;
+	main_debug->r_version = 1;
 	// debug->r_base = (void *)data.base_address;
-	debug->r_brk = (ElfW(Addr))update_callback;
+	main_debug->r_brk = (ElfW(Addr))update_callback;
 
 	add_link_map(NULL, "", NULL);
 }
@@ -115,7 +115,7 @@ void debug_intercept_system_loader(int fd, const struct binary_info *info)
 	if (symbol_error == 0) {
 		void *main_dl_debug_state = find_symbol(info, &symbols, "_dl_debug_state", NULL, NULL);
 		if (main_dl_debug_state) {
-			if (!patch_breakpoint(get_thread_storage(), (intptr_t)main_dl_debug_state, (intptr_t)main_dl_debug_state, &inferior_debug_state_hit, SELF_FD)) {
+			if (!patch_breakpoint(get_thread_storage(), main_dl_debug_state, main_dl_debug_state, &inferior_debug_state_hit, SELF_FD)) {
 #if 0
 				ERROR("failed to patch _dl_debug_state");
 #endif

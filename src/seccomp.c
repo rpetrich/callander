@@ -122,12 +122,15 @@ int apply_seccomp(void)
 		// Trap all but specific syscalls
 		LD_SYSCALL,
 #ifdef STACK_PROTECTOR
+#ifdef __aarch64__
 		// Stack protector requires to be able to send __NR_arch_prctl before
 		// the trap handler is installed
-		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_arch_prctl, 9, 0),
+		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_arch_prctl, 10, 0),
 #endif
-		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_futex, 8, 0),
-		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_pread64, 0, 2),
+#endif
+		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_futex, 9, 0),
+		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_pread64, 1, 0),
+		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_fstat, 0, 2),
 		BPF_STMT(BPF_LD+BPF_W+BPF_ABS, offsetof(struct seccomp_data, args)),
 		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, SELF_FD, 5, 6),
 		BPF_JUMP(BPF_JMP+BPF_JEQ+BPF_K, __NR_clone, 0, 2),

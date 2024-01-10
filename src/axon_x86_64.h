@@ -58,12 +58,19 @@ __asm__( \
 "	jmp release\n" \
 );
 
+#define NAKED_FUNCTION __attribute__((naked))
+
 __attribute__((warn_unused_result))
 static inline const void *read_thread_register(void)
 {
 	void *result;
 	__asm__ __volatile__("mov %%fs:0, %0":"=r"(result));
 	return result;
+}
+
+static inline void set_thread_register(const void *value)
+{
+	FS_SYSCALL(__NR_arch_prctl, ARCH_SET_FS, (intptr_t)value);
 }
 
 #define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2) do { \

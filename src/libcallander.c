@@ -74,7 +74,7 @@ void callander_perform_analysis(struct program_state *analysis, callander_main_f
 
 	// analyze the return from exit
 	new_caller.description = "exit";
-	set_register(&new_caller.current_state.registers[REGISTER_RAX], (uintptr_t)SYS_exit_group);
+	set_register(&new_caller.current_state.registers[REGISTER_SYSCALL_NR], (uintptr_t)SYS_exit_group);
 	analyze_instructions(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)&fs_syscall, &new_caller, ALLOW_JUMPS_INTO_THE_ABYSS);
 
 	LOG("finished initial pass, dequeuing instructions");

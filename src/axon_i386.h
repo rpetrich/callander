@@ -44,12 +44,19 @@ __asm__( \
 "	jmp release\n" \
 );
 
+#define NAKED_FUNCTION __attribute__((naked))
+
 __attribute__((warn_unused_result))
 static inline const void *read_thread_register(void)
 {
 	void *result;
 	__asm__ __volatile__("mov %%gs, %0":"=r"(result));
 	return result;
+}
+
+static inline void set_thread_register(const void *value)
+{
+	FS_SYSCALL(__NR_arch_prctl, ARCH_SET_FS, (intptr_t)value);
 }
 
 #define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2) __asm__ __volatile__("sub $0x10, %%esp; mov %%esp, 0x8(%%esp); mov %1, 0x4(%%esp); mov %0, 0x0(%%esp); call "#func"; add $0x10, %%esp" :  "=S"(arg1), "=D"(arg2) : "S"(arg1), "D"(arg2) : "cc", "memory", "eax", "ebx", "ecx", "ebp", "edx")

@@ -17,7 +17,7 @@ pid_t get_self_pid(void)
 	return self_pid;
 }
 
-__attribute__((naked)) __attribute__((used)) __attribute__((visibility("default")))
+__attribute__((used)) __attribute__((visibility("default"))) NAKED_FUNCTION
 noreturn void receive_start(const struct receive_start_args *args)
 {
 	self_pid = fs_gettid();

@@ -19,7 +19,9 @@
 #include "tls.h"
 
 #include <arpa/inet.h>
+#ifdef __x86_64__
 #include <asm/prctl.h>
+#endif
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
@@ -672,6 +674,7 @@ static intptr_t invalid_local_operation(void)
 intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, ucontext_t *context)
 {
 	switch (syscall) {
+#ifdef __NR_arch_prctl
 		case __NR_arch_prctl: {
 			switch (arg1) {
 #if defined(__x86_64__)
@@ -684,6 +687,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			break;
 		}
+#endif
 		case __NR_set_tid_address: {
 			set_tid_address((const void *)arg1);
 			break;
@@ -754,6 +758,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int flags = arg5;
 			return wrapped_execveat(thread, dirfd, path, argv, envp, flags);
 		}
+#ifdef __NR_stat
 		case __NR_stat: {
 			const char *path = (const char *)arg1;
 			path_info real;
@@ -765,6 +770,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
 		}
+#endif
 		case __NR_fstat: {
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
@@ -772,6 +778,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
+#ifdef __NR_lstat
 		case __NR_lstat: {
 			const char *path = (const char *)arg1;
 			path_info real;
@@ -783,6 +790,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
 		}
+#endif
 		case __NR_newfstatat: {
 			int dirfd = arg1;
 			const char *path = (const char *)arg2;
@@ -793,16 +801,17 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
 		}
 		case __NR_statx: {
-			// TODO: handle statx
 			int dirfd = arg1;
 			const char *path = (const char *)arg2;
 			path_info real;
 			if (lookup_real_path(dirfd, path, &real)) {
-				return invalid_remote_operation();
+				return remote_statx(real.fd, real.path, arg3, arg4, (struct statx *)arg5);
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
 		}
+#ifdef __NR_poll
 		case __NR_poll:
+#endif
 		case __NR_ppoll: {
 			struct pollfd *fds = (struct pollfd *)arg1;
 			nfds_t nfds = arg2;
@@ -920,6 +929,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
+#ifdef __NR_access
 		case __NR_access: {
 			const char *path = (const char *)arg1;
 			path_info real;
@@ -931,6 +941,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
 		}
+#endif
 		case __NR_faccessat: {
 			int fd = arg1;
 			const char *path = (const char *)arg2;
@@ -943,6 +954,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case __NR_faccessat2: {
 			return -ENOSYS;
 		}
+#ifdef __NR_pipe
 		case __NR_pipe: {
 			int result = FS_SYSCALL(syscall, arg1);
 			if (arg1 != 0 && result == 0) {
@@ -952,6 +964,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return result;
 		}
+#endif
 #ifdef __NR_chmod
 		case __NR_chmod: {
 			const char *path = (const char *)arg1;
@@ -1068,7 +1081,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
 		}
+#ifdef __NR_select
 		case __NR_select:
+#endif
 		case __NR_pselect6: {
 			int n = arg1;
 			fd_set *readfds = (fd_set *)arg2;
@@ -1296,6 +1311,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
+#ifdef __NR_getdents
 		case __NR_getdents: {
 			int fd = arg1;
 			int real_fd;
@@ -1304,6 +1320,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
+#endif
 		case __NR_statfs: {
 			path_info real;
 			bool is_remote = lookup_real_path(AT_FDCWD, (const char *)arg1, &real);
@@ -1466,7 +1483,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
+#ifdef __NR_epoll_wait
 		case __NR_epoll_wait:
+#endif
 		case __NR_epoll_pwait: {
 			int fd = arg1;
 			int real_fd;
@@ -1475,9 +1494,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int timeout = arg4;
 			if (lookup_real_fd(fd, &real_fd)) {
 				// TODO: support pwait properly when remote
+				// TODO: support on aarch64
+#ifdef __NR_epoll_wait
 				return PROXY_CALL(__NR_epoll_wait, proxy_value(real_fd), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
+#else
+				return -ENOSYS;
+#endif
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, real_fd, (intptr_t)events, maxevents, timeout, arg5);
 		}
 		case __NR_epoll_pwait2: {
 			return -ENOSYS;
@@ -1550,9 +1574,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg1, arg2, arg3);
 		}
+#ifdef __NR_inotify_init
 		case __NR_inotify_init: {
 			return install_local_fd(FS_SYSCALL(syscall), 0);
 		}
+#endif
 		case __NR_inotify_init1: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}
@@ -1624,6 +1650,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
+#ifdef __NR_utime
 		case __NR_utime: {
 			const char *path = (const char *)arg1;
 			path_info real;
@@ -1636,6 +1663,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
+#endif
 		case __NR_utimensat: {
 			int dirfd = arg1;
 			const char *path = (const char *)arg2;
@@ -1645,6 +1673,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
 		}
+#ifdef __NR_futimesat
 		case __NR_futimesat: {
 			int dirfd = arg1;
 			const char *path = (const char *)arg2;
@@ -1654,6 +1683,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
 		}
+#endif
+#ifdef __NR_signalfd
 		case __NR_signalfd: {
 			int fd = arg1;
 			int real_fd;
@@ -1670,6 +1701,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return result;
 		}
+#endif
 		case __NR_signalfd4: {
 			int fd = arg1;
 			int real_fd;
@@ -1689,9 +1721,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case __NR_timerfd_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
 		}
+#ifdef __NR_eventfd
 		case __NR_eventfd: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), 0);
 		}
+#endif
 		case __NR_eventfd2: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
 		}
@@ -1719,9 +1753,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
+#ifdef __NR_epoll_create
 		case __NR_epoll_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), 0);
 		}
+#endif
 		case __NR_epoll_create1: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}

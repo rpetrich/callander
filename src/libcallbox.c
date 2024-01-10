@@ -776,7 +776,7 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 			if (zlib_symbols[i].original != NULL) {
 				*zlib_symbols[i].original = (intptr_t)value;
 			}
-			enum patch_status status = patch_function(thread, (intptr_t)value, zlib_symbols[i].handler, -1);
+			enum patch_status status = patch_function(thread, value, zlib_symbols[i].handler, -1);
 			if (status != PATCH_STATUS_INSTALLED_TRAMPOLINE) {
 				if (status == PATCH_STATUS_INSTALLED_ILLEGAL) {
 					DIE("failed to install trampoline", zlib_symbols[i].name);
@@ -894,7 +894,7 @@ static void constructor(void)
 
 	struct thread_storage *thread = get_thread_storage();
 
-	if (!patch_breakpoint(thread, (intptr_t)global_r_debug->r_brk, (intptr_t)global_r_debug->r_brk, &inferior_debug_state_hit, -1)) {
+	if (!patch_breakpoint(thread, (ins_ptr)global_r_debug->r_brk, (ins_ptr)global_r_debug->r_brk, &inferior_debug_state_hit, -1)) {
 		DIE("failed to attach breakpoint to r_debug");
 	}
 
@@ -904,7 +904,7 @@ static void constructor(void)
 		DIE("could not find entrypoint");
 	}
 
-	if (!patch_breakpoint(thread, (intptr_t)loaded_main.entrypoint, (intptr_t)loaded_main.entrypoint, entrypoint_hit, -1)) {
+	if (!patch_breakpoint(thread, loaded_main.entrypoint, loaded_main.entrypoint, entrypoint_hit, -1)) {
 		DIE("failed to attach breakpoint to entrypoint");
 	}
 

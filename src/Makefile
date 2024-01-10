@@ -86,45 +86,47 @@ endif
 
 STANDALONE ?= 1
 
-OBJECTS := attempt.o axon.o coverage.o darwin.o debugger.o defaultlibs.o \
-			exec.o fd_table.o fork.o install.o intercept.o handler.o libraries.o \
-			loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o paths.o \
-			preload.o proxy.o qsort.o remote.o remote_library.o resolver.o search.o seccomp.o \
-			sockets.o stack.o time.o tls.o tracer.o x86.o x86_64_length_disassembler.o
-TEXEC_OBJECTS := attempt.o darwin.o defaultlibs.o exec.o fd_table.o \
-		    loader.o proxy.o qsort.o remote.o search.o seccomp.o \
-		    stack.o texec.o time.o tls.o x86.o \
-		    callander.o callander_print.o patch_x86_64.o x86_64_length_disassembler.o
-THANDLER_OBJECTS := attempt_target.o defaultlibs.o exec_target.o fd_table_target.o \
-			fork_target.o handler.o intercept_target.o malloc.o paths_target.o proxy_target.o \
-			remote.o remote_library_target.o sockets_target.o stack.o thandler.o tls.o tracer.o
-COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o callander_print.o defaultlibs.o loader.o \
-			mapped.o qsort.o search.o
 ifeq ($(TARGETMACHINE),aarch64)
-	COMMON_CALLANDER_OBJECTS += arch-arm64/disassembler/decode.o arch-arm64/disassembler/decode0.o \
+	ARCH_OBJECTS := arch-arm64/disassembler/decode.o arch-arm64/disassembler/decode0.o \
 			arch-arm64/disassembler/decode1.o arch-arm64/disassembler/decode2.o \
 			arch-arm64/disassembler/decode_scratchpad.o arch-arm64/disassembler/encodings_dec.o \
 			arch-arm64/disassembler/pcode.o arch-arm64/disassembler/decode_fields32.o \
 			arch-arm64/disassembler/sysregs.o arch-arm64/disassembler/operations.o \
 			arch-arm64/disassembler/format.o arch-arm64/disassembler/regs.o \
 			printf.o printf_inject.o
+	PATCH_OBJECTS := patch.o patch_aarch64.o
 endif
 ifeq ($(TARGETMACHINE),x86_64)
-	COMMON_CALLANDER_OBJECTS += x86.o x86_64_length_disassembler.o
-endif
-LOOKUP_OBJECTS := defaultlibs.o loader.o lookup_main.o resolver.o
-LIBCALLBOX_OBJECTS := libcallbox.o attempt.o $(COMMON_CALLANDER_OBJECTS) defaultlibs.o loader.o mapped.o patch.o patch_aarch64.o patch_x86_64.o proxy.o tls.o x86.o x86_64_length_disassembler.o
-ifeq ($(STANDALONE),1)
-	CFLAGS += -DSTANDALONE=1
-	OBJECTS += malloc.o
-	TEXEC_OBJECTS += malloc.o
-	COMMON_CALLANDER_OBJECTS += malloc.o
-	LOOKUP_OBJECTS += malloc.o
-	LIBCALLBOX_OBJECTS += malloc.o
+	ARCH_OBJECTS += x86.o x86_64_length_disassembler.o
+	PATCH_OBJECTS := patch.o patch_x86_64.o
 endif
 
-CALLANDER_OBJECTS := $(COMMON_CALLANDER_OBJECTS) callander_main.o
-LIBCALLANDER_OBJECTS := $(COMMON_CALLANDER_OBJECTS) libcallander.o
+COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o callander_print.o defaultlibs.o loader.o \
+			mapped.o qsort.o search.o $(ARCH_OBJECTS)
+ifeq ($(STANDALONE),1)
+	CFLAGS += -DSTANDALONE=1
+	COMMON_OBJECTS := malloc.o
+else
+	COMMON_OBJECTS :=
+endif
+
+OBJECTS :=  $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o axon.o coverage.o \
+			darwin.o debugger.o defaultlibs.o exec.o fd_table.o fork.o install.o intercept.o \
+			handler.o libraries.o loader.o mapped.o paths.o preload.o proxy.o qsort.o remote.o \
+			remote_library.o resolver.o search.o seccomp.o sockets.o stack.o time.o tls.o tracer.o
+TEXEC_OBJECTS := $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o darwin.o \
+			defaultlibs.o exec.o fd_table.o loader.o proxy.o qsort.o remote.o search.o seccomp.o \
+		    stack.o texec.o time.o tls.o x86.o callander.o callander_print.o
+THANDLER_OBJECTS := $(COMMON_OBJECTS) attempt_target.o defaultlibs.o exec_target.o \
+			fd_table_target.o fork_target.o handler.o intercept_target.o malloc.o paths_target.o \
+			proxy_target.o remote.o remote_library_target.o sockets_target.o stack.o thandler.o \
+			tls.o tracer.o
+LOOKUP_OBJECTS := $(COMMON_OBJECTS) defaultlibs.o loader.o lookup_main.o resolver.o
+LIBCALLBOX_OBJECTS := $(COMMON_OBJECTS) $(ARCH_OBJECTS) $(PATCH_OBJECTS) \
+			$(COMMON_CALLANDER_OBJECTS)  libcallbox.o attempt.o defaultlibs.o loader.o mapped.o \
+			proxy.o tls.o
+CALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_main.o
+LIBCALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) libcallander.o
 
 CALLANDER_OPT := -Os -ftree-vectorize \
 	-fauto-inc-dec -fbranch-count-reg -fcombine-stack-adjustments -fcompare-elim -fcprop-registers -fdce -fdefer-pop -fdse -fforward-propagate -fguess-branch-probability -fif-conversion -fif-conversion2 -finline-functions-called-once -fipa-profile -fipa-pure-const -fipa-reference -fipa-reference-addressable -fmerge-constants -fmove-loop-invariants -freorder-blocks -fshrink-wrap -fshrink-wrap-separate -fsplit-wide-types -fssa-backprop -fssa-phiopt -ftree-bit-ccp -ftree-ccp -ftree-ch -ftree-coalesce-vars -ftree-copy-prop -ftree-dce -ftree-dominator-opts -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop -ftree-pta -ftree-scev-cprop -ftree-sink -ftree-slsr -ftree-sra -ftree-ter -funit-at-a-time \

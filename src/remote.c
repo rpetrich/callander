@@ -466,6 +466,18 @@ intptr_t remote_newfstatat(int fd, const char *path, struct fs_stat *stat, int f
 	}
 }
 
+intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, struct statx *restrict statxbuf)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(__NR_statx, proxy_value(fd), proxy_string(path), proxy_value(flags), proxy_value(mask), proxy_inout(statxbuf, sizeof(struct statx)));
+		case TARGET_PLATFORM_DARWIN:
+			return -EINVAL;
+		default:
+			unknown_target();
+	}
+}
+
 intptr_t remote_faccessat(int fd, const char *path, int mode, int flags)
 {
 	switch (proxy_get_target_platform()) {
@@ -598,7 +610,18 @@ intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
+#ifdef __NR_poll
 			return PROXY_CALL(__NR_poll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), proxy_value(timeout));
+#else
+			if (timeout < 0) {
+				return PROXY_CALL(__NR_ppoll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), proxy_value(0), proxy_value(0), proxy_value(0));
+			} else {
+				struct timespec timeout_spec;
+				timeout_spec.tv_sec = timeout / 1000;
+				timeout_spec.tv_nsec = (timeout % 1000) * 1000000;
+				return PROXY_CALL(__NR_ppoll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), proxy_in(&timeout_spec, sizeof(struct timespec)), proxy_value(0), proxy_value(0));
+			}
+#endif
 		case TARGET_PLATFORM_DARWIN:
 			return translate_darwin_result(PROXY_CALL(DARWIN_SYS_poll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), proxy_value(timeout)));
 		default:

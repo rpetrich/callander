@@ -24,7 +24,9 @@
 #include <stdnoreturn.h>
 #include <string.h>
 #include <sys/prctl.h>
+#ifdef __x86_64__
 #include <asm/prctl.h>
+#endif
 
 AXON_BOOTSTRAP_ASM
 
@@ -67,7 +69,6 @@ noreturn void release(size_t *sp)
 		.traces = 0,
 #endif
 		.debug = NULL,
-		.debug_update = &_dl_debug_state,
 		.patch_syscalls = true,
 		.intercept = true,
 	};
@@ -136,6 +137,14 @@ noreturn void release(size_t *sp)
 		*aux_copy++ = *aux++;
 	}
 	*aux_copy = *aux;
+
+	// relocate self asap
+	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
+	struct binary_info self_info;
+	load_existing(&self_info, old_base_address);
+	self_info.dynamic = _DYNAMIC;
+	relocate_binary(&self_info);
+
 	// Open the self fd in the special SELF_FD slot
 	if (data.comm == NULL) {
 		if (UNLIKELY(*sp <= 1 && data.interpreter_base == 0)) {
@@ -177,7 +186,6 @@ noreturn void release(size_t *sp)
 	}
 
 	// Decide the new base address
-	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
 	if (data.base_address == 0) {
 		if (random) {
 			// Randomize the base address, if we don't have a proper one already
@@ -193,24 +201,21 @@ noreturn void release(size_t *sp)
 	// Setup fs temporarily so that stack protection can work
 	void **thread_data = fs_mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 	*thread_data = thread_data;
-	FS_SYSCALL(__NR_arch_prctl, ARCH_SET_FS, (intptr_t)thread_data);
+	set_thread_register(thread_data);
 #endif
+
+	data.self_size = self_info.size;
+	data.debug = &_r_debug;
+	data.debug_update = &_dl_debug_state;
+
 	// Remap self so that we can build our own ASLR
-	struct binary_info self_info;
 	if (data.base_address != old_base_address) {
 		int result = load_binary(SELF_FD, &self_info, data.base_address, false);
 		if (UNLIKELY(result != 0)) {
 			DIE("unable to reload axon binary");
 		}
-	} else {
-		load_existing(&self_info, old_base_address);
-		self_info.dynamic = _DYNAMIC;
+		relocate_binary(&self_info);
 	}
-	data.self_size = self_info.size;
-	data.debug = &_r_debug;
-
-	relocate_binary(&self_info);
-
 	__typeof__(&bind_axon) adjusted_bind = (void *)((uintptr_t)&bind_axon - old_base_address + self_info.base);
 	adjusted_bind(data);
 	__builtin_unreachable();
@@ -229,10 +234,17 @@ noreturn void release(size_t *sp)
 __attribute__((noinline))
 noreturn static void bind_axon(bind_data data)
 {
-#ifdef COVERAGE
-	// If gcov is enabled, run static initializers
 	struct binary_info self_info;
 	load_existing(&self_info, data.base_address);
+
+	debug_init(data.debug, data.debug_update);
+
+	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
+	if (old_base_address != data.base_address) {
+		debug_register_relocated_self((void *)data.base_address);
+	}
+	// If gcov is enabled, run static initializers
+#ifdef COVERAGE
 	struct symbol_info symbols;
 	if (parse_dynamic_symbols(&self_info, (void *)data.base_address, &symbols) != 0) {
 		DIE("failed to parse main binary");
@@ -266,18 +278,14 @@ noreturn static void bind_axon(bind_data data)
 		DIE("failed to intercept signals", fs_strerror(result));
 	}
 
-	debug_init(data.debug, data.debug_update);
-
 	// Unmap the old binary
-	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
-	if (old_base_address != data.base_address) {
-		debug_register_relocated_self((void *)data.base_address);
-		// result = fs_munmap((void *)old_base_address, data.self_size);
-		// result = fs_mprotect((void *)old_base_address, data.self_size, PROT_READ);
-		// if (UNLIKELY(result < 0)) {
-		// 	DIE("failed to unmap self", -result);
-		// }
-	}
+	// if (old_base_address != data.base_address) {
+	// 	result = fs_munmap((void *)old_base_address, data.self_size);
+	// 	result = fs_mprotect((void *)old_base_address, data.self_size, PROT_READ);
+	// 	if (UNLIKELY(result < 0)) {
+	// 		DIE("failed to unmap self", -result);
+	// 	}
+	// }
 
 	// Start pseudo-interpreter
 	const char **argv = (void *)(data.sp+1);

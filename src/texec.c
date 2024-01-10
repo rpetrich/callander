@@ -5,7 +5,9 @@
 #include "axon.h"
 AXON_BOOTSTRAP_ASM
 
+#ifdef __x86_64__
 #include <asm/prctl.h>
+#endif
 #include <errno.h>
 #include <linux/binfmts.h>
 #include <netinet/in.h>
@@ -19,7 +21,7 @@ AXON_BOOTSTRAP_ASM
 #include "exec.h"
 #include "fd_table.h"
 #include "loader.h"
-#include "patch_x86_64.h"
+#include "patch.h"
 #include "proxy.h"
 #include "proxy_target.h"
 #include "search.h"
@@ -30,7 +32,7 @@ AXON_BOOTSTRAP_ASM
 static void set_thread_pointer(const void **thread_pointer)
 {
 	*thread_pointer = thread_pointer;
-	FS_SYSCALL(__NR_arch_prctl, ARCH_SET_FS, (intptr_t)thread_pointer);
+	set_thread_register(thread_pointer);
 }
 
 __attribute__((used)) __attribute__((visibility("hidden")))
@@ -431,19 +433,30 @@ static bool should_try_to_patch_remotely(const struct recorded_syscall *syscall)
 	return syscall->nr != SYS_futex && syscall->nr != SYS_restart_syscall && syscall->nr != SYS_clock_gettime && syscall->ins != NULL;
 }
 
-static char *loader_address_formatter(const uint8_t *address, void *loader)
+static char *loader_address_formatter(const ins_ptr address, void *loader)
 {
 	return copy_address_description((const struct loader_context *)loader, address);
 }
 
 static bool find_remote_patch_target(const struct loader_context *loader, const struct recorded_syscall *syscall, struct instruction_range *out_result)
 {
-	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins + 2 };
-	struct x86_instruction decoded_end;
-	if (x86_decode_instruction(basic_block.end, &decoded_end)) {
-		basic_block.end = x86_next_instruction(basic_block.end, &decoded_end);
+	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins };
+	struct decoded_ins decoded_end;
+	if (decode_ins(basic_block.end, &decoded_end)) {
+		basic_block.end = next_ins(basic_block.end, &decoded_end);
+	} else {
+		return false;
 	}
-	return find_patch_target(basic_block, syscall->ins, 5, 5, loader_address_formatter, (void *)loader, out_result);
+#ifdef PATCH_REQUIRES_MIGRATION
+	if (decode_ins(basic_block.end, &decoded_end)) {
+		basic_block.end = next_ins(basic_block.end, &decoded_end);
+	}
+	return find_patch_target(basic_block, syscall->ins, PCREL_JUMP_SIZE, PCREL_JUMP_SIZE, loader_address_formatter, (void *)loader, out_result);
+#else
+	out_result->start = syscall->ins;
+	out_result->end = basic_block.end;
+	return true;
+#endif
 }
 
 static inline bool addresses_are_within_s32(intptr_t addr1, intptr_t addr2)
@@ -528,7 +541,7 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 	uintptr_t existing_trampoline = PAGE_SIZE-1;
 	for (int i = 0; i < analysis->syscalls.count; i++) {
 		if (patches->list[i].trampoline == 0 && should_try_to_patch_remotely(&analysis->syscalls.list[i])) {
-			const uint8_t *addr = analysis->syscalls.list[i].ins;
+			const ins_ptr addr = analysis->syscalls.list[i].ins;
 			uintptr_t child_addr = translate_analysis_address_to_child(&analysis->loader, addr);
 			if (child_addr != 0) {
 				intptr_t nr = analysis->syscalls.list[i].nr;
@@ -562,7 +575,7 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 				// allocate a trampoline page
 				uintptr_t trampoline;
 				size_t bytes_remaining_in_existing = PAGE_SIZE - (existing_trampoline & (PAGE_SIZE-1));
-				size_t expected_size = (addr - patch_target.start) + ((uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start) + 10 + ((uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call) + 5;
+				size_t expected_size = (addr - patch_target.start) + ((uintptr_t)trampoline_call_handler_address - (uintptr_t)trampoline_call_handler_start) + 10 + ((uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address) + 5;
 				if (addresses_are_within_s32(existing_trampoline, child_patch_start) && bytes_remaining_in_existing > expected_size) {
 					trampoline = existing_trampoline;
 				} else {
@@ -579,6 +592,7 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 				size_t cur = 0;
 				{
 					// copy the prefix of the syscall instruction that is overwritten by the patch
+#ifdef PATCH_REQUIRES_MIGRATION
 					ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)trampoline;
 					size_t head_size = addr - patch_target.start;
 					if (head_size != 0) {
@@ -588,12 +602,12 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 						}
 						cur += head_size;
 					}
+#endif
 					// copy the prefix part of the trampoline
-					memcpy(&trampoline_buf[cur], trampoline_call_handler_start, (uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start);
-					cur += (uintptr_t)trampoline_call_handler_call - (uintptr_t)trampoline_call_handler_start;
-					// // move address of remote handler function into rcx
-					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_0;
-					trampoline_buf[cur++] = INS_MOV_RCX_64_IMM_1;
+					size_t prefix_size = (uintptr_t)trampoline_call_handler_address - (uintptr_t)trampoline_call_handler_start - sizeof(uintptr_t);
+					memcpy(&trampoline_buf[cur], trampoline_call_handler_start, prefix_size);
+					cur += prefix_size;
+					// move address of remote handler function into rcx
 					uintptr_t receive_syscall_remote = nr != SYS_clone ? receive_syscall_addr : receive_clone_addr;
 					trampoline_buf[cur++] = receive_syscall_remote;
 					trampoline_buf[cur++] = receive_syscall_remote >> 8;
@@ -604,26 +618,27 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					trampoline_buf[cur++] = receive_syscall_remote >> 48;
 					trampoline_buf[cur++] = receive_syscall_remote >> 56;
 					// copy the suffix part of the trampoline
-					memcpy(&trampoline_buf[cur], trampoline_call_handler_call, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call);
-					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_call;
+					memcpy(&trampoline_buf[cur], trampoline_call_handler_address, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address);
+					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address;
 					// copy the suffix of the syscall instruction that is overwritten by the patch
-					size_t skip_len = nr != SYS_clone ? 2 : 0;
-					delta = (uintptr_t)child_addr + skip_len - ((uintptr_t)trampoline + cur);
+					size_t skip_len = nr != SYS_clone ? 2 : 0; // TODO: support aarch64
 					size_t tail_size = patch_target.end - (addr + skip_len);
 					if (tail_size != 0) {
+#ifdef PATCH_REQUIRES_MIGRATION
+						delta = (uintptr_t)child_addr + skip_len - ((uintptr_t)trampoline + cur);
 						tail_size = migrate_instructions(&trampoline_buf[cur], addr + skip_len, delta, tail_size, loader_address_formatter, (void *)&analysis->loader);
 						if (tail_size == 0) {
 							DIE("failed to migrate suffix");
 						}
 						cur += tail_size;
+#else
+						DIE("tail has size, but target doesn't support migration", tail_size);
+#endif
 					}
 					// jump back to the resume point in the function
 					int32_t resume_relative_offset = child_patch_end - (trampoline + cur + PCREL_JUMP_SIZE);
-					trampoline_buf[cur++] = INS_JMP_32_IMM;
-					trampoline_buf[cur++] = resume_relative_offset;
-					trampoline_buf[cur++] = resume_relative_offset >> 8;
-					trampoline_buf[cur++] = resume_relative_offset >> 16;
-					trampoline_buf[cur++] = resume_relative_offset >> 24;
+					patch_write_pc_relative_jump((ins_ptr)&trampoline_buf[cur], resume_relative_offset);
+					cur += PCREL_JUMP_SIZE;
 				}
 				intptr_t result = proxy_poke(trampoline, cur, trampoline_buf);
 				if (result < 0) {
@@ -631,13 +646,9 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 				}
 				existing_trampoline = trampoline + cur;
 				// patch the original code to jump to the trampoline page
-				int32_t detour_relative_offset = trampoline - (child_patch_start + 5);
+				int32_t detour_relative_offset = trampoline - (child_patch_start + PCREL_JUMP_SIZE);
 				uint8_t jump_buf[PCREL_JUMP_SIZE];
-				jump_buf[0] = INS_JMP_32_IMM;
-				jump_buf[1] = detour_relative_offset;
-				jump_buf[2] = detour_relative_offset >> 8;
-				jump_buf[3] = detour_relative_offset >> 16;
-				jump_buf[4] = detour_relative_offset >> 24;
+				patch_write_pc_relative_jump((ins_ptr)&jump_buf, detour_relative_offset);
 				result = proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
 				if (result < 0) {
 					DIE("failed writing detour jump", fs_strerror(result));
@@ -944,7 +955,9 @@ static bool syscall_is_allowed_from_target(int syscall)
 		case __NR_shutdown:
 		case __NR_getsockname:
 		case __NR_getpeername:
+#ifdef __NR_getdents
 		case __NR_getdents:
+#endif
 		case __NR_fstatfs:
 		case __NR_setxattr:
 		case __NR_lsetxattr:
@@ -956,7 +969,10 @@ static bool syscall_is_allowed_from_target(int syscall)
 		case __NR_flistxattr:
 		case __NR_removexattr:
 		case __NR_fremovexattr:
+#ifdef __NR_epoll_wait
 		case __NR_epoll_wait:
+#endif
+		case __NR_epoll_pwait:
 		case __NR_epoll_create1:
 		case __NR_epoll_ctl:
 		case __NR_inotify_add_watch:
@@ -965,9 +981,13 @@ static bool syscall_is_allowed_from_target(int syscall)
 		case __NR_splice:
 		case __NR_tee:
 		case __NR_sync_file_range:
+#ifdef __NR_utime
 		case __NR_utime:
+#endif
 		case __NR_utimensat:
+#ifdef __NR_futimesat
 		case __NR_futimesat:
+#endif
 		case __NR_fallocate:
 		case __NR_readv:
 		case __NR_preadv:
@@ -1024,7 +1044,9 @@ static bool syscall_is_allowed_from_target(int syscall)
 		case __NR_socket:
 		case __NR_getsockopt:
 		case __NR_setsockopt:
+#ifdef __NR_poll
 		case __NR_poll:
+#endif
 			return true;
 		default:
 			return false;

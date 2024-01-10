@@ -24,7 +24,7 @@ union sockaddr_buf {
 };
 
 #ifdef __linux__
-__attribute__((used)) __attribute__((naked))
+__attribute__((used)) NAKED_FUNCTION
 noreturn void release(uint32_t expected_addr, uint32_t expected_port)
 #else
 int main(void)

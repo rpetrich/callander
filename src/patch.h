@@ -2,6 +2,7 @@
 #define PATCH_H
 
 #include "axon.h"
+#include "ins.h"
 
 #include <stdbool.h>
 
@@ -18,7 +19,7 @@ enum patch_status {
 };
 
 struct patch_body_args {
-	intptr_t pc;
+	ins_ptr pc;
 	intptr_t sp;
 	intptr_t bp;
 	struct patch_state_shard *shard;
@@ -28,21 +29,26 @@ struct patch_body_args {
 
 struct thread_storage;
 
+struct instruction_range {
+	ins_ptr start;
+	ins_ptr end;
+};
+
 // patch_syscall attempts to patch the syscall instruction at pc. it must
 // go through great lengths to sanity check to avoid disrupting the program
-void patch_syscall(struct thread_storage *thread, intptr_t pc, intptr_t sp, intptr_t bp, int self_fd);
+void patch_syscall(struct thread_storage *thread, ins_ptr pc, intptr_t sp, intptr_t bp, int self_fd);
 
 // patch_breakpoint sets a breakpoint at the address specified that calls
 // the associated handler when the address is hit
 __attribute__((warn_unused_result))
-enum patch_status patch_breakpoint(struct thread_storage *thread, intptr_t address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd);
+enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr address, ins_ptr entry, void (*handler)(uintptr_t *), int self_fd);
 
 // patch_function patches a function to instead call a handler instead when the
 // function would have run. The original behaviour of the function is not called
 // and instead a function pointer that will invoke the original behaviour is
 // passed to the handler
 __attribute__((warn_unused_result))
-enum patch_status patch_function(struct thread_storage *thread, intptr_t function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd);
+enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd);
 
 // find_unused_address finds an unmapped page by searching for an unmapped page
 uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address);
@@ -65,6 +71,16 @@ static inline bool trampoline_region_has_space(uint8_t *next_trampoline, size_t 
 #if defined(__aarch64__)
 #include "patch_aarch64.h"
 #endif
+#endif
+
+#ifdef PATCH_EXPOSE_INTERNALS
+
+void trampoline_call_handler_start();
+void trampoline_call_handler_address();
+void trampoline_call_handler_end();
+
+void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump);
+
 #endif
 
 #endif

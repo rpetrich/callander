@@ -1,3 +1,5 @@
+#ifdef __x86_64__
+
 #include "ins.h"
 #include "x86.h"
 
@@ -126,3 +128,4 @@ enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction 
 	return INS_JUMPS_NEVER;
 }
 
+#endif
