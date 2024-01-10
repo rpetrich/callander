@@ -317,40 +317,37 @@ int translate_seek_whence_to_darwin(int whence)
 	}
 }
 
+static uint32_t translate_darwin_mode_ifmt(uint16_t mode) {
+	switch (mode & S_IFMT) {
+		case 0010000:
+			return S_IFIFO;
+		case 0020000:
+			return S_IFCHR;
+		case 0040000:
+			return S_IFDIR;
+		case 0060000:
+			// it's actually S_IFBLK, but linux ls fails on block devices *womp womp*
+			// return S_IFBLK;
+			return S_IFDIR;
+		case 0100000:
+			return S_IFREG;
+		case 0120000:
+			return S_IFLNK;
+		case 0140000:
+			return S_IFSOCK;
+		// case 0160000:
+		// 	return S_IFWHT;
+		default:
+			return 0;
+	}
+}
+
 struct fs_stat translate_darwin_stat(struct darwin_stat stat)
 {
 	struct fs_stat result = { 0 };
 	result.st_dev = stat.st_dev;
 	result.st_ino = stat.st_ino;
-	result.st_mode = stat.st_mode & ~S_IFMT;
-	switch (stat.st_mode & S_IFMT) {
-		case 0010000:
-			result.st_mode |= S_IFIFO;
-			break;
-		case 0020000:
-			result.st_mode |= S_IFCHR;
-			break;
-		case 0040000:
-			result.st_mode |= S_IFDIR;
-			break;
-		case 0060000:
-			// it's actually S_IFBLK, but linux ls fails on block devices *womp womp*
-			// result.st_mode |= S_IFBLK;
-			result.st_mode |= S_IFDIR;
-			break;
-		case 0100000:
-			result.st_mode |= S_IFREG;
-			break;
-		case 0120000:
-			result.st_mode |= S_IFLNK;
-			break;
-		case 0140000:
-			result.st_mode |= S_IFSOCK;
-			break;
-		// case 0160000:
-		// 	result.st_mode |= S_IFWHT;
-		// 	break;
-	}
+	result.st_mode = (stat.st_mode & ~S_IFMT) | translate_darwin_mode_ifmt(stat.st_mode);
 	result.st_nlink = stat.st_nlink;
 	result.st_uid = stat.st_uid;
 	result.st_gid = stat.st_gid;
@@ -369,14 +366,17 @@ struct fs_stat translate_darwin_stat(struct darwin_stat stat)
 
 void translate_darwin_statx(struct statx *out_statx, struct darwin_stat stat, unsigned int mask)
 {
+	out_statx->stx_dev_major = (stat.st_dev >> 8) & 0xff;
+	out_statx->stx_dev_minor = stat.st_dev & 0xff;
 	unsigned int filled = 0;
 	if (mask & STATX_TYPE) {
 		filled |= STATX_TYPE;
-		out_statx->stx_mode = (out_statx->stx_mode & ~S_IFMT) | (stat.st_mode & S_IFMT);
 	}
 	if (mask & STATX_MODE) {
 		filled |= STATX_MODE;
-		out_statx->stx_mode = (out_statx->stx_mode & S_IFMT) | (stat.st_mode & ~S_IFMT);
+	}
+	if (mask & (STATX_MODE | STATX_TYPE)) {
+		out_statx->stx_mode = (stat.st_mode & ~S_IFMT) | translate_darwin_mode_ifmt(stat.st_mode);
 	}
 	if (mask & STATX_NLINK) {
 		filled |= STATX_NLINK;

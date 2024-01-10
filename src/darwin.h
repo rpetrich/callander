@@ -9,6 +9,7 @@ intptr_t translate_darwin_result(intptr_t result);
 
 #define DARWIN_SYSCALL_BASE (2 << 24)
 
+// from https://opensource.apple.com/source/xnu/xnu-7195.81.3/bsd/kern/syscalls.master.auto.html
 #define DARWIN_SYS_read       (DARWIN_SYSCALL_BASE | 3)
 #define DARWIN_SYS_write      (DARWIN_SYSCALL_BASE | 4)
 #define DARWIN_SYS_close      (DARWIN_SYSCALL_BASE | 6)
@@ -22,11 +23,11 @@ intptr_t translate_darwin_result(intptr_t result);
 #define DARWIN_SYS_pread      (DARWIN_SYSCALL_BASE | 153)
 #define DARWIN_SYS_pwrite     (DARWIN_SYSCALL_BASE | 154)
 #define DARWIN_SYS_fdatasync  (DARWIN_SYSCALL_BASE | 187)
-#define DARWIN_SYS_fstat      (DARWIN_SYSCALL_BASE | 189)
 #define DARWIN_SYS_lseek      (DARWIN_SYSCALL_BASE | 199)
 #define DARWIN_SYS_truncate   (DARWIN_SYSCALL_BASE | 200)
 #define DARWIN_SYS_ftruncate  (DARWIN_SYSCALL_BASE | 201)
 #define DARWIN_SYS_poll       (DARWIN_SYSCALL_BASE | 230)
+#define DARWIN_SYS_fstat64    (DARWIN_SYSCALL_BASE | 339)
 #define DARWIN_SYS_getdirentries64 (DARWIN_SYSCALL_BASE | 344)
 #define DARWIN_SYS_openat     (DARWIN_SYSCALL_BASE | 463)
 #define DARWIN_SYS_faccessat  (DARWIN_SYSCALL_BASE | 466)

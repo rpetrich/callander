@@ -430,7 +430,7 @@ intptr_t remote_fstat(int fd, struct fs_stat *buf)
 			return PROXY_CALL(__NR_fstat, proxy_value(fd), proxy_out(buf, sizeof(*buf)));
 		case TARGET_PLATFORM_DARWIN: {
 			struct darwin_stat dstat;
-			intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstat, proxy_value(fd), proxy_out(&dstat, sizeof(struct darwin_stat))));
+			intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstat64, proxy_value(fd), proxy_out(&dstat, sizeof(struct darwin_stat))));
 			if (result >= 0) {
 				*buf = translate_darwin_stat(dstat);
 			}
@@ -478,7 +478,7 @@ intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, st
 				if (fd == AT_FDCWD) {
 					result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstatat64, proxy_value(translate_at_fd_to_darwin(fd)), proxy_string("."), proxy_out(&dstat, sizeof(struct darwin_stat)), proxy_value(translate_at_flags_to_darwin(flags))));
 				} else {
-					result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstat, proxy_value(fd), proxy_out(&dstat, sizeof(struct darwin_stat))));
+					result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstat64, proxy_value(fd), proxy_out(&dstat, sizeof(struct darwin_stat))));
 				}
 			} else {
 				result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstatat64, proxy_value(translate_at_fd_to_darwin(fd)), proxy_string(path), proxy_out(&dstat, sizeof(struct darwin_stat)), proxy_value(translate_at_flags_to_darwin(flags))));
