@@ -4,7 +4,6 @@
 #include "loader.h"
 
 #include <errno.h>
-#include <linux/limits.h>
 #include <limits.h>
 #include <string.h>
 

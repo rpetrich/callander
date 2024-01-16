@@ -13,17 +13,14 @@
 
 __asm__(
 ".text\n"
-".global trampoline_call_handler_start\n"
-".hidden trampoline_call_handler_start\n"
-".type trampoline_call_handler_start,@function\n"
-"trampoline_call_handler_start:\n"
+FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_start) "\n"
 "	stp x9, x10, [sp, #-0x90]!\n"
 "	stp x11, x12, [sp, #-0x10]!\n"
 "	stp x13, x14, [sp, #-0x10]!\n"
 "	stp x15, lr, [sp, #-0x10]!\n"
 "	mrs x9, nzcv\n"
 "	stp x7, x9, [sp, #-0x10]!\n"
-"	ldr x7, address\n"
+"	ldr x7, 0x48\n"
 "	stp x8, x6, [sp, #-0x10]!\n"
 "	stp x4, x5, [sp, #-0x10]!\n"
 "	stp x2, x3, [sp, #-0x10]!\n"
@@ -40,18 +37,10 @@ __asm__(
 "	ldp x13, x14, [sp], #0x10\n"
 "	ldp x11, x12, [sp], #0x10\n"
 "	ldp x9, x10, [sp], #0x90\n"
-"	b trampoline_call_handler_end\n"
-"address:\n"
-"	brk #0\n"
-"	brk #0\n"
-".global trampoline_call_handler_address\n"
-".hidden trampoline_call_handler_address\n"
-".type trampoline_call_handler_address,@function\n"
-"trampoline_call_handler_address:\n"
-".global trampoline_call_handler_end\n"
-".hidden trampoline_call_handler_end\n"
-".type trampoline_call_handler_end,@function\n"
-"trampoline_call_handler_end:\n"
+"	b "FS_NAME_ASM(trampoline_call_handler_end)"\n"
+".quad 0\n"
+FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_address) "\n"
+FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_end) "\n"
 );
 
 void trampoline_call_handler_start();
@@ -176,13 +165,24 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 				return PATCH_STATUS_FAILED;
 
 			}
-			new_mapping = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
-			if (UNLIKELY(fs_is_map_failed(new_mapping))) {
+#ifdef SYS_mremap
+			void *new_attempt = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
+			if (UNLIKELY(fs_is_map_failed(new_attempt))) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 				PATCH_LOG("Failed to patch: mremap failed", -(intptr_t)new_mapping);
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				return PATCH_STATUS_FAILED;
 			}
+			new_mapping = new_attempt;
+#else
+			fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
+			new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_FIXED|MAP_PRIVATE, self_fd, PAGE_SIZE);
+			if (UNLIKELY(fs_is_map_failed(new_mapping))) {
+				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
+				PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
+				return PATCH_STATUS_FAILED;
+			}
+#endif
 		}
 	}
 	// Construct the trampoline
@@ -210,9 +210,11 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 	}
 	current_region = trampoline;
 	// Patch the syscall instruction to jump to the trampoline
+#ifdef SYS_membarrier
 	if (membarrier_is_supported) {
 		fs_membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0);
 	}
+#endif
 	intptr_t offset = stub_address - (uintptr_t)instruction;
 	patch_write_pc_relative_jump(instruction, offset);
 	clear_icache((uintptr_t)instruction, (uintptr_t)&instruction[1]);
@@ -234,7 +236,7 @@ enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr addres
 
 enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
 {
-	PATCH_LOG("patching function", (uintptr_t)address);
+	PATCH_LOG("patching function", (uintptr_t)function);
 	return patch_common(thread, function, handler, true, self_fd);
 }
 

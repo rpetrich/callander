@@ -1,15 +1,9 @@
 #define FS_DEFINE_SYSCALL __asm__( \
 ".text\n" \
-".global fs_syscall\n" \
-".hidden fs_syscall\n" \
-".type fs_syscall,@function\n" \
-"fs_syscall:\n" \
+FS_HIDDEN_FUNCTION(fs_syscall) \
 "	int $0x80\n" \
-".global fs_syscall_ret\n" \
-".hidden fs_syscall_ret\n" \
-".type fs_syscall_ret,@function\n" \
-"fs_syscall_ret:\n" \
 "	ret\n" \
+FS_SIZE_ASM(fs_syscall) \
 );
 
 __attribute__((always_inline))
@@ -17,7 +11,7 @@ static inline intptr_t fs_syscall0(intptr_t id)
 {
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id)
 		: "memory", "cc"
@@ -30,7 +24,7 @@ static inline intptr_t fs_syscall1(intptr_t id, intptr_t arg1)
 {
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id), "b"(arg1)
 		: "memory", "cc"
@@ -42,7 +36,7 @@ __attribute__((always_inline))
 static inline void fs_syscall_noreturn1(intptr_t id, intptr_t arg1)
 {
 	asm __volatile__ (
-		"jmp fs_syscall"
+		"jmp "FS_NAME_ASM(fs_syscall)
 		:
 		: "a"(id), "b"(arg1)
 		: "memory"
@@ -55,7 +49,7 @@ static inline intptr_t fs_syscall2(intptr_t id, intptr_t arg1, intptr_t arg2)
 {
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id), "b"(arg1), "c"(arg2)
 		: "memory", "cc"
@@ -68,7 +62,7 @@ static inline intptr_t fs_syscall3(intptr_t id, intptr_t arg1, intptr_t arg2, in
 {
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id), "b"(arg1), "c"(arg2), "d"(arg3)
 		: "memory", "cc"
@@ -81,7 +75,7 @@ static inline intptr_t fs_syscall4(intptr_t id, intptr_t arg1, intptr_t arg2, in
 {
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id), "b"(arg1), "c"(arg2), "d"(arg3), "S"(arg4)
 		: "memory", "cc"
@@ -94,7 +88,7 @@ static inline intptr_t fs_syscall5(intptr_t id, intptr_t arg1, intptr_t arg2, in
 {
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id), "b"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5)
 		: "memory", "cc"
@@ -115,7 +109,7 @@ static inline intptr_t fs_syscall6(intptr_t id, intptr_t arg1, intptr_t arg2, in
 	} args = { arg1, arg2, arg3, arg4, arg5, arg6 };
 	intptr_t result;
 	asm __volatile__ (
-		"call fs_syscall"
+		"call "FS_NAME_ASM(fs_syscall)
 		: "=a"(result)
 		: "a"(id), "b"(&args)
 		: "memory", "cc"

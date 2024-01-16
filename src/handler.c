@@ -123,23 +123,22 @@ static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *
 		}
 		if (enabled_traces & (mask | TRACE_TYPE_PTRACE)) {
 			// read file path, since it's required for enabled trace types
-			char filename[PATH_MAX+1];
-			int result = fs_readlink_fd(fd, filename, sizeof(filename)-1);
+			char filename[PATH_MAX];
+			int result = fs_fd_getpath(fd, filename);
 			if (result <= 0) {
 				attempt_pop_close(&state);
 				return result;
 			}
-			filename[result] = '\0';
 			if (send_create) {
 				send_create_event(thread, filename, result - 1, mode);
 			}
 			if ((flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY) {
 				if (enabled_traces & TRACE_TYPE_OPEN_FOR_MODIFY) {
-					send_open_for_modify_event(thread, filename, result - 1, flags, (flags & O_CREAT) ? mode : 0);
+					send_open_for_modify_event(thread, filename, fs_strlen(result), flags, (flags & O_CREAT) ? mode : 0);
 				}
 			} else {
 				if (enabled_traces & TRACE_TYPE_OPEN_READ_ONLY) {
-					send_open_read_only_event(thread, filename, result - 1, flags);
+					send_open_read_only_event(thread, filename, fs_strlen(result), flags);
 				}
 			}
 			if (special_path_type(filename) == SPECIAL_PATH_TYPE_MEM) {
@@ -230,12 +229,13 @@ static int resolve_path_operation(struct thread_storage *thread, int dirfd, cons
 	struct attempt_cleanup_state state;
 	attempt_push_close(thread, &state, new_dirfd);
 	// readlink on the parent directory to get fully resolved path
-	int dir_length = fs_readlink_fd(new_dirfd, buffer, PATH_MAX);
-	if (dir_length < 0) {
+	int result = fs_fd_getpath(new_dirfd, buffer);
+	if (result < 0) {
 		attempt_pop_close(&state);
-		return dir_length;
+		return result;
 	}
 	// prepare the full path
+	size_t dir_length = fs_strlen(buffer);
 	if (dir_length == 1) {
 		// directory is /, avoid two slashes
 		dir_length = 0;
@@ -407,19 +407,19 @@ static int wrapped_chmodat(struct thread_storage *thread, int dirfd, const char 
 		return fd;
 	}
 	char filename[PATH_MAX];
-	int filename_len = fs_readlink_fd(fd, filename, sizeof(filename));
-	if (filename_len <= 0) {
+	int result = fs_fd_getpath(fd, filename);
+	if (result <= 0) {
 		fs_close(fd);
-		return filename_len;
+		return result;
 	}
 	int result = fs_fchmod(fd, mode);
 	fs_close(fd);
 	if (enabled_traces & TRACE_TYPE_CHMOD) {
-		send_chmod_event(thread, filename, filename_len, mode);
+		send_chmod_event(thread, filename, fs_strlen(filename), mode);
 	}
 	if (result == 0) {
 		if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
-			send_attribute_change_event(thread, filename, filename_len);
+			send_attribute_change_event(thread, filename, fs_strlen(filename_len));
 		}
 	}
 	return result;
@@ -453,16 +453,16 @@ static int wrapped_chownat(struct thread_storage *thread, int dirfd, const char 
 	}
 	// read the path
 	char filename[PATH_MAX];
-	int filename_len = fs_readlink_fd(fd, filename, PATH_MAX);
-	if (filename_len <= 0) {
+	int result = fs_fd_getpath(fd, filename);
+	if (result <= 0) {
 		fs_close(fd);
-		return filename_len;
+		return result;
 	}
 	// chown the file
 	int result = fs_fchown(fd, uid, gid);
 	fs_close(fd);
 	if (result == 0) {
-		send_attribute_change_event(thread, filename, filename_len);
+		send_attribute_change_event(thread, filename, fs_strlen(filename));
 	}
 	return result;
 }

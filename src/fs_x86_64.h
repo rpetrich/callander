@@ -1,27 +1,22 @@
 #ifdef __APPLE__
-#define FS_SYSCALL_POSTPROCESS "\njae 1f\nneg %%rax\n1:"
+#define FS_SYSCALL_POSTPROCESS "jae 1f\nneg %%rax\n1:"
 #else
 #define FS_SYSCALL_POSTPROCESS ""
 #endif
 #ifdef FS_INLINE_SYSCALL
-#define FS_CALL_SYSCALL "syscall" FS_SYSCALL_POSTPROCESS
-#define FS_JUMP_SYSCALL "syscall" FS_SYSCALL_POSTPROCESS
+#define FS_CALL_SYSCALL "syscall\n" FS_SYSCALL_POSTPROCESS
+#define FS_JUMP_SYSCALL "syscall\n" FS_SYSCALL_POSTPROCESS
 #define FS_DEFINE_SYSCALL
 #else
-#define FS_CALL_SYSCALL "call fs_syscall"
-#define FS_JUMP_SYSCALL "jmp fs_syscall"
+#define FS_CALL_SYSCALL "call "FS_NAME_ASM(fs_syscall)
+#define FS_JUMP_SYSCALL "jmp "FS_NAME_ASM(fs_syscall)
 #define FS_DEFINE_SYSCALL __asm__( \
 ".text\n" \
-".global fs_syscall\n" \
-".hidden fs_syscall\n" \
-".type fs_syscall,@function\n" \
+FS_HIDDEN_FUNCTION(fs_syscall) \
 ".cfi_startproc\n" \
-"fs_syscall:\n" \
 "	syscall\n" \
-".global fs_syscall_ret\n" \
-".hidden fs_syscall_ret\n" \
-".type fs_syscall_ret,@function\n" \
-"fs_syscall_ret:" FS_SYSCALL_POSTPROCESS "\n" \
+FS_HIDDEN_FUNCTION_ASM(fs_syscall_ret) "\n" \
+FS_SYSCALL_POSTPROCESS "\n" \
 "	ret\n" \
 ".cfi_endproc\n" \
 );

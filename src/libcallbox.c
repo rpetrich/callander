@@ -631,7 +631,7 @@ static void apply_sandbox(const struct link_map *libz_entry)
 	}
 	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0);
 	// ERROR("permitted syscalls", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, true, true, true)));
-	free_loaded_binary(analysis.loader.binaries);
+	free_loader_context(&analysis.loader);
 	ERROR_FLUSH();
 	result = FS_SYSCALL(__NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, (intptr_t)&prog);
 	if (result < 0) {

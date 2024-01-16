@@ -11,6 +11,8 @@
 
 #define INDEX_SYMBOLS
 
+#define PAGE_ALIGNMENT_MASK ~((uintptr_t)PAGE_SIZE - 1)
+
 #define DW_EH_PE_omit	0xff
 #define DW_EH_PE_ptr	0x00
 
@@ -151,18 +153,25 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		}
 	}
 	end += PAGE_SIZE-1;
-	end &= -PAGE_SIZE;
-	off_start &= -PAGE_SIZE;
-	start &= -PAGE_SIZE;
+	end &= PAGE_ALIGNMENT_MASK;
+	off_start &= PAGE_ALIGNMENT_MASK;
+	start &= PAGE_ALIGNMENT_MASK;
 	size_t total_size = end - start + off_start;
 	uintptr_t desired_address = load_address == 0 || header.e_type != ET_DYN ? start - off_start : load_address;
-	void *mapped_address = fs_mmap((void *)desired_address, total_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+#ifdef MAP_JIT
+	int additional_map_flags = MAP_JIT;
+#else
+	int additional_map_flags = 0;
+#endif
+	void *mapped_address = fs_mmap((void *)desired_address, total_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|additional_map_flags, -1, 0);
 	if (fs_is_map_failed(mapped_address)) {
 		ERROR("could not map binary", fs_strerror((intptr_t)mapped_address));
 		free(phbuffer);
 		return -ENOEXEC;
 	}
 	if ((uintptr_t)mapped_address != desired_address && header.e_type != ET_DYN && load_address == 0 && !force_relocation) {
+		ERROR("desired address is not allowed", desired_address);
+		ERROR("instead got", (uintptr_t)mapped_address);
 		// ERROR("binary is not relocable");
 		fs_munmap(mapped_address, end - start + off_start);
 		free(phbuffer);
@@ -174,33 +183,47 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		if (ph->p_type != PT_LOAD) {
 			continue;
 		}
-		uintptr_t this_min = ph->p_vaddr & -PAGE_SIZE;
-		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & -PAGE_SIZE;
-		int protection = 0;
-		if (ph->p_flags & PF_R) {
-			protection |= PROT_READ;
-		}
-		if (ph->p_flags & PF_W) {
-			protection |= PROT_WRITE;
-		}
-		if (ph->p_flags & PF_X) {
-			protection |= PROT_EXEC;
-		}
+		uintptr_t this_min = ph->p_vaddr & PAGE_ALIGNMENT_MASK;
+		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
+		int protection = protection_for_pflags(ph->p_flags);
 		if (this_max-this_min) {
-			size_t offset = ph->p_offset & -PAGE_SIZE;
+			size_t offset = ph->p_offset & PAGE_ALIGNMENT_MASK;
 			size_t len = this_max-this_min;
+			size_t map_len = len;
 			if (offset + len > (size_t)stat.st_size) {
-				len = (((size_t)stat.st_size - offset) + PAGE_SIZE-1) & -PAGE_SIZE;
+				map_len = (((size_t)stat.st_size - offset) + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
 			}
-			void *section_mapping = fs_mmap((void *)(map_offset + this_min), len, ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection, MAP_PRIVATE|MAP_FIXED, fd, offset);
-			if (fs_is_map_failed(section_mapping)) {
-				ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
-				return -ENOEXEC;
+			void *desired_section_mapping = (void *)(map_offset + this_min);
+			int temporary_prot = ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection;
+			if (map_len != 0) {
+#ifdef __APPLE__
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE|MAP_FIXED, fd, offset);
+#else
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE|MAP_FIXED, fd, offset);
+#endif
+				if (fs_is_map_failed(section_mapping)) {
+					ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
+					return -ENOEXEC;
+				}
+				if (section_mapping != desired_section_mapping) {
+					ERROR("section mapped to incorrect address", (uintptr_t)section_mapping);
+					ERROR("expected", (uintptr_t)desired_section_mapping);
+					return -ENOEXEC;
+				}
+#ifdef __APPLE__
+				if (temporary_prot & PROT_EXEC) {
+					result = fs_mprotect(desired_section_mapping, map_len, temporary_prot);
+					if (result != 0) {
+						ERROR("failed adding PROT_EXEC", fs_strerror(result));
+						return -ENOEXEC;
+					}
+				}
+#endif
 			}
 		}
 		if (ph->p_memsz > ph->p_filesz) {
 			size_t brk = (size_t)map_offset+ph->p_vaddr+ph->p_filesz;
-			size_t pgbrk = (brk+PAGE_SIZE-1) & -PAGE_SIZE;
+			size_t pgbrk = (brk+PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
 			memset((void *)brk, 0, (pgbrk-brk) & (PAGE_SIZE-1));
 			if (this_max-this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
 				result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
@@ -359,8 +382,8 @@ int apply_postrelocation_readonly(struct binary_info *info)
 			if (ph->p_type != PT_GNU_RELRO) {
 				continue;
 			}
-			uintptr_t this_min = ph->p_vaddr & -PAGE_SIZE;
-			uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & -PAGE_SIZE;
+			uintptr_t this_min = ph->p_vaddr & PAGE_ALIGNMENT_MASK;
+			uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
 			int protection = protection_for_pflags(ph->p_flags);
 			int result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
 			if (result < 0) {
@@ -994,7 +1017,7 @@ void *find_symbol_by_address(const struct binary_info *info, const struct symbol
 			const ElfW(Sym) *symbol = (const ElfW(Sym) *)next_symbol;
 			ordered[i] = i | (symbol->st_value << SYMBOL_INDEX_BITS);
 		}
-		qsort_r(ordered, count, sizeof(uint64_t), compare_uint64_t, NULL);
+		qsort_r_freestanding(ordered, count, sizeof(uint64_t), compare_uint64_t, NULL);
 	}
 	uint64_t search_value = (value + 1) << SYMBOL_INDEX_BITS;
 	for (int i = bsearch_bool(count, (void *)search_value, ordered, bsearch_symbol_by_address_callback); i != 0; i--) {
@@ -1084,10 +1107,18 @@ int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid) {
 	if (result < 0) {
 		return result;
 	}
+#ifdef ST_NOEXEC
 	if (mount_stat.f_flags & ST_NOEXEC) {
 		// Filesystem is mounted noexec
 		return -EACCES;
 	}
+#endif
+#ifdef MNT_NOEXEC
+	if (mount_stat.f_flags & MNT_NOEXEC) {
+		// Filesystem is mounted noexec
+		return -EACCES;
+	}
+#endif
 	result = fs_fstat(fd, stat);
 	if (result < 0) {
 		return result;

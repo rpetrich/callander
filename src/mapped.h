@@ -6,7 +6,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/stat.h>
+#ifdef __linux__
 #include <linux/limits.h>
+#else
+#include <sys/syslimits.h>
+#endif
 
 // region_is_mapped checks if a particular address is mapped. this is inherently
 // racy since the workload could immediatly map or unmap the address shortly

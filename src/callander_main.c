@@ -3,7 +3,6 @@
 #include <dirent.h>
 #include <linux/audit.h>
 #include <linux/binfmts.h>
-#include <linux/limits.h>
 #include <linux/seccomp.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -11,6 +10,11 @@
 #include <sys/auxv.h>
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
+#ifdef __linux__
+#include <linux/limits.h>
+#else
+#include <sys/syslimits.h>
+#endif
 #include <sys/user.h>
 
 #include "bpf_debug.h"
@@ -688,7 +692,7 @@ static struct mapped_region_info copy_sorted_mapped_regions(const struct loader_
 		}
 	}
 	// sort by address
-	qsort_r(regions, count, sizeof(struct mapped_region), compare_regions, NULL);
+	qsort_r_freestanding(regions, count, sizeof(struct mapped_region), compare_regions, NULL);
 	// merge overlapping addresses
 	for (int i = count - 1; i > 0; i--) {
 		if (regions[i].start <= regions[i-1].end) {
@@ -914,7 +918,7 @@ static int compare_reachable_regions(const void *left, const void *right, __attr
 static void prune_unreachable_instructions(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) struct loader_context *loader)
 {
 	size_t breakpoint_count = unreachables->breakpoint_count;
-	qsort_r(unreachables->breakpoints, breakpoint_count, sizeof(*unreachables->breakpoints), compare_addresses, NULL);
+	qsort_r_freestanding(unreachables->breakpoints, breakpoint_count, sizeof(*unreachables->breakpoints), compare_addresses, NULL);
 	for (size_t i = 1; i < breakpoint_count; i++) {
 		if (unreachables->breakpoints[i] < unreachables->breakpoints[i-1]) {
 			DIE("sorting breakpoints failed");
@@ -924,7 +928,7 @@ static void prune_unreachable_instructions(__attribute__((unused)) struct unreac
 	if (UNLIKELY(reachable_region_count == 0)) {
 		return;
 	}
-	qsort_r(unreachables->reachable_regions, reachable_region_count, sizeof(*unreachables->reachable_regions), compare_reachable_regions, NULL);
+	qsort_r_freestanding(unreachables->reachable_regions, reachable_region_count, sizeof(*unreachables->reachable_regions), compare_reachable_regions, NULL);
 	for (size_t i = 1; i < reachable_region_count; i++) {
 		if (unreachables->reachable_regions[i].exit < unreachables->reachable_regions[i-1].exit) {
 			DIE("sorting reachable regions failed");
@@ -1363,7 +1367,7 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 		.restorer = (void *)&__restore,
 		.mask = { 0 },
 	};
-	int sa_result = fs_rt_sigaction(SIGSEGV, &sa, NULL, sizeof(struct fs_sigset_t));
+	int sa_result = fs_sigaction(SIGSEGV, &sa, NULL);
 	if (sa_result < 0) {
 		DIE("failed to reset sigaction", fs_strerror(sa_result));
 	}
@@ -1633,12 +1637,11 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	}
 
 	// find path so we can exec it
-	char path_buf[PATH_MAX+1];
-	intptr_t result = fs_readlink_fd(fd, path_buf, sizeof(path_buf)-1);
+	char path_buf[PATH_MAX];
+	intptr_t result = fs_fd_getpath(fd, path_buf);
 	if (result < 0) {
 		DIE("failed to read path", fs_strerror(result));
 	}
-	path_buf[result] = '\0';
 	LOG("will exec", &path_buf[0]);
 
 	char **new_argv = &argv[executable_index];
@@ -1860,7 +1863,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		.mask = { ~0l },
 	};
 	fs_sigdelset(&action.mask, SIGSEGV);
-	result = fs_rt_sigaction(SIGSEGV, &action, NULL, sizeof(struct fs_sigset_t));
+	result = fs_sigaction(SIGSEGV, &action, NULL);
 	if (result < 0) {
 		DIE("failed to register for SIGSEGV", fs_strerror(result));
 	}
@@ -1938,7 +1941,7 @@ skip_analysis:
 			write_profile(&analysis.loader, &analysis.syscalls, (ins_ptr)analysis.main, profile_path);
 		}
 		cleanup_searched_instructions(&analysis.search);
-		free_loaded_binary(analysis.loader.binaries);
+		free_loader_context(&analysis.loader);
 		cleanup_syscalls(&analysis.syscalls);
 		free(analysis.known_symbols.blocked_symbols);
 		ERROR_FLUSH();
@@ -2028,7 +2031,7 @@ skip_analysis:
 	}
 	// ensure we're stopped at a signal
 	if (!WIFSTOPPED(status)) {
-		free_loaded_binary(analysis.loader.binaries);
+		free_loader_context(&analysis.loader);
 		// early exit because the child died during startup
 		if (WIFSIGNALED(status)) {
 			ERROR_FLUSH();
@@ -2169,7 +2172,7 @@ skip_analysis:
 	// free if not attaching
 	if (!attach) {
 		free(prog.filter);
-		free_loaded_binary(analysis.loader.binaries);
+		free_loader_context(&analysis.loader);
 	}
 	// unmap the anonymous pages
 	// TODO: allowlist this
@@ -2387,11 +2390,11 @@ skip_analysis:
 					}
 					goto wait_for_child;
 				}
-				free_loaded_binary(analysis.loader.binaries);
+				free_loader_context(&analysis.loader);
 				ERROR_FLUSH();
 				return 128 + WSTOPSIG(status);
 			}
-			free_loaded_binary(analysis.loader.binaries);
+			free_loader_context(&analysis.loader);
 		}
 		if (WIFSIGNALED(status)) {
 			if (attach) {

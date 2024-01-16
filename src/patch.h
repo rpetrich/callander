@@ -2,6 +2,7 @@
 #define PATCH_H
 
 #include "axon.h"
+#include "freestanding.h"
 #include "ins.h"
 
 #include <stdbool.h>
@@ -55,7 +56,9 @@ uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address);
 
 void patch_init(bool enable_syscall_patching);
 
+#ifdef SYS_membarrier
 extern bool membarrier_is_supported;
+#endif
 
 #define TRAMPOLINE_REGION_SIZE PAGE_SIZE
 

@@ -3,6 +3,7 @@
 #include "callander_print.h"
 
 #include <sys/mount.h>
+#ifdef __linux__
 #include <linux/bpf.h>
 #include <linux/fs.h>
 #include <linux/fsmap.h>
@@ -16,31 +17,42 @@
 #include <linux/tiocl.h>
 #include <linux/userfaultfd.h>
 #include <linux/vt.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <sched.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __linux__
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/inotify.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/msg.h>
 #include <sys/resource.h>
+#ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
+#endif
 #include <sys/random.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
+#ifdef __linux__
 #include <sys/signalfd.h>
+#endif
 #include <sys/socket.h>
 #include <sys/stat.h>
+#ifdef __linux__
 #include <sys/swap.h>
+#endif
 #include <sys/time.h>
+#ifdef __linux__
 #include <sys/timerfd.h>
+#endif
 #include <sys/types.h>
 #include <sys/user.h>
 #include <sys/xattr.h>
@@ -54,8 +66,6 @@ static inline char *strdup_fixed(const char *str, size_t size)
 	memcpy(buf, str, size);
 	return buf;
 }
-
-#define strdup(x) _Generic((x), char *: strdup(x), const char*: strdup(x), const char[sizeof(x)]: strdup_fixed(x, sizeof(x)), char[sizeof(x)]: strdup_fixed(x, sizeof(x)))
 
 __attribute__((nonnull(1)))
 char *copy_register_state_description(const struct loader_context *context, struct register_state reg)
@@ -114,6 +124,8 @@ struct enum_option {
 	uintptr_t value;
 	const char *description;
 };
+
+#ifdef __linux__
 
 #define DESCRIBE_ENUM(x) { .value = x, .description = #x }
 
@@ -1215,6 +1227,8 @@ static const char *statx_mask[64] = {
 	DESCRIBE_FLAG(STATX_DIOALIGN),
 };
 
+#endif
+
 __attribute__((nonnull(1)))
 static char *copy_register_state_description_simple(const struct loader_context *context, struct register_state reg)
 {
@@ -1259,6 +1273,8 @@ static inline size_t format_octal(uintptr_t value, char buffer[])
 	return i+1;
 }
 
+#ifdef __linux__
+
 static void fill_ioctl_description(uintptr_t value, char buf[])
 {
 	uintptr_t nr = (value >> _IOC_NRSHIFT) & _IOC_TYPEMASK;
@@ -1287,6 +1303,8 @@ static void fill_ioctl_description(uintptr_t value, char buf[])
 	buf[i++] = '\0';
 }
 
+#endif
+
 static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], description_format_options description_options)
 {
 	char num_buf[64];
@@ -1300,10 +1318,12 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 			format_octal(value, num_buf);
 			return strdup(num_buf);
 		}
+#ifdef __linux__
 		if (description_options & DESCRIBE_AS_IOCTL) {
 			fill_ioctl_description(value, num_buf);
 			return strdup(num_buf);
 		}
+#endif
 		return copy_address_details(context, (const void *)value, false);
 	}
 	// calculate length
@@ -1391,6 +1411,7 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 static char *copy_argument_description(const struct loader_context *context, struct register_state state, uint8_t argument_type)
 {
 	switch (argument_type) {
+#ifdef __linux__
 		case SYSCALL_ARG_IS_FD:
 			return copy_enum_flags_description(context, state, file_descriptors, sizeof(file_descriptors), NULL, false);
 		case SYSCALL_ARG_IS_PROT:
@@ -1519,6 +1540,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 			} else {
 				return copy_register_state_description(context, state);
 			}
+#endif
 		case SYSCALL_ARG_IS_MODE:
 		case SYSCALL_ARG_IS_MODEFLAGS:
 			return copy_enum_flags_description(context, state, NULL, 0, NULL, DESCRIBE_AS_FILE_MODE);

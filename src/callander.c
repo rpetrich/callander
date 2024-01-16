@@ -5,28 +5,39 @@
 
 #include <errno.h>
 #include <limits.h>
+#ifdef __linux__
 #include <linux/audit.h>
 #include <linux/binfmts.h>
-#include <linux/limits.h>
 #include <linux/filter.h>
 #include <linux/seccomp.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sched.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#ifdef __linux__
 #include <sys/prctl.h>
+#endif
 #include <sys/ptrace.h>
 #include <sys/resource.h>
+#ifdef __linux__
+#include <linux/limits.h>
+#else
+#include <sys/syslimits.h>
+#endif
 
 #include "callander.h"
 #include "callander_print.h"
 
+#ifdef __linux__
 #include "bpf_debug.h"
+#endif
 #include "loader.h"
 #include "qsort.h"
 #include "search.h"
+#include "linux.h"
 
 #define CALL_TRACE_WITH_RANGE
 
@@ -129,12 +140,12 @@ static inline void canonicalize_register(struct register_state *reg) {
 	}
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
+__attribute__((nonnull(1))) __attribute__((always_inline)) __attribute__((unused))
 static inline bool register_is_partially_known_8bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xff;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
+__attribute__((nonnull(1))) __attribute__((always_inline)) __attribute__((unused))
 static inline bool register_is_partially_known_16bit(const struct register_state *reg) {
 	return reg->value != (uintptr_t)0 || reg->max < 0xffff;
 }
@@ -324,6 +335,8 @@ static register_mask syscall_argument_abi_used_registers_for_argc[] = {
 	(1 << REGISTER_SYSCALL_NR) | (1 << REGISTER_SYSCALL_ARG0) | (1 << REGISTER_SYSCALL_ARG1) | (1 << REGISTER_SYSCALL_ARG2) | (1 << REGISTER_SYSCALL_ARG3) | (1 << REGISTER_SYSCALL_ARG4) | (1 << REGISTER_SYSCALL_ARG5),
 };
 
+#ifdef __linux__
+
 static inline ssize_t seccomp_data_offset_for_register(enum register_index reg) {
 	switch (reg) {
 		case REGISTER_SYSCALL_NR:
@@ -344,6 +357,8 @@ static inline ssize_t seccomp_data_offset_for_register(enum register_index reg) 
 			return -1;
 	}
 }
+
+#endif
 
 const struct registers empty_registers = {
 	.registers = {
@@ -530,7 +545,7 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 	}
 }
 
-__attribute__((nonnull(1)))
+__attribute__((nonnull(1))) __attribute__((unused))
 static inline void clear_stack(struct registers *regs)
 {
 	for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
@@ -2274,34 +2289,6 @@ void *resolve_loaded_symbol(const struct loader_context *context, const char *na
 	return NULL;
 }
 
-__attribute__((nonnull(1, 2)))
-static void *resolve_next_binary_loaded_symbol(struct loaded_binary *binary, const char *name, int symbol_types, const ElfW(Sym) **symbol) {
-	if ((symbol_types & NORMAL_SYMBOL) && binary->has_symbols && (*symbol == NULL || symbol_info_contains_symbol(&binary->symbols, *symbol))) {
-		const struct symbol_info *symbols = &binary->symbols;
-		void *result = find_next_symbol(&binary->info, symbols, name, symbol);
-		if (result != NULL) {
-			return result;
-		}
-		*symbol = NULL;
-	}
-	if ((symbol_types & LINKER_SYMBOL) && binary->has_linker_symbols && (*symbol == NULL || symbol_info_contains_symbol(&binary->linker_symbols, *symbol))) {
-		const struct symbol_info *symbols = &binary->linker_symbols;
-		void *result = find_next_symbol(&binary->info, symbols, name, symbol);
-		if (result != NULL) {
-			return result;
-		}
-		*symbol = NULL;
-	}
-	if ((symbol_types & DEBUG_SYMBOL) && binary->has_debuglink_symbols && (*symbol == NULL || symbol_info_contains_symbol(&binary->debuglink_symbols, *symbol))) {
-		const struct symbol_info *symbols = &binary->debuglink_symbols;
-		void *result = find_next_symbol(&binary->info, symbols, name, symbol);
-		if (result != NULL) {
-			return result;
-		}
-	}
-	return NULL;
-}
-
 __attribute__((nonnull(1, 2, 3)))
 static inline ins_ptr update_known_function(struct program_state *analysis, struct loaded_binary *binary, const char *name, int symbol_locations, function_effects effects)
 {
@@ -2325,25 +2312,6 @@ static inline ins_ptr update_known_function(struct program_state *analysis, stru
 		*get_or_populate_effects(analysis, addr, &empty, effects, &token) = effects;
 	}
 	return addr;
-}
-
-__attribute__((nonnull(1, 2, 3)))
-static inline void skip_lea_on_known_symbol(struct program_state *analysis, struct loaded_binary *binary, const char *name, size_t default_size)
-{
-	const ElfW(Sym) *symbol = NULL;
-	ins_ptr value;
-	while ((value = resolve_next_binary_loaded_symbol(binary, name, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, &symbol)) != NULL) {
-		LOG("found symbol to skip", name);
-		LOG("symbol address is", temp_str(copy_address_description(&analysis->loader, value)));
-		struct known_symbols *known_symbols = &analysis->known_symbols;
-		for (int i = 0; i < SKIPPED_LEA_AREA_COUNT; i++) {
-			if (known_symbols->skipped_lea_areas[i].address == NULL) {
-				known_symbols->skipped_lea_areas[i].address = value;
-				known_symbols->skipped_lea_areas[i].size = symbol->st_size != 0 ? symbol->st_size : default_size;
-				break;
-			}
-		}
-	}
 }
 
 static void handle_forkAndExecInChild1(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
@@ -2410,6 +2378,53 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 	}
 }
 
+static const char *apply_loader_sysroot(const struct loader_context *loader, const char *path, char buf[PATH_MAX])
+{
+	return apply_sysroot(loader->sysroot, path, buf);
+}
+
+static int loader_find_executable_in_sysrooted_paths(const struct loader_context *loader, const char *name, const char *paths, bool require_executable, char buf[PATH_MAX], const char **out_path)
+{
+	if (loader->sysroot == NULL) {
+		return find_executable_in_paths(name, paths, require_executable, loader->uid, loader->gid, buf, out_path);
+	}
+	if (*name == '/') {
+		return find_executable_in_paths(apply_loader_sysroot(loader, name, buf), NULL, require_executable, loader->uid, loader->gid, buf, out_path);
+	}
+	size_t sysroot_len = fs_strlen(loader->sysroot);
+	size_t length = sysroot_len;
+	size_t i = 0;
+	for (;;) {
+		if (paths[i] == '\0') {
+			break;
+		}
+		if (paths[i] == ':') {
+			length += sysroot_len;
+		}
+		i++;
+	}
+	length += i;
+	char *new_paths = malloc(length + 1);
+	fs_memcpy(new_paths, loader->sysroot, sysroot_len);
+	size_t p = sysroot_len;
+	for (i = 0;;) {
+		char c = paths[i];
+		new_paths[p] = c;
+		if (c == '\0') {
+			break;
+		}
+		i++;
+		p++;
+		if (c == ':') {
+			fs_memcpy(&new_paths[p], loader->sysroot, sysroot_len);
+			p += sysroot_len;
+		}
+	}
+	int result = find_executable_in_paths(name, new_paths, require_executable, loader->uid, loader->gid, buf, out_path);
+	free(new_paths);
+	return result;
+}
+
 static int load_all_needed_and_relocate(struct program_state *analysis);
 
 static struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols)
@@ -2418,7 +2433,7 @@ static struct loaded_binary *register_dlopen_file(struct program_state *analysis
 	if (binary == NULL) {
 		char buf[PATH_MAX];
 		const char *full_path;
-		int needed_fd = find_executable_in_paths(path, "/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib", false, analysis->loader.uid, analysis->loader.gid, buf, &full_path);
+		int needed_fd = loader_find_executable_in_sysrooted_paths(&analysis->loader, path, "/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib", false, buf, &full_path);
 		if (needed_fd < 0) {
 			LOG("failed to find dlopen'ed path, assuming it will fail at runtime", path);
 			return NULL;
@@ -2506,7 +2521,28 @@ static ins_ptr find_function_entry(struct loader_context *loader, ins_ptr ins)
 	return NULL;
 }
 
-static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void load_openssl_modules(struct program_state *analysis, const struct analysis_frame *caller)
+{
+	char buf[PATH_MAX];
+	const char *path = apply_loader_sysroot(&analysis->loader, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", buf);
+	if (fs_access(path, R_OK) == 0) {
+		register_dlopen(analysis, path, caller, false, false, true);
+	}
+	path = apply_loader_sysroot(&analysis->loader, "/lib/engines-3", buf);
+	if (fs_access(path, R_OK) == 0) {
+		register_dlopen(analysis, path, caller, false, false, true);
+	}
+	path = apply_loader_sysroot(&analysis->loader, "/lib64/engines-3", buf);
+	if (fs_access(path, R_OK) == 0) {
+		register_dlopen(analysis, path, caller, false, false, true);
+	}
+	path = apply_loader_sysroot(&analysis->loader, "/usr/lib64/openssl/engines", buf);
+	if (fs_access(path, R_OK) == 0) {
+		register_dlopen(analysis, path, caller, false, false, true);
+	}
+}
+
+static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	if (effects == EFFECT_NONE) {
 		LOG("encountered dlopen call with no effects", temp_str(copy_call_trace_description(&analysis->loader, caller)));
@@ -2533,18 +2569,7 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 			}
 			if (analysis->loader.searching_libcrypto_dlopen) {
 				analysis->loader.libcrypto_dlopen = ins;
-				if (fs_access("/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
-					register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, false, true);
-				}
-				if (fs_access("/lib/engines-3", R_OK) == 0) {
-					register_dlopen(analysis, "/lib/engines-3", caller, false, false, true);
-				}
-				if (fs_access("/lib64/engines-3", R_OK) == 0) {
-					register_dlopen(analysis, "/lib64/engines-3", caller, false, false, true);
-				}
-				if (fs_access("/usr/lib64/openssl/engines", R_OK) == 0) {
-					register_dlopen(analysis, "/usr/lib64/openssl/engines", caller, false, false, true);
-				}
+				load_openssl_modules(analysis, caller);
 			}
 			analysis->loader.searching_gconv_dlopen = analysis->loader.searching_libcrypto_dlopen = false;
 			return;
@@ -2596,13 +2621,17 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 		return;
 	}
 	analysis->loader.loaded_gconv_libraries = true;
-	int dirfd = fs_open("/usr/lib/"ARCH_NAME"-linux-gnu/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+	char buf[PATH_MAX];
+	const char *gconv_path = apply_loader_sysroot(&analysis->loader, "/usr/lib/"ARCH_NAME"-linux-gnu/gconv", buf);
+	int dirfd = fs_open(gconv_path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (dirfd < 0) {
 		if (dirfd == -ENOENT) {
-			dirfd = fs_open("/lib64/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+			gconv_path = apply_loader_sysroot(&analysis->loader, "/lib64/gconv", buf);
+			dirfd = fs_open(gconv_path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 		}
 		if (dirfd == -ENOENT) {
-			dirfd = fs_open("/usr/lib64/gconv", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+			gconv_path = apply_loader_sysroot(&analysis->loader, "/usr/lib64/gconv", buf);
+			dirfd = fs_open(gconv_path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 		}
 		if (dirfd < 0) {
 			if (dirfd == -ENOENT) {
@@ -2611,6 +2640,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 			DIE("failed to open gconv library path", fs_strerror(dirfd));
 		}
 	}
+	size_t gconv_path_len = fs_strlen(gconv_path);
 	for (;;) {
 		char buf[8192];
 		int count = fs_getdents(dirfd, (struct fs_dirent *)&buf[0], sizeof(buf));
@@ -2629,10 +2659,11 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 					if (*haystack == *needle) {
 						if (*needle == '\0') {
 							size_t suffix_len = haystack - name;
-							char *path = malloc(sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") + suffix_len);
+							char *path = malloc(gconv_path_len + 2 + suffix_len);
 							char *path_buf = path;
-							fs_memcpy(path_buf, "/usr/lib/"ARCH_NAME"-linux-gnu/gconv/", sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") - 1);
-							path_buf += sizeof("/usr/lib/"ARCH_NAME"-linux-gnu/gconv/") - 1;
+							fs_memcpy(path_buf, gconv_path, gconv_path_len);
+							path_buf += gconv_path_len;
+							*path_buf++ = '/';
 							fs_memcpy(path_buf, name, suffix_len + 1);
 							LOG("found gconv library", path);
 							register_dlopen_file_owning_path(analysis, path, caller, true, true);
@@ -2684,7 +2715,8 @@ static void load_nss_libraries(struct program_state *analysis, const struct anal
 		return;
 	}
 	analysis->loader.loaded_nss_libraries = true;
-	int nsswitch_fd = fs_open("/etc/nsswitch.conf", O_RDONLY | O_CLOEXEC, 0);
+	char path_buf[PATH_MAX];
+	int nsswitch_fd = fs_open(apply_loader_sysroot(&analysis->loader, "/etc/nsswitch.conf", path_buf), O_RDONLY | O_CLOEXEC, 0);
 	if (nsswitch_fd < 0) {
 		DIE("nsswitch used, but unable to open nsswitch configuration", fs_strerror(nsswitch_fd));
 	}
@@ -2804,7 +2836,7 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
 	int third_arg = sysv_argument_abi_register_indexes[2];
 	int fourth_arg = sysv_argument_abi_register_indexes[3];
 	if (!register_is_exactly_known(&state->registers[third_arg]) || state->registers[third_arg].value == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
-		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & MAP_STACK) == MAP_STACK) {
+		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & LINUX_MAP_STACK) == LINUX_MAP_STACK) {
 			if (caller != NULL) {
 				struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
 				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
@@ -2862,14 +2894,14 @@ static void handle_IO_file_open(struct program_state *analysis, __attribute__((u
 	int flags = 0;
 	switch (mode_str[0]) {
 		case 'r':
-			mode = O_RDONLY;
+			mode = LINUX_O_RDONLY;
 			break;
 		case 'w':
-			mode = O_WRONLY;
+			mode = LINUX_O_WRONLY;
 			break;
 		case 'a':
-			mode = O_WRONLY;
-			flags = O_CREAT|O_APPEND;
+			mode = LINUX_O_WRONLY;
+			flags = LINUX_O_CREAT|LINUX_O_APPEND;
 			break;
 		default:
 			return;
@@ -2879,10 +2911,10 @@ static void handle_IO_file_open(struct program_state *analysis, __attribute__((u
 			case '\0':
 				break;
 			case '+':
-				mode = O_RDWR;
+				mode = LINUX_O_RDWR;
 				continue;
 			case 'x':
-				flags |= O_EXCL;
+				flags |= LINUX_O_EXCL;
 				continue;
 			case 'b':
 				continue;
@@ -2891,7 +2923,7 @@ static void handle_IO_file_open(struct program_state *analysis, __attribute__((u
 			case 'c':
 				continue;
 			case 'e':
-				flags |= O_CLOEXEC;
+				flags |= LINUX_O_CLOEXEC;
 				continue;
 			default:
 				continue;
@@ -2916,21 +2948,21 @@ static void handle_fopen(struct program_state *analysis, __attribute__((unused))
 static int musl_fmodeflags(const char *mode)
 {
 	int flags;
-	if (*fs_strchr(mode, '+')) flags = O_RDWR;
-	else if (*mode == 'r') flags = O_RDONLY;
-	else flags = O_WRONLY;
-	if (*fs_strchr(mode, 'x')) flags |= O_EXCL;
-	if (*fs_strchr(mode, 'e')) flags |= O_CLOEXEC;
-	if (*mode != 'r') flags |= O_CREAT;
-	if (*mode == 'w') flags |= O_TRUNC;
-	if (*mode == 'a') flags |= O_APPEND;
+	if (*fs_strchr(mode, '+')) flags = LINUX_O_RDWR;
+	else if (*mode == 'r') flags = LINUX_O_RDONLY;
+	else flags = LINUX_O_WRONLY;
+	if (*fs_strchr(mode, 'x')) flags |= LINUX_O_EXCL;
+	if (*fs_strchr(mode, 'e')) flags |= LINUX_O_CLOEXEC;
+	if (*mode != 'r') flags |= LINUX_O_CREAT;
+	if (*mode == 'w') flags |= LINUX_O_TRUNC;
+	if (*mode == 'a') flags |= LINUX_O_APPEND;
 	return flags;
 }
 
 static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libseccomp syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
-	// if first syscall argument is unbounded, assume it's __NR_seccomp
+	// if first syscall argument is unbounded, assume it's LINUX_SYS_seccomp
 	struct analysis_frame self = { .address = ins, .description = "libseccomp syscall", .next = caller, .current_state = *state, .entry = ins, .entry_state = state, .token = { 0 } };
 #pragma GCC unroll 64
 	for (int i = 0; i < REGISTER_COUNT; i++) {
@@ -2938,7 +2970,7 @@ static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr in
 	}
 	int first_arg = sysv_argument_abi_register_indexes[0];
 	if (!register_is_partially_known_32bit(&self.current_state.registers[first_arg])) {
-		set_register(&self.current_state.registers[first_arg], __NR_seccomp);
+		set_register(&self.current_state.registers[first_arg], LINUX_SYS_seccomp);
 		clear_match(&analysis->loader, &self.current_state, first_arg, ins);
 		self.current_state.sources[first_arg] = 0;
 	}
@@ -2949,23 +2981,23 @@ static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr in
 static void handle_libcap_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
 {
 	LOG("encountered libcap syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
-	// if first syscall argument is unbounded, assume it's __NR_seccomp
+	// if first syscall argument is unbounded, assume it's LINUX_SYS_seccomp
 	struct registers new_state = *state;
 	function_effects effects = 0;
 	if (register_is_partially_known_32bit(&new_state.registers[sysv_argument_abi_register_indexes[0]])) {
 		effects = analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 	} else {
-		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_capset);
+		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_capset);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
-		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_prctl);
+		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_prctl);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
-		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setuid);
+		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_setuid);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
-		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setgid);
+		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_setgid);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
-		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_setgroups);
+		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_setgroups);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
-		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], __NR_chroot);
+		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_chroot);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 	}
 	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS);
@@ -2991,9 +3023,7 @@ static void handle_golang_unix_sched_affinity(struct program_state *analysis, in
 static void handle_openssl_dso_load(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
-	if (fs_access("/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", R_OK) == 0) {
-		register_dlopen(analysis, "/usr/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, false, false, true);
-	}
+	load_openssl_modules(analysis, caller);
 }
 
 __attribute__((nonnull(1, 2, 3, 4)))
@@ -3556,10 +3586,10 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 			// argument is modeflags, previous is mode. check if mode is used and if not, convert to any
 			const struct register_state *arg = &self.current_state.registers[syscall_argument_abi_register_indexes[i-1]];
 			if (register_is_exactly_known(arg)) {
-				if ((arg->value & O_TMPFILE) == O_TMPFILE) {
+				if ((arg->value & LINUX_O_TMPFILE) == LINUX_O_TMPFILE) {
 					continue;
 				}
-				if ((arg->value & O_CREAT) == O_CREAT) {
+				if ((arg->value & LINUX_O_CREAT) == LINUX_O_CREAT) {
 					continue;
 				}
 			}
@@ -3568,7 +3598,7 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 	}
 	// debug logging
 	LOG("syscall is", temp_str(copy_call_description(&analysis->loader, name_for_syscall(nr), self.current_state, syscall_argument_abi_register_indexes, info, true)));
-	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == __NR_exit || nr == __NR_exit_group);
+	bool should_record = ((config & SYSCALL_CONFIG_BLOCK) == 0) && (((effects & EFFECT_AFTER_STARTUP) == EFFECT_AFTER_STARTUP) || nr == LINUX_SYS_exit || nr == LINUX_SYS_exit_group);
 	if (should_record) {
 		LOG("recorded syscall");
 		add_syscall(syscalls, (struct recorded_syscall){
@@ -3579,9 +3609,9 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 		});
 		if (info.attributes & SYSCALL_IS_RESTARTABLE) {
 			struct registers restart = self.current_state;
-			set_register(&restart.registers[REGISTER_SYSCALL_NR], __NR_restart_syscall);
+			set_register(&restart.registers[REGISTER_SYSCALL_NR], LINUX_SYS_restart_syscall);
 			add_syscall(syscalls, (struct recorded_syscall){
-				.nr = __NR_restart_syscall,
+				.nr = LINUX_SYS_restart_syscall,
 				.ins = self.address,
 				.entry = self.entry,
 				.registers = restart,
@@ -3809,6 +3839,7 @@ static uintptr_t read_imm(struct x86_ins_prefixes prefixes, ins_ptr imm)
 
 #endif
 
+__attribute__((unused))
 static void record_stack_address_taken(__attribute__((unused)) const struct loader_context *loader, __attribute__((unused)) ins_ptr addr, struct registers *regs)
 {
 	LOG("taking address of stack", temp_str(copy_address_description(loader, addr)));
@@ -4826,7 +4857,7 @@ static void set_compare_from_operation(struct registers *regs, int reg, uintptr_
 		.mask = mask,
 		.mem_rm = regs->mem_rm,
 		.sources = 0,
-		.validity = COMPARISON_SUPPORTS_EQUALITY,
+		.validity = reg == REGISTER_INVALID ? COMPARISON_IS_INVALID : COMPARISON_SUPPORTS_EQUALITY,
 	};
 }
 
@@ -4904,6 +4935,7 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 	return 0;
 }
 
+#ifdef __x86_64__
 static bool lookup_table_jump_is_valid(const struct loaded_binary *binary, const struct frame_details *frame_details, const ElfW(Sym) *function_symbol, ins_ptr jump)
 {
 	if (frame_details != NULL) {
@@ -4914,7 +4946,7 @@ static bool lookup_table_jump_is_valid(const struct loaded_binary *binary, const
 		return (binary->info.base <= (const void *)jump) && ((const void *)jump < binary->info.base + binary->info.size);
 	}
 }
-
+#endif
 
 static void print_debug_symbol_requirement(const struct loaded_binary *binary)
 {
@@ -5058,7 +5090,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 	struct register_state continue_state;
 	register_mask target_registers = 0;
 	register_mask additional_sources = 0;
-	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value) && compare_state.target_register != REGISTER_INVALID) {
+	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value)) {
 		// include matching registers
 		if (compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&compare_state.mem_rm, &self->current_state.mem_rm)) {
 			LOG("clearing old mem r/m for conditional", temp_str(copy_decoded_rm_description(&analysis->loader, self->current_state.mem_rm)));
@@ -5511,12 +5543,6 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 		jump_effects = (jump_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
 	}
 	return jump_effects | continue_effects;
-}
-
-static inline function_effects fallback_effects_if_processing(function_effects effects)
-{
-	return effects & ~EFFECT_PROCESSING;
-	// return effects & EFFECT_PROCESSING ? ((effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS) : effects;
 }
 
 static bool is_setxid_name(const char *name)
@@ -6029,7 +6055,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							LOG("syscall address", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 							self.description = "syscall";
 							// special case musl's fopen
-							if (value == __NR_open && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[1]])) {
+							if (value == LINUX_SYS_open && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[1]])) {
 								struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
 								if (binary != NULL && (binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN))) {
 									const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
@@ -6111,7 +6137,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
 									if (name != NULL && fs_strcmp(name, "next_line") == 0) {
 										// this is a giant hack
-										self.current_state.registers[REGISTER_SYSCALL_NR].value = self.current_state.registers[REGISTER_SYSCALL_NR].max = __NR_read;
+										self.current_state.registers[REGISTER_SYSCALL_NR].value = self.current_state.registers[REGISTER_SYSCALL_NR].max = LINUX_SYS_read;
 										goto syscall_nr_is_known;
 									}
 									if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
@@ -8161,22 +8187,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 						int prot = protection_for_address_in_binary(binary, (uintptr_t)address, NULL);
 						if (prot & PROT_EXEC) {
-							bool should_skip_lea = false;
-							for (int i = 0; i < SKIPPED_LEA_AREA_COUNT; i++) {
-								ins_ptr skipped_address = analysis->known_symbols.skipped_lea_areas[i].address;
-								if (skipped_address == NULL) {
-									break;
-								}
-								if (skipped_address <= address && skipped_address + analysis->known_symbols.skipped_lea_areas[i].size > address) {
-									should_skip_lea = true;
-									break;
-								}
-							}
-							if (should_skip_lea) {
-								LOG("discarding lea into skipped lea section");
-								clear_register(&self.current_state.registers[reg]);
-								self.current_state.sources[reg] = 0;
-							} else if (address[0] == 0x98 && address[1] == 0x2f && address[2] == 0x8a && address[3] == 0x42 && address[4] == 0x91) {
+							if (address[0] == 0x98 && address[1] == 0x2f && address[2] == 0x8a && address[3] == 0x42 && address[4] == 0x91) {
 								LOG("discarding lea into openssl's K256 table");
 								clear_register(&self.current_state.registers[reg]);
 								self.current_state.sources[reg] = 0;
@@ -11408,15 +11419,31 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_SB:
 				LOG("sb");
 				break;
-			case ARM64_SBC:
+			case ARM64_SBC: {
+				struct additional_result additional;
+				int dest = perform_basic_op("sbc", basic_op_sbb, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_SBCLB:
 			case ARM64_SBCLT:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			case ARM64_SBCS:
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+			case ARM64_SBCS: {
+				struct additional_result additional;
+				int dest = perform_basic_op("sbc", basic_op_sbb, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
 				clear_comparison_state(&self.current_state);
-				break;
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				pending_stack_clear &= ~mask_for_register(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_SBFIZ:
 			case ARM64_SBFM:
 			case ARM64_SBFX:
@@ -11957,7 +11984,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("syscall address", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 					self.description = "syscall";
 					// special case musl's fopen
-					if (value == __NR_openat && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[2]])) {
+					if (value == LINUX_SYS_openat && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[2]])) {
 						struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
 						if (binary != NULL && (binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN))) {
 							const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
@@ -12022,7 +12049,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
 							if (name != NULL && fs_strcmp(name, "next_line") == 0) {
 								// this is a giant hack
-								self.current_state.registers[REGISTER_SYSCALL_NR].value = self.current_state.registers[REGISTER_SYSCALL_NR].max = __NR_read;
+								self.current_state.registers[REGISTER_SYSCALL_NR].value = self.current_state.registers[REGISTER_SYSCALL_NR].max = LINUX_SYS_read;
 								goto syscall_nr_is_known;
 							}
 							if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
@@ -13032,7 +13059,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		.binary = new_binary,
 		.base = new_binary->info.base,
 	};
-	qsort_r(analysis->loader.sorted_binaries, analysis->loader.binary_count, sizeof(struct loaded_binary_stub), compare_loaded_binary_stubs, NULL);
+	qsort_r_freestanding(analysis->loader.sorted_binaries, analysis->loader.binary_count, sizeof(struct loaded_binary_stub), compare_loaded_binary_stubs, NULL);
 	if (analysis->loader.binaries == NULL) {
 		analysis->loader.last = new_binary;
 		analysis->loader.main = new_binary;
@@ -13072,7 +13099,9 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 	}
 	LOG("searching for debuglink", debuglink);
 	LOG("debuglink search paths", debuglink_search_paths);
-	int debuglink_fd = open_executable_in_paths(debuglink, debuglink_search_paths, false, loader->uid, loader->gid);
+	char path_buf[PATH_MAX];
+	const char *debuginfo_path;
+	int debuglink_fd = loader_find_executable_in_sysrooted_paths(loader, debuglink, debuglink_search_paths, false, path_buf, &debuginfo_path);
 	if (debuglink_fd < 0) {
 		LOG("failed to open debuglink", fs_strerror(debuglink_fd));
 		return binary->debuglink_error = debuglink_fd;
@@ -13119,21 +13148,24 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 	size_t dynamic_size = new_binary->info.dynamic_size;
 	if (new_binary->special_binary_flags & BINARY_IS_MAIN) {
 		if (new_binary->info.interpreter) {
-			int interpreter_fd = open_executable_in_paths(new_binary->info.interpreter, NULL, true, analysis->loader.uid, analysis->loader.gid);
+			const char *interpreter_path = new_binary->info.interpreter;
+			char buf[PATH_MAX];
+			const char *sysrooted_interpreter_path = apply_loader_sysroot(&analysis->loader, interpreter_path, buf);
+			int interpreter_fd = open_executable_in_paths(sysrooted_interpreter_path, NULL, true, analysis->loader.uid, analysis->loader.gid);
 			if (interpreter_fd < 0) {
-				ERROR("failed to find interpreter", new_binary->info.interpreter);
+				ERROR("failed to find interpreter", interpreter_path);
 				return interpreter_fd;
 			}
-			const char *interpreter_filename = fs_strrchr(new_binary->info.interpreter, '/');
+			const char *interpreter_filename = fs_strrchr(interpreter_path, '/');
 			if (interpreter_filename) {
 				interpreter_filename++;
 			} else {
-				interpreter_filename = new_binary->info.interpreter;
+				interpreter_filename = interpreter_path;
 			}
-			int result = load_binary_into_analysis(analysis, interpreter_filename, new_binary->info.interpreter, interpreter_fd, NULL, &analysis->loader.interpreter);
+			int result = load_binary_into_analysis(analysis, interpreter_filename, interpreter_path, interpreter_fd, NULL, &analysis->loader.interpreter);
 			fs_close(interpreter_fd);
 			if (result < 0) {
-				ERROR("failed to load interpreter", new_binary->info.interpreter);
+				ERROR("failed to load interpreter", interpreter_path);
 				return result;
 			}
 			analysis->loader.interpreter->special_binary_flags |= BINARY_IS_INTERPRETER | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
@@ -13152,8 +13184,10 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					break;
 			}
 		}
-		const char *standard_run_path = "/lib64:/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE";
-		size_t standard_run_path_sizeof = sizeof("/lib64:/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE");
+#define STANDARD_RUN_PATH "/lib64:/lib/"ARCH_NAME"-linux-gnu:/lib:/usr/lib:/usr/lib64:/usr/lib/perl5/core_perl/CORE"
+		// TODO: support path virtualization to a "linux sysroot"
+		const char *standard_run_path = STANDARD_RUN_PATH;
+		size_t standard_run_path_sizeof = sizeof(STANDARD_RUN_PATH);
 		char *new_run_path = NULL;
 		if (additional_run_path != NULL) {
 			if (fs_strncmp(additional_run_path, "$ORIGIN", sizeof("$ORIGIN")-1) == 0) {
@@ -13184,7 +13218,7 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 					if (find_loaded_binary(&analysis->loader, needed_path) == NULL) {
 						char buf[PATH_MAX];
 						const char *full_path;
-						int needed_fd = find_executable_in_paths(needed_path, additional_run_path != NULL ? new_run_path : standard_run_path, false, analysis->loader.uid, analysis->loader.gid, buf, &full_path);
+						int needed_fd = loader_find_executable_in_sysrooted_paths(&analysis->loader, needed_path, additional_run_path != NULL ? new_run_path : standard_run_path, false, buf, &full_path);
 						if (needed_fd < 0) {
 							ERROR("failed to find", needed_path);
 							if (new_run_path != NULL) {
@@ -13559,7 +13593,7 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 			const ElfW(Sym) *symbol;
 			struct golang_modern_init_task **modern_init_task_list = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "go:main.inittasks", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, &symbol);
 			if (modern_init_task_list) {
-				LOG("found golang init tasks", symbol->st_size / sizeof(*modern_init_task_list));
+				LOG("found golang init tasks", (intptr_t)(symbol->st_size / sizeof(*modern_init_task_list)));
 				for (size_t i = 0; i < symbol->st_size / sizeof(*modern_init_task_list); i++) {
 					analyze_golang_init_task(analysis, effects | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, modern_init_task_list[i]);
 				}
@@ -13648,7 +13682,8 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 	return 0;
 }
 
-void free_loaded_binary(struct loaded_binary *binary) {
+void free_loader_context(struct loader_context *loader) {
+	struct loaded_binary *binary = loader->binaries;
 	while (binary != NULL) {
 		struct loaded_binary *next = binary->next;
 		if (binary->has_symbols) {
@@ -13684,6 +13719,7 @@ void free_loaded_binary(struct loaded_binary *binary) {
 		free(binary);
 		binary = next;
 	}
+	free(loader->sorted_binaries);
 }
 
 __attribute__((noinline))
@@ -14006,7 +14042,7 @@ static int coalesce_syscalls(struct recorded_syscall *out, const struct recorded
 		count = new_count;
 	}
 	// sort the output so that it's stable
-	qsort_r(out, count, sizeof(*out), compare_found_syscalls, loader);
+	qsort_r_freestanding(out, count, sizeof(*out), compare_found_syscalls, loader);
 	return count;
 }
 
@@ -14018,15 +14054,15 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 		for (int i = 0; i < count; i++) {
 			struct recorded_syscall *syscall = &syscalls->list[i];
 			switch (syscall->nr) {
-				case __NR_setuid:
-				case __NR_setgid:
-				case __NR_setreuid:
-				case __NR_setregid:
-				case __NR_setgroups:
-				case __NR_setresuid:
-				case __NR_setresgid:
-				case __NR_setfsuid:
-				case __NR_setfsgid: {
+				case LINUX_SYS_setuid:
+				case LINUX_SYS_setgid:
+				case LINUX_SYS_setreuid:
+				case LINUX_SYS_setregid:
+				case LINUX_SYS_setgroups:
+				case LINUX_SYS_setresuid:
+				case LINUX_SYS_setresgid:
+				case LINUX_SYS_setfsuid:
+				case LINUX_SYS_setfsgid: {
 					struct recorded_syscall copy = *syscall;
 					if (loader->setxid_syscall != NULL) {
 						copy.ins = loader->setxid_syscall;
@@ -14046,7 +14082,7 @@ void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loade
 		}
 		count = syscalls->count;
 	}
-	qsort_r(syscalls->list, count, sizeof(*syscalls->list), compare_found_syscalls, loader);
+	qsort_r_freestanding(syscalls->list, count, sizeof(*syscalls->list), compare_found_syscalls, loader);
 	if (count > 1) {
 		struct recorded_syscall *list = syscalls->list;
 		int out_pos = 0;
@@ -14178,6 +14214,8 @@ char *copy_used_binaries(const struct loader_context *loader)
 	return message;
 }
 
+#ifdef __linux__
+
 static void push_bpf_insn(struct bpf_insn **array, size_t *cap, size_t *pos, struct bpf_insn value)
 {
 	size_t new_pos = *pos;
@@ -14202,16 +14240,16 @@ static void push_description(char ***descriptions, size_t *cap, size_t pos, char
 static inline bool special_arg_indexes_for_syscall(int nr, enum register_index *out_map_base_index, enum register_index *out_map_size_index)
 {
 	switch(nr) {
-		case __NR_mmap:
-		case __NR_munmap:
-		case __NR_mremap:
-		case __NR_mprotect:
-		case __NR_pkey_mprotect:
-		case __NR_remap_file_pages:
+		case LINUX_SYS_mmap:
+		case LINUX_SYS_munmap:
+		case LINUX_SYS_mremap:
+		case LINUX_SYS_mprotect:
+		case LINUX_SYS_pkey_mprotect:
+		case LINUX_SYS_remap_file_pages:
 			*out_map_base_index = syscall_argument_abi_register_indexes[0];
 			*out_map_size_index = syscall_argument_abi_register_indexes[1];
 			return true;
-		// case __NR_shmat:
+		// case LINUX_SYS_shmat:
 		// 	break;
 		default:
 			return false;
@@ -14585,12 +14623,15 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, const 
 	return result;
 }
 
+#endif
+
 struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols, bool recursive)
 {
 	if (!recursive) {
 		return register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
 	}
-	int fd = fs_open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
+	char buf[PATH_MAX];
+	int fd = fs_open(apply_loader_sysroot(&analysis->loader, path, buf), O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
 	if (fd == -ENOTDIR) {
 		struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
 		if (binary == NULL) {

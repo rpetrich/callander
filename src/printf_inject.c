@@ -1,7 +1,7 @@
 #include "printf.h"
 
 __attribute__((used, visibility("hidden")))
-int __snprintf_chk(char *__restrict buf, size_t maxlen, int flags, size_t len, const char *__restrict format, ...)
+int __snprintf_chk(char *__restrict buf, size_t maxlen, int __attribute__((unused)) flags, size_t len, const char *__restrict format, ...)
 {
 	va_list va;
 	va_start(va, format);

@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdnoreturn.h>
 
 struct attempt;
 struct thread_storage;
@@ -15,7 +16,7 @@ __attribute__((warn_unused_result))
 bool attempt_handle_fault(struct thread_storage *thread, ucontext_t *context);
 
 // attempt_cancel makes a non-local return out of the current attempt, running any cleanup functions
-void attempt_cancel(struct thread_storage *thread);
+noreturn void attempt_cancel(struct thread_storage *thread);
 
 // attempt_exit runs all of the cleanups in the current attempt with the expectation that the thread
 // will exit

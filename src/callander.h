@@ -1,7 +1,9 @@
 #ifndef CALLANDER_H
 #define CALLANDER_H
 
+#ifdef __linux__
 #include <linux/filter.h>
+#endif
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/stat.h>
@@ -255,6 +257,7 @@ struct loader_context {
 	ins_ptr setxid_sighandler_syscall_entry;
 	struct loaded_binary_stub *sorted_binaries;
 	int binary_count;
+	const char *sysroot;
 };
 
 __attribute__((nonnull(1)))
@@ -266,7 +269,7 @@ char *copy_address_description(const struct loader_context *context, const void 
 __attribute__((nonnull(1, 2)))
 struct loaded_binary *find_loaded_binary(const struct loader_context *context, const char *path);
 __attribute__((nonnull(1)))
-void free_loaded_binary(struct loaded_binary *binary);
+void free_loader_context(struct loader_context *loader_context);
 __attribute__((nonnull(1, 1)))
 void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) **out_symbol);
 __attribute__((nonnull(1, 2, 3)))
@@ -431,7 +434,6 @@ struct blocked_symbol {
 };
 
 struct known_symbols {
-	struct address_and_size skipped_lea_areas[SKIPPED_LEA_AREA_COUNT];
 	struct blocked_symbol *blocked_symbols;
 	uint32_t blocked_symbol_count;
 };

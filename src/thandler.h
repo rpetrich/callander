@@ -2,7 +2,7 @@
 #define THREAD_FUNC_H
 
 struct receive_start_args {
-	void (*pc)(intptr_t arg1, intptr_t arg2, intptr_t arg3);
+	__attribute__((__noreturn__)) void (*pc)(intptr_t arg1, intptr_t arg2, intptr_t arg3);
 	intptr_t sp;
 	intptr_t arg1;
 	intptr_t arg2;

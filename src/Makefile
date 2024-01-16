@@ -39,9 +39,12 @@ CFLAGS += -flto -fvisibility=hidden -ffunction-sections -fdata-sections
 LDFLAGS += -flto -fvisibility=hidden
 ifeq ($(TARGETOS),linux)
 	LDFLAGS += -Wl,--gc-sections
+	STANDALONE ?= 1
+	DEBUG_FLAGS := -gdwarf-2 -g1 -ggdb
+else
+	STANDALONE ?= 0
+	DEBUG_FLAGS := -glldb -fno-standalone-debug
 endif
-
-DEBUG_FLAGS := -gdwarf-2 -g1
 
 # record stack usage to objs-*/*.su
 # CFLAGS += -fstack-usage
@@ -53,12 +56,7 @@ ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Softwar
 	# CFLAGS += -mgeneral-regs-only
 	CFLAGS += -Wold-style-declaration -Wmissing-parameter-type
 ifeq ($(TARGETMACHINE),aarch64)
-	CFLAGS += -Wno-psabi -march=armv8-a+lse
-	LDFLAGS += -Wno-psabi -march=armv8-a+lse
-	CFLAGS += -Wno-unused-function
-	CFLAGS += -Wno-unused-parameter -Wno-strict-aliasing -Wno-shadow -Wno-int-in-bool-context -Wno-implicit-fallthrough -Wno-sign-compare -Wno-maybe-uninitialized
-	CFLAGS += -Wno-double-promotion
-	CFLAGS += -Wno-format
+	CFLAGS += -Wno-maybe-uninitialized
 endif
 else
 ifeq ($(CC),clang)
@@ -68,7 +66,13 @@ else
 	CFLAGS += -mno-sse
 endif
 endif
-CFLAGS += -Wno-gnu-null-pointer-arithmetic -Wno-unused-but-set-variable
+CFLAGS += -Wno-gnu-null-pointer-arithmetic -Wno-unused-but-set-variable -Wno-tautological-unsigned-enum-zero-compare
+endif
+
+ifeq ($(TARGETMACHINE),aarch64)
+	CFLAGS += -Wno-psabi -march=armv8-a+lse
+	LDFLAGS += -Wno-psabi -march=armv8-a+lse
+	CFLAGS += -Wno-unused-function -Wno-unused-parameter -Wno-strict-aliasing -Wno-shadow -Wno-int-in-bool-context -Wno-implicit-fallthrough -Wno-sign-compare -Wno-double-promotion -Wno-format
 endif
 
 ifeq ($(COVERAGE),1)
@@ -94,8 +98,6 @@ ifeq ($(ANALYZER),1)
 	CFLAGS += -fanalyzer
 endif
 
-STANDALONE ?= 1
-
 ifeq ($(TARGETMACHINE),aarch64)
 	ARCH_OBJECTS := arch-arm64/disassembler/decode.o arch-arm64/disassembler/decode0.o \
 			arch-arm64/disassembler/decode1.o arch-arm64/disassembler/decode2.o \
@@ -111,8 +113,11 @@ ifeq ($(TARGETMACHINE),x86_64)
 	PATCH_OBJECTS := patch.o patch_x86_64.o
 endif
 
-COMMON_CALLANDER_OBJECTS := bpf_debug.o callander.o callander_print.o defaultlibs.o loader.o \
+COMMON_CALLANDER_OBJECTS := callander.o callander_print.o defaultlibs.o loader.o \
 			mapped.o qsort.o search.o $(ARCH_OBJECTS)
+ifeq ($(TARGETOS),linux)
+	COMMON_CALLANDER_OBJECTS += bpf_debug.o
+endif
 ifeq ($(STANDALONE),1)
 	CFLAGS += -DSTANDALONE=1
 	COMMON_OBJECTS := malloc.o
@@ -125,9 +130,9 @@ OBJECTS :=  $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o axon.o 
 			handler.o libraries.o loader.o mapped.o paths.o preload.o proxy.o qsort.o remote.o \
 			remote_library.o resolver.o search.o seccomp.o sockets.o stack.o time.o tls.o tracer.o
 TEXEC_OBJECTS := $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o darwin.o \
-			defaultlibs.o exec.o fd_table.o loader.o proxy.o qsort.o remote.o search.o seccomp.o \
+			defaultlibs.o exec.o fd_table.o loader.o proxy.o qsort.o remote.o remote_exec.o search.o seccomp.o \
 		    stack.o texec.o time.o tls.o x86.o callander.o callander_print.o
-THANDLER_OBJECTS := $(COMMON_OBJECTS) attempt_target.o defaultlibs.o exec_target.o \
+THANDLER_OBJECTS := $(COMMON_OBJECTS) attempt_target.o darwin.o defaultlibs.o exec_target.o \
 			fd_table_target.o fork_target.o handler.o intercept_target.o malloc.o paths_target.o \
 			proxy_target.o remote.o remote_library_target.o sockets_target.o stack.o thandler.o \
 			tls.o tracer.o
@@ -137,12 +142,17 @@ LIBCALLBOX_OBJECTS := $(COMMON_OBJECTS) $(ARCH_OBJECTS) $(PATCH_OBJECTS) \
 			proxy.o tls.o
 CALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_main.o
 LIBCALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) libcallander.o
+LEXEC_OBJECTS := ${COMMON_OBJECTS} $(COMMON_CALLANDER_OBJECTS) $(PATCH_OBJECTS) lexec.o remote_exec.o
 
+ifeq ($(TARGETOS),linux)
 CALLANDER_OPT := -Os -ftree-vectorize \
 	-fauto-inc-dec -fbranch-count-reg -fcombine-stack-adjustments -fcompare-elim -fcprop-registers -fdce -fdefer-pop -fdse -fforward-propagate -fguess-branch-probability -fif-conversion -fif-conversion2 -finline-functions-called-once -fipa-profile -fipa-pure-const -fipa-reference -fipa-reference-addressable -fmerge-constants -fmove-loop-invariants -freorder-blocks -fshrink-wrap -fshrink-wrap-separate -fsplit-wide-types -fssa-backprop -fssa-phiopt -ftree-bit-ccp -ftree-ccp -ftree-ch -ftree-coalesce-vars -ftree-copy-prop -ftree-dce -ftree-dominator-opts -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop -ftree-pta -ftree-scev-cprop -ftree-sink -ftree-slsr -ftree-sra -ftree-ter -funit-at-a-time \
 	-falign-functions -falign-jumps -falign-labels -falign-loops -fcaller-saves -fcode-hoisting -fcrossjumping -fcse-follow-jumps -fcse-skip-blocks -fdelete-null-pointer-checks -fdevirtualize -fdevirtualize-speculatively -fexpensive-optimizations -fgcse -fgcse-lm -fhoist-adjacent-loads -finline-small-functions -findirect-inlining -fipa-bit-cp -fipa-cp -fipa-icf -fipa-ra -fipa-sra -fipa-vrp -fisolate-erroneous-paths-dereference -flra-remat -foptimize-sibling-calls -foptimize-strlen -fpartial-inlining -fpeephole2 -freorder-blocks-algorithm=stc -freorder-blocks-and-partition -freorder-functions -frerun-cse-after-loop -fschedule-insns -fschedule-insns2 -fsched-interblock -fsched-spec -fstore-merging -fstrict-aliasing -fthread-jumps -ftree-builtin-call-dce -ftree-pre -ftree-switch-conversion -ftree-tail-merge -ftree-vrp
+else
+CALLANDER_OPT := -O2
+endif
 
-objdir = .objs-$(TARGETMACHINE)
+objdir = .objs-$(TARGETOS)-$(TARGETMACHINE)
 
 .PHONY: all test test-debug test-trace clean install
 
@@ -207,101 +217,105 @@ endif
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 tests/sample: tests/sample.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
 
 tests/sample_dyn: tests/sample.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
 
 tests/sample_fs: tests/sample_fs.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -static -nostdlib -no-pie -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -nostdlib -no-pie -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
 
 tests/sample_fs_pie: tests/sample_fs.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -nostdlib -pie -fPIC -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -pie -fPIC -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
 
 tests/sample_write: tests/sample_write.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -nostdlib -fPIC -O2  -nostdlib -shared -nostartfiles -ffreestanding -Wl,-e,impulse -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -fPIC -O2  -nostdlib -shared -nostartfiles -ffreestanding -Wl,-e,impulse -o "$@" "$<"
 
 tests/sigsys_receive: tests/sigsys_receive.c Makefile
-	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
 
 tests/fault: tests/fault.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
 
 tests/segfault: tests/segfault.c *.h Makefile
-	$(CC) $(LDFLAGS) -g -static -no-pie -ffreestanding -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
 
 # full axon target payload
 target: target.c *.h Makefile
 ifeq ($(TARGETOS),linux)
-	$(CC) $(CFLAGS) $(LDFLAGS) -g -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 else
-	$(CC) $(LDFLAGS) -g -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
 endif
 
 # basic remote shell payload
 target2: target2.c *.h Makefile
 ifeq ($(TARGETOS),linux)
-	$(CC) $(CFLAGS) $(LDFLAGS) -g -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
+	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 else
-	$(CC) $(LDFLAGS) -g -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
 endif
 
 # intermediary payload
 target3: target3.c *.h Makefile
 ifeq ($(TARGETOS),linux)
-	$(CC) $(CFLAGS) $(LDFLAGS) -g -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 else
-	$(CC) $(LDFLAGS) -g -o "$@" "$<"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
 endif
 
 # executes binaries remotely
 texec: $(foreach obj,$(TEXEC_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 # payload for executing binaries remotely
 thandler: $(foreach obj,$(THANDLER_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) -g -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 callander: $(foreach obj,$(CALLANDER_OBJECTS),$(objdir)/$(obj))
 ifeq ($(STANDALONE),1)
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
-else
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
-endif
-	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
-	$(STRIP) -s -R .comment -D "$@"
-	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
-
-libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
-
-libcallbox.so: $(foreach obj,$(LIBCALLBOX_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
-
-callander_test: $(foreach obj,$(LIBCALLANDER_OBJECTS) callander_test_main.o,$(objdir)/$(obj))
-ifeq ($(STANDALONE),1)
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc -g $^ -o "$@"
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
 else
 	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
 endif
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
+
+libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
+
+libcallbox.so: $(foreach obj,$(LIBCALLBOX_OBJECTS),$(objdir)/$(obj))
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
+
+callander_test: $(foreach obj,$(LIBCALLANDER_OBJECTS) callander_test_main.o,$(objdir)/$(obj))
+ifeq ($(STANDALONE),1)
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
+else
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
+endif
+	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
+	$(STRIP) -s -R .comment -D "$@"
+	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
+
+lexec: $(foreach obj,$(LEXEC_OBJECTS),$(objdir)/$(obj))
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -fPIE $^ -o "$@"
+# 	codesign -s gdb_codesign -o runtime --entitlements entitlements.xml "$@"
 
 systranslate: systranslate.c defaultlibs.c syscall_defs_x86_64.h Makefile
 	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<" defaultlibs.c

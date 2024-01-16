@@ -1,7 +1,6 @@
 #ifndef EXEC_H
 #define EXEC_H
 
-#include <linux/limits.h>
 #include <stdbool.h>
 #include <sys/types.h>
 

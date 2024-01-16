@@ -120,7 +120,7 @@ void callander_run(callander_main_function main, void *data)
 	}
 
 	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0);
-	free_loaded_binary(analysis.loader.binaries);
+	free_loader_context(&analysis.loader);
 	ERROR_FLUSH();
 	result = FS_SYSCALL(__NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, (intptr_t)&prog);
 	if (result < 0) {

@@ -34,7 +34,9 @@ uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address)
 
 #ifdef PATCH_SUPPORTED
 
+#ifdef SYS_membarrier
 bool membarrier_is_supported;
+#endif
 
 bool patch_syscalls;
 
@@ -99,9 +101,11 @@ void patch_syscall(struct thread_storage *thread, ins_ptr pc, intptr_t sp, intpt
 void patch_init(bool enable_syscall_patching)
 {
 	patch_syscalls = enable_syscall_patching;
+#ifdef SYS_membarrier
 	if (fs_membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) == 0) {
 		membarrier_is_supported = true;
 	}
+#endif
 }
 
 #else

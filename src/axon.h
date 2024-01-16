@@ -17,6 +17,11 @@
 #endif
 #endif
 
+#define AXON_BOOTSTRAP_ASM \
+AXON_RESTORE_ASM \
+FS_DEFINE_SYSCALL \
+AXON_IMPULSE_ASM
+
 #include <stdnoreturn.h>
 // #include <stdlib.h>
 extern void free(void *);

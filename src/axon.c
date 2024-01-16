@@ -382,11 +382,10 @@ noreturn static void bind_axon(bind_data data)
 			result = exec_fd(fd, NULL, argv + (data.interpreter_base == 0), envp, argv[1], 0);
 		} else {
 			char buf[PATH_MAX];
-			intptr_t count = fs_readlink_fd(fd, buf, sizeof(buf)-1);
+			intptr_t count = fs_fd_getpath(fd, buf);
 			if (count < 0) {
 				DIE("unable to read exec path", fs_strerror(count));
 			}
-			buf[count] = '\0';
 			result = fs_execve(buf, (char * const *)(argv + (data.interpreter_base == 0)), (char * const *)envp);
 		}
 		if (UNLIKELY(result < 0)) {
@@ -460,11 +459,10 @@ noreturn static void bind_axon(bind_data data)
 			send_exec_event(get_thread_storage(), data.exec_path, fs_strlen(data.exec_path), argv, 0);
 		} else {
 			// otherwise readlink on the main binary
-			result = fs_readlink_fd(MAIN_FD, filename, PATH_MAX);
+			result = fs_fd_getpath(MAIN_FD, filename);
 			if (result < 0) {
 				DIE("unable to read path of main binary", fs_strerror(result));
 			}
-			filename[result] = '\0';
 			send_exec_event(get_thread_storage(), filename, result, argv, 0);
 		}
 	}

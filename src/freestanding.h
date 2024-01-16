@@ -9,6 +9,7 @@
 #include <linux/futex.h>
 #include <linux/membarrier.h>
 #endif
+#include <limits.h>
 #include <unistd.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -26,7 +27,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/mman.h>
+#include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <sys/uio.h>
@@ -39,6 +42,26 @@ extern void fs_syscall_ret(void);
 #define FS_SYSCALL_(_0, _1, _2, _3, _4, _5, _6, N, ...) N
 #define FS_SYSCALL(id, ...) FS_SYSCALL_(id, ##__VA_ARGS__, fs_syscall6, fs_syscall5, fs_syscall4, fs_syscall3, fs_syscall2, fs_syscall1, fs_syscall0)(id, ##__VA_ARGS__)
 #define FS_SYSCALL_NORETURN(id, ...) do { FS_SYSCALL_(id, ##__VA_ARGS__, fs_syscall_noreturn6, fs_syscall_noreturn5, fs_syscall_noreturn4, fs_syscall_noreturn3, fs_syscall_noreturn2, fs_syscall_noreturn1, fs_syscall_noreturn0)(id, ##__VA_ARGS__); __builtin_unreachable(); } while (0);
+
+#ifdef __APPLE__
+#define FS_NAME_ASM(name) "_"#name
+#else
+#define FS_NAME_ASM(name) #name
+#endif
+
+#ifdef __APPLE__
+#define FS_HIDDEN_FUNCTION_ASM(name) ".global "FS_NAME_ASM(name)"\n" \
+".private_extern "FS_NAME_ASM(name)"\n" \
+".no_dead_strip "FS_NAME_ASM(name)"\n" \
+FS_NAME_ASM(name)":"
+#define FS_SIZE_ASM(name) ""
+#else
+#define FS_HIDDEN_FUNCTION_ASM(name) ".global "FS_NAME_ASM(name)"\n" \
+".hidden "FS_NAME_ASM(name)"\n" \
+".type "FS_NAME_ASM(name)",@function\n" \
+#name":"
+#define FS_SIZE_ASM(name) ".size  " FS_NAME_ASM(name) ", . - " FS_NAME_ASM(name)
+#endif
 
 #if defined(__x86_64__)
 #include "fs_x86_64.h"
@@ -512,6 +535,7 @@ static inline int fs_stat(const char *path, struct fs_stat *buf)
 #endif
 }
 
+#ifdef __linux__
 struct fs_statfs {
 	unsigned long f_type;
 	unsigned long f_bsize;
@@ -526,11 +550,35 @@ struct fs_statfs {
 	unsigned long f_flags;
 	unsigned long f_spare[4];
 };
+#else
+struct fs_statfs { /* when _DARWIN_FEATURE_64_BIT_INODE is defined */
+    uint32_t    f_bsize;        /* fundamental file system block size */ 
+    int32_t     f_iosize;       /* optimal transfer block size */ 
+    uint64_t    f_blocks;       /* total data blocks in file system */ 
+    uint64_t    f_bfree;        /* free blocks in fs */ 
+    uint64_t    f_bavail;       /* free blocks avail to non-superuser */ 
+    uint64_t    f_files;        /* total file nodes in file system */ 
+    uint64_t    f_ffree;        /* free file nodes in fs */ 
+    fsid_t      f_fsid;         /* file system id */ 
+    uid_t       f_owner;        /* user that mounted the filesystem */ 
+    uint32_t    f_type;         /* type of filesystem */ 
+    uint32_t    f_flags;        /* copy of mount exported flags */ 
+    uint32_t    f_fssubtype;    /* fs sub-type (flavor) */ 
+    char        f_fstypename[MFSTYPENAMELEN];   /* fs type name */ 
+    char        f_mntonname[MAXPATHLEN];        /* directory on which mounted */ 
+    char        f_mntfromname[MAXPATHLEN];      /* mounted filesystem */ 
+    uint32_t    f_reserved[8];  /* For future use */ 
+};
+#endif
 
 __attribute__((warn_unused_result))
 static inline int fs_fstatfs(int fd, struct fs_statfs *buf)
 {
+#ifdef SYS_fstatfs64
+	return (int)FS_SYSCALL(SYS_fstatfs64, fd, (intptr_t)buf);
+#else
 	return (int)FS_SYSCALL(SYS_fstatfs, fd, (intptr_t)buf);
+#endif
 }
 
 struct fs_dirent {
@@ -546,6 +594,13 @@ static inline int fs_getdents(int fd, struct fs_dirent *dirp, size_t size)
 {
 	return (int)FS_SYSCALL(SYS_getdents64, fd, (intptr_t)dirp, (intptr_t)size);
 }
+#else
+#ifdef SYS_getdirentries64
+static inline int fs_getdents(int fd, struct fs_dirent *dirp, size_t size)
+{
+	return (int)FS_SYSCALL(SYS_getdirentries64, fd, (intptr_t)dirp, (intptr_t)size, 0);
+}
+#endif
 #endif
 
 __attribute__((warn_unused_result))
@@ -698,13 +753,15 @@ struct fs_sigaction {
 	struct fs_sigset_t mask;
 };
 
-#ifdef SYS_sigaction
 __attribute__((warn_unused_result))
-static inline int fs_sigaction(int signum, const struct fs_sigaction *act, struct fs_sigaction *oldact, size_t sigsetsize)
+static inline int fs_sigaction(int signum, const struct fs_sigaction *act, struct fs_sigaction *oldact)
 {
-	return (int)FS_SYSCALL(SYS_sigaction, signum, (intptr_t)act, (intptr_t)oldact, sigsetsize);
-}
+#ifdef SYS_rt_sigaction
+	return (int)FS_SYSCALL(SYS_rt_sigaction, signum, (intptr_t)act, (intptr_t)oldact, (intptr_t)sizeof(struct fs_sigset_t));
+#else
+	return (int)FS_SYSCALL(SYS_sigaction, signum, (intptr_t)act, (intptr_t)oldact);
 #endif
+}
 
 #ifdef SYS_rt_sigaction
 __attribute__((warn_unused_result))
@@ -821,6 +878,7 @@ static inline int fs_futex(int *uaddr, int futex_op, int val, const struct times
 #endif
 
 #ifdef SYS_membarrier
+// TODO: use the trick described in https://github.com/dotnet/runtime/issues/41993 to support Darwin
 static inline int fs_membarrier(int cmd, int flags)
 {
 	return (int)FS_SYSCALL(SYS_membarrier, cmd, flags);
@@ -1287,6 +1345,30 @@ static inline int fs_readlink_fd(int fd, char *out_path, size_t size)
 	return fs_readlink(dev_path, out_path, size);
 }
 
+__attribute__((warn_unused_result))
+__attribute__((nonnull(2)))
+static inline int fs_fd_getpath(int fd, char out_path[PATH_MAX])
+{
+#ifdef __linux__
+	int result = fs_readlink_fd(fd, out_path, PATH_MAX);
+	if (result < 1) {
+		return result;
+	}
+	if (result >= PATH_MAX) {
+		return -ENAMETOOLONG;
+	}
+	out_path[result] = '\0';
+	return 0;
+#else
+#ifdef F_GETPATH
+	int result = fs_fcntl(fd, F_GETPATH, (intptr_t)out_path);
+	return result < 0 ? result : 0;
+#else
+	return -ENOSYS;
+#endif
+#endif
+}
+
 #ifdef SYS_futex
 
 struct fs_mutex {
@@ -1372,6 +1454,103 @@ static inline const char *fs_strerror(int err)
 	if (err >= 0) {
 		return "SUCCESS";
 	}
+#ifdef __APPLE__
+	static const char *templates[] = {
+#define ERR(name) [name] = #name
+		ERR(EPERM),
+		ERR(ENOENT),
+		ERR(ESRCH),
+		ERR(EINTR),
+		ERR(EIO),
+		ERR(ENXIO),
+		ERR(E2BIG),
+		ERR(ENOEXEC),
+		ERR(EBADF),
+		ERR(ECHILD),
+		ERR(EDEADLK),
+		ERR(ENOMEM),
+		ERR(EACCES),
+		ERR(EFAULT),
+		ERR(ENOTBLK),
+		ERR(EBUSY),
+		ERR(EEXIST),
+		ERR(EXDEV),
+		ERR(ENODEV),
+		ERR(ENOTDIR),
+		ERR(EISDIR),
+		ERR(EINVAL),
+		ERR(ENFILE),
+		ERR(EMFILE),
+		ERR(ENOTTY),
+		ERR(ETXTBSY),
+		ERR(EFBIG),
+		ERR(ENOSPC),
+		ERR(ESPIPE),
+		ERR(EROFS),
+		ERR(EMLINK),
+		ERR(EPIPE),
+		ERR(EDOM),
+		ERR(ERANGE),
+		ERR(EAGAIN),
+		// ERR(EWOULDBLOCK),
+		ERR(EINPROGRESS),
+		ERR(EALREADY),
+		ERR(ENOTSOCK),
+		ERR(EDESTADDRREQ),
+		ERR(EMSGSIZE),
+		ERR(EPROTOTYPE),
+		ERR(ENOPROTOOPT),
+		ERR(EPROTONOSUPPORT),
+		ERR(ESOCKTNOSUPPORT),
+		ERR(ENOTSUP),
+		ERR(EOPNOTSUPP),
+		ERR(EPFNOSUPPORT),
+		ERR(EAFNOSUPPORT),
+		ERR(EADDRINUSE),
+		ERR(EADDRNOTAVAIL),
+		ERR(ENETDOWN),
+		ERR(ENETUNREACH),
+		ERR(ENETRESET),
+		ERR(ECONNABORTED),
+		ERR(ECONNRESET),
+		ERR(ENOBUFS),
+		ERR(EISCONN),
+		ERR(ENOTCONN),
+		ERR(ESHUTDOWN),
+		ERR(ETOOMANYREFS),
+		ERR(ETIMEDOUT),
+		ERR(ECONNREFUSED),
+		ERR(ELOOP),
+		ERR(ENAMETOOLONG),
+		ERR(EHOSTDOWN),
+		ERR(EHOSTUNREACH),
+		ERR(ENOTEMPTY),
+		ERR(EPROCLIM),
+		ERR(EUSERS),
+		ERR(EDQUOT),
+		ERR(ESTALE),
+		ERR(EREMOTE),
+		ERR(EBADRPC),
+		ERR(ERPCMISMATCH),
+		ERR(EPROGUNAVAIL),
+		ERR(EPROGMISMATCH),
+		ERR(EPROCUNAVAIL),
+		ERR(ENOLCK),
+		ERR(ENOSYS),
+		ERR(EFTYPE),
+		ERR(EAUTH),
+		ERR(ENEEDAUTH),
+		ERR(EPWROFF),
+		ERR(EDEVERR),
+		ERR(EOVERFLOW),
+		ERR(EBADEXEC),
+		ERR(EBADARCH),
+		ERR(ESHLIBVERS),
+		ERR(EBADMACHO),
+#undef ERR
+	};
+	return templates[-err];
+#else
 	const char *template =
 	"EPERM\0\0\0\0\0\0\0\0\0\0\0"
 	"ENOENT\0\0\0\0\0\0\0\0\0\0"
@@ -1507,6 +1686,7 @@ static inline const char *fs_strerror(int err)
 	"ERFKILL\0\0\0\0\0\0\0\0\0"
 	"EHWPOISON";
 	return &template[((-1)-err)*16];
+#endif
 }
 
 #endif

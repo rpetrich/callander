@@ -66,12 +66,12 @@ int exec_fd(int fd, const char *named_path, const char *const *argv, const char 
 {
 	// back out the /bin/axon symlink
 	char path_buf[PATH_MAX];
-	int result = fs_readlink_fd(fd, path_buf, sizeof(path_buf)-1);
+	int result = fs_fd_getpath(fd, path_buf);
 	if (result < 0) {
 		fs_close(fd);
 		return result;
 	}
-	if (result == sizeof("/bin/axon")-1 && fs_strncmp(path_buf, "/bin/axon", result) == 0) {
+	if (fs_strcmp(path_buf, "/bin/axon") == 0) {
 		fs_close(fd);
 		if (named_path == NULL) {
 			return -ENOEXEC;
@@ -228,15 +228,14 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 			break;
 		}
 	}
-	char path_buf[PATH_MAX+1];
+	char path_buf[PATH_MAX];
 	if (named_path == NULL) {
 		// Execed via execveat, readlink to get a path to pass to the interpreter
-		int link_result = fs_readlink_fd(fd, path_buf, PATH_MAX);
+		int link_result = fs_fd_getpath(fd, path_buf);
 		if (link_result < 0) {
 			fs_close(fd);
 			return link_result;
 		}
-		path_buf[link_result] = '\0';
 		named_path = path_buf;
 	}
 	// Recreate arguments to pass to the interpreter script
@@ -310,9 +309,9 @@ int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filenam
 	// send the open read only trace, if necessary
 	if (enabled_traces & TRACE_TYPE_OPEN_READ_ONLY) {
 		char path[PATH_MAX];
-		int len = fs_readlink_fd(fd, path, sizeof(path));
-		if (len > 0) {
-			send_open_read_only_event(thread, path, len, O_RDONLY);
+		int len = fs_fd_getpath(fd, path);
+		if (len >= 0) {
+			send_open_read_only_event(thread, path, fs_strlen(path), O_RDONLY);
 		} else {
 			result = -EACCES;
 			goto close_and_error;

@@ -88,7 +88,7 @@ static void default_handler(__attribute__((unused)) int nr, __attribute__((unuse
 		.restorer = (void *)&__restore,
 		.mask = { 0 },
 	};
-	int sa_result = fs_rt_sigaction(nr, &sa, NULL, sizeof(struct fs_sigset_t));
+	int sa_result = fs_sigaction(nr, &sa, NULL);
 	if (sa_result < 0) {
 		DIE("failed to reset sigaction", fs_strerror(sa_result));
 	}
@@ -243,18 +243,18 @@ int intercept_signals(void) {
 	fs_sigdelset(&sa.mask, SIGILL);
 	fs_sigdelset(&sa.mask, SIGSYS);
 
-	int result = fs_rt_sigaction(SIGSYS, &sa, NULL, sizeof(struct fs_sigset_t));
+	int result = fs_sigaction(SIGSYS, &sa, NULL);
 	if (result) {
 		return result;
 	}
 
 	// Set a handler to handle SIGSEGV and SIGTRAP signals
 	sa.handler = (void *)&crash_handler;
-	result = fs_rt_sigaction(SIGSEGV, &sa, NULL, sizeof(struct fs_sigset_t));
+	result = fs_sigaction(SIGSEGV, &sa, NULL);
 	if (result) {
 		return result;
 	}
-	result = fs_rt_sigaction(SIGTRAP, &sa, NULL, sizeof(struct fs_sigset_t));
+	result = fs_sigaction(SIGTRAP, &sa, NULL);
 	if (result) {
 		return result;
 	}
@@ -262,7 +262,7 @@ int intercept_signals(void) {
 #ifdef PATCH_HANDLES_SIGILL
 	// Set a handler to handle SIGILL signals
 	sa.handler = (void *)&sigill_handler;
-	result = fs_rt_sigaction(SIGILL, &sa, NULL, sizeof(struct fs_sigset_t));
+	result = fs_sigaction(SIGILL, &sa, NULL);
 	if (result) {
 		return result;
 	}
@@ -302,7 +302,7 @@ int handle_sigaction(int signal, const struct fs_sigaction *act, struct fs_sigac
 				.restorer = (void *)&__restore,
 				.mask = { 0 },
 			};
-			int result = fs_rt_sigaction(signal, &sa, NULL, sizeof(struct fs_sigset_t));
+			int result = fs_sigaction(signal, &sa, NULL);
 			if (result != 0) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &signal_lock);
 				return result;

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void qsort_r(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *, void *), void *arg);
+void qsort_r_freestanding(void *base, size_t nel, size_t width, int (*compar)(const void *, const void *, void *), void *arg);
 #if 0
 void *bsearch(const void *key, const void *base, size_t nel, size_t width, int (*cmp)(const void *, const void *));
 #else

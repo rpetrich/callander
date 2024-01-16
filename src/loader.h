@@ -2,7 +2,11 @@
 #define LOADER_H
 
 #include "freestanding.h"
+#if defined(__APPLE__)
+#include "elf.h"
+#else
 #include <elf.h>
+#endif
 #include <stdint.h>
 #include <stdbool.h>
 

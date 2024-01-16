@@ -35,20 +35,16 @@
 
 #define JUMP(pc, sp, arg0, arg1, arg2) __asm__ __volatile__("mov %1,%%rsp; xor %%rbp,%%rbp; xor %1,%1; push %0; xor %0,%0; ret" : : "r"(pc), "r"(sp), "D"(arg0), "S"(arg1), "d"(arg2), "a"(0), "b"(0), "c"(0), "A"(0) : "memory")
 
-#define AXON_BOOTSTRAP_ASM __asm__( \
-".text\n" \
-".global __restore\n" \
-".hidden __restore\n" \
-".type __restore,@function\n" \
-"__restore:\n" \
-"	mov $15, %rax\n" \
-); \
-FS_DEFINE_SYSCALL \
+#define AXON_RESTORE_ASM \
 __asm__( \
 ".text\n" \
-".global impulse\n" \
-".hidden impulse\n" \
-"impulse:\n" \
+FS_HIDDEN_FUNCTION_ASM(__restore) "\n" \
+"	mov $15, %rax\n" \
+); \
+#define AXON_IMPULSE_ASM \
+__asm__( \
+".text\n" \
+FS_HIDDEN_FUNCTION_ASM(impulse) "\n" \
 "	xor %rbp,%rbp\n" \
 "	mov %rsp,%rdi\n" \
 ".weak _DYNAMIC\n" \
