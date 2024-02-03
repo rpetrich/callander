@@ -119,42 +119,6 @@ static inline pid_t fs_fork(void)
 #endif
 }
 
-__attribute__((warn_unused_result))
-static inline ssize_t fs_getcwd(char *buf, size_t size)
-{
-#ifdef SYS_getcwd
-	return FS_SYSCALL(SYS_getcwd, (intptr_t)buf, (intptr_t)size);
-#else
-	intptr_t result = FS_SYSCALL(SYS_readlink, (intptr_t)".", (intptr_t)buf, (intptr_t)size);
-	if (result >= (intptr_t)size) {
-		result = -ERANGE;
-	} else if (result >= 0) {
-		buf[result] = '\0';
-	}
-	return result;
-#endif
-}
-
-__attribute__((warn_unused_result))
-static inline intptr_t fs_chdir(const char *path)
-{
-#ifdef SYS___pthread_chdir
-	return FS_SYSCALL(SYS___pthread_chdir, (intptr_t)path);
-#else
-	return FS_SYSCALL(SYS_chdir, (intptr_t)path);
-#endif
-}
-
-__attribute__((warn_unused_result))
-static inline intptr_t fs_fchdir(int fd)
-{
-#ifdef SYS___pthread_fchdir
-	return FS_SYSCALL(SYS___pthread_fchdir, fd);
-#else
-	return FS_SYSCALL(SYS_fchdir, fd);
-#endif
-}
-
 static inline intptr_t fs_write(int fd, const char *buffer, size_t length)
 {
 	return FS_SYSCALL(SYS_write, fd, (intptr_t)buffer, (intptr_t)length);
@@ -604,19 +568,24 @@ static inline int fs_getdents(int fd, struct fs_dirent *dirp, size_t size)
 #endif
 
 __attribute__((warn_unused_result))
+static inline int fs_faccessat(int dirfd, const char *pathname, int mode)
+{
+#ifdef __linux__
+	// linux is missing a flags parameter
+	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode);
+#else
+	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode, 0);
+#endif
+}
+
+__attribute__((warn_unused_result))
 static inline int fs_access(const char *pathname, int mode)
 {
 #ifdef SYS_access
 	return (int)FS_SYSCALL(SYS_access, (intptr_t)pathname, mode);
 #else
-	return (int)FS_SYSCALL(SYS_faccessat, AT_FDCWD, (intptr_t)pathname, mode);
+	return fs_faccessat(AT_FDCWD, pathname, mode);
 #endif
-}
-
-__attribute__((warn_unused_result))
-static inline int fs_faccessat(int dirfd, const char *pathname, int mode, int flags)
-{
-	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode, flags);
 }
 
 __attribute__((warn_unused_result))
@@ -652,6 +621,54 @@ static inline int fs_fcntl(int fd, int cmd, uintptr_t arg)
 static inline int fs_close(int fd)
 {
 	return (int)FS_SYSCALL(SYS_close, fd);
+}
+
+__attribute__((warn_unused_result))
+static inline ssize_t fs_getcwd(char *buf, size_t size)
+{
+#ifdef SYS_getcwd
+	return FS_SYSCALL(SYS_getcwd, (intptr_t)buf, (intptr_t)size);
+#else
+#ifdef F_GETPATH
+	int fd = fs_open(".", O_RDONLY | O_CLOEXEC, 0);
+	if (fd < 0) {
+		return fd;
+	}
+	int result = fs_fcntl(fd, F_GETPATH, (uintptr_t)buf);
+	fs_close(fd);
+	return result;
+#else
+	return -ENOSYS;
+#endif
+
+	// intptr_t result = FS_SYSCALL(SYS_readlink, (intptr_t)".", (intptr_t)buf, (intptr_t)size);
+	// if (result >= (intptr_t)size) {
+	// 	result = -ERANGE;
+	// } else if (result >= 0) {
+	// 	buf[result] = '\0';
+	// }
+	// return result;
+#endif
+}
+
+__attribute__((warn_unused_result))
+static inline intptr_t fs_chdir(const char *path)
+{
+#ifdef SYS___pthread_chdir
+	return FS_SYSCALL(SYS___pthread_chdir, (intptr_t)path);
+#else
+	return FS_SYSCALL(SYS_chdir, (intptr_t)path);
+#endif
+}
+
+__attribute__((warn_unused_result))
+static inline intptr_t fs_fchdir(int fd)
+{
+#ifdef SYS___pthread_fchdir
+	return FS_SYSCALL(SYS___pthread_fchdir, fd);
+#else
+	return FS_SYSCALL(SYS_fchdir, fd);
+#endif
 }
 
 __attribute__((warn_unused_result))
@@ -821,14 +838,16 @@ static inline pid_t fs_getpgid(pid_t pid)
 	return (pid_t)FS_SYSCALL(SYS_getpgid, pid);
 }
 
-#ifdef __linux__
 __attribute__((warn_unused_result))
 static inline pid_t fs_gettid(void)
 {
 	// darwin's gettid is completely different from linux's
+#ifdef SYS_thread_selfid
+	return (pid_t)FS_SYSCALL(SYS_thread_selfid);
+#else
 	return (pid_t)FS_SYSCALL(SYS_gettid);
-}
 #endif
+}
 
 __attribute__((warn_unused_result))
 static inline uid_t fs_getuid(void)
