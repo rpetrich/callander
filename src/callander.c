@@ -10659,20 +10659,18 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case MEM_PRE_IDX: {
-						struct register_state imm;
-						set_register(&imm, decoded.decomposed.operands[1].immediate);
-						add_registers(&source_state, &imm);
-						self.current_state.registers[reg] = source_state;
+						LOG("preindex", (uintptr_t)decoded.decomposed.operands[1].immediate);
+						// indexing already made in read_operand
 						clear_match(&analysis->loader, &self.current_state, reg, ins);
-						LOG("preindex", imm.value);
 						break;
 					}
 					case MEM_POST_IDX: {
+						LOG("postindex", (uintptr_t)decoded.decomposed.operands[1].immediate);
+						// subtract the indexing made in read_operand out for the base value
 						struct register_state imm;
-						set_register(&imm, decoded.decomposed.operands[1].immediate);
-						add_registers(&self.current_state.registers[reg], &imm);
+						set_register(&imm, -decoded.decomposed.operands[1].immediate);
+						add_registers(&source_state, &imm);
 						clear_match(&analysis->loader, &self.current_state, reg, ins);
-						LOG("postindex", imm.value);
 						break;
 					}
 					case MEM_EXTENDED: {
