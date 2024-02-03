@@ -1344,6 +1344,12 @@ void init_searched_instructions(struct searched_instructions *search)
 	search->fopen_mode_count = 0;
 }
 
+static void cleanup_address_list(struct address_list *list)
+{
+	free(list->addresses);
+	*list = (struct address_list){0};
+}
+
 void cleanup_searched_instructions(struct searched_instructions *search)
 {
 	uint32_t mask = search->mask;
@@ -1369,8 +1375,8 @@ void cleanup_searched_instructions(struct searched_instructions *search)
 	search->table = NULL;
 	search->queue.queue = NULL;
 	free(search->lookup_base_addresses.addresses);
-	free(search->loaded_addresses);
-	search->loaded_addresses = NULL;
+	cleanup_address_list(&search->loaded_addresses);
+	cleanup_address_list(&search->tls_addresses);
 	free(search->callbacks);
 }
 
@@ -4961,18 +4967,18 @@ static inline bool bsearch_address_callback(int index, void *ordered_addresses, 
 	return ordered[index] > (uintptr_t)needle;
 }
 
-static inline uintptr_t search_find_next_loaded_address(struct searched_instructions *search, uintptr_t address)
+static inline uintptr_t search_find_next_address(struct address_list *list, uintptr_t address)
 {
-	int count = search->loaded_address_count;
-	uintptr_t *addresses = search->loaded_addresses;
+	int count = list->count;
+	uintptr_t *addresses = list->addresses;
 	int i = bsearch_bool(count, addresses, (void *)address, bsearch_address_callback);
 	return i < count ? addresses[i] : ~(uintptr_t)0;
 }
 
-static inline void add_loaded_address(__attribute__((unused)) struct searched_instructions *search, __attribute__((unused)) uintptr_t address)
+static inline void add_address_to_list(struct address_list *list, uintptr_t address)
 {
-	int old_count = search->loaded_address_count;
-	uintptr_t *addresses = search->loaded_addresses;
+	size_t old_count = list->count;
+	uintptr_t *addresses = list->addresses;
 	int i = bsearch_bool(old_count, addresses, (void *)address, bsearch_address_callback);
 	if (i != 0) {
 		if (addresses[i-1] == address) {
@@ -4980,9 +4986,9 @@ static inline void add_loaded_address(__attribute__((unused)) struct searched_in
 			return;
 		}
 	}
-	int new_count = old_count + 1;
-	search->loaded_address_count = new_count;
-	addresses = search->loaded_addresses = realloc(addresses, sizeof(uintptr_t) * new_count);
+	size_t new_count = old_count + 1;
+	list->count = new_count;
+	addresses = list->addresses = realloc(addresses, sizeof(uintptr_t) * new_count);
 	for (int j = old_count; j > i; j--) {
 		addresses[j] = addresses[j-1];
 	}
@@ -7510,7 +7516,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							int prot = protection_for_address(&analysis->loader, (const void *)base_addr, &binary, &section);
 							if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
 								// enforce max range from other lea instructions
-								uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+								uintptr_t next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
 								uintptr_t last_base_index = (next_base_address - base_addr) / sizeof(int32_t) - 1;
 								if (last_base_index << max) {
 									LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
@@ -7567,7 +7573,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, flags & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
-										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+										next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
 										last_base_index = (next_base_address - base_addr) / sizeof(int32_t) - 1;
 										if (last_base_index < max) {
 											max = last_base_index;
@@ -8233,7 +8239,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
 								}
 							} else {
-								add_loaded_address(&analysis->search, (uintptr_t)address);
+								add_address_to_list(&analysis->search.loaded_addresses, (uintptr_t)address);
 								LOG("rip-relative lea is to readable address, assuming it is data");
 								struct address_and_size symbol;
 								if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
@@ -9235,7 +9241,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
 							}
 						} else {
-							add_loaded_address(&analysis->search, (uintptr_t)address);
+							add_address_to_list(&analysis->search.loaded_addresses, (uintptr_t)address);
 							LOG("formed address is readable, assuming it is data");
 							struct address_and_size symbol;
 							if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
@@ -10738,7 +10744,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									LOG("lookup table from known base", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
 									dump_registers(&analysis->loader, &self.current_state, mask_for_register(reg) | mask_for_register(index));
 									// enforce max range from other ldr instructions
-									uintptr_t next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+									uintptr_t next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
 									uintptr_t last_base_index = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) - 1;
 									if (last_base_index < index_state.max) {
 										LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
@@ -10799,7 +10805,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, (flags + 2) & ~ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
-										next_base_address = search_find_next_loaded_address(&analysis->search, base_addr);
+										next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
 										last_base_index = ((next_base_address - base_addr) >> decoded.decomposed.operands[1].shiftValue) - 1;
 										if (last_base_index < index_state.max) {
 											LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
@@ -11177,6 +11183,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_MRS: {
 				// move system register clears output reg
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				add_address_to_list(&analysis->search.tls_addresses, (uintptr_t)ins);
 				break;
 			}
 			case ARM64_MSB:
@@ -11184,7 +11191,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			case ARM64_MSR: {
-				LOG("msr");
+				ERROR("msr", temp_str(copy_address_description(&analysis->loader, ins)));
+				add_address_to_list(&analysis->search.tls_addresses, (uintptr_t)ins);
 				break;
 			}
 			case ARM64_MUL:

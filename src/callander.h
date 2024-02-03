@@ -361,6 +361,11 @@ struct searched_instruction_callback {
 	void *data;
 };
 
+struct address_list {
+	uintptr_t *addresses;
+	size_t count;
+};
+
 struct searched_instructions {
 	struct searched_instruction_entry *table;
 	uint32_t mask;
@@ -370,8 +375,8 @@ struct searched_instructions {
 	struct searched_instruction_callback *callbacks;
 	uint32_t callback_count;
 	uint16_t generation;
-	uintptr_t *loaded_addresses;
-	int loaded_address_count;
+	struct address_list loaded_addresses;
+	struct address_list tls_addresses;
 	struct register_state *fopen_modes;
 	size_t fopen_mode_count;
 };
