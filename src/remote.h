@@ -2,6 +2,7 @@
 #define REMOTE_H
 
 #include "freestanding.h"
+#include "linux.h"
 
 #include <fcntl.h>
 #include <netinet/ip.h>
@@ -42,7 +43,7 @@ intptr_t remote_fcntl_int(int fd, int cmd, int *value);
 
 intptr_t remote_fstat(int fd, struct fs_stat *buf);
 intptr_t remote_newfstatat(int fd, const char *path, struct fs_stat *stat, int flags);
-intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, struct statx *restrict statxbuf);
+intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, struct linux_statx *restrict statxbuf);
 intptr_t remote_faccessat(int fd, const char *path, int mode, int flag);
 intptr_t remote_readlinkat(int dirfd, const char *path, char *buf, size_t bufsz);
 intptr_t remote_readlink_fd(int fd, char *buf, size_t size);

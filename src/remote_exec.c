@@ -139,11 +139,6 @@ static void analyze_binary(struct program_state *analysis, const char *executabl
 #pragma GCC pop_options
 #endif
 
-static bool should_try_to_patch_remotely(const struct recorded_syscall *syscall)
-{
-	return syscall->nr != LINUX_SYS_futex && syscall->nr != LINUX_SYS_restart_syscall && syscall->nr != LINUX_SYS_clock_gettime && syscall->ins != NULL;
-}
-
 static bool find_remote_patch_target(const struct loader_context *loader, const struct recorded_syscall *syscall, struct instruction_range *out_result)
 {
 	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins };
@@ -169,7 +164,7 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 {
 	bool die = false;
 	for (int i = 0; i < analysis->syscalls.count; i++) {
-		if (should_try_to_patch_remotely(&analysis->syscalls.list[i])) {
+		if (remote_should_try_to_patch(&analysis->syscalls.list[i])) {
 			struct instruction_range patch_target;
 			if (!find_remote_patch_target(&analysis->loader, &analysis->syscalls.list[i], &patch_target)) {
 				ERROR("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
@@ -253,10 +248,12 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 {
 	uintptr_t existing_trampoline = PAGE_SIZE-1;
 	for (int i = 0; i < analysis->syscalls.count; i++) {
-		if (patches->list[i].trampoline == 0 && should_try_to_patch_remotely(&analysis->syscalls.list[i])) {
+		if (patches->list[i].trampoline == 0 && remote_should_try_to_patch(&analysis->syscalls.list[i])) {
 			const ins_ptr addr = analysis->syscalls.list[i].ins;
 			uintptr_t child_addr = translate_analysis_address_to_child(&analysis->loader, addr);
-			if (child_addr != 0) {
+			if (child_addr == 0 || child_addr == (uintptr_t)addr) {
+				PATCH_LOG("missing child address", temp_str(copy_address_description(&analysis->loader, addr)));
+			} else {
 				intptr_t nr = analysis->syscalls.list[i].nr;
 				PATCH_LOG("remotely patching", temp_str(copy_address_description(&analysis->loader, addr)));
 				// TODO: reprotect with correct protection
@@ -356,7 +353,7 @@ static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct
 					memcpy(&trampoline_buf[cur], trampoline_call_handler_address, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address);
 					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address;
 					// copy the suffix of the syscall instruction that is overwritten by the patch
-					size_t skip_len = nr != LINUX_SYS_clone ? (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)) : 0; // TODO: support aarch64
+					size_t skip_len = nr != LINUX_SYS_clone ? (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)) : 0;
 					size_t tail_size = patch_target.end - (addr + skip_len);
 					if (tail_size != 0) {
 #ifdef PATCH_REQUIRES_MIGRATION
@@ -460,6 +457,11 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 		aux_buf++;
 		fs_memcpy(&dynv_buf[string_cur], ARCH_NAME, sizeof(ARCH_NAME));
 		string_cur += sizeof(ARCH_NAME);
+		aux_buf->a_type = AT_RANDOM;
+		aux_buf->a_un.a_val = dynv_base + string_cur;
+		aux_buf++;
+		memset(&dynv_buf[string_cur], 0x66, 16);
+		string_cur += 16;
 		aux_buf->a_type = AT_NULL;
 		aux_buf->a_un.a_val = 0;
 		aux_buf++;
@@ -561,7 +563,6 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 		ERROR("syscalls", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, false, true, true)));
 		ERROR_FLUSH();
 	}
-	cleanup_searched_instructions(&analysis.search);
 	if (debug) {
 		ERROR("checking program for remote compatibility");
 		ERROR_FLUSH();
@@ -676,6 +677,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 
 void cleanup_remote_exec(struct remote_exec_state *remote) {
 	// cleanup
+	cleanup_searched_instructions(&remote->analysis.search);
 	free_remote_patches(&remote->patches, &remote->analysis);
 	remote_munmap(remote->stack, STACK_SIZE);
 	if (remote->has_interpreter) {

@@ -314,6 +314,11 @@ void remote_unload_binary(struct binary_info *info)
 	}
 }
 
+bool remote_should_try_to_patch(const struct recorded_syscall *syscall)
+{
+	return syscall->nr != LINUX_SYS_futex && syscall->nr != LINUX_SYS_restart_syscall && syscall->nr != LINUX_SYS_clock_gettime && syscall->ins != NULL;
+}
+
 static void transfer_fd_table(uintptr_t fd_table_addr)
 {
 	// poke the remote file table

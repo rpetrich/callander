@@ -51,4 +51,7 @@ int remote_load_binary(int fd, struct binary_info *out_info);
 
 void remote_unload_binary(struct binary_info *info);
 
+struct recorded_syscall;
+bool remote_should_try_to_patch(const struct recorded_syscall *syscall);
+
 #endif
