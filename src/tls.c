@@ -19,11 +19,11 @@
 
 // thread_data stores the bookkeeping for the TLS linked list as well as the
 // actual data itself
-__attribute__((aligned(64))) struct thread_data {
+struct __attribute__((aligned(64))) thread_data {
 	size_t zero1;
 	atomic_intptr_t id;
 	size_t zero2;
-	struct thread_data *next;
+	struct thread_data *_Atomic next;
 	size_t zero3;
 	struct thread_storage storage;
 	size_t zero4;
