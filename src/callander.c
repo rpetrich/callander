@@ -13757,7 +13757,7 @@ static int protection_for_address_definitely_in_binary(const struct loaded_binar
 						if (flags & SHF_EXECINSTR) {
 							result |= PROT_EXEC;
 						}
-						if ((flags & SHF_WRITE) && (fs_strcmp(section_name, ".data.rel.ro") != 0) && (fs_strcmp(section_name, ".got") != 0) && (fs_strcmp(section_name, ".got.plt") != 0)) {
+						if ((flags & SHF_WRITE) && (fs_strcmp(section_name, ".data.rel.ro") != 0 || (binary->special_binary_flags & BINARY_IS_INTERPRETER)) && (fs_strcmp(section_name, ".got") != 0) && (fs_strcmp(section_name, ".got.plt") != 0)) {
 							result |= PROT_WRITE;
 						}
 						return result;
