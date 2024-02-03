@@ -40,6 +40,8 @@ static struct attempt *attempt_exit_current(struct thread_storage *thread)
 	return attempt;
 }
 
+#ifndef __APPLE__
+
 bool attempt_handle_fault(struct thread_storage *thread, ucontext_t *context)
 {
 	struct attempt *attempt = attempt_exit_current(thread);
@@ -50,6 +52,8 @@ bool attempt_handle_fault(struct thread_storage *thread, ucontext_t *context)
 	}
 	return false;
 }
+
+#endif
 
 noreturn void attempt_cancel(struct thread_storage *thread)
 {
@@ -90,8 +94,10 @@ static void attempt_internal(attempt_body body, void *data, uintptr_t sp)
 	}
 }
 
+#ifndef __clang__
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
+#endif
 __attribute__((used))
 void attempt(struct thread_storage *thread, attempt_body body, void *data)
 {
@@ -104,7 +110,9 @@ void attempt(struct thread_storage *thread, attempt_body body, void *data)
 	thread->attempt = &attempt;
 	CALL_SPILLED_WITH_ARGS_AND_SP(attempt_internal, body, &attempt);
 }
+#ifndef __clang__
 #pragma GCC pop_options
+#endif
 
 void attempt_push_cleanup(struct thread_storage *thread, struct attempt_cleanup_state *state)
 {
