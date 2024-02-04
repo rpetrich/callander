@@ -11198,7 +11198,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
 			case ARM64_MSR: {
-				ERROR("msr", temp_str(copy_address_description(&analysis->loader, ins)));
+				LOG("msr", temp_str(copy_address_description(&analysis->loader, ins)));
 				add_address_to_list(&analysis->search.tls_addresses, (uintptr_t)ins);
 				break;
 			}
