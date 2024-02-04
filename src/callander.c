@@ -10841,6 +10841,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							LOG("from", temp_str(copy_address_description(&analysis->loader, (const void *)addr)));
 							clear_match(&analysis->loader, &self.current_state, dest, ins);
 							dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+							if (mem_size == OPERATION_SIZE_DWORD && !is_signed && address_is_call_aligned(value)) {
+								prot = protection_for_address(&analysis->loader, (const void *)value, &binary, NULL);
+								if (prot & PROT_EXEC) {
+									LOG("found reference to executable address, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)value)));
+									self.description = "load address";
+									struct analysis_frame new_caller = { .address = ins, .description = "ld", .next = NULL, .current_state = empty_registers, .entry = ins, .entry_state = &empty_registers, .token = { 0 } };
+									analyze_function(analysis, effects, &empty_registers, (ins_ptr)value, &new_caller);
+								}
+							}
 							break;
 						}
 					}
