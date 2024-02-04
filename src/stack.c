@@ -61,7 +61,11 @@ static inline void *get_allocated_stack(struct stack_data *stack_data)
 	void *stack = stack_data->allocated_stack;
 	if (UNLIKELY(stack == NULL)) {
 		// map a new stack and guard
+#ifdef MAP_STACK
 		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+#else
+		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+#endif
 		if (fs_is_map_failed(stack)) {
 			DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
 		}
@@ -90,8 +94,10 @@ void call_on_alternate_stack_body(void *data1, void *data2, alt_callback callbac
 	callback(data1, data2);
 }
 
+#ifndef __clang__
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
+#endif
 void call_on_alternate_stack(struct thread_storage *thread, alt_callback callback, void *data1, void *data2)
 {
 	if (thread->stack.allocated_stack && thread->stack.running) {
@@ -176,7 +182,9 @@ void attempt_with_sufficient_stack(struct thread_storage *thread, attempt_body c
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(attempt, thread, callback, data, stack);
 	stack_data->running = false;
 }
+#ifndef __clang__
 #pragma GCC pop_options
+#endif
 
 void stack_data_clear(struct stack_data *stack)
 {

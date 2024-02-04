@@ -1,14 +1,15 @@
+#define PATCH_EXPOSE_INTERNALS
 #include "axon.h"
 #include "exec.h"
 #include "ins.h"
 #include "linux.h"
-#include "patch.h"
 #include "remote_exec.h"
 #include "search.h"
 #include "thandler.h"
-#include "tls.h"
 
 #include <mach/mach.h>
+#include <mach/vm_map.h>
+#include <mach/mach_vm.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/attr.h>
@@ -25,7 +26,6 @@ extern char **environ;
 // #undef SYSCALL_DEF
 // #undef SYSCALL_DEF_EMPTY
 // };
-
 
 __attribute__((used))
 noreturn void receive_start(const struct receive_start_args *args)
@@ -44,25 +44,27 @@ static int translate_at_fd_to_darwin(int fd)
 
 static struct remote_exec_state remote;
 
+static void update_patches(void);
+
 static void discovered_library_mapping(int fd, void *address)
 {
 	char buf[PATH_MAX];
 	int result = fs_fd_getpath(fd, buf);
 	if (result >= 0) {
-		ERROR("mapped library", &buf[0]);
-		ERROR("at", (uintptr_t)address);
+		PATCH_LOG("mapped library", &buf[0]);
+		PATCH_LOG("at", (uintptr_t)address);
 		for (struct loaded_binary *binary = remote.analysis.loader.binaries; binary != NULL; binary = binary->next) {
 			if (fs_strcmp(binary->loaded_path, buf) == 0) {
 				if (binary->child_base != 0) {
 					return;
 				}
-				ERROR("known library loaded", binary->path);
+				PATCH_LOG("known library loaded", binary->path);
 				binary->child_base = (uintptr_t)address;
-				repatch_remote_syscalls(&remote);
+				update_patches();
 				ERROR_FLUSH();
 				return;
 			}
-			ERROR("didn't match", binary->loaded_path);
+			PATCH_LOG("didn't match", binary->loaded_path);
 		}
 		DIE("could not find library");
 	}
@@ -70,7 +72,6 @@ static void discovered_library_mapping(int fd, void *address)
 
 void receive_syscall(__attribute__((unused)) intptr_t data[7])
 {
-	ERROR("thread register in", (uintptr_t)read_thread_register());
 	intptr_t nr = data[6];
 	{
 		const char *name = name_for_syscall(nr);
@@ -97,18 +98,9 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 		}
 		*cur++ = ')';
 		*cur++ = '\0';
-		ERROR("received syscall", buf);
+		PATCH_LOG("received syscall", buf);
 		free(buf);
 	}
-	// const char *name = NULL;
-	// if (data[6] < sizeof(syscall_names)/sizeof(syscall_names[0])) {
-	// 	name = syscall_names[nr];
-	// }
-	// if (name != NULL) {
-	// 	ERROR("received syscall", name);
-	// } else {
-	// 	ERROR("received syscall", nr);
-	// }
 	switch (data[6]) {
 		case LINUX_SYS_brk:
 			data[0] = -ENOSYS;
@@ -128,7 +120,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 		case LINUX_SYS_openat: {
 			int flags = data[2];
 			const char *path = (const char *)data[1];
-			ERROR("path", path);
+			PATCH_LOG("path", path);
 			data[0] = fs_openat(translate_at_fd_to_darwin(data[0]), path, flags, data[3]);
 			break;
 		}
@@ -161,7 +153,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			// }
 			int fd = translate_at_fd_to_darwin(data[0]);
 			const char *path = (const char *)data[1];
-			ERROR("path", path ? path : "(null)");
+			PATCH_LOG("path", path ? path : "(null)");
 			struct fs_stat stat;
 			intptr_t result;
 			if ((flags & LINUX_AT_EMPTY_PATH) && (path == NULL || *path == '\0')) {
@@ -195,6 +187,14 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			data[0] = fs_writev(data[0], (const struct iovec *)data[1], data[2]);
 			break;
 		}
+		case LINUX_SYS_write: {
+			data[0] = fs_write(data[0], (const char *)data[1], data[2]);
+			break;
+		}
+		case LINUX_SYS_readv: {
+			data[0] = fs_readv(data[0], (const struct iovec *)data[1], data[2]);
+			break;
+		}
 		case LINUX_SYS_read: {
 			data[0] = fs_read(data[0], (char *)data[1], data[2]);
 			break;
@@ -222,67 +222,85 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			break;
 		}
 		case LINUX_SYS_mmap: {
+			void *address = (void *)data[0];
 			int prot = data[2];
 			int resolved_prot = 0;
 			if (prot & LINUX_PROT_READ) {
 				resolved_prot |= PROT_READ;
-				ERROR("read");
+				PATCH_LOG("read");
 			}
 			if (prot & LINUX_PROT_WRITE) {
 				resolved_prot |= PROT_WRITE;
-				ERROR("write");
+				PATCH_LOG("write");
 			}
 			if (prot & LINUX_PROT_EXEC) {
 				resolved_prot |= PROT_EXEC;
-				ERROR("exec");
+				PATCH_LOG("exec");
 			}
 			int flags = data[3];
 			int resolved_flags;
 			if (flags & LINUX_MAP_ANONYMOUS) {
 				resolved_flags = MAP_ANONYMOUS;
-				ERROR("anonymous");
+				PATCH_LOG("anonymous");
 			} else {
 				resolved_flags = MAP_FILE;
-				ERROR("file");
+				PATCH_LOG("file");
 			}
 			if (flags & LINUX_MAP_FIXED) {
 				resolved_flags |= MAP_FIXED;
-				ERROR("fixed");
+				PATCH_LOG("fixed");
 			}
 			if (flags & LINUX_MAP_PRIVATE) {
 				resolved_flags |= MAP_PRIVATE;
-				ERROR("private");
+				PATCH_LOG("private");
 			}
 			if (flags & LINUX_MAP_SHARED) {
 				resolved_flags |= MAP_SHARED;
-				ERROR("shared");
+				PATCH_LOG("shared");
 			}
 			size_t size = data[1];
 			if (resolved_prot & PROT_EXEC) {
 				if ((flags & LINUX_MAP_ANONYMOUS) == 0) {
-					char *buf = malloc(size);
-					intptr_t read_result = fs_pread_all(data[4], buf, size, data[5]);
-					if (read_result < 0) {
-						data[0] = read_result;
-						break;
-					}
-					void *result = fs_mmap((void *)data[0], (size + (PAGE_SIZE-1)) & ~(uint64_t)(PAGE_SIZE-1), PROT_READ|PROT_WRITE|PROT_EXEC, (resolved_flags & MAP_FIXED) | MAP_ANONYMOUS | MAP_JIT, -1, 0);
-					if ((intptr_t)result > 0) {
-						ERROR("result", (uintptr_t)result);
-						ERROR("size", (intptr_t)size);
-						ERROR_FLUSH();
-						pthread_jit_write_protect_np(false);
-						fs_memcpy(result, buf, size);
-						pthread_jit_write_protect_np(true);
+					size_t rounded_size = (size + (PAGE_SIZE-1)) & ~(uint64_t)(PAGE_SIZE-1);
+					void *result = fs_mmap(address, rounded_size, PROT_READ|PROT_EXEC, (resolved_flags & MAP_FIXED) | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+					if ((intptr_t)result >= 0) {
+						mach_vm_address_t writable_addr = 0;
+						vm_prot_t cur, max;
+						kern_return_t ret = mach_vm_remap(mach_task_self(), &writable_addr, rounded_size, 0, VM_FLAGS_ANYWHERE | VM_FLAGS_RANDOM_ADDR, mach_task_self(), (mach_vm_address_t)result, FALSE, &cur, &max, VM_INHERIT_DEFAULT);
+						if (ret != KERN_SUCCESS) {
+							PATCH_LOG("mach_vm_remap failed", ret);
+							data[0] = -EINVAL;
+							break;
+						}
+						intptr_t mprotect_result = fs_mprotect((void *)writable_addr, rounded_size, PROT_READ | PROT_WRITE);
+						if (mprotect_result < 0) {
+							data[0] = mprotect_result;
+							PATCH_LOG("mprotect failed");
+							break;
+						}
+						intptr_t read_result = fs_pread_all(data[4], (void *)writable_addr, size, data[5]);
+						if (read_result < 0) {
+							data[0] = read_result;
+							PATCH_LOG("read failed");
+							break;
+						}
+						fs_munmap((void *)writable_addr, rounded_size);
 						discovered_library_mapping(data[4], result - data[5]);
 					}
-					free(buf);
 					data[0] = (intptr_t)result;
 					break;
 				}
 				resolved_flags |= MAP_JIT;
 			}
-			data[0] = (intptr_t)fs_mmap((void *)data[0], data[1], resolved_prot, resolved_flags, data[4], data[5]);
+			data[0] = (intptr_t)fs_mmap(address, size, resolved_prot, resolved_flags, data[4], data[5]);
+			break;
+		}
+		case LINUX_SYS_munmap: {
+			data[0] = (intptr_t)fs_munmap((void *)data[0], data[1]);
+			break;
+		}
+		case LINUX_SYS_mprotect: {
+			data[0] = fs_mprotect((void *)data[0], data[1], data[2]);
 			break;
 		}
 		case LINUX_SYS_faccessat: {
@@ -301,22 +319,103 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			data[0] = 0;
 			break;
 		}
+		case LINUX_SYS_prlimit64: {
+			data[0] = -EINVAL;
+			break;
+		}
+		case LINUX_SYS_execve: {
+			ERROR_FLUSH();
+			data[0] = fs_execve((const char *)data[0], (void *)data[1], (void *)data[2]);
+			break;
+		}
 		default: {
 			DIE("unknown syscall");
 			break;
 		}
 	}
-	ERROR("=", data[0]);
-	ERROR_FLUSH();
-	ERROR("thread register out", (uintptr_t)read_thread_register());
-	ERROR_FLUSH();
-	ERROR("thread register out", (uintptr_t)read_thread_register());
+	if (data[0] < 0) {
+		PATCH_LOG("=", fs_strerror(data[0]));
+		data[0] = -translate_errno_to_linux(-data[0]);
+	}
+	if (data[0] > (intptr_t)PAGE_SIZE) {
+		PATCH_LOG("=", (uintptr_t)data[0]);
+	} else {
+		PATCH_LOG("=", data[0]);
+	}
 	ERROR_FLUSH();
 }
 
-static intptr_t tls_handler(uintptr_t *arguments, intptr_t original)
+#ifdef __aarch64__
+
+static uintptr_t tls_value;
+
+static void tls_handler(uintptr_t *arguments, intptr_t original)
 {
-	DIE("tls handler");
+	ins_ptr ins = (ins_ptr)original;
+	PATCH_LOG("tls handler", temp_str(copy_address_description(&remote.analysis.loader, ins)));
+	struct decoded_ins decoded;
+	if (!decode_ins(ins, &decoded)) {
+		DIE("could not decode instruction");
+	}
+	switch (decoded.decomposed.operation) {
+		case ARM64_MRS: {
+			PATCH_LOG("reading tls", tls_value);
+			PATCH_LOG("into", get_register_name(decoded.decomposed.operands[0].reg[0]));
+			arguments[decoded.decomposed.operands[0].reg[0] - REG_X0] = tls_value;
+			break;
+		}
+		case ARM64_MSR: {
+			uintptr_t new_value = arguments[decoded.decomposed.operands[1].reg[0] - REG_X0];
+			PATCH_LOG("storing tls", new_value);
+			PATCH_LOG("from", get_register_name(decoded.decomposed.operands[1].reg[0]));
+			tls_value = new_value;
+			break;
+		}
+		default:
+			DIE("tls handler received non-tls instruction");
+	}
+	ERROR_FLUSH();
+}
+#endif
+
+static void update_patches(void)
+{
+	repatch_remote_syscalls(&remote);
+#ifdef __aarch64__
+	uintptr_t *tls_addresses = remote.analysis.search.tls_addresses.addresses;
+	for (size_t i = 0, count = remote.analysis.search.tls_addresses.count; i < count; i++) {
+		ins_ptr addr = (ins_ptr)tls_addresses[i];
+		if (addr == NULL) {
+			continue;
+		}
+		struct decoded_ins decoded;
+		if (!decode_ins(addr, &decoded)) {
+			DIE("could not decode instruction");
+		}
+		switch (decoded.decomposed.operation) {
+			case ARM64_MRS:
+				if (decoded.decomposed.operands[1].sysreg != REG_TPIDR_EL0) {
+					continue;
+				}
+				break;
+			case ARM64_MSR:
+				if (decoded.decomposed.operands[0].sysreg != REG_TPIDR_EL0) {
+					continue;
+				}
+				break;
+			default:
+				continue;
+		}
+		uintptr_t child_addr = translate_analysis_address_to_child(&remote.analysis.loader, addr);
+		if (child_addr != 0 && child_addr != (uintptr_t)addr) {
+			PATCH_LOG("patching tls instruction", temp_str(copy_address_description(&remote.analysis.loader, addr)));
+			remote_patch(&remote.patches, &remote.analysis, addr, addr, child_addr, PATCH_TEMPLATE(breakpoint_call_handler), (uintptr_t)&tls_handler, (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), (uintptr_t)addr);
+			tls_addresses[i] = 0;
+		} else {
+			PATCH_LOG("skipping tls instruction", temp_str(copy_address_description(&remote.analysis.loader, addr)));
+		}
+	}
+#endif
 }
 
 int main(__attribute__((unused)) int argc_, char *argv[])
@@ -406,18 +505,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		DIE("remote exec failed", fs_strerror(result));
 	}
 
-	uintptr_t *tls_addresses = remote.analysis.search.tls_addresses.addresses;
-	for (size_t i = 0, count = remote.analysis.search.tls_addresses.count; i < count; i++) {
-		ins_ptr addr = (ins_ptr)tls_addresses[i];
-		ERROR("tls", temp_str(copy_address_description(&remote.analysis.loader, addr)));
-		uintptr_t child_addr = translate_analysis_address_to_child(&remote.analysis.loader, addr);
-		if (child_addr != 0 && child_addr != (uintptr_t)addr) {
-			enum patch_status status = patch_function(get_thread_storage(), (ins_ptr)child_addr, tls_handler, -1);
-			if (status != PATCH_STATUS_INSTALLED_TRAMPOLINE) {
-				DIE("failed to patch", temp_str(copy_address_description(&remote.analysis.loader, addr)));
-			}
-		}
-	}
+	update_patches();
 
 	ERROR_FLUSH();
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(receive_start, remote.sp, 0, 0, remote.sp);
@@ -477,8 +565,8 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 		if (fs_fd_getpath(fd, path) < 0) {
 			DIE("could not query path");
 		}
-		ERROR("loaded", &path[0]);
-		ERROR("remotely at", (uintptr_t)out_info->base);
+		PATCH_LOG("loaded", &path[0]);
+		PATCH_LOG("remotely at", (uintptr_t)out_info->base);
 		ERROR_FLUSH();
 	}
 	return result;
@@ -492,4 +580,9 @@ void remote_unload_binary(struct binary_info *info)
 bool remote_should_try_to_patch(const struct recorded_syscall *syscall)
 {
 	return syscall->ins != NULL;
+}
+
+intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, ucontext_t *context)
+{
+	return -ENOSYS;
 }

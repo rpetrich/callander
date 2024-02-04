@@ -103,6 +103,21 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		LOG("no interpreter for this binary");
 	}
 
+	for (struct loaded_binary *binary = analysis->loader.binaries; binary != NULL; binary = binary->next) {
+		ins_ptr libc_early_init = resolve_binary_loaded_symbol(&analysis->loader, binary, "__libc_early_init", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (libc_early_init != NULL) {
+			struct registers registers = empty_registers;
+			struct analysis_frame new_caller = { .address = binary->info.base, .description = "__libc_early_init", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, libc_early_init, &new_caller);
+		}
+		ins_ptr dl_runtime_resolve = resolve_binary_loaded_symbol(&analysis->loader, binary, "_dl_runtime_resolve", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (dl_runtime_resolve != NULL) {
+			struct registers registers = empty_registers;
+			struct analysis_frame new_caller = { .address = binary->info.base, .description = "_dl_runtime_resolve", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, dl_runtime_resolve, &new_caller);
+		}
+	}
+
 	LOG("finished initial pass, dequeuing instructions");
 	ERROR_FLUSH();
 	finish_analysis(analysis);
@@ -139,9 +154,9 @@ static void analyze_binary(struct program_state *analysis, const char *executabl
 #pragma GCC pop_options
 #endif
 
-static bool find_remote_patch_target(const struct loader_context *loader, const struct recorded_syscall *syscall, struct instruction_range *out_result)
+static bool find_remote_patch_target(const struct loader_context *loader, const ins_ptr target, const ins_ptr entry, struct instruction_range *out_result)
 {
-	struct instruction_range basic_block = (struct instruction_range){ .start = syscall->entry, .end = syscall->ins };
+	struct instruction_range basic_block = (struct instruction_range){ .start = entry, .end = target };
 	struct decoded_ins decoded_end;
 	if (decode_ins(basic_block.end, &decoded_end)) {
 		basic_block.end = next_ins(basic_block.end, &decoded_end);
@@ -152,9 +167,9 @@ static bool find_remote_patch_target(const struct loader_context *loader, const 
 	if (decode_ins(basic_block.end, &decoded_end)) {
 		basic_block.end = next_ins(basic_block.end, &decoded_end);
 	}
-	return find_patch_target(basic_block, syscall->ins, PCREL_JUMP_SIZE, PCREL_JUMP_SIZE, loader_address_formatter, (void *)loader, out_result);
+	return find_patch_target(basic_block, target, PCREL_JUMP_SIZE, PCREL_JUMP_SIZE, loader_address_formatter, (void *)loader, out_result);
 #else
-	out_result->start = syscall->ins;
+	out_result->start = target;
 	out_result->end = basic_block.end;
 	return true;
 #endif
@@ -166,7 +181,7 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 	for (int i = 0; i < analysis->syscalls.count; i++) {
 		if (remote_should_try_to_patch(&analysis->syscalls.list[i])) {
 			struct instruction_range patch_target;
-			if (!find_remote_patch_target(&analysis->loader, &analysis->syscalls.list[i], &patch_target)) {
+			if (!find_remote_patch_target(&analysis->loader, analysis->syscalls.list[i].ins, analysis->syscalls.list[i].entry, &patch_target)) {
 				ERROR("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
 				ERROR("from entry", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].entry)));
 				die = true;
@@ -224,17 +239,20 @@ static intptr_t alloc_remote_page_near_address(intptr_t address, size_t size, in
 	}
 }
 
-struct remote_syscall_patch {
+struct remote_patch {
+	uintptr_t address;
 	uintptr_t trampoline;
 	bool owns_trampoline;
 };
 
-static void init_remote_patches(struct remote_syscall_patches *patches, struct program_state *analysis)
+static void init_remote_patches(struct remote_patches *patches, struct program_state *analysis)
 {
-	patches->list = calloc(analysis->syscalls.count, sizeof(struct remote_syscall_patch));
+	patches->list = NULL;
+	patches->count = 0;
+	patches->existing_trampoline = PAGE_SIZE-1;
 }
 
-static void free_remote_patches(struct remote_syscall_patches *patches, struct program_state *analysis)
+static void free_remote_patches(struct remote_patches *patches, struct program_state *analysis)
 {
 	for (int i = 0; i < analysis->syscalls.count; i++) {
 		if (patches->list[i].owns_trampoline) {
@@ -242,153 +260,188 @@ static void free_remote_patches(struct remote_syscall_patches *patches, struct p
 		}
 	}
 	free(patches->list);
+	patches->count = 0;
 }
 
-static void patch_remote_syscalls(struct remote_syscall_patches *patches, struct program_state *analysis, struct remote_handlers *handlers)
+void remote_patch(struct remote_patches *patches, struct program_state *analysis, const ins_ptr addr, const ins_ptr entry, uintptr_t child_addr, struct patch_template template, uintptr_t remote_handler, size_t skip_len, uintptr_t data)
 {
-	uintptr_t existing_trampoline = PAGE_SIZE-1;
+	PATCH_LOG("remotely patching", temp_str(copy_address_description(&analysis->loader, addr)));
+	PATCH_LOG("with entry", temp_str(copy_address_description(&analysis->loader, entry)));
+	// TODO: reprotect with correct protection
+#if 0
+	ERROR("mprotect", (uintptr_t)addr & -PAGE_SIZE);
+	ERROR("mprotect", child_addr & -PAGE_SIZE);
+	ERROR("size", PAGE_SIZE);
+	ERROR("prot", PROT_READ | PROT_WRITE | PROT_EXEC);
+	int protect_result = remote_mprotect(child_addr & -PAGE_SIZE, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+	if (protect_result < 0) {
+		DIE("failed to remote mprotect", fs_strerror(protect_result));
+		return protect_result;
+	}
+	char breakpoint = 0xcc;
+	proxy_poke(child_addr, 1, &breakpoint);
+#else
+	struct instruction_range patch_target;
+	if (!find_remote_patch_target(&analysis->loader, addr, entry, &patch_target)) {
+		DIE("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, addr)));
+	}
+	uintptr_t child_patch_start = translate_analysis_address_to_child(&analysis->loader, patch_target.start);
+	uintptr_t child_patch_end = translate_analysis_address_to_child(&analysis->loader, patch_target.end);
+	uintptr_t child_page_start = child_patch_start & -PAGE_SIZE;
+	uintptr_t child_page_end = (child_patch_end + (PAGE_SIZE-1)) & -PAGE_SIZE;
+#ifdef __APPLE__
+	{
+		void *copy = malloc(child_page_end - child_page_start);
+		intptr_t result = proxy_peek(child_page_start, child_page_end - child_page_start, copy);
+		if (result < 0) {
+			DIE("failed reading copy", fs_strerror(result));
+		}
+		fs_memcpy(copy, (void *)child_page_start, child_page_end - child_page_start);
+		fs_munmap((void *)child_page_start, child_page_end - child_page_start);
+		intptr_t mmap_result = remote_mmap(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS|MAP_JIT, -1, 0);
+		if (mmap_result < 0) {
+			DIE("failed to remote map_jit", fs_strerror(mmap_result));
+		}
+		pthread_jit_write_protect_np(false);
+		result = proxy_poke(mmap_result, child_page_end - child_page_start, copy);
+		if (result < 0) {
+			DIE("failed writing copy", fs_strerror(result));
+		}
+		free(copy);
+	}
+#else
+	int protect_result = remote_mprotect(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC);
+	if (protect_result < 0) {
+		DIE("failed to remote mprotect", fs_strerror(protect_result));
+	}
+#endif
+	// allocate a trampoline page
+	uintptr_t trampoline;
+	size_t bytes_remaining_in_existing = PAGE_SIZE - (patches->existing_trampoline & (PAGE_SIZE-1));
+	size_t expected_size = (addr - patch_target.start) + ((uintptr_t)template.address - (uintptr_t)template.start) + 10 + ((uintptr_t)template.end - (uintptr_t)template.address) + 5;
+	struct remote_patch patch;
+	patch.address = child_addr;
+	if (addresses_are_within_s32(patches->existing_trampoline, child_patch_start) && bytes_remaining_in_existing > expected_size) {
+		trampoline = patches->existing_trampoline;
+		patch.owns_trampoline = false;
+	} else {
+		trampoline = (uintptr_t)alloc_remote_page_near_address((intptr_t)child_patch_start, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+		patch.owns_trampoline = true;
+	}
+	patch.trampoline = trampoline;
+	size_t patch_count = patches->count;
+	patches->list = realloc(patches->list, (patch_count + 1) * sizeof(struct remote_patch));
+	patches->list[patch_count] = patch;
+	patches->count++;
+	PATCH_LOG("target instruction is at", child_addr);
+	PATCH_LOG("starting patch at", child_patch_start);
+	PATCH_LOG("ending patch at", child_patch_end);
+	PATCH_LOG("redirecting to trampoline at", trampoline);
+	// prepare and poke the trampoline
+	uint8_t trampoline_buf[PAGE_SIZE];
+	size_t cur = 0;
+	{
+		// copy the prefix of the target instruction that is overwritten by the patch
+#ifdef PATCH_REQUIRES_MIGRATION
+		ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)trampoline;
+		size_t head_size = addr - patch_target.start;
+		if (head_size != 0) {
+			head_size = migrate_instructions(&trampoline_buf[cur], patch_target.start, delta, head_size, loader_address_formatter, (void *)&analysis->loader);
+			if (head_size == 0) {
+				DIE("failed to migrate prefix");
+			}
+			cur += head_size;
+		}
+#endif
+		// copy the prefix part of the trampoline
+		size_t prefix_size = (uintptr_t)template.address - (uintptr_t)template.start - 2 * sizeof(uintptr_t);
+		memcpy(&trampoline_buf[cur], template.start, prefix_size);
+		cur += prefix_size;
+		// move address of remote handler function into rcx
+#if 1
+		*(uintptr_t *)&trampoline_buf[cur] = data;
+		cur += sizeof(uintptr_t);
+		*(uintptr_t *)&trampoline_buf[cur] = remote_handler;
+		cur += sizeof(uintptr_t);
+#else
+		trampoline_buf[cur++] = data;
+		trampoline_buf[cur++] = data >> 8;
+		trampoline_buf[cur++] = data >> 16;
+		trampoline_buf[cur++] = data >> 24;
+		trampoline_buf[cur++] = data >> 32;
+		trampoline_buf[cur++] = data >> 40;
+		trampoline_buf[cur++] = data >> 48;
+		trampoline_buf[cur++] = data >> 56;
+		trampoline_buf[cur++] = remote_handler;
+		trampoline_buf[cur++] = remote_handler >> 8;
+		trampoline_buf[cur++] = remote_handler >> 16;
+		trampoline_buf[cur++] = remote_handler >> 24;
+		trampoline_buf[cur++] = remote_handler >> 32;
+		trampoline_buf[cur++] = remote_handler >> 40;
+		trampoline_buf[cur++] = remote_handler >> 48;
+		trampoline_buf[cur++] = remote_handler >> 56;
+#endif
+		// copy the suffix part of the trampoline
+		memcpy(&trampoline_buf[cur], template.address, (uintptr_t)template.end - (uintptr_t)template.address);
+		cur += (uintptr_t)template.end - (uintptr_t)template.address;
+		// copy the suffix of the target instruction that is overwritten by the patch
+		size_t tail_size = patch_target.end - (addr + skip_len);
+		if (tail_size != 0) {
+#ifdef PATCH_REQUIRES_MIGRATION
+			delta = (uintptr_t)child_addr + skip_len - ((uintptr_t)trampoline + cur);
+			tail_size = migrate_instructions(&trampoline_buf[cur], addr + skip_len, delta, tail_size, loader_address_formatter, (void *)&analysis->loader);
+			if (tail_size == 0) {
+				DIE("failed to migrate suffix");
+			}
+			cur += tail_size;
+#else
+			DIE("tail has size, but target doesn't support migration", tail_size);
+#endif
+		}
+		// jump back to the resume point in the function
+		int32_t resume_relative_offset = child_patch_end - (trampoline + cur /*+ PCREL_JUMP_SIZE*/);
+		patch_write_pc_relative_jump((ins_ptr)&trampoline_buf[cur], resume_relative_offset);
+		cur += PCREL_JUMP_SIZE;
+	}
+	intptr_t result = proxy_poke(trampoline, cur, trampoline_buf);
+	if (result < 0) {
+		DIE("failed writing trampoline", fs_strerror(result));
+	}
+	patches->existing_trampoline = trampoline + cur;
+	// patch the original code to jump to the trampoline page
+	int32_t detour_relative_offset = trampoline - (child_patch_start /*+ PCREL_JUMP_SIZE*/);
+	uint8_t jump_buf[PCREL_JUMP_SIZE];
+	patch_write_pc_relative_jump((ins_ptr)&jump_buf, detour_relative_offset);
+	result = proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
+	if (result < 0) {
+		DIE("failed writing detour jump", fs_strerror(result));
+	}
+#ifdef __APPLE__
+	pthread_jit_write_protect_np(true);
+#endif
+#endif
+}
+
+static void patch_remote_syscalls(struct remote_patches *patches, struct program_state *analysis, struct remote_handlers *handlers)
+{
 	for (int i = 0; i < analysis->syscalls.count; i++) {
-		if (patches->list[i].trampoline == 0 && remote_should_try_to_patch(&analysis->syscalls.list[i])) {
+		if (remote_should_try_to_patch(&analysis->syscalls.list[i])) {
 			const ins_ptr addr = analysis->syscalls.list[i].ins;
 			uintptr_t child_addr = translate_analysis_address_to_child(&analysis->loader, addr);
 			if (child_addr == 0 || child_addr == (uintptr_t)addr) {
 				PATCH_LOG("missing child address", temp_str(copy_address_description(&analysis->loader, addr)));
 			} else {
-				intptr_t nr = analysis->syscalls.list[i].nr;
-				PATCH_LOG("remotely patching", temp_str(copy_address_description(&analysis->loader, addr)));
-				// TODO: reprotect with correct protection
-#if 0
-				ERROR("mprotect", (uintptr_t)addr & -PAGE_SIZE);
-				ERROR("mprotect", child_addr & -PAGE_SIZE);
-				ERROR("size", PAGE_SIZE);
-				ERROR("prot", PROT_READ | PROT_WRITE | PROT_EXEC);
-				int protect_result = remote_mprotect(child_addr & -PAGE_SIZE, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
-				if (protect_result < 0) {
-					DIE("failed to remote mprotect", fs_strerror(protect_result));
-					return protect_result;
-				}
-				char breakpoint = 0xcc;
-				proxy_poke(child_addr, 1, &breakpoint);
-#else
-				struct instruction_range patch_target;
-				if (!find_remote_patch_target(&analysis->loader, &analysis->syscalls.list[i], &patch_target)) {
-					DIE("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, addr)));
-				}
-				uintptr_t child_patch_start = translate_analysis_address_to_child(&analysis->loader, patch_target.start);
-				uintptr_t child_patch_end = translate_analysis_address_to_child(&analysis->loader, patch_target.end);
-				uintptr_t child_page_start = child_patch_start & -PAGE_SIZE;
-				uintptr_t child_page_end = (child_patch_end + (PAGE_SIZE-1)) & -PAGE_SIZE;
-#ifdef __APPLE__
-				{
-					void *copy = malloc(child_page_end - child_page_start);
-					intptr_t result = proxy_peek(child_page_start, child_page_end - child_page_start, copy);
-					if (result < 0) {
-						DIE("failed reading copy", fs_strerror(result));
+				bool found = false;
+				for (size_t j = 0, count = patches->count; j < count; j++) {
+					if (patches->list[i].address == child_addr) {
+						found = true;
+						break;
 					}
-					fs_memcpy(copy, (void *)child_page_start, child_page_end - child_page_start);
-					fs_munmap((void *)child_page_start, child_page_end - child_page_start);
-					intptr_t mmap_result = remote_mmap(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS|MAP_JIT, -1, 0);
-					if (mmap_result < 0) {
-						DIE("failed to remote map_jit", fs_strerror(mmap_result));
-					}
-					pthread_jit_write_protect_np(false);
-					result = proxy_poke(mmap_result, child_page_end - child_page_start, copy);
-					if (result < 0) {
-						DIE("failed writing copy", fs_strerror(result));
-					}
-					free(copy);
 				}
-#else
-				int protect_result = remote_mprotect(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC);
-				if (protect_result < 0) {
-					DIE("failed to remote mprotect", fs_strerror(protect_result));
+				if (!found) {
+					bool is_clone = analysis->syscalls.list[i].nr == LINUX_SYS_clone;
+					remote_patch(patches, analysis, addr, analysis->syscalls.list[i].entry, child_addr, trampoline_call_template(), is_clone ? handlers->receive_clone_addr : handlers->receive_syscall_addr, is_clone ? 0 : (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), 0);
 				}
-#endif
-				// allocate a trampoline page
-				uintptr_t trampoline;
-				size_t bytes_remaining_in_existing = PAGE_SIZE - (existing_trampoline & (PAGE_SIZE-1));
-				size_t expected_size = (addr - patch_target.start) + ((uintptr_t)trampoline_call_handler_address - (uintptr_t)trampoline_call_handler_start) + 10 + ((uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address) + 5;
-				if (addresses_are_within_s32(existing_trampoline, child_patch_start) && bytes_remaining_in_existing > expected_size) {
-					trampoline = existing_trampoline;
-				} else {
-					trampoline = (uintptr_t)alloc_remote_page_near_address((intptr_t)child_patch_start, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
-					patches->list[i].owns_trampoline = true;
-				}
-				patches->list[i].trampoline = trampoline;
-				PATCH_LOG("syscall instruction is at", child_addr);
-				PATCH_LOG("starting patch at", child_patch_start);
-				PATCH_LOG("ending patch at", child_patch_end);
-				PATCH_LOG("redirecting to trampoline at", trampoline);
-				// prepare and poke the trampoline
-				uint8_t trampoline_buf[PAGE_SIZE];
-				size_t cur = 0;
-				{
-					// copy the prefix of the syscall instruction that is overwritten by the patch
-#ifdef PATCH_REQUIRES_MIGRATION
-					ssize_t delta = (uintptr_t)child_patch_start - (uintptr_t)trampoline;
-					size_t head_size = addr - patch_target.start;
-					if (head_size != 0) {
-						head_size = migrate_instructions(&trampoline_buf[cur], patch_target.start, delta, head_size, loader_address_formatter, (void *)&analysis->loader);
-						if (head_size == 0) {
-							DIE("failed to migrate prefix");
-						}
-						cur += head_size;
-					}
-#endif
-					// copy the prefix part of the trampoline
-					size_t prefix_size = (uintptr_t)trampoline_call_handler_address - (uintptr_t)trampoline_call_handler_start - sizeof(uintptr_t);
-					memcpy(&trampoline_buf[cur], trampoline_call_handler_start, prefix_size);
-					cur += prefix_size;
-					// move address of remote handler function into rcx
-					uintptr_t receive_syscall_remote = nr != LINUX_SYS_clone ? handlers->receive_syscall_addr : handlers->receive_clone_addr;
-					trampoline_buf[cur++] = receive_syscall_remote;
-					trampoline_buf[cur++] = receive_syscall_remote >> 8;
-					trampoline_buf[cur++] = receive_syscall_remote >> 16;
-					trampoline_buf[cur++] = receive_syscall_remote >> 24;
-					trampoline_buf[cur++] = receive_syscall_remote >> 32;
-					trampoline_buf[cur++] = receive_syscall_remote >> 40;
-					trampoline_buf[cur++] = receive_syscall_remote >> 48;
-					trampoline_buf[cur++] = receive_syscall_remote >> 56;
-					// copy the suffix part of the trampoline
-					memcpy(&trampoline_buf[cur], trampoline_call_handler_address, (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address);
-					cur += (uintptr_t)trampoline_call_handler_end - (uintptr_t)trampoline_call_handler_address;
-					// copy the suffix of the syscall instruction that is overwritten by the patch
-					size_t skip_len = nr != LINUX_SYS_clone ? (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)) : 0;
-					size_t tail_size = patch_target.end - (addr + skip_len);
-					if (tail_size != 0) {
-#ifdef PATCH_REQUIRES_MIGRATION
-						delta = (uintptr_t)child_addr + skip_len - ((uintptr_t)trampoline + cur);
-						tail_size = migrate_instructions(&trampoline_buf[cur], addr + skip_len, delta, tail_size, loader_address_formatter, (void *)&analysis->loader);
-						if (tail_size == 0) {
-							DIE("failed to migrate suffix");
-						}
-						cur += tail_size;
-#else
-						DIE("tail has size, but target doesn't support migration", tail_size);
-#endif
-					}
-					// jump back to the resume point in the function
-					int32_t resume_relative_offset = child_patch_end - (trampoline + cur + PCREL_JUMP_SIZE);
-					patch_write_pc_relative_jump((ins_ptr)&trampoline_buf[cur], resume_relative_offset);
-					cur += PCREL_JUMP_SIZE;
-				}
-				intptr_t result = proxy_poke(trampoline, cur, trampoline_buf);
-				if (result < 0) {
-					DIE("failed writing trampoline", fs_strerror(result));
-				}
-				existing_trampoline = trampoline + cur;
-				// patch the original code to jump to the trampoline page
-				int32_t detour_relative_offset = trampoline - (child_patch_start + PCREL_JUMP_SIZE);
-				uint8_t jump_buf[PCREL_JUMP_SIZE];
-				patch_write_pc_relative_jump((ins_ptr)&jump_buf, detour_relative_offset);
-				result = proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
-				if (result < 0) {
-					DIE("failed writing detour jump", fs_strerror(result));
-				}
-#ifdef __APPLE__
-				pthread_jit_write_protect_np(true);
-#endif
-#endif
 			}
 		}
 	}
@@ -454,6 +507,13 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 		aux_buf++;
 		aux_buf->a_type = AT_PLATFORM;
 		aux_buf->a_un.a_val = dynv_base + string_cur;
+		aux_buf++;
+		aux_buf->a_type = AT_PAGESZ;
+#if 1
+		aux_buf->a_un.a_val = PAGE_SIZE;
+#else
+		aux_buf->a_un.a_val = 4096;
+#endif
 		aux_buf++;
 		fs_memcpy(&dynv_buf[string_cur], ARCH_NAME, sizeof(ARCH_NAME));
 		string_cur += sizeof(ARCH_NAME);
@@ -587,8 +647,10 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 		ERROR("failed to load binary remotely", fs_strerror(result));
 		return result;
 	}
-	LOG("mapped main", exec_path);
-	LOG("at", (uintptr_t)main_info.base);
+	if (debug) {
+		ERROR("mapped main", exec_path);
+		ERROR("at", (uintptr_t)main_info.base);
+	}
 	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
 	struct binary_info interpreter_info = { 0 };
@@ -620,8 +682,10 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 			DIE("unable to load ELF interpreter", fs_strerror(result));
 			return result;
 		}
-		LOG("mapped interpreter", analysis.loader.main->info.interpreter);
-		LOG("at", (uintptr_t)interpreter_info.base);
+		if (debug) {
+			ERROR("mapped interpreter", analysis.loader.main->info.interpreter);
+			ERROR("at", (uintptr_t)interpreter_info.base);
+		}
 		if (analysis.loader.interpreter != NULL) {
 			analysis.loader.interpreter->child_base = (uintptr_t)interpreter_info.base;
 		} else {
@@ -640,7 +704,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 			fs_close(interpreter_fd);
 		}
 		remote_unload_binary(&main_info);
-		LOG("creating stack failed", fs_strerror(stack));
+		ERROR("creating stack failed", fs_strerror(stack));
 		return stack;
 	}
 	LOG("stack", (uintptr_t)stack);
@@ -650,7 +714,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 		ERROR("patching remote syscalls");
 		ERROR_FLUSH();
 	}
-	struct remote_syscall_patches patches;
+	struct remote_patches patches;
 	init_remote_patches(&patches, &analysis);
 	patch_remote_syscalls(&patches, &analysis, &handlers);
 

@@ -1,23 +1,26 @@
 #ifndef REMOTE_EXEC_H
 
-#include "loader.h"
 #include "callander.h"
+#include "loader.h"
+#include "patch.h"
 
 struct remote_handlers {
 	intptr_t receive_clone_addr;
 	intptr_t receive_syscall_addr;
 };
 
-struct remote_syscall_patch;
+struct remote_patch;
 
-struct remote_syscall_patches {
-	struct remote_syscall_patch *list;
+struct remote_patches {
+	struct remote_patch *list;
+	size_t count;
+	uintptr_t existing_trampoline;
 };
 
 struct remote_exec_state {
 	struct remote_handlers handlers;
 	struct program_state analysis;
-	struct remote_syscall_patches patches;
+	struct remote_patches patches;
 	bool has_interpreter;
 	bool debug;
 	int interpreter_fd;
@@ -33,6 +36,7 @@ int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const ch
 void cleanup_remote_exec(struct remote_exec_state *remote);
 
 void repatch_remote_syscalls(struct remote_exec_state *remote);
+void remote_patch(struct remote_patches *patches, struct program_state *analysis, const ins_ptr addr, const ins_ptr entry, uintptr_t child_addr, struct patch_template template, uintptr_t receive_syscall_remote, size_t skip_len, uintptr_t data);
 
 // defined elsewhere
 void remote_munmap(intptr_t addr, size_t length);

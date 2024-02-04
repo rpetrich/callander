@@ -68,6 +68,12 @@ static inline bool trampoline_region_has_space(uint8_t *next_trampoline, size_t 
 	return (((uintptr_t)next_trampoline + trampoline_size) & -TRAMPOLINE_REGION_SIZE) == (((uintptr_t)next_trampoline - 1) & -TRAMPOLINE_REGION_SIZE);
 }
 
+struct patch_template {
+	void *start;
+	void *address;
+	void *end;
+};
+
 #if defined(__x86_64__)
 #include "patch_x86_64.h"
 #else
@@ -78,9 +84,20 @@ static inline bool trampoline_region_has_space(uint8_t *next_trampoline, size_t 
 
 #ifdef PATCH_EXPOSE_INTERNALS
 
-void trampoline_call_handler_start();
-void trampoline_call_handler_address();
-void trampoline_call_handler_end();
+#define PATCH_TEMPLATE(name) ({ \
+	void name ##_start(); \
+	void name ##_address(); \
+	void name ##_end(); \
+	(struct patch_template){ \
+		.start = &name ##_start, \
+		.address = &name ##_address, \
+		.end = &name ##_end, \
+	}; \
+})
+
+static struct patch_template trampoline_call_template(void) {
+	return PATCH_TEMPLATE(trampoline_call_handler);
+}
 
 void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump);
 

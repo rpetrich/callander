@@ -701,7 +701,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 }
 
 __attribute__((warn_unused_result))
-static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *address_template, void *end_template, void *handler, bool skip, int self_fd);
+static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd);
 
 static char *naive_address_formatter(const uint8_t *address, void *unused)
 {
@@ -791,7 +791,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		basic_block.end = (const uint8_t *)args->pc;
 	}
 	// Actually patch
-	args->patched = patch_common(thread, args->pc - 2, basic_block, &trampoline_call_handler_start, &trampoline_call_handler_address, &trampoline_call_handler_end, &receive_trampoline, true, args->self_fd);
+	args->patched = patch_common(thread, args->pc - 2, basic_block, trampoline_call_template(), &receive_trampoline, true, args->self_fd);
 }
 
 // migrate_instruction copies and relocates instructions
@@ -1106,7 +1106,7 @@ enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr addres
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, address, basic_block, &breakpoint_call_handler_start, &breakpoint_call_handler_address, &breakpoint_call_handler_end, handler, false, self_fd);
+	return patch_common(thread, address, basic_block, PATCH_TEMPLATE(breakpoint_call_handler), handler, false, self_fd);
 }
 
 enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
@@ -1130,7 +1130,12 @@ enum patch_status patch_function(struct thread_storage *thread, ins_ptr function
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, function, basic_block, &function_call_handler_start, &function_call_handler_address, &function_call_handler_end, handler, false, self_fd);
+	struct patch_template template = (struct patch_template) {
+		.start = &breakpoint_call_handler_start,
+		.address = &breakpoint_call_handler_address,
+		.end = &breakpoint_call_handler_end,
+	};
+	return patch_common(thread, function, basic_block, PATCH_TEMPLATE(function_call_handler), handler, false, self_fd);
 }
 
 void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump)
