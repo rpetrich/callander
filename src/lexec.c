@@ -13,19 +13,12 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/attr.h>
+#include <sys/random.h>
 
 AXON_RESTORE_ASM
 FS_DEFINE_SYSCALL
 
 extern char **environ;
-
-// const char *syscall_names[] = {
-// #define SYSCALL_DEF(name, ...) [LINUX_SYS_ ## name] = #name,
-// #define SYSCALL_DEF_EMPTY()
-// #include "syscall_defs.h"
-// #undef SYSCALL_DEF
-// #undef SYSCALL_DEF_EMPTY
-// };
 
 __attribute__((used))
 noreturn void receive_start(const struct receive_start_args *args)
@@ -183,6 +176,10 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			data[0] = result;
 			break;
 		}
+		case LINUX_SYS_statfs: {
+			data[0] = -ENOSYS;
+			break;
+		}
 		case LINUX_SYS_writev: {
 			data[0] = fs_writev(data[0], (const struct iovec *)data[1], data[2]);
 			break;
@@ -200,6 +197,9 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			break;
 		}
 		case LINUX_SYS_close: {
+			if (data[0] == 2) {
+				ERROR_FLUSH();
+			}
 			data[0] = fs_close(data[0]);
 			break;
 		}
@@ -328,6 +328,38 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			data[0] = fs_execve((const char *)data[0], (void *)data[1], (void *)data[2]);
 			break;
 		}
+		case LINUX_SYS_getrandom: {
+			data[0] = getentropy((void *)data[0], data[1]);
+			break;
+		}
+		case LINUX_SYS_clock_gettime: {
+			data[0] = clock_gettime(data[0], (void *)data[1]);
+			break;
+		}
+		case LINUX_SYS_ioctl: {
+			data[0] = -ENOSYS;
+			break;
+		}
+		case LINUX_SYS_statx: {
+			data[0] = -ENOSYS;
+			break;
+		}
+		case LINUX_SYS_lgetxattr: {
+			data[0] = -ENOTSUP;
+			break;
+		}
+		case LINUX_SYS_getxattr: {
+			data[0] = -ENOTSUP;
+			break;
+		}
+		case LINUX_SYS_socket: {
+			data[0] = -ENOSYS;
+			break;
+		}
+		case LINUX_SYS_lseek: {
+			data[0] = fs_lseek(data[0], data[1], data[2]);
+			break;
+		}
 		default: {
 			DIE("unknown syscall");
 			break;
@@ -411,8 +443,6 @@ static void update_patches(void)
 			PATCH_LOG("patching tls instruction", temp_str(copy_address_description(&remote.analysis.loader, addr)));
 			remote_patch(&remote.patches, &remote.analysis, addr, addr, child_addr, PATCH_TEMPLATE(breakpoint_call_handler), (uintptr_t)&tls_handler, (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), (uintptr_t)addr);
 			tls_addresses[i] = 0;
-		} else {
-			PATCH_LOG("skipping tls instruction", temp_str(copy_address_description(&remote.analysis.loader, addr)));
 		}
 	}
 #endif
