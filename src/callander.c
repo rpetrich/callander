@@ -9225,7 +9225,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (prot & PROT_EXEC) {
 						LOG("formed executable address, assuming it could be called after startup");
 						if (effects & EFFECT_ENTER_CALLS) {
-							if (decoded.decomposed.operands[1].operandClass == IMM32 || decoded.decomposed.operands[1].operandClass == IMM64) {
+							if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
 								queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
 							} else {
 								int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, NULL);
