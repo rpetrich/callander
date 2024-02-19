@@ -1645,6 +1645,17 @@ __attribute__((nonnull(1, 3)))
 static int protection_for_address(const struct loader_context *context, const void *address, struct loaded_binary **out_binary, const ElfW(Shdr) **out_section);
 static int protection_for_address_in_binary(const struct loaded_binary *binary, uintptr_t addr, const ElfW(Shdr) **out_section);
 
+static bool in_plt_section(const struct loaded_binary *binary, ins_ptr ins)
+{
+	const ElfW(Shdr) *section;
+	protection_for_address_in_binary(binary, (uintptr_t)ins, &section);
+	if (section == NULL) {
+		return false;
+	}
+	const char *section_name = &binary->sections.strings[section->sh_name];
+	return fs_strcmp(section_name, ".plt") == 0;
+}
+
 __attribute__((nonnull(1, 2, 3, 5, 6, 7))) __attribute__((always_inline))
 static inline size_t entry_offset_for_registers(struct searched_instruction_entry *table_entry, const struct registers *registers, struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr addr, struct registers *out_registers, bool *out_wrote_registers)
 {
@@ -9225,7 +9236,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (prot & PROT_EXEC) {
 						LOG("formed executable address, assuming it could be called after startup");
 						if (effects & EFFECT_ENTER_CALLS) {
-							if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
+							if (!in_plt_section(binary, ins) && (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64)) {
 								queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
 							} else {
 								int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, NULL);
@@ -10841,7 +10852,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							LOG("from", temp_str(copy_address_description(&analysis->loader, (const void *)addr)));
 							clear_match(&analysis->loader, &self.current_state, dest, ins);
 							dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
-							if (mem_size == OPERATION_SIZE_DWORD && !is_signed && address_is_call_aligned(value)) {
+							if (mem_size == OPERATION_SIZE_DWORD && !is_signed && address_is_call_aligned(value) && !in_plt_section(binary, ins)) {
 								prot = protection_for_address(&analysis->loader, (const void *)value, &binary, NULL);
 								if (prot & PROT_EXEC) {
 									LOG("found reference to executable address, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)value)));
