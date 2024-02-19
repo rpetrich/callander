@@ -12069,7 +12069,23 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (binary != NULL) {
 						if (binary->special_binary_flags & BINARY_IS_INTERPRETER) {
 							// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
-							// TODO: reimplement this giant hack for aarch64
+							if (self.entry[0] == 0xaa0103e8) {
+								if (self.entry[1] == 0xaa0203e0) {
+									if (self.entry[2] == 0xaa0303e1) {
+										if (self.entry[3] == 0xaa0403e2) {
+											if (self.entry[4] == 0xaa0503e3) {
+												if (self.entry[5] == 0xaa0603e4) {
+													if (self.entry[6] == 0xaa0703e5) {
+														self.description = NULL;
+														LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+														return EFFECT_NONE;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
 						}
 						if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
 							const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
