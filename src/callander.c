@@ -565,16 +565,20 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 }
 
 __attribute__((nonnull(1))) __attribute__((unused))
-static inline void clear_stack(struct registers *regs)
+static inline void clear_stack(struct registers *regs, __attribute__((unused)) ins_ptr ins)
 {
 	for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
 		clear_register(&regs->registers[i]);
 		regs->sources[i] = 0;
 		regs->matches[i] = 0;
+#if STORE_LAST_MODIFIED
+		regs->last_modify_ins[i] = ins;
+#endif
 	}
 	for (int i = 0; i < REGISTER_STACK_0; i++) {
 		regs->matches[i] &= ~STACK_REGISTERS;
 	}
+	regs->modified |= STACK_REGISTERS;
 }
 
 __attribute__((always_inline))
@@ -584,109 +588,24 @@ static inline bool binary_has_flags(const struct loaded_binary *binary, int flag
 }
 
 __attribute__((nonnull(1, 2, 4)))
-static inline void clear_call_dirtied_registers(const struct loader_context *loader, struct registers *regs, struct loaded_binary *binary, __attribute__((unused)) ins_ptr ins) {
-#if defined(__x86_64__)
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RAX])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_RAX));
+static inline void clear_call_dirtied_registers(const struct loader_context *loader, struct registers *regs, struct loaded_binary *binary, ins_ptr ins, register_mask modified)
+{
+	register_mask preserved = CALL_PRESERVED_REGISTERS | mask_for_register(REGISTER_SP);
+#ifdef __x86_64__
+	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
+		preserved &= ~(mask_for_register(REGISTER_RBX) | mask_for_register(REGISTER_RSI));
 	}
-	clear_register(&regs->registers[REGISTER_RAX]);
-	regs->sources[REGISTER_RAX] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RCX])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_RCX));
-	}
-	clear_register(&regs->registers[REGISTER_RCX]);
-	regs->sources[REGISTER_RCX] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RDX])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_RDX));
-	}
-	clear_register(&regs->registers[REGISTER_RDX]);
-	regs->sources[REGISTER_RDX] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RSI])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_RSI));
-	}
-	clear_register(&regs->registers[REGISTER_RSI]);
-	regs->sources[REGISTER_RSI] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RDI])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_RDI));
-	}
-	clear_register(&regs->registers[REGISTER_RDI]);
-	regs->sources[REGISTER_RDI] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_R8])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_R8));
-	}
-	clear_register(&regs->registers[REGISTER_R8]);
-	regs->sources[REGISTER_R8] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_R9])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_R9));
-	}
-	clear_register(&regs->registers[REGISTER_R9]);
-	regs->sources[REGISTER_R9] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_R10])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_R10));
-	}
-	clear_register(&regs->registers[REGISTER_R10]);
-	regs->sources[REGISTER_R10] = 0;
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_R11])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_R11));
-	}
-	clear_register(&regs->registers[REGISTER_R11]);
-	regs->sources[REGISTER_R11] = 0;
-	bool isGo = binary_has_flags(binary, BINARY_IS_GOLANG);
-	if (isGo) {
-		if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RBX])) {
-			LOG("clearing call dirtied register", name_for_register(REGISTER_RBX));
+#endif
+	modified &= ~preserved;
+	for_each_bit(modified, bit, i) {
+		if (SHOULD_LOG && register_is_partially_known(&regs->registers[i])) {
+			LOG("clearing call dirtied register", name_for_register(i));
 		}
-		clear_register(&regs->registers[REGISTER_RBX]);
-		regs->sources[REGISTER_RBX] = 0;
-		if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_RSI])) {
-			LOG("clearing call dirtied register", name_for_register(REGISTER_RSI));
-		}
-		clear_register(&regs->registers[REGISTER_RSI]);
-		regs->sources[REGISTER_RSI] = 0;
+		clear_register(&regs->registers[i]);
+		regs->sources[i] = 0;
+		clear_match(loader, regs, i, ins);
 	}
-	if (SHOULD_LOG && register_is_partially_known(&regs->registers[REGISTER_MEM])) {
-		LOG("clearing call dirtied register", name_for_register(REGISTER_MEM));
-	}
-#else
-#if defined(__aarch64__)
-	for (int r = REGISTER_X0; r <= REGISTER_X17; r++) {
-		if (SHOULD_LOG && register_is_partially_known(&regs->registers[r])) {
-			LOG("clearing call dirtied register", name_for_register(r));
-		}
-		clear_register(&regs->registers[r]);
-		regs->sources[r] = 0;
-	}
-#else
-#error "Unknown architecture"
-#endif
-#endif
-	clear_register(&regs->registers[REGISTER_MEM]);
-	regs->sources[REGISTER_MEM] = 0;
-#if defined(__x86_64__)
-	clear_match(loader, regs, REGISTER_RAX, ins);
-	clear_match(loader, regs, REGISTER_RCX, ins);
-	clear_match(loader, regs, REGISTER_RDX, ins);
-	clear_match(loader, regs, REGISTER_RSI, ins);
-	clear_match(loader, regs, REGISTER_RDI, ins);
-	clear_match(loader, regs, REGISTER_R8, ins);
-	clear_match(loader, regs, REGISTER_R9, ins);
-	clear_match(loader, regs, REGISTER_R10, ins);
-	clear_match(loader, regs, REGISTER_R11, ins);
-	if (isGo) {
-		clear_match(loader, regs, REGISTER_RBX, ins);
-		clear_match(loader, regs, REGISTER_RSI, ins);
-	}
-#else
-#if defined(__aarch64__)
-	for (int r = REGISTER_X0; r <= REGISTER_X17; r++) {
-		clear_match(loader, regs, r, ins);
-	}
-	// TODO: support golang's internal ABI on arm64
-	(void)binary;
-#else
-#error "Unknown architecture"
-#endif
-#endif
+	regs->modified |= modified;
 	clear_match(loader, regs, REGISTER_MEM, ins);
 	regs->compare_state.validity = COMPARISON_IS_INVALID;
 	regs->mem_rm = invalid_decoded_rm;
@@ -5121,6 +5040,8 @@ static void analyze_libcrypto_dlopen(struct program_state *analysis)
 	}
 }
 
+static bool is_stack_preserving_function(struct loader_context *loader, struct loaded_binary *binary, ins_ptr addr);
+
 __attribute__((always_inline))
 static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, struct loaded_binary *binary, ins_ptr ins, ins_ptr call_target, struct analysis_frame *self)
 {
@@ -5130,26 +5051,16 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 	call_state.modified = 0;
 	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
-	// pop_stack(&self->current_state, 2);
 	if (more_effects & EFFECT_PROCESSING) {
 		queue_instruction(&analysis->search.queue, call_target, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self->description);
 		more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
-		clear_call_dirtied_registers(&analysis->loader, &self->current_state, binary, ins);
-	} else {
-		register_mask caller_modified = (call_state.modified & ~STACK_REGISTERS) | (((call_state.modified & STACK_REGISTERS) >> call_push_count) & ALL_REGISTERS);
-		for_each_bit(caller_modified, bit, i) {
-			if (SHOULD_LOG && register_is_partially_known(&self->current_state.registers[i])) {
-				LOG("clearing call dirtied register", name_for_register(i));
-			}
-			clear_register(&self->current_state.registers[i]);
-			self->current_state.sources[i] = 0;
-			clear_match(&analysis->loader, &self->current_state, i, ins);
-		}
-		self->current_state.modified |= call_state.modified;
-		clear_match(&analysis->loader, &self->current_state, REGISTER_MEM, ins);
-		self->current_state.compare_state.validity = COMPARISON_IS_INVALID;
-		self->current_state.compare_state.mem_rm = invalid_decoded_rm;
+		call_state.modified = ALL_REGISTERS;
 	}
+	register_mask modified = (call_state.modified & ~STACK_REGISTERS) | (((call_state.modified & STACK_REGISTERS) >> call_push_count) & ALL_REGISTERS);
+	if (is_stack_preserving_function(&analysis->loader, binary, call_target)) {
+		modified &= ~STACK_REGISTERS;
+	}
+	clear_call_dirtied_registers(&analysis->loader, &self->current_state, binary, ins, modified);
 	return more_effects;
 }
 
@@ -6751,7 +6662,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						clear_match(&analysis->loader, &self.current_state, rm, ins);
 						// TODO: check why this happens only in golang
 						// if (self.current_state.stack_address_taken == STACK_ADDRESS_TAKEN_GOLANG) {
-						// 	clear_stack(&self.current_state);
+						// 	clear_stack(&self.current_state, ins);
 						// }
 						break;
 					}
@@ -6768,7 +6679,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						clear_match(&analysis->loader, &self.current_state, rm, ins);
 						// TODO: check why this happens only in golang
 						// if (self.current_state.stack_address_taken == STACK_ADDRESS_TAKEN_GOLANG) {
-						// 	clear_stack(&self.current_state);
+						// 	clear_stack(&self.current_state, ins);
 						// }
 						break;
 					}
@@ -8786,19 +8697,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				function_effects more_effects = EFFECT_NONE;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= DEFAULT_EFFECTS;
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else if ((effects & EFFECT_ENTRY_POINT) && (ins_ptr)dest == next_ins(ins, &decoded)) {
 					LOG("calling self pattern in entrypoint");
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest;
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else {
 					self.description = "call";
 					more_effects = analyze_call(analysis, required_effects, binary, ins, (ins_ptr)dest, &self);
@@ -9075,15 +8986,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
 								// effects |= DEFAULT_EFFECTS;
-								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 							} else if ((protection_for_address(&analysis->loader, (const void *)address.value, &call_binary, NULL) & PROT_EXEC) == 0) {
 								encountered_non_executable_address(&analysis->loader, "call*", &self, (ins_ptr)address.value);
 								LOG("call* to non-executable address, assuming all effects", address.value);
-								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 							} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 								LOG("skipping call when searching for address loads");
 								analysis->skipped_call = (ins_ptr)address.value;
-								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 							} else {
 								self.description = "indirect call";
 								function_effects more_effects = analyze_call(analysis, required_effects, call_binary, ins, (ins_ptr)address.value, &self);
@@ -9108,18 +9019,18 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
 								// effects |= DEFAULT_EFFECTS;
-								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 							} else if (is_null) {
 								LOG("indirecting through null, assuming read of data that is populated at runtime");
-								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 							} else if ((protection_for_address(&analysis->loader, (const void *)address.state.value, &call_address_binary, NULL) & PROT_READ) == 0) {
 								LOG("call* indirect to known, but unreadable address", address.state.value);
-								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 							} else {
 								ins_ptr dest = (ins_ptr)(uintptr_t)*(const ins_uint64 *)address.state.value;
 								LOG("dest is", (uintptr_t)dest);
 								if (dest == NULL) {
-									clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+									clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 								} else {
 									struct loaded_binary *call_binary;
 									if ((protection_for_address(&analysis->loader, dest, &call_binary, NULL) & PROT_EXEC) == 0) {
@@ -9127,11 +9038,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										encountered_non_executable_address(&analysis->loader, "call*", &self, dest);
 										LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
 										effects |= DEFAULT_EFFECTS;
-										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 									} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 										LOG("skipping call when searching for address loads");
 										analysis->skipped_call = dest;
-										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
 									} else {
 										self.description = "indirect call";
 										function_effects more_effects = analyze_call(analysis, required_effects, call_binary, ins, dest, &self);
@@ -9150,13 +9061,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 						}
 						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING, 0);
-						clear_stack(&self.current_state);
+						clear_stack(&self.current_state, ins);
 						break;
 					case 3: // callf
 						clear_comparison_state(&self.current_state);
 						LOG("found unsupported call*");
-						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
-						clear_stack(&self.current_state);
+						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
+						clear_stack(&self.current_state, ins);
 						break;
 					case 4: { // jmp
 						// found jmp*
@@ -9661,16 +9572,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				function_effects more_effects = DEFAULT_EFFECTS;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= DEFAULT_EFFECTS;
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest;
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else {
 					self.description = "bl";
 					more_effects = analyze_call(analysis, required_effects, binary, ins, dest, &self);
@@ -9702,8 +9613,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("target is stack-preserving function", temp_str(copy_address_description(&analysis->loader, ins)));
 						self.current_state.stack_address_taken = NULL;
 						goto skip_stack_clear;
+					} else {
+						pending_stack_clear = STACK_REGISTERS;
 					}
-					pending_stack_clear = STACK_REGISTERS;
 				}
 				break;
 			}
@@ -9726,22 +9638,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("address isn't exactly known, assuming all effects");
 					// could have any effect
 					// effects |= DEFAULT_EFFECTS;
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest_state.value;
-					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else {
 					ins_ptr dest = (ins_ptr)dest_state.value;
 					LOG("found blr", temp_str(copy_function_call_description(&analysis->loader, dest, self.current_state)));
 					if (dest == 0) {
 						LOG("found call to NULL, assuming all effects");
-						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 					} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 						encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 						LOG("found call to non-executable address, assuming all effects");
 						effects |= DEFAULT_EFFECTS;
-						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
+						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 					} else {
 						self.description = "bl";
 						more_effects = analyze_call(analysis, required_effects, binary, ins, dest, &self);
