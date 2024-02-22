@@ -12508,6 +12508,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_register(&self.current_state.registers[i]);
 					self.current_state.sources[i] = 0;
 					self.current_state.matches[i] = 0;
+#if STORE_LAST_MODIFIED
+					self.current_state.last_modify_ins[i] = ins;
+#endif
 				}
 			}
 			for (int i = 0; i < REGISTER_STACK_0; i++) {
