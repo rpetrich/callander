@@ -249,12 +249,14 @@ struct loader_context {
 	bool searching_libcrypto_dlopen:1;
 	bool searching_setxid:1;
 	bool searching_setxid_sighandler:1;
+	bool searching_do_setxid:1;
 	ins_ptr gconv_dlopen;
 	ins_ptr libcrypto_dlopen;
 	ins_ptr setxid_syscall;
 	ins_ptr setxid_syscall_entry;
 	ins_ptr setxid_sighandler_syscall;
 	ins_ptr setxid_sighandler_syscall_entry;
+	ins_ptr do_setxid;
 	struct loaded_binary_stub *sorted_binaries;
 	int binary_count;
 	const char *sysroot;

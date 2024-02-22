@@ -2355,14 +2355,16 @@ static void handle_forkAndExecInChild1(struct program_state *analysis, ins_ptr i
 	add_blocked_symbol(&analysis->known_symbols, "syscall.forkAndExecInChild1", 0, true)->value = ins;
 }
 
-static void handle_musl_setxid(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+struct musl_setxid_wrapper {
+	const char *name;
+	int nr;
+	int argc;
+};
+
+static void handle_musl_setxid(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, void *data)
 {
-	LOG("encountered musl __setxid call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
+	LOG("encountered musl __setxid call", temp_str(copy_address_description(&analysis->loader, ins)));
 	if (analysis->loader.setxid_sighandler_syscall != NULL) {
-		int arg0index = sysv_argument_abi_register_indexes[0];
-		if (!register_is_exactly_known(&state->registers[arg0index])) {
-			DIE("musl __setxid with unknown nr argument", temp_str(copy_call_trace_description(&analysis->loader, caller)));
-		}
 		struct analysis_frame self = {
 			.address = analysis->loader.setxid_sighandler_syscall,
 			.description = "syscall",
@@ -2372,11 +2374,33 @@ static void handle_musl_setxid(struct program_state *analysis, __attribute__((un
 			.token = { 0 },
 			.current_state = empty_registers,
 		};
-		self.current_state.registers[REGISTER_SYSCALL_NR] = caller->current_state.registers[arg0index];
-		for (int i = 0; i < 3; i++) {
-			self.current_state.registers[syscall_argument_abi_register_indexes[i]] = caller->current_state.registers[sysv_argument_abi_register_indexes[i+1]];
+		const struct musl_setxid_wrapper *wrapper = data;
+		uintptr_t nr;
+		if (wrapper == NULL) {
+			int arg0index = sysv_argument_abi_register_indexes[0];
+			if (!register_is_exactly_known(&state->registers[arg0index])) {
+				DIE("musl __setxid with unknown nr argument", temp_str(copy_call_trace_description(&analysis->loader, caller)));
+			}
+			nr = caller->current_state.registers[arg0index].value;
+			for (int i = 0; i < 3; i++) {
+				self.current_state.registers[syscall_argument_abi_register_indexes[i]] = caller->current_state.registers[sysv_argument_abi_register_indexes[i+1]];
+			}
+		} else {
+			nr = wrapper->nr;
+			if (wrapper->argc < 0) {
+				// setegid/seteuid
+				set_register(&self.current_state.registers[syscall_argument_abi_register_indexes[0]], -1);
+				self.current_state.registers[syscall_argument_abi_register_indexes[1]] = caller->current_state.registers[sysv_argument_abi_register_indexes[0]];
+				set_register(&self.current_state.registers[syscall_argument_abi_register_indexes[2]], -1);
+			} else {
+				// all other setxid wrappers
+				for (int i = 0; i < wrapper->argc; i++) {
+					self.current_state.registers[syscall_argument_abi_register_indexes[i]] = caller->current_state.registers[sysv_argument_abi_register_indexes[i]];
+				}
+			}
 		}
-		record_syscall(analysis, caller->current_state.registers[arg0index].value, self, effects);
+		set_register(&self.current_state.registers[REGISTER_SYSCALL_NR], nr);
+		record_syscall(analysis, wrapper->nr, self, effects);
 	}
 }
 
@@ -3300,8 +3324,19 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		update_known_function(analysis, new_binary, "_dl_make_stack_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_INTERPRETER) {
-		// temporary workaround for musl
+		// find the syscall invocation inside musl's do_setxid call
 		ins_ptr do_setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "do_setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
+		if (do_setxid == NULL) {
+			ins_ptr setuid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "setuid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
+			if (setuid != NULL) {
+				struct registers registers = empty_registers;
+				struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "setuid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+				analysis->loader.searching_do_setxid = true;
+				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, setuid, &new_caller);
+				analysis->loader.searching_do_setxid = false;
+				do_setxid = analysis->loader.do_setxid;
+			}
+		}
 		if (do_setxid != NULL) {
 			struct registers registers = empty_registers;
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "do_setxid", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
@@ -3309,9 +3344,35 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, do_setxid, &new_caller);
 			analysis->loader.searching_setxid_sighandler = false;
 		}
+		// translate calls to musl's setxid wrapper functions into syscalls from inside do_setxid
 		ins_ptr setxid = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__setxid", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 		if (setxid != NULL) {
 			find_and_add_callback(analysis, setxid, mask_for_register(sysv_argument_abi_register_indexes[0]), mask_for_register(sysv_argument_abi_register_indexes[0]), mask_for_register(sysv_argument_abi_register_indexes[0]), EFFECT_NONE, handle_musl_setxid, NULL);
+		} else {
+			static const struct musl_setxid_wrapper wrappers[] = {
+				{"setegid", SYS_setresgid, -1},
+				{"seteuid", SYS_setresuid, -1},
+				{"setgid", SYS_setgid, 1},
+				{"setregid", SYS_setregid, 2},
+				{"setresgid", SYS_setresgid, 3},
+				{"setresuid", SYS_setresuid, 3},
+				{"setreuid", SYS_setreuid, 2},
+				{"setuid", SYS_setuid, 1},
+			};
+			for (size_t i = 0; i < sizeof(wrappers) / sizeof(wrappers[0]); i++) {
+				ins_ptr wrapper = resolve_binary_loaded_symbol(&analysis->loader, new_binary, wrappers[i].name, NULL, INTERNAL_COMMON_SYMBOL, NULL);
+				if (wrapper != NULL) {
+					register_mask mask = 0;
+					if (wrappers[i].argc < 0) {
+						mask = mask_for_register(sysv_argument_abi_register_indexes[0]);
+					} else {
+						for (int i = 0; i < wrappers[i].argc; i++) {
+							mask |= mask_for_register(sysv_argument_abi_register_indexes[i]);
+						}
+					}
+					find_and_add_callback(analysis, wrapper, mask, 0, 0, EFFECT_NONE, handle_musl_setxid, (void *)&wrappers[i]);
+				}
+			}
 		}
 		update_known_function(analysis, new_binary, "cancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
@@ -9283,7 +9344,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("formed executable address, assuming it could be called after startup");
 						if (effects & EFFECT_ENTER_CALLS) {
 							if (!in_plt_section(binary, ins) && (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64)) {
-								queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
+								if (analysis->loader.searching_do_setxid && analysis->loader.do_setxid == NULL) {
+									analysis->loader.do_setxid = address;
+								} else {
+									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
+								}
 							} else {
 								int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &dest_state, NULL);
 								int right = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &dest_state, NULL);
