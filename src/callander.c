@@ -9657,11 +9657,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						effects |= DEFAULT_EFFECTS;
 						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 					} else {
-						self.description = "bl";
+						self.description = "blr";
 						more_effects = analyze_call(analysis, required_effects, binary, ins, dest, &self);
 						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 						LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
-						LOG("resuming from bl", temp_str(copy_address_description(&analysis->loader, ins)));
+						LOG("resuming from blr", temp_str(copy_address_description(&analysis->loader, ins)));
 						if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 							LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
 							push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
