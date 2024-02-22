@@ -5698,10 +5698,11 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 	if (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
 		const char *name = find_any_symbol_name_by_address(loader, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL);
 		if (name != NULL) {
-			if (fs_strcmp(name, "read_int") == 0) {
+			if (fs_strcmp(name, "read_int") == 0 || fs_strcmp(name, "__printf_buffer_write") == 0 || fs_strcmp(name, "__pthread_enable_asynccancel") == 0 || fs_strcmp(name, "__libc_enable_asynccancel") == 0) {
 				return true;
 			}
 		}
+#ifdef __x86_64__
 		// check for __pthread_enable_asynccancel
 		struct decoded_ins ins;
 		if (!decode_ins(addr, &ins)) {
@@ -5723,6 +5724,7 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 			LOG("found pthread stack preserving function", temp_str(copy_address_description(loader, addr)));
 			return true;
 		}
+#endif
 		return false;
 	}
 	return false;
