@@ -45,8 +45,6 @@
 #define SKIP_SHIFT
 #endif
 
-#define CLEAR_PROCESSED_ENTRIES
-
 __attribute__((always_inline))
 static inline register_mask mask_for_conditional_register(bool conditional, enum register_index index)
 {
@@ -1965,19 +1963,6 @@ retry:
 	}
 }
 
-static inline bool validate_offset(__attribute__((unused)) struct searched_instruction_data *data, __attribute__((unused)) int entry_offset)
-{
-#ifdef CLEAR_PROCESSED_ENTRIES
-	if (LIKELY(data->end_offset >= (uint32_t)entry_offset + sizeof(struct searched_instruction_data_entry))) {
-		struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
-		return LIKELY(data->end_offset >= (uint32_t)entry_offset + sizeof(struct searched_instruction_data_entry) + entry->used_count * sizeof(entry->registers[0]));
-	}
-	return false;
-#else
-	return true;
-#endif
-}
-
 __attribute__((always_inline))
 __attribute__((nonnull(1, 2, 3, 5)))
 static inline function_effects *get_or_populate_effects(struct program_state *analysis, ins_ptr addr, struct registers *registers, function_effects required_effects, struct effect_token *token)
@@ -1987,9 +1972,6 @@ static inline function_effects *get_or_populate_effects(struct program_state *an
 	bool wrote_registers;
 	int entry_offset = entry_offset_for_registers(table_entry, registers, analysis, required_effects, addr, registers, &wrote_registers);
 	token->entry_offset = entry_offset;
-	if (!validate_offset(table_entry->data, entry_offset)) {
-		return &table_entry->data->sticky_effects;
-	}
 	struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 	token->entry_generation = entry->generation;
 	return &entry->effects;
@@ -2025,27 +2007,10 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 {
 	struct searched_instruction_entry *table_entry = table_entry_for_token(search, addr, token);
 	uint32_t entry_offset = token->entry_offset;
-	if (!validate_offset(table_entry->data, entry_offset)) {
-		// deleted by hack for lower memory usage!
-		return;
-	}
 	struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 	if (token->entry_generation == entry->generation) {
 		entry->effects = new_effects;
 		entry->modified |= modified;
-#ifdef CLEAR_PROCESSED_ENTRIES
-		// hack for lower memory usage
-		if (LIKELY((new_effects & EFFECT_PROCESSING) == 0)) {
-			if (UNLIKELY(table_entry->data->relevant_registers == 0)) {
-				size_t size = sizeof_searched_instruction_data_entry(entry);
-				if (table_entry->data->end_offset == entry_offset + size) {
-					table_entry->data->sticky_effects = entry->effects;
-					table_entry->data->end_offset = entry_offset;
-					table_entry->data = realloc(table_entry->data, sizeof(*table_entry->data) + entry_offset);
-				}
-			}
-		}
-#endif
 	} else {
 		LOG("skipping setting effects because the generation changed");
 	}
@@ -2085,10 +2050,6 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 	data->preserved_registers |= preserved_registers;
 	data->preserved_and_kept_registers = result.preserved_and_kept_registers | preserved_and_kept_registers;
 	int entry_offset = token->entry_offset;
-	if (!validate_offset(data, entry_offset)) {
-		// entry was deleted!
-		return result;
-	}
 	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 	if (SHOULD_LOG) {
 		ERROR_NOPREFIX("existing values (index)", (intptr_t)token->entry_offset);
@@ -5876,7 +5837,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 	struct analysis_frame self;
 	function_effects effects;
 	{
-		function_effects *effects_entry;
 		struct searched_instructions *search = &analysis->search;
 		struct searched_instruction_entry *table_entry = find_searched_instruction_table_entry(search, ins, &self.token);
 		bool wrote_registers = false;
@@ -5901,27 +5861,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				table_entry = find_searched_instruction_table_entry(search, ins, &self.token);
 			}
 		}
-		if (!validate_offset(table_entry->data, entry_offset)) {
-			effects_entry = &table_entry->data->sticky_effects;
-		} else {
-			// gdb command to get the data entry: p *(struct searched_instruction_data_entry *)((uintptr_t)analysis->search.table[self.token.index].data->entries + self.token.entry_offset)
-			struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
-			self.token.entry_generation = entry->generation;
-			if (entry->effects & EFFECT_PROCESSING) {
-				if (!wrote_registers) {
-					wrote_registers = true;
-					self.current_state = *entry_state;
-				}
-				if (!registers_are_subset_of_entry_registers(self.current_state.registers, entry, ~relevant_registers)) {
-					LOG("queuing because subset of existing processing entry, but expanded set of registers are not subset");
-					dump_nonempty_registers(&analysis->loader, &self.current_state, ~relevant_registers);
-					queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, &self.current_state, ins, "in progress");
-				}
+		// gdb command to get the data entry: p *(struct searched_instruction_data_entry *)((uintptr_t)analysis->search.table[self.token.index].data->entries + self.token.entry_offset)
+		struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
+		self.token.entry_generation = entry->generation;
+		if (entry->effects & EFFECT_PROCESSING) {
+			if (!wrote_registers) {
+				wrote_registers = true;
+				self.current_state = *entry_state;
 			}
-			entry_state->modified |= entry->modified;
-			effects_entry = &entry->effects;
+			if (!registers_are_subset_of_entry_registers(self.current_state.registers, entry, ~relevant_registers)) {
+				LOG("queuing because subset of existing processing entry, but expanded set of registers are not subset");
+				dump_nonempty_registers(&analysis->loader, &self.current_state, ~relevant_registers);
+				queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, &self.current_state, ins, "in progress");
+			}
 		}
-		effects = *effects_entry;
+		entry_state->modified |= entry->modified;
+		effects = entry->effects;
 		if ((effects & required_effects) == required_effects) {
 			LOG("skip", temp_str(copy_function_call_description(&analysis->loader, ins, *entry_state)));
 			LOG("has effects:");
@@ -5935,10 +5890,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		}
 		if (UNLIKELY(effects & EFFECT_STICKY_EXITS)) {
 			effects = required_effects | EFFECT_EXITS | EFFECT_STICKY_EXITS;
-			*effects_entry = effects;
+			entry->effects = effects;
 		} else {
 			effects = required_effects;
-			*effects_entry = effects/* | EFFECT_RETURNS*/ | EFFECT_PROCESSING;
+			entry->effects = effects/* | EFFECT_RETURNS*/ | EFFECT_PROCESSING;
 		}
 	};
 	self.entry_state = entry_state;
