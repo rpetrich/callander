@@ -4914,7 +4914,7 @@ static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader,
 				case '2':
 				case '4':
 					if (fs_strncmp(jumps_text, "_jumps", sizeof("_jumps")-1) == 0) {
-						return 30;
+						return 32;
 					}
 					break;
 			}
