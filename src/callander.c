@@ -10643,7 +10643,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("value is unknown", temp_str(copy_register_state_description(&analysis->loader, source_state)));
 						self.current_state.sources[dest] = 0;
 					}
-					dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+					dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest) | mask_for_register(source));
 					pending_stack_clear &= ~mask_for_register(dest);
 					goto skip_stack_clear;
 				}
