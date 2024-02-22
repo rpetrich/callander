@@ -311,6 +311,7 @@ struct registers {
 	struct register_state registers[REGISTER_COUNT];
 	register_mask sources[REGISTER_COUNT];
 	register_mask matches[REGISTER_COUNT];
+	register_mask modified;
 #if STORE_LAST_MODIFIED
 	ins_ptr last_modify_ins[REGISTER_COUNT];
 #endif
@@ -513,11 +514,11 @@ enum {
 };
 
 __attribute__((nonnull(1, 3, 4, 5)))
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 3, 4, 5)))
-static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller)
+static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller)
 {
 	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS);
 }

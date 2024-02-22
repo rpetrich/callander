@@ -385,6 +385,7 @@ const struct registers empty_registers = {
 	},
 	.sources = { 0 },
 	.matches = { 0 },
+	.modified = 0,
 #if STORE_LAST_MODIFIED
 	.last_modify_ins = { 0 },
 #endif
@@ -420,6 +421,7 @@ static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm
 __attribute__((nonnull(1, 3)))
 static void register_changed(struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
+	regs->modified |= mask_for_register(register_index);
 #if STORE_LAST_MODIFIED
 	regs->last_modify_ins[register_index] = ins;
 #endif
@@ -443,6 +445,7 @@ static void register_changed(struct registers *regs, int register_index, __attri
 				}
 			}
 			clear_register(&regs->registers[REGISTER_MEM]);
+			regs->modified |= mask_for_register(REGISTER_MEM);
 #if STORE_LAST_MODIFIED
 			regs->last_modify_ins[REGISTER_MEM] = ins;
 #endif
@@ -677,6 +680,7 @@ __attribute__((nonnull(1)))
 static inline void push_stack(struct registers *regs, int push_count)
 {
 	LOG("push stack", push_count);
+	regs->modified |= STACK_REGISTERS;
 	if (push_count > REGISTER_COUNT - REGISTER_STACK_0) {
 		push_count = REGISTER_COUNT - REGISTER_STACK_0;
 	} else {
@@ -709,6 +713,7 @@ __attribute__((nonnull(1)))
 static inline void pop_stack(struct registers *regs, int pop_count)
 {
 	LOG("pop stack", pop_count);
+	regs->modified |= STACK_REGISTERS;
 	for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
 		if (i + pop_count >= REGISTER_COUNT) {
 			clear_register(&regs->registers[i]);
@@ -798,6 +803,7 @@ static inline struct registers copy_call_argument_registers(const struct loader_
 			result.matches[i] &= mask;
 		}
 	}
+	result.modified |= mask_for_register(REGISTER_MEM);
 #if STORE_LAST_MODIFIED
 	result.last_modify_ins[REGISTER_MEM] = ins;
 #endif
@@ -1297,6 +1303,7 @@ static uintptr_t find_lookup_table_base_address(const struct lookup_base_address
 
 struct searched_instruction_data_entry {
 	register_mask used_registers;
+	register_mask modified;
 	function_effects effects;
 	uint8_t widen_count[REGISTER_COUNT];
 	uint8_t used_count;
@@ -1613,6 +1620,7 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 	entry->used_count = used_count;
 	entry->generation = 0;
 	entry->used_registers = used_registers;
+	entry->modified = registers->modified;
 	int j = 0;
 	for_each_bit(used_registers, bit, i) {
 		entry->registers[j++] = registers->registers[i];
@@ -1693,6 +1701,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
 			}
+			out_registers->modified = registers->modified;
 			out_registers->mem_rm = registers->mem_rm;
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
@@ -1754,6 +1763,7 @@ static inline size_t entry_offset_for_registers(struct searched_instruction_entr
 			for (int i = 0; i < REGISTER_COUNT; i++) {
 				out_registers->matches[i] = registers->matches[i];
 			}
+			out_registers->modified = registers->modified;
 			out_registers->mem_rm = registers->mem_rm;
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
@@ -2011,7 +2021,7 @@ static inline struct searched_instruction_entry *table_entry_for_token(struct se
 }
 
 __attribute__((always_inline))
-static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects)
+static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects, register_mask modified)
 {
 	struct searched_instruction_entry *table_entry = table_entry_for_token(search, addr, token);
 	uint32_t entry_offset = token->entry_offset;
@@ -2022,6 +2032,7 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 	struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 	if (token->entry_generation == entry->generation) {
 		entry->effects = new_effects;
+		entry->modified |= modified;
 #ifdef CLEAR_PROCESSED_ENTRIES
 		// hack for lower memory usage
 		if (LIKELY((new_effects & EFFECT_PROCESSING) == 0)) {
@@ -2101,6 +2112,7 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 			copy.last_modify_ins[i] = registers->last_modify_ins[i];
 #endif
 		}
+		copy.modified = registers->modified;
 		copy.mem_rm = registers->mem_rm;
 		copy.compare_state = registers->compare_state;
 		copy.stack_address_taken = registers->stack_address_taken;
@@ -2339,7 +2351,7 @@ static void handle_forkAndExecInChild1(struct program_state *analysis, ins_ptr i
 		ERROR_FLUSH();
 		fs_exit(1);
 	}
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_EXITS | EFFECT_ENTER_CALLS, 0);
 	add_blocked_symbol(&analysis->known_symbols, "syscall.forkAndExecInChild1", 0, true)->value = ins;
 }
 
@@ -2381,7 +2393,7 @@ void analyze_function_symbols(struct program_state *analysis, const struct loade
 			if (protection_for_address_in_binary(binary, (uintptr_t)ins, NULL) & PROT_EXEC) {
 				LOG("symbol contains executable code that might be dlsym'ed", symbol_name(symbols, symbol));
 				struct analysis_frame new_caller = { .address = ins, .description = symbol_name(symbols, symbol), .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, };
-				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, ins, &new_caller);
+				analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &new_caller.current_state, ins, &new_caller);
 			} else {
 				LOG("symbol is not executable", symbol_name(symbols, symbol));
 			}
@@ -2632,7 +2644,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 		.entry_state = state,
 		.token = *token,
 	};
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_RETURNS | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_RETURNS | EFFECT_ENTER_CALLS, 0);
 	*token = self.token;
 	if (analysis->loader.loaded_gconv_libraries) {
 		return;
@@ -2814,7 +2826,7 @@ static void handle_nss_usage(struct program_state *analysis, ins_ptr ins, __attr
 		.entry_state = state,
 		.token = *token,
 	};
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTER_CALLS, 0);
 	*token = self.token;
 }
 
@@ -2992,7 +3004,7 @@ static void handle_libseccomp_syscall(struct program_state *analysis, ins_ptr in
 		self.current_state.sources[first_arg] = 0;
 	}
 	function_effects effects = analyze_function(analysis, required_effects, &self.current_state, syscall_function, &self);
-	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, 0);
 }
 
 static void handle_libcap_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects required_effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, void *syscall_function)
@@ -3017,7 +3029,7 @@ static void handle_libcap_syscall(struct program_state *analysis, ins_ptr ins, _
 		set_register(&new_state.registers[sysv_argument_abi_register_indexes[0]], LINUX_SYS_chroot);
 		effects |= analyze_function(analysis, required_effects, &new_state, syscall_function, caller);
 	}
-	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, 0);
 }
 
 static void handle_ruby_syscall(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *syscall_function)
@@ -3025,7 +3037,7 @@ static void handle_ruby_syscall(struct program_state *analysis, ins_ptr ins, __a
 	LOG("encountered ruby syscall function call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	if (!register_is_partially_known_32bit(&state->registers[sysv_argument_abi_register_indexes[0]])) {
 		add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", 0, false)->value = caller->address;
-		set_effects(&analysis->search, ins, token, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
+		set_effects(&analysis->search, ins, token, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS, 0);
 	}
 }
 
@@ -3033,13 +3045,13 @@ static void handle_golang_unix_sched_affinity(struct program_state *analysis, in
 {
 	LOG("encountered unix.schedAffinity call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	// skip affinity
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS, 0);
 	LOG("skipping unix.schedAffinity");
 }
 
 static void handle_openssl_dso_load(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
+	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS, 0);
 	load_openssl_modules(analysis, caller);
 }
 
@@ -3140,7 +3152,7 @@ static void ignored_load_callback(struct program_state *analysis, ins_ptr addres
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 2, 3, 4)))
-static inline function_effects analyze_function_for_ignored_load(struct program_state *analysis, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, size_t ignored_load_size)
+static inline function_effects analyze_function_for_ignored_load(struct program_state *analysis, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, size_t ignored_load_size)
 {
 	address_loaded_callback old_callback = analysis->address_loaded;
 	analysis->address_loaded = ignored_load_callback;
@@ -5070,16 +5082,33 @@ static void analyze_libcrypto_dlopen(struct program_state *analysis)
 }
 
 __attribute__((always_inline))
-static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, ins_ptr ins, ins_ptr call_target, struct analysis_frame *self)
+static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, struct loaded_binary *binary, ins_ptr ins, ins_ptr call_target, struct analysis_frame *self)
 {
 	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
-	push_stack(&call_state, 2);
+	int call_push_count = 2;
+	push_stack(&call_state, call_push_count);
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
+	call_state.modified = 0;
 	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
 	// pop_stack(&self->current_state, 2);
 	if (more_effects & EFFECT_PROCESSING) {
 		queue_instruction(&analysis->search.queue, call_target, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self->description);
 		more_effects = (more_effects & ~EFFECT_PROCESSING) | EFFECT_RETURNS;
+		clear_call_dirtied_registers(&analysis->loader, &self->current_state, binary, ins);
+	} else {
+		register_mask caller_modified = (call_state.modified & ~STACK_REGISTERS) | (((call_state.modified & STACK_REGISTERS) >> call_push_count) & ALL_REGISTERS);
+		for_each_bit(caller_modified, bit, i) {
+			if (SHOULD_LOG && register_is_partially_known(&self->current_state.registers[i])) {
+				LOG("clearing call dirtied register", name_for_register(i));
+			}
+			clear_register(&self->current_state.registers[i]);
+			self->current_state.sources[i] = 0;
+			clear_match(&analysis->loader, &self->current_state, i, ins);
+		}
+		self->current_state.modified |= call_state.modified;
+		clear_match(&analysis->loader, &self->current_state, REGISTER_MEM, ins);
+		self->current_state.compare_state.validity = COMPARISON_IS_INVALID;
+		self->current_state.compare_state.mem_rm = invalid_decoded_rm;
 	}
 	return more_effects;
 }
@@ -5515,7 +5544,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			for_each_bit(target_registers, bit, r) {
 				self->current_state.registers[r] = continue_state;
 			}
-			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING);
+			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING, 0);
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
 			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, ALLOW_JUMPS_INTO_THE_ABYSS);
 			LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
@@ -5545,7 +5574,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			for_each_bit(target_registers, bit, r) {
 				self->current_state.registers[r] = continue_state;
 			}
-			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING);
+			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING, 0);
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
 			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, ALLOW_JUMPS_INTO_THE_ABYSS);
 			LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
@@ -5776,7 +5805,7 @@ static void set_comparison_state(__attribute__((unused)) struct loader_context *
 	LOG("with", temp_str(copy_register_state_description(loader, state->compare_state.value)));
 }
 
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, const struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags)
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags)
 {
 	struct decoded_ins decoded;
 	ins = skip_prefix_jumps(analysis, ins, &decoded);
@@ -5828,6 +5857,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, &self.current_state, ins, "in progress");
 				}
 			}
+			entry_state->modified |= entry->modified;
 			effects_entry = &entry->effects;
 		}
 		effects = *effects_entry;
@@ -5901,7 +5931,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				} else {
 					self.description = "jump";
 					if (ins == self.entry || (ins == &self.entry[4] && is_landing_pad_ins_decode(self.entry))) {
-						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE);
+						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE, 0);
 					}
 					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, flags | ALLOW_JUMPS_INTO_THE_ABYSS) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -8460,9 +8490,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct loaded_binary *binary;
 				if (protection_for_address(&analysis->loader, address, &binary, NULL) & PROT_EXEC) {
 					LOG("mov is to executable address, assuming it could be called after startup");
-					queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
-					// self.description = "mov";
-					// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)address, &self);
+					if (effects & EFFECT_ENTER_CALLS) {
+						queue_instruction(&analysis->search.queue, address, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
+						// self.description = "mov";
+						// analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)address, &self);
+					}
 				}
 				goto skip_stack_clear;
 			}
@@ -8573,8 +8605,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &empty_registers, (ins_ptr)state.value, &self);
 							}
 						} else {
-							LOG("mov is to executable address, assuming it could be called after startup");
-							queue_instruction(&analysis->search.queue, (ins_ptr)state.value, required_effects | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
+							if (effects &EFFECT_ENTER_CALLS) {
+								LOG("mov is to executable address, assuming it could be called after startup");
+								queue_instruction(&analysis->search.queue, (ins_ptr)state.value, required_effects | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
+							}
 						}
 					} else {
 						LOG("mov is to non-executable value, assuming it is data");
@@ -8718,18 +8752,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				function_effects more_effects = EFFECT_NONE;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= DEFAULT_EFFECTS;
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else if ((effects & EFFECT_ENTRY_POINT) && (ins_ptr)dest == next_ins(ins, &decoded)) {
 					LOG("calling self pattern in entrypoint");
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest;
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else {
 					self.description = "call";
-					more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)dest, &self);
+					more_effects = analyze_call(analysis, required_effects, binary, ins, (ins_ptr)dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					LOG("resuming from call", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -8751,7 +8789,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 				}
-				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				pending_stack_clear = STACK_REGISTERS;
 				if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
 					// we should be able to track dirtied slots, but for now assume golang preserves
@@ -9004,15 +9041,18 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
 								// effects |= DEFAULT_EFFECTS;
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 							} else if ((protection_for_address(&analysis->loader, (const void *)address.value, &call_binary, NULL) & PROT_EXEC) == 0) {
 								encountered_non_executable_address(&analysis->loader, "call*", &self, (ins_ptr)address.value);
 								LOG("call* to non-executable address, assuming all effects", address.value);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 							} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 								LOG("skipping call when searching for address loads");
 								analysis->skipped_call = (ins_ptr)address.value;
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 							} else {
 								self.description = "indirect call";
-								function_effects more_effects = analyze_call(analysis, required_effects, ins, (ins_ptr)address.value, &self);
+								function_effects more_effects = analyze_call(analysis, required_effects, call_binary, ins, (ins_ptr)address.value, &self);
 								effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 								LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 								LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -9034,26 +9074,33 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("address isn't exactly known, assuming all effects");
 								// could have any effect
 								// effects |= DEFAULT_EFFECTS;
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 							} else if (is_null) {
 								LOG("indirecting through null, assuming read of data that is populated at runtime");
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 							} else if ((protection_for_address(&analysis->loader, (const void *)address.state.value, &call_address_binary, NULL) & PROT_READ) == 0) {
 								LOG("call* indirect to known, but unreadable address", address.state.value);
+								clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 							} else {
 								ins_ptr dest = (ins_ptr)(uintptr_t)*(const ins_uint64 *)address.state.value;
 								LOG("dest is", (uintptr_t)dest);
-								if (dest) {
+								if (dest == NULL) {
+									clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+								} else {
 									struct loaded_binary *call_binary;
 									if ((protection_for_address(&analysis->loader, dest, &call_binary, NULL) & PROT_EXEC) == 0) {
 										dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
 										encountered_non_executable_address(&analysis->loader, "call*", &self, dest);
 										LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
 										effects |= DEFAULT_EFFECTS;
+										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 									} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 										LOG("skipping call when searching for address loads");
 										analysis->skipped_call = dest;
+										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
 									} else {
 										self.description = "indirect call";
-										function_effects more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
+										function_effects more_effects = analyze_call(analysis, required_effects, call_binary, ins, dest, &self);
 										effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 										LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 										LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -9068,8 +9115,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING);
-						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins);
+						// set_effects(&analysis->search, self.entry, &self.token, effects | EFFECT_PROCESSING, 0);
 						clear_stack(&self.current_state);
 						break;
 					case 3: // callf
@@ -9269,7 +9315,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
 										self.description = "load address";
 										struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
-										analyze_function(analysis, effects, &empty_registers, (ins_ptr)data, &new_caller);
+										analyze_function(analysis, effects, &new_caller.current_state, (ins_ptr)data, &new_caller);
 									}
 								}
 								if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
@@ -9554,19 +9600,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						analysis->main = self.current_state.registers[main_reg].value;
 						LOG("bl in init, assuming arg 0 is the main function");
 						self.description = "main";
-						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)self.current_state.registers[main_reg].value, &self);
+						struct registers registers = empty_registers;
+						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, (ins_ptr)self.current_state.registers[main_reg].value, &self);
 					}
 					int fini_reg = sysv_argument_abi_register_indexes[4];
 					if (register_is_exactly_known(&self.current_state.registers[fini_reg]) && self.current_state.registers[fini_reg].value != 0) {
 						LOG("bl in init, assuming arg 4 is the fini function");
 						self.description = "fini";
-						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)self.current_state.registers[fini_reg].value, &self);
+						struct registers registers = empty_registers;
+						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, (ins_ptr)self.current_state.registers[fini_reg].value, &self);
 					}
 					int rtld_fini_reg = sysv_argument_abi_register_indexes[4];
 					if (register_is_exactly_known(&self.current_state.registers[rtld_fini_reg]) && self.current_state.registers[rtld_fini_reg].value != 0) {
 						LOG("bl in init, assuming arg 4 is the rtld_fini function");
 						self.description = "rtld_fini";
-						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, (ins_ptr)self.current_state.registers[rtld_fini_reg].value, &self);
+						struct registers registers = empty_registers;
+						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, (ins_ptr)self.current_state.registers[rtld_fini_reg].value, &self);
 					}
 					goto update_and_return;
 				}
@@ -9574,16 +9623,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				function_effects more_effects = DEFAULT_EFFECTS;
 				if (dest == 0) {
 					LOG("found call to NULL, assuming all effects");
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 					encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 					LOG("found call to non-executable address, assuming all effects");
 					effects |= DEFAULT_EFFECTS;
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest;
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else {
 					self.description = "bl";
-					more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
+					more_effects = analyze_call(analysis, required_effects, binary, ins, dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					LOG("resuming from bl", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -9605,7 +9657,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 				}
-				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				if (more_effects & EFFECT_MODIFIES_STACK) {
 					if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
 						// we should be able to track dirtied slots, but for now assume golang preserves
@@ -9637,21 +9688,25 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("address isn't exactly known, assuming all effects");
 					// could have any effect
 					// effects |= DEFAULT_EFFECTS;
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 					LOG("skipping call when searching for address loads");
 					analysis->skipped_call = (ins_ptr)dest_state.value;
+					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				} else {
 					ins_ptr dest = (ins_ptr)dest_state.value;
 					LOG("found blr", temp_str(copy_function_call_description(&analysis->loader, dest, self.current_state)));
 					if (dest == 0) {
 						LOG("found call to NULL, assuming all effects");
+						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 					} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 						encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 						LOG("found call to non-executable address, assuming all effects");
 						effects |= DEFAULT_EFFECTS;
+						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 					} else {
 						self.description = "bl";
-						more_effects = analyze_call(analysis, required_effects, ins, dest, &self);
+						more_effects = analyze_call(analysis, required_effects, binary, ins, dest, &self);
 						effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 						LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						LOG("resuming from bl", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -9674,7 +9729,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 				}
-				clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins);
 				if (more_effects & EFFECT_MODIFIES_STACK) {
 					pending_stack_clear = STACK_REGISTERS;
 				}
@@ -10854,11 +10908,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 							if (mem_size == OPERATION_SIZE_DWORD && !is_signed && address_is_call_aligned(value) && !in_plt_section(binary, ins)) {
 								prot = protection_for_address(&analysis->loader, (const void *)value, &binary, NULL);
-								if (prot & PROT_EXEC) {
+								if ((prot & PROT_EXEC) && (effects & EFFECT_ENTER_CALLS)) {
 									LOG("found reference to executable address, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)value)));
 									self.description = "load address";
 									struct analysis_frame new_caller = { .address = ins, .description = "ld", .next = NULL, .current_state = empty_registers, .entry = ins, .entry_state = &empty_registers, .token = { 0 } };
-									analyze_function(analysis, effects, &empty_registers, (ins_ptr)value, &new_caller);
+									analyze_function(analysis, (effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)value, &new_caller);
 								}
 							}
 							break;
@@ -12529,13 +12583,13 @@ update_and_return:
 		LOG("final effects:");
 		log_effects(effects);
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
-		set_effects(&analysis->search, self.entry, &self.token, effects);
+		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified);
 	} else {
 		effects &= ~EFFECT_RETURNS;
 		LOG("final effects:");
 		log_effects(effects);
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
-		set_effects(&analysis->search, self.entry, &self.token, effects);
+		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified);
 		effects &= ~EFFECT_STICKY_EXITS;
 	}
 	if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
@@ -12544,6 +12598,7 @@ update_and_return:
 #if BREAK_ON_UNREACHABLES
 	push_reachable_region(&analysis->loader, &analysis->unreachables, self.entry, next_ins(ins, &decoded));
 #endif
+	entry_state->modified |= self.current_state.modified;
 	return effects;
 }
 
