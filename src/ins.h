@@ -398,6 +398,7 @@ enum {
 	REGISTER_SYSCALL_RESULT = X86_REGISTER_AX,
 
 	SYSV_REGISTER_ARGUMENT_COUNT = 6,
+#define CALL_PRESERVED_REGISTERS (mask_for_register(REGISTER_RBX) | mask_for_register(REGISTER_RBP) | mask_for_register(REGISTER_R12) | mask_for_register(REGISTER_R13) | mask_for_register(REGISTER_R14) | mask_for_register(REGISTER_R15))
 #else
 #ifdef __aarch64__
 	REGISTER_SYSCALL_NR = AARCH64_REGISTER_X8,
@@ -410,6 +411,7 @@ enum {
 	REGISTER_SYSCALL_RESULT = AARCH64_REGISTER_X0,
 
 	SYSV_REGISTER_ARGUMENT_COUNT = 8,
+#define CALL_PRESERVED_REGISTERS (mask_for_register(REGISTER_X19) | mask_for_register(REGISTER_X20) | mask_for_register(REGISTER_X21) | mask_for_register(REGISTER_X22) | mask_for_register(REGISTER_X23) | mask_for_register(REGISTER_X24) | mask_for_register(REGISTER_X25) | mask_for_register(REGISTER_X26) | mask_for_register(REGISTER_X27) | mask_for_register(REGISTER_X28))
 #else
 #error "Unknown architecture"
 #endif
