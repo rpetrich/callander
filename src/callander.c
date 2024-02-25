@@ -10814,7 +10814,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									dump_registers(&analysis->loader, &self.current_state, mask_for_register(reg) | mask_for_register(index));
 									self.description = "rejected lookup table";
 									LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-									requires_known_target = true;
+									if (decoded.decomposed.operation != ARM64_LDR) {
+										requires_known_target = true;
+									}
 								} else {
 									self.description = "lookup table";
 									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(reg) | mask_for_register(index), mask_for_register(reg) | mask_for_register(index), mask_for_register(reg)/* | mask_for_register(index)*/, required_effects);
@@ -10848,7 +10850,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 									copy.sources[dest] = used_registers;
 									clear_match(&analysis->loader, &copy, dest, ins);
-									copy.requires_known_target |= mask_for_register(dest);
+									if (decoded.decomposed.operation != ARM64_LDR) {
+										copy.requires_known_target |= mask_for_register(dest);
+									}
 									ins_ptr continue_target = next_ins(ins, &decoded);
 									for (uintptr_t i = index_state.value; i <= index_state.max; i++) {
 										LOG("processing table index", (intptr_t)i);
