@@ -314,6 +314,7 @@ struct registers {
 	register_mask sources[REGISTER_COUNT];
 	register_mask matches[REGISTER_COUNT];
 	register_mask modified;
+	register_mask requires_known_target;
 #if STORE_LAST_MODIFIED
 	ins_ptr last_modify_ins[REGISTER_COUNT];
 #endif
@@ -511,10 +512,6 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
-enum {
-	ALLOW_JUMPS_INTO_THE_ABYSS = 1,
-};
-
 __attribute__((nonnull(1, 3, 4, 5)))
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);
 
@@ -522,7 +519,7 @@ __attribute__((always_inline))
 __attribute__((nonnull(1, 3, 4, 5)))
 static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller)
 {
-	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, ALLOW_JUMPS_INTO_THE_ABYSS);
+	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, 0);
 }
 
 __attribute__((nonnull(1)))

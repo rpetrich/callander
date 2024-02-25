@@ -1,3 +1,4 @@
+#include <asm/prctl.h>
 #include <signal.h>
 #define CURRENT_AUDIT_ARCH AUDIT_ARCH_X86_64
 #define CURRENT_ELF_MACHINE EM_X86_64
@@ -40,7 +41,7 @@ __asm__( \
 ".text\n" \
 FS_HIDDEN_FUNCTION_ASM(__restore) "\n" \
 "	mov $15, %rax\n" \
-); \
+);
 #define AXON_IMPULSE_ASM \
 __asm__( \
 ".text\n" \

@@ -12,7 +12,7 @@
 #define FS_JUMP_SYSCALL "jmp "FS_NAME_ASM(fs_syscall)
 #define FS_DEFINE_SYSCALL __asm__( \
 ".text\n" \
-FS_HIDDEN_FUNCTION(fs_syscall) \
+FS_HIDDEN_FUNCTION_ASM(fs_syscall) \
 ".cfi_startproc\n" \
 "	syscall\n" \
 FS_HIDDEN_FUNCTION_ASM(fs_syscall_ret) "\n" \
