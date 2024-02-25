@@ -9265,7 +9265,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					const void *address = (const void *)self.current_state.registers[dest].value;
 					struct loaded_binary *binary;
 					int prot = protection_for_address(&analysis->loader, address, &binary, NULL);
-					if (prot & PROT_EXEC) {
+					if ((prot & PROT_EXEC) && address_is_call_aligned(self.current_state.registers[dest].value)) {
 						LOG("formed executable address, assuming it could be called after startup");
 						if (effects & EFFECT_ENTER_CALLS) {
 							if (!in_plt_section(binary, ins) && (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64)) {
