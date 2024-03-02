@@ -2,6 +2,7 @@
 #define DARWIN_H
 
 #include "freestanding.h"
+#include "linux.h"
 
 #include <stdint.h>
 
@@ -80,7 +81,7 @@ int translate_seek_whence_to_darwin(int whence);
 
 struct fs_stat translate_darwin_stat(struct darwin_stat stat);
 #ifdef __linux__
-void translate_darwin_statx(struct statx *out_statx, struct darwin_stat stat, unsigned int mask);
+void translate_darwin_statx(struct linux_statx *out_statx, struct darwin_stat stat, unsigned int mask);
 #endif
 
 #endif

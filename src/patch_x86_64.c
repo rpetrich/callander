@@ -37,7 +37,7 @@ __asm__(
 "	push %rdi\n"
 "	push %r11\n"
 "	mov %rsp, %rdi\n"
-"   movabs 0x6666666666666666, %rcx\n"
+"   movabs $0x6666666666666666, %rcx\n"
 ".global trampoline_call_handler_address\n"
 ".hidden trampoline_call_handler_address\n"
 ".type trampoline_call_handler_address,@function\n" \
@@ -85,7 +85,7 @@ __asm__(
 "	push %rsi\n"
 "	push %rdi\n"
 "	mov %rsp, %rdi\n"
-"   movabs 0x6666666666666666, %rcx\n"
+"   movabs $0x6666666666666666, %rcx\n"
 ".global breakpoint_call_handler_address\n"
 ".hidden breakpoint_call_handler_address\n"
 ".type breakpoint_call_handler_address,@function\n" \
@@ -128,7 +128,7 @@ __asm__(
 "	push %rdi\n"
 "	mov %rsp, %rdi\n"
 "	push %rax\n"
-"   movabs 0x6666666666666666, %rcx\n"
+"   movabs $0x6666666666666666, %rcx\n"
 ".global function_call_handler_address\n"
 ".hidden function_call_handler_address\n"
 ".type function_call_handler_address,@function\n" \
@@ -217,7 +217,7 @@ static bool is_valid_pc_relative_offset(intptr_t offset)
 
 // destination_of_pc_relative_addr returns the destination address of a pc-relative offset
 __attribute__((unused))
-static inline intptr_t destination_of_pc_relative_addr(const uint8_t *addr)
+static inline intptr_t destination_of_pc_relative_addr(ins_ptr addr)
 {
 	int32_t relative = *(const int32_t *)addr;
 	return (intptr_t)addr + 4 + relative;
@@ -228,7 +228,7 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 {
 	(void)formatter;
 	(void)formatter_data;
-	const uint8_t *ins = addr->unprefixed;
+	ins_ptr ins = addr->unprefixed;
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
 		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(ins, formatter_data)));
 		return true;
@@ -332,12 +332,12 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 }
 
 struct searched_instructions {
-	const uint8_t *addresses[127];
+	ins_ptr addresses[127];
 	struct searched_instructions *next;
 };
 
 struct instruction_search {
-	const uint8_t *addr;
+	ins_ptr addr;
 	struct searched_instructions *searched;
 };
 
@@ -410,8 +410,8 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 		// avoid infinitely traversing loops
 		return false;
 	}
-	const uint8_t *jump;
-	const uint8_t *ins = search.addr;
+	ins_ptr jump;
+	ins_ptr ins = search.addr;
 	bool previous_ins_is_stack_check = false;
 	for (;;) {
 		struct x86_instruction decoded;
@@ -566,14 +566,14 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 // find_basic_block scans instructions to find the basic block containing an instruction
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1, 3, 4)))
-static bool find_basic_block(struct thread_storage *thread, struct instruction_search search, const uint8_t *instruction, struct instruction_range *out_block)
+static bool find_basic_block(struct thread_storage *thread, struct instruction_search search, ins_ptr instruction, struct instruction_range *out_block)
 {
 tail_call:
 	if (check_already_searched_instruction(search)) {
 		return true;
 	}
-	const uint8_t *jump;
-	const uint8_t *ins = search.addr;
+	ins_ptr jump;
+	ins_ptr ins = search.addr;
 	bool has_instruction = instruction == ins;
 	PATCH_LOG("searching for", (uintptr_t)instruction);
 	struct x86_instruction decoded;
@@ -654,7 +654,7 @@ tail_call:
 // find_patch_target finds the longest possible span of patchable instructions
 __attribute__((warn_unused_result))
 __attribute__((nonnull(2, 5)))
-bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result)
+bool find_patch_target(struct instruction_range basic_block, ins_ptr target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result)
 {
 	// precheck on target
 	struct x86_instruction ins;
@@ -667,9 +667,9 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 	}
 	expanded_rel8 = false;
 	// find a candidate for the start of the patch, possibly the target itself
-	const uint8_t *start = target;
-	const uint8_t *end = x86_next_instruction(start, &ins);
-	for (const uint8_t *current = basic_block.start; current < target; ) {
+	ins_ptr start = target;
+	ins_ptr end = x86_next_instruction(start, &ins);
+	for (ins_ptr current = basic_block.start; current < target; ) {
 		if (!x86_decode_instruction(current, &ins)) {
 			return false;
 		}
@@ -703,7 +703,7 @@ bool find_patch_target(struct instruction_range basic_block, const uint8_t *targ
 __attribute__((warn_unused_result))
 static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd);
 
-static char *naive_address_formatter(const uint8_t *address, void *unused)
+static char *naive_address_formatter(ins_ptr address, void *unused)
 {
 	(void)unused;
 	char *result = malloc(2 * sizeof(uintptr_t) + 3);
@@ -715,7 +715,7 @@ static char *naive_address_formatter(const uint8_t *address, void *unused)
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 {
 	// Check if syscall has been rewritten
-	const uint8_t *syscall_ins = (const uint8_t *)args->pc - 2;
+	ins_ptr syscall_ins = (ins_ptr)args->pc - 2;
 	if (!x86_is_syscall_instruction(syscall_ins)) {
 		return;
 	}
@@ -744,10 +744,10 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		return;
 	}
 	uintptr_t entry;
-	if (*(const uint8_t *)(ret - 5) == INS_CALL_32_IMM) {
+	if (*(ins_ptr)(ret - 5) == INS_CALL_32_IMM) {
 		entry = ret + *(const int32_t *)(ret - 4);
 	} else {
-		PATCH_LOG("not a call", (uintptr_t)*(const uint8_t *)(ret - 5));
+		PATCH_LOG("not a call", (uintptr_t)*(ins_ptr)(ret - 5));
 		const ElfW(Ehdr) *library_base = NULL;
 		const char *library_path = NULL;
 		if (!debug_find_library(syscall_ins, &library_base, &library_path)) {
@@ -774,11 +774,11 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 	// Find the basic block containing the syscall instruction
 	init_searched_instructions(thread, &searched, &searched_cleanup);
 	const struct instruction_search basic_block_search = {
-		.addr = (const uint8_t *)entry,
+		.addr = (ins_ptr)entry,
 		.searched = &searched,
 	};
 	struct instruction_range basic_block = { 0 };
-	bool found_basic_block = find_basic_block(thread, basic_block_search, (const uint8_t *)args->pc - 2, &basic_block) && basic_block.start != NULL;
+	bool found_basic_block = find_basic_block(thread, basic_block_search, (ins_ptr)args->pc - 2, &basic_block) && basic_block.start != NULL;
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_basic_block) {
 		PATCH_LOG("could not find basic block");
@@ -787,20 +787,20 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 	// Trim the basic block to not include the next instruction. Other threads
 	// could be in the kernel's syscall handler and return to the next
 	// instruction at any time!
-	if (basic_block.end > (const uint8_t *)args->pc) {
-		basic_block.end = (const uint8_t *)args->pc;
+	if (basic_block.end > (ins_ptr)args->pc) {
+		basic_block.end = (ins_ptr)args->pc;
 	}
 	// Actually patch
-	args->patched = patch_common(thread, args->pc - 2, basic_block, trampoline_call_template(), &receive_trampoline, true, args->self_fd);
+	args->patched = patch_common(thread, (uintptr_t)args->pc - SYSCALL_INSTRUCTION_SIZE, basic_block, PATCH_TEMPLATE(trampoline_call_handler), &receive_trampoline, true, args->self_fd);
 }
 
 // migrate_instruction copies and relocates instructions
 __attribute__((warn_unused_result))
-size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
+size_t migrate_instructions(uint8_t *dest, ins_ptr src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
 {
 	(void)formatter;
 	(void)formatter_data;
-	const uint8_t *end_src = src + byte_count;
+	ins_ptr end_src = src + byte_count;
 	while (src < end_src) {
 		struct x86_instruction decoded;
 		if (!x86_decode_instruction(src, &decoded)) {
@@ -867,20 +867,20 @@ size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, si
 }
 
 __attribute__((always_inline))
-static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, void *start_template, void *address_template, void *end_template, void *handler, bool skip, int self_fd)
+static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd)
 {
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
 	// Find the patch target
 	struct x86_instruction decoded;
-	if (!x86_decode_instruction((const uint8_t *)instruction, &decoded)) {
+	if (!x86_decode_instruction((ins_ptr)instruction, &decoded)) {
 		return PATCH_STATUS_FAILED;
 	}
 	if (x86_is_endbr64_instruction(&decoded)) {
 		instruction += decoded.length;
 	}
 	struct instruction_range patch_target;
-	if (!find_patch_target(basic_block, (const uint8_t *)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, naive_address_formatter, NULL, &patch_target)) {
+	if (!find_patch_target(basic_block, (ins_ptr)instruction, skip ? PCREL_JUMP_SIZE : 1, PCREL_JUMP_SIZE, naive_address_formatter, NULL, &patch_target)) {
 		PATCH_LOG("unable to find patch target");
 		ERROR_FLUSH();
 		return PATCH_STATUS_FAILED;
@@ -908,7 +908,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	attempt_lock_and_push_mutex(thread, &lock_cleanup, &patches_lock);
 	bool new_address;
 	uintptr_t current_region = patches != NULL ? (uintptr_t)&patches[1] : 0;
-	uintptr_t space_required = (10 + ((uintptr_t)end_template - (uintptr_t)start_template) + (12 + 6) + sizeof(struct applied_patch));
+	uintptr_t space_required = (10 + ((uintptr_t)template.end - (uintptr_t)template.start) + (12 + 6) + sizeof(struct applied_patch));
 	if (current_region && trampoline_region_has_space((uint8_t *)current_region, space_required) && is_valid_pc_relative_offset(current_region - (uintptr_t)patch_target.end)) {
 		// Have at least the space left in the trampoline page and the trampoline's address is compatible with a PC-relative jump
 		stub_address = current_region;
@@ -962,26 +962,26 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	}
 	trampoline += head_size;
 	// Copy the prefix part of the trampoline
-	size_t prefix_size = (uintptr_t)address_template - (uintptr_t)start_template - sizeof(uintptr_t);
-	memcpy(trampoline, start_template, prefix_size);
+	size_t prefix_size = (uintptr_t)template.address - (uintptr_t)template.start - sizeof(uintptr_t);
+	memcpy(trampoline, template.start, prefix_size);
 	trampoline += prefix_size;
 	// Move address of receive_trampoline into rcx
 	*(uintptr_t *)trampoline = (uintptr_t)handler;
 	trampoline += sizeof(uintptr_t);
 	// Copy the suffix part of the trampoline
-	size_t suffix_size = (uintptr_t)end_template - (uintptr_t)address_template;
-	memcpy(trampoline, address_template, suffix_size);
+	size_t suffix_size = (uintptr_t)template.end - (uintptr_t)template.address;
+	memcpy(trampoline, template.address, suffix_size);
 	trampoline += suffix_size;
 	// Copy the patched instructions from the original basic block
 	uintptr_t tail_start = instruction;
 	if (skip) {
-		if (x86_decode_instruction((const uint8_t *)instruction, &decoded)) {
+		if (x86_decode_instruction((ins_ptr)instruction, &decoded)) {
 			tail_start += decoded.length;
 		}
 	}
 	size_t tail_size = (uintptr_t)patch_target.end - tail_start;
 	if (tail_size != 0) {
-		tail_size = migrate_instructions(trampoline, (const uint8_t *)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size, naive_address_formatter, NULL);
+		tail_size = migrate_instructions(trampoline, (ins_ptr)tail_start, (uintptr_t)tail_start - (uintptr_t)trampoline, tail_size, naive_address_formatter, NULL);
 		if (tail_start == 0) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 			PATCH_LOG("Failed to patch: migrating tail failed");
@@ -1010,7 +1010,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 		return PATCH_STATUS_FAILED;
 	}
 	// Patch in some illegal instructions
-	for (const uint8_t *ill = patch_target.start; ill < patch_target.end; ) {
+	for (ins_ptr ill = patch_target.start; ill < patch_target.end; ) {
 		struct x86_instruction ill_decoded;
 		if (!x86_decode_instruction(ill, &ill_decoded)) {
 			break;
@@ -1062,7 +1062,7 @@ static void patch_handle_illegal_instruction_body(struct thread_storage *thread,
 {
 	struct attempt_cleanup_state lock_cleanup;
 	attempt_lock_and_push_mutex(thread, &lock_cleanup, &patches_lock);
-	const uint8_t *pc = (const uint8_t *)args->context->uc_mcontext.REG_PC;
+	ins_ptr pc = (ins_ptr)args->context->uc_mcontext.REG_PC;
 	// Find a patch for the associated region, preferring newer patches
 	struct applied_patch *patch = patches;
 	while (patch) {
@@ -1086,7 +1086,7 @@ bool patch_handle_illegal_instruction(struct thread_storage *thread, ucontext_t 
 	return args.result;
 }
 
-enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr address, intptr_t entry, void (*handler)(uintptr_t *), int self_fd)
+enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr address, ins_ptr entry, void (*handler)(uintptr_t *), int self_fd)
 {
 	PATCH_LOG("patching breakpoint", (uintptr_t)address);
 	// Construct the basic block that contains the address. Need to do a full
@@ -1096,17 +1096,17 @@ enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr addres
 	struct attempt_cleanup_state searched_cleanup;
 	init_searched_instructions(thread, &searched, &searched_cleanup);
 	const struct instruction_search basic_block_search = {
-		.addr = (const uint8_t *)entry,
+		.addr = (ins_ptr)entry,
 		.searched = &searched,
 	};
 	struct instruction_range basic_block = { 0 };
-	bool found_basic_block = find_basic_block(thread, basic_block_search, (const uint8_t *)entry, &basic_block);
+	bool found_basic_block = find_basic_block(thread, basic_block_search, entry, &basic_block);
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_basic_block || basic_block.start == NULL) {
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	return patch_common(thread, address, basic_block, PATCH_TEMPLATE(breakpoint_call_handler), handler, false, self_fd);
+	return patch_common(thread, (uintptr_t)address, basic_block, PATCH_TEMPLATE(breakpoint_call_handler), handler, false, self_fd);
 }
 
 enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
@@ -1120,22 +1120,17 @@ enum patch_status patch_function(struct thread_storage *thread, ins_ptr function
 	struct attempt_cleanup_state searched_cleanup;
 	init_searched_instructions(thread, &searched, &searched_cleanup);
 	const struct instruction_search basic_block_search = {
-		.addr = (const uint8_t *)function,
+		.addr = (ins_ptr)function,
 		.searched = &searched,
 	};
 	struct instruction_range basic_block = { 0 };
-	bool found_basic_block = find_basic_block(thread, basic_block_search, (const uint8_t *)function, &basic_block);
+	bool found_basic_block = find_basic_block(thread, basic_block_search, (ins_ptr)function, &basic_block);
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_basic_block || basic_block.start == NULL) {
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
-	struct patch_template template = (struct patch_template) {
-		.start = &breakpoint_call_handler_start,
-		.address = &breakpoint_call_handler_address,
-		.end = &breakpoint_call_handler_end,
-	};
-	return patch_common(thread, function, basic_block, PATCH_TEMPLATE(function_call_handler), handler, false, self_fd);
+	return patch_common(thread, (uintptr_t)function, basic_block, PATCH_TEMPLATE(function_call_handler), handler, false, self_fd);
 }
 
 void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump)

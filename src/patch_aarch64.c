@@ -150,7 +150,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		PATCH_LOG("not a syscall", (uintptr_t)*instruction);
 		return;
 	}
-	args->patched = patch_common(thread, instruction, trampoline_call_template(), &receive_trampoline, true, args->self_fd);
+	args->patched = patch_common(thread, instruction, PATCH_TEMPLATE(trampoline_call_handler), &receive_trampoline, true, args->self_fd);
 }
 
 #define CACHE_LINE_SIZE 64

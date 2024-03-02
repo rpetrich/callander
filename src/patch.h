@@ -95,10 +95,6 @@ struct patch_template {
 	}; \
 })
 
-static struct patch_template trampoline_call_template(void) {
-	return PATCH_TEMPLATE(trampoline_call_handler);
-}
-
 void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump);
 
 #endif

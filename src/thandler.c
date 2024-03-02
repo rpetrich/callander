@@ -38,3 +38,13 @@ void receive_syscall(intptr_t data[7])
 	struct thread_storage *thread = get_thread_storage();
 	data[0] = handle_syscall(thread, data[0], data[1], data[2], data[3], data[4], data[5], data[6], NULL);
 }
+
+#ifdef PROXY_SUPPORT_DARWIN
+enum target_platform proxy_get_target_platform(void) {
+#ifdef __linux__
+	return TARGET_PLATFORM_LINUX;
+#else
+#error "thandler only supports linux"
+#endif
+}
+#endif

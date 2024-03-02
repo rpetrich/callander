@@ -364,7 +364,7 @@ struct fs_stat translate_darwin_stat(struct darwin_stat stat)
 	return result;
 }
 
-void translate_darwin_statx(struct statx *out_statx, struct darwin_stat stat, unsigned int mask)
+void translate_darwin_statx(struct linux_statx *out_statx, struct darwin_stat stat, unsigned int mask)
 {
 	out_statx->stx_dev_major = (stat.st_dev >> 8) & 0xff;
 	out_statx->stx_dev_minor = stat.st_dev & 0xff;

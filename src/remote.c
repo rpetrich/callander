@@ -466,7 +466,7 @@ intptr_t remote_newfstatat(int fd, const char *path, struct fs_stat *stat, int f
 	}
 }
 
-intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, struct statx *restrict statxbuf)
+intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, struct linux_statx *restrict statxbuf)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:

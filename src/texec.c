@@ -686,7 +686,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		ERROR("spawning remote thread");
 		ERROR_FLUSH();
 	}
-	intptr_t clone_result = PROXY_CALL(LINUX_SYS_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(data.tid_ptr), proxy_value(data.tid_ptr), proxy_value(sp), proxy_value(thandler->receive_start_addr));
+	intptr_t clone_result = PROXY_CALL(LINUX_SYS_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(data.tid_ptr), proxy_value(data.tid_ptr), proxy_value(remote->sp), proxy_value(thandler->receive_start_addr));
 	if (clone_result < 0) {
 		ERROR("failed to clone", fs_strerror(clone_result));
 		return clone_result;

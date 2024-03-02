@@ -109,13 +109,13 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		ins_ptr libc_early_init = resolve_binary_loaded_symbol(&analysis->loader, binary, "__libc_early_init", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (libc_early_init != NULL) {
 			registers = empty_registers;
-			struct analysis_frame new_caller = { .address = binary->info.base, .description = "__libc_early_init", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			new_caller = (struct analysis_frame){ .address = binary->info.base, .description = "__libc_early_init", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, libc_early_init, &new_caller);
 		}
 		ins_ptr dl_runtime_resolve = resolve_binary_loaded_symbol(&analysis->loader, binary, "_dl_runtime_resolve", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (dl_runtime_resolve != NULL) {
 			registers = empty_registers;
-			struct analysis_frame new_caller = { .address = binary->info.base, .description = "_dl_runtime_resolve", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			new_caller = (struct analysis_frame){ .address = binary->info.base, .description = "_dl_runtime_resolve", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, dl_runtime_resolve, &new_caller);
 		}
 	}
@@ -155,6 +155,11 @@ static void analyze_binary(struct program_state *analysis, const char *executabl
 #ifndef __APPLE__
 #pragma GCC pop_options
 #endif
+
+static char *loader_address_formatter(const ins_ptr address, void *loader)
+{
+	return copy_address_description((const struct loader_context *)loader, address);
+}
 
 static bool find_remote_patch_target(const struct loader_context *loader, const ins_ptr target, const ins_ptr entry, struct instruction_range *out_result)
 {
@@ -197,11 +202,6 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 	if (die) {
 		DIE("at least one instruction was not patchable");
 	}
-}
-
-static char *loader_address_formatter(const ins_ptr address, void *loader)
-{
-	return copy_address_description((const struct loader_context *)loader, address);
 }
 
 static inline bool addresses_are_within_s32(intptr_t addr1, intptr_t addr2)
@@ -247,7 +247,7 @@ struct remote_patch {
 	bool owns_trampoline;
 };
 
-static void init_remote_patches(struct remote_patches *patches, struct program_state *analysis)
+static void init_remote_patches(struct remote_patches *patches)
 {
 	patches->list = NULL;
 	patches->count = 0;
@@ -442,7 +442,7 @@ static void patch_remote_syscalls(struct remote_patches *patches, struct program
 				}
 				if (!found) {
 					bool is_clone = analysis->syscalls.list[i].nr == LINUX_SYS_clone;
-					remote_patch(patches, analysis, addr, analysis->syscalls.list[i].entry, child_addr, trampoline_call_template(), is_clone ? handlers->receive_clone_addr : handlers->receive_syscall_addr, is_clone ? 0 : (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), 0);
+					remote_patch(patches, analysis, addr, analysis->syscalls.list[i].entry, child_addr, PATCH_TEMPLATE(trampoline_call_handler), is_clone ? handlers->receive_clone_addr : handlers->receive_syscall_addr, is_clone ? 0 : (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), 0);
 				}
 			}
 		}
@@ -717,7 +717,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 		ERROR_FLUSH();
 	}
 	struct remote_patches patches;
-	init_remote_patches(&patches, &analysis);
+	init_remote_patches(&patches);
 	patch_remote_syscalls(&patches, &analysis, &handlers);
 
 	// prepare thread args and dynv

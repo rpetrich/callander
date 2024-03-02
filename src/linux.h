@@ -1,4 +1,5 @@
 #ifndef LINUX_H
+#define LINUX_H
 
 #ifdef __linux__
 #include <linux/binfmts.h>
