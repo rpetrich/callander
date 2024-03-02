@@ -56,7 +56,7 @@ int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const ch
 		return remote_exec_fd_elf(sysroot, fd, argv, envp, aux, comm, named_path, debug, handlers, out_state);
 	}
 	fs_close(fd);
-	ERROR("not magic enough");
+	ERROR("not magic enough", named_path);
 	return -ENOEXEC;
 }
 
@@ -91,14 +91,16 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
 	LOG("size", (uintptr_t)loaded->info.size);
 	struct analysis_frame new_caller = { .address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &empty_registers, loaded->info.entrypoint, &new_caller);
+	struct registers registers = empty_registers;
+	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, loaded->info.entrypoint, &new_caller);
 
 	// interpreter entrypoint
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
 		LOG("assuming interpreter can run after startup");
 		struct analysis_frame interpreter_caller = { .address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &empty_registers, interpreter->info.entrypoint, &interpreter_caller);
+		registers = empty_registers;
+		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, interpreter->info.entrypoint, &interpreter_caller);
 	} else {
 		LOG("no interpreter for this binary");
 	}
@@ -106,13 +108,13 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	for (struct loaded_binary *binary = analysis->loader.binaries; binary != NULL; binary = binary->next) {
 		ins_ptr libc_early_init = resolve_binary_loaded_symbol(&analysis->loader, binary, "__libc_early_init", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (libc_early_init != NULL) {
-			struct registers registers = empty_registers;
+			registers = empty_registers;
 			struct analysis_frame new_caller = { .address = binary->info.base, .description = "__libc_early_init", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, libc_early_init, &new_caller);
 		}
 		ins_ptr dl_runtime_resolve = resolve_binary_loaded_symbol(&analysis->loader, binary, "_dl_runtime_resolve", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (dl_runtime_resolve != NULL) {
-			struct registers registers = empty_registers;
+			registers = empty_registers;
 			struct analysis_frame new_caller = { .address = binary->info.base, .description = "_dl_runtime_resolve", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, dl_runtime_resolve, &new_caller);
 		}
