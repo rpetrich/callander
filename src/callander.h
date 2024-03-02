@@ -12,7 +12,7 @@
 
 #include "loader.h"
 
-#define STORE_LAST_MODIFIED 0
+#define STORE_LAST_MODIFIED 1
 #define BREAK_ON_UNREACHABLES 0
 #define RECORD_WHERE_STACK_ADDRESS_TAKEN 0
 
