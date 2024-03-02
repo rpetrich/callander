@@ -7532,7 +7532,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								// enforce max range from other lea instructions
 								uintptr_t next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
 								uintptr_t last_base_index = (next_base_address - base_addr) / sizeof(int32_t) - 1;
-								if (last_base_index << max) {
+								if (last_base_index < max) {
 									LOG("truncating to next base address", temp_str(copy_address_description(&analysis->loader, (const void *)next_base_address)));
 									max = last_base_index;
 								}
