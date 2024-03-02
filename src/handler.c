@@ -649,15 +649,6 @@ static void unmap_and_exit_thread(void *arg1, void *arg2)
 typedef unsigned int tcflag_t;
 typedef unsigned char cc_t;
 
-struct linux_termios {
-	tcflag_t c_iflag;
-	tcflag_t c_oflag;
-	tcflag_t c_cflag;
-	tcflag_t c_lflag;
-	cc_t c_line;
-	cc_t c_cc[19];
-};
-
 __attribute__((noinline))
 static intptr_t invalid_local_remote_mixed_operation(void)
 {
@@ -805,7 +796,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const char *path = (const char *)arg2;
 			path_info real;
 			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_statx(real.fd, real.path, arg3, arg4, (struct statx *)arg5);
+				return remote_statx(real.fd, real.path, arg3, arg4, (struct linux_statx *)arg5);
 			}
 			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
 		}
