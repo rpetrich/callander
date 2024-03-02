@@ -5558,11 +5558,11 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 	}
 	if (continue_effects & EFFECT_PROCESSING) {
 		LOG("continue is processing", temp_str(copy_address_description(&analysis->loader, continue_target)));
-		continue_effects = (continue_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
+		continue_effects = (continue_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : EFFECT_NONE;
 	}
 	if (jump_effects & EFFECT_PROCESSING) {
 		LOG("jump is processing", temp_str(copy_address_description(&analysis->loader, jump_target)));
-		jump_effects = (jump_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : (EFFECT_RETURNS | EFFECT_EXITS);
+		jump_effects = (jump_effects & EFFECT_STICKY_EXITS) ? EFFECT_EXITS : EFFECT_NONE;
 	}
 	return jump_effects | continue_effects;
 }
