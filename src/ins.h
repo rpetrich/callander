@@ -453,10 +453,10 @@ static inline int first_set_register_in_mask(register_mask mask) {
 struct __attribute__((packed)) decoded_rm {
 #if defined(__x86_64__)
 	uintptr_t addr;
-	uint8_t rm:6;
-	uint8_t base:4;
-	uint8_t index:4;
-	uint8_t scale:2;
+	uint16_t rm:6;
+	uint16_t base:4;
+	uint16_t index:4;
+	uint16_t scale:2;
 #endif
 };
 
