@@ -45,6 +45,7 @@ openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-a
 close(any) @ ld-musl-aarch64.so.1+0x1ff28(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x41e58(if_indextoname+84)
 close(any) @ ld-musl-aarch64.so.1+0x421c8(if_nametoindex+116)
+close(any) @ ld-musl-aarch64.so.1+0x44604(cleanup*+4)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52598(fopen64+176)
 close(any) @ ld-musl-aarch64.so.1+0x5d210
@@ -63,8 +64,8 @@ readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-pselect6(0x1-0x400, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
-pselect6(0x1-0x400, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
+pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -80,6 +81,7 @@ exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(any) @ ld-musl-aarch64.so.1+0x5d1e8
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
+set_tid_address(any) @ ld-musl-aarch64.so.1+0x5e958(start*+64)
 futex(any, FUTEX_WAIT, any, 0, any u32, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
 futex(any, any, any, 0, 0, any)
@@ -111,6 +113,7 @@ restart_syscall()
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any u32, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x24500(membarrier+304)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x4fc9c(raise+44)
+tkill(any u32, SIGSETXID) @ ld-musl-aarch64.so.1+0x5dc34(cancel_handler*+124)
 tkill(non-NULL, SIGSETXID) @ ld-musl-aarch64.so.1+0x5f4d0(pthread_kill+68)
 rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-aarch64.so.1+0x20c20(abort+64)
 rt_sigaction(SIGHUP-SIGQUIT, any, any, 8) @ ld-musl-aarch64.so.1+0x4fde0(__libc_sigaction*+240)
@@ -127,7 +130,10 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6e528(all_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6e520(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x4fafc(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fb18(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sigaction*+376)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e998(start*+128)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5ea90(pthread_create+172)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
+rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 uname(any) @ ld-musl-aarch64.so.1+0x3e148(uname+12)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x627b4(clock_gettime+104)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
@@ -138,6 +144,8 @@ socket(any, any, any) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(any, 0-0xfffffffffff7f7ff, any) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 bind(any, any, any u32) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
 listen(any, 128) @ ld-musl-aarch64.so.1+0x42900(listen+36)
+accept(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
+accept(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41cf8(getsockname+28)

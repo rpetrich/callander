@@ -1,4 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xd2760(getcwd+136)
+dup(any) @ libc.so.6+0xd2584(dup+4)
 dup3(any u32, STDIN_FILENO-0xfffffffe, 0) @ libc.so.6+0xd2624(dup3+4)
 dup3(any u32, STDIN_FILENO-0xfffffffe, O_CLOEXEC) @ libc.so.6+0xd2624(dup3+4)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xd6d4c(__fcntl64_nocancel_adjusted+52)

@@ -38,8 +38,8 @@ close(any) @ ld-musl-aarch64.so.1+0x61e30(__map_file*+160)
 getdents64(any u32, any, 2048) @ ld-musl-aarch64.so.1+0x2005c(readdir64+44)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x65550(lseek64+12)
 read(any u32, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
-read(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-read(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+read(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+read(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
@@ -55,6 +55,7 @@ exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+set_tid_address(any) @ ld-musl-aarch64.so.1+0x5f40c(start*+64)
 futex(any, FUTEX_WAIT, any, 0, any u32, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
 futex(any, any, 0-INT_MAX, any, any u32, any u32)
@@ -90,6 +91,7 @@ tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20d1c(abort+84)
 tkill(any u32, 0x0) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
 tkill(any u32, SIGSTOP) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x506d8(raise+44)
+tkill(any u32, SIGSETXID) @ ld-musl-aarch64.so.1+0x5e724(cancel_handler*+176)
 tkill(non-NULL, SIGSETXID) @ ld-musl-aarch64.so.1+0x5ffec(pthread_kill+68)
 rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-aarch64.so.1+0x20d08(abort+64)
 rt_sigaction(SIGSETXID, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
@@ -98,7 +100,10 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f118(all_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f110(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50538(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x50554(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x508a4(__libc_sigaction*+376)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5f44c(start*+128)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5f544(pthread_create+172)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x610e8(pthread_sigmask+24)
+rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x504d4
 uname(any) @ ld-musl-aarch64.so.1+0x3e200(uname+12)
 getrlimit(0x20, any) @ ld-musl-aarch64.so.1+0x3ca94(getrlimit+112)
 getrlimit(0x64, any) @ ld-musl-aarch64.so.1+0x3ca94(getrlimit+112)

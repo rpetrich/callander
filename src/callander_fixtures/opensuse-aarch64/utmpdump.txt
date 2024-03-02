@@ -1,4 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xd2760(getcwd+136)
+dup(any) @ libc.so.6+0xd2584(dup+4)
 inotify_init1(0) @ libc.so.6+0xdfe28(inotify_init+8)
 inotify_add_watch(any u32, any, IN_MODIFY|IN_DELETE_SELF|IN_MOVE_SELF|IN_UNMOUNT) @ libc.so.6+0xe06f4(inotify_add_watch+4)
 ioctl(any, TCGETS, any) @ libc.so.6+0xd7384(tcgetattr+60)

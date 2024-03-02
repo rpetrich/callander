@@ -1,79 +1,59 @@
-callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c22f
-read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c268
-read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c696
-write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c382
-write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c3bb
-write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c6c9
-close(any u32) @ /usr/sbin/ldconfig+0x4b632
-close(any u32) @ /usr/sbin/ldconfig+0x4b65a
-close(any u32) @ /usr/sbin/ldconfig+0x4c419
-poll(any, 1, any u32) @ /usr/sbin/ldconfig+0xae7d2
-poll(any, any, any u32) @ /usr/sbin/ldconfig+0xae80b
-lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x4bf79
-mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d54a
-mmap(0, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d5a6
-mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x4d5e9
-munmap(any, any) @ /usr/sbin/ldconfig+0x4d619
-brk(any) @ /usr/sbin/ldconfig+0x4c739
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x60e38
-rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig+0x60e38
+callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c26f
+read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c2a8
+read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c6d6
+write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c3c2
+write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c3fb
+write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c709
+close(any u32) @ /usr/sbin/ldconfig+0x4b672
+close(any u32) @ /usr/sbin/ldconfig+0x4b69a
+close(any u32) @ /usr/sbin/ldconfig+0x4c459
+lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x4bfb9
+mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d58a
+mmap(0, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d5e6
+mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x4d629
+munmap(any, any) @ /usr/sbin/ldconfig+0x4d659
+brk(any) @ /usr/sbin/ldconfig+0x4c779
+rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x60e88
+rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig+0x60e88
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x1591
-rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xb9348, any, 8) @ /usr/sbin/ldconfig+0x2086e
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig+0x208b9
-rt_sigreturn(any) @ /usr/sbin/ldconfig+0x60d57
-ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x7ae5c
-ioctl(any u32, FIONREAD, any) @ /usr/sbin/ldconfig+0xa54bb
-ioctl(any u32, SIOCGIFINDEX, any) @ /usr/sbin/ldconfig+0xa54bb
-pread64(any u32, any, any, any) @ /usr/sbin/ldconfig+0x7adfc
-writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x4e2a2
-writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x4e2d9
-writev(any u32, any, any) @ /usr/sbin/ldconfig+0x8c351
-access(/usr/sbin/ldconfig+0xbb62d, F_OK) @ /usr/sbin/ldconfig+0x7a7d9
-access(/usr/sbin/ldconfig+0xbb63c, F_OK) @ /usr/sbin/ldconfig+0x7a7d9
-mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x4e3bf
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x4d4f9
-madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig+0x4d4f9
-alarm(any u32) @ /usr/sbin/ldconfig+0x761d9
-getpid() @ /usr/sbin/ldconfig+0x486c9
-socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0xa5509
-socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0xa5509
-socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0xa5509
-connect(any u32, any, 0x10-0x1c) @ /usr/sbin/ldconfig+0xae872
-connect(any u32, any, any u32) @ /usr/sbin/ldconfig+0xae8a9
-sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig+0xaea6b
-sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig+0xaeab8
-recvfrom(any u32, any, any, 0, any, any) @ /usr/sbin/ldconfig+0xae9a5
-recvfrom(any u32, any, any, any u32, any, any) @ /usr/sbin/ldconfig+0xae9f2
-getpeername(any u32, any, any) @ /usr/sbin/ldconfig+0xae909
-setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ /usr/sbin/ldconfig+0xb203c
-setsockopt(any u32, SOL_IPV6, IPV6_RECVERR, any, 4) @ /usr/sbin/ldconfig+0xb203c
-uname(any) @ /usr/sbin/ldconfig+0xb2ae9
-fcntl(any u32, F_SETFD, 1) @ /usr/sbin/ldconfig+0x4c480
-fcntl(any u32, F_GETFL, any) @ /usr/sbin/ldconfig+0x4c480
-fcntl(any u32, F_SETLKW, any) @ /usr/sbin/ldconfig+0x4c480
-fsync(any u32) @ /usr/sbin/ldconfig+0x4cda2
-fsync(any u32) @ /usr/sbin/ldconfig+0x4cdca
-fdatasync(any u32) @ /usr/sbin/ldconfig+0x4cd12
-fdatasync(any u32) @ /usr/sbin/ldconfig+0x4cd3a
-getcwd(non-NULL, any) @ /usr/sbin/ldconfig+0x4b7b9
-chdir(/usr/sbin/ldconfig+0xb628b) @ /usr/sbin/ldconfig+0x4b5c9
-rename(any, any) @ /usr/sbin/ldconfig+0x14489
-mkdir(any, 0700) @ /usr/sbin/ldconfig+0x4bfc9
-unlink(any) @ /usr/sbin/ldconfig+0x4c349
-symlink(any, any) @ /usr/sbin/ldconfig+0x4c319
-readlink(any, any, 4095) @ /usr/sbin/ldconfig+0x4c2c9
-readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig+0x4c2c9
-chmod(any, 0644) @ /usr/sbin/ldconfig+0x4b5f9
-gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
-sysinfo(any) @ /usr/sbin/ldconfig+0x4e429
-sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x7a669
-sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x7a729
-sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x7a699
-sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x7a6c9
-sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x7a6f9
-arch_prctl(0x3002, NULL-0x3) @ /usr/sbin/ldconfig+0xa3479
-chroot(non-NULL) @ /usr/sbin/ldconfig+0x4c779
-gettid() @ /usr/sbin/ldconfig+0x20915
+rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xb9348, any, 8) @ /usr/sbin/ldconfig+0x2087e
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig+0x208c9
+rt_sigreturn(any) @ /usr/sbin/ldconfig+0x60da7
+ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x7ae9c
+pread64(any u32, any, any, any) @ /usr/sbin/ldconfig+0x7ae3c
+writev(STDERR_FILENO, any, any u32) @ /usr/sbin/ldconfig+0x4e2e2
+writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x4e319
+writev(any u32, any, any) @ /usr/sbin/ldconfig+0x8c391
+access(/usr/sbin/ldconfig+0xbb63c, F_OK) @ /usr/sbin/ldconfig+0x7a819
+mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x4e3ff
+madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x4d539
+madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig+0x4d539
+alarm(any u32) @ /usr/sbin/ldconfig+0x76219
+getpid() @ /usr/sbin/ldconfig+0x48709
+fcntl(any u32, F_SETFD, 1) @ /usr/sbin/ldconfig+0x4c4c0
+fcntl(any u32, F_GETFL, any) @ /usr/sbin/ldconfig+0x4c4c0
+fcntl(any u32, F_SETLKW, any) @ /usr/sbin/ldconfig+0x4c4c0
+fsync(any u32) @ /usr/sbin/ldconfig+0x4cde2
+fsync(any u32) @ /usr/sbin/ldconfig+0x4ce0a
+fdatasync(any u32) @ /usr/sbin/ldconfig+0x4cd52
+fdatasync(any u32) @ /usr/sbin/ldconfig+0x4cd7a
+getcwd(non-NULL, any) @ /usr/sbin/ldconfig+0x4b7f9
+chdir(/usr/sbin/ldconfig+0xb628b) @ /usr/sbin/ldconfig+0x4b609
+rename(any, any) @ /usr/sbin/ldconfig+0x14499
+mkdir(any, 0700) @ /usr/sbin/ldconfig+0x4c009
+unlink(any) @ /usr/sbin/ldconfig+0x4c389
+symlink(any, any) @ /usr/sbin/ldconfig+0x4c359
+readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig+0x4c309
+chmod(any, 0644) @ /usr/sbin/ldconfig+0x4b639
+sysinfo(any) @ /usr/sbin/ldconfig+0x4e469
+sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x7a6a9
+sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x7a769
+sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x7a6d9
+sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x7a709
+sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x7a739
+arch_prctl(0x3002, NULL-0x3) @ /usr/sbin/ldconfig+0xa34b9
+chroot(non-NULL) @ /usr/sbin/ldconfig+0x4c7b9
+gettid() @ /usr/sbin/ldconfig+0x20925
 futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any u32)
 futex(any, FUTEX_WAIT, 2, 0, 128, any)
@@ -93,30 +73,25 @@ futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any u32)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(/usr/sbin/ldconfig+0xf31d4, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NULL-0x1, any)
-futex(/usr/sbin/ldconfig+0xf358c, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
-sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x4d30a
-getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x75ba5
+sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x4d34a
+getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x75be5
 restart_syscall()
-clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x482d5
-clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
-clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
-clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0xa5415
-clock_nanosleep(any u32, any u32, any, any) @ /usr/sbin/ldconfig+0xa5451
-exit_group(any u32) @ /usr/sbin/ldconfig+0x486ab
-tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x208f7
-tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x208f7
-tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x2092a
-tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x2092a
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c043
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c0b3
-openat(any u32, /usr/sbin/ldconfig+0xbb1a1, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c150
-openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x4c1c5
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c5a2
-openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c5a2
-newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x4b6fc
-newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x4b6fc
-newfstatat(any u32, /usr/sbin/ldconfig+0xcae6d, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x4b6fc
-readlinkat(AT_FDCWD, /usr/sbin/ldconfig+0xcf2b8, any, 0x1000) @ /usr/sbin/ldconfig+0x8c10e
-sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0xaeb25
-sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig+0xaeb60
-getrandom(/usr/sbin/ldconfig+0xf2bf0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x22117
+clock_gettime(CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x48315
+clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0xa5455
+clock_nanosleep(any u32, any u32, any, any) @ /usr/sbin/ldconfig+0xa5491
+exit_group(any u32) @ /usr/sbin/ldconfig+0x486eb
+tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x20907
+tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x20907
+tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x2093a
+tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x2093a
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c083
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c0f3
+openat(any u32, /usr/sbin/ldconfig+0xbb1a1, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c190
+openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x4c205
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c5e2
+openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c5e2
+newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x4b73c
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x4b73c
+newfstatat(any u32, /usr/sbin/ldconfig+0xcae6d, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x4b73c
+readlinkat(AT_FDCWD, /usr/sbin/ldconfig+0xcf2b8, any, 0x1000) @ /usr/sbin/ldconfig+0x8c14e
+getrandom(/usr/sbin/ldconfig+0xf2bf0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x22127

@@ -1,4 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xd2760(getcwd+136)
+dup(any) @ libc.so.6+0xd2584(dup+4)
 ioctl(any, TCGETS, any) @ libc.so.6+0xd7384(tcgetattr+60)
 mount(/usr/bin/unshare+0xa988, any, 0, 0x44000, 0) @ libc.so.6+0xe0774(mount+4)
 mount(/usr/bin/unshare+0xa988, /usr/bin/unshare+0x9eb8, 0, any, 0) @ libc.so.6+0xe0774(mount+4)

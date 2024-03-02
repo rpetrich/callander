@@ -1,5 +1,6 @@
 callander: permitted syscalls: getxattr(any, libselinux.so.1+0x20cc0, 0, 0) @ libc.so.6+0xdf8b4(getxattr+4)
 getxattr(any, libselinux.so.1+0x20cc0, non-NULL, any) @ libc.so.6+0xdf8b4(getxattr+4)
+getxattr(any, libselinux.so.1+0x21088, any, 20) @ libc.so.6+0xdf8b4(getxattr+4)
 getcwd(non-NULL, any) @ libc.so.6+0xd2760(getcwd+136)
 dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xd2584(dup+4)
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, libc.so.6+0x13b10c) @ libc.so.6+0xd213c(__fcntl+108)

@@ -38,7 +38,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x8ae09
 rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x8ab97
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0xa7658
 pread64(any u32, any, any, any) @ /usr/sbin/ldconfig.real+0xa75fc
-writev(STDERR_FILENO, any, any u32) @ /usr/sbin/ldconfig.real+0x740b5
+writev(STDERR_FILENO, any, 1) @ /usr/sbin/ldconfig.real+0x740b5
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig.real+0x740eb
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0xb638f
 access(/usr/sbin/ldconfig.real+0xd3042, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
@@ -69,11 +69,9 @@ rename(any, any) @ /usr/sbin/ldconfig.real+0x22499
 mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x73119
 unlink(any) @ /usr/sbin/ldconfig.real+0x73c79
 symlink(any, any) @ /usr/sbin/ldconfig.real+0x73c19
-readlink(any, any, 4095) @ /usr/sbin/ldconfig.real+0x73c49
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig.real+0x73c49
 readlink(/usr/sbin/ldconfig.real+0xe63e3, any, 0x1000) @ /usr/sbin/ldconfig.real+0xb7ff1
 chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x730e9
-gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x772e9
 arch_prctl(0x3005, /usr/sbin/ldconfig.real+0x101d60) @ /usr/sbin/ldconfig.real+0xc7a89
 arch_prctl(0x3002, 0) @ /usr/sbin/ldconfig.real+0xc7acf
@@ -87,8 +85,6 @@ getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xa6449
 restart_syscall()
 clock_gettime(CLOCK_REALTIME, any) @ /usr/sbin/ldconfig.real+0xa636a
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ /usr/sbin/ldconfig.real+0xa636a
-clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
-clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1712
 clock_nanosleep(any u32, 0, any, any) @ /usr/sbin/ldconfig.real+0xc179d
 clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc17e8

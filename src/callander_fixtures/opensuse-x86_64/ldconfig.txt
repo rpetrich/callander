@@ -70,11 +70,9 @@ rename(any, any) @ /sbin/ldconfig:0x4108d5
 mkdir(any, 0700) @ /sbin/ldconfig:0x465e85
 unlink(any) @ /sbin/ldconfig:0x466a35
 symlink(any, any) @ /sbin/ldconfig:0x4669b5
-readlink(any, any, 4095) @ /sbin/ldconfig:0x4669f5
 readlink(any, non-NULL, 511) @ /sbin/ldconfig:0x4669f5
 readlink(/sbin/ldconfig:0x4be37a, any, 0x1000) @ /sbin/ldconfig:0x4a9462
 chmod(any, 0644) @ /sbin/ldconfig:0x465e45
-gettimeofday(any, any) @ [vdso]+0x7ff(gettimeofday+271)
 sysinfo(any) @ /sbin/ldconfig:0x468ce5
 chroot(non-NULL) @ /sbin/ldconfig:0x466fe5
 gettid() @ /sbin/ldconfig:0x40ec3c
@@ -84,8 +82,6 @@ getdents64(any u32, any, any) @ /sbin/ldconfig:0x498e35
 restart_syscall()
 clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /sbin/ldconfig:0x498d32
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ /sbin/ldconfig:0x498d32
-clock_gettime(any u32, any) @ [vdso]+0x99a(__vdso_clock_gettime+202)
-clock_getres(any u32, any) @ [vdso]+0xb9e(__vdso_clock_getres+94)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /sbin/ldconfig:0x4b3598
 clock_nanosleep(any u32, any u32, any, any) @ /sbin/ldconfig:0x4b35ef
 exit_group(any u32) @ /sbin/ldconfig:0x45f1a4
