@@ -561,7 +561,8 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 			DIE("could not analyze", zlib_symbols[i].name);
 		}
 		struct analysis_frame new_caller = { .address = addr, .description = zlib_symbols[i].name, .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, };
-		analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, addr, &new_caller);
+		struct registers registers = empty_registers;
+		analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, addr, &new_caller);
 	}
 
 	sort_and_coalesce_syscalls(&analysis->syscalls, &analysis->loader);
