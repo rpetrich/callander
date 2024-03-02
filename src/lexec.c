@@ -59,7 +59,7 @@ static void discovered_library_mapping(int fd, void *address)
 			}
 			PATCH_LOG("didn't match", binary->loaded_path);
 		}
-		DIE("could not find library");
+		DIE("could not find library", &buf[0]);
 	}
 }
 
@@ -361,7 +361,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			break;
 		}
 		default: {
-			DIE("unknown syscall");
+			DIE("unknown syscall", name_for_syscall(nr));
 			break;
 		}
 	}
