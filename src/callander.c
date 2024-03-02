@@ -3265,14 +3265,14 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			find_and_add_callback(analysis, setxid, mask_for_register(sysv_argument_abi_register_indexes[0]), mask_for_register(sysv_argument_abi_register_indexes[0]), mask_for_register(sysv_argument_abi_register_indexes[0]), EFFECT_NONE, handle_musl_setxid, NULL);
 		} else {
 			static const struct musl_setxid_wrapper wrappers[] = {
-				{"setegid", SYS_setresgid, -1},
-				{"seteuid", SYS_setresuid, -1},
-				{"setgid", SYS_setgid, 1},
-				{"setregid", SYS_setregid, 2},
-				{"setresgid", SYS_setresgid, 3},
-				{"setresuid", SYS_setresuid, 3},
-				{"setreuid", SYS_setreuid, 2},
-				{"setuid", SYS_setuid, 1},
+				{"setegid", LINUX_SYS_setresgid, -1},
+				{"seteuid", LINUX_SYS_setresuid, -1},
+				{"setgid", LINUX_SYS_setgid, 1},
+				{"setregid", LINUX_SYS_setregid, 2},
+				{"setresgid", LINUX_SYS_setresgid, 3},
+				{"setresuid", LINUX_SYS_setresuid, 3},
+				{"setreuid", LINUX_SYS_setreuid, 2},
+				{"setuid", LINUX_SYS_setuid, 1},
 			};
 			for (size_t i = 0; i < sizeof(wrappers) / sizeof(wrappers[0]); i++) {
 				ins_ptr wrapper = resolve_binary_loaded_symbol(&analysis->loader, new_binary, wrappers[i].name, NULL, INTERNAL_COMMON_SYMBOL, NULL);
