@@ -1,7 +1,11 @@
 #ifndef INS_H
 #define INS_H
 
+#ifdef __aarch64__
+#define MORE_STACK_SLOTS 1
+#else
 #define MORE_STACK_SLOTS 0
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
