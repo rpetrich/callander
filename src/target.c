@@ -68,7 +68,7 @@ int main(void)
 #endif
 {
 	intptr_t result;
-#if 1
+#if 0
 	int fd = 0;
 	for (;;) {
 		struct sockaddr_in sa;
@@ -80,6 +80,10 @@ int main(void)
 		fd++;
 	}
 	(void)fs_fcntl(fd, F_SETFL, O_RDWR);
+	result = fs_fork();
+	if (result != 0) {
+		fs_exit(0);
+	}
 #else
 	int fd = fs_socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -103,10 +107,6 @@ int main(void)
 		EXIT_FROM_ERRNO("Failed to disable nagle on socket", result);
 	}
 #endif
-	result = fs_fork();
-	if (result != 0) {
-		fs_exit(0);
-	}
 	state.read_mutex = (struct fs_mutex){ 0 };
 	state.write_mutex = (struct fs_mutex){ 0 };
 
