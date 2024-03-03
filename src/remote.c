@@ -23,6 +23,7 @@ void remote_spawn_worker(void)
 			break;
 		}
 		case TARGET_PLATFORM_DARWIN:
+		case TARGET_PLATFORM_WINDOWS:
 			break;
 		default:
 			unknown_target();

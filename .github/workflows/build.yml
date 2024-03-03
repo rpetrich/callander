@@ -38,3 +38,13 @@ jobs:
       with:
         name: callander-aarch64
         path: src/callander-aarch64-*.tgz
+
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+    - run: sudo apt-get update
+    - run: sudo apt-get install mingw-w64
+    - uses: actions/checkout@v3
+    - run: git submodule update --init
+    - run: make -j -k target TARGETOS=windows TARGETMACHINE=x86_64
+      working-directory: src

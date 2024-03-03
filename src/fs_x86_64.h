@@ -181,6 +181,7 @@ static inline intptr_t fs_clone(unsigned long flags, void *child_stack, void *pt
 }
 #endif
 
+#ifdef __linux__
 struct fs_stat {
 	dev_t st_dev;
 	ino_t st_ino;
@@ -203,3 +204,4 @@ struct fs_stat {
 	long st_ctime_nsec;
 	long __unused_trailer[3];
 };
+#endif

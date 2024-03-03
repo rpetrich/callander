@@ -26,24 +26,35 @@ else
 	BASE_ADDRESS=0x08040000
 endif
 
+ifeq ($(TARGETOS),windows)
+	CC = $(TARGETMACHINE)-w64-mingw32-gcc
+	LDFLAGS += -lsynchronization -lws2_32
+else
 ifneq ($(NATIVEMACHINE),$(TARGETMACHINE))
 	CC = $(TARGETMACHINE)-$(TARGETOS)-gnu-gcc
 	export PATH := /usr/$(TARGETMACHINE)-$(TARGETOS)-gnu/bin:$(PATH)
+endif
 endif
 OBJCOPY ?= objcopy
 STRIP ?= strip
 
 CFLAGS += -DPRODUCT_NAME='"callander"'
 
-CFLAGS += -flto -fvisibility=hidden -ffunction-sections -fdata-sections
-LDFLAGS += -flto -fvisibility=hidden
+CFLAGS += -fvisibility=hidden -ffunction-sections -fdata-sections
+LDFLAGS += -fvisibility=hidden
 ifeq ($(TARGETOS),linux)
-	LDFLAGS += -Wl,--gc-sections
+	CFLAGS += -flto
+	LDFLAGS += -flto -Wl,--gc-sections
 	STANDALONE ?= 1
 	DEBUG_FLAGS := -gdwarf-2 -g1 -ggdb
 else
 	STANDALONE ?= 0
+	CFLAGS += -Wno-inline-asm
+ifeq ($(TARGETOS),darwin)
 	DEBUG_FLAGS := -glldb -fno-standalone-debug
+else
+	DEBUG_FLAGS := -g
+endif
 endif
 
 # record stack usage to objs-*/*.su
@@ -248,7 +259,7 @@ ifeq ($(TARGETOS),linux)
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 else
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
+	$(CC) $(DEBUG_FLAGS) -o "$@" "$<" $(LDFLAGS)
 endif
 
 # basic remote shell payload

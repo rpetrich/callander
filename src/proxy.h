@@ -1,15 +1,23 @@
 #ifndef PROXY_H
 #define PROXY_H
 
+#include "freestanding.h"
 #include "target.h"
 
-#include "attempt.h"
-#include "freestanding.h"
-
 #include <stdnoreturn.h>
-#include <sys/uio.h>
 
-#define PROXY_SUPPORT_DARWIN
+#ifdef __MINGW32__
+struct iovec {
+	size_t iov_len;
+	void *iov_base;
+};
+#else
+#include "attempt.h"
+
+#include <sys/uio.h>
+#endif
+
+#define PROXY_SUPPORT_ALL_PLATFORMS
 
 // PROXY_FD is the connection to the victim target
 #define PROXY_FD 0x3fc
@@ -110,7 +118,7 @@ static inline int proxy_fill_request_message(request_message *request, struct io
 
 intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT]);
 
-#ifdef PROXY_SUPPORT_DARWIN
+#ifdef PROXY_SUPPORT_ALL_PLATFORMS
 enum target_platform proxy_get_target_platform(void);
 #else
 __attribute__((always_inline))
@@ -154,6 +162,8 @@ int *get_fd_counts(void);
 struct resolver_config_cache;
 struct resolver_config_cache *get_resolver_config_cache(void);
 
+#ifndef __MINGW32__
+
 typedef struct {
 	struct attempt_cleanup_state cleanup_state;
 	intptr_t addr;
@@ -178,6 +188,8 @@ static inline void attempt_proxy_free(attempt_proxy_alloc_state *state) {
 	attempt_pop_and_skip_cleanup(&state->cleanup_state);
 	proxy_free(state->addr, state->size);
 }
+
+#endif
 
 noreturn void unknown_target(void);
 

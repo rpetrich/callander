@@ -43,6 +43,21 @@ typedef struct {
 enum target_platform {
 	TARGET_PLATFORM_LINUX,
 	TARGET_PLATFORM_DARWIN,
+	TARGET_PLATFORM_WINDOWS,
+};
+
+enum {
+#ifdef __linux__
+	TARGET_PLATFORM_CURRENT = TARGET_PLATFORM_LINUX,
+#else
+#ifdef __APPLE__
+	TARGET_PLATFORM_CURRENT = TARGET_PLATFORM_DARWIN,
+#else
+#ifdef __MINGW32__
+	TARGET_PLATFORM_CURRENT = TARGET_PLATFORM_WINDOWS,
+#endif
+#endif
+#endif
 };
 
 typedef struct {

@@ -1,6 +1,17 @@
 #ifndef FREESTANDING_H
 #define FREESTANDING_H
 
+#ifdef __MINGW32__
+#define FREESTANDING_USE_PASSTHROUGH
+#endif
+
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdnoreturn.h>
+
+#ifndef FREESTANDING_USE_PASSTHROUGH
+
 #ifdef __linux__
 #define _GNU_SOURCE
 #endif
@@ -11,10 +22,6 @@
 #endif
 #include <limits.h>
 #include <unistd.h>
-#include <stdatomic.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdnoreturn.h>
 #ifdef __linux__
 #include <syscall.h>
 #elif defined(__APPLE__)
@@ -77,6 +84,8 @@ FS_NAME_ASM(name)":"
 #endif
 #endif
 
+#endif
+
 static inline unsigned short fs_htons(unsigned short value)
 {
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -94,6 +103,8 @@ static inline unsigned int fs_htonl(unsigned int value)
 	return value;
 #endif
 }
+
+#ifndef FREESTANDING_USE_PASSTHROUGH
 
 noreturn static inline void fs_exit(int status)
 {
@@ -239,6 +250,12 @@ static inline intptr_t fs_readv_all(int fd, struct iovec *iov, int iovcnt)
 		iov->iov_base += result;
 		iov->iov_len -= (size_t)result;
 	}
+}
+
+__attribute__((warn_unused_result))
+static inline intptr_t fs_recv(int fd, char *buffer, size_t length, int flags)
+{
+	return FS_SYSCALL(SYS_read, fd, (intptr_t)buffer, (intptr_t)length, flags);
 }
 
 __attribute__((warn_unused_result))
@@ -623,6 +640,11 @@ static inline int fs_close(int fd)
 	return (int)FS_SYSCALL(SYS_close, fd);
 }
 
+static inline int fs_closesocket(int fd)
+{
+	return fs_close(fd);
+}
+
 __attribute__((warn_unused_result))
 static inline ssize_t fs_getcwd(char *buf, size_t size)
 {
@@ -1001,6 +1023,8 @@ static inline void fs_fd_clr(int fd, struct fs_fd_set *fds)
 	fds->bits[(unsigned int)fd / (8 * sizeof(long int))] &= ~(1 << ((unsigned int)fd % (8 * sizeof(long int))));
 }
 
+#endif
+
 // fs_memset fills a buffer with a specified character value
 __attribute__((nonnull(1)))
 static inline void *fs_memset(void *buffer, int value, size_t num)
@@ -1351,6 +1375,8 @@ static inline const char *fs_scans(const char *buffer, intptr_t *result)
 	return buffer;
 }
 
+#ifndef FREESTANDING_USE_PASSTHROUGH
+
 __attribute__((warn_unused_result))
 __attribute__((nonnull(2)))
 static inline int fs_readlink_fd(int fd, char *out_path, size_t size)
@@ -1465,6 +1491,8 @@ static inline void fs_mutex_unlock(struct fs_mutex *mutex)
 {
 	os_unfair_lock_unlock(&mutex->state);
 }
+
+#endif
 
 #endif
 
@@ -1707,5 +1735,9 @@ static inline const char *fs_strerror(int err)
 	return &template[((-1)-err)*16];
 #endif
 }
+
+#ifdef FREESTANDING_USE_PASSTHROUGH
+#include "freestanding_passthrough.h"
+#endif
 
 #endif

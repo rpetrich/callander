@@ -1,3 +1,4 @@
+#ifndef __MINGW32__
 #define _GNU_SOURCE
 #define FS_INLINE_SYSCALL
 #define FS_INLINE_MUTEX_SLOW_PATH
@@ -17,6 +18,8 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <errno.h>
+
+#endif
 
 #include "target.h"
 #include "proxy.h"
@@ -108,15 +111,11 @@ int main(void)
 	state.write_mutex = (struct fs_mutex){ 0 };
 
 	hello_message hello;
-#ifdef __linux__
-	hello.target_platform = TARGET_PLATFORM_LINUX;
-#else
-	hello.target_platform = TARGET_PLATFORM_DARWIN;
-#endif
+	hello.target_platform = TARGET_PLATFORM_CURRENT;
 	hello.process_data = process_data;
 	state.sockfd = fd;
 	hello.state = &state;
-	result = fs_write(fd, (const char *)&hello, sizeof(hello));
+	result = fs_send(fd, (const char *)&hello, sizeof(hello), 0);
 	if (result < 0) {
 		EXIT_FROM_ERRNO("Failed to write startup message", result);
 	}
@@ -138,15 +137,15 @@ noreturn static void process_data(void)
 			request_message message;
 		} request;
 		uint32_t bytes_read = 0;
-#ifdef SYS_futex
 		fs_mutex_lock(&state.read_mutex);
-#endif
 		do {
-			int result = fs_read(sockfd_local, &request.buf[bytes_read], sizeof(request.buf) - bytes_read);
+			int result = fs_recv(sockfd_local, &request.buf[bytes_read], sizeof(request.buf) - bytes_read, 0);
 			if (result <= 0) {
+#ifdef EINTR
 				if (result == -EINTR) {
 					continue;
 				}
+#endif
 				if (result == 0) {
 					fs_exit(0);
 				}
@@ -163,9 +162,7 @@ noreturn static void process_data(void)
 		switch (request.message.template.nr) {
 			case TARGET_NR_PEEK:
 				// peek at local memory, writing the current data to the socket
-#ifdef SYS_futex
 				fs_mutex_unlock(&state.read_mutex);
-#endif
 				vec[io_count].iov_base = (void *)request.message.values[0];
 				vec[io_count].iov_len = request.message.values[1];
 				io_count++;
@@ -177,11 +174,13 @@ noreturn static void process_data(void)
 				char *addr = (char *)request.message.values[0];
 				size_t trailer_bytes = request.message.values[1];
 				while (trailer_bytes != bytes_read) {
-					int result = fs_read(sockfd_local, addr + bytes_read, trailer_bytes - bytes_read);
+					int result = fs_recv(sockfd_local, addr + bytes_read, trailer_bytes - bytes_read, 0);
 					if (result <= 0) {
+#ifdef EINTR
 						if (result == -EINTR) {
 							continue;
 						}
+#endif
 						if (result == 0) {
 							fs_exit(0);
 						}
@@ -189,9 +188,7 @@ noreturn static void process_data(void)
 					}
 					bytes_read += result;
 				}
-#ifdef SYS_futex
 				fs_mutex_unlock(&state.read_mutex);
-#endif
 				break;
 			}
 			default: {
@@ -228,11 +225,13 @@ noreturn static void process_data(void)
 				// read trailer
 				bytes_read = 0;
 				while (trailer_bytes != bytes_read) {
-					int result = fs_read(sockfd_local, &buf[bytes_read], sizeof(buf) - bytes_read);
+					int result = fs_recv(sockfd_local, &buf[bytes_read], sizeof(buf) - bytes_read, 0);
 					if (result <= 0) {
+#ifdef EINTR
 						if (result == -EINTR) {
 							continue;
 						}
+#endif
 						if (result == 0) {
 							fs_exit(0);
 						}
@@ -240,9 +239,7 @@ noreturn static void process_data(void)
 					}
 					bytes_read += result;
 				}
-#ifdef SYS_futex
 				fs_mutex_unlock(&state.read_mutex);
-#endif
 				// perform syscall
 				int syscall = request.message.template.nr & ~TARGET_NO_RESPONSE;
 				if (syscall == TARGET_NR_CALL) {
@@ -256,7 +253,11 @@ noreturn static void process_data(void)
 #ifdef __APPLE__
 					syscall |= DARWIN_SYSCALL_BASE;
 #endif
+#ifndef __MINGW32__
 					response.result = FS_SYSCALL(syscall, values[0], values[1], values[2], values[3], values[4], values[5]);
+#else
+					response.result = -1;
+#endif
 				}
 				break;
 			}
@@ -265,15 +266,19 @@ noreturn static void process_data(void)
 			// write result
 			response.id = request.message.id;
 			size_t io_start = 0;
-#ifdef SYS_futex
 			fs_mutex_lock(&state.write_mutex);
-#endif
 			for (;;) {
+#ifdef SYS_writev
 				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count-io_start);
+#else
+				intptr_t result = fs_send(sockfd_local, vec[io_start].iov_base, vec[io_start].iov_len, 0);
+#endif
 				if (result <= 0) {
+#ifdef EINTR
 					if (result == -EINTR) {
 						continue;
 					}
+#endif
 					if (result == 0) {
 						fs_exit(0);
 					}
@@ -289,11 +294,7 @@ noreturn static void process_data(void)
 				vec[io_start].iov_len -= result;
 			}
 	unlock:
-#ifdef SYS_futex
 			fs_mutex_unlock(&state.write_mutex);
-#else
-			;
-#endif
 		}
 	}
 	__builtin_unreachable();

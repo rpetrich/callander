@@ -257,7 +257,7 @@ void proxy_read_stream_message_finish(uint32_t stream_id)
 	shared_mutex_unlock(&shared->read_lock);
 }
 
-#ifdef PROXY_SUPPORT_DARWIN
+#ifdef PROXY_SUPPORT_ALL_PLATFORMS
 
 enum target_platform proxy_get_target_platform(void)
 {
