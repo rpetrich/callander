@@ -21,6 +21,8 @@ typedef struct {
 #define TARGET_NR_PEEK (TARGET_NO_RESPONSE-1)
 #define TARGET_NR_POKE (TARGET_NO_RESPONSE | TARGET_NR_PEEK)
 #define TARGET_NR_CALL (TARGET_NO_RESPONSE-2)
+#define TARGET_NR_WIN32_CALL (TARGET_NO_RESPONSE-3)
+#define TARGET_NR_WIN32_BOOL_CALL (TARGET_NO_RESPONSE-4)
 
 typedef struct {
 	syscall_template template;
@@ -64,6 +66,13 @@ typedef struct {
 	uint8_t target_platform;
 	target_state *state;
 	void (*process_data)(void);
+	union {
+		struct {
+			intptr_t GetModuleHandleA;
+			intptr_t LoadLibraryA;
+			intptr_t GetProcAddress;
+		} windows;
+	};
 } __attribute__((packed)) hello_message;
 
 #endif

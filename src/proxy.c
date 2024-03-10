@@ -135,6 +135,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	iov[0].iov_base = &request;
 	iov[0].iov_len = sizeof(request);
 	int arg_vec_count = proxy_fill_request_message(&request, &iov[1], syscall, args);
+#if 0
 	if ((shared->hello.target_platform == TARGET_PLATFORM_DARWIN) != ((syscall & DARWIN_SYSCALL_BASE) == DARWIN_SYSCALL_BASE)) {
 		switch (syscall & ~PROXY_NO_WORKER) {
 			case TARGET_NR_PEEK:
@@ -152,6 +153,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 				break;
 		}
 	}
+#endif
 	if ((syscall & (PROXY_NO_RESPONSE | PROXY_NO_WORKER)) == 0) {
 		if (atomic_fetch_sub_explicit(&shared->idle_worker_count, 1, memory_order_relaxed) == 0) {
 			remote_spawn_worker();

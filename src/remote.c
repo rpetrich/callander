@@ -1,13 +1,19 @@
 #define _GNU_SOURCE
 #include "remote.h"
 
+#include "axon.h"
 #include "darwin.h"
 #include "freestanding.h"
-#include "axon.h"
 #include "proxy.h"
+#include "windows.h"
 
 #include <string.h>
 #include <sched.h>
+
+#define unknown_target() do { \
+	ERROR("in function", __func__); \
+	unknown_target(); \
+} while(0)
 
 void remote_spawn_worker(void)
 {
@@ -44,6 +50,21 @@ intptr_t remote_openat(int dirfd, const char *path, int flags, mode_t mode)
 			return PROXY_CALL(__NR_openat, proxy_value(dirfd), proxy_string(path), proxy_value(flags), proxy_value(mode));
 		case TARGET_PLATFORM_DARWIN:
 			return translate_darwin_result(PROXY_CALL(DARWIN_SYS_openat, proxy_value(translate_at_fd_to_darwin(dirfd)), proxy_string(path), proxy_value(translate_open_flags_to_darwin(flags)), proxy_value(mode)));
+		case TARGET_PLATFORM_WINDOWS: {
+			if (dirfd != AT_FDCWD) {
+				return -EINVAL;
+			}
+			WINDOWS_DWORD desired_access = translate_open_flags_to_windows_desired_access(flags);
+			uint16_t buf[PATH_MAX];
+			WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS params;
+			params.dwSize = sizeof(params);
+			params.dwFileAttributes = WINDOWS_FILE_ATTRIBUTE_NORMAL;
+			params.dwFileFlags = WINDOWS_FILE_FLAG_BACKUP_SEMANTICS;
+			params.dwSecurityQosFlags = 0;
+			params.lpSecurityAttributes = NULL;
+			params.hTemplateFile = 0;
+			return translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(translate_windows_wide_path(path, buf)), proxy_value(desired_access), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_ALWAYS), proxy_in(&params, sizeof(params))));
+		}
 		default:
 			unknown_target();
 	}
@@ -69,6 +90,11 @@ intptr_t remote_read(int fd, char *buf, size_t bufsz)
 			return PROXY_CALL(__NR_read, proxy_value(fd), proxy_out(buf, bufsz), proxy_value(bufsz));
 		case TARGET_PLATFORM_DARWIN:
 			return translate_darwin_result(PROXY_CALL(DARWIN_SYS_read, proxy_value(fd), proxy_out(buf, bufsz), proxy_value(bufsz)));
+		case TARGET_PLATFORM_WINDOWS: {
+			WINDOWS_DWORD numberOfBytesRead;
+			intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, ReadFile, proxy_value(fd), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_out(&numberOfBytesRead, sizeof(numberOfBytesRead))));
+			return result == 0 ? numberOfBytesRead : result;
+		}
 		default:
 			unknown_target();
 	}
@@ -133,6 +159,8 @@ intptr_t remote_fadvise64(int fd, size_t offset, size_t len, int advice)
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_fadvise64, proxy_value(fd), proxy_value(offset), proxy_value(len), proxy_value(advice));
 		case TARGET_PLATFORM_DARWIN:
+		case TARGET_PLATFORM_WINDOWS:
+			// ignore fadvise
 			return 0;
 		default:
 			unknown_target();
@@ -145,6 +173,8 @@ intptr_t remote_readahead(int fd, off_t offset, size_t count)
 		case TARGET_PLATFORM_LINUX:
 			return PROXY_CALL(__NR_readahead, proxy_value(fd), proxy_value(offset), proxy_value(count));
 		case TARGET_PLATFORM_DARWIN:
+		case TARGET_PLATFORM_WINDOWS:
+			// ignore readahead
 			return 0;
 		default:
 			unknown_target();
@@ -354,6 +384,9 @@ void remote_close(int fd)
 		case TARGET_PLATFORM_DARWIN:
 			PROXY_CALL(DARWIN_SYS_close | PROXY_NO_RESPONSE, proxy_value(fd));
 			break;
+		case TARGET_PLATFORM_WINDOWS:
+			PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(fd));
+			break;
 		default:
 			unknown_target();
 			break;
@@ -437,6 +470,14 @@ intptr_t remote_fstat(int fd, struct fs_stat *buf)
 			}
 			return result;
 		}
+		case TARGET_PLATFORM_WINDOWS: {
+			WINDOWS_BY_HANDLE_FILE_INFORMATION info;
+			intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, GetFileInformationByHandle, proxy_value(fd), proxy_out(&info, sizeof(info))));
+			if (result >= 0) {
+				*buf = translate_windows_by_handle_file_information(info);
+			}
+			return result;
+		}
 		default:
 			unknown_target();
 	}
@@ -462,6 +503,16 @@ intptr_t remote_newfstatat(int fd, const char *path, struct fs_stat *stat, int f
 			}
 			return result;
 		}
+		case TARGET_PLATFORM_WINDOWS: {
+			if ((flags & AT_EMPTY_PATH) && (path == NULL || *path == '\0')) {
+				if (fd == AT_FDCWD) {
+					path = ".";
+				} else {
+					return remote_fstat(fd, stat);
+				}
+			}
+			unknown_target();
+		}
 		default:
 			unknown_target();
 	}
@@ -486,6 +537,57 @@ intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, st
 			}
 			if (result >= 0) {
 				translate_darwin_statx(statxbuf, dstat, mask);
+			}
+			return result;
+		}
+		case TARGET_PLATFORM_WINDOWS: {
+			WINDOWS_BY_HANDLE_FILE_INFORMATION info;
+			intptr_t handle;
+			intptr_t result;
+			if ((flags & AT_EMPTY_PATH) && (path == NULL || *path == '\0')) {
+				if (fd == AT_FDCWD) {
+					WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS params;
+					params.dwSize = sizeof(params);
+					params.dwFileAttributes = WINDOWS_FILE_ATTRIBUTE_NORMAL;
+					params.dwFileFlags = WINDOWS_FILE_FLAG_BACKUP_SEMANTICS;
+					params.dwSecurityQosFlags = 0;
+					params.lpSecurityAttributes = NULL;
+					params.hTemplateFile = 0;
+					uint16_t buf[2];
+					buf[0] = '.';
+					buf[1] = '\0';
+					handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(buf), proxy_value(0), proxy_value(WINDOWS_FILE_SHARE_READ), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
+					if (handle < 0) {
+						return handle;
+					}
+				} else {
+					result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, GetFileInformationByHandle, proxy_value(fd), proxy_out(&info, sizeof(info))));
+					if (result >= 0) {
+						translate_windows_by_handle_file_information_to_statx(statxbuf, info, mask);
+					}
+					return result;
+				}
+			} else {
+				if (fd != AT_FDCWD) {
+					return -EINVAL;
+				}
+				uint16_t buf[PATH_MAX];
+				WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS params;
+				params.dwSize = sizeof(params);
+				params.dwFileAttributes = WINDOWS_FILE_ATTRIBUTE_NORMAL;
+				params.dwFileFlags = WINDOWS_FILE_FLAG_BACKUP_SEMANTICS;
+				params.dwSecurityQosFlags = 0;
+				params.lpSecurityAttributes = NULL;
+				params.hTemplateFile = 0;
+				handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(translate_windows_wide_path(path, buf)), proxy_value(0), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
+				if (handle < 0) {
+					return handle;
+				}
+			}
+			result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, GetFileInformationByHandle, proxy_value(handle), proxy_out(&info, sizeof(info))));
+			PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(handle));
+			if (result >= 0) {
+				translate_windows_by_handle_file_information_to_statx(statxbuf, info, mask);
 			}
 			return result;
 		}
@@ -522,21 +624,26 @@ intptr_t remote_readlinkat(int dirfd, const char *path, char *buf, size_t bufsz)
 
 intptr_t remote_readlink_fd(int fd, char *buf, size_t size)
 {
-	if (proxy_get_target_platform() == TARGET_PLATFORM_DARWIN) {
-		if (size < 1024) {
-			DIE("expected at least 1024 byte buffer", (int)size);
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX: {
+			// readlink the fd remotely
+			char dev_path[64];
+			memcpy(dev_path, DEV_FD, sizeof(DEV_FD) - 1);
+			fs_utoa(fd, &dev_path[sizeof(DEV_FD) - 1]);
+			return remote_readlinkat(AT_FDCWD, dev_path, buf, size);
 		}
-		intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fcntl, proxy_value(fd), proxy_value(DARWIN_F_GETPATH), proxy_out(buf, size)));
-		if (result >= 0) {
-			return fs_strlen(buf);
+		case TARGET_PLATFORM_DARWIN: {
+			if (size < 1024) {
+				DIE("expected at least 1024 byte buffer", (int)size);
+			}
+			intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fcntl, proxy_value(fd), proxy_value(DARWIN_F_GETPATH), proxy_out(buf, size)));
+			if (result >= 0) {
+				return fs_strlen(buf);
+			}
+			return result;
 		}
-		return result;
-	} else {
-		// readlink the fd remotely
-		char dev_path[64];
-		memcpy(dev_path, DEV_FD, sizeof(DEV_FD) - 1);
-		fs_utoa(fd, &dev_path[sizeof(DEV_FD) - 1]);
-		return remote_readlinkat(AT_FDCWD, dev_path, buf, size);
+		default:
+			unknown_target();
 	}
 }
 

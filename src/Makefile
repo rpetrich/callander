@@ -29,11 +29,13 @@ endif
 ifeq ($(TARGETOS),windows)
 	CC = $(TARGETMACHINE)-w64-mingw32-gcc
 	LDFLAGS += -lsynchronization -lws2_32
+	BINSUFFIX := .exe
 else
 ifneq ($(NATIVEMACHINE),$(TARGETMACHINE))
 	CC = $(TARGETMACHINE)-$(TARGETOS)-gnu-gcc
 	export PATH := /usr/$(TARGETMACHINE)-$(TARGETOS)-gnu/bin:$(PATH)
 endif
+	BINSUFFIX :=
 endif
 OBJCOPY ?= objcopy
 STRIP ?= strip
@@ -139,7 +141,7 @@ endif
 OBJECTS :=  $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o axon.o coverage.o \
 			darwin.o debugger.o defaultlibs.o exec.o fd_table.o fork.o install.o intercept.o \
 			handler.o libraries.o loader.o mapped.o paths.o preload.o proxy.o qsort.o remote.o \
-			remote_library.o resolver.o search.o seccomp.o sockets.o stack.o time.o tls.o tracer.o
+			remote_library.o resolver.o search.o seccomp.o sockets.o stack.o time.o tls.o tracer.o windows.o
 TEXEC_OBJECTS := $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o darwin.o \
 			defaultlibs.o exec.o fd_table.o loader.o proxy.o qsort.o remote.o remote_exec.o search.o seccomp.o \
 		    stack.o texec.o time.o tls.o x86.o callander.o callander_print.o
@@ -252,7 +254,7 @@ tests/segfault: tests/segfault.c *.h Makefile
 	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
 
 # full axon target payload
-target: target.c *.h Makefile
+target$(BINSUFFIX): target.c *.h Makefile
 ifeq ($(TARGETOS),linux)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
@@ -263,25 +265,25 @@ else
 endif
 
 # basic remote shell payload
-target2: target2.c *.h Makefile
+target2$(BINSUFFIX): target2.c *.h Makefile
 ifeq ($(TARGETOS),linux)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 else
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
+	$(CC) $(DEBUG_FLAGS) -o "$@" "$<" $(LDFLAGS)
 endif
 
 # intermediary payload
-target3: target3.c *.h Makefile
+target3$(BINSUFFIX): target3.c *.h Makefile
 ifeq ($(TARGETOS),linux)
 	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -shared -nostartfiles -ffreestanding -fPIC -Os -ffreestanding -Wl,-e,release -Wl,--build-id=none -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -fcf-protection=none -fno-asynchronous-unwind-tables  -fno-toplevel-reorder -o "$@" "$<"
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 else
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
+	$(CC) $(DEBUG_FLAGS) -o "$@" "$<" $(LDFLAGS)
 endif
 
 # executes binaries remotely

@@ -1496,6 +1496,17 @@ static inline void fs_mutex_unlock(struct fs_mutex *mutex)
 
 #endif
 
+__attribute__((always_inline))
+static inline bool fs_is_eintr(int err)
+{
+#ifdef EINTR
+	return err == -EINTR;
+#else
+	(void)err;
+	return false;
+#endif
+}
+
 static inline const char *fs_strerror(int err)
 {
 	if (err >= 0) {

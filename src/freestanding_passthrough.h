@@ -2,9 +2,11 @@
 #define FREESTANDING_PASSTHROUGH_H
 
 #ifdef __MINGW32__
+#define WIN32_LEAN_AND_MEAN
 #include <stdlib.h>
 #include <winsock2.h>
 #include <synchapi.h>
+#include <unistd.h>
 
 struct fs_mutex {
 	// needs manual padding to avoid false sharing
@@ -109,6 +111,11 @@ __attribute__((warn_unused_result))
 static inline intptr_t fs_recv(int socket, char *buffer, size_t length, int flags)
 {
 	return fs_adapt_socket_result(recv(socket, buffer, length, flags));
+}
+
+static inline intptr_t fs_write(int fd, const char *buffer, size_t length)
+{
+	return fs_adapt_socket_result(write(fd, buffer, length));
 }
 
 #endif

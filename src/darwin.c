@@ -368,6 +368,7 @@ void translate_darwin_statx(struct linux_statx *out_statx, struct darwin_stat st
 {
 	out_statx->stx_dev_major = (stat.st_dev >> 8) & 0xff;
 	out_statx->stx_dev_minor = stat.st_dev & 0xff;
+	out_statx->stx_blksize = stat.st_blksize;
 	unsigned int filled = 0;
 	if (mask & STATX_TYPE) {
 		filled |= STATX_TYPE;

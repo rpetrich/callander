@@ -85,7 +85,11 @@ int main(void)
 		fs_exit(0);
 	}
 #else
-	int fd = fs_socket(AF_INET, SOCK_STREAM, 0);
+#ifdef __MINGW32__
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+	int fd = fs_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (fd < 0) {
 		EXIT_FROM_ERRNO("Failed to open socket", fd);
 	}
@@ -110,11 +114,16 @@ int main(void)
 	state.read_mutex = (struct fs_mutex){ 0 };
 	state.write_mutex = (struct fs_mutex){ 0 };
 
-	hello_message hello;
+	hello_message hello = { 0 };
 	hello.target_platform = TARGET_PLATFORM_CURRENT;
 	hello.process_data = process_data;
 	state.sockfd = fd;
 	hello.state = &state;
+#ifdef __MINGW32__
+	hello.windows.LoadLibraryA = (intptr_t)&LoadLibraryA;
+	hello.windows.GetModuleHandleA = (intptr_t)&GetModuleHandleA;
+	hello.windows.GetProcAddress = (intptr_t)&GetProcAddress;
+#endif
 	result = fs_send(fd, (const char *)&hello, sizeof(hello), 0);
 	if (result < 0) {
 		EXIT_FROM_ERRNO("Failed to write startup message", result);
@@ -141,11 +150,9 @@ noreturn static void process_data(void)
 		do {
 			int result = fs_recv(sockfd_local, &request.buf[bytes_read], sizeof(request.buf) - bytes_read, 0);
 			if (result <= 0) {
-#ifdef EINTR
-				if (result == -EINTR) {
+				if (fs_is_eintr(result)) {
 					continue;
 				}
-#endif
 				if (result == 0) {
 					fs_exit(0);
 				}
@@ -176,11 +183,9 @@ noreturn static void process_data(void)
 				while (trailer_bytes != bytes_read) {
 					int result = fs_recv(sockfd_local, addr + bytes_read, trailer_bytes - bytes_read, 0);
 					if (result <= 0) {
-#ifdef EINTR
-						if (result == -EINTR) {
+						if (fs_is_eintr(result)) {
 							continue;
 						}
-#endif
 						if (result == 0) {
 							fs_exit(0);
 						}
@@ -227,11 +232,9 @@ noreturn static void process_data(void)
 				while (trailer_bytes != bytes_read) {
 					int result = fs_recv(sockfd_local, &buf[bytes_read], sizeof(buf) - bytes_read, 0);
 					if (result <= 0) {
-#ifdef EINTR
-						if (result == -EINTR) {
+						if (fs_is_eintr(result)) {
 							continue;
 						}
-#endif
 						if (result == 0) {
 							fs_exit(0);
 						}
@@ -245,6 +248,16 @@ noreturn static void process_data(void)
 				if (syscall == TARGET_NR_CALL) {
 					intptr_t (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
 					response.result = target(values[1], values[2], values[3], values[4], values[5]);
+#ifdef __MINGW32__
+				} else if (syscall == TARGET_NR_WIN32_CALL) {
+					intptr_t (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
+					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
+					response.result = result < 0 ? -(intptr_t)GetLastError() : result;
+				} else if (syscall == TARGET_NR_WIN32_BOOL_CALL) {
+					BOOL (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
+					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
+					response.result = result == 0 ? -(intptr_t)GetLastError() : 0;
+#endif
 #ifdef __NR_clone
 				} else if (syscall == __NR_clone) {
 					response.result = fs_clone(values[0], (void *)values[1], (void *)values[2], (void *)values[3], (void *)values[4], (void *)values[5]);
@@ -274,11 +287,9 @@ noreturn static void process_data(void)
 				intptr_t result = fs_send(sockfd_local, vec[io_start].iov_base, vec[io_start].iov_len, 0);
 #endif
 				if (result <= 0) {
-#ifdef EINTR
-					if (result == -EINTR) {
+					if (fs_is_eintr(result)) {
 						continue;
 					}
-#endif
 					if (result == 0) {
 						fs_exit(0);
 					}

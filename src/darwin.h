@@ -80,8 +80,6 @@ int translate_open_flags_to_darwin(int flags);
 int translate_seek_whence_to_darwin(int whence);
 
 struct fs_stat translate_darwin_stat(struct darwin_stat stat);
-#ifdef __linux__
 void translate_darwin_statx(struct linux_statx *out_statx, struct darwin_stat stat, unsigned int mask);
-#endif
 
 #endif

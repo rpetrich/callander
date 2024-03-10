@@ -72,6 +72,25 @@ static inline proxy_arg proxy_string(const char *address) {
 }
 
 __attribute__((always_inline))
+static inline proxy_arg proxy_wide_string(const uint16_t *address)
+{
+	if (address == NULL) {
+		return (proxy_arg){
+			.value = 0,
+			.size = 0,
+		};
+	}
+	const uint16_t *current = address;
+	while (*current) {
+		++current;
+	}
+	return (proxy_arg){
+		.value = (intptr_t)address,
+		.size = (sizeof(uint16_t) * (size_t)(current - address + 1)) | PROXY_ARGUMENT_INPUT,
+	};
+}
+
+__attribute__((always_inline))
 static inline proxy_arg proxy_out(void *address, size_t size) {
 	return (proxy_arg){
 		.value = (intptr_t)address,
