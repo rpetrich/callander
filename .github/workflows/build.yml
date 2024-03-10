@@ -46,5 +46,5 @@ jobs:
     - run: sudo apt-get install mingw-w64
     - uses: actions/checkout@v3
     - run: git submodule update --init
-    - run: make -j -k target TARGETOS=windows TARGETMACHINE=x86_64
+    - run: make -j -k target.exe TARGETOS=windows TARGETMACHINE=x86_64
       working-directory: src
