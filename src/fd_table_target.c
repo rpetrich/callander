@@ -78,7 +78,7 @@ static int become_underlying_fd(int fd, int underlying_fd, int type, bool requir
 	if (fd > MAX_TABLE_SIZE || fd < 0) {
 		return -EMFILE;
 	}
-	int *counts = get_fd_counts();
+	struct fd_state *states = get_fd_states();
 	fs_mutex_lock(&table_lock);
 	int existing = fd_table[fd];
 	if (require_existing && (existing == 0)) {
@@ -91,13 +91,13 @@ static int become_underlying_fd(int fd, int underlying_fd, int type, bool requir
 			fs_mutex_unlock(&table_lock);
 			return 0;
 		}
-		if (atomic_fetch_sub_explicit(&counts[old_underlying_fd], 1, memory_order_relaxed) == 1) {
+		if (atomic_fetch_sub_explicit(&states[old_underlying_fd].count, 1, memory_order_relaxed) == 1) {
 			remote_close(old_underlying_fd);
 		}
 	} else if (existing & HAS_LOCAL_FD) {
 		fs_close(old_underlying_fd);
 	}
-	atomic_fetch_add_explicit(&counts[underlying_fd], 1, memory_order_relaxed);
+	atomic_fetch_add_explicit(&states[underlying_fd].count, 1, memory_order_relaxed);
 	fd_table[fd] = (underlying_fd << USED_BITS) | type | (existing & HAS_CLOEXEC);
 	fs_mutex_unlock(&table_lock);
 	return 0;
@@ -145,8 +145,8 @@ int perform_close(int fd)
 			int underlying_fd = value >> USED_BITS;
 			if (value & HAS_REMOTE_FD) {
 				// decrement the reference count for the remote fd
-				int *counts = get_fd_counts();
-				if (atomic_fetch_sub_explicit(&counts[underlying_fd], 1, memory_order_relaxed) == 1) {
+				struct fd_state *states = get_fd_states();
+				if (atomic_fetch_sub_explicit(&states[underlying_fd].count, 1, memory_order_relaxed) == 1) {
 					remote_close(underlying_fd);
 				}
 			} else {
@@ -169,8 +169,8 @@ int perform_dup(int oldfd, int flags)
 	}
 	if (is_remote) {
 		// increment the ref count for the remote underlying fd
-		int *counts = get_fd_counts();
-		atomic_fetch_add_explicit(&counts[underlying_fd], 1, memory_order_relaxed);
+		struct fd_state *states = get_fd_states();
+		atomic_fetch_add_explicit(&states[underlying_fd].count, 1, memory_order_relaxed);
 	} else {
 		// duplicate the underlying local fd
 		underlying_fd = fs_dup(underlying_fd);
@@ -187,7 +187,7 @@ int perform_dup3(int oldfd, int newfd, int flags)
 {
 	// check if oldfd is valid
 	if (oldfd < MAX_TABLE_SIZE && oldfd >= 0 && newfd < MAX_TABLE_SIZE && newfd >= 0) {
-		int *counts = get_fd_counts();
+		struct fd_state *states = get_fd_states();
 		fs_mutex_lock(&table_lock);
 		int old_data = fd_table[oldfd];
 		if (old_data != 0) {
@@ -198,7 +198,7 @@ int perform_dup3(int oldfd, int newfd, int flags)
 		int existing_value = fd_table[newfd];
 		if (old_data & HAS_REMOTE_FD) {
 			// increment the ref count on remote underlying fd and store into the new slot
-			atomic_fetch_add_explicit(&counts[old_data >> USED_BITS], 1, memory_order_relaxed);
+			atomic_fetch_add_explicit(&states[old_data >> USED_BITS].count, 1, memory_order_relaxed);
 			fd_table[newfd] = (old_data & ~HAS_CLOEXEC) | (flags & O_CLOEXEC ? HAS_CLOEXEC : 0);
 		} else {
 			// perform a local dup and store into the new slot
@@ -213,7 +213,7 @@ int perform_dup3(int oldfd, int newfd, int flags)
 		// close the evicted underlying file descriptor that was previously at newfd, if any
 		int existing_underlying_fd = existing_value >> USED_BITS;
 		if (existing_value & HAS_REMOTE_FD) {
-			if (atomic_fetch_sub_explicit(&counts[existing_underlying_fd], 1, memory_order_relaxed) == 1) {
+			if (atomic_fetch_sub_explicit(&states[existing_underlying_fd].count, 1, memory_order_relaxed) == 1) {
 				remote_close(existing_underlying_fd);
 			}
 		} else if (existing_value & HAS_LOCAL_FD) {

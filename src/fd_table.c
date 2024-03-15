@@ -13,7 +13,7 @@ static struct fs_mutex table_lock;
 
 void initialize_fd_table(void)
 {
-	int *counts = get_fd_counts();
+	struct fd_state *states = get_fd_states();
 	int null = fs_open("/dev/null", O_RDONLY, 0);
 	if (null < 0) {
 		DIE("error opening /dev/null", fs_strerror(null));
@@ -50,19 +50,19 @@ void initialize_fd_table(void)
 	table[5] = HAS_LOCAL_FD;
 	// setup remote standard in, standard out and standard error
 	table[0] = (0 << USED_BITS) | HAS_REMOTE_FD;
-	counts[0] = 2;
+	states[0].count = 2;
 	result = fs_dup3(DEAD_FD, 0, 0);
 	if (result < 0) {
 		DIE("error duping to 0", fs_strerror(result));
 	}
 	table[1] = (1 << USED_BITS) | HAS_REMOTE_FD;
-	counts[1] = 2;
+	states[1].count = 2;
 	result = fs_dup3(DEAD_FD, 1, 0);
 	if (result < 0) {
 		DIE("error duping to 1", fs_strerror(result));
 	}
 	table[2] = (2 << USED_BITS) | HAS_REMOTE_FD;
-	counts[2] = 2;
+	states[2].count = 2;
 	result = fs_dup3(DEAD_FD, 2, 0);
 	if (result < 0) {
 		DIE("error duping to 2", fs_strerror(result));
@@ -78,19 +78,19 @@ void initialize_fd_table(void)
 		DIE("error duping to 3", fs_strerror(result));
 	}
 	table[3] = (0 << USED_BITS) | HAS_REMOTE_FD;
-	counts[0] = 2;
+	states[0].count = 2;
 	result = fs_dup3(DEAD_FD, 4, 0);
 	if (result < 0) {
 		DIE("error duping to 4", fs_strerror(result));
 	}
 	table[4] = (1 << USED_BITS) | HAS_REMOTE_FD;
-	counts[1] = 2;
+	states[1].count = 2;
 	result = fs_dup3(DEAD_FD, 5, 0);
 	if (result < 0) {
 		DIE("error duping to 4", fs_strerror(result));
 	}
 	table[5] = (2 << USED_BITS) | HAS_REMOTE_FD;
-	counts[2] = 2;
+	states[2].count = 2;
 #endif
 }
 
@@ -115,7 +115,7 @@ static void serialize_fd_table(int new_table[MAX_TABLE_SIZE]) {
 
 void serialize_fd_table_for_exec(void)
 {
-	int *counts = get_fd_counts();
+	struct fd_state *states = get_fd_states();
 	fs_mutex_lock(&table_lock);
 	int copy[MAX_TABLE_SIZE];
 	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
@@ -123,7 +123,7 @@ void serialize_fd_table_for_exec(void)
 		if (value & HAS_CLOEXEC) {
 			if ((value & HAS_REMOTE_FD)) {
 				int remote_fd = value >> USED_BITS;
-				if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+				if (atomic_fetch_sub_explicit(&states[remote_fd].count, 1, memory_order_relaxed) == 1) {
 					remote_close(remote_fd);
 				}
 			}
@@ -136,14 +136,14 @@ void serialize_fd_table_for_exec(void)
 
 void serialize_fd_table_for_fork(void)
 {
-	int *counts = get_fd_counts();
+	struct fd_state *states = get_fd_states();
 	fs_mutex_lock(&table_lock);
 	int copy[MAX_TABLE_SIZE];
 	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
 		int value = table[i];
 		if (value & HAS_REMOTE_FD) {
 			int remote_fd = value >> USED_BITS;
-			atomic_fetch_add_explicit(&counts[remote_fd], 1, memory_order_relaxed);
+			atomic_fetch_add_explicit(&states[remote_fd].count, 1, memory_order_relaxed);
 		}
 		copy[i] = value;
 	}
@@ -169,14 +169,14 @@ void resurrect_fd_table(void)
 
 void clear_fd_table_for_exit(__attribute__((unused)) int status)
 {
-	int *counts = get_fd_counts();
+	struct fd_state *states = get_fd_states();
 	fs_mutex_lock(&table_lock);
 	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
 		int value = table[i];
 		if (value) {
 			if (value & HAS_REMOTE_FD) {
 				int remote_fd = value >> USED_BITS;
-				if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+				if (atomic_fetch_sub_explicit(&states[remote_fd].count, 1, memory_order_relaxed) == 1) {
 					remote_close(remote_fd);
 				}
 			}
@@ -214,8 +214,8 @@ int install_remote_fd(int remote_fd, int flags)
 			return -EMFILE;
 		}
 		table[result] = (remote_fd << USED_BITS) | HAS_REMOTE_FD | (flags & O_CLOEXEC ? HAS_CLOEXEC : 0);
-		int *counts = get_fd_counts();
-		atomic_fetch_add_explicit(&counts[remote_fd], 1, memory_order_relaxed);
+		struct fd_state *states = get_fd_states();
+		atomic_fetch_add_explicit(&states[remote_fd].count, 1, memory_order_relaxed);
 		fs_mutex_unlock(&table_lock);
 	} else {
 		fs_mutex_unlock(&table_lock);
@@ -239,14 +239,14 @@ int become_remote_fd(int fd, int remote_fd) {
 		remote_close(remote_fd);
 		return -EINVAL;
 	}
-	int *counts = get_fd_counts();
+	struct fd_state *states = get_fd_states();
 	if (existing & HAS_REMOTE_FD) {
 		int old_remote_fd = existing >> USED_BITS;
 		if (old_remote_fd == remote_fd) {
 			fs_mutex_unlock(&table_lock);
 			return 0;
 		}
-		if (atomic_fetch_sub_explicit(&counts[old_remote_fd], 1, memory_order_relaxed) == 1) {
+		if (atomic_fetch_sub_explicit(&states[old_remote_fd].count, 1, memory_order_relaxed) == 1) {
 			remote_close(old_remote_fd);
 		}
 	} else {
@@ -257,7 +257,7 @@ int become_remote_fd(int fd, int remote_fd) {
 			return -EINVAL;
 		}
 	}
-	atomic_fetch_add_explicit(&counts[remote_fd], 1, memory_order_relaxed);
+	atomic_fetch_add_explicit(&states[remote_fd].count, 1, memory_order_relaxed);
 	table[fd] = (remote_fd << USED_BITS) | HAS_REMOTE_FD | (existing & HAS_CLOEXEC);
 	fs_mutex_unlock(&table_lock);
 	return 0;
@@ -297,8 +297,8 @@ int perform_close(int fd)
 		if (value) {
 			if (value & HAS_REMOTE_FD) {
 				int remote_fd = value >> USED_BITS;
-				int *counts = get_fd_counts();
-				if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+				struct fd_state *states = get_fd_states();
+				if (atomic_fetch_sub_explicit(&states[remote_fd].count, 1, memory_order_relaxed) == 1) {
 					remote_close(remote_fd);
 				}
 			}
@@ -335,8 +335,8 @@ int perform_dup(int oldfd, int flags)
 		}
 		table[result] = (old & ~HAS_CLOEXEC) | (flags & O_CLOEXEC ? HAS_CLOEXEC : 0);
 		if (old & HAS_REMOTE_FD) {
-			int *counts = get_fd_counts();
-			atomic_fetch_add_explicit(&counts[old >> USED_BITS], 1, memory_order_relaxed);
+			struct fd_state *states = get_fd_states();
+			atomic_fetch_add_explicit(&states[old >> USED_BITS].count, 1, memory_order_relaxed);
 		}
 		fs_mutex_unlock(&table_lock);
 		return result;
@@ -366,13 +366,13 @@ int perform_dup3(int oldfd, int newfd, int flags)
 		}
 		int old_table_value = table[result];
 		table[result] = (old & ~HAS_CLOEXEC) | (flags & O_CLOEXEC ? HAS_CLOEXEC : 0);
-		int *counts = get_fd_counts();
+		struct fd_state *states = get_fd_states();
 		if (old & HAS_REMOTE_FD) {
-			atomic_fetch_add_explicit(&counts[old >> USED_BITS], 1, memory_order_relaxed);
+			atomic_fetch_add_explicit(&states[old >> USED_BITS].count, 1, memory_order_relaxed);
 		}
 		if (old_table_value & HAS_REMOTE_FD) {
 			int remote_fd = old_table_value >> USED_BITS;
-			if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+			if (atomic_fetch_sub_explicit(&states[remote_fd].count, 1, memory_order_relaxed) == 1) {
 				remote_close(remote_fd);
 			}
 		}
@@ -423,8 +423,8 @@ int chdir_become_local(void)
 	fs_mutex_unlock(&table_lock);
 	if (value & HAS_REMOTE_FD) {
 		int remote_fd = value >> USED_BITS;
-		int *counts = get_fd_counts();
-		if (atomic_fetch_sub_explicit(&counts[remote_fd], 1, memory_order_relaxed) == 1) {
+		struct fd_state *states = get_fd_states();
+		if (atomic_fetch_sub_explicit(&states[remote_fd].count, 1, memory_order_relaxed) == 1) {
 			remote_close(remote_fd);
 		}
 	}

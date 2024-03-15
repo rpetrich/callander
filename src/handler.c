@@ -1351,7 +1351,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				if (proxy_get_target_platform() == TARGET_PLATFORM_DARWIN) {
 					return invalid_remote_operation();
 				}
-				return PROXY_CALL(syscall, proxy_string(real.path), proxy_string(name), proxy_in((void *)arg3, arg4), proxy_value(arg4), proxy_value(arg5));
+				if (syscall == __NR_lsetxattr) {
+					return remote_lsetxattr(path, name, (const void *)arg3, arg4, arg5);
+				}
+				return remote_setxattr(path, name, (const void *)arg3, arg4, arg5);
 			}
 			if (real.fd != AT_FDCWD) {
 				return invalid_local_operation();
@@ -1366,7 +1369,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				if (proxy_get_target_platform() == TARGET_PLATFORM_DARWIN) {
 					return invalid_remote_operation();
 				}
-				return PROXY_CALL(__NR_fsetxattr, proxy_value(real_fd), proxy_string(name), proxy_in((void *)arg3, arg4), proxy_value(arg4), proxy_value(arg5));
+				return remote_fsetxattr(real_fd, name, (const void *)arg3, arg4, arg5);
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
@@ -1383,10 +1386,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						return result;
 					}
 				}
-				if (proxy_get_target_platform() == TARGET_PLATFORM_DARWIN) {
-					return -ENODATA;
+				if (syscall == __NR_lgetxattr) {
+					return remote_lgetxattr(buf, name, (void *)arg3, arg4);
 				}
-				return PROXY_CALL(syscall, proxy_string(real.path), proxy_string(name), proxy_out((void *)arg3, arg4), proxy_value(arg4), proxy_value(arg5));
+				return remote_getxattr(buf, name, (void *)arg3, arg4);
 			}
 			if (real.fd != AT_FDCWD) {
 				return invalid_local_operation();
@@ -1398,7 +1401,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const char *name = (const char *)arg2;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_CALL(__NR_fgetxattr, proxy_value(real_fd), proxy_string(name), proxy_out((void *)arg3, arg4), proxy_value(arg4), proxy_value(arg5));
+				return remote_fgetxattr(real_fd, name, (void *)arg3, arg4);
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
@@ -1414,7 +1417,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						return result;
 					}
 				}
-				return PROXY_CALL(syscall, proxy_string(real.path), proxy_out((void *)arg2, arg3), proxy_value(arg3));
+				if (syscall == __NR_llistxattr) {
+					return remote_llistxattr(buf, (void *)arg2, arg3);
+				}
+				return remote_listxattr(buf, (void *)arg2, arg3);
 			}
 			if (real.fd != AT_FDCWD) {
 				return invalid_local_operation();
@@ -1425,7 +1431,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_CALL(__NR_flistxattr, proxy_value(real_fd), proxy_out((void *)arg2, arg3), proxy_value(arg3));
+				return remote_flistxattr(real_fd, (void *)arg2, arg3);
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}

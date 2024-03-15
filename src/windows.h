@@ -10,6 +10,7 @@
 
 typedef uint32_t WINDOWS_DWORD;
 
+#define WINDOWS_FILE_READ_ATTRIBUTES 0x80
 #define WINDOWS_GENERIC_ALL 0x10000000
 #define WINDOWS_GENERIC_EXECUTE 0x20000000
 #define WINDOWS_GENERIC_WRITE 0x40000000
@@ -41,6 +42,8 @@ typedef uint32_t WINDOWS_DWORD;
 #define WINDOWS_FILE_FLAG_BACKUP_SEMANTICS 0x02000000
 
 #define WINDOWS_INVALID_HANDLE_VALUE ((void *)(long long)-1)
+
+#define WINDOWS_MAX_PATH 260
 
 typedef int WINDOWS_BOOL;
 
@@ -158,6 +161,15 @@ static inline intptr_t translate_windows_result(intptr_t result)
 		return translate_windows_error(-result);
 	}
 	return result;
+}
+
+static inline struct timespec windows_filetime_to_timespec(WINDOWS_FILETIME time)
+{
+	uint64_t hundo_nanos = ((uint64_t)time.dwHighDateTime << 32) | time.dwLowDateTime;
+	return (struct timespec){
+		.tv_sec = (hundo_nanos / 10000000) - 11644473600,
+		.tv_nsec = (hundo_nanos % 10000000) * 100,
+	};
 }
 
 struct fs_stat translate_windows_by_handle_file_information(WINDOWS_BY_HANDLE_FILE_INFORMATION info);

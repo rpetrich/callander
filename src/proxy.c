@@ -32,7 +32,7 @@ typedef struct {
 	uint16_t page_counts[REUSED_PAGE_COUNT];
 	struct resolver_config_cache resolver_config_cache;
 	hello_message hello;
-	int fd_counts[4096];
+	struct fd_state fd_states[4096];
 } shared_page;
 
 static shared_page *shared;
@@ -482,12 +482,12 @@ void install_proxy(int fd)
 	}
 }
 
-int *get_fd_counts(void)
+struct fd_state *get_fd_states(void)
 {
 	if (shared == NULL) {
 		setup_shared();
 	}
-	return &shared->fd_counts[0];
+	return &shared->fd_states[0];
 }
 
 struct resolver_config_cache *get_resolver_config_cache(void)

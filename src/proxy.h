@@ -176,7 +176,14 @@ void proxy_read_stream_message_finish(uint32_t stream_id);
 
 void install_proxy(int fd);
 
-int *get_fd_counts(void);
+struct fd_state {
+	int count;
+	struct windows_state {
+		void *dir_handle;
+	} windows;
+};
+
+struct fd_state *get_fd_states(void);
 
 struct resolver_config_cache;
 struct resolver_config_cache *get_resolver_config_cache(void);

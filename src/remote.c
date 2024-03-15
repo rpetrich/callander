@@ -7,6 +7,7 @@
 #include "proxy.h"
 #include "windows.h"
 
+#include <dirent.h>
 #include <string.h>
 #include <sched.h>
 
@@ -385,6 +386,11 @@ void remote_close(int fd)
 			PROXY_CALL(DARWIN_SYS_close | PROXY_NO_RESPONSE, proxy_value(fd));
 			break;
 		case TARGET_PLATFORM_WINDOWS:
+			struct windows_state *state = &get_fd_states()[fd].windows;
+			if (state->dir_handle != NULL) {
+				PROXY_WIN32_BOOL_CALL(kernel32.dll, FindClose, proxy_value((intptr_t)state->dir_handle));
+				state->dir_handle = NULL;
+			}
 			PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(fd));
 			break;
 		default:
@@ -435,7 +441,7 @@ intptr_t remote_fcntl_lock(int fd, int cmd, struct flock *lock)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			return PROXY_CALL(__NR_fcntl | PROXY_NO_WORKER, proxy_value(fd), proxy_value(cmd), proxy_inout(lock, sizeof(struct flock)));
+			return PROXY_CALL(LINUX_SYS_fcntl | PROXY_NO_WORKER, proxy_value(fd), proxy_value(cmd), proxy_inout(lock, sizeof(struct flock)));
 		case TARGET_PLATFORM_DARWIN:
 			return -EINVAL;
 		default:
@@ -448,7 +454,7 @@ intptr_t remote_fcntl_int(int fd, int cmd, int *value)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			return PROXY_CALL(__NR_fcntl | PROXY_NO_WORKER, proxy_value(fd), proxy_value(cmd), proxy_inout(value, sizeof(int)));
+			return PROXY_CALL(LINUX_SYS_fcntl | PROXY_NO_WORKER, proxy_value(fd), proxy_value(cmd), proxy_inout(value, sizeof(int)));
 		case TARGET_PLATFORM_DARWIN:
 			return -EINVAL;
 		default:
@@ -461,7 +467,7 @@ intptr_t remote_fstat(int fd, struct fs_stat *buf)
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			return PROXY_CALL(__NR_fstat, proxy_value(fd), proxy_out(buf, sizeof(*buf)));
+			return PROXY_CALL(LINUX_SYS_fstat, proxy_value(fd), proxy_out(buf, sizeof(*buf)));
 		case TARGET_PLATFORM_DARWIN: {
 			struct darwin_stat dstat;
 			intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fstat64, proxy_value(fd), proxy_out(&dstat, sizeof(struct darwin_stat))));
@@ -487,7 +493,7 @@ intptr_t remote_newfstatat(int fd, const char *path, struct fs_stat *stat, int f
 {
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			return PROXY_CALL(__NR_newfstatat, proxy_value(fd), proxy_string(path), proxy_out(stat, sizeof(struct fs_stat)), proxy_value(flags));
+			return PROXY_CALL(LINUX_SYS_newfstatat, proxy_value(fd), proxy_string(path), proxy_out(stat, sizeof(struct fs_stat)), proxy_value(flags));
 		case TARGET_PLATFORM_DARWIN: {
 			if ((flags & AT_EMPTY_PATH) && (path == NULL || *path == '\0')) {
 				if (fd == AT_FDCWD) {
@@ -556,7 +562,7 @@ intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, st
 					uint16_t buf[2];
 					buf[0] = '.';
 					buf[1] = '\0';
-					handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(buf), proxy_value(0), proxy_value(WINDOWS_FILE_SHARE_READ), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
+					handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(buf), proxy_value(0), proxy_value(WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE | WINDOWS_FILE_SHARE_DELETE), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
 					if (handle < 0) {
 						return handle;
 					}
@@ -579,17 +585,18 @@ intptr_t remote_statx(int fd, const char *path, int flags, unsigned int mask, st
 				params.dwSecurityQosFlags = 0;
 				params.lpSecurityAttributes = NULL;
 				params.hTemplateFile = 0;
-				handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(translate_windows_wide_path(path, buf)), proxy_value(0), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
+				handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(translate_windows_wide_path(path, buf)), proxy_value(WINDOWS_FILE_READ_ATTRIBUTES), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
 				if (handle < 0) {
 					return handle;
 				}
 			}
 			result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, GetFileInformationByHandle, proxy_value(handle), proxy_out(&info, sizeof(info))));
 			PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(handle));
-			if (result >= 0) {
-				translate_windows_by_handle_file_information_to_statx(statxbuf, info, mask);
+			if (result < 0) {
+				return result;
 			}
-			return result;
+			translate_windows_by_handle_file_information_to_statx(statxbuf, info, mask);
+			return 0;
 		}
 		default:
 			unknown_target();
@@ -688,8 +695,141 @@ intptr_t remote_getdents64(int fd, char *buf, size_t size)
 			} while(result > 0);
 			return consumed;
 		}
+		case TARGET_PLATFORM_WINDOWS: {
+			struct windows_state *state = &get_fd_states()[fd].windows;
+			WINDOWS_WIN32_FIND_DATAW find_data;
+			intptr_t result;
+			if (state->dir_handle == NULL) {
+				uint16_t path_buf[PATH_MAX];
+				result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, GetFinalPathNameByHandleW, proxy_value(fd), proxy_out(path_buf, sizeof(path_buf)), proxy_value(PATH_MAX), proxy_value(0)));
+				if (result < 0) {
+					return result;
+				}
+				if (path_buf[result] != '\\') {
+					path_buf[result++] = '\\';
+				}
+				path_buf[result++] = '*';
+				path_buf[result++] = '\0';
+				result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, FindFirstFileW, proxy_in(path_buf, result * sizeof(uint16_t)), proxy_out(&find_data, sizeof(find_data))));
+				if (result > 0) {
+					state->dir_handle = (WINDOWS_HANDLE)result;
+				}
+			} else {
+				result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, FindNextFileW, proxy_value((intptr_t)state->dir_handle), proxy_out(&find_data, sizeof(find_data))));
+			}
+			if (result < 0) {
+				// convert -ENOENT to 0, representing end of directory listing
+				return result == -ENOENT ? 0 : result;
+			}
+			// translate the single directory entry
+			struct fs_dirent *dirp = (void *)buf;
+			dirp->d_ino = 1;
+			dirp->d_type = (find_data.dwFileAttributes & WINDOWS_FILE_ATTRIBUTE_DIRECTORY) ? DT_DIR : DT_REG;
+			size_t i = 0;
+			for (; i < WINDOWS_MAX_PATH; i++) {
+				dirp->d_name[i] = find_data.cFileName[i];
+				if (dirp->d_name[i] == '\0') {
+					break;
+				}
+			}
+			size_t rec_len = sizeof(struct fs_dirent) + i + 2;
+			size_t aligned_len = (rec_len + 7) & ~7;
+			dirp->d_reclen = aligned_len;
+			dirp->d_off = aligned_len;
+			return aligned_len;
+		}
 		default:
 			unknown_target();
+	}
+}
+
+intptr_t remote_getxattr(const char *path, const char *name, void *out_value, size_t size)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_getxattr, proxy_string(path), proxy_string(name), proxy_out(out_value, size), proxy_value(size));
+		default:
+			return -ENODATA;
+	}
+}
+
+intptr_t remote_lgetxattr(const char *path, const char *name, void *out_value, size_t size)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_lgetxattr, proxy_string(path), proxy_string(name), proxy_out(out_value, size), proxy_value(size));
+		default:
+			return -ENODATA;
+	}
+}
+
+intptr_t remote_fgetxattr(int fd, const char *name, void *out_value, size_t size)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_fgetxattr, proxy_value(fd), proxy_string(name), proxy_out(out_value, size), proxy_value(size));
+		default:
+			return -ENODATA;
+	}
+}
+
+intptr_t remote_setxattr(const char *path, const char *name, const void *value, size_t size, int flags)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_setxattr, proxy_string(path), proxy_string(name), proxy_in(value, size), proxy_value(size), proxy_value(flags));
+		default:
+			return -ENOTSUP;
+	}
+}
+
+intptr_t remote_lsetxattr(const char *path, const char *name, const void *value, size_t size, int flags)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_lsetxattr, proxy_string(path), proxy_string(name), proxy_in(value, size), proxy_value(size), proxy_value(flags));
+		default:
+			return -ENOTSUP;
+	}
+}
+
+intptr_t remote_fsetxattr(int fd, const char *name, const void *value, size_t size, int flags)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_fsetxattr, proxy_value(fd), proxy_string(name), proxy_in(value, size), proxy_value(size), proxy_value(flags));
+		default:
+			return -ENOTSUP;
+	}
+}
+
+intptr_t remote_listxattr(const char *path, void *out_value, size_t size)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_listxattr, proxy_string(path), proxy_out(out_value, size), proxy_value(size));
+		default:
+			return -ENOTSUP;
+	}
+}
+
+intptr_t remote_llistxattr(const char *path, void *out_value, size_t size)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_llistxattr, proxy_string(path), proxy_out(out_value, size), proxy_value(size));
+		default:
+			return -ENOTSUP;
+	}
+}
+
+intptr_t remote_flistxattr(int fd, void *out_value, size_t size)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_flistxattr, proxy_value(fd), proxy_out(out_value, size), proxy_value(size));
+		default:
+			return -ENOTSUP;
 	}
 }
 
