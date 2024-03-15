@@ -112,8 +112,7 @@ void proxy_free(intptr_t addr, size_t size)
 	fs_mutex_unlock(&heap_lock);
 }
 
-
-int *get_fd_counts(void)
+struct fd_state *get_fd_states(void)
 {
-	return &proxy_state.fd_counts[0];
+	return &proxy_state.fd_states[0];
 }

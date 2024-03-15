@@ -49,6 +49,18 @@ intptr_t remote_readlinkat(int dirfd, const char *path, char *buf, size_t bufsz)
 intptr_t remote_readlink_fd(int fd, char *buf, size_t size);
 intptr_t remote_getdents64(int fd, char *buf, size_t size);
 
+intptr_t remote_getxattr(const char *path, const char *name, void *out_value, size_t size);
+intptr_t remote_lgetxattr(const char *path, const char *name, void *out_value, size_t size);
+intptr_t remote_fgetxattr(int fd, const char *name, void *out_value, size_t size);
+
+intptr_t remote_setxattr(const char *path, const char *name, const void *value, size_t size, int flags);
+intptr_t remote_lsetxattr(const char *path, const char *name, const void *value, size_t size, int flags);
+intptr_t remote_fsetxattr(int fd, const char *name, const void *out, size_t size, int flags);
+
+intptr_t remote_listxattr(const char *path, void *out_value, size_t size);
+intptr_t remote_llistxattr(const char *path, void *out_value, size_t size);
+intptr_t remote_flistxattr(int fd, void *out_value, size_t size);
+
 intptr_t remote_socket(int domain, int type, int protocol);
 intptr_t remote_getsockopt(int sockfd, int level, int optname, void *restrict optval, socklen_t *restrict optlen);
 intptr_t remote_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);

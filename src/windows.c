@@ -43,7 +43,7 @@ intptr_t translate_windows_error(intptr_t result)
 		case 17:
 			return -EXDEV;
 		case 18: // ERROR_NO_MORE_FILES
-			return 0;
+			return -ENOENT;
 		case 19:
 			return -EPERM;
 		case 20:
@@ -82,13 +82,23 @@ struct fs_stat translate_windows_by_handle_file_information(WINDOWS_BY_HANDLE_FI
 	result.st_dev = info.dwVolumeSerialNumber;
 	result.st_ino = ((uint64_t)info.nFileIndexHigh << 32) | info.nFileIndexLow;
 	result.st_mode = mode_for_file_attributes(info.dwFileAttributes);
-	result.st_nlink = 0;
+	result.st_nlink = 1;
 	result.st_uid = 0;
 	result.st_gid = 0;
 	result.st_rdev = 0;
-	result.st_size = ((uint64_t)info.nFileSizeHigh << 32) | info.nFileSizeLow;
+	uint64_t size = (info.dwFileAttributes & WINDOWS_FILE_ATTRIBUTE_DIRECTORY) ? 4096 : (((uint64_t)info.nFileSizeHigh << 32) | info.nFileSizeLow);
+	result.st_size = size;
 	result.st_blksize = 4096;
-	result.st_blocks = (result.st_size + 4095) / 4096;
+	result.st_blocks = (size + 4095) / 4096;
+	struct timespec atime = windows_filetime_to_timespec(info.ftLastAccessTime);
+	result.st_atime_sec = atime.tv_sec;
+	result.st_atime_nsec = atime.tv_nsec;
+	struct timespec mtime = windows_filetime_to_timespec(info.ftLastWriteTime);
+	result.st_mtime_sec = mtime.tv_sec;
+	result.st_mtime_nsec = mtime.tv_nsec;
+	struct timespec ctime = windows_filetime_to_timespec(info.ftCreationTime);
+	result.st_ctime_sec = ctime.tv_sec;
+	result.st_ctime_nsec = ctime.tv_nsec;
 	return result;
 }
 
@@ -109,7 +119,7 @@ void translate_windows_by_handle_file_information_to_statx(struct linux_statx *o
 	}
 	if (mask & STATX_NLINK) {
 		filled |= STATX_NLINK;
-		out_statx->stx_nlink = 0;
+		out_statx->stx_nlink = 1;
 	}
 	if (mask & STATX_UID) {
 		filled |= STATX_UID;
@@ -121,29 +131,34 @@ void translate_windows_by_handle_file_information_to_statx(struct linux_statx *o
 	}
 	if (mask & STATX_ATIME) {
 		filled |= STATX_ATIME;
-		out_statx->stx_atime.tv_sec = 0;
-		out_statx->stx_atime.tv_nsec = 0;
+		struct timespec atime = windows_filetime_to_timespec(info.ftLastAccessTime);
+		out_statx->stx_atime.tv_sec = atime.tv_sec;
+		out_statx->stx_atime.tv_nsec = atime.tv_nsec;
 	}
 	if (mask & STATX_MTIME) {
 		filled |= STATX_MTIME;
-		out_statx->stx_mtime.tv_sec = 0;
-		out_statx->stx_mtime.tv_nsec = 0;
+		struct timespec mtime = windows_filetime_to_timespec(info.ftLastWriteTime);
+		out_statx->stx_mtime.tv_sec = mtime.tv_sec;
+		out_statx->stx_mtime.tv_nsec = mtime.tv_nsec;
 	}
 	if (mask & STATX_CTIME) {
 		filled |= STATX_CTIME;
-		out_statx->stx_ctime.tv_sec = 0;
-		out_statx->stx_ctime.tv_nsec = 0;
+		struct timespec ctime = windows_filetime_to_timespec(info.ftCreationTime);
+		out_statx->stx_ctime.tv_sec = ctime.tv_sec;
+		out_statx->stx_ctime.tv_nsec = ctime.tv_nsec;
 	}
 	if (mask & STATX_INO) {
 		filled |= STATX_INO;
 		out_statx->stx_ino = ((uint64_t)info.nFileIndexHigh << 32) | info.nFileIndexLow;
 	}
+	uint64_t size = (info.dwFileAttributes & WINDOWS_FILE_ATTRIBUTE_DIRECTORY) ? 4096 : (((uint64_t)info.nFileSizeHigh << 32) | info.nFileSizeLow);
 	if (mask & STATX_SIZE) {
 		filled |= STATX_SIZE;
-		out_statx->stx_size = ((uint64_t)info.nFileSizeHigh << 32) | info.nFileSizeLow;
+		out_statx->stx_size = size;
 	}
 	if (mask & STATX_BLOCKS) {
 		filled |= STATX_BLOCKS;
-		out_statx->stx_blocks = ((((uint64_t)info.nFileSizeHigh << 32) | info.nFileSizeLow) + 4095) / 4096;
+		out_statx->stx_blocks = (size + 4095) / 4096;
 	}
+	out_statx->stx_mask = filled;
 }

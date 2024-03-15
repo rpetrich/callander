@@ -252,7 +252,7 @@ noreturn static void process_data(void)
 				} else if (syscall == TARGET_NR_WIN32_CALL) {
 					intptr_t (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
 					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
-					response.result = result < 0 ? -(intptr_t)GetLastError() : result;
+					response.result = result <= 0 ? -(intptr_t)GetLastError() : result;
 				} else if (syscall == TARGET_NR_WIN32_BOOL_CALL) {
 					BOOL (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
 					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
