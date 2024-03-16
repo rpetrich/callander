@@ -29,7 +29,7 @@ __attribute__((warn_unused_result))
 int install_remote_fd(int remote_fd, int flags);
 // become_remote_fd takes ownership of remote_fd
 int become_remote_fd(int fd, int remote_fd);
-// become_local_fd takes ownership of remote_fd
+// become_local_fd takes ownership of local_fd
 int become_local_fd(int fd, int local_fd);
 // lookup_real_fd looks up the real file descriptor and returns true if it's remote
 __attribute__((warn_unused_result))
@@ -44,12 +44,6 @@ int perform_set_fd_flags(int fd, int flags);
 __attribute__((warn_unused_result))
 int perform_get_fd_flags(int fd);
 
-// chdir_become_remote_fd takes ownership of remote_fd
-__attribute__((warn_unused_result))
-static inline int chdir_become_remote_fd(int remote_fd)
-{
-	return become_remote_fd(CWD_FD, remote_fd);
-}
 __attribute__((warn_unused_result))
 int chdir_become_local_path(const char *path);
 // chdir_become_local_fd does not take ownership of local_fd
