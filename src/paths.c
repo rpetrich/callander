@@ -38,33 +38,40 @@ bool lookup_real_path(int fd, const char *path, path_info *out_path)
 			{
 				if (path[7] == '/') {
 					*out_path = (path_info){
-						.fd = AT_FDCWD,
+						.handle = AT_FDCWD,
 						.path = &path[7],
 					};
 					return true;
 				}
 				if (path[7] == '\0') {
 					*out_path = (path_info){
-						.fd = AT_FDCWD,
+						.handle = AT_FDCWD,
 						.path = "/",
 					};
 					return true;
 				}
 			}
-			out_path->fd = AT_FDCWD;
+			out_path->handle = AT_FDCWD;
 			out_path->path = path;
 			return false;
 		}
 		out_path->path = path;
+		int handle;
 		if (fd == AT_FDCWD) {
-			if (lookup_real_fd(CWD_FD, &out_path->fd)) {
+			if (lookup_real_fd(CWD_FD, &handle)) {
+				out_path->handle = handle;
 				return true;
 			}
-			out_path->fd = AT_FDCWD;
+			out_path->handle = AT_FDCWD;
 			return false;
 		}
-		return lookup_real_fd(fd, &out_path->fd);
+		bool result = lookup_real_fd(fd, &handle);
+		out_path->handle = handle;
+		return result;
 	}
 	out_path->path = NULL;
-	return lookup_real_fd(fd, &out_path->fd);
+	int handle;
+	bool result = lookup_real_fd(fd, &handle);
+	out_path->handle = handle;
+	return result;
 }

@@ -17,6 +17,7 @@
 #include "target.h"
 #include "tracer.h"
 #include "tls.h"
+#include "vfs.h"
 
 #include <arpa/inet.h>
 #ifdef __x86_64__
@@ -61,420 +62,7 @@
 #define NS_GET_PARENT   _IO(NSIO, 0x2)
 #endif
 
-#ifndef __NR_close_range
-#define __NR_close_range 436
-#endif
-
-#ifndef __NR_faccessat2
-#define __NR_faccessat2 439
-#endif
-
-#ifndef __NR_epoll_pwait2
-#define __NR_epoll_pwait2 441
-#endif
-
-__attribute__((always_inline))
-static inline int translate_openat(int dirfd, const char *path, int flags, mode_t mode)
-{
-#ifdef __NR_open
-	if (LIKELY(dirfd == AT_FDCWD) || (path != NULL && path[0] == '/')) {
-		return fs_open(path, flags, mode);
-	}
-#endif
-	return fs_openat(dirfd, path, flags, mode);
-}
-
-// wrapped_openat handles open syscalls
-__attribute__((warn_unused_result))
-static int wrapped_openat(struct thread_storage *thread, int dirfd, const char *path, int flags, mode_t mode)
-{
 #ifdef ENABLE_TRACER
-	bool send_create;
-	int fd;
-	if (UNLIKELY(flags & O_CREAT) && UNLIKELY(enabled_traces & TRACE_TYPE_CREATE)) {
-		fd = translate_openat(dirfd, path, flags & ~O_CREAT, mode);
-		send_create = fd == -ENOENT;
-		if (send_create) {
-			fd = translate_openat(dirfd, path, flags, mode);
-		}
-	} else {
-		fd = translate_openat(dirfd, path, flags, mode);
-		send_create = false;
-	}
-#else
-	int fd = translate_openat(dirfd, path, flags, mode);
-#endif
-	if (fd >= 0) {
-		struct attempt_cleanup_state state;
-		attempt_push_close(thread, &state, fd);
-		// fixup /proc/self/exe
-		if (special_path_type(path) == SPECIAL_PATH_TYPE_EXE) {
-			struct fs_stat stat;
-			int stat_result = fs_fstat(fd, &stat);
-			if (stat_result < 0) {
-				attempt_pop_close(&state);
-				return stat_result;
-			}
-			if (is_axon(&stat)) {
-				attempt_pop_close(&state);
-				fd = fixup_exe_open(dirfd, path, flags);
-				if (fd < 0) {
-					return fd;
-				}
-				attempt_push_close(thread, &state, fd);
-			}
-		}
-#ifdef ENABLE_TRACER
-		uint32_t mask = (flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY ? TRACE_TYPE_OPEN_FOR_MODIFY : TRACE_TYPE_OPEN_READ_ONLY;
-		if (send_create) {
-			mask |= TRACE_TYPE_CREATE;
-		}
-		if (enabled_traces & (mask | TRACE_TYPE_PTRACE)) {
-			// read file path, since it's required for enabled trace types
-			char filename[PATH_MAX];
-			int result = fs_fd_getpath(fd, filename);
-			if (result <= 0) {
-				attempt_pop_close(&state);
-				return result;
-			}
-			if (send_create) {
-				send_create_event(thread, filename, result - 1, mode);
-			}
-			if ((flags & (O_RDONLY | O_RDWR | O_WRONLY)) != O_RDONLY) {
-				if (enabled_traces & TRACE_TYPE_OPEN_FOR_MODIFY) {
-					send_open_for_modify_event(thread, filename, fs_strlen(result), flags, (flags & O_CREAT) ? mode : 0);
-				}
-			} else {
-				if (enabled_traces & TRACE_TYPE_OPEN_READ_ONLY) {
-					send_open_read_only_event(thread, filename, fs_strlen(result), flags);
-				}
-			}
-			if (special_path_type(filename) == SPECIAL_PATH_TYPE_MEM) {
-				struct fs_stat stat;
-				int stat_result = fs_fstat(fd, &stat);
-				if (stat_result < 0) {
-					attempt_pop_close(&state);
-					return stat_result;
-				}
-				if (stat.st_size == 0) {
-					struct fs_statfs fs;
-					int result = fs_fstatfs(fd, &fs);
-					if (result < 0) {
-						attempt_pop_close(&state);
-						return result;
-					}
-					if (fs.f_type == 0x9fa0) { // procfs
-						// todo extract pid
-						send_mm_access_fs_event(thread, 0, flags | 0x8); // PTRACE_MODE_FSCREDS
-					}
-				}
-			}
-		}
-#endif
-		attempt_pop_and_skip_cleanup(&state);
-	}
-	return fd;
-}
-
-__attribute__((warn_unused_result))
-static int wrapped_readlinkat(struct thread_storage *thread, int dirfd, const char *path, char *buf, size_t bufsiz)
-{
-	if (special_path_type(path) != SPECIAL_PATH_TYPE_EXE) {
-		return fs_readlinkat(dirfd, path, buf, bufsiz);
-	}
-	// readlinkat does NOT support AT_EMPTY_PATH
-	int fd = fs_openat(dirfd, path, O_RDONLY | O_CLOEXEC, 0);
-	if (fd < 0) {
-		return fd;
-	}
-	struct attempt_cleanup_state state;
-	attempt_push_close(thread, &state, fd);
-	struct fs_stat stat;
-	int result = fs_fstat(fd, &stat);
-	if (result >= 0) {
-		if (is_axon(&stat)) {
-			attempt_pop_close(&state);
-			fd = fixup_exe_open(dirfd, path, O_RDONLY | O_CLOEXEC);
-			if (fd < 0) {
-				return fd;
-			}
-			attempt_push_close(thread, &state, fd);
-		}
-		result = fs_readlink_fd(fd, buf, bufsiz);
-	}
-	attempt_pop_close(&state);
-	return result;
-}
-
-#ifdef ENABLE_TRACER
-static int resolve_path_operation(struct thread_storage *thread, int dirfd, const char *path, char buffer[PATH_MAX], const char **out_filename, int *out_length)
-{
-	if (path == NULL) {
-		return -EFAULT;
-	}
-	// resolve parent directory path expression
-	const char *filename = fs_strrchr(path, '/');
-	if (filename == NULL) {
-		// filename without relative or absolute path
-		filename = path;
-		buffer[0] = '.';
-		buffer[1] = '\0';
-	} else if (filename == path) {
-		// filename in /
-		buffer[0] = '/';
-		buffer[1] = '\0';
-	} else {
-		// regular full or regular path with more than one component
-		fs_memcpy(buffer, path, filename - path);
-		buffer[filename - path] = '\0';
-		filename++;
-	}
-	// open parent directory
-	int new_dirfd = fs_openat(dirfd, buffer, O_DIRECTORY | O_CLOEXEC, 0);
-	if (new_dirfd < 0) {
-		return new_dirfd;
-	}
-	struct attempt_cleanup_state state;
-	attempt_push_close(thread, &state, new_dirfd);
-	// readlink on the parent directory to get fully resolved path
-	int result = fs_fd_getpath(new_dirfd, buffer);
-	if (result < 0) {
-		attempt_pop_close(&state);
-		return result;
-	}
-	// prepare the full path
-	size_t dir_length = fs_strlen(buffer);
-	if (dir_length == 1) {
-		// directory is /, avoid two slashes
-		dir_length = 0;
-	}
-	buffer[dir_length] = '/';
-	size_t filename_length = fs_strlen(filename);
-	fs_memcpy(&buffer[dir_length + 1], filename, filename_length + 1);
-	*out_filename = &buffer[dir_length + 1];
-	*out_length = dir_length + filename_length + 1;
-	attempt_pop_and_skip_cleanup(&state);
-	return new_dirfd;
-}
-#endif
-
-__attribute__((warn_unused_result))
-static int wrapped_unlinkat(struct thread_storage *thread, int dirfd, const char *path, int flags)
-{
-#ifdef ENABLE_TRACER
-	if (enabled_traces & TRACE_TYPE_DELETE) {
-		// resolve path
-		char buffer[PATH_MAX];
-		int length;
-		dirfd = resolve_path_operation(thread, dirfd, path, buffer, &path, &length);
-		if (dirfd < 0) {
-			return dirfd;
-		}
-		// perform unlink
-		int result = fs_unlinkat(dirfd, path, flags);
-		fs_close(dirfd);
-		// send event
-		if (result == 0) {
-			send_delete_event(thread, buffer, length);
-		}
-		return result;
-	}
-#else
-	(void)thread;
-#endif
-	return fs_unlinkat(dirfd, path, flags);
-}
-
-__attribute__((warn_unused_result))
-static int wrapped_renameat(struct thread_storage *thread, int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
-{
-#ifdef ENABLE_TRACER
-	if (enabled_traces & TRACE_TYPE_RENAME) {
-		// resolve old path
-		char old_buffer[PATH_MAX];
-		int old_length;
-		old_dirfd = resolve_path_operation(thread, old_dirfd, old_path, old_buffer, &old_path, &old_length);
-		if (old_dirfd < 0) {
-			return old_dirfd;
-		}
-		struct attempt_cleanup_state state;
-		attempt_push_close(thread, &state, old_dirfd);
-		// resolve new path
-		char new_buffer[PATH_MAX];
-		int new_length;
-		new_dirfd = resolve_path_operation(thread, new_dirfd, new_path, new_buffer, &new_path, &new_length);
-		if (new_dirfd < 0) {
-			attempt_pop_close(&state);
-			return new_dirfd;
-		}
-		// perform rename
-		int result;
-		if (flags == 0) {
-			result = fs_renameat(old_dirfd, old_path, new_dirfd, new_path);
-		} else {
-			result = fs_renameat2(old_dirfd, old_path, new_dirfd, new_path, flags);
-		}
-		fs_close(new_dirfd);
-		attempt_pop_close(&state);
-		// send event
-		if (result == 0) {
-			send_rename_event(thread, old_buffer, old_length, new_buffer, new_length);
-			if (flags & RENAME_EXCHANGE) {
-				// not strictly correct, but the protocol doesn't have enough fidelity to represent
-				send_rename_event(thread, new_buffer, new_length, old_buffer, old_length);
-			}
-		}
-		return result;
-	}
-#else
-	(void)thread;
-#endif
-	if (flags == 0) {
-		return fs_renameat(old_dirfd, old_path, new_dirfd, new_path);
-	}
-	return fs_renameat2(old_dirfd, old_path, new_dirfd, new_path, flags);
-}
-
-__attribute__((warn_unused_result))
-static int wrapped_linkat(struct thread_storage *thread, int old_dirfd, const char *old_path, int new_dirfd, const char *new_path, int flags)
-{
-#ifdef ENABLE_TRACER
-	if (enabled_traces & TRACE_TYPE_HARDLINK) {
-		// resolve old path
-		char old_buffer[PATH_MAX];
-		int old_length;
-		old_dirfd = resolve_path_operation(thread, old_dirfd, old_path, old_buffer, &old_path, &old_length);
-		if (old_dirfd < 0) {
-			return old_dirfd;
-		}
-		struct attempt_cleanup_state state;
-		attempt_push_close(thread, &state, old_dirfd);
-		// resolve new path
-		char new_buffer[PATH_MAX];
-		int new_length;
-		new_dirfd = resolve_path_operation(thread, new_dirfd, new_path, new_buffer, &new_path, &new_length);
-		if (new_dirfd < 0) {
-			attempt_pop_close(&state);
-			return new_dirfd;
-		}
-		// perform link
-		int result = fs_linkat(old_dirfd, old_path, new_dirfd, new_path, flags);
-		fs_close(new_dirfd);
-		attempt_pop_close(&state);
-		// send event
-		if (result == 0) {
-			send_hardlink_event(thread, old_buffer, old_length, new_buffer, new_length);
-		}
-		return result;
-	}
-#else
-	(void)thread;
-#endif
-	return fs_linkat(old_dirfd, old_path, new_dirfd, new_path, flags);
-}
-
-__attribute__((warn_unused_result))
-static int wrapped_symlinkat(struct thread_storage *thread, const char *old_path, int new_dirfd, const char *new_path)
-{
-#ifdef ENABLE_TRACER
-	if (enabled_traces & TRACE_TYPE_SYMLINK) {
-		// resolve path
-		char buffer[PATH_MAX];
-		int length;
-		new_dirfd = resolve_path_operation(thread, new_dirfd, new_path, buffer, &new_path, &length);
-		if (new_dirfd < 0) {
-			return new_dirfd;
-		}
-		// perform symlink
-		int result = fs_symlinkat(old_path, new_dirfd, new_path);
-		fs_close(new_dirfd);
-		// send event
-		if (result == 0) {
-			send_symlink_event(thread, old_path, fs_strlen(old_path), buffer, length);
-		}
-		return result;
-	}
-#else
-	(void)thread;
-#endif
-	return fs_symlinkat(old_path, new_dirfd, new_path);
-}
-
-#ifdef ENABLE_TRACER
-
-__attribute__((warn_unused_result))
-static int wrapped_chmodat(struct thread_storage *thread, int dirfd, const char *path, mode_t mode)
-{
-	int fd;
-	if ((path != NULL && path[0] == '/') || dirfd == AT_FDCWD) {
-		fd = fs_open(path, O_RDONLY | O_CLOEXEC, 0);
-	} else {
-		fd = fs_openat(dirfd, path, O_RDONLY | O_CLOEXEC, 0);
-	}
-	if (fd < 0) {
-		return fd;
-	}
-	char filename[PATH_MAX];
-	int result = fs_fd_getpath(fd, filename);
-	if (result <= 0) {
-		fs_close(fd);
-		return result;
-	}
-	int result = fs_fchmod(fd, mode);
-	fs_close(fd);
-	if (enabled_traces & TRACE_TYPE_CHMOD) {
-		send_chmod_event(thread, filename, fs_strlen(filename), mode);
-	}
-	if (result == 0) {
-		if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
-			send_attribute_change_event(thread, filename, fs_strlen(filename_len));
-		}
-	}
-	return result;
-}
-
-__attribute__((warn_unused_result))
-static int wrapped_chownat(struct thread_storage *thread, int dirfd, const char *path, uid_t uid, gid_t gid, int flags)
-{
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		// resolve path
-		char buffer[PATH_MAX];
-		int length;
-		dirfd = resolve_path_operation(thread, dirfd, path, buffer, &path, &length);
-		if (dirfd < 0) {
-			return dirfd;
-		}
-		// chown the path
-		int result = fs_fchownat(dirfd, path, uid, gid, flags);
-		fs_close(dirfd);
-		if (result == 0) {
-			send_attribute_change_event(thread, buffer, length);
-		}
-		return result;
-	}
-	// open the file
-	int fd;
-	if ((path != NULL && path[0] == '/') || dirfd == AT_FDCWD) {
-		fd = fs_open(path, O_RDONLY | O_CLOEXEC, 0);
-	} else {
-		fd = fs_openat(dirfd, path, O_RDONLY | O_CLOEXEC, 0);
-	}
-	// read the path
-	char filename[PATH_MAX];
-	int result = fs_fd_getpath(fd, filename);
-	if (result <= 0) {
-		fs_close(fd);
-		return result;
-	}
-	// chown the file
-	int result = fs_fchown(fd, uid, gid);
-	fs_close(fd);
-	if (result == 0) {
-		send_attribute_change_event(thread, filename, fs_strlen(filename));
-	}
-	return result;
-}
-
 static void working_dir_changed(struct thread_storage *thread)
 {
 	if (enabled_traces & TRACE_TYPE_UPDATE_WORKING_DIR) {
@@ -515,44 +103,6 @@ static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_socka
 	}
 }
 #endif
-
-static int assemble_remote_path(int real_fd, const char *path, char buf[PATH_MAX], const char **out_path)
-{
-	if (path == NULL || *path == '\0' || (path[0] == '.' && path[1] == '\0')) {
-		int count = remote_readlink_fd(real_fd, buf, PATH_MAX);
-		if (count < 0) {
-			return count;
-		}
-		if (count >= PATH_MAX) {
-			return -ENAMETOOLONG;
-		}
-		buf[count] = '\0';
-		*out_path = buf;
-		return 0;
-	}
-	if (path[0] == '/') {
-		*out_path = path;
-		return 0;
-	}
-	int count = remote_readlink_fd(real_fd, buf, PATH_MAX);
-	if (count < 0) {
-		return count;
-	}
-	if (count >= PATH_MAX - 2) {
-		return -ENAMETOOLONG;
-	}
-	if (count && buf[count - 1] != '/') {
-		buf[count] = '/';
-		count++;
-	}
-	size_t len = fs_strlen(path);
-	if (count + len + 1 > PATH_MAX) {
-		return -ENAMETOOLONG;
-	}
-	fs_memcpy(&buf[count], path, len + 1);
-	*out_path = buf;
-	return 0;
-}
 
 static int become_remote_socket(int fd, int domain, int *out_real_fd)
 {
@@ -620,10 +170,10 @@ static int become_local_socket(int fd, int *out_real_fd)
 	if (result < 0) {
 		return result;
 	}
-	int real_fd = FS_SYSCALL(__NR_socket, domain, type | SOCK_CLOEXEC, protocol);
+	int real_fd = FS_SYSCALL(LINUX_SYS_socket, domain, type | SOCK_CLOEXEC, protocol);
 	if (real_fd < 0) {
 		if (protocol != 0 && real_fd == -EINVAL) {
-			real_fd = FS_SYSCALL(__NR_socket, domain, type | SOCK_CLOEXEC, 0);
+			real_fd = FS_SYSCALL(LINUX_SYS_socket, domain, type | SOCK_CLOEXEC, 0);
 			if (real_fd < 0) {
 				return real_fd;
 			}
@@ -674,7 +224,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 {
 	switch (syscall) {
 #ifdef __NR_arch_prctl
-		case __NR_arch_prctl: {
+		case LINUX_SYS_arch_prctl: {
 			switch (arg1) {
 #if defined(__x86_64__)
 				case ARCH_SET_FS: {
@@ -687,66 +237,45 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			break;
 		}
 #endif
-		case __NR_set_tid_address: {
+		case LINUX_SYS_set_tid_address: {
 			set_tid_address((const void *)arg1);
 			break;
 		}
 #ifdef __NR_creat
-		case __NR_creat: {
-			const char *path = (const char *)arg1;
-			mode_t mode = arg2;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return install_remote_fd(remote_openat(real.fd, real.path, O_CREAT|O_WRONLY|O_TRUNC, mode), 0);
-			}
-			if (real.fd != AT_FDCWD) {
-				return install_local_fd(FS_SYSCALL(__NR_openat, real.fd, (intptr_t)real.path, O_CREAT|O_WRONLY|O_TRUNC, mode), 0);
-			}
-			return install_local_fd(FS_SYSCALL(syscall, (intptr_t)real.path, mode), 0);
+		case LINUX_SYS_creat: {
+			struct vfs_resolved_file file;
+			return vfs_install_file(vfs_call(openat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), O_CREAT|O_WRONLY|O_TRUNC, arg2, &file), &file, 0);
 		}
 #endif
 #ifdef __NR_open
-		case __NR_open: {
-			const char *path = (const char *)arg1;
-			int flags = arg2;
-			int mode = arg3;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return install_remote_fd(remote_openat(real.fd, real.path, flags, mode), flags);
-			}
-			return install_local_fd(wrapped_openat(thread, real.fd, real.path, flags, mode), flags);
+		case LINUX_SYS_open: {
+			struct vfs_resolved_file file;
+			return vfs_install_file(vfs_call(openat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2, arg3, &file), &file, arg2);
 		}
 #endif
-		case __NR_openat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			int flags = arg3;
-			int mode = arg4;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return install_remote_fd(remote_openat(real.fd, real.path, flags, mode), flags);
-			}
-			return install_local_fd(wrapped_openat(thread, real.fd, real.path, flags, mode), flags);
+		case LINUX_SYS_openat: {
+			struct vfs_resolved_file file;
+			return vfs_install_file(vfs_call(openat, vfs_resolve_path(arg1, (const char *)arg2), arg3, arg4, &file), &file, arg3);
 		}
 #ifdef __NR_openat2
-		case __NR_openat2: {
+		case LINUX_SYS_openat2: {
 			// TODO: handle openat2
 			return -ENOSYS;
 		}
 #endif
-		case __NR_close: {
+		case LINUX_SYS_close: {
 			return perform_close(arg1);
 		}
-		case __NR_close_range: {
+		case LINUX_SYS_close_range: {
 			return -ENOSYS;
 		}
-		case __NR_execve: {
+		case LINUX_SYS_execve: {
 			const char *path = (const char *)arg1;
 			const char *const *argv = (const char *const *)arg2;
 			const char *const *envp = (const char *const *)arg3;
 			return wrapped_execveat(thread, AT_FDCWD, path, argv, envp, 0);
 		}
-		case __NR_execveat: {
+		case LINUX_SYS_execveat: {
 			int dirfd = arg1;
 			if (dirfd != AT_FDCWD) {
 				return -ENOEXEC;
@@ -758,60 +287,28 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return wrapped_execveat(thread, dirfd, path, argv, envp, flags);
 		}
 #ifdef __NR_stat
-		case __NR_stat: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_newfstatat(real.fd, real.path, (struct fs_stat *)arg2, 0);
-			}
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_newfstatat, real.fd, (intptr_t)real.path, arg2, 0);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_stat: {
+			return vfs_call(newfstatat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (struct fs_stat *)arg2, 0);
 		}
 #endif
-		case __NR_fstat: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_fstat(real_fd, (struct fs_stat *)arg2);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_fstat: {
+			return vfs_call(fstat, vfs_resolve_file(arg1), (struct fs_stat *)arg2);
 		}
 #ifdef __NR_lstat
-		case __NR_lstat: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_newfstatat(real.fd, real.path, (struct fs_stat *)arg2, AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT);
-			}
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_newfstatat, real.fd, (intptr_t)real.path, arg2, AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_lstat: {
+			return vfs_call(newfstatat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (struct fs_stat *)arg2, AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT);
 		}
 #endif
-		case __NR_newfstatat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_newfstatat(real.fd, real.path, (struct fs_stat *)arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		case LINUX_SYS_newfstatat: {
+			return vfs_call(newfstatat, vfs_resolve_path(arg1, (const char *)arg2), (struct fs_stat *)arg3, arg4);
 		}
-		case __NR_statx: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_statx(real.fd, real.path, arg3, arg4, (struct linux_statx *)arg5);
-			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
+		case LINUX_SYS_statx: {
+			return vfs_call(statx, vfs_resolve_path(arg1, (const char *)arg2), arg3, arg4, (struct linux_statx *)arg5);
 		}
 #ifdef __NR_poll
-		case __NR_poll:
+		case LINUX_SYS_poll:
 #endif
-		case __NR_ppoll: {
+		case LINUX_SYS_ppoll: {
 			struct pollfd *fds = (struct pollfd *)arg1;
 			nfds_t nfds = arg2;
 			if (nfds == 0) {
@@ -843,7 +340,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			int result;
 			if (has_remote) {
-				if (syscall == __NR_ppoll) {
+				if (syscall == LINUX_SYS_ppoll) {
 					// TODO: set signal mask
 					result = remote_ppoll(&real_fds[0], nfds, (struct timespec *)arg3);
 				} else {
@@ -860,14 +357,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			attempt_pop_free(&state);
 			return result;
 		}
-		case __NR_lseek: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_lseek(real_fd, arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_lseek: {
+			return vfs_call(lseek, vfs_resolve_file(arg1), arg2, arg3);
 		}
-		case __NR_mmap: {
+		case LINUX_SYS_mmap: {
 			// TODO: need to update seccomp policy to trap to userspace
 			void *addr = (void *)arg1;
 			size_t len = arg2;
@@ -914,47 +407,25 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, real_fd, arg6);
 		}
-		case __NR_pread64: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_pread(real_fd, (char *)arg2, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+		case LINUX_SYS_pread64: {
+			return vfs_call(pread, vfs_resolve_file(arg1), (char *)arg2, arg3, arg4);
 		}
-		case __NR_pwrite64: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_pwrite(real_fd, (const char *)arg2, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+		case LINUX_SYS_pwrite64: {
+			return vfs_call(pwrite, vfs_resolve_file(arg1), (const char *)arg2, arg3, arg4);
 		}
 #ifdef __NR_access
-		case __NR_access: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_faccessat(real.fd, real.path, arg2, 0);
-			}
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_faccessat, real.fd, (intptr_t)real.path, arg2, 0);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_access: {
+			return vfs_call(faccessat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2, 0);
 		}
 #endif
-		case __NR_faccessat: {
-			int fd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(fd, path, &real)) {
-				return remote_faccessat(real.fd, real.path, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		case LINUX_SYS_faccessat: {
+			return vfs_call(faccessat, vfs_resolve_path(arg1, (const char *)arg2), arg3, 0);
 		}
-		case __NR_faccessat2: {
-			return -ENOSYS;
+		case LINUX_SYS_faccessat2: {
+			return vfs_call(faccessat, vfs_resolve_path(arg1, (const char *)arg2), arg3, arg4);
 		}
 #ifdef __NR_pipe
-		case __NR_pipe: {
+		case LINUX_SYS_pipe: {
 			int result = FS_SYSCALL(syscall, arg1);
 			if (arg1 != 0 && result == 0) {
 				int *fds = (int *)arg1;
@@ -965,26 +436,12 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 #endif
 #ifdef __NR_chmod
-		case __NR_chmod: {
-			const char *path = (const char *)arg1;
-			mode_t mode = arg2;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_fchmodat(real.fd, real.path, mode, 0);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & (TRACE_TYPE_ATTRIBUTE_CHANGE | TRACE_TYPE_CHMOD)) {
-				return wrapped_chmodat(thread, real.fd, real.path, mode);
-			}
-#endif
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_fchmodat, real.fd, (intptr_t)real.path, arg2, 0);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_chmod: {
+			return vfs_call(fchmodat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2, 0);
 		}
 #endif
 #ifdef __NR_pipe2
-		case __NR_pipe2: {
+		case LINUX_SYS_pipe2: {
 			int result = FS_SYSCALL(syscall, arg1, arg2);
 			if (arg1 != 0 && result == 0) {
 				int *fds = (int *)arg1;
@@ -994,96 +451,29 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 #endif
-		case __NR_fchmod: {
-			int fd = arg1;
-			mode_t mode = arg2;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fchmod(real_fd, mode);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & (TRACE_TYPE_ATTRIBUTE_CHANGE | TRACE_TYPE_CHMOD)) {
-				return wrapped_chmodat(thread, real_fd, NULL, mode);
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_fchmod: {
+			return vfs_call(fchmod, vfs_resolve_file(arg1), arg2);
 		}
 #ifdef __NR_chown
-		case __NR_chown: {
-			const char *path = (const char *)arg1;
-			uid_t owner = arg2;
-			gid_t group = arg3;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_fchownat(real.fd, real.path, owner, group, 0);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, real.fd, real.path, owner, group, 0);
-			}
-#endif
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_fchownat, real.fd, (intptr_t)real.path, arg2, arg3, 0);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2, arg3);
+		case LINUX_SYS_chown: {
+			return vfs_call(fchownat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2, arg3, 0);
 		}
 #endif
-		case __NR_fchown: {
-			int fd = arg1;
-			uid_t owner = arg2;
-			gid_t group = arg3;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fchown(real_fd, owner, group);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, real_fd, NULL, owner, group, 0);
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_fchown: {
+			return vfs_call(fchown, vfs_resolve_file(arg1), arg2, arg3);
 		}
 #ifdef __NR_lchown
-		case __NR_lchown: {
-			const char *path = (const char *)arg1;
-			uid_t owner = arg2;
-			gid_t group = arg3;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_fchownat(real.fd, real.path, owner, group, AT_SYMLINK_NOFOLLOW);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, real.fd, real.path, owner, group, AT_SYMLINK_NOFOLLOW);
-			}
-#endif
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_fchownat, real.fd, (intptr_t)real.path, arg2, arg3, AT_SYMLINK_NOFOLLOW);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2, arg3);
+		case LINUX_SYS_lchown: {
+			return vfs_call(fchownat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2, arg3, AT_SYMLINK_NOFOLLOW);
 		}
 #endif
-		case __NR_fchownat: {
-			int fd = arg1;
-			const char *path = (const char *)arg2;
-			uid_t owner = arg3;
-			gid_t group = arg4;
-			int flags = arg5;
-			path_info real;
-			if (lookup_real_path(fd, path, &real)) {
-				return remote_fchownat(real.fd, real.path, owner, group, flags);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_ATTRIBUTE_CHANGE) {
-				return wrapped_chownat(thread, real.fd, real.path, owner, group, flags);
-			}
-#endif
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4, arg5);
+		case LINUX_SYS_fchownat: {
+			return vfs_call(fchownat, vfs_resolve_path(arg1, (const char *)arg2), arg3, arg4, arg5);
 		}
 #ifdef __NR_select
-		case __NR_select:
+		case LINUX_SYS_select:
 #endif
-		case __NR_pselect6: {
+		case LINUX_SYS_pselect6: {
 			int n = arg1;
 			fd_set *readfds = (fd_set *)arg2;
 			fd_set *writefds = (fd_set *)arg3;
@@ -1125,7 +515,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			// translate timeout
 			struct timespec *timeout;
 			struct timespec timeout_copy;
-			if (syscall == __NR_pselect6) {
+			if (syscall == LINUX_SYS_pselect6) {
 				timeout = (struct timespec *)arg5;
 			} else if (arg5 != 0) {
 				TIMEVAL_TO_TIMESPEC((struct timeval *)arg5, &timeout_copy);
@@ -1136,7 +526,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			// translate sigset
 			const void *sigset = NULL;
 			size_t sigsetsize = 0;
-			if (syscall == __NR_pselect6 && arg6 != 0) {
+			if (syscall == LINUX_SYS_pselect6 && arg6 != 0) {
 				struct {
 					const void *ss;
 					size_t ss_len;
@@ -1150,11 +540,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				result = remote_ppoll(&real_fds[0], nfds, timeout);
 			} else if (fds_all_match) {
 				attempt_pop_free(&state);
-				// all the file descriptors match, just use the standard __NR_select or __NR_pselect6
+				// all the file descriptors match, just use the standard LINUX_SYS_select or LINUX_SYS_pselect6
 				// syscall that would have been invoked anyway
 				return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 			} else {
-				result = FS_SYSCALL(__NR_ppoll, (intptr_t)&real_fds[0], nfds, (intptr_t)timeout, (intptr_t)sigset, sigsetsize);
+				result = FS_SYSCALL(LINUX_SYS_ppoll, (intptr_t)&real_fds[0], nfds, (intptr_t)timeout, (intptr_t)sigset, sigsetsize);
 			}
 			if (result > 0) {
 				nfds = 0;
@@ -1177,323 +567,100 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			attempt_pop_free(&state);
 			return result;
 		}
-		case __NR_sendfile: {
-			int out_real_fd;
-			bool out_is_remote = lookup_real_fd(arg1, &out_real_fd);
-			int in_real_fd;
-			bool in_is_remote = lookup_real_fd(arg2, &in_real_fd);
-			if (in_is_remote != out_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (in_is_remote) {
-				return remote_sendfile(out_real_fd, in_real_fd, (off_t *)arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, out_real_fd, in_real_fd, arg3, arg4);
+		case LINUX_SYS_sendfile: {
+			return vfs_call(sendfile, vfs_resolve_file(arg1), vfs_resolve_file(arg2), (off_t *)arg3, arg4);
 		}
-		case __NR_recvfrom: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				socklen_t *len = (socklen_t *)arg6;
-				return remote_recvfrom(real_fd, (void *)arg2, arg3, arg4, (struct sockaddr *)arg5, len);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5, arg6);
+		case LINUX_SYS_recvfrom: {
+			return vfs_call(recvfrom, vfs_resolve_file(arg1), (char *)arg2, arg3, arg4, (struct sockaddr *)arg5, (socklen_t *)arg6);
 		}
-		case __NR_sendmsg: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_sendmsg(thread, real_fd, (const struct msghdr *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_sendmsg: {
+			return vfs_call(sendmsg, vfs_resolve_file(arg1), (const struct msghdr *)arg2, arg3);
 		}
-		case __NR_recvmsg: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_recvmsg(thread, real_fd, (struct msghdr *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_recvmsg: {
+			return vfs_call(recvmsg, vfs_resolve_file(arg1), (struct msghdr *)arg2, arg3);
 		}
-		case __NR_shutdown: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_shutdown(real_fd, arg2);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_shutdown: {
+			return vfs_call(shutdown, vfs_resolve_file(arg1), arg2);
 		}
-		case __NR_getsockname: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_getsockname(real_fd, (void *)arg2, (socklen_t *)arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_getsockname: {
+			return vfs_call(getsockname, vfs_resolve_file(arg1), (struct sockaddr *)arg2, (socklen_t *)arg3);
 		}
-		case __NR_getpeername: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_getpeername(real_fd, (void *)arg2, (socklen_t *)arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_getpeername: {
+			return vfs_call(getpeername, vfs_resolve_file(arg1), (struct sockaddr *)arg2, (socklen_t *)arg3);
 		}
-		case __NR_getsockopt: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_getsockopt(real_fd, arg2, arg3, (void *)arg4, (socklen_t *)arg5);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+		case LINUX_SYS_getsockopt: {
+			return vfs_call(getsockopt, vfs_resolve_file(arg1), arg2, arg3, (void *)arg4, (socklen_t *)arg5);
 		}
-		case __NR_setsockopt: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_setsockopt(real_fd, arg2, arg3, (const void *)arg4, arg5);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+		case LINUX_SYS_setsockopt: {
+			return vfs_call(setsockopt, vfs_resolve_file(arg1), arg2, arg3, (const void *)arg4, arg5);
 		}
-		case __NR_flock: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_flock(real_fd, arg2);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_flock: {
+			return vfs_call(flock, vfs_resolve_file(arg1), arg2);
 		}
-		case __NR_fsync: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fsync(real_fd);
-			}
-			return FS_SYSCALL(syscall, real_fd);
+		case LINUX_SYS_fsync: {
+			return vfs_call(fsync, vfs_resolve_file(arg1));
 		}
-		case __NR_fdatasync: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fdatasync(real_fd);
-			}
-			return FS_SYSCALL(syscall, real_fd);
+		case LINUX_SYS_fdatasync: {
+			return vfs_call(fdatasync, vfs_resolve_file(arg1));
 		}
-		case __NR_truncate: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				if (real.fd != AT_FDCWD) {
-					// no ftruncateat; open, ftruncate, and close
-					int temp_fd = remote_openat(real.fd, real.path, O_WRONLY | O_CLOEXEC, 0);
-					if (temp_fd < 0) {
-						return temp_fd;
-					}
-					intptr_t result = remote_ftruncate(temp_fd, arg2);
-					remote_close(temp_fd);
-					return result;
-				}
-				return remote_truncate(real.path, arg2);
-			}
-			if (real.fd != AT_FDCWD) {
-				// no ftruncateat; open, ftruncate, and close
-				int temp_fd = fs_openat(real.fd, real.path, O_WRONLY | O_CLOEXEC, 0);
-				if (temp_fd < 0) {
-					return temp_fd;
-				}
-				intptr_t result = fs_ftruncate(temp_fd, arg2);
-				remote_close(temp_fd);
-				return result;
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_truncate: {
+			return vfs_call(truncate, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2);
 		}
-		case __NR_ftruncate: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_ftruncate(real_fd, arg2);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_ftruncate: {
+			return vfs_call(ftruncate, vfs_resolve_file(arg1), arg2);
 		}
 #ifdef __NR_getdents
-		case __NR_getdents: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				remote_getdents(real_fd, (void *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_getdents: {
+			return vfs_call(getdents, vfs_resolve_file(arg1), (void *)arg2, arg3);
 		}
 #endif
-		case __NR_statfs: {
-			path_info real;
-			bool is_remote = lookup_real_path(AT_FDCWD, (const char *)arg1, &real);
-			if (real.fd != AT_FDCWD) {
-				return is_remote ? invalid_remote_operation() : invalid_local_operation();
-			}
-			if (is_remote) {
-				return remote_statfs(real.path, (struct fs_statfs *)arg2);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_statfs: {
+			return vfs_call(statfs, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (struct fs_statfs *)arg2);
 		}
-		case __NR_fstatfs: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fstatfs(real_fd, (struct fs_statfs *)arg2);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_fstatfs: {
+			return vfs_call(fstatfs, vfs_resolve_file(arg1), (struct fs_statfs *)arg2);
 		}
-		case __NR_readahead: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_readahead(real_fd, arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_readahead: {
+			return vfs_call(readahead, vfs_resolve_file(arg2), arg3, arg4);
 		}
-		case __NR_setxattr:
-		case __NR_lsetxattr: {
-			const char *path = (const char *)arg1;
-			const char *name = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				if (real.fd != AT_FDCWD) {
-					return invalid_remote_operation();
-				}
-				if (syscall == __NR_lsetxattr) {
-					return remote_lsetxattr(path, name, (const void *)arg3, arg4, arg5);
-				}
-				return remote_setxattr(path, name, (const void *)arg3, arg4, arg5);
-			}
-			if (real.fd != AT_FDCWD) {
-				return invalid_local_operation();
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2, arg3, arg4, arg5);
+		case LINUX_SYS_setxattr:
+		case LINUX_SYS_lsetxattr: {
+			return vfs_call(setxattr, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (const void *)arg2, (const void *)arg3, arg4, syscall == LINUX_SYS_lsetxattr ? AT_SYMLINK_NOFOLLOW : 0);
 		}
-		case __NR_fsetxattr: {
-			int fd = arg1;
-			const char *name = (const char *)arg2;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fsetxattr(real_fd, name, (const void *)arg3, arg4, arg5);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+		case LINUX_SYS_fsetxattr: {
+			return vfs_call(fsetxattr, vfs_resolve_file(arg1), (const void *)arg2, (const void *)arg3, arg4, arg5);
 		}
-		case __NR_getxattr:
-		case __NR_lgetxattr: {
-			const char *path = (const char *)arg1;
-			const char *name = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				char buf[PATH_MAX];
-				if (real.fd != AT_FDCWD) {
-					int result = assemble_remote_path(real.fd, real.path, buf, &real.path);
-					if (result < 0) {
-						return result;
-					}
-				}
-				if (syscall == __NR_lgetxattr) {
-					return remote_lgetxattr(buf, name, (void *)arg3, arg4);
-				}
-				return remote_getxattr(buf, name, (void *)arg3, arg4);
-			}
-			if (real.fd != AT_FDCWD) {
-				return invalid_local_operation();
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2, arg3, arg4, arg5);
+		case LINUX_SYS_getxattr:
+		case LINUX_SYS_lgetxattr: {
+			return vfs_call(getxattr, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (const void *)arg2, (void *)arg3, arg4, syscall == LINUX_SYS_lgetxattr ? AT_SYMLINK_NOFOLLOW : 0);
 		}
-		case __NR_fgetxattr: {
-			int fd = arg1;
-			const char *name = (const char *)arg2;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fgetxattr(real_fd, name, (void *)arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+		case LINUX_SYS_fgetxattr: {
+			return vfs_call(fgetxattr, vfs_resolve_file(arg1), (const void *)arg2, (void *)arg3, arg4);
 		}
-		case __NR_listxattr:
-		case __NR_llistxattr: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				char buf[PATH_MAX];
-				if (real.fd != AT_FDCWD) {
-					int result = assemble_remote_path(real.fd, real.path, buf, &real.path);
-					if (result < 0) {
-						return result;
-					}
-				}
-				if (syscall == __NR_llistxattr) {
-					return remote_llistxattr(buf, (void *)arg2, arg3);
-				}
-				return remote_listxattr(buf, (void *)arg2, arg3);
-			}
-			if (real.fd != AT_FDCWD) {
-				return invalid_local_operation();
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2, arg3);
+		case LINUX_SYS_listxattr:
+		case LINUX_SYS_llistxattr: {
+			return vfs_call(listxattr, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (void *)arg2, arg3, syscall == LINUX_SYS_llistxattr ? AT_SYMLINK_NOFOLLOW : 0);
 		}
-		case __NR_flistxattr: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_flistxattr(real_fd, (void *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_flistxattr: {
+			return vfs_call(flistxattr, vfs_resolve_file(arg1), (void *)arg2, arg3);
 		}
-		case __NR_removexattr:
-		case __NR_lremovexattr: {
-			const char *path = (const char *)arg1;
-			const char *name = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				char buf[PATH_MAX];
-				if (real.fd != AT_FDCWD) {
-					int result = assemble_remote_path(real.fd, real.path, buf, &real.path);
-					if (result < 0) {
-						return result;
-					}
-				}
-				if (syscall == __NR_lremovexattr) {
-					return remote_lremovexattr(real.path, name);
-				}
-				return remote_removexattr(real.path, name);
-			}
-			if (real.fd != AT_FDCWD) {
-				return invalid_local_operation();
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2);
+		case LINUX_SYS_removexattr:
+		case LINUX_SYS_lremovexattr: {
+			return vfs_call(removexattr, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (const void *)arg2, syscall == LINUX_SYS_lremovexattr ? AT_SYMLINK_NOFOLLOW : 0);
 		}
-		case __NR_fremovexattr: {
-			int fd = arg1;
-			const char *name = (const char *)arg2;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fremovexattr(real_fd, name);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_fremovexattr: {
+			return vfs_call(fremovexattr, vfs_resolve_file(arg1), (const void *)arg2);
 		}
-		case __NR_getdents64: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_getdents64(real_fd, (void *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_getdents64: {
+			return vfs_call(getdents64, vfs_resolve_file(arg1), (char *)arg2, arg3);
 		}
-		case __NR_fadvise64: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fadvise64(real_fd, arg2, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+		case LINUX_SYS_fadvise64: {
+			return vfs_call(fadvise64, vfs_resolve_file(arg1), arg2, arg3, arg4);
 		}
 #ifdef __NR_epoll_wait
-		case __NR_epoll_wait:
+		case LINUX_SYS_epoll_wait:
 #endif
-		case __NR_epoll_pwait: {
+		case LINUX_SYS_epoll_pwait: {
 			int fd = arg1;
 			int real_fd;
 			struct epoll_event *events = (struct epoll_event *)arg2;
@@ -1503,17 +670,17 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				// TODO: support pwait properly when remote
 				// TODO: support on aarch64
 #ifdef __NR_epoll_wait
-				return PROXY_LINUX_CALL(__NR_epoll_wait, proxy_value(real_fd), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
+				return PROXY_LINUX_CALL(LINUX_SYS_epoll_wait, proxy_value(real_fd), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
 #else
 				return -ENOSYS;
 #endif
 			}
 			return FS_SYSCALL(syscall, real_fd, (intptr_t)events, maxevents, timeout, arg5);
 		}
-		case __NR_epoll_pwait2: {
+		case LINUX_SYS_epoll_pwait2: {
 			return -ENOSYS;
 		}
-		case __NR_epoll_ctl: {
+		case LINUX_SYS_epoll_ctl: {
 			// TODO: handle epoll_ctl with mixed remote and local fds
 			int epfd = arg1;
 			int op = arg2;
@@ -1525,7 +692,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			bool fd_is_remote = lookup_real_fd(fd, &real_fd);
 			if (fd_is_remote) {
 				if (!epfd_is_remote) {
-					real_epfd = PROXY_LINUX_CALL(__NR_epoll_create1 | PROXY_NO_WORKER, proxy_value(EPOLL_CLOEXEC));
+					real_epfd = PROXY_LINUX_CALL(LINUX_SYS_epoll_create1 | PROXY_NO_WORKER, proxy_value(EPOLL_CLOEXEC));
 					if (real_epfd < 0) {
 						return real_epfd;
 					}
@@ -1535,17 +702,17 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						return result;
 					}
 				}
-				return PROXY_LINUX_CALL(__NR_epoll_ctl, proxy_value(real_epfd), proxy_value(op), proxy_value(real_fd), proxy_in(event, sizeof(*event)));
+				return PROXY_LINUX_CALL(LINUX_SYS_epoll_ctl, proxy_value(real_epfd), proxy_value(op), proxy_value(real_fd), proxy_in(event, sizeof(*event)));
 			}
 			if (epfd_is_remote) {
 				return invalid_remote_operation();
 			}
 			return FS_SYSCALL(syscall, real_epfd, arg2, real_fd, arg4);
 		}
-		case __NR_mq_open: {
+		case LINUX_SYS_mq_open: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2, arg3, arg4), arg2);
 		}
-		case __NR_mq_timedsend: {
+		case LINUX_SYS_mq_timedsend: {
 			// TODO: handle mq_timedsend
 			int fd = arg1;
 			int real_fd;
@@ -1554,7 +721,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_mq_timedreceive: {
+		case LINUX_SYS_mq_timedreceive: {
 			// TODO: handle mq_timedreceive
 			int fd = arg1;
 			int real_fd;
@@ -1563,7 +730,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_mq_notify: {
+		case LINUX_SYS_mq_notify: {
 			// TODO: handle mq_notify
 			int fd = arg1;
 			int real_fd;
@@ -1572,7 +739,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg1, arg2);
 		}
-		case __NR_mq_getsetattr: {
+		case LINUX_SYS_mq_getsetattr: {
 			// TODO: handle mq_getsetattr
 			int fd = arg1;
 			int real_fd;
@@ -1582,14 +749,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg1, arg2, arg3);
 		}
 #ifdef __NR_inotify_init
-		case __NR_inotify_init: {
+		case LINUX_SYS_inotify_init: {
 			return install_local_fd(FS_SYSCALL(syscall), 0);
 		}
 #endif
-		case __NR_inotify_init1: {
+		case LINUX_SYS_inotify_init1: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}
-		case __NR_inotify_add_watch: {
+		case LINUX_SYS_inotify_add_watch: {
 			// TODO: handle inotify_add_watch
 			int fd = arg1;
 			int real_fd;
@@ -1600,56 +767,32 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (fd_is_remote != path_is_remote) {
 				return invalid_local_remote_mixed_operation();
 			}
-			if (real.fd != AT_FDCWD) {
+			if (real.handle != AT_FDCWD) {
 				return fd_is_remote ? invalid_remote_operation() : invalid_local_operation();
 			}
 			if (fd_is_remote) {
-				return PROXY_LINUX_CALL(__NR_inotify_add_watch, proxy_value(real_fd), proxy_string(real.path), proxy_value(arg3));
+				return PROXY_LINUX_CALL(LINUX_SYS_inotify_add_watch, proxy_value(real_fd), proxy_string(real.path), proxy_value(arg3));
 			}
 			return FS_SYSCALL(syscall, real_fd, (intptr_t)real.path, arg3);
 		}
-		case __NR_inotify_rm_watch: {
+		case LINUX_SYS_inotify_rm_watch: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_LINUX_CALL(__NR_inotify_rm_watch, real_fd, arg2);
+				return PROXY_LINUX_CALL(LINUX_SYS_inotify_rm_watch, real_fd, arg2);
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
-		case __NR_splice: {
-			int fd_in_real;
-			bool in_is_remote = lookup_real_fd(arg1, &fd_in_real);
-			int fd_out_real;
-			bool out_is_remote = lookup_real_fd(arg3, &fd_out_real);
-			if (in_is_remote != out_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (in_is_remote) {
-				return remote_splice(fd_in_real, (void *)arg2, fd_out_real, (void *)arg4, arg5, arg6);
-			}
-			return FS_SYSCALL(syscall, fd_in_real, arg2, fd_out_real, arg4, arg5, arg6);
+		case LINUX_SYS_splice: {
+			return vfs_call(splice, vfs_resolve_file(arg1), (off_t *)arg2, vfs_resolve_file(arg3), (off_t *)arg4, arg5, arg6);
 		}
-		case __NR_tee: {
-			int fd_in_real;
-			bool in_is_remote = lookup_real_fd(arg1, &fd_in_real);
-			int fd_out_real;
-			bool out_is_remote = lookup_real_fd(arg2, &fd_out_real);
-			if (in_is_remote != out_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (in_is_remote) {
-				return remote_tee(fd_in_real, fd_out_real, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, fd_in_real, fd_out_real, arg3, arg4);
+		case LINUX_SYS_tee: {
+			return vfs_call(tee, vfs_resolve_file(arg1), vfs_resolve_file(arg2), arg3, arg4);
 		}
-		case __NR_sync_file_range: {
-			int real_fd;
-			if (lookup_real_fd(arg2, &real_fd)) {
-				return remote_sync_file_range(real_fd, arg2, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+		case LINUX_SYS_sync_file_range: {
+			return vfs_call(sync_file_range, vfs_resolve_file(arg1), arg2, arg3, arg4);
 		}
-		case __NR_vmsplice: {
+		case LINUX_SYS_vmsplice: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1658,50 +801,29 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
 #ifdef __NR_utime
-		case __NR_utime: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			bool is_remote = lookup_real_path(AT_FDCWD, path, &real);
-			if (real.fd != AT_FDCWD) {
-				return is_remote ? invalid_remote_operation() : invalid_local_operation();
+		case LINUX_SYS_utime: {
+			const struct utimbuf *buf = (const struct utimbuf *)arg2;
+			if (buf == NULL) {
+				return vfs_call(utimensat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), NULL, 0);
 			}
-			if (is_remote) {
-				const struct utimbuf *buf = (const struct utimbuf *)arg2;
-				if (buf == NULL) {
-					return remote_utimensat(real.fd, real.path, NULL, 0);
-				}
-				struct timespec copy[2];
-				copy[0].tv_sec = buf->actime;
-				copy[0].tv_nsec = 0;
-				copy[1].tv_sec = buf->modtime;
-				copy[1].tv_nsec = 0;
-				return remote_utimensat(real.fd, real.path, copy, 0);
-			}
-			return FS_SYSCALL(syscall, arg1, arg2);
+			struct timespec copy[2];
+			copy[0].tv_sec = buf->actime;
+			copy[0].tv_nsec = 0;
+			copy[1].tv_sec = buf->modtime;
+			copy[1].tv_nsec = 0;
+			return vfs_call(utimensat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), copy, 0);
 		}
 #endif
-		case __NR_utimensat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_utimensat(real.fd, real.path, (struct timespec *)arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		case LINUX_SYS_utimensat: {
+			return vfs_call(utimensat, vfs_resolve_path(arg1, (const char *)arg2), (struct timespec *)arg3, arg4);
 		}
 #ifdef __NR_futimesat
-		case __NR_futimesat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_utimensat(real.fd, real.path, (const struct timespec *)arg3, 0);
-			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		case LINUX_SYS_futimesat: {
+			return vfs_call(utimensat, vfs_resolve_path(arg1, (const char *)arg2), (struct timespec *)arg3, 0);
 		}
 #endif
 #ifdef __NR_signalfd
-		case __NR_signalfd: {
+		case LINUX_SYS_signalfd: {
 			int fd = arg1;
 			int real_fd;
 			if (fd == -1) {
@@ -1718,7 +840,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 #endif
-		case __NR_signalfd4: {
+		case LINUX_SYS_signalfd4: {
 			int fd = arg1;
 			int real_fd;
 			if (fd == -1) {
@@ -1734,26 +856,21 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return result;
 		}
-		case __NR_timerfd_create: {
+		case LINUX_SYS_timerfd_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
 		}
 #ifdef __NR_eventfd
-		case __NR_eventfd: {
+		case LINUX_SYS_eventfd: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), 0);
 		}
 #endif
-		case __NR_eventfd2: {
+		case LINUX_SYS_eventfd2: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
 		}
-		case __NR_fallocate: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_fallocate(real_fd, arg2, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+		case LINUX_SYS_fallocate: {
+			return vfs_call(fallocate, vfs_resolve_file(arg1), arg2, arg3, arg4);
 		}
-		case __NR_timerfd_settime: {
+		case LINUX_SYS_timerfd_settime: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1761,7 +878,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
-		case __NR_timerfd_gettime: {
+		case LINUX_SYS_timerfd_gettime: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1770,16 +887,16 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
 #ifdef __NR_epoll_create
-		case __NR_epoll_create: {
+		case LINUX_SYS_epoll_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), 0);
 		}
 #endif
-		case __NR_epoll_create1: {
+		case LINUX_SYS_epoll_create1: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}
-		case __NR_readv:
-		case __NR_preadv:
-		case __NR_preadv2: {
+		case LINUX_SYS_readv:
+		case LINUX_SYS_preadv:
+		case LINUX_SYS_preadv2: {
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
 				const struct iovec *iov = (const struct iovec *)arg2;
@@ -1833,9 +950,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5, arg6);
 		}
-		case __NR_writev:
-		case __NR_pwritev:
-		case __NR_pwritev2: {
+		case LINUX_SYS_writev:
+		case LINUX_SYS_pwritev:
+		case LINUX_SYS_pwritev2: {
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
 				const struct iovec *iov = (const struct iovec *)arg2;
@@ -1877,7 +994,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5, arg6);
 		}
-		case __NR_recvmmsg: {
+		case LINUX_SYS_recvmmsg: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1899,10 +1016,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_fanotify_init: {
+		case LINUX_SYS_fanotify_init: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg1);
 		}
-		case __NR_fanotify_mark: {
+		case LINUX_SYS_fanotify_mark: {
 			int fanotify_fd = arg1;
 			unsigned int flags = arg2;
 			uint64_t mask = arg3;
@@ -1916,11 +1033,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return invalid_local_remote_mixed_operation();
 			}
 			if (fanotify_fd_is_remote) {
-				return PROXY_LINUX_CALL(__NR_fanotify_mark, proxy_value(real_fanotify_fd), proxy_value(flags), proxy_value(mask), proxy_value(real.fd), proxy_string(real.path));
+				return PROXY_LINUX_CALL(LINUX_SYS_fanotify_mark, proxy_value(real_fanotify_fd), proxy_value(flags), proxy_value(mask), proxy_value(real.handle), proxy_string(real.path));
 			}
-			return FS_SYSCALL(syscall, real_fanotify_fd, flags, mask, real.fd, (intptr_t)real.path);
+			return FS_SYSCALL(syscall, real_fanotify_fd, flags, mask, real.handle, (intptr_t)real.path);
 		}
-		case __NR_name_to_handle_at: {
+		case LINUX_SYS_name_to_handle_at: {
 			// TODO: handle name_to_handle_at
 			int dfd = arg1;
 			int real_dfd;
@@ -1929,7 +1046,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_dfd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_open_by_handle_at: {
+		case LINUX_SYS_open_by_handle_at: {
 			// TODO: handle open_by_handle_at
 			int dfd = arg1;
 			int real_dfd;
@@ -1938,15 +1055,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return install_local_fd(FS_SYSCALL(syscall, real_dfd, arg2, arg3, arg4, arg5), arg5);
 		}
-		case __NR_syncfs: {
-			int fd = arg1;
-			int real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return remote_syncfs(real_fd);
-			}
-			return FS_SYSCALL(syscall, real_fd);
+		case LINUX_SYS_syncfs: {
+			return vfs_call(syncfs, vfs_resolve_file(arg1));
 		}
-		case __NR_sendmmsg: {
+		case LINUX_SYS_sendmmsg: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1964,7 +1076,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_setns: {
+		case LINUX_SYS_setns: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1972,7 +1084,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2);
 		}
-		case __NR_finit_module: {
+		case LINUX_SYS_finit_module: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
@@ -1980,245 +1092,81 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
-		case __NR_memfd_create: {
+		case LINUX_SYS_memfd_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
 		}
-		case __NR_copy_file_range: {
-			int in_real_fd;
-			bool in_is_remote = lookup_real_fd(arg1, &in_real_fd);
-			int out_real_fd;
-			bool out_is_remote = lookup_real_fd(arg3, &out_real_fd);
-			if (in_is_remote != out_is_remote) {
-				invalid_local_remote_mixed_operation();
-				return -EXDEV;
-			}
-			if (in_is_remote) {
-				return remote_copy_file_range(in_real_fd, (off64_t *)arg2, out_real_fd, (off64_t *)arg4, arg5, arg6);
-			}
-			return FS_SYSCALL(syscall, in_real_fd, arg2, out_real_fd, arg4, arg5, arg6);
+		case LINUX_SYS_copy_file_range: {
+			return vfs_call(copy_file_range, vfs_resolve_file(arg1), (off64_t *)arg2, vfs_resolve_file(arg2), (off64_t *)arg3, arg4, arg5);
 		}
 #ifdef __NR_readlink
-		case __NR_readlink: {
-			const char *path = (const char *)arg1;
-			char *buf = (char *)arg2;
-			size_t bufsiz = (size_t)arg3;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_readlinkat(real.fd, real.path, buf, bufsiz);
-			}
-			return wrapped_readlinkat(thread, real.fd, real.path, buf, bufsiz);
+		case LINUX_SYS_readlink: {
+			return vfs_call(readlinkat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), (char *)arg2, arg3);
 		}
 #endif
-		case __NR_readlinkat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			char *buf = (char *)arg3;
-			size_t bufsiz = (size_t)arg4;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_readlinkat(real.fd, real.path, buf, bufsiz);
-			}
-			return wrapped_readlinkat(thread, real.fd, real.path, buf, bufsiz);
+		case LINUX_SYS_readlinkat: {
+			return vfs_call(readlinkat, vfs_resolve_path(arg1, (const char *)arg2), (char *)arg3, arg4);
 		}
 #ifdef __NR_mkdir
-		case __NR_mkdir: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_mkdirat(real.fd, real.path, arg2);
-			}
-			if (real.fd != AT_FDCWD) {
-				return fs_mkdirat(real.fd, real.path, arg2);
-			}
-			return fs_mkdir(real.path, arg2);
+		case LINUX_SYS_mkdir: {
+			return vfs_call(mkdirat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2);
 		}
 #endif
-		case __NR_mkdirat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_mkdirat(real.fd, real.path, arg3);
-			}
-			return fs_mkdirat(real.fd, real.path, arg3);
+		case LINUX_SYS_mkdirat: {
+			return vfs_call(mkdirat, vfs_resolve_path(arg1, (const char *)arg2), arg3);
 		}
 #ifdef __NR_mknod
-		case __NR_mknod: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_mknodat(real.fd, real.path, arg2, arg3);
-			}
-			if (real.fd != AT_FDCWD) {
-				return FS_SYSCALL(__NR_mknodat, real.fd, (intptr_t)real.path, arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, (intptr_t)real.path, arg2, arg3);
+		case LINUX_SYS_mknod: {
+			return vfs_call(mknodat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), arg2, arg3);
 		}
 #endif
-		case __NR_mknodat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_mknodat(real.fd, real.path, arg3, arg4);
-			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		case LINUX_SYS_mknodat: {
+			return vfs_call(mknodat, vfs_resolve_path(arg1, (const char *)arg2), arg3, arg4);
 		}
 #ifdef __NR_unlink
-		case __NR_unlink: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_unlinkat(real.fd, real.path, 0);
-			}
-			return wrapped_unlinkat(thread, real.fd, real.path, 0);
+		case LINUX_SYS_unlink: {
+			return vfs_call(unlinkat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), 0);
 		}
-		case __NR_rmdir: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				return remote_unlinkat(real.fd, real.path, AT_REMOVEDIR);
-			}
-			return wrapped_unlinkat(thread, real.fd, path, AT_REMOVEDIR);
+		case LINUX_SYS_rmdir: {
+			return vfs_call(unlinkat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), AT_REMOVEDIR);
 		}
 #endif
-		case __NR_unlinkat: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			int flag = arg3;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
-				return remote_unlinkat(real.fd, real.path, flag);
-			}
-			return wrapped_unlinkat(thread, real.fd, real.path, flag);
+		case LINUX_SYS_unlinkat: {
+			return vfs_call(unlinkat, vfs_resolve_path(arg1, (const char *)arg2), arg3);
 		}
 #ifdef __NR_rename
-		case __NR_rename: {
-			const char *oldpath = (const char *)arg1;
-			const char *newpath = (const char *)arg2;
-			path_info real_old;
-			bool old_is_remote = lookup_real_path(AT_FDCWD, oldpath, &real_old);
-			path_info real_new;
-			bool new_is_remote = lookup_real_path(AT_FDCWD, newpath, &real_new);
-			if (old_is_remote != new_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (old_is_remote) {
-				return remote_renameat2(real_old.fd, real_old.path, real_new.fd, real_new.path, 0);
-			}
-			return wrapped_renameat(thread, real_old.fd, real_old.path, real_new.fd, real_new.path, 0);
+		case LINUX_SYS_rename: {
+			return vfs_call(renameat2, vfs_resolve_path(AT_FDCWD, (const char *)arg1), vfs_resolve_path(AT_FDCWD, (const char *)arg2), 0);
 		}
 #endif
-		case __NR_renameat: {
-			int old_dirfd = arg1;
-			const char *oldpath = (const char *)arg2;
-			int new_dirfd = arg3;
-			const char *newpath = (const char *)arg4;
-			path_info real_old;
-			bool old_is_remote = lookup_real_path(old_dirfd, oldpath, &real_old);
-			path_info real_new;
-			bool new_is_remote = lookup_real_path(new_dirfd, newpath, &real_new);
-			if (old_is_remote != new_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (old_is_remote) {
-				return remote_renameat2(real_old.fd, real_old.path, real_new.fd, real_new.path, 0);
-			}
-			return wrapped_renameat(thread, real_old.fd, real_old.path, real_new.fd, real_new.path, 0);
+		case LINUX_SYS_renameat: {
+			return vfs_call(renameat2, vfs_resolve_path(arg1, (const char *)arg2), vfs_resolve_path(arg3, (const char *)arg4), 0);
 		}
-		case __NR_renameat2: {
-			int old_dirfd = arg1;
-			const char *oldpath = (const char *)arg2;
-			int new_dirfd = arg3;
-			const char *newpath = (const char *)arg4;
-			int flags = arg5;
-			path_info real_old;
-			bool old_is_remote = lookup_real_path(old_dirfd, oldpath, &real_old);
-			path_info real_new;
-			bool new_is_remote = lookup_real_path(new_dirfd, newpath, &real_new);
-			if (old_is_remote != new_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (old_is_remote) {
-				return remote_renameat2(real_old.fd, real_old.path, real_new.fd, real_new.path, flags);
-			}
-			return wrapped_renameat(thread, real_old.fd, real_old.path, real_new.fd, real_new.path, flags);
+		case LINUX_SYS_renameat2: {
+			return vfs_call(renameat2, vfs_resolve_path(arg1, (const char *)arg2), vfs_resolve_path(arg3, (const char *)arg4), arg5);
 		}
 #ifdef __NR_link
-		case __NR_link: {
-			const char *oldpath = (const char *)arg1;
-			const char *newpath = (const char *)arg2;
-			path_info real_old;
-			bool old_is_remote = lookup_real_path(AT_FDCWD, oldpath, &real_old);
-			path_info real_new;
-			bool new_is_remote = lookup_real_path(AT_FDCWD, newpath, &real_new);
-			if (old_is_remote != new_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (old_is_remote) {
-				return remote_linkat(real_old.fd, real_old.path, real_new.fd, real_new.path, 0);
-			}
-			return wrapped_linkat(thread, real_old.fd, real_old.path, real_new.fd, real_new.path, 0);
+		case LINUX_SYS_link: {
+			return vfs_call(linkat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), vfs_resolve_path(AT_FDCWD, (const char *)arg2), 0);
 		}
 #endif
-		case __NR_linkat: {
-			int old_dirfd = arg1;
-			const char *oldpath = (const char *)arg2;
-			int new_dirfd = arg3;
-			const char *newpath = (const char *)arg4;
-			int flags = arg5;
-			path_info real_old;
-			bool old_is_remote = lookup_real_path(old_dirfd, oldpath, &real_old);
-			path_info real_new;
-			bool new_is_remote = lookup_real_path(new_dirfd, newpath, &real_new);
-			if (old_is_remote != new_is_remote) {
-				return invalid_local_remote_mixed_operation();
-			}
-			if (old_is_remote) {
-				return remote_linkat(real_old.fd, real_old.path, real_new.fd, real_new.path, flags);
-			}
-			return wrapped_linkat(thread, real_old.fd, real_old.path, real_old.fd, real_old.path, flags);
+		case LINUX_SYS_linkat: {
+			return vfs_call(linkat, vfs_resolve_path(arg1, (const char *)arg2), vfs_resolve_path(arg3, (const char *)arg4), arg5);
 		}
 #ifdef __NR_symlink
-		case __NR_symlink: {
-			const char *oldpath = (const char *)arg1;
-			const char *newpath = (const char *)arg2;
-			path_info real_new;
-			if (lookup_real_path(AT_FDCWD, newpath, &real_new)) {
-				return remote_symlinkat(oldpath, real_new.fd, real_new.path);
-			}
-			return wrapped_symlinkat(thread, oldpath, real_new.fd, real_new.path);
+		case LINUX_SYS_symlink: {
+			return vfs_call(symlinkat, vfs_resolve_path(AT_FDCWD, (const char *)arg2), (const char *)arg1);
 		}
 #endif
-		case __NR_symlinkat: {
-			const char *oldpath = (const char *)arg1;
-			int new_dirfd = arg2;
-			const char *newpath = (const char *)arg3;
-			path_info real_new;
-			if (lookup_real_path(new_dirfd, newpath, &real_new)) {
-				return remote_symlinkat(oldpath, real_new.fd, real_new.path);
-			}
-			return wrapped_symlinkat(thread, oldpath, real_new.fd, real_new.path);
+		case LINUX_SYS_symlinkat: {
+			return vfs_call(symlinkat, vfs_resolve_path(arg2, (const char *)arg3), (const char *)arg1);
 		}
-		case __NR_fchmodat: {
-			int fd = arg1;
-			const char *path = (const char *)arg2;
-			mode_t mode = arg3;
-			path_info real;
-			if (lookup_real_path(fd, path, &real)) {
-				return remote_fchmodat(real.fd, real.path, mode, arg4);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & (TRACE_TYPE_ATTRIBUTE_CHANGE | TRACE_TYPE_CHMOD)) {
-				return wrapped_chmodat(thread, real.fd, real.path, mode);
-			}
-#endif
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3, arg4);
+		case LINUX_SYS_fchmodat: {
+			return vfs_call(fchmodat, vfs_resolve_path(arg1, (const char *)arg2), arg3, arg4);
 		}
-		case __NR_rt_sigaction: {
+		case LINUX_SYS_rt_sigaction: {
 			return handle_sigaction((int)arg1, (const struct fs_sigaction *)arg2, (struct fs_sigaction *)arg3, (size_t)arg4);
 		}
-		case __NR_rt_sigprocmask: {
+		case LINUX_SYS_rt_sigprocmask: {
 			int how = arg1;
 			struct fs_sigset_t *nset = (struct fs_sigset_t *)arg2;
 			struct fs_sigset_t *oset = (struct fs_sigset_t *)arg3;
@@ -2298,7 +1246,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 #ifdef WATCH_ALTSTACKS
-		case __NR_sigaltstack: {
+		case LINUX_SYS_sigaltstack: {
 			const stack_t *ss = (const stack_t *)arg1;
 			stack_t *old_ss = (stack_t *)arg2;
 			if (ss != NULL) {
@@ -2315,23 +1263,23 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 #endif
 #ifdef __NR_fork
-		case __NR_fork: {
+		case LINUX_SYS_fork: {
 			return wrapped_fork(thread);
 		}
 #endif
 #ifdef __NR_vfork
-		case __NR_vfork: {
+		case LINUX_SYS_vfork: {
 			return wrapped_vfork(thread);
 		}
 #endif
-		case __NR_clone: {
+		case LINUX_SYS_clone: {
 			return wrapped_clone(thread, arg1, (void *)arg2, (int *)arg3, (int *)arg4, arg5);
 		}
-		case __NR_clone3: {
+		case LINUX_SYS_clone3: {
 			// for now, disable support for clone3
 			return -ENOSYS;
 		}
-		case __NR_munmap: {
+		case LINUX_SYS_munmap: {
 			// workaround to handle case where a thread unmaps its stack and immediately exits
 			// see musl's __pthread_exit function and the associated __unmapself helper
 			intptr_t sp = context != NULL ? (intptr_t)context->uc_mcontext.REG_SP : (intptr_t)&sp;
@@ -2352,9 +1300,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				attempt_exit(thread);
 				call_on_alternate_stack(thread, unmap_and_exit_thread, (void *)arg1, (void *)arg2);
 			}
-			return FS_SYSCALL(__NR_munmap, arg1, arg2);
+			return FS_SYSCALL(LINUX_SYS_munmap, arg1, arg2);
 		}
-		case __NR_exit:
+		case LINUX_SYS_exit:
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_EXIT && fs_gettid() == get_self_pid()) {
 				send_exit_event(thread, arg1);
@@ -2373,7 +1321,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			atomic_store_explicit(thread_id, 0, memory_order_release);
 			fs_exitthread(arg1);
 			__builtin_unreachable();
-		case __NR_exit_group:
+		case LINUX_SYS_exit_group:
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_EXIT) {
 				send_exit_event(thread, arg1);
@@ -2383,12 +1331,12 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			coverage_flush();
 #endif
 			clear_fd_table_for_exit(arg1);
-			return FS_SYSCALL(__NR_exit_group, arg1);
-		case __NR_chdir: {
+			return FS_SYSCALL(LINUX_SYS_exit_group, arg1);
+		case LINUX_SYS_chdir: {
 			const char *path = (const char *)arg1;
 			path_info real;
 			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				int real_fd = remote_openat(real.fd, real.path, O_PATH|O_DIRECTORY, 0);
+				int real_fd = remote_openat(real.handle, real.path, O_PATH|O_DIRECTORY, 0);
 				if (real_fd < 0) {
 					return real_fd;
 				}
@@ -2401,7 +1349,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				perform_close(temp_fd);
 				return result;
 			}
-			if (real.fd != AT_FDCWD) {
+			if (real.handle != AT_FDCWD) {
 				return invalid_local_operation();
 			}
 			int result = chdir_become_local_path(real.path);
@@ -2412,7 +1360,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return result;
 		}
-		case __NR_fchdir: {
+		case LINUX_SYS_fchdir: {
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
 				struct fs_stat stat;
@@ -2433,7 +1381,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return result;
 		}
-		case __NR_getcwd: {
+		case LINUX_SYS_getcwd: {
 			char *buf = (char *)arg1;
 			size_t size = (size_t)arg2;
 			int real_fd;
@@ -2443,7 +1391,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
-		case __NR_ptrace: {
+		case LINUX_SYS_ptrace: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_PTRACE) {
 				send_ptrace_attempt_event(thread, (int)arg1, (pid_t)arg2, (void *)arg3, (void *)arg4);
@@ -2451,7 +1399,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
-		case __NR_process_vm_readv: {
+		case LINUX_SYS_process_vm_readv: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_PTRACE) {
 				send_process_vm_readv_attempt_event(thread, (pid_t)arg1, (const struct iovec *)arg2, (unsigned long)arg3, (const struct iovec *)arg4, (unsigned long)arg5, (unsigned long)arg6);
@@ -2459,7 +1407,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
-		case __NR_process_vm_writev: {
+		case LINUX_SYS_process_vm_writev: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_PTRACE) {
 				send_process_vm_writev_attempt_event(thread, (pid_t)arg1, (const struct iovec *)arg2, (unsigned long)arg3, (const struct iovec *)arg4, (unsigned long)arg5, (unsigned long)arg6);
@@ -2467,10 +1415,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
-		case __NR_socket: {
-			return install_local_fd(FS_SYSCALL(__NR_socket, arg1, arg2, arg3), (arg2 & SOCK_CLOEXEC) ? O_CLOEXEC : 0);
+		case LINUX_SYS_socket: {
+			return install_local_fd(FS_SYSCALL(LINUX_SYS_socket, arg1, arg2, arg3), (arg2 & SOCK_CLOEXEC) ? O_CLOEXEC : 0);
 		}
-		case __NR_socketpair: {
+		case LINUX_SYS_socketpair: {
 			int domain = arg1;
 			int type = arg2;
 			int protocol = arg3;
@@ -2479,7 +1427,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return -EFAULT;
 			}
 			int local_sv[2];
-			int result = FS_SYSCALL(__NR_socketpair, domain, type, protocol, (intptr_t)&local_sv);
+			int result = FS_SYSCALL(LINUX_SYS_socketpair, domain, type, protocol, (intptr_t)&local_sv);
 			if (result == 0) {
 				int oflags = (type & SOCK_CLOEXEC) ? O_CLOEXEC : 0;
 				int first = install_local_fd(local_sv[0], oflags);
@@ -2498,7 +1446,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return result;
 		}
-		case __NR_connect: {
+		case LINUX_SYS_connect: {
 			struct sockaddr *addr = (struct sockaddr *)arg2;
 			union copied_sockaddr copied;
 			size_t size = (uintptr_t)arg3;
@@ -2546,7 +1494,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
 		}
-		case __NR_bpf: {
+		case LINUX_SYS_bpf: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_BPF) {
 				send_bpf_attempt_event(thread, arg1, (union bpf_attr *)arg2, (unsigned int)arg3);
@@ -2565,7 +1513,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					return -EINVAL;
 			}
 		}
-		case __NR_brk: {
+		case LINUX_SYS_brk: {
 			intptr_t result = FS_SYSCALL(syscall, arg1);
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_BRK) {
@@ -2574,7 +1522,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return result;
 		}
-		case __NR_ioctl: {
+		case LINUX_SYS_ioctl: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_IOCTL) {
 				send_ioctl_attempt_event(thread, (int)arg1, (unsigned long)arg2, arg3);
@@ -2592,62 +1540,62 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						// }
 						// *out_pgid = result;
 						// return 0;
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(pid_t)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(pid_t)));
 					}
 					case TIOCSPGRP: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(pid_t)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(pid_t)));
 					}
 					case TIOCGLCKTRMIOS:
 					case TCGETS: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct linux_termios)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct linux_termios)));
 					}
 					case TIOCSLCKTRMIOS:
 					case TCSETS:
 					case TCSETSW:
 					case TCSETSF: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct linux_termios)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct linux_termios)));
 					}
 					// case TCGETA: {
-					// 	return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termio)));
+					// 	return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termio)));
 					// }
 					// case TCSETA:
 					// case TCSETAW:
 					// case TCSETAF: {
-					// 	return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termio)));
+					// 	return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termio)));
 					// }
 					case TIOCGWINSZ: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct winsize)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct winsize)));
 					}
 					case TIOCSBRK:
 					case TCSBRK:
 					case TCXONC:
 					case TCFLSH:
 					case TIOCSCTTY: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
 					}
 					case TIOCCBRK:
 					case TIOCCONS:
 					case TIOCNOTTY:
 					case TIOCEXCL:
 					case TIOCNXCL: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2));
 					}
 					case FIONREAD:
 					case TIOCOUTQ:
 					case TIOCGETD:
 					case TIOCMGET:
 					case TIOCGSOFTCAR: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(int)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(int)));
 					}
 					case TIOCSETD:
 					case TIOCPKT:
 					case TIOCMSET:
 					case TIOCMBIS:
 					case TIOCSSOFTCAR: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(int)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(int)));
 					}
 					case TIOCSTI: {
-						return PROXY_LINUX_CALL(__NR_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(char)));
+						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(char)));
 					}
 				}
 				return invalid_remote_operation();
@@ -2667,22 +1615,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return result;
 		}
-		case __NR_listen: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_listen(real_fd, arg2);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_LISTEN) {
-				send_listen_attempt_event(thread, arg1, arg2);
-				intptr_t result = FS_SYSCALL(syscall, real_fd, arg2);
-				send_listen_result_event(thread, result);
-				return result;
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2);
+		case LINUX_SYS_listen: {
+			return vfs_call(listen, vfs_resolve_file(arg1), arg2);
 		}
-		case __NR_bind: {
+		case LINUX_SYS_bind: {
 			struct sockaddr *addr = (struct sockaddr *)arg2;
 			union copied_sockaddr copied;
 			size_t size = (uintptr_t)arg3;
@@ -2714,7 +1650,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
-		case __NR_dup: {
+		case LINUX_SYS_dup: {
 			intptr_t result = perform_dup(arg1, 0);
 #ifdef ENABLE_TRACER
 			if (result >= 0) {
@@ -2727,7 +1663,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 #ifdef __NR_dup2
-		case __NR_dup2: {
+		case LINUX_SYS_dup2: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_DUP) {
 				send_dup3_attempt_event(thread, arg1, arg2, 0);
@@ -2739,7 +1675,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return perform_dup3(arg1, arg2, 0);
 		}
 #endif
-		case __NR_dup3: {
+		case LINUX_SYS_dup3: {
 			if (arg1 == arg2) {
 				return -EINVAL;
 			}
@@ -2750,7 +1686,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return perform_dup3(arg1, arg2, arg3);
 		}
-		case __NR_fcntl: {
+		case LINUX_SYS_fcntl: {
 			int real_fd;
 			switch (arg2) {
 				case F_DUPFD: {
@@ -2785,10 +1721,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				case F_GETPIPE_SZ:
 				case F_ADD_SEALS:
 				case F_GET_SEALS: {
-					if (lookup_real_fd(arg1, &real_fd)) {
-						return remote_fcntl_basic(real_fd, arg2, arg3);
-					}
-					break;
+					return vfs_call(fcntl_basic, vfs_resolve_file(arg1), arg2, arg3);
 				}
 				case F_GETLK:
 				case F_SETLK:
@@ -2796,30 +1729,23 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				case F_OFD_GETLK:
 				case F_OFD_SETLK:
 				case F_OFD_SETLKW: {
-					if (lookup_real_fd(arg1, &real_fd)) {
-						return remote_fcntl_lock(real_fd, arg2, (struct flock *)arg3);
-					}
-					break;
+					return vfs_call(fcntl_lock, vfs_resolve_file(arg1), arg2, (struct flock *)arg3);
 				}
 				case FIONREAD:
 				/*case TIOCINQ:*/
 				case TIOCOUTQ: {
-					if (lookup_real_fd(arg1, &real_fd)) {
-						return remote_fcntl_int(real_fd, arg2, (int *)arg3);
-					}
-					break;
+					return vfs_call(fcntl_int, vfs_resolve_file(arg1), arg2, (int *)arg3);
 				}
 				default: {
 					if (lookup_real_fd(arg1, &real_fd)) {
 						// don't know how to proxy this operation
 						return invalid_remote_operation();
 					}
-					break;
+					return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 				}
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
-		case __NR_setrlimit: {
+		case LINUX_SYS_setrlimit: {
 #ifdef ENABLE_TRACER
 			if (arg1 == RLIMIT_STACK && (enabled_traces & TRACE_TYPE_RLIMIT) && arg2) {
 				struct rlimit newlimit = *(const struct rlimit *)arg2;
@@ -2831,7 +1757,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
-		case __NR_prlimit64: {
+		case LINUX_SYS_prlimit64: {
 #ifdef ENABLE_TRACER
 			if (arg2 == RLIMIT_STACK && (enabled_traces & TRACE_TYPE_RLIMIT) && arg3) {
 				struct rlimit newlimit = *(const struct rlimit *)arg3;
@@ -2843,7 +1769,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4);
 		}
-		case __NR_userfaultfd: {
+		case LINUX_SYS_userfaultfd: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_USER_FAULT) {
 				send_userfaultfd_attempt_event(thread, arg1);
@@ -2851,7 +1777,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return install_local_fd(FS_SYSCALL(syscall, arg1), arg1);
 		}
-		case __NR_setuid: {
+		case LINUX_SYS_setuid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETUID) {
 				send_setuid_attempt_event(thread, arg1);
@@ -2859,7 +1785,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
-		case __NR_setreuid: {
+		case LINUX_SYS_setreuid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETUID) {
 				send_setreuid_attempt_event(thread, arg1, arg2);
@@ -2867,7 +1793,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
-		case __NR_setresuid: {
+		case LINUX_SYS_setresuid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETUID) {
 				uid_t *ruid = (uid_t *)arg1;
@@ -2878,7 +1804,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
-		case __NR_setfsuid: {
+		case LINUX_SYS_setfsuid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETUID) {
 				send_setfsuid_attempt_event(thread, arg1);
@@ -2886,7 +1812,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
-		case __NR_setgid: {
+		case LINUX_SYS_setgid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETGID) {
 				send_setgid_attempt_event(thread, arg1);
@@ -2894,7 +1820,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
-		case __NR_setregid: {
+		case LINUX_SYS_setregid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETGID) {
 				send_setregid_attempt_event(thread, arg1, arg2);
@@ -2902,7 +1828,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
-		case __NR_setresgid: {
+		case LINUX_SYS_setresgid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETGID) {
 				gid_t *rgid = (gid_t *)arg1;
@@ -2913,7 +1839,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
-		case __NR_setfsgid: {
+		case LINUX_SYS_setfsgid: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_SETGID) {
 				send_setfsgid_attempt_event(thread, arg1);
@@ -2921,13 +1847,13 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, arg1);
 		}
-		case __NR_getpid: {
+		case LINUX_SYS_getpid: {
 			return get_self_pid();
 		}
-		case __NR_gettid: {
+		case LINUX_SYS_gettid: {
 			return fs_gettid();
 		}
-		case __NR_sendto: {
+		case LINUX_SYS_sendto: {
 			int real_fd;
 			struct sockaddr *addr = (struct sockaddr *)arg5;
 			size_t size = (uintptr_t)arg6;
@@ -2969,7 +1895,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #endif
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, (intptr_t)&copied, size);
 		}
-		case __NR_mprotect: {
+		case LINUX_SYS_mprotect: {
 #ifdef ENABLE_TRACER
 			if (enabled_traces & TRACE_TYPE_MEMORY_PROTECTION && arg3 & PROT_EXEC) {
 				send_mprotect_attempt_event(thread, (void *)arg1, arg2, arg3);
@@ -2978,60 +1904,26 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
 #ifdef __NR_accept4
-		case __NR_accept4: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				struct sockaddr *addr = (struct sockaddr *)arg2;
-				socklen_t *len = (socklen_t *)arg3;
-				return install_remote_fd(remote_accept4(real_fd, addr, len, arg4 | SOCK_CLOEXEC), (arg4 & SOCK_CLOEXEC) ? O_CLOEXEC : 0);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_ACCEPT) {
-				send_accept_attempt_event(thread, arg1);
-				int result = FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
-				send_accept_result_event(thread, result);
-				return result;
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+		case LINUX_SYS_accept4: {
+			struct vfs_resolved_file file;
+			return vfs_install_file(vfs_call(accept4, vfs_resolve_file(arg1), (struct sockaddr *)arg2, (socklen_t *)arg3, arg4, &file), &file, (arg4 & SOCK_CLOEXEC) ? FD_CLOEXEC : 0);
 		}
 #endif
-		case __NR_accept: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				struct sockaddr *addr = (struct sockaddr *)arg2;
-				socklen_t *len = (socklen_t *)arg3;
-				return install_remote_fd(remote_accept4(real_fd, addr, len, O_CLOEXEC), 0);
-			}
-#ifdef ENABLE_TRACER
-			if (enabled_traces & TRACE_TYPE_ACCEPT) {
-				send_accept_attempt_event(thread, arg1);
-				int result = FS_SYSCALL(syscall, real_fd, arg2, arg3);
-				send_accept_result_event(thread, result);
-				return result;
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_accept: {
+			struct vfs_resolved_file file;
+			return vfs_install_file(vfs_call(accept4, vfs_resolve_file(arg1), (struct sockaddr *)arg2, (socklen_t *)arg3, 0, &file), &file, 0);
 		}
-		case __NR_read: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_read(real_fd, (char *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_read: {
+			return vfs_call(read, vfs_resolve_file(arg1), (char *)arg2, arg3);
 		}
-		case __NR_write: {
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				return remote_write(real_fd, (const char *)arg2, arg3);
-			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+		case LINUX_SYS_write: {
+			return vfs_call(write, vfs_resolve_file(arg1), (const char *)arg2, arg3);
 		}
-		case __NR_semget:
-		case __NR_shmget: {
+		case LINUX_SYS_semget:
+		case LINUX_SYS_shmget: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2, arg3), 0);
 		}
-		case __NR_perf_event_open: {
+		case LINUX_SYS_perf_event_open: {
 			int arg2_fd;
 			if (arg5 & PERF_FLAG_PID_CGROUP) {
 				if (lookup_real_fd(arg2, &arg2_fd)) {
@@ -3048,7 +1940,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2_fd, arg3, arg4_fd, arg5), arg5 & PERF_FLAG_FD_CLOEXEC ? O_CLOEXEC : 0);
 		}
-		case __NR_kexec_file_load: {
+		case LINUX_SYS_kexec_file_load: {
 			int kernel_fd;
 			int initrd_fd;
 			if (lookup_real_fd(arg1, &kernel_fd) || lookup_real_fd(arg2, &initrd_fd)) {
@@ -3056,22 +1948,22 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, kernel_fd, initrd_fd, arg3, arg4, arg5);
 		}
-		case __NR_tkill: {
+		case LINUX_SYS_tkill: {
 			if (arg1 == fs_gettid()) {
 				handle_raise(arg1, arg2);
 			}
 			break;
 		}
-		case __NR_tgkill: {
+		case LINUX_SYS_tgkill: {
 			if (arg1 ==  get_self_pid() && arg2 == fs_gettid()) {
 				handle_raise(arg2, arg3);
 			}
 			break;
 		}
-		case __NR_pidfd_open: {
+		case LINUX_SYS_pidfd_open: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), O_CLOEXEC);
 		}
-		case __NR_pidfd_send_signal: {
+		case LINUX_SYS_pidfd_send_signal: {
 			int real_fd;
 			if (lookup_real_fd(arg1, &real_fd)) {
 				return invalid_remote_operation();
@@ -3079,18 +1971,18 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 		}
 #ifdef __NR_pidfd_getfd
-		case __NR_pidfd_getfd: {
+		case LINUX_SYS_pidfd_getfd: {
 			// disable pidfd_getfd because it's impossible
 			return -ENOSYS;
 		}
 #endif
-		case __NR_io_uring_setup:
-		case __NR_io_uring_enter:
-		case __NR_io_uring_register: {
+		case LINUX_SYS_io_uring_setup:
+		case LINUX_SYS_io_uring_enter:
+		case LINUX_SYS_io_uring_register: {
 			// disable io_uring because it's not possible to proxy it
 			return -ENOSYS;
 		}
-		case __NR_open_tree: {
+		case LINUX_SYS_open_tree: {
 			int dirfd = arg1;
 			const char *path = (const char *)arg2;
 			path_info real;
@@ -3099,7 +1991,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			}
 			return FS_SYSCALL(syscall, arg1, arg2, arg3);
 		}
-		case __NR_move_mount: {
+		case LINUX_SYS_move_mount: {
 			int from_dirfd = arg1;
 			const char *from_path = (const char *)arg2;
 			path_info from_real;
@@ -3112,46 +2004,46 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				return invalid_local_remote_mixed_operation();
 			}
 			if (from_is_remote) {
-				return PROXY_LINUX_CALL(__NR_move_mount, proxy_value(from_real.fd), proxy_string(from_real.path), proxy_value(to_real.fd), proxy_string(to_real.path), proxy_value(arg5));
+				return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from_real.handle), proxy_string(from_real.path), proxy_value(to_real.handle), proxy_string(to_real.path), proxy_value(arg5));
 			}
-			return FS_SYSCALL(syscall, from_real.fd, (intptr_t)from_real.path, to_real.fd, (intptr_t)to_real.path, arg5);
+			return FS_SYSCALL(syscall, from_real.handle, (intptr_t)from_real.path, to_real.handle, (intptr_t)to_real.path, arg5);
 		}
-		case __NR_fsopen: {
+		case LINUX_SYS_fsopen: {
 			const char *fsname = (const char *)arg1;
 			path_info real;
 			bool is_remote = lookup_real_path(AT_FDCWD, fsname, &real);
-			if (real.fd != AT_FDCWD) {
+			if (real.handle != AT_FDCWD) {
 				return is_remote ? invalid_remote_operation() : invalid_local_operation();
 			}
 			if (is_remote) {
-				return install_remote_fd(PROXY_LINUX_CALL(__NR_fsopen, proxy_string(real.path), proxy_value(arg2)), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
+				return install_remote_fd(PROXY_LINUX_CALL(LINUX_SYS_fsopen, proxy_string(real.path), proxy_value(arg2)), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
 			}
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
 		}
-		case __NR_fsconfig: {
+		case LINUX_SYS_fsconfig: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_LINUX_CALL(__NR_fsconfig, proxy_value(real_fd), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
+				return PROXY_LINUX_CALL(LINUX_SYS_fsconfig, proxy_value(real_fd), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
 		}
-		case __NR_fsmount: {
+		case LINUX_SYS_fsmount: {
 			int fd = arg1;
 			int real_fd;
 			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_LINUX_CALL(__NR_fsmount, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
+				return PROXY_LINUX_CALL(LINUX_SYS_fsmount, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
 			}
 			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
 		}
-		case __NR_fspick: {
+		case LINUX_SYS_fspick: {
 			int fd = arg1;
 			const char *path = (const char *)arg2;
 			path_info real;
 			if (lookup_real_path(fd, path, &real)) {
-				return PROXY_LINUX_CALL(__NR_fspick, proxy_value(real.fd), proxy_string(real.path), proxy_value(arg3));
+				return PROXY_LINUX_CALL(LINUX_SYS_fspick, proxy_value(real.handle), proxy_string(real.path), proxy_value(arg3));
 			}
-			return FS_SYSCALL(syscall, real.fd, (intptr_t)real.path, arg3);
+			return FS_SYSCALL(syscall, real.handle, (intptr_t)real.path, arg3);
 		}
 		case 0x666: {
 			return (intptr_t)get_fd_table();
