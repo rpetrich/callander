@@ -475,6 +475,12 @@ static inline int fs_fchmod(int fd, mode_t mode)
 }
 
 __attribute__((warn_unused_result))
+static inline int fs_fchmodat(int dirfd, const char *path, mode_t mode, int flags)
+{
+	return (int)FS_SYSCALL(SYS_fchmodat, dirfd, (intptr_t)path, mode, flags);
+}
+
+__attribute__((warn_unused_result))
 static inline int fs_fchown(int fd, uid_t uid, gid_t gid)
 {
 	return (int)FS_SYSCALL(SYS_fchown, fd, uid, gid);
@@ -585,13 +591,15 @@ static inline int fs_getdents(int fd, struct fs_dirent *dirp, size_t size)
 #endif
 
 __attribute__((warn_unused_result))
-static inline int fs_faccessat(int dirfd, const char *pathname, int mode)
+static inline int fs_faccessat(int dirfd, const char *pathname, int mode, int flags)
 {
 #ifdef __linux__
-	// linux is missing a flags parameter
-	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode);
+	if (flags == 0) {
+		return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode);
+	}
+	return (int)FS_SYSCALL(SYS_faccessat2, dirfd, (intptr_t)pathname, mode, flags);
 #else
-	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode, 0);
+	return (int)FS_SYSCALL(SYS_faccessat, dirfd, (intptr_t)pathname, mode, flags);
 #endif
 }
 

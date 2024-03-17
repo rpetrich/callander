@@ -141,7 +141,8 @@ endif
 OBJECTS :=  $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o axon.o coverage.o \
 			darwin.o debugger.o defaultlibs.o exec.o fd_table.o fork.o install.o intercept.o \
 			handler.o libraries.o loader.o mapped.o paths.o preload.o proxy.o qsort.o remote.o \
-			remote_library.o resolver.o search.o seccomp.o sockets.o stack.o time.o tls.o tracer.o windows.o
+			remote_library.o resolver.o search.o seccomp.o sockets.o stack.o time.o tls.o tracer.o \
+			vfs.o vfs_local.o vfs_remote.o windows.o
 TEXEC_OBJECTS := $(COMMON_OBJECTS) $(PATCH_OBJECTS) $(ARCH_OBJECTS) attempt.o darwin.o \
 			defaultlibs.o exec.o fd_table.o loader.o proxy.o qsort.o remote.o remote_exec.o search.o seccomp.o \
 		    stack.o texec.o time.o tls.o x86.o callander.o callander_print.o

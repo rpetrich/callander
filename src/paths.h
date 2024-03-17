@@ -37,7 +37,7 @@ __attribute__((warn_unused_result))
 int fixup_exe_open(int dfd, const char *filename, int flags);
 
 typedef struct {
-	int fd;
+	intptr_t handle;
 	const char *path;
 } path_info;
 

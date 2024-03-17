@@ -40,7 +40,7 @@ static inline bool decode_target_addr(union copied_sockaddr *u, size_t *size)
 	// TODO: support rewriting of local paths
 	if (u->addr.sa_family == AF_UNIX) {
 		if (lookup_real_path(AT_FDCWD, u->un.sun_path, &real)) {
-			if (real.fd == AT_FDCWD) {
+			if (real.handle == AT_FDCWD) {
 				size_t len = fs_strlen(real.path);
 				if (len < 108) {
 					fs_memcpy(&u->un.sun_path[0], real.path, len + 1);
