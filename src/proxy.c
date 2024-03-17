@@ -156,7 +156,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 #endif
 	if ((syscall & (PROXY_NO_RESPONSE | PROXY_NO_WORKER)) == 0) {
 		if (atomic_fetch_sub_explicit(&shared->idle_worker_count, 1, memory_order_relaxed) == 0) {
-			remote_spawn_worker();
+			proxy_spawn_worker();
 			atomic_fetch_add_explicit(&shared->idle_worker_count, 1, memory_order_relaxed);
 		}
 	}
@@ -498,6 +498,29 @@ struct resolver_config_cache *get_resolver_config_cache(void)
 	return &shared->resolver_config_cache;
 }
 
+void proxy_spawn_worker(void)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX: {
+			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
+			if (worker_func_addr != 0) {
+				intptr_t stack_addr = PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(0), proxy_value(PROXY_WORKER_STACK_SIZE), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN), proxy_value(-1), proxy_value(0));
+				if (fs_is_map_failed((void *)stack_addr)) {
+					DIE("unable to map a worker stack", fs_strerror(stack_addr));
+					return;
+				}
+				PROXY_CALL(LINUX_SYS_clone | TARGET_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS), proxy_value(stack_addr + PROXY_WORKER_STACK_SIZE), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(worker_func_addr));
+			}
+			break;
+		}
+		case TARGET_PLATFORM_DARWIN:
+		case TARGET_PLATFORM_WINDOWS:
+			break;
+		default:
+			unknown_target();
+	}
+}
+
 noreturn void unknown_target(void)
 {
 	switch (shared->hello.target_platform) {
@@ -506,6 +529,9 @@ noreturn void unknown_target(void)
 			break;
 		case TARGET_PLATFORM_DARWIN:
 			DIE("invalid operation for darwin target");
+			break;
+		case TARGET_PLATFORM_WINDOWS:
+			DIE("invalid operation for windows target");
 			break;
 		default:
 			DIE("unknown target platform");

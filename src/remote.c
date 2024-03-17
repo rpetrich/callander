@@ -11,32 +11,6 @@
 #include <string.h>
 #include <sched.h>
 
-#define unknown_target() do { \
-	ERROR("in function", __func__); \
-	unknown_target(); \
-} while(0)
-
-void remote_spawn_worker(void)
-{
-	switch (proxy_get_target_platform()) {
-		case TARGET_PLATFORM_LINUX: {
-			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
-			intptr_t stack_addr = PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(0), proxy_value(PROXY_WORKER_STACK_SIZE), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN), proxy_value(-1), proxy_value(0));
-			if (fs_is_map_failed((void *)stack_addr)) {
-				DIE("unable to map a worker stack", fs_strerror(stack_addr));
-				return;
-			}
-			PROXY_CALL(LINUX_SYS_clone | TARGET_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS), proxy_value(stack_addr + PROXY_WORKER_STACK_SIZE), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(worker_func_addr));
-			break;
-		}
-		case TARGET_PLATFORM_DARWIN:
-		case TARGET_PLATFORM_WINDOWS:
-			break;
-		default:
-			unknown_target();
-	}
-}
-
 intptr_t remote_mkdirat(int dirfd, const char *path, mode_t mode)
 {
 	return PROXY_CALL(LINUX_SYS_mkdirat, proxy_value(dirfd), proxy_string(path), proxy_value(mode));

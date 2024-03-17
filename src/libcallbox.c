@@ -449,17 +449,6 @@ noreturn static void process_data(void)
 
 static int (*worker_pthread_create)(pthread_t *restrict thread, const pthread_attr_t *restrict attr, void *(*start_routine)(void *), void *restrict arg);
 
-void remote_spawn_worker(void)
-{
-	// TODO: support thread pinning, which zlib requires. in the meantime, don't spawn a worker
-	// intptr_t buf = proxy_alloc(PAGE_SIZE);
-	// intptr_t result = PROXY_CALL(TARGET_NR_CALL | PROXY_NO_WORKER, proxy_value((intptr_t)worker_pthread_create), proxy_value(buf), proxy_value(0), proxy_value((intptr_t)&process_data), proxy_value(0));
-	// proxy_free(buf, PAGE_SIZE);
-	// if (result != 0) {
-	// 	DIE("unable to call pthread_create in worker", fs_strerror(result));
-	// }
-}
-
 __attribute__((used)) __attribute__((visibility("hidden")))
 void callander_perform_analysis(struct program_state *analysis, const struct link_map *libz_entry, __attribute__((unused)) void *data)
 {
@@ -674,7 +663,8 @@ static void spawn_worker(const struct link_map *libz_entry)
 #else
 	hello.target_platform = TARGET_PLATFORM_DARWIN;
 #endif
-	hello.process_data = process_data;
+	// TODO: support thread pinning, which zlib requires. in the meantime, don't spawn workers
+	// hello.process_data = process_data;
 	state.sockfd = sockets[1];
 	hello.state = &state;
 	result = fs_write_all(sockets[1], (const char *)&hello, sizeof(hello));
