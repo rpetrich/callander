@@ -339,7 +339,11 @@ intptr_t remote_readlink_fd(int fd, char *buf, size_t size)
 intptr_t remote_getdents(int fd, char *buf, size_t size)
 {
 	trim_size(&size);
+#ifndef __NR_getdents
+	return -ENOSYS;
+#else
 	return PROXY_CALL(LINUX_SYS_getdents, proxy_value(fd), proxy_out(buf, size), proxy_value(size));
+#endif
 }
 
 intptr_t remote_getdents64(int fd, char *buf, size_t size)
