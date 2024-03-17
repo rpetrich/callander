@@ -82,6 +82,22 @@ typedef struct WINDOWS__CREATEFILE2_EXTENDED_PARAMETERS {
 	WINDOWS_HANDLE                hTemplateFile;
 } WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS;
 
+typedef struct WINDOWS_WIN32_FIND_DATAW {
+	WINDOWS_DWORD    dwFileAttributes;
+	WINDOWS_FILETIME ftCreationTime;
+	WINDOWS_FILETIME ftLastAccessTime;
+	WINDOWS_FILETIME ftLastWriteTime;
+	WINDOWS_DWORD    nFileSizeHigh;
+	WINDOWS_DWORD    nFileSizeLow;
+	WINDOWS_DWORD    dwReserved0;
+	WINDOWS_DWORD    dwReserved1;
+	uint16_t    cFileName[WINDOWS_MAX_PATH];
+	uint16_t    cAlternateFileName[14];
+	WINDOWS_DWORD    dwFileType; // Obsolete. Do not use.
+	WINDOWS_DWORD    dwCreatorType; // Obsolete. Do not use
+	uint16_t     wFinderFlags; // Obsolete. Do not use
+} WINDOWS_WIN32_FIND_DATAW;
+
 intptr_t translate_windows_error(intptr_t result);
 
 #define PROXY_WINDOWS_CALL(kind, module, name, ...) ({ \
