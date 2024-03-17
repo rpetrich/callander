@@ -104,94 +104,6 @@ static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_socka
 }
 #endif
 
-static int become_remote_socket(int fd, int domain, int *out_real_fd)
-{
-	if (lookup_real_fd(fd, out_real_fd)) {
-		return 0;
-	}
-	// int domain;
-	// size_t size = sizeof(domain);
-	// int result = fs_getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &domain, &size);
-	// if (result < 0) {
-	// 	return result;
-	// }
-	int type;
-	size_t size = sizeof(type);
-	int result = fs_getsockopt(*out_real_fd, SOL_SOCKET, SO_TYPE, &type, &size);
-	if (result < 0) {
-		return result;
-	}
-	int protocol;
-	size = sizeof(protocol);
-	result = fs_getsockopt(*out_real_fd, SOL_SOCKET, SO_PROTOCOL, &protocol, &size);
-	if (result < 0) {
-		return result;
-	}
-	int real_fd = remote_socket(domain, type | SOCK_CLOEXEC, protocol);
-	if (real_fd < 0) {
-		if (protocol != 0 && real_fd == -EINVAL) {
-			real_fd = remote_socket(domain, type | SOCK_CLOEXEC, 0);
-			if (real_fd < 0) {
-				return real_fd;
-			}
-		} else {
-			return real_fd;
-		}
-	}
-	result = become_remote_fd(fd, real_fd);
-	if (result < 0) {
-		remote_close(real_fd);
-		return result;
-	}
-	*out_real_fd = real_fd;
-	return 0;
-}
-
-static int become_local_socket(int fd, int *out_real_fd)
-{
-	if (!lookup_real_fd(fd, out_real_fd)) {
-		return 0;
-	}
-	int domain;
-	socklen_t optlen = sizeof(domain);
-	int result = remote_getsockopt(*out_real_fd, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
-	if (result < 0) {
-		return result;
-	}
-	int type;
-	optlen = sizeof(type);
-	result = remote_getsockopt(*out_real_fd, SOL_SOCKET, SO_TYPE, &type, &optlen);
-	if (result < 0) {
-		return result;
-	}
-	int protocol;
-	optlen = sizeof(protocol);
-	result = remote_getsockopt(*out_real_fd, SOL_SOCKET, SO_PROTOCOL, &protocol, &optlen);
-	if (result < 0) {
-		return result;
-	}
-	int real_fd = FS_SYSCALL(LINUX_SYS_socket, domain, type | SOCK_CLOEXEC, protocol);
-	if (real_fd < 0) {
-		if (protocol != 0 && real_fd == -EINVAL) {
-			real_fd = FS_SYSCALL(LINUX_SYS_socket, domain, type | SOCK_CLOEXEC, 0);
-			if (real_fd < 0) {
-				return real_fd;
-			}
-		} else {
-			return real_fd;
-		}
-	}
-	result = become_local_fd(fd, real_fd);
-	if (result < 0) {
-		perform_close(real_fd);
-		return result;
-	}
-	if (lookup_real_fd(fd, out_real_fd)) {
-		DIE("expected fd to be local", fd);
-	}
-	return 0;
-}
-
 static void unmap_and_exit_thread(void *arg1, void *arg2)
 {
 	atomic_intptr_t *thread_id = clear_thread_storage();
@@ -1447,52 +1359,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 		case LINUX_SYS_connect: {
-			struct sockaddr *addr = (struct sockaddr *)arg2;
-			union copied_sockaddr copied;
+			const struct sockaddr *addr = (const struct sockaddr *)arg2;
+			union copied_sockaddr addr_buf;
 			size_t size = (uintptr_t)arg3;
-			if (size > sizeof(copied)) {
-				size = sizeof(copied);
-			}
-			memcpy(&copied, addr, size);
-			if (decode_remote_addr(&copied, &size)) {
-				int real_fd;
-				int result = become_remote_socket(arg1, copied.addr.sa_family, &real_fd);
-				if (result < 0) {
-					return result;
-				}
-				return remote_connect(real_fd, (struct sockaddr *)&copied, size);
-			}
-			int real_fd;
-			int result = become_local_socket(arg1, &real_fd);
+			struct vfs_resolved_file file;
+			intptr_t result = vfs_resolve_socket_and_addr(thread, arg1, &addr, &size, &file, &addr_buf);
 			if (result < 0) {
 				return result;
 			}
-#ifdef ENABLE_TRACER
-			struct trace_sockaddr trace;
-			memset(&trace, 0, sizeof(struct trace_sockaddr));
-			if (enabled_traces & (TRACE_TYPE_CONNECT | TRACE_TYPE_CONNECT_CLOUD | TRACE_TYPE_CONNECT_UNIX) && decode_sockaddr(&trace, &copied, size)) {
-				// handle TCP first
-				if (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) {
-					if (enabled_traces & TRACE_TYPE_CONNECT) {
-						send_connect_attempt_event(thread, arg1, trace);
-					}
-					if (enabled_traces & TRACE_TYPE_CONNECT_CLOUD) {
-						// only IPv4 to 169.254.129.254:80
-						if (copied.addr.sa_family == AF_INET && copied.in.sin_addr.s_addr == fs_htonl(0xa9fea9fe) && copied.in.sin_port == fs_htons(80)) {
-							send_connect_aws_attempt_event(thread);
-						}
-					}
-				} else if (copied.addr.sa_family == AF_UNIX) {
-					send_connect_unix_attempt_event(thread, (uint64_t *)&trace.sun_path, size);
-				}
-				intptr_t result = FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
-				if (enabled_traces & TRACE_TYPE_CONNECT) {
-					send_connect_result_event(thread, result);
-				}
-				return result;
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
+			return vfs_call(connect, file, addr, size);
 		}
 		case LINUX_SYS_bpf: {
 #ifdef ENABLE_TRACER
@@ -1528,83 +1403,16 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				send_ioctl_attempt_event(thread, (int)arg1, (unsigned long)arg2, arg3);
 			}
 #endif
-			int real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
-				switch (arg2) {
-					case TIOCGSID:
-					case TIOCGPGRP: {
-						// pid_t *out_pgid = (pid_t *)arg3;
-						// pid_t result = fs_getpgid(0);
-						// if (result < 0) {
-						// 	return result;
-						// }
-						// *out_pgid = result;
-						// return 0;
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(pid_t)));
-					}
-					case TIOCSPGRP: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(pid_t)));
-					}
-					case TIOCGLCKTRMIOS:
-					case TCGETS: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct linux_termios)));
-					}
-					case TIOCSLCKTRMIOS:
-					case TCSETS:
-					case TCSETSW:
-					case TCSETSF: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct linux_termios)));
-					}
-					// case TCGETA: {
-					// 	return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct termio)));
-					// }
-					// case TCSETA:
-					// case TCSETAW:
-					// case TCSETAF: {
-					// 	return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(struct termio)));
-					// }
-					case TIOCGWINSZ: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(struct winsize)));
-					}
-					case TIOCSBRK:
-					case TCSBRK:
-					case TCXONC:
-					case TCFLSH:
-					case TIOCSCTTY: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
-					}
-					case TIOCCBRK:
-					case TIOCCONS:
-					case TIOCNOTTY:
-					case TIOCEXCL:
-					case TIOCNXCL: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2));
-					}
-					case FIONREAD:
-					case TIOCOUTQ:
-					case TIOCGETD:
-					case TIOCMGET:
-					case TIOCGSOFTCAR: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_out((void *)arg3, sizeof(int)));
-					}
-					case TIOCSETD:
-					case TIOCPKT:
-					case TIOCMSET:
-					case TIOCMBIS:
-					case TIOCSSOFTCAR: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(int)));
-					}
-					case TIOCSTI: {
-						return PROXY_LINUX_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(real_fd), proxy_value(arg2), proxy_in((void *)arg3, sizeof(char)));
-					}
-				}
-				return invalid_remote_operation();
-			}
-			intptr_t result = FS_SYSCALL(syscall, real_fd, arg2, arg3);
+			intptr_t result;
 			switch (arg2) {
 				case NS_GET_USERNS:
-				case NS_GET_PARENT:
-					result = install_local_fd(result, O_CLOEXEC);
+				case NS_GET_PARENT: {
+					struct vfs_resolved_file file;
+					result = vfs_install_file(vfs_call(ioctl_open_file, vfs_resolve_file(arg1), arg2, arg3, &file), &file, FD_CLOEXEC);
+					break;
+				}
+				default:
+					result = vfs_call(ioctl, vfs_resolve_file(arg1), arg2, arg3);
 					break;
 			}
 			if (result == -ENOSYS && arg2 == TCGETS) {
@@ -1619,36 +1427,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return vfs_call(listen, vfs_resolve_file(arg1), arg2);
 		}
 		case LINUX_SYS_bind: {
-			struct sockaddr *addr = (struct sockaddr *)arg2;
-			union copied_sockaddr copied;
+			const struct sockaddr *addr = (struct sockaddr *)arg2;
+			union copied_sockaddr addr_buf;
 			size_t size = (uintptr_t)arg3;
-			if (size > sizeof(copied)) {
-				size = sizeof(copied);
-			}
-			memcpy(&copied, addr, size);
-			if (decode_remote_addr(&copied, &size)) {
-				int real_fd;
-				int result = become_remote_socket(arg1, copied.addr.sa_family, &real_fd);
-				if (result < 0) {
-					return result;
-				}
-				return remote_bind(real_fd, (struct sockaddr *)&copied, size);
-			}
-			int real_fd;
-			int result = become_local_socket(arg1, &real_fd);
+			struct vfs_resolved_file file;
+			intptr_t result = vfs_resolve_socket_and_addr(thread, arg1, &addr, &size, &file, &addr_buf);
 			if (result < 0) {
 				return result;
 			}
-#ifdef ENABLE_TRACER
-			struct trace_sockaddr trace;
-			if (enabled_traces & TRACE_TYPE_BIND && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&trace, &copied, size)) {
-				send_bind_attempt_event(thread, arg1, trace);
-				intptr_t result = FS_SYSCALL(syscall, real_fd, (intptr_t)&copied, size);
-				send_bind_result_event(thread, result);
-				return result;
-			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+			return vfs_call(bind, file, addr, size);
 		}
 		case LINUX_SYS_dup: {
 			intptr_t result = perform_dup(arg1, 0);
@@ -1687,7 +1474,6 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return perform_dup3(arg1, arg2, arg3);
 		}
 		case LINUX_SYS_fcntl: {
-			int real_fd;
 			switch (arg2) {
 				case F_DUPFD: {
 					intptr_t result = perform_dup(arg1, 0);
@@ -1737,11 +1523,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					return vfs_call(fcntl_int, vfs_resolve_file(arg1), arg2, (int *)arg3);
 				}
 				default: {
-					if (lookup_real_fd(arg1, &real_fd)) {
-						// don't know how to proxy this operation
-						return invalid_remote_operation();
-					}
-					return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+					return vfs_call(fcntl, vfs_resolve_file(arg1), arg2, arg3);
 				}
 			}
 		}
@@ -1854,46 +1636,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return fs_gettid();
 		}
 		case LINUX_SYS_sendto: {
-			int real_fd;
-			struct sockaddr *addr = (struct sockaddr *)arg5;
+			const struct sockaddr *addr = (struct sockaddr *)arg5;
 			size_t size = (uintptr_t)arg6;
-			bool socket_is_remote = lookup_real_fd(arg1, &real_fd);
-			bool address_is_remote;
-			union copied_sockaddr copied;
-			if (size > sizeof(copied)) {
-				size = sizeof(copied);
-			}
-			if (addr != NULL) {
-				memcpy(&copied, addr, size);
-				address_is_remote = decode_target_addr(&copied, &size);
-			} else {
-				address_is_remote = socket_is_remote;
-			}
-			if (address_is_remote) {
-				if (!socket_is_remote) {
-					int result = become_remote_socket(arg1, copied.addr.sa_family, &real_fd);
-					if (result < 0) {
-						return result;
-					}
-				}
-				return remote_sendto(real_fd, (const void *)arg2, arg3, arg4, addr != NULL ? &copied.addr : NULL, size);
-			}
-			if (socket_is_remote) {
-				int result = become_local_socket(arg1, &real_fd);
-				if (result < 0) {
-					return result;
-				}
-			}
-#ifdef ENABLE_TRACER
-			struct tracer_sockaddr trace;
-			if (enabled_traces & TRACE_TYPE_SENDTO && (copied.addr.sa_family == AF_INET || copied.addr.sa_family == AF_INET6) && decode_sockaddr(&trace, &copied, size)) {
-				send_sendto_attempt_event(thread, arg1, trace);
-				intptr_t result = FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, addr != NULL ? (intptr_t)&copied : 0, size);
-				send_sendto_result_event(thread, result);
+			union copied_sockaddr addr_buf;
+			struct vfs_resolved_file file;
+			intptr_t result = vfs_resolve_socket_and_addr(thread, arg1, &addr, &size, &file, &addr_buf);
+			if (result < 0) {
 				return result;
 			}
-#endif
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, (intptr_t)&copied, size);
+			return vfs_call(sendto, file, (const void *)arg2, arg3, arg4, addr, size);
 		}
 		case LINUX_SYS_mprotect: {
 #ifdef ENABLE_TRACER
