@@ -3,11 +3,19 @@
 #include "freestanding.h"
 #include "exec.h"
 #include "proxy.h"
-#include "remote.h"
+#include "vfs.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
+
+#define remote_close(fd) do { \
+	const struct vfs_file_ops *ops = vfs_file_ops_for_remote(); \
+	ops->close((struct vfs_resolved_file){ \
+		.handle = fd, \
+		.ops = ops, \
+	}); \
+} while(0)
 
 __attribute__((visibility("default")))
 int fd_table[MAX_TABLE_SIZE];

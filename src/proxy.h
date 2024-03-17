@@ -24,6 +24,12 @@ struct iovec {
 #define SHARED_PAGE_FD 0x3fb
 
 #define PROXY_BUFFER_SIZE (256 * 1024)
+static inline void trim_size(size_t *size)
+{
+	if (*size >= PROXY_BUFFER_SIZE) {
+		*size = PROXY_BUFFER_SIZE;
+	}
+}
 
 #define PROXY_ARGUMENT_INPUT ((intptr_t)1 << (sizeof(intptr_t)*8-1))
 #define PROXY_ARGUMENT_OUTPUT ((intptr_t)1 << (sizeof(intptr_t)*8-2))
@@ -175,6 +181,7 @@ int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size
 void proxy_read_stream_message_finish(uint32_t stream_id);
 
 void install_proxy(int fd);
+void proxy_spawn_worker(void);
 
 struct fd_state {
 	int count;
