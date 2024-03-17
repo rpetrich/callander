@@ -21,7 +21,16 @@ void clock_load(ElfW(auxv_t) *auxv)
 		load_existing(&info, auxv->a_un.a_val);
 		struct symbol_info symbols;
 		if (parse_dynamic_symbols(&info, (void *)auxv->a_un.a_val, &symbols) == 0) {
-			void *vdso_clock_gettime = find_symbol(&info, &symbols, "__vdso_clock_gettime", NULL, NULL);
+#ifdef __x86_64__
+			const char *get_time_symbol = "__vdso_clock_gettime";
+#else
+#ifdef __aarch64__
+			const char *get_time_symbol = "__kernel_clock_gettime";
+#else
+#error "unsupported architecture"
+#endif
+#endif
+			void *vdso_clock_gettime = find_symbol(&info, &symbols, get_time_symbol, NULL, NULL);
 			if (vdso_clock_gettime != NULL) {
 				current_gettime = vdso_clock_gettime;
 				return;
