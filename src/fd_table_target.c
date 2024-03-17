@@ -121,7 +121,7 @@ int become_local_fd(int fd, int local_fd)
 }
 
 __attribute__((warn_unused_result))
-bool lookup_real_fd(int fd, int *out_real_fd)
+bool lookup_real_fd(int fd, intptr_t *out_real_fd)
 {
 	if (fd < MAX_TABLE_SIZE && fd >= 0) {
 		fs_mutex_lock(&table_lock);
@@ -162,7 +162,7 @@ int perform_close(int fd)
 __attribute__((warn_unused_result))
 int perform_dup(int oldfd, int flags)
 {
-	int underlying_fd;
+	intptr_t underlying_fd;
 	bool is_remote = lookup_real_fd(oldfd, &underlying_fd);
 	if (underlying_fd < 0) {
 		return underlying_fd;

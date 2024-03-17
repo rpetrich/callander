@@ -27,7 +27,7 @@ typedef void (*attempt_body)(struct thread_storage *thread, void *data);
 // attempt calls the body function and early exits if it faults, running any cleanup functions
 void attempt(struct thread_storage *thread, attempt_body body, void *data);
 
-typedef void (*attempt_cleanup_body)(void *data, struct thread_storage *thread);
+typedef void (*attempt_cleanup_body)(void *data);
 struct attempt_cleanup_state {
 	attempt_cleanup_body body;
 	void *data;
@@ -39,7 +39,7 @@ struct attempt_cleanup_state {
 void attempt_push_cleanup(struct thread_storage *thread, struct attempt_cleanup_state *state);
 
 // attempt_pop_cleanup pops a previously pushed cleanup function
-void attempt_pop_cleanup(struct thread_storage *thread, struct attempt_cleanup_state *state);
+void attempt_pop_cleanup(struct attempt_cleanup_state *state);
 
 // attempt_pop_and_skip_cleanup pops a previously pushed cleanup function, but does not call it
 void attempt_pop_and_skip_cleanup(struct attempt_cleanup_state *state);
@@ -48,7 +48,7 @@ void attempt_pop_and_skip_cleanup(struct attempt_cleanup_state *state);
 static inline void attempt_lock_and_push_mutex(struct thread_storage *thread, struct attempt_cleanup_state *state, struct fs_mutex *mutex)
 {
 	fs_mutex_lock(mutex);
-	state->body = (attempt_cleanup_body)(void *)&fs_mutex_unlock;
+	state->body = (attempt_cleanup_body)&fs_mutex_unlock;
 	state->data = mutex;
 	attempt_push_cleanup(thread, state);
 }
@@ -62,7 +62,7 @@ static inline void attempt_unlock_and_pop_mutex(struct attempt_cleanup_state *st
 
 // attempt_push_free sets up a pointer to be freed if the attempt fails
 static inline void attempt_push_free(struct thread_storage *thread, struct attempt_cleanup_state *state, void *ptr) {
-	state->body = (attempt_cleanup_body)(void *)&free;
+	state->body = (attempt_cleanup_body)&free;
 	state->data = ptr;
 	attempt_push_cleanup(thread, state);
 }

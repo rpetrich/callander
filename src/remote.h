@@ -1,8 +1,10 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
+#include "axon.h"
 #include "freestanding.h"
 #include "linux.h"
+#include "proxy.h"
 
 #include <fcntl.h>
 #include <netinet/ip.h>
@@ -104,5 +106,12 @@ intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, struct timespec *timeout);
 
 intptr_t invalid_remote_operation(void);
+
+static inline void trim_size(size_t *size)
+{
+	if (UNLIKELY(*size >= PROXY_BUFFER_SIZE)) {
+		*size = PROXY_BUFFER_SIZE;
+	}
+}
 
 #endif

@@ -26,26 +26,26 @@ bool lookup_real_path(int fd, const char *path, path_info *out_path)
 			{
 				if (path[7] == '/') {
 					*out_path = (path_info){
-						.fd = AT_FDCWD,
+						.handle = AT_FDCWD,
 						.path = &path[7],
 					};
 					return false;
 				}
 				if (path[7] == '\0') {
 					*out_path = (path_info){
-						.fd = AT_FDCWD,
+						.handle = AT_FDCWD,
 						.path = "/",
 					};
 					return false;
 				}
 			}
-			out_path->fd = AT_FDCWD;
+			out_path->handle = AT_FDCWD;
 			out_path->path = path;
 			return true;
 		}
 		out_path->path = path;
-		return lookup_real_fd(fd == AT_FDCWD ? CWD_FD : fd, &out_path->fd);
+		return lookup_real_fd(fd == AT_FDCWD ? CWD_FD : fd, &out_path->handle);
 	}
 	out_path->path = NULL;
-	return lookup_real_fd(fd, &out_path->fd);
+	return lookup_real_fd(fd, &out_path->handle);
 }

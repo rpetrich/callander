@@ -49,8 +49,8 @@ void attempt_pop_and_skip_cleanup(struct attempt_cleanup_state *state)
 	}
 }
 
-void attempt_pop_cleanup(struct thread_storage *thread, struct attempt_cleanup_state *state)
+void attempt_pop_cleanup(struct attempt_cleanup_state *state)
 {
 	attempt_pop_and_skip_cleanup(state);
-	state->body(state->data, thread);
+	state->body(state->data);
 }
