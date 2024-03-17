@@ -5,7 +5,6 @@
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-extern const struct vfs_file_ops darwin_file_ops;
 extern const struct vfs_path_ops darwin_path_ops;
 
 static intptr_t darwin_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
@@ -23,7 +22,7 @@ static intptr_t darwin_path_openat(__attribute__((unused)) struct thread_storage
 	intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_openat, proxy_value(translate_at_fd_to_darwin(resolved.info.handle)), proxy_string(resolved.info.path), proxy_value(translate_open_flags_to_darwin(flags)), proxy_value(mode)));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &darwin_file_ops,
+			.ops = &darwin_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -145,37 +144,12 @@ static intptr_t darwin_path_listxattr(__attribute__((unused)) struct thread_stor
 	return -EOPNOTSUPP;
 }
 
-const struct vfs_path_ops darwin_path_ops = {
-	.dirfd_ops = &darwin_file_ops,
-	.mkdirat = darwin_path_mkdirat,
-	.mknodat = darwin_path_mknodat,
-	.openat = darwin_path_openat,
-	.unlinkat = darwin_path_unlinkat,
-	.renameat2 = darwin_path_renameat2,
-	.linkat = darwin_path_linkat,
-	.symlinkat = darwin_path_symlinkat,
-	.truncate = darwin_path_truncate,
-	.fchmodat = darwin_path_fchmodat,
-	.fchownat = darwin_path_fchownat,
-	.utimensat = darwin_path_utimensat,
-	.newfstatat = darwin_path_newfstatat,
-	.statx = darwin_path_statx,
-	.statfs = darwin_path_statfs,
-	.faccessat = darwin_path_faccessat,
-	.readlinkat = darwin_path_readlinkat,
-	.getxattr = darwin_path_getxattr,
-	.setxattr = darwin_path_setxattr,
-	.removexattr = darwin_path_removexattr,
-	.listxattr = darwin_path_listxattr,
-};
-
-
 static intptr_t darwin_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
     intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_socket, proxy_value(domain), proxy_value(type), proxy_value(protocol)));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file) {
-			.ops = &darwin_file_ops,
+			.ops = &darwin_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -503,54 +477,78 @@ static intptr_t darwin_file_ioctl_open_file(__attribute__((unused)) struct threa
 	return -EINVAL;
 }
 
-const struct vfs_file_ops darwin_file_ops = {
-	.socket = darwin_file_socket,
-	.close = darwin_file_close,
-	.read = darwin_file_read,
-	.write = darwin_file_write,
-	.recvfrom = darwin_file_recvfrom,
-	.sendto = darwin_file_sendto,
-	.lseek = darwin_file_lseek,
-	.fadvise64 = darwin_file_fadvise64,
-	.readahead = darwin_file_readahead,
-	.pread = darwin_file_pread,
-	.pwrite = darwin_file_pwrite,
-	.flock = darwin_file_flock,
-	.fsync = darwin_file_fsync,
-	.fdatasync = darwin_file_fdatasync,
-	.syncfs = darwin_file_syncfs,
-	.sync_file_range = darwin_file_sync_file_range,
-	.ftruncate = darwin_file_ftruncate,
-	.fallocate = darwin_file_fallocate,
-	.recvmsg = darwin_file_recvmsg,
-	.sendmsg = darwin_file_sendmsg,
-	.fcntl_basic = darwin_file_fcntl_basic,
-	.fcntl_lock = darwin_file_fcntl_lock,
-	.fcntl_int = darwin_file_fcntl_int,
-	.fchmod = darwin_file_fchmod,
-	.fchown = darwin_file_fchown,
-	.fstat = darwin_file_fstat,
-	.fstatfs = darwin_file_fstatfs,
-	.readlink_fd = darwin_file_readlink_fd,
-	.getdents = darwin_file_getdents,
-	.getdents64 = darwin_file_getdents64,
-	.fgetxattr = darwin_file_fgetxattr,
-	.fsetxattr = darwin_file_fsetxattr,
-	.fremovexattr = darwin_file_fremovexattr,
-	.flistxattr = darwin_file_flistxattr,
-	.connect = darwin_file_connect,
-	.bind = darwin_file_bind,
-	.listen = darwin_file_listen,
-	.accept4 = darwin_file_accept4,
-	.getsockopt = darwin_file_getsockopt,
-	.setsockopt = darwin_file_setsockopt,
-	.getsockname = darwin_file_getsockname,
-	.getpeername = darwin_file_getpeername,
-	.shutdown = darwin_file_shutdown,
-	.sendfile = darwin_file_sendfile,
-	.splice = darwin_file_splice,
-	.tee = darwin_file_tee,
-	.copy_file_range = darwin_file_copy_file_range,
-	.ioctl = darwin_file_ioctl,
-	.ioctl_open_file = darwin_file_ioctl_open_file,
+const struct vfs_path_ops darwin_path_ops = {
+	.dirfd_ops = {
+        .socket = darwin_file_socket,
+        .close = darwin_file_close,
+        .read = darwin_file_read,
+        .write = darwin_file_write,
+        .recvfrom = darwin_file_recvfrom,
+        .sendto = darwin_file_sendto,
+        .lseek = darwin_file_lseek,
+        .fadvise64 = darwin_file_fadvise64,
+        .readahead = darwin_file_readahead,
+        .pread = darwin_file_pread,
+        .pwrite = darwin_file_pwrite,
+        .flock = darwin_file_flock,
+        .fsync = darwin_file_fsync,
+        .fdatasync = darwin_file_fdatasync,
+        .syncfs = darwin_file_syncfs,
+        .sync_file_range = darwin_file_sync_file_range,
+        .ftruncate = darwin_file_ftruncate,
+        .fallocate = darwin_file_fallocate,
+        .recvmsg = darwin_file_recvmsg,
+        .sendmsg = darwin_file_sendmsg,
+        .fcntl_basic = darwin_file_fcntl_basic,
+        .fcntl_lock = darwin_file_fcntl_lock,
+        .fcntl_int = darwin_file_fcntl_int,
+        .fchmod = darwin_file_fchmod,
+        .fchown = darwin_file_fchown,
+        .fstat = darwin_file_fstat,
+        .fstatfs = darwin_file_fstatfs,
+        .readlink_fd = darwin_file_readlink_fd,
+        .getdents = darwin_file_getdents,
+        .getdents64 = darwin_file_getdents64,
+        .fgetxattr = darwin_file_fgetxattr,
+        .fsetxattr = darwin_file_fsetxattr,
+        .fremovexattr = darwin_file_fremovexattr,
+        .flistxattr = darwin_file_flistxattr,
+        .connect = darwin_file_connect,
+        .bind = darwin_file_bind,
+        .listen = darwin_file_listen,
+        .accept4 = darwin_file_accept4,
+        .getsockopt = darwin_file_getsockopt,
+        .setsockopt = darwin_file_setsockopt,
+        .getsockname = darwin_file_getsockname,
+        .getpeername = darwin_file_getpeername,
+        .shutdown = darwin_file_shutdown,
+        .sendfile = darwin_file_sendfile,
+        .splice = darwin_file_splice,
+        .tee = darwin_file_tee,
+        .copy_file_range = darwin_file_copy_file_range,
+        .ioctl = darwin_file_ioctl,
+        .ioctl_open_file = darwin_file_ioctl_open_file,
+    },
+	.mkdirat = darwin_path_mkdirat,
+	.mknodat = darwin_path_mknodat,
+	.openat = darwin_path_openat,
+	.unlinkat = darwin_path_unlinkat,
+	.renameat2 = darwin_path_renameat2,
+	.linkat = darwin_path_linkat,
+	.symlinkat = darwin_path_symlinkat,
+	.truncate = darwin_path_truncate,
+	.fchmodat = darwin_path_fchmodat,
+	.fchownat = darwin_path_fchownat,
+	.utimensat = darwin_path_utimensat,
+	.newfstatat = darwin_path_newfstatat,
+	.statx = darwin_path_statx,
+	.statfs = darwin_path_statfs,
+	.faccessat = darwin_path_faccessat,
+	.readlinkat = darwin_path_readlinkat,
+	.getxattr = darwin_path_getxattr,
+	.setxattr = darwin_path_setxattr,
+	.removexattr = darwin_path_removexattr,
+	.listxattr = darwin_path_listxattr,
 };
+
+

@@ -18,7 +18,7 @@ static intptr_t local_path_openat(__attribute__((unused)) struct thread_storage 
 	int result = fs_openat(resolved.info.handle, resolved.info.path, flags, mode);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &local_file_ops,
+			.ops = &local_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -141,36 +141,12 @@ static intptr_t local_path_listxattr(__attribute__((unused)) struct thread_stora
 	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_llistxattr : LINUX_SYS_listxattr, (intptr_t)path, (intptr_t)out_value, size);
 }
 
-const struct vfs_path_ops local_path_ops = {
-	.dirfd_ops = &local_file_ops,
-	.mkdirat = local_path_mkdirat,
-	.mknodat = local_path_mknodat,
-	.openat = local_path_openat,
-	.unlinkat = local_path_unlinkat,
-	.renameat2 = local_path_renameat2,
-	.linkat = local_path_linkat,
-	.symlinkat = local_path_symlinkat,
-	.truncate = local_path_truncate,
-	.fchmodat = local_path_fchmodat,
-	.fchownat = local_path_fchownat,
-	.utimensat = local_path_utimensat,
-	.newfstatat = local_path_newfstatat,
-	.statx = local_path_statx,
-	.statfs = local_path_statfs,
-	.faccessat = local_path_faccessat,
-	.readlinkat = local_path_readlinkat,
-	.getxattr = local_path_getxattr,
-	.setxattr = local_path_setxattr,
-	.removexattr = local_path_removexattr,
-	.listxattr = local_path_listxattr,
-};
-
 static intptr_t local_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
 	intptr_t result = fs_socket(domain, type, protocol);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file) {
-			.ops = &local_file_ops,
+			.ops = &local_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -368,7 +344,7 @@ static intptr_t local_file_accept4(__attribute__((unused)) struct thread_storage
 	int result = FS_SYSCALL(LINUX_SYS_accept4, file.handle, (intptr_t)addr, (intptr_t)addrlen, flags);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &local_file_ops,
+			.ops = &local_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -443,7 +419,7 @@ static intptr_t local_file_ioctl_open_file(__attribute__((unused)) struct thread
 	intptr_t result = FS_SYSCALL(LINUX_SYS_ioctl, file.handle, cmd, arg);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &local_file_ops,
+			.ops = &local_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -451,55 +427,78 @@ static intptr_t local_file_ioctl_open_file(__attribute__((unused)) struct thread
 	return result;
 }
 
-const struct vfs_file_ops local_file_ops = {
-	.socket = local_file_socket,
-	.close = local_file_close,
-	.read = local_file_read,
-	.write = local_file_write,
-	.recvfrom = local_file_recvfrom,
-	.sendto = local_file_sendto,
-	.lseek = local_file_lseek,
-	.fadvise64 = local_file_fadvise64,
-	.readahead = local_file_readahead,
-	.pread = local_file_pread,
-	.pwrite = local_file_pwrite,
-	.flock = local_file_flock,
-	.fsync = local_file_fsync,
-	.fdatasync = local_file_fdatasync,
-	.syncfs = local_file_syncfs,
-	.sync_file_range = local_file_sync_file_range,
-	.ftruncate = local_file_ftruncate,
-	.fallocate = local_file_fallocate,
-	.recvmsg = local_file_recvmsg,
-	.sendmsg = local_file_sendmsg,
-	.fcntl_basic = local_file_fcntl_basic,
-	.fcntl_lock = local_file_fcntl_lock,
-	.fcntl_int = local_file_fcntl_int,
-	.fcntl = local_file_fcntl,
-	.fchmod = local_file_fchmod,
-	.fchown = local_file_fchown,
-	.fstat = local_file_fstat,
-	.fstatfs = local_file_fstatfs,
-	.readlink_fd = local_file_readlink_fd,
-	.getdents = local_file_getdents,
-	.getdents64 = local_file_getdents64,
-	.fgetxattr = local_file_fgetxattr,
-	.fsetxattr = local_file_fsetxattr,
-	.fremovexattr = local_file_fremovexattr,
-	.flistxattr = local_file_flistxattr,
-	.connect = local_file_connect,
-	.bind = local_file_bind,
-	.listen = local_file_listen,
-	.accept4 = local_file_accept4,
-	.getsockopt = local_file_getsockopt,
-	.setsockopt = local_file_setsockopt,
-	.getsockname = local_file_getsockname,
-	.getpeername = local_file_getpeername,
-	.shutdown = local_file_shutdown,
-	.sendfile = local_file_sendfile,
-	.splice = local_file_splice,
-	.tee = local_file_tee,
-	.copy_file_range = local_file_copy_file_range,
-	.ioctl = local_file_ioctl,
-	.ioctl_open_file = local_file_ioctl_open_file,
+const struct vfs_path_ops local_path_ops = {
+	.dirfd_ops = {
+		.socket = local_file_socket,
+		.close = local_file_close,
+		.read = local_file_read,
+		.write = local_file_write,
+		.recvfrom = local_file_recvfrom,
+		.sendto = local_file_sendto,
+		.lseek = local_file_lseek,
+		.fadvise64 = local_file_fadvise64,
+		.readahead = local_file_readahead,
+		.pread = local_file_pread,
+		.pwrite = local_file_pwrite,
+		.flock = local_file_flock,
+		.fsync = local_file_fsync,
+		.fdatasync = local_file_fdatasync,
+		.syncfs = local_file_syncfs,
+		.sync_file_range = local_file_sync_file_range,
+		.ftruncate = local_file_ftruncate,
+		.fallocate = local_file_fallocate,
+		.recvmsg = local_file_recvmsg,
+		.sendmsg = local_file_sendmsg,
+		.fcntl_basic = local_file_fcntl_basic,
+		.fcntl_lock = local_file_fcntl_lock,
+		.fcntl_int = local_file_fcntl_int,
+		.fcntl = local_file_fcntl,
+		.fchmod = local_file_fchmod,
+		.fchown = local_file_fchown,
+		.fstat = local_file_fstat,
+		.fstatfs = local_file_fstatfs,
+		.readlink_fd = local_file_readlink_fd,
+		.getdents = local_file_getdents,
+		.getdents64 = local_file_getdents64,
+		.fgetxattr = local_file_fgetxattr,
+		.fsetxattr = local_file_fsetxattr,
+		.fremovexattr = local_file_fremovexattr,
+		.flistxattr = local_file_flistxattr,
+		.connect = local_file_connect,
+		.bind = local_file_bind,
+		.listen = local_file_listen,
+		.accept4 = local_file_accept4,
+		.getsockopt = local_file_getsockopt,
+		.setsockopt = local_file_setsockopt,
+		.getsockname = local_file_getsockname,
+		.getpeername = local_file_getpeername,
+		.shutdown = local_file_shutdown,
+		.sendfile = local_file_sendfile,
+		.splice = local_file_splice,
+		.tee = local_file_tee,
+		.copy_file_range = local_file_copy_file_range,
+		.ioctl = local_file_ioctl,
+		.ioctl_open_file = local_file_ioctl_open_file,
+	},
+	.mkdirat = local_path_mkdirat,
+	.mknodat = local_path_mknodat,
+	.openat = local_path_openat,
+	.unlinkat = local_path_unlinkat,
+	.renameat2 = local_path_renameat2,
+	.linkat = local_path_linkat,
+	.symlinkat = local_path_symlinkat,
+	.truncate = local_path_truncate,
+	.fchmodat = local_path_fchmodat,
+	.fchownat = local_path_fchownat,
+	.utimensat = local_path_utimensat,
+	.newfstatat = local_path_newfstatat,
+	.statx = local_path_statx,
+	.statfs = local_path_statfs,
+	.faccessat = local_path_faccessat,
+	.readlinkat = local_path_readlinkat,
+	.getxattr = local_path_getxattr,
+	.setxattr = local_path_setxattr,
+	.removexattr = local_path_removexattr,
+	.listxattr = local_path_listxattr,
 };
+

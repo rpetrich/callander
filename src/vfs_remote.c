@@ -3,7 +3,6 @@
 #include "proxy.h"
 #include "remote.h"
 
-extern const struct vfs_file_ops remote_file_ops;
 extern const struct vfs_path_ops remote_path_ops;
 
 static intptr_t remote_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
@@ -21,7 +20,7 @@ static intptr_t remote_path_openat(__attribute__((unused)) struct thread_storage
 	int result = remote_openat(resolved.info.handle, resolved.info.path, flags, mode);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &remote_file_ops,
+			.ops = &remote_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -159,37 +158,12 @@ static intptr_t remote_path_listxattr(__attribute__((unused)) struct thread_stor
 	return remote_listxattr(path, out_value, size);
 }
 
-const struct vfs_path_ops remote_path_ops = {
-	.dirfd_ops = &remote_file_ops,
-	.mkdirat = remote_path_mkdirat,
-	.mknodat = remote_path_mknodat,
-	.openat = remote_path_openat,
-	.unlinkat = remote_path_unlinkat,
-	.renameat2 = remote_path_renameat2,
-	.linkat = remote_path_linkat,
-	.symlinkat = remote_path_symlinkat,
-	.truncate = remote_path_truncate,
-	.fchmodat = remote_path_fchmodat,
-	.fchownat = remote_path_fchownat,
-	.utimensat = remote_path_utimensat,
-	.newfstatat = remote_path_newfstatat,
-	.statx = remote_path_statx,
-	.statfs = remote_path_statfs,
-	.faccessat = remote_path_faccessat,
-	.readlinkat = remote_path_readlinkat,
-	.getxattr = remote_path_getxattr,
-	.setxattr = remote_path_setxattr,
-	.removexattr = remote_path_removexattr,
-	.listxattr = remote_path_listxattr,
-};
-
-
 static intptr_t remote_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
 	intptr_t result = remote_socket(domain, type, protocol);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file) {
-			.ops = &remote_file_ops,
+			.ops = &remote_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -383,7 +357,7 @@ static intptr_t remote_file_accept4(__attribute__((unused)) struct thread_storag
 	int result = remote_accept4(file.handle, addr, addrlen, flags);
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &remote_file_ops,
+			.ops = &remote_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -519,7 +493,7 @@ static intptr_t remote_file_ioctl_open_file(__attribute__((unused)) struct threa
 	intptr_t result = PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(arg));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &remote_file_ops,
+			.ops = &remote_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -527,54 +501,76 @@ static intptr_t remote_file_ioctl_open_file(__attribute__((unused)) struct threa
 	return result;
 }
 
-const struct vfs_file_ops remote_file_ops = {
-	.socket = remote_file_socket,
-	.close = remote_file_close,
-	.read = remote_file_read,
-	.write = remote_file_write,
-	.recvfrom = remote_file_recvfrom,
-	.sendto = remote_file_sendto,
-	.lseek = remote_file_lseek,
-	.fadvise64 = remote_file_fadvise64,
-	.readahead = remote_file_readahead,
-	.pread = remote_file_pread,
-	.pwrite = remote_file_pwrite,
-	.flock = remote_file_flock,
-	.fsync = remote_file_fsync,
-	.fdatasync = remote_file_fdatasync,
-	.syncfs = remote_file_syncfs,
-	.sync_file_range = remote_file_sync_file_range,
-	.ftruncate = remote_file_ftruncate,
-	.fallocate = remote_file_fallocate,
-	.recvmsg = remote_file_recvmsg,
-	.sendmsg = remote_file_sendmsg,
-	.fcntl_basic = remote_file_fcntl_basic,
-	.fcntl_lock = remote_file_fcntl_lock,
-	.fcntl_int = remote_file_fcntl_int,
-	.fchmod = remote_file_fchmod,
-	.fchown = remote_file_fchown,
-	.fstat = remote_file_fstat,
-	.fstatfs = remote_file_fstatfs,
-	.readlink_fd = remote_file_readlink_fd,
-	.getdents = remote_file_getdents,
-	.getdents64 = remote_file_getdents64,
-	.fgetxattr = remote_file_fgetxattr,
-	.fsetxattr = remote_file_fsetxattr,
-	.fremovexattr = remote_file_fremovexattr,
-	.flistxattr = remote_file_flistxattr,
-	.connect = remote_file_connect,
-	.bind = remote_file_bind,
-	.listen = remote_file_listen,
-	.accept4 = remote_file_accept4,
-	.getsockopt = remote_file_getsockopt,
-	.setsockopt = remote_file_setsockopt,
-	.getsockname = remote_file_getsockname,
-	.getpeername = remote_file_getpeername,
-	.shutdown = remote_file_shutdown,
-	.sendfile = remote_file_sendfile,
-	.splice = remote_file_splice,
-	.tee = remote_file_tee,
-	.copy_file_range = remote_file_copy_file_range,
-	.ioctl = remote_file_ioctl,
-	.ioctl_open_file = remote_file_ioctl_open_file,
+const struct vfs_path_ops remote_path_ops = {
+	.dirfd_ops = {
+		.socket = remote_file_socket,
+		.close = remote_file_close,
+		.read = remote_file_read,
+		.write = remote_file_write,
+		.recvfrom = remote_file_recvfrom,
+		.sendto = remote_file_sendto,
+		.lseek = remote_file_lseek,
+		.fadvise64 = remote_file_fadvise64,
+		.readahead = remote_file_readahead,
+		.pread = remote_file_pread,
+		.pwrite = remote_file_pwrite,
+		.flock = remote_file_flock,
+		.fsync = remote_file_fsync,
+		.fdatasync = remote_file_fdatasync,
+		.syncfs = remote_file_syncfs,
+		.sync_file_range = remote_file_sync_file_range,
+		.ftruncate = remote_file_ftruncate,
+		.fallocate = remote_file_fallocate,
+		.recvmsg = remote_file_recvmsg,
+		.sendmsg = remote_file_sendmsg,
+		.fcntl_basic = remote_file_fcntl_basic,
+		.fcntl_lock = remote_file_fcntl_lock,
+		.fcntl_int = remote_file_fcntl_int,
+		.fchmod = remote_file_fchmod,
+		.fchown = remote_file_fchown,
+		.fstat = remote_file_fstat,
+		.fstatfs = remote_file_fstatfs,
+		.readlink_fd = remote_file_readlink_fd,
+		.getdents = remote_file_getdents,
+		.getdents64 = remote_file_getdents64,
+		.fgetxattr = remote_file_fgetxattr,
+		.fsetxattr = remote_file_fsetxattr,
+		.fremovexattr = remote_file_fremovexattr,
+		.flistxattr = remote_file_flistxattr,
+		.connect = remote_file_connect,
+		.bind = remote_file_bind,
+		.listen = remote_file_listen,
+		.accept4 = remote_file_accept4,
+		.getsockopt = remote_file_getsockopt,
+		.setsockopt = remote_file_setsockopt,
+		.getsockname = remote_file_getsockname,
+		.getpeername = remote_file_getpeername,
+		.shutdown = remote_file_shutdown,
+		.sendfile = remote_file_sendfile,
+		.splice = remote_file_splice,
+		.tee = remote_file_tee,
+		.copy_file_range = remote_file_copy_file_range,
+		.ioctl = remote_file_ioctl,
+		.ioctl_open_file = remote_file_ioctl_open_file,
+	},
+	.mkdirat = remote_path_mkdirat,
+	.mknodat = remote_path_mknodat,
+	.openat = remote_path_openat,
+	.unlinkat = remote_path_unlinkat,
+	.renameat2 = remote_path_renameat2,
+	.linkat = remote_path_linkat,
+	.symlinkat = remote_path_symlinkat,
+	.truncate = remote_path_truncate,
+	.fchmodat = remote_path_fchmodat,
+	.fchownat = remote_path_fchownat,
+	.utimensat = remote_path_utimensat,
+	.newfstatat = remote_path_newfstatat,
+	.statx = remote_path_statx,
+	.statfs = remote_path_statfs,
+	.faccessat = remote_path_faccessat,
+	.readlinkat = remote_path_readlinkat,
+	.getxattr = remote_path_getxattr,
+	.setxattr = remote_path_setxattr,
+	.removexattr = remote_path_removexattr,
+	.listxattr = remote_path_listxattr,
 };
