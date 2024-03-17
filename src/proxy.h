@@ -196,7 +196,7 @@ typedef struct {
 	size_t size;
 } attempt_proxy_alloc_state;
 
-static inline void attempt_proxy_cleanup(void *data, __attribute__((unused)) struct thread_storage *thread) {
+static inline void attempt_proxy_cleanup(void *data) {
 	const attempt_proxy_alloc_state *state = data;
 	proxy_free(state->addr, state->size);
 }

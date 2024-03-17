@@ -3,6 +3,9 @@
 #include "proxy.h"
 #include "remote.h"
 
+extern const struct vfs_file_ops remote_file_ops;
+extern const struct vfs_path_ops remote_path_ops;
+
 static intptr_t remote_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
 {
 	return remote_mkdirat(resolved.info.handle, resolved.info.path, mode);
@@ -156,7 +159,7 @@ static intptr_t remote_path_listxattr(__attribute__((unused)) struct thread_stor
 	return remote_listxattr(path, out_value, size);
 }
 
-struct vfs_path_ops remote_path_ops = {
+const struct vfs_path_ops remote_path_ops = {
 	.dirfd_ops = &remote_file_ops,
 	.mkdirat = remote_path_mkdirat,
 	.mknodat = remote_path_mknodat,
@@ -194,7 +197,7 @@ static intptr_t remote_file_socket(__attribute__((unused)) struct thread_storage
 	return result;
 }
 
-static intptr_t remote_file_close(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
+static intptr_t remote_file_close(struct vfs_resolved_file file)
 {
 	remote_close(file.handle);
 	return 0;
@@ -524,8 +527,7 @@ static intptr_t remote_file_ioctl_open_file(__attribute__((unused)) struct threa
 	return result;
 }
 
-
-struct vfs_file_ops remote_file_ops = {
+const struct vfs_file_ops remote_file_ops = {
 	.socket = remote_file_socket,
 	.close = remote_file_close,
 	.read = remote_file_read,

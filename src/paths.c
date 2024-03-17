@@ -56,22 +56,15 @@ bool lookup_real_path(int fd, const char *path, path_info *out_path)
 			return false;
 		}
 		out_path->path = path;
-		int handle;
 		if (fd == AT_FDCWD) {
-			if (lookup_real_fd(CWD_FD, &handle)) {
-				out_path->handle = handle;
+			if (lookup_real_fd(CWD_FD, &out_path->handle)) {
 				return true;
 			}
 			out_path->handle = AT_FDCWD;
 			return false;
 		}
-		bool result = lookup_real_fd(fd, &handle);
-		out_path->handle = handle;
-		return result;
+		return lookup_real_fd(fd, &out_path->handle);
 	}
 	out_path->path = NULL;
-	int handle;
-	bool result = lookup_real_fd(fd, &handle);
-	out_path->handle = handle;
-	return result;
+	return lookup_real_fd(fd, &out_path->handle);
 }

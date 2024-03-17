@@ -141,7 +141,7 @@ static intptr_t local_path_listxattr(__attribute__((unused)) struct thread_stora
 	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_llistxattr : LINUX_SYS_listxattr, (intptr_t)path, (intptr_t)out_value, size);
 }
 
-struct vfs_path_ops local_path_ops = {
+const struct vfs_path_ops local_path_ops = {
 	.dirfd_ops = &local_file_ops,
 	.mkdirat = local_path_mkdirat,
 	.mknodat = local_path_mknodat,
@@ -178,7 +178,7 @@ static intptr_t local_file_socket(__attribute__((unused)) struct thread_storage 
 	return result;
 }
 
-static intptr_t local_file_close(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
+static intptr_t local_file_close(struct vfs_resolved_file file)
 {
 	return fs_close(file.handle);
 }
@@ -451,8 +451,7 @@ static intptr_t local_file_ioctl_open_file(__attribute__((unused)) struct thread
 	return result;
 }
 
-
-struct vfs_file_ops local_file_ops = {
+const struct vfs_file_ops local_file_ops = {
 	.socket = local_file_socket,
 	.close = local_file_close,
 	.read = local_file_read,

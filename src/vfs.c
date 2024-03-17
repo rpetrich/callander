@@ -10,16 +10,9 @@ intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thre
 		struct attempt_cleanup_state state;
 		vfs_attempt_push_close(thread, &state, &temp_file);
 		result = vfs_call(ftruncate, temp_file, length);
-		vfs_attempt_pop_close(thread, &state);
+		vfs_attempt_pop_close(&state);
 	}
 	return result;
-}
-
-static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved) {
-	return (struct vfs_resolved_file){
-		.handle = resolved.info.handle,
-		.ops = resolved.ops->dirfd_ops,
-	};
 }
 
 intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_resolved_path resolved, char buf[PATH_MAX], const char **out_path)
@@ -60,10 +53,10 @@ intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_reso
 	return 0;
 }
 
-void vfs_close_cleanup_body(void *data, struct thread_storage *thread)
+void vfs_close_cleanup_body(void *data)
 {
 	const struct vfs_resolved_file *file = data;
-	vfs_call(close, *file);
+	file->ops->close(*file);
 }
 
 void vfs_attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, const struct vfs_resolved_file *file)
@@ -73,9 +66,9 @@ void vfs_attempt_push_close(struct thread_storage *thread, struct attempt_cleanu
 	attempt_push_cleanup(thread, state);
 }
 
-void vfs_attempt_pop_close(struct thread_storage *thread, struct attempt_cleanup_state *state)
+void vfs_attempt_pop_close(struct attempt_cleanup_state *state)
 {
 	attempt_pop_and_skip_cleanup(state);
 	const struct vfs_resolved_file *file = state->data;
-	vfs_call(close, *file);
+	file->ops->close(*file);
 }

@@ -4,15 +4,17 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include "axon.h"
 #include "fd_table.h"
 #include "freestanding.h"
 #include "linux.h"
 #include "paths.h"
+#include "proxy.h"
 #include "sockets.h"
 
 struct vfs_resolved_file {
 	const struct vfs_file_ops *ops;
-	int handle;
+	intptr_t handle;
 };
 
 struct thread_storage;
@@ -22,7 +24,7 @@ struct thread_storage;
 struct vfs_file_ops {
 	intptr_t (*socket)(struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file);
 
-	intptr_t (*close)(struct thread_storage *, struct vfs_resolved_file);
+	intptr_t (*close)(struct vfs_resolved_file);
 	intptr_t (*read)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t bufsz);
 	intptr_t (*write)(struct thread_storage *, struct vfs_resolved_file, const char *buf, size_t bufsz);
 	intptr_t (*recvfrom)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
@@ -104,24 +106,62 @@ struct vfs_path_ops {
 	intptr_t (*listxattr)(struct thread_storage *, struct vfs_resolved_path, void *out_value, size_t size, int flags);
 };
 
-extern struct vfs_file_ops local_file_ops;
-extern struct vfs_path_ops local_path_ops;
+extern const struct vfs_file_ops local_file_ops;
+extern const struct vfs_path_ops local_path_ops;
 
-extern struct vfs_file_ops remote_file_ops;
-extern struct vfs_path_ops remote_path_ops;
+static inline const struct vfs_file_ops *vfs_file_ops_for_remote(void)
+{
+	extern const struct vfs_file_ops remote_file_ops;
+	extern const struct vfs_file_ops darwin_file_ops;
+	extern const struct vfs_file_ops windows_file_ops;
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return &remote_file_ops;
+		case TARGET_PLATFORM_DARWIN:
+			return &darwin_file_ops;
+		case TARGET_PLATFORM_WINDOWS:
+			return &windows_file_ops;
+		default:
+			unknown_target();
+	}
+}
+
+static inline const struct vfs_path_ops *vfs_path_ops_for_remote(void)
+{
+	extern const struct vfs_path_ops remote_path_ops;
+	extern const struct vfs_path_ops darwin_path_ops;
+	extern const struct vfs_path_ops windows_path_ops;
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return &remote_path_ops;
+		case TARGET_PLATFORM_DARWIN:
+			return &darwin_path_ops;
+		case TARGET_PLATFORM_WINDOWS:
+			return &windows_path_ops;
+		default:
+			unknown_target();
+	}
+}
 
 static inline struct vfs_resolved_file vfs_resolve_file(int fd)
 {
 	struct vfs_resolved_file result;
-	result.ops = lookup_real_fd(fd, &result.handle) ? &remote_file_ops : &local_file_ops;
+	result.ops = lookup_real_fd(fd, &result.handle) ? vfs_file_ops_for_remote() : &local_file_ops;
 	return result;
 }
 
 static inline struct vfs_resolved_path vfs_resolve_path(int fd, const char *path)
 {
 	struct vfs_resolved_path result;
-	result.ops = lookup_real_path(fd, path, &result.info) ? &remote_path_ops : &local_path_ops;
+	result.ops = lookup_real_path(fd, path, &result.info) ? vfs_path_ops_for_remote() : &local_path_ops;
 	return result;
+}
+
+static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved) {
+	return (struct vfs_resolved_file){
+		.handle = resolved.info.handle,
+		.ops = resolved.ops->dirfd_ops,
+	};
 }
 
 static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolved_file *file, int flags)
@@ -135,7 +175,7 @@ static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolv
 	return install_remote_fd(file->handle, flags);
 }
 
-#define vfs_call(name, target, ...) ({ __typeof__(target) _target = target; _target.ops->name != NULL ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; })
+#define vfs_call(name, target, ...) ({ __typeof__(target) _target = target; LIKELY(_target.ops->name != NULL) ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; })
 
 intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length);
 
@@ -143,7 +183,7 @@ intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_reso
 
 struct attempt_cleanup_state;
 void vfs_attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, const struct vfs_resolved_file *file);
-void vfs_attempt_pop_close(struct thread_storage *thread, struct attempt_cleanup_state *state);
+void vfs_attempt_pop_close(struct attempt_cleanup_state *state);
 
 static inline intptr_t vfs_resolve_socket_and_addr(struct thread_storage *thread, int fd, const struct sockaddr **addr, size_t *size, struct vfs_resolved_file *out_file, union copied_sockaddr *buf)
 {
@@ -158,7 +198,7 @@ static inline intptr_t vfs_resolve_socket_and_addr(struct thread_storage *thread
 	memcpy(buf, *addr, *size);
 	*addr = &buf->addr;
 	bool is_remote = decode_target_addr(buf, size);
-	const struct vfs_file_ops *ops = is_remote ? &remote_file_ops : &local_file_ops;
+	const struct vfs_file_ops *ops = is_remote ? vfs_file_ops_for_remote() : &local_file_ops;
 	if (ops == file.ops) {
 		*out_file = file;
 		return 0;
@@ -190,7 +230,7 @@ static inline intptr_t vfs_resolve_socket_and_addr(struct thread_storage *thread
 	}
 	result = is_remote ? become_remote_fd(fd, result) : become_local_fd(fd, result);
 	if (result < 0) {
-		vfs_call(close, file);
+		file.ops->close(file);
 		return result;
 	}
 	*out_file = file;
