@@ -56,6 +56,130 @@ intptr_t translate_windows_error(intptr_t result)
 	}
 }
 
+intptr_t translate_winsock_error(intptr_t result)
+{
+	switch (result) {
+		case 6:
+			return -EBADF;
+		case 8:
+			return -ENOMEM;
+		case 87:
+			return -EINVAL;
+		case 995:
+			return -ECANCELED;
+		case 996:
+			return -EINPROGRESS;
+		case 997:
+			return -EINPROGRESS;
+		case 10004:
+			return -EINTR;
+		case 10013:
+			return -EACCES;
+		case 10014:
+			return -EFAULT;
+		case 10022:
+			return -EINVAL;
+		case 10024:
+			return -EMFILE;
+		case 10035:
+			return -EWOULDBLOCK;
+		case 10036:
+			return -EINPROGRESS;
+		case 10037:
+			return -EALREADY;
+		case 10039:
+			return -EDESTADDRREQ;
+		case 10040:
+			return -EMSGSIZE;
+		case 10041:
+			return -EPROTOTYPE;
+		case 10042:
+			return -ENOPROTOOPT;
+		case 10043:
+			return -EPROTONOSUPPORT;
+		case 10044:
+			return -ESOCKTNOSUPPORT;
+		case 10045:
+			return -EOPNOTSUPP;
+		case 10046:
+			return -EPFNOSUPPORT;
+		case 10047:
+			return -EAFNOSUPPORT;
+		case 10048:
+			return -EADDRINUSE;
+		case 10049:
+			return -EADDRNOTAVAIL;
+		case 10050:
+			return -ENETDOWN;
+		case 10051:
+			return -ENETUNREACH;
+		case 10052:
+			return -ENETRESET;
+		case 10053:
+			return -ECONNABORTED;
+		case 10054:
+			return -ECONNRESET;
+		case 10055:
+			return -ENOBUFS;
+		case 10058:
+			return -ESHUTDOWN;
+		case 10059:
+			return -ETOOMANYREFS;
+		case 10060:
+			return -ETIMEDOUT;
+		case 10061:
+			return -ECONNREFUSED;
+		case 10062:
+			return -ELOOP;
+		case 10063:
+			return -ENAMETOOLONG;
+		case 10064:
+			return -EHOSTDOWN;
+		case 10065:
+			return -EHOSTUNREACH;
+		case 10066:
+			return -ENOTEMPTY;
+		// case 10067:
+		// 	return -EPROCLIM;
+		case 10068:
+			return -EUSERS;
+		case 10069:
+			return -EDQUOT;
+		case 10070:
+			return -ESTALE;
+		case 10071:
+			return -EREMOTE;
+		// case 10091:
+		// 	return -ESYSNOTREADY;
+		// case 10092:
+		// 	return -EVERNOTSUPPORTED;
+		// case 10093:
+		// 	return -ENOTINITIALISED;
+		// case 10101:
+		// 	return -EDISCON;
+		// case 10102:
+		// 	return -ENOMORE;
+		case 10103:
+			return -ECANCELED;
+		// case 10104:
+		// 	return -EINVALIDPROCTABLE;
+		// case 10105:
+		// 	return -EINVALIDPROVIDER;
+		// case 10106:
+		// 	return -EPROVIDERFAILEDINIT;
+		// case 10107:
+		// 	return -ESYSCALLFAILURE;
+		// case 10108:
+		// 	return -ESERVICE_NOT_FOUND;
+		// case 10109:
+		// 	return -ETYPE_NOT_FOUND;
+		// case 10110:
+		// 	return -ENOMORE;
+		default:
+			DIE("unknown winsock error", result);
+	}
+}
+
 static mode_t mode_for_file_attributes(WINDOWS_DWORD fileAttributes)
 {
 	mode_t result;

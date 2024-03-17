@@ -11,6 +11,7 @@
 typedef uint32_t WINDOWS_DWORD;
 
 #define WINDOWS_FILE_READ_ATTRIBUTES 0x80
+#define WINDOWS_DELETE 0x10000
 #define WINDOWS_GENERIC_ALL 0x10000000
 #define WINDOWS_GENERIC_EXECUTE 0x20000000
 #define WINDOWS_GENERIC_WRITE 0x40000000
@@ -50,6 +51,7 @@ typedef uint32_t WINDOWS_DWORD;
 #define WINDOWS_MAX_PATH 260
 
 typedef int WINDOWS_BOOL;
+typedef uint8_t WINDOWS_BOOLEAN;
 
 typedef void *WINDOWS_HANDLE;
 
@@ -86,7 +88,7 @@ typedef struct WINDOWS__CREATEFILE2_EXTENDED_PARAMETERS {
 	WINDOWS_HANDLE                hTemplateFile;
 } WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS;
 
-typedef struct WINDOWS_WIN32_FIND_DATAW {
+typedef struct WINDOWS__WIN32_FIND_DATAW {
 	WINDOWS_DWORD    dwFileAttributes;
 	WINDOWS_FILETIME ftCreationTime;
 	WINDOWS_FILETIME ftLastAccessTime;
@@ -102,7 +104,48 @@ typedef struct WINDOWS_WIN32_FIND_DATAW {
 	uint16_t     wFinderFlags; // Obsolete. Do not use
 } WINDOWS_WIN32_FIND_DATAW;
 
+typedef struct WINDOWS_FILE_RENAME_INFO {
+  union {
+    WINDOWS_BOOLEAN ReplaceIfExists;
+    WINDOWS_DWORD   Flags;
+  } DUMMYUNIONNAME;
+  WINDOWS_BOOLEAN ReplaceIfExists;
+  WINDOWS_HANDLE  RootDirectory;
+  WINDOWS_DWORD   FileNameLength;
+  uint16_t   FileName[1];
+} WINDOWS_FILE_RENAME_INFO;
+
+typedef enum WINDOWS__FILE_INFO_BY_HANDLE_CLASS {
+  WINDOWS_FileBasicInfo,
+  WINDOWS_FileStandardInfo,
+  WINDOWS_FileNameInfo,
+  WINDOWS_FileRenameInfo,
+  WINDOWS_FileDispositionInfo,
+  WINDOWS_FileAllocationInfo,
+  WINDOWS_FileEndOfFileInfo,
+  WINDOWS_FileStreamInfo,
+  WINDOWS_FileCompressionInfo,
+  WINDOWS_FileAttributeTagInfo,
+  WINDOWS_FileIdBothDirectoryInfo,
+  WINDOWS_FileIdBothDirectoryRestartInfo,
+  WINDOWS_FileIoPriorityHintInfo,
+  WINDOWS_FileRemoteProtocolInfo,
+  WINDOWS_FileFullDirectoryInfo,
+  WINDOWS_FileFullDirectoryRestartInfo,
+  WINDOWS_FileStorageInfo,
+  WINDOWS_FileAlignmentInfo,
+  WINDOWS_FileIdInfo,
+  WINDOWS_FileIdExtdDirectoryInfo,
+  WINDOWS_FileIdExtdDirectoryRestartInfo,
+  WINDOWS_FileDispositionInfoEx,
+  WINDOWS_FileRenameInfoEx,
+  WINDOWS_FileCaseSensitiveInfo,
+  WINDOWS_FileNormalizedNameInfo,
+  WINDOWS_MaximumFileInfoByHandleClass
+} WINDOWS_FILE_INFO_BY_HANDLE_CLASS;
+
 intptr_t translate_windows_error(intptr_t result);
+intptr_t translate_winsock_error(intptr_t result);
 
 #define PROXY_WINDOWS_CALL(kind, module, name, ...) ({ \
 	static intptr_t name; \
@@ -119,6 +162,8 @@ intptr_t translate_windows_error(intptr_t result);
 
 #define PROXY_WIN32_CALL(module, name, ...) PROXY_WINDOWS_CALL(TARGET_NR_WIN32_CALL, module, name, ##__VA_ARGS__)
 #define PROXY_WIN32_BOOL_CALL(module, name, ...) PROXY_WINDOWS_CALL(TARGET_NR_WIN32_BOOL_CALL, module, name, ##__VA_ARGS__)
+#define PROXY_WINSOCK_CALL(module, name, ...) PROXY_WINDOWS_CALL(TARGET_NR_WINSOCK_CALL, module, name, ##__VA_ARGS__)
+#define PROXY_WINSOCK_HANDLE_CALL(module, name, ...) PROXY_WINDOWS_CALL(TARGET_NR_WINSOCK_HANDLE_CALL, module, name, ##__VA_ARGS__)
 
 inline static proxy_arg get_windows_function(intptr_t *cached, const char *module, const char *name)
 {
@@ -179,6 +224,15 @@ static inline intptr_t translate_windows_result(intptr_t result)
 {
 	if (UNLIKELY(result < 0)) {
 		return translate_windows_error(-result);
+	}
+	return result;
+}
+
+__attribute__((always_inline))
+static inline intptr_t translate_winsock_result(intptr_t result)
+{
+	if (UNLIKELY(result < 0)) {
+		return translate_winsock_error(-result);
 	}
 	return result;
 }

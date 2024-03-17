@@ -257,6 +257,14 @@ noreturn static void process_data(void)
 					BOOL (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
 					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
 					response.result = result == 0 ? -(intptr_t)GetLastError() : 0;
+				} else if (syscall == TARGET_NR_WINSOCK_CALL) {
+					intptr_t (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
+					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
+					response.result = result == SOCKET_ERROR ? -(intptr_t)WSAGetLastError() : result;
+				} else if (syscall == TARGET_NR_WINSOCK_HANDLE_CALL) {
+					intptr_t (*target)(intptr_t, intptr_t, intptr_t, intptr_t, intptr_t) = (void *)values[0];
+					intptr_t result = target(values[1], values[2], values[3], values[4], values[5]);
+					response.result = result == INVALID_SOCKET ? -(intptr_t)WSAGetLastError() : result;
 #endif
 #ifdef __NR_clone
 				} else if (syscall == __NR_clone) {
