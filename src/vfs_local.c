@@ -296,7 +296,11 @@ static intptr_t local_file_readlink_fd(__attribute__((unused)) struct thread_sto
 
 static intptr_t local_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
+#ifndef __NR_getdents
+	return -ENOSYS;
+#else
 	return FS_SYSCALL(LINUX_SYS_getdents, file.handle, (intptr_t)buf, size);
+#endif
 }
 
 static intptr_t local_file_getdents64(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)

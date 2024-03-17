@@ -609,7 +609,7 @@ static inline int fs_access(const char *pathname, int mode)
 #ifdef SYS_access
 	return (int)FS_SYSCALL(SYS_access, (intptr_t)pathname, mode);
 #else
-	return fs_faccessat(AT_FDCWD, pathname, mode);
+	return fs_faccessat(AT_FDCWD, pathname, mode, 0);
 #endif
 }
 
