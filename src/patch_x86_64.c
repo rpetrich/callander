@@ -201,12 +201,8 @@ static void trampoline_body(struct thread_storage *thread, intptr_t data[7])
 
 // receive_trampoline is called by trampolines to handle the intercepted syscall
 static void receive_trampoline(intptr_t data[7]) {
-	intptr_t syscall = data[0];
 	struct thread_storage *thread = get_thread_storage();
 	attempt_with_sufficient_stack(thread, (attempt_body)&trampoline_body, data);
-	if (data[0] == -ENOSYS) {
-		data[0] = FS_SYSCALL(syscall, data[1], data[2], data[3], data[4], data[5], data[6]);
-	}
 }
 
 // is_valid_pc_relative_offset verifies that an offset will fit in a 32-bit offset
