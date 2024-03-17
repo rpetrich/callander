@@ -138,4 +138,8 @@ intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thre
 
 intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_resolved_path resolved, char buf[PATH_MAX], const char **out_path);
 
+struct attempt_cleanup_state;
+void vfs_attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, const struct vfs_resolved_file *file);
+void vfs_attempt_pop_close(struct thread_storage *thread, struct attempt_cleanup_state *state);
+
 #endif
