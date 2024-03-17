@@ -2,7 +2,6 @@
 #include "darwin.h"
 #include "vfs.h"
 #include "proxy.h"
-#include "remote.h"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -11,12 +10,12 @@ extern const struct vfs_path_ops darwin_path_ops;
 
 static intptr_t darwin_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
 {
-	return remote_mkdirat(resolved.info.handle, resolved.info.path, mode);
+    return -EPERM;
 }
 
 static intptr_t darwin_path_mknodat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode, dev_t dev)
 {
-	return remote_mknodat(resolved.info.handle, resolved.info.path, mode, dev);
+    return -EPERM;
 }
 
 static intptr_t darwin_path_openat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags, mode_t mode, struct vfs_resolved_file *out_file)
@@ -34,22 +33,22 @@ static intptr_t darwin_path_openat(__attribute__((unused)) struct thread_storage
 
 static intptr_t darwin_path_unlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags)
 {
-	return remote_unlinkat(resolved.info.handle, resolved.info.path, flags);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_renameat2(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path old_resolved, struct vfs_resolved_path new_resolved, int flags)
 {
-	return remote_renameat2(old_resolved.info.handle, old_resolved.info.path, new_resolved.info.handle, new_resolved.info.path, flags);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_linkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path old_resolved, struct vfs_resolved_path new_resolved, int flags)
 {
-	return remote_linkat(old_resolved.info.handle, old_resolved.info.path, new_resolved.info.handle, new_resolved.info.path, flags);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_symlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path new_resolved, const char *old_path)
 {
-	return remote_symlinkat(old_path, new_resolved.info.handle, new_resolved.info.path);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_truncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length)
@@ -62,17 +61,17 @@ static intptr_t darwin_path_truncate(__attribute__((unused)) struct thread_stora
 
 static intptr_t darwin_path_fchmodat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode, int flags)
 {
-	return remote_fchmodat(resolved.info.handle, resolved.info.path, mode, flags);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_fchownat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, uid_t owner, gid_t group, int flags)
 {
-	return remote_fchownat(resolved.info.handle, resolved.info.path, owner, group, flags);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_utimensat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const struct timespec times[2], int flags)
 {
-	return remote_utimensat(resolved.info.handle, resolved.info.path, times, flags);
+    return -EACCES;
 }
 
 static intptr_t darwin_path_newfstatat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, struct fs_stat *out_stat, int flags)
@@ -113,13 +112,7 @@ static intptr_t darwin_path_statx(__attribute__((unused)) struct thread_storage 
 
 static intptr_t darwin_path_statfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, struct fs_statfs *out_buf)
 {
-	char buf[PATH_MAX];
-	const char *path;
-	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
-	if (result != 0) {
-		return result;
-	}
-	return FS_SYSCALL(LINUX_SYS_statfs, (intptr_t)resolved.info.path, (intptr_t)out_buf);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_path_faccessat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int mode, int flags)
@@ -134,58 +127,22 @@ static intptr_t darwin_path_readlinkat(__attribute__((unused)) struct thread_sto
 
 static intptr_t darwin_path_getxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, void *out_value, size_t size, int flags)
 {
-	char buf[PATH_MAX];
-	const char *path;
-	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
-	if (result != 0) {
-		return result;
-	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_lgetxattr(path, name, out_value, size);
-	}
-	return remote_getxattr(path, name, out_value, size);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_path_setxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, const void *value, size_t size, int flags)
 {
-	char buf[PATH_MAX];
-	const char *path;
-	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
-	if (result != 0) {
-		return result;
-	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_lsetxattr(path, name, value, size, flags & ~AT_SYMLINK_NOFOLLOW);
-	}
-	return remote_setxattr(path, name, value, size, flags);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_path_removexattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, int flags)
 {
-	char buf[PATH_MAX];
-	const char *path;
-	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
-	if (result != 0) {
-		return result;
-	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_lremovexattr(path, name);
-	}
-	return remote_removexattr(path, name);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_path_listxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, void *out_value, size_t size, int flags)
 {
-	char buf[PATH_MAX];
-	const char *path;
-	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
-	if (result != 0) {
-		return result;
-	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_llistxattr(path, out_value, size);
-	}
-	return remote_listxattr(path, out_value, size);
+	return -EOPNOTSUPP;
 }
 
 const struct vfs_path_ops darwin_path_ops = {
@@ -305,12 +262,12 @@ static intptr_t darwin_file_fdatasync(__attribute__((unused)) struct thread_stor
 
 static intptr_t darwin_file_syncfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
-	return remote_syncfs(file.handle);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_sync_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, off_t nbytes, unsigned int flags)
 {
-	return remote_sync_file_range(file.handle, offset, nbytes, flags);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t length)
@@ -320,17 +277,17 @@ static intptr_t darwin_file_ftruncate(__attribute__((unused)) struct thread_stor
 
 static intptr_t darwin_file_fallocate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int mode, off_t offset, off_t len)
 {
-	return remote_fallocate(file.handle, mode, offset, len);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_recvmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct msghdr *msg, int flags)
 {
-	return remote_recvmsg(thread, file.handle, msg, flags);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_sendmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct msghdr *msg, int flags)
 {
-	return remote_sendmsg(thread, file.handle, msg, flags);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_fcntl_basic(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, intptr_t argument)
@@ -374,12 +331,12 @@ static intptr_t darwin_file_fcntl_int(__attribute__((unused)) struct thread_stor
 
 static intptr_t darwin_file_fchmod(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, mode_t mode)
 {
-	return remote_fchmod(file.handle, mode);
+    return -EACCES;
 }
 
 static intptr_t darwin_file_fchown(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, uid_t owner, gid_t group)
 {
-	return remote_fchown(file.handle, owner, group);
+    return -EACCES;
 }
 
 static intptr_t darwin_file_fstat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat)
@@ -394,7 +351,7 @@ static intptr_t darwin_file_fstat(__attribute__((unused)) struct thread_storage 
 
 static intptr_t darwin_file_fstatfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_statfs *out_buf)
 {
-	return remote_fstatfs(file.handle, out_buf);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
@@ -411,7 +368,7 @@ static intptr_t darwin_file_readlink_fd(__attribute__((unused)) struct thread_st
 
 static intptr_t darwin_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
-	return remote_getdents(file.handle, buf, size);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_getdents64(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
@@ -430,7 +387,7 @@ static intptr_t darwin_file_getdents64(__attribute__((unused)) struct thread_sto
         size_t rec_len = sizeof(struct fs_dirent) + name_len + 2;
         size_t aligned_len = (rec_len + 7) & ~7;
         if (consumed + aligned_len > size) {
-            result = remote_lseek(file.handle, dent->d_seekoff, SEEK_SET);
+            result = vfs_call(lseek, file, dent->d_seekoff, SEEK_SET);
             if (result < 0) {
                 return 0;
             }
@@ -453,50 +410,42 @@ static intptr_t darwin_file_getdents64(__attribute__((unused)) struct thread_sto
 
 static intptr_t darwin_file_fgetxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name, void *out_value, size_t size)
 {
-	return remote_fgetxattr(file.handle, name, out_value, size);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_fsetxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name, const void *value, size_t size, int flags)
 {
-	return remote_fsetxattr(file.handle, name, value, size, flags);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_fremovexattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name)
 {
-	return remote_fremovexattr(file.handle, name);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_flistxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, void *out_value, size_t size)
 {
-	return remote_flistxattr(file.handle, out_value, size);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_connect(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct sockaddr *addr, size_t size)
 {
-	return remote_connect(file.handle, addr, size);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_bind(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct sockaddr *addr, size_t size)
 {
-	return remote_bind(file.handle, addr, size);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_listen(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int backlog)
 {
-	return remote_listen(file.handle, backlog);
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_accept4(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen, int flags, struct vfs_resolved_file *out_file)
 {
-	int result = remote_accept4(file.handle, addr, addrlen, flags);
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &darwin_file_ops,
-			.handle = result,
-		};
-		return 0;
-	}
-	return result;
+    return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_getsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, void *restrict optval, socklen_t *restrict optlen)
@@ -511,128 +460,47 @@ static intptr_t darwin_file_setsockopt(__attribute__((unused)) struct thread_sto
 
 static intptr_t darwin_file_getsockname(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
 {
-	return remote_getsockname(file.handle, addr, addrlen);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_getpeername(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
 {
-	return remote_getpeername(file.handle, addr, addrlen);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_shutdown(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int how)
 {
-	return remote_shutdown(file.handle, how);
+	return -EOPNOTSUPP;
 }
 
 static intptr_t darwin_file_sendfile(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_out, struct vfs_resolved_file file_in, off_t *offset, size_t size)
 {
-	if (file_in.ops != file_out.ops) {
-		return -EINVAL;
-	}
-	return remote_sendfile(file_out.handle, file_in.handle, offset, size);
+	return -EINVAL;
 }
 
 static intptr_t darwin_file_splice(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off_t *off_in, struct vfs_resolved_file file_out, off_t *off_out, size_t size, unsigned int flags)
 {
-	if (file_in.ops != file_out.ops) {
-		return -EINVAL;
-	}
-	return remote_splice(file_in.handle, off_in, file_out.handle, off_out, size, flags);
+	return -EINVAL;
 }
 
 static intptr_t darwin_file_tee(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, struct vfs_resolved_file file_out, size_t len, unsigned int flags)
 {
-	if (file_in.ops != file_out.ops) {
-		return -EINVAL;
-	}
-	return remote_tee(file_in.handle, file_out.handle, len, flags);
+	return -EINVAL;
 }
 
 static intptr_t darwin_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
 {
-	if (file_in.ops != file_out.ops) {
-		return -EINVAL;
-	}
-	return remote_copy_file_range(file_in.handle, off_in, file_out.handle, off_out, len, flags);
+	return -EINVAL;
 }
 
 static intptr_t darwin_file_ioctl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
 {
-	switch (cmd) {
-		case TIOCGSID:
-		case TIOCGPGRP: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(pid_t)));
-		}
-		case TIOCSPGRP: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(pid_t)));
-		}
-		case TIOCGLCKTRMIOS:
-		case TCGETS: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(struct linux_termios)));
-		}
-		case TIOCSLCKTRMIOS:
-		case TCSETS:
-		case TCSETSW:
-		case TCSETSF: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(struct linux_termios)));
-		}
-		// case TCGETA: {
-		// 	return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(struct termio)));
-		// }
-		// case TCSETA:
-		// case TCSETAW:
-		// case TCSETAF: {
-		// 	return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(struct termio)));
-		// }
-		case TIOCGWINSZ: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(struct winsize)));
-		}
-		case TIOCSBRK:
-		case TCSBRK:
-		case TCXONC:
-		case TCFLSH:
-		case TIOCSCTTY: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(arg));
-		}
-		case TIOCCBRK:
-		case TIOCCONS:
-		case TIOCNOTTY:
-		case TIOCEXCL:
-		case TIOCNXCL: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd));
-		}
-		case FIONREAD:
-		case TIOCOUTQ:
-		case TIOCGETD:
-		case TIOCMGET:
-		case TIOCGSOFTCAR: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(int)));
-		}
-		case TIOCSETD:
-		case TIOCPKT:
-		case TIOCMSET:
-		case TIOCMBIS:
-		case TIOCSSOFTCAR: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(int)));
-		}
-		case TIOCSTI: {
-			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(char)));
-		}
-	}
 	return -EINVAL;
 }
 
 static intptr_t darwin_file_ioctl_open_file(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file)
 {
-	intptr_t result = PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(arg));
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &darwin_file_ops,
-			.handle = result,
-		};
-		return 0;
-	}
-	return result;
+	return -EINVAL;
 }
 
 const struct vfs_file_ops darwin_file_ops = {

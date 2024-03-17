@@ -544,12 +544,12 @@ static intptr_t windows_file_accept4(__attribute__((unused)) struct thread_stora
 
 static intptr_t windows_file_getsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, void *restrict optval, socklen_t *restrict optlen)
 {
-	return -EOPNOTSUPP;
+	return -ENOPROTOOPT;
 }
 
 static intptr_t windows_file_setsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, const void *optval, socklen_t optlen)
 {
-	return -EOPNOTSUPP;
+	return -ENOPROTOOPT;
 }
 
 static intptr_t windows_file_getsockname(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
