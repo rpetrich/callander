@@ -431,6 +431,26 @@ static intptr_t local_file_ioctl_open_file(__attribute__((unused)) struct thread
 	return result;
 }
 
+static intptr_t local_file_ppoll(__attribute__((unused)) struct thread_storage *thread, struct vfs_poll_resolved_file *files, nfds_t nfiles, struct timespec *timeout, const sigset_t *sigmask)
+{
+	struct attempt_cleanup_state state;
+	struct pollfd *real_fds = malloc(sizeof(struct pollfd) * nfiles);
+	attempt_push_free(thread, &state, real_fds);
+	for (nfds_t i = 0; i < nfiles; i++) {
+		real_fds[i].fd = files[i].file.handle;
+		real_fds[i].events = files[i].events;
+		real_fds[i].revents = files[i].revents;
+	}
+	intptr_t result = FS_SYSCALL(LINUX_SYS_ppoll, (intptr_t)real_fds, nfiles, (intptr_t)timeout, (intptr_t)sigmask, sizeof(struct fs_sigset_t));
+	if (result > 0) {
+		for (nfds_t i = 0; i < nfiles; i++) {
+			files[i].revents = real_fds[i].revents;
+		}
+	}
+	attempt_pop_free(&state);
+	return result;
+}
+
 const struct vfs_path_ops local_path_ops = {
 	.dirfd_ops = {
 		.socket = local_file_socket,
@@ -483,6 +503,7 @@ const struct vfs_path_ops local_path_ops = {
 		.copy_file_range = local_file_copy_file_range,
 		.ioctl = local_file_ioctl,
 		.ioctl_open_file = local_file_ioctl_open_file,
+		.ppoll = local_file_ppoll,
 	},
 	.mkdirat = local_path_mkdirat,
 	.mknodat = local_path_mknodat,

@@ -230,49 +230,25 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			struct pollfd *fds = (struct pollfd *)arg1;
 			nfds_t nfds = arg2;
 			if (nfds == 0) {
-				return FS_SYSCALL(syscall, arg1, arg2, arg3);
+				return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4);
 			}
 			struct attempt_cleanup_state state;
-			struct pollfd *real_fds = malloc(sizeof(struct pollfd) * nfds);
-			attempt_push_free(thread, &state, real_fds);
-			bool has_local = false;
-			bool has_remote = false;
+			struct vfs_poll_resolved_file *polls = malloc(sizeof(struct vfs_poll_resolved_file) * nfds);
+			attempt_push_free(thread, &state, polls);
 			for (nfds_t i = 0; i < nfds; i++) {
-				intptr_t real_fd;
-				bool is_remote = lookup_real_fd(fds[i].fd, &real_fd);
-				real_fds[i].fd = real_fd;
-				if (is_remote) {
-					if (has_local) {
-						// cannot poll on both local and remote file descriptors
-						attempt_pop_free(&state);
-						return invalid_local_remote_mixed_operation();
-					}
-					has_remote = true;
-				} else {
-					if (has_remote) {
-						// cannot poll on both local and remote file descriptors
-						attempt_pop_free(&state);
-						return invalid_local_remote_mixed_operation();
-					}
-					has_local = true;
+				polls[i].file = vfs_resolve_file(fds[i].fd);
+				if (i != 0 && polls[i].file.ops != polls[i-1].file.ops) {
+					// cannot poll on both local and remote file descriptors
+					attempt_pop_free(&state);
+					return invalid_local_remote_mixed_operation();
 				}
-				real_fds[i].events = fds[i].events;
-				real_fds[i].revents = fds[i].revents;
+				polls[i].events = fds[i].events;
+				polls[i].revents = fds[i].revents;
 			}
-			int result;
-			if (has_remote) {
-				if (syscall == LINUX_SYS_ppoll) {
-					// TODO: set signal mask
-					result = remote_ppoll(&real_fds[0], nfds, (struct timespec *)arg3);
-				} else {
-					result = remote_poll(&real_fds[0], nfds, arg3);
-				}
-			} else {
-				result = FS_SYSCALL(syscall, (intptr_t)&real_fds[0], nfds, arg3, arg4);
-			}
-			if (result > 0) {
+			intptr_t result = polls[0].file.ops->ppoll(thread, polls, nfds, syscall == LINUX_SYS_ppoll ? (struct timespec *)arg3 : NULL, syscall == LINUX_SYS_ppoll ? (const sigset_t *)arg4 : NULL);
+			if (result >= 0) {
 				for (nfds_t i = 0; i < nfds; i++) {
-					fds[i].revents = real_fds[i].revents;
+					fds[i].revents = polls[i].revents;
 				}
 			}
 			attempt_pop_free(&state);

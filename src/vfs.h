@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <poll.h>
 
 #include "axon.h"
 #include "fd_table.h"
@@ -15,6 +16,12 @@
 struct vfs_resolved_file {
 	const struct vfs_file_ops *ops;
 	intptr_t handle;
+};
+
+struct vfs_poll_resolved_file {
+	struct vfs_resolved_file file;
+	short events;
+	short revents;
 };
 
 struct thread_storage;
@@ -73,8 +80,7 @@ struct vfs_file_ops {
 	intptr_t (*copy_file_range)(struct thread_storage *, struct vfs_resolved_file in, off64_t *off_in, struct vfs_resolved_file out, off64_t *off_out, size_t len, unsigned int flags);
 	intptr_t (*ioctl)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg);
 	intptr_t (*ioctl_open_file)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file);
-	// intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout);
-	// intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, struct timespec *timeout);
+	intptr_t (*ppoll)(struct thread_storage *, struct vfs_poll_resolved_file *files, nfds_t nfiles, struct timespec *timeout, const sigset_t *sigmask);
 };
 
 struct vfs_resolved_path {

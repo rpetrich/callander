@@ -501,6 +501,26 @@ static intptr_t remote_file_ioctl_open_file(__attribute__((unused)) struct threa
 	return result;
 }
 
+static intptr_t remote_file_ppoll(__attribute__((unused)) struct thread_storage *thread, struct vfs_poll_resolved_file *files, nfds_t nfiles, struct timespec *timeout, __attribute__((unused)) const sigset_t *sigmask)
+{
+	struct attempt_cleanup_state state;
+	struct pollfd *real_fds = malloc(sizeof(struct pollfd) * nfiles);
+	attempt_push_free(thread, &state, real_fds);
+	for (nfds_t i = 0; i < nfiles; i++) {
+		real_fds[i].fd = files[i].file.handle;
+		real_fds[i].events = files[i].events;
+		real_fds[i].revents = files[i].revents;
+	}
+	intptr_t result = remote_ppoll(real_fds, nfiles, timeout);
+	if (result > 0) {
+		for (nfds_t i = 0; i < nfiles; i++) {
+			files[i].revents = real_fds[i].revents;
+		}
+	}
+	attempt_pop_free(&state);
+	return result;
+}
+
 const struct vfs_path_ops remote_path_ops = {
 	.dirfd_ops = {
 		.socket = remote_file_socket,
@@ -552,6 +572,7 @@ const struct vfs_path_ops remote_path_ops = {
 		.copy_file_range = remote_file_copy_file_range,
 		.ioctl = remote_file_ioctl,
 		.ioctl_open_file = remote_file_ioctl_open_file,
+		.ppoll = remote_file_ppoll,
 	},
 	.mkdirat = remote_path_mkdirat,
 	.mknodat = remote_path_mknodat,
