@@ -233,8 +233,8 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 	// Construct the trampoline
 	uint32_t *trampoline = (uint32_t *)stub_address;
 	// Copy the code to call into x7 with pointer to registers as first arg
-	size_t template_size = (uintptr_t)&template.end - (uintptr_t)&template.start - sizeof(uint64_t);
-	memcpy(trampoline, (const void *)&template.start, template_size);
+	size_t template_size = (uintptr_t)template.end - (uintptr_t)template.start - sizeof(uint64_t);
+	memcpy(trampoline, (const void *)template.start, template_size);
 	trampoline += template_size / sizeof(*trampoline);
 	*(uintptr_t *)trampoline = (uintptr_t)handler;
 	trampoline += 2;
