@@ -374,7 +374,7 @@ not_found:
 	return false;
 }
 
-static void cleanup_searched_instructions(void *data)
+static void cleanup_searched_instructions(void *data, __attribute__((unused)) struct thread_storage *thread)
 {
 	struct searched_instructions *searched = data;
 	searched = searched->next;
@@ -397,7 +397,7 @@ static void init_searched_instructions(struct thread_storage *thread, struct sea
 static void free_searched_instructions(struct searched_instructions *searched, struct attempt_cleanup_state *cleanup)
 {
 	attempt_pop_and_skip_cleanup(cleanup);
-	cleanup_searched_instructions(searched);
+	cleanup_searched_instructions(searched, NULL);
 }
 
 // find_return_address_stack_offset returns the stack offset of the return address by inspecting stack manipulation
