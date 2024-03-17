@@ -83,7 +83,7 @@ struct vfs_resolved_path {
 };
 
 struct vfs_path_ops {
-	const struct vfs_file_ops *dirfd_ops;
+	const struct vfs_file_ops dirfd_ops;
 	intptr_t (*mkdirat)(struct thread_storage *, struct vfs_resolved_path, mode_t mode);
 	intptr_t (*mknodat)(struct thread_storage *, struct vfs_resolved_path, mode_t mode, dev_t dev);
 	intptr_t (*openat)(struct thread_storage *, struct vfs_resolved_path, int flags, mode_t mode, struct vfs_resolved_file *out_file);
@@ -106,25 +106,7 @@ struct vfs_path_ops {
 	intptr_t (*listxattr)(struct thread_storage *, struct vfs_resolved_path, void *out_value, size_t size, int flags);
 };
 
-extern const struct vfs_file_ops local_file_ops;
 extern const struct vfs_path_ops local_path_ops;
-
-static inline const struct vfs_file_ops *vfs_file_ops_for_remote(void)
-{
-	extern const struct vfs_file_ops remote_file_ops;
-	extern const struct vfs_file_ops darwin_file_ops;
-	extern const struct vfs_file_ops windows_file_ops;
-	switch (proxy_get_target_platform()) {
-		case TARGET_PLATFORM_LINUX:
-			return &remote_file_ops;
-		case TARGET_PLATFORM_DARWIN:
-			return &darwin_file_ops;
-		case TARGET_PLATFORM_WINDOWS:
-			return &windows_file_ops;
-		default:
-			unknown_target();
-	}
-}
 
 static inline const struct vfs_path_ops *vfs_path_ops_for_remote(void)
 {
@@ -143,10 +125,16 @@ static inline const struct vfs_path_ops *vfs_path_ops_for_remote(void)
 	}
 }
 
+__attribute__((always_inline))
+static inline const struct vfs_file_ops *vfs_file_ops_for_remote(void)
+{
+	return &vfs_path_ops_for_remote()->dirfd_ops;
+}
+
 static inline struct vfs_resolved_file vfs_resolve_file(int fd)
 {
 	struct vfs_resolved_file result;
-	result.ops = lookup_real_fd(fd, &result.handle) ? vfs_file_ops_for_remote() : &local_file_ops;
+	result.ops = lookup_real_fd(fd, &result.handle) ? vfs_file_ops_for_remote() : &local_path_ops.dirfd_ops;
 	return result;
 }
 
@@ -160,7 +148,7 @@ static inline struct vfs_resolved_path vfs_resolve_path(int fd, const char *path
 static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved) {
 	return (struct vfs_resolved_file){
 		.handle = resolved.info.handle,
-		.ops = resolved.ops->dirfd_ops,
+		.ops = &resolved.ops->dirfd_ops,
 	};
 }
 
@@ -169,7 +157,7 @@ static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolv
 	if (result < 0) {
 		return result;
 	}
-	if (file->ops == &local_file_ops) {
+	if (file->ops == &local_path_ops.dirfd_ops) {
 		return install_local_fd(file->handle, flags);
 	}
 	return install_remote_fd(file->handle, flags);
@@ -198,7 +186,7 @@ static inline intptr_t vfs_resolve_socket_and_addr(struct thread_storage *thread
 	memcpy(buf, *addr, *size);
 	*addr = &buf->addr;
 	bool is_remote = decode_target_addr(buf, size);
-	const struct vfs_file_ops *ops = is_remote ? vfs_file_ops_for_remote() : &local_file_ops;
+	const struct vfs_file_ops *ops = is_remote ? vfs_file_ops_for_remote() : &local_path_ops.dirfd_ops;
 	if (ops == file.ops) {
 		*out_file = file;
 		return 0;

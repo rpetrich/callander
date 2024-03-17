@@ -7,7 +7,6 @@
 
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-extern const struct vfs_file_ops windows_file_ops;
 extern const struct vfs_file_ops windows_socket_ops;
 extern const struct vfs_path_ops windows_path_ops;
 
@@ -64,7 +63,7 @@ static intptr_t windows_path_openat(__attribute__((unused)) struct thread_storag
 	result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(buf), proxy_value(desired_access), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_ALWAYS), proxy_in(&params, sizeof(params))));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
-			.ops = &windows_file_ops,
+			.ops = &windows_path_ops.dirfd_ops,
 			.handle = result,
 		};
 		return 0;
@@ -269,31 +268,6 @@ static intptr_t windows_path_listxattr(__attribute__((unused)) struct thread_sto
 {
 	return -EOPNOTSUPP;
 }
-
-const struct vfs_path_ops windows_path_ops = {
-	.dirfd_ops = &windows_file_ops,
-	.mkdirat = windows_path_mkdirat,
-	.mknodat = windows_path_mknodat,
-	.openat = windows_path_openat,
-	.unlinkat = windows_path_unlinkat,
-	.renameat2 = windows_path_renameat2,
-	.linkat = windows_path_linkat,
-	.symlinkat = windows_path_symlinkat,
-	.truncate = windows_path_truncate,
-	.fchmodat = windows_path_fchmodat,
-	.fchownat = windows_path_fchownat,
-	.utimensat = windows_path_utimensat,
-	.newfstatat = windows_path_newfstatat,
-	.statx = windows_path_statx,
-	.statfs = windows_path_statfs,
-	.faccessat = windows_path_faccessat,
-	.readlinkat = windows_path_readlinkat,
-	.getxattr = windows_path_getxattr,
-	.setxattr = windows_path_setxattr,
-	.removexattr = windows_path_removexattr,
-	.listxattr = windows_path_listxattr,
-};
-
 
 static intptr_t windows_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
@@ -657,56 +631,78 @@ static intptr_t windows_file_ioctl_open_file(__attribute__((unused)) struct thre
 	return -EINVAL;
 }
 
-const struct vfs_file_ops windows_file_ops = {
-	.socket = windows_file_socket,
-	.close = windows_file_close,
-	.read = windows_file_read,
-	.write = windows_file_write,
-	.recvfrom = windows_file_recvfrom,
-	.sendto = windows_file_sendto,
-	.lseek = windows_file_lseek,
-	.fadvise64 = windows_file_fadvise64,
-	.readahead = windows_file_readahead,
-	.pread = windows_file_pread,
-	.pwrite = windows_file_pwrite,
-	.flock = windows_file_flock,
-	.fsync = windows_file_fsync,
-	.fdatasync = windows_file_fdatasync,
-	.syncfs = windows_file_syncfs,
-	.sync_file_range = windows_file_sync_file_range,
-	.ftruncate = windows_file_ftruncate,
-	.fallocate = windows_file_fallocate,
-	.recvmsg = windows_file_recvmsg,
-	.sendmsg = windows_file_sendmsg,
-	.fcntl_basic = windows_file_fcntl_basic,
-	.fcntl_lock = windows_file_fcntl_lock,
-	.fcntl_int = windows_file_fcntl_int,
-	.fchmod = windows_file_fchmod,
-	.fchown = windows_file_fchown,
-	.fstat = windows_file_fstat,
-	.fstatfs = windows_file_fstatfs,
-	.readlink_fd = windows_file_readlink_fd,
-	.getdents = windows_file_getdents,
-	.getdents64 = windows_file_getdents64,
-	.fgetxattr = windows_file_fgetxattr,
-	.fsetxattr = windows_file_fsetxattr,
-	.fremovexattr = windows_file_fremovexattr,
-	.flistxattr = windows_file_flistxattr,
-	.connect = windows_file_connect,
-	.bind = windows_file_bind,
-	.listen = windows_file_listen,
-	.accept4 = windows_file_accept4,
-	.getsockopt = windows_file_getsockopt,
-	.setsockopt = windows_file_setsockopt,
-	.getsockname = windows_file_getsockname,
-	.getpeername = windows_file_getpeername,
-	.shutdown = windows_file_shutdown,
-	.sendfile = windows_file_sendfile,
-	.splice = windows_file_splice,
-	.tee = windows_file_tee,
-	.copy_file_range = windows_file_copy_file_range,
-	.ioctl = windows_file_ioctl,
-	.ioctl_open_file = windows_file_ioctl_open_file,
+const struct vfs_path_ops windows_path_ops = {
+	.dirfd_ops =  {
+		.socket = windows_file_socket,
+		.close = windows_file_close,
+		.read = windows_file_read,
+		.write = windows_file_write,
+		.recvfrom = windows_file_recvfrom,
+		.sendto = windows_file_sendto,
+		.lseek = windows_file_lseek,
+		.fadvise64 = windows_file_fadvise64,
+		.readahead = windows_file_readahead,
+		.pread = windows_file_pread,
+		.pwrite = windows_file_pwrite,
+		.flock = windows_file_flock,
+		.fsync = windows_file_fsync,
+		.fdatasync = windows_file_fdatasync,
+		.syncfs = windows_file_syncfs,
+		.sync_file_range = windows_file_sync_file_range,
+		.ftruncate = windows_file_ftruncate,
+		.fallocate = windows_file_fallocate,
+		.recvmsg = windows_file_recvmsg,
+		.sendmsg = windows_file_sendmsg,
+		.fcntl_basic = windows_file_fcntl_basic,
+		.fcntl_lock = windows_file_fcntl_lock,
+		.fcntl_int = windows_file_fcntl_int,
+		.fchmod = windows_file_fchmod,
+		.fchown = windows_file_fchown,
+		.fstat = windows_file_fstat,
+		.fstatfs = windows_file_fstatfs,
+		.readlink_fd = windows_file_readlink_fd,
+		.getdents = windows_file_getdents,
+		.getdents64 = windows_file_getdents64,
+		.fgetxattr = windows_file_fgetxattr,
+		.fsetxattr = windows_file_fsetxattr,
+		.fremovexattr = windows_file_fremovexattr,
+		.flistxattr = windows_file_flistxattr,
+		.connect = windows_file_connect,
+		.bind = windows_file_bind,
+		.listen = windows_file_listen,
+		.accept4 = windows_file_accept4,
+		.getsockopt = windows_file_getsockopt,
+		.setsockopt = windows_file_setsockopt,
+		.getsockname = windows_file_getsockname,
+		.getpeername = windows_file_getpeername,
+		.shutdown = windows_file_shutdown,
+		.sendfile = windows_file_sendfile,
+		.splice = windows_file_splice,
+		.tee = windows_file_tee,
+		.copy_file_range = windows_file_copy_file_range,
+		.ioctl = windows_file_ioctl,
+		.ioctl_open_file = windows_file_ioctl_open_file,
+	},
+	.mkdirat = windows_path_mkdirat,
+	.mknodat = windows_path_mknodat,
+	.openat = windows_path_openat,
+	.unlinkat = windows_path_unlinkat,
+	.renameat2 = windows_path_renameat2,
+	.linkat = windows_path_linkat,
+	.symlinkat = windows_path_symlinkat,
+	.truncate = windows_path_truncate,
+	.fchmodat = windows_path_fchmodat,
+	.fchownat = windows_path_fchownat,
+	.utimensat = windows_path_utimensat,
+	.newfstatat = windows_path_newfstatat,
+	.statx = windows_path_statx,
+	.statfs = windows_path_statfs,
+	.faccessat = windows_path_faccessat,
+	.readlinkat = windows_path_readlinkat,
+	.getxattr = windows_path_getxattr,
+	.setxattr = windows_path_setxattr,
+	.removexattr = windows_path_removexattr,
+	.listxattr = windows_path_listxattr,
 };
 
 static intptr_t windows_socket_close(struct vfs_resolved_file file)
