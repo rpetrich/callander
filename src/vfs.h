@@ -8,6 +8,7 @@
 #include "freestanding.h"
 #include "linux.h"
 #include "paths.h"
+#include "sockets.h"
 
 struct vfs_resolved_file {
 	const struct vfs_file_ops *ops;
@@ -19,6 +20,8 @@ struct thread_storage;
 // intptr_t remote_socket(int domain, int type, int protocol);
 
 struct vfs_file_ops {
+	intptr_t (*socket)(struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file);
+
 	intptr_t (*close)(struct thread_storage *, struct vfs_resolved_file);
 	intptr_t (*read)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t bufsz);
 	intptr_t (*write)(struct thread_storage *, struct vfs_resolved_file, const char *buf, size_t bufsz);
@@ -41,6 +44,7 @@ struct vfs_file_ops {
 	intptr_t (*fcntl_basic)(struct thread_storage *, struct vfs_resolved_file, int cmd, intptr_t argument);
 	intptr_t (*fcntl_lock)(struct thread_storage *, struct vfs_resolved_file, int cmd, struct flock *lock);
 	intptr_t (*fcntl_int)(struct thread_storage *, struct vfs_resolved_file, int cmd, int *value);
+	intptr_t (*fcntl)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg);
 	intptr_t (*fchmod)(struct thread_storage *, struct vfs_resolved_file, mode_t mode);
 	intptr_t (*fchown)(struct thread_storage *, struct vfs_resolved_file, uid_t owner, gid_t group);
 	intptr_t (*fstat)(struct thread_storage *, struct vfs_resolved_file, struct fs_stat *out_stat);
@@ -65,6 +69,8 @@ struct vfs_file_ops {
 	intptr_t (*splice)(struct thread_storage *, struct vfs_resolved_file in, off_t *off_in, struct vfs_resolved_file out, off_t *off_out, size_t size, unsigned int flags);
 	intptr_t (*tee)(struct thread_storage *, struct vfs_resolved_file in, struct vfs_resolved_file out, size_t len, unsigned int flags);
 	intptr_t (*copy_file_range)(struct thread_storage *, struct vfs_resolved_file in, off64_t *off_in, struct vfs_resolved_file out, off64_t *off_out, size_t len, unsigned int flags);
+	intptr_t (*ioctl)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg);
+	intptr_t (*ioctl_open_file)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file);
 	// intptr_t remote_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 	// intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, struct timespec *timeout);
 };
@@ -126,10 +132,7 @@ static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolv
 	if (file->ops == &local_file_ops) {
 		return install_local_fd(file->handle, flags);
 	}
-	if (file->ops == &remote_file_ops) {
-		return install_remote_fd(file->handle, flags);
-	}
-	DIE("not remote or local ops");
+	return install_remote_fd(file->handle, flags);
 }
 
 #define vfs_call(name, target, ...) ({ __typeof__(target) _target = target; _target.ops->name != NULL ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; })
@@ -141,5 +144,57 @@ intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_reso
 struct attempt_cleanup_state;
 void vfs_attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, const struct vfs_resolved_file *file);
 void vfs_attempt_pop_close(struct thread_storage *thread, struct attempt_cleanup_state *state);
+
+static inline intptr_t vfs_resolve_socket_and_addr(struct thread_storage *thread, int fd, const struct sockaddr **addr, size_t *size, struct vfs_resolved_file *out_file, union copied_sockaddr *buf)
+{
+	struct vfs_resolved_file file = vfs_resolve_file(fd);
+	if (*addr == NULL) {
+		*out_file = file;
+		return 0;
+	}
+	if (*size > sizeof(*buf)) {
+		return -EINVAL;
+	}
+	memcpy(buf, *addr, *size);
+	*addr = &buf->addr;
+	bool is_remote = decode_target_addr(buf, size);
+	const struct vfs_file_ops *ops = is_remote ? &remote_file_ops : &local_file_ops;
+	if (ops == file.ops) {
+		*out_file = file;
+		return 0;
+	}
+	if (ops->socket == NULL) {
+		return -EINVAL;
+	}
+	int domain;
+	socklen_t optlen = sizeof(domain);
+	intptr_t result = vfs_call(getsockopt, file, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
+	if (result < 0) {
+		return result;
+	}
+	int type;
+	optlen = sizeof(type);
+	result = vfs_call(getsockopt, file, SOL_SOCKET, SO_TYPE, &type, &optlen);
+	if (result < 0) {
+		return result;
+	}
+	int protocol;
+	optlen = sizeof(protocol);
+	result = vfs_call(getsockopt, file, SOL_SOCKET, SO_PROTOCOL, &protocol, &optlen);
+	if (result < 0) {
+		return result;
+	}
+	result = ops->socket(thread, domain, type | SOCK_CLOEXEC, protocol, &file);
+	if (result < 0) {
+		return result;
+	}
+	result = is_remote ? become_remote_fd(fd, result) : become_local_fd(fd, result);
+	if (result < 0) {
+		vfs_call(close, file);
+		return result;
+	}
+	*out_file = file;
+	return 0;
+}
 
 #endif

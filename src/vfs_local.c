@@ -165,6 +165,18 @@ struct vfs_path_ops local_path_ops = {
 	.listxattr = local_path_listxattr,
 };
 
+static intptr_t local_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
+{
+	intptr_t result = fs_socket(domain, type, protocol);
+	if (result >= 0) {
+		*out_file = (struct vfs_resolved_file) {
+			.ops = &local_file_ops,
+			.handle = result,
+		};
+		return 0;
+	}
+	return result;
+}
 
 static intptr_t local_file_close(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
@@ -274,6 +286,11 @@ static intptr_t local_file_fcntl_lock(__attribute__((unused)) struct thread_stor
 static intptr_t local_file_fcntl_int(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, int *value)
 {
 	return fs_fcntl(file.handle, cmd, (intptr_t)value);
+}
+
+static intptr_t local_file_fcntl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
+{
+	return FS_SYSCALL(LINUX_SYS_fcntl, file.handle, cmd, arg);
 }
 
 static intptr_t local_file_fchmod(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, mode_t mode)
@@ -416,7 +433,27 @@ static intptr_t local_file_copy_file_range(__attribute__((unused)) struct thread
 	return FS_SYSCALL(LINUX_SYS_copy_file_range, file_in.handle, (intptr_t)off_in, file_out.handle, (intptr_t)off_out, len, flags);
 }
 
+static intptr_t local_file_ioctl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
+{
+	return FS_SYSCALL(LINUX_SYS_ioctl, file.handle, cmd, arg);
+}
+
+static intptr_t local_file_ioctl_open_file(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file)
+{
+	intptr_t result = FS_SYSCALL(LINUX_SYS_ioctl, file.handle, cmd, arg);
+	if (result >= 0) {
+		*out_file = (struct vfs_resolved_file){
+			.ops = &local_file_ops,
+			.handle = result,
+		};
+		return 0;
+	}
+	return result;
+}
+
+
 struct vfs_file_ops local_file_ops = {
+	.socket = local_file_socket,
 	.close = local_file_close,
 	.read = local_file_read,
 	.write = local_file_write,
@@ -439,6 +476,7 @@ struct vfs_file_ops local_file_ops = {
 	.fcntl_basic = local_file_fcntl_basic,
 	.fcntl_lock = local_file_fcntl_lock,
 	.fcntl_int = local_file_fcntl_int,
+	.fcntl = local_file_fcntl,
 	.fchmod = local_file_fchmod,
 	.fchown = local_file_fchown,
 	.fstat = local_file_fstat,
@@ -463,4 +501,6 @@ struct vfs_file_ops local_file_ops = {
 	.splice = local_file_splice,
 	.tee = local_file_tee,
 	.copy_file_range = local_file_copy_file_range,
+	.ioctl = local_file_ioctl,
+	.ioctl_open_file = local_file_ioctl_open_file,
 };

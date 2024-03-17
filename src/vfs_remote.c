@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "vfs.h"
+#include "proxy.h"
 #include "remote.h"
 
 static intptr_t remote_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
@@ -179,6 +180,19 @@ struct vfs_path_ops remote_path_ops = {
 	.listxattr = remote_path_listxattr,
 };
 
+
+static intptr_t remote_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
+{
+	intptr_t result = remote_socket(domain, type, protocol);
+	if (result >= 0) {
+		*out_file = (struct vfs_resolved_file) {
+			.ops = &remote_file_ops,
+			.handle = result,
+		};
+		return 0;
+	}
+	return result;
+}
 
 static intptr_t remote_file_close(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
@@ -431,7 +445,88 @@ static intptr_t remote_file_copy_file_range(__attribute__((unused)) struct threa
 	return remote_copy_file_range(file_in.handle, off_in, file_out.handle, off_out, len, flags);
 }
 
+static intptr_t remote_file_ioctl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
+{
+	switch (cmd) {
+		case TIOCGSID:
+		case TIOCGPGRP: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(pid_t)));
+		}
+		case TIOCSPGRP: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(pid_t)));
+		}
+		case TIOCGLCKTRMIOS:
+		case TCGETS: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(struct linux_termios)));
+		}
+		case TIOCSLCKTRMIOS:
+		case TCSETS:
+		case TCSETSW:
+		case TCSETSF: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(struct linux_termios)));
+		}
+		// case TCGETA: {
+		// 	return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(struct termio)));
+		// }
+		// case TCSETA:
+		// case TCSETAW:
+		// case TCSETAF: {
+		// 	return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(struct termio)));
+		// }
+		case TIOCGWINSZ: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(struct winsize)));
+		}
+		case TIOCSBRK:
+		case TCSBRK:
+		case TCXONC:
+		case TCFLSH:
+		case TIOCSCTTY: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(arg));
+		}
+		case TIOCCBRK:
+		case TIOCCONS:
+		case TIOCNOTTY:
+		case TIOCEXCL:
+		case TIOCNXCL: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd));
+		}
+		case FIONREAD:
+		case TIOCOUTQ:
+		case TIOCGETD:
+		case TIOCMGET:
+		case TIOCGSOFTCAR: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_out((void *)arg, sizeof(int)));
+		}
+		case TIOCSETD:
+		case TIOCPKT:
+		case TIOCMSET:
+		case TIOCMBIS:
+		case TIOCSSOFTCAR: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(int)));
+		}
+		case TIOCSTI: {
+			return PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_in((void *)arg, sizeof(char)));
+		}
+	}
+	return -EINVAL;
+}
+
+static intptr_t remote_file_ioctl_open_file(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file)
+{
+	intptr_t result = PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(arg));
+	if (result >= 0) {
+		*out_file = (struct vfs_resolved_file){
+			.ops = &remote_file_ops,
+			.handle = result,
+		};
+		return 0;
+	}
+	return result;
+}
+
+
 struct vfs_file_ops remote_file_ops = {
+	.socket = remote_file_socket,
 	.close = remote_file_close,
 	.read = remote_file_read,
 	.write = remote_file_write,
@@ -478,4 +573,6 @@ struct vfs_file_ops remote_file_ops = {
 	.splice = remote_file_splice,
 	.tee = remote_file_tee,
 	.copy_file_range = remote_file_copy_file_range,
+	.ioctl = remote_file_ioctl,
+	.ioctl_open_file = remote_file_ioctl_open_file,
 };
