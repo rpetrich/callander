@@ -45,7 +45,7 @@ struct vfs_file_ops {
 	intptr_t (*fchown)(struct thread_storage *, struct vfs_resolved_file, uid_t owner, gid_t group);
 	intptr_t (*fstat)(struct thread_storage *, struct vfs_resolved_file, struct fs_stat *out_stat);
 	intptr_t (*fstatfs)(struct thread_storage *, struct vfs_resolved_file, struct fs_statfs *out_buf);
-	// intptr_t (*readlink_fd)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t size);
+	intptr_t (*readlink_fd)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t size);
 	intptr_t (*getdents)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t size);
 	intptr_t (*getdents64)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t size);
 	intptr_t (*fgetxattr)(struct thread_storage *, struct vfs_resolved_file, const char *name, void *out_value, size_t size);
@@ -75,6 +75,7 @@ struct vfs_resolved_path {
 };
 
 struct vfs_path_ops {
+	const struct vfs_file_ops *dirfd_ops;
 	intptr_t (*mkdirat)(struct thread_storage *, struct vfs_resolved_path, mode_t mode);
 	intptr_t (*mknodat)(struct thread_storage *, struct vfs_resolved_path, mode_t mode, dev_t dev);
 	intptr_t (*openat)(struct thread_storage *, struct vfs_resolved_path, int flags, mode_t mode, struct vfs_resolved_file *out_file);
@@ -125,11 +126,16 @@ static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolv
 	if (file->ops == &local_file_ops) {
 		return install_local_fd(file->handle, flags);
 	}
-	return install_remote_fd(file->handle, flags);
+	if (file->ops == &remote_file_ops) {
+		return install_remote_fd(file->handle, flags);
+	}
+	DIE("not remote or local ops");
 }
 
 #define vfs_call(name, target, ...) ({ __typeof__(target) _target = target; _target.ops->name != NULL ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; })
 
 intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length);
+
+intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_resolved_path resolved, char buf[PATH_MAX], const char **out_path);
 
 #endif
