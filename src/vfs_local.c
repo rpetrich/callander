@@ -99,37 +99,50 @@ static intptr_t local_path_readlinkat(__attribute__((unused)) struct thread_stor
 
 static intptr_t local_path_getxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, void *out_value, size_t size, int flags)
 {
-	if (resolved.info.handle != AT_FDCWD) {
-		return -ENOTSUP;
+	char buf[PATH_MAX];
+	const char *path;
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
+	if (result != 0) {
+		return result;
 	}
-	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_lgetxattr : LINUX_SYS_getxattr, (intptr_t)resolved.info.path, (intptr_t)name, (intptr_t)out_value, size);
+	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_lgetxattr : LINUX_SYS_getxattr, (intptr_t)path, (intptr_t)name, (intptr_t)out_value, size);
 }
 
 static intptr_t local_path_setxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, const void *value, size_t size, int flags)
 {
-	if (resolved.info.handle != AT_FDCWD) {
-		return -ENOTSUP;
+	char buf[PATH_MAX];
+	const char *path;
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
+	if (result != 0) {
+		return result;
 	}
-	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_lsetxattr : LINUX_SYS_setxattr, (intptr_t)resolved.info.path, (intptr_t)name, (intptr_t)value, size, flags & ~LINUX_AT_SYMLINK_NOFOLLOW);
+	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_lsetxattr : LINUX_SYS_setxattr, (intptr_t)path, (intptr_t)name, (intptr_t)value, size, flags & ~LINUX_AT_SYMLINK_NOFOLLOW);
 }
 
 static intptr_t local_path_removexattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, int flags)
 {
-	if (resolved.info.handle != AT_FDCWD) {
-		return -ENOTSUP;
+	char buf[PATH_MAX];
+	const char *path;
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
+	if (result != 0) {
+		return result;
 	}
-	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_lremovexattr : LINUX_SYS_removexattr, (intptr_t)resolved.info.path, (intptr_t)name);
+	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_lremovexattr : LINUX_SYS_removexattr, (intptr_t)path, (intptr_t)name);
 }
 
 static intptr_t local_path_listxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, void *out_value, size_t size, int flags)
 {
-	if (resolved.info.handle != AT_FDCWD) {
-		return -ENOTSUP;
+	char buf[PATH_MAX];
+	const char *path;
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
+	if (result != 0) {
+		return result;
 	}
-	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_llistxattr : LINUX_SYS_listxattr, (intptr_t)resolved.info.path, (intptr_t)out_value, size);
+	return FS_SYSCALL(flags & AT_SYMLINK_NOFOLLOW ? LINUX_SYS_llistxattr : LINUX_SYS_listxattr, (intptr_t)path, (intptr_t)out_value, size);
 }
 
 struct vfs_path_ops local_path_ops = {
+	.dirfd_ops = &local_file_ops,
 	.mkdirat = local_path_mkdirat,
 	.mknodat = local_path_mknodat,
 	.openat = local_path_openat,
@@ -283,6 +296,11 @@ static intptr_t local_file_fstatfs(__attribute__((unused)) struct thread_storage
 	return fs_fstatfs(file.handle, out_buf);
 }
 
+static intptr_t local_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
+{
+	return fs_readlink_fd(file.handle, buf, size);
+}
+
 static intptr_t local_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
 	return FS_SYSCALL(LINUX_SYS_getdents, file.handle, (intptr_t)buf, size);
@@ -425,6 +443,7 @@ struct vfs_file_ops local_file_ops = {
 	.fchown = local_file_fchown,
 	.fstat = local_file_fstat,
 	.fstatfs = local_file_fstatfs,
+	.readlink_fd = local_file_readlink_fd,
 	.getdents = local_file_getdents,
 	.getdents64 = local_file_getdents64,
 	.fgetxattr = local_file_fgetxattr,

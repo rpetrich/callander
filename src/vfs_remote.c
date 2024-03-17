@@ -2,45 +2,6 @@
 #include "vfs.h"
 #include "remote.h"
 
-static int assemble_remote_path(path_info info, char buf[PATH_MAX], const char **out_path)
-{
-	if (info.path == NULL || *info.path == '\0' || (info.path[0] == '.' && info.path[1] == '\0')) {
-		int count = remote_readlink_fd(info.handle, buf, PATH_MAX);
-		if (count < 0) {
-			return count;
-		}
-		if (count >= PATH_MAX) {
-			return -ENAMETOOLONG;
-		}
-		buf[count] = '\0';
-		*out_path = buf;
-		return 0;
-	}
-	if (info.path[0] == '/') {
-		*out_path = info.path;
-		return 0;
-	}
-	int count = remote_readlink_fd(info.handle, buf, PATH_MAX);
-	if (count < 0) {
-		return count;
-	}
-	if (count >= PATH_MAX - 2) {
-		return -ENAMETOOLONG;
-	}
-	if (count && buf[count - 1] != '/') {
-		buf[count] = '/';
-		count++;
-	}
-	size_t len = fs_strlen(info.path);
-	if (count + len + 1 > PATH_MAX) {
-		return -ENAMETOOLONG;
-	}
-	fs_memcpy(&buf[count], info.path, len + 1);
-	*out_path = buf;
-	return 0;
-}
-
-
 static intptr_t remote_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
 {
 	return remote_mkdirat(resolved.info.handle, resolved.info.path, mode);
@@ -121,7 +82,7 @@ static intptr_t remote_path_statfs(__attribute__((unused)) struct thread_storage
 {
 	char buf[PATH_MAX];
 	const char *path;
-	int result = assemble_remote_path(resolved.info, buf, &path);
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
 	if (result != 0) {
 		return result;
 	}
@@ -142,7 +103,7 @@ static intptr_t remote_path_getxattr(__attribute__((unused)) struct thread_stora
 {
 	char buf[PATH_MAX];
 	const char *path;
-	int result = assemble_remote_path(resolved.info, buf, &path);
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
 	if (result != 0) {
 		return result;
 	}
@@ -156,7 +117,7 @@ static intptr_t remote_path_setxattr(__attribute__((unused)) struct thread_stora
 {
 	char buf[PATH_MAX];
 	const char *path;
-	int result = assemble_remote_path(resolved.info, buf, &path);
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
 	if (result != 0) {
 		return result;
 	}
@@ -170,7 +131,7 @@ static intptr_t remote_path_removexattr(__attribute__((unused)) struct thread_st
 {
 	char buf[PATH_MAX];
 	const char *path;
-	int result = assemble_remote_path(resolved.info, buf, &path);
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
 	if (result != 0) {
 		return result;
 	}
@@ -184,7 +145,7 @@ static intptr_t remote_path_listxattr(__attribute__((unused)) struct thread_stor
 {
 	char buf[PATH_MAX];
 	const char *path;
-	int result = assemble_remote_path(resolved.info, buf, &path);
+	int result = vfs_assemble_simple_path(thread, resolved, buf, &path);
 	if (result != 0) {
 		return result;
 	}
@@ -195,6 +156,7 @@ static intptr_t remote_path_listxattr(__attribute__((unused)) struct thread_stor
 }
 
 struct vfs_path_ops remote_path_ops = {
+	.dirfd_ops = &remote_file_ops,
 	.mkdirat = remote_path_mkdirat,
 	.mknodat = remote_path_mknodat,
 	.openat = remote_path_openat,
@@ -349,6 +311,11 @@ static intptr_t remote_file_fstatfs(__attribute__((unused)) struct thread_storag
 	return remote_fstatfs(file.handle, out_buf);
 }
 
+static intptr_t remote_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
+{
+	return remote_readlink_fd(file.handle, buf, size);
+}
+
 static intptr_t remote_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
 	return remote_getdents(file.handle, buf, size);
@@ -491,6 +458,7 @@ struct vfs_file_ops remote_file_ops = {
 	.fchown = remote_file_fchown,
 	.fstat = remote_file_fstat,
 	.fstatfs = remote_file_fstatfs,
+	.readlink_fd = remote_file_readlink_fd,
 	.getdents = remote_file_getdents,
 	.getdents64 = remote_file_getdents64,
 	.fgetxattr = remote_file_fgetxattr,
