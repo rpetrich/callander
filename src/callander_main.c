@@ -1,4 +1,5 @@
 #include "callander.h"
+#include "callander_print.h"
 
 #include <dirent.h>
 #include <linux/audit.h>
@@ -2322,32 +2323,7 @@ skip_analysis:
 									break;
 							}
 						}
-						const char *name = name_for_syscall(nr);
-						size_t name_len = fs_strlen(name);
-						size_t len = name_len + 3; // '(' ... ')' '\0'
-						int argc = info_for_syscall(nr).attributes & SYSCALL_ARGC_MASK;
-						for (int i = 0; i < argc; i++) {
-							if (i != 0) {
-								len += 2; // ", "
-							}
-							char buf[10];
-							len += data.args[i] < PAGE_SIZE ? fs_utoa(data.args[i], buf) : fs_utoah(data.args[i], buf);
-						}
-						char *buf = malloc(len);
-						fs_memcpy(buf, name, name_len);
-						char *cur = &buf[name_len];
-						*cur++ = '(';
-						for (int i = 0; i < argc; i++) {
-							if (i != 0) {
-								*cur++ = ',';
-								*cur++ = ' ';
-							}
-							cur += data.args[i] < PAGE_SIZE ? fs_utoa(data.args[i], cur) : fs_utoah(data.args[i], cur);
-						}
-						*cur++ = ')';
-						*cur++ = '\0';
-						ERROR("syscall was", buf);
-						free(buf);
+						ERROR("syscall was", temp_str(copy_raw_syscall_description(nr, data.args[0], data.args[1], data.args[2], data.args[3], data.args[4], data.args[5])));
 						ERROR("perhaps callander's analysis is insufficient?");
 					}
 				} else if (siginfo.si_signo == SIGTRAP) {

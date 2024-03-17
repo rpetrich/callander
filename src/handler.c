@@ -19,6 +19,8 @@
 #include "tls.h"
 #include "vfs.h"
 
+#include "callander_print.h"
+
 #include <arpa/inet.h>
 #ifdef __x86_64__
 #include <asm/prctl.h>
@@ -134,6 +136,10 @@ static intptr_t invalid_local_operation(void)
 // handle_syscall handles a trapped syscall, potentially emulating or blocking as necessary
 intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, ucontext_t *context)
 {
+#if 0
+	ERROR("syscall", temp_str(copy_raw_syscall_description(syscall, arg1, arg2, arg3, arg4, arg5, arg6)));
+	ERROR_FLUSH();
+#endif
 	switch (syscall) {
 #ifdef __NR_arch_prctl
 		case LINUX_SYS_arch_prctl: {

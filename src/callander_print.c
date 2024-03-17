@@ -67,6 +67,46 @@ static inline char *strdup_fixed(const char *str, size_t size)
 	return buf;
 }
 
+#define SYSCALL_ARG_IS_RELATED(relation, related_arg) ((relation) | (SYSCALL_ARG_RELATED_ARGUMENT_BASE << (related_arg)))
+#define SYSCALL_ARG_IS_SIZE_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_SIZE, related_arg_index)
+#define SYSCALL_ARG_IS_COUNT_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_COUNT, related_arg_index)
+#define SYSCALL_ARG_IS_MODEFLAGS_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_MODEFLAGS, related_arg_index)
+#define SYSCALL_ARG_IS_PRESERVED(underlying) (SYSCALL_ARG_IS_PRESERVED | (underlying))
+
+#define SYSCALL_DEF_(_0, _1, _2, _3, _4, _5, _6, N, ...) N
+#define SYSCALL_DEF(name, attributes, ...) { #name, { SYSCALL_DEF_(0, ##__VA_ARGS__, 6, 5, 4, 3, 2, 1, 0) | ((attributes) & ~SYSCALL_ARGC_MASK), { __VA_ARGS__ } } },
+#define SYSCALL_DEF_EMPTY() {NULL, 6, {}},
+struct syscall_decl const syscall_list[] = {
+#include "syscall_defs.h"
+};
+#undef SYSCALL_DEF
+#undef SYSCALL_DEF_EMPTY
+
+const char *name_for_syscall(uintptr_t nr) {
+	if (nr < sizeof(syscall_list) / sizeof(syscall_list[0])) {
+		const char *name = syscall_list[nr].name;
+		if (name != NULL) {
+			return name;
+		}
+	}
+	char buf[100];
+	int count = fs_utoa(nr, buf);
+	char *result = malloc(count + 1);
+	fs_memcpy(result, buf, count + 1);
+	return result;
+}
+
+struct syscall_info info_for_syscall(uintptr_t nr)
+{
+	if (nr < sizeof(syscall_list) / sizeof(syscall_list[0])) {
+		return syscall_list[nr].info;
+	}
+	return (struct syscall_info){
+		.attributes = 6,
+		.arguments = { 0 },
+	};
+}
+
 __attribute__((nonnull(1)))
 char *copy_register_state_description(const struct loader_context *context, struct register_state reg)
 {
@@ -1589,4 +1629,35 @@ char *copy_call_description(const struct loader_context *context, const char *na
 	result[pos++] = ')';
 	result[pos++] = '\0';
 	return result;
+}
+
+char *copy_raw_syscall_description(intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
+{
+	const char *name = name_for_syscall(syscall);
+	size_t name_len = fs_strlen(name);
+	size_t len = name_len + 3; // '(' ... ')' '\0'
+	int argc = info_for_syscall(syscall).attributes & SYSCALL_ARGC_MASK;
+	uintptr_t args[] = { arg1, arg2, arg3, arg4, arg5, arg6 };
+	for (int i = 0; i < argc; i++) {
+		if (i != 0) {
+			len += 2; // ", "
+		}
+		char buf[10];
+		len += args[i] < PAGE_SIZE ? fs_utoa(args[i], buf) : fs_utoah(args[i], buf);
+	}
+	char *buf = malloc(len);
+	char *cur = buf;
+	fs_memcpy(cur, name, name_len);
+	cur += name_len;
+	*cur++ = '(';
+	for (int i = 0; i < argc; i++) {
+		if (i != 0) {
+			*cur++ = ',';
+			*cur++ = ' ';
+		}
+		cur += args[i] < PAGE_SIZE ? fs_utoa(args[i], cur) : fs_utoah(args[i], cur);
+	}
+	*cur++ = ')';
+	*cur++ = '\0';
+	return buf;
 }

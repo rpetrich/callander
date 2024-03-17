@@ -152,10 +152,6 @@ enum {
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY
 
-extern struct syscall_decl const syscall_list[SYSCALL_DEFINED_COUNT];
-const char *name_for_syscall(uintptr_t nr);
-struct syscall_info info_for_syscall(uintptr_t nr);
-
 enum {
 	BINARY_IS_MAIN = 1 << 0,
 	BINARY_IS_INTERPRETER = 1 << 1,

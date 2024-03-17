@@ -89,46 +89,6 @@ static inline void check_register_mask(__attribute__((unused)) register_mask mas
 bool should_log;
 #endif
 
-#define SYSCALL_ARG_IS_RELATED(relation, related_arg) ((relation) | (SYSCALL_ARG_RELATED_ARGUMENT_BASE << (related_arg)))
-#define SYSCALL_ARG_IS_SIZE_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_SIZE, related_arg_index)
-#define SYSCALL_ARG_IS_COUNT_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_COUNT, related_arg_index)
-#define SYSCALL_ARG_IS_MODEFLAGS_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_MODEFLAGS, related_arg_index)
-#define SYSCALL_ARG_IS_PRESERVED(underlying) (SYSCALL_ARG_IS_PRESERVED | (underlying))
-
-#define SYSCALL_DEF_(_0, _1, _2, _3, _4, _5, _6, N, ...) N
-#define SYSCALL_DEF(name, attributes, ...) { #name, { SYSCALL_DEF_(0, ##__VA_ARGS__, 6, 5, 4, 3, 2, 1, 0) | ((attributes) & ~SYSCALL_ARGC_MASK), { __VA_ARGS__ } } },
-#define SYSCALL_DEF_EMPTY() {NULL, 6, {}},
-struct syscall_decl const syscall_list[] = {
-#include "syscall_defs.h"
-};
-#undef SYSCALL_DEF
-#undef SYSCALL_DEF_EMPTY
-
-const char *name_for_syscall(uintptr_t nr) {
-	if (nr < sizeof(syscall_list) / sizeof(syscall_list[0])) {
-		const char *name = syscall_list[nr].name;
-		if (name != NULL) {
-			return name;
-		}
-	}
-	char buf[100];
-	int count = fs_utoa(nr, buf);
-	char *result = malloc(count + 1);
-	fs_memcpy(result, buf, count + 1);
-	return result;
-}
-
-struct syscall_info info_for_syscall(uintptr_t nr)
-{
-	if (nr < sizeof(syscall_list) / sizeof(syscall_list[0])) {
-		return syscall_list[nr].info;
-	}
-	return (struct syscall_info){
-		.attributes = 6,
-		.arguments = { 0 },
-	};
-}
-
 #define ABORT_AT_NON_EXECUTABLE_ADDRESS 0
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
