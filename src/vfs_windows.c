@@ -8,7 +8,17 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 extern const struct vfs_file_ops windows_file_ops;
+extern const struct vfs_file_ops windows_socket_ops;
 extern const struct vfs_path_ops windows_path_ops;
+
+static size_t wide_strlen(const uint16_t *string)
+{
+	const uint16_t *current = string;
+	while (*current) {
+		++current;
+	}
+	return (size_t)(current - string);
+}
 
 static intptr_t vfs_assemble_simple_wide_path(struct thread_storage *thread, struct vfs_resolved_path resolved, uint16_t wide_buf[PATH_MAX])
 {
@@ -23,7 +33,12 @@ static intptr_t vfs_assemble_simple_wide_path(struct thread_storage *thread, str
 
 static intptr_t windows_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
 {
-	return -EPERM;
+	uint16_t buf[PATH_MAX];
+	intptr_t result = vfs_assemble_simple_wide_path(thread, resolved, buf);
+	if (result != 0) {
+		return result;
+	}
+	return translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateDirectoryW, proxy_wide_string(buf), proxy_value(0)));
 }
 
 static intptr_t windows_path_mknodat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode, dev_t dev)
@@ -76,7 +91,39 @@ static intptr_t windows_path_unlinkat(__attribute__((unused)) struct thread_stor
 
 static intptr_t windows_path_renameat2(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path old_resolved, struct vfs_resolved_path new_resolved, int flags)
 {
-	return -EACCES;
+	union {
+		WINDOWS_FILE_RENAME_INFO rename;
+		struct {
+			char pad[sizeof(WINDOWS_FILE_RENAME_INFO) - sizeof(uint16_t)];
+			uint16_t buf[PATH_MAX];
+		};
+	} temp;
+	intptr_t result = vfs_assemble_simple_wide_path(thread, old_resolved, temp.buf);
+	if (result != 0) {
+		return result;
+	}
+	WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS params;
+	params.dwSize = sizeof(params);
+	params.dwFileAttributes = WINDOWS_FILE_ATTRIBUTE_NORMAL;
+	params.dwFileFlags = WINDOWS_FILE_FLAG_BACKUP_SEMANTICS;
+	params.dwSecurityQosFlags = 0;
+	params.lpSecurityAttributes = NULL;
+	params.hTemplateFile = 0;
+	intptr_t handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(temp.buf), proxy_value(WINDOWS_GENERIC_READ | WINDOWS_GENERIC_WRITE | WINDOWS_DELETE), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_ALWAYS), proxy_in(&params, sizeof(params))));
+	if (handle < 0) {
+		return handle;
+	}
+	result = vfs_assemble_simple_wide_path(thread, new_resolved, (uint16_t *)&temp.rename.FileName[0]);
+	if (result != 0) {
+		PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(handle));
+		return result;
+	}
+	temp.rename.ReplaceIfExists = 1;
+	temp.rename.RootDirectory = NULL;
+	temp.rename.FileNameLength = wide_strlen(&temp.rename.FileName[0]);
+	result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, SetFileInformationByHandle, proxy_value(handle), proxy_value(WINDOWS_FileRenameInfo), proxy_in(&temp, sizeof(temp)), proxy_value(sizeof(temp.rename) + temp.rename.FileNameLength)));
+	PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(handle));
+	return result;
 }
 
 static intptr_t windows_path_linkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path old_resolved, struct vfs_resolved_path new_resolved, int flags)
@@ -96,7 +143,7 @@ static intptr_t windows_path_truncate(__attribute__((unused)) struct thread_stor
 
 static intptr_t windows_path_fchmodat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode, int flags)
 {
-	return -EACCES;
+	return 0;
 }
 
 static intptr_t windows_path_fchownat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, uid_t owner, gid_t group, int flags)
@@ -118,7 +165,14 @@ static intptr_t windows_path_newfstatat(__attribute__((unused)) struct thread_st
 			return vfs_call(fstat, vfs_get_dir_file(resolved), out_stat);
 		}
 	}
-	return -EINVAL;
+	struct vfs_resolved_file file;
+	intptr_t result = vfs_call(openat, resolved, O_RDONLY, 0, &file);
+	if (result < 0) {
+		return result;
+	}
+	result = vfs_call(fstat, file, out_stat);
+	file.ops->close(file);
+	return result;
 }
 
 static intptr_t windows_path_statx(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags, unsigned int mask, struct linux_statx *restrict statxbuf)
@@ -182,7 +236,13 @@ static intptr_t windows_path_statfs(__attribute__((unused)) struct thread_storag
 
 static intptr_t windows_path_faccessat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int mode, int flag)
 {
-	return 0;
+	struct vfs_resolved_file file;
+	intptr_t result = vfs_call(openat, resolved, O_RDONLY, 0, &file);
+	if (result < 0) {
+		return result;
+	}
+	file.ops->close(file);
+	return result;
 }
 
 static intptr_t windows_path_readlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, char *buf, size_t bufsz)
@@ -237,10 +297,10 @@ const struct vfs_path_ops windows_path_ops = {
 
 static intptr_t windows_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
-	intptr_t result = -EOPNOTSUPP;
+	intptr_t result = PROXY_WINSOCK_HANDLE_CALL(ws2_32.dll, socket, proxy_value(domain), proxy_value(type), proxy_value(protocol));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file) {
-			.ops = &windows_file_ops,
+			.ops = &windows_socket_ops,
 			.handle = result,
 		};
 		return 0;
@@ -647,4 +707,301 @@ const struct vfs_file_ops windows_file_ops = {
 	.copy_file_range = windows_file_copy_file_range,
 	.ioctl = windows_file_ioctl,
 	.ioctl_open_file = windows_file_ioctl_open_file,
+};
+
+static intptr_t windows_socket_close(struct vfs_resolved_file file)
+{
+	PROXY_WINSOCK_CALL(ws2_32.dll, close, proxy_value(file.handle));
+	return 0;
+}
+
+static intptr_t windows_socket_read(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz)
+{
+	trim_size(&bufsz);
+	return translate_winsock_result(PROXY_WINSOCK_CALL(ws2_32.dll, recv, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_value(0)));
+}
+
+static intptr_t windows_socket_write(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *buf, size_t bufsz)
+{
+	trim_size(&bufsz);
+	return translate_winsock_result(PROXY_WINSOCK_CALL(ws2_32.dll, send, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_value(0)));
+}
+
+static intptr_t windows_socket_recvfrom(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_sendto(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *buf, size_t bufsz, int flags, const struct sockaddr *dest_addr, socklen_t dest_len)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_lseek(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, int whence)
+{
+	return -ESPIPE;
+}
+
+static intptr_t windows_socket_fadvise64(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, size_t offset, size_t len, int advice)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_readahead(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, size_t count)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_pread(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, void *buf, size_t count, off_t offset)
+{
+	return -ESPIPE;
+}
+
+static intptr_t windows_socket_pwrite(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const void *buf, size_t count, off_t offset)
+{
+	return -ESPIPE;
+}
+
+static intptr_t windows_socket_flock(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int how)
+{
+	return -ENOLCK;
+}
+
+static intptr_t windows_socket_fsync(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_fdatasync(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_syncfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
+{
+	return 0;
+}
+
+static intptr_t windows_socket_sync_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, off_t nbytes, unsigned int flags)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t length)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_fallocate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int mode, off_t offset, off_t len)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_recvmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct msghdr *msg, int flags)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_sendmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct msghdr *msg, int flags)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fcntl_basic(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, intptr_t argument)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fcntl_lock(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, struct flock *lock)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fcntl_int(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, int *value)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fchmod(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, mode_t mode)
+{
+	return -EACCES;
+}
+
+static intptr_t windows_socket_fchown(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, uid_t owner, gid_t group)
+{
+	return -EACCES;
+}
+
+static intptr_t windows_socket_fstat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat)
+{
+	*out_stat = (struct fs_stat){ 0 };
+	out_stat->st_mode = S_IFSOCK;
+	return 0;
+}
+
+static intptr_t windows_socket_fstatfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_statfs *out_buf)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_getdents64(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fgetxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name, void *out_value, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fsetxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name, const void *value, size_t size, int flags)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_fremovexattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_flistxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, void *out_value, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_connect(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct sockaddr *addr, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_bind(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct sockaddr *addr, size_t size)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_listen(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int backlog)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_accept4(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen, int flags, struct vfs_resolved_file *out_file)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_getsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, void *restrict optval, socklen_t *restrict optlen)
+{
+	return -ENOPROTOOPT;
+}
+
+static intptr_t windows_socket_setsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, const void *optval, socklen_t optlen)
+{
+	return -ENOPROTOOPT;
+}
+
+static intptr_t windows_socket_getsockname(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_getpeername(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_shutdown(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int how)
+{
+	return -EOPNOTSUPP;
+}
+
+static intptr_t windows_socket_sendfile(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_out, struct vfs_resolved_file file_in, off_t *offset, size_t size)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_splice(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off_t *off_in, struct vfs_resolved_file file_out, off_t *off_out, size_t size, unsigned int flags)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_tee(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, struct vfs_resolved_file file_out, size_t len, unsigned int flags)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_ioctl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
+{
+	return -EINVAL;
+}
+
+static intptr_t windows_socket_ioctl_open_file(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file)
+{
+	return -EINVAL;
+}
+
+const struct vfs_file_ops windows_socket_ops = {
+	.socket = windows_file_socket,
+	.close = windows_socket_close,
+	.read = windows_socket_read,
+	.write = windows_socket_write,
+	.recvfrom = windows_socket_recvfrom,
+	.sendto = windows_socket_sendto,
+	.lseek = windows_socket_lseek,
+	.fadvise64 = windows_socket_fadvise64,
+	.readahead = windows_socket_readahead,
+	.pread = windows_socket_pread,
+	.pwrite = windows_socket_pwrite,
+	.flock = windows_socket_flock,
+	.fsync = windows_socket_fsync,
+	.fdatasync = windows_socket_fdatasync,
+	.syncfs = windows_socket_syncfs,
+	.sync_file_range = windows_socket_sync_file_range,
+	.ftruncate = windows_socket_ftruncate,
+	.fallocate = windows_socket_fallocate,
+	.recvmsg = windows_socket_recvmsg,
+	.sendmsg = windows_socket_sendmsg,
+	.fcntl_basic = windows_socket_fcntl_basic,
+	.fcntl_lock = windows_socket_fcntl_lock,
+	.fcntl_int = windows_socket_fcntl_int,
+	.fchmod = windows_socket_fchmod,
+	.fchown = windows_socket_fchown,
+	.fstat = windows_socket_fstat,
+	.fstatfs = windows_socket_fstatfs,
+	.readlink_fd = windows_socket_readlink_fd,
+	.getdents = windows_socket_getdents,
+	.getdents64 = windows_socket_getdents64,
+	.fgetxattr = windows_socket_fgetxattr,
+	.fsetxattr = windows_socket_fsetxattr,
+	.fremovexattr = windows_socket_fremovexattr,
+	.flistxattr = windows_socket_flistxattr,
+	.connect = windows_socket_connect,
+	.bind = windows_socket_bind,
+	.listen = windows_socket_listen,
+	.accept4 = windows_socket_accept4,
+	.getsockopt = windows_socket_getsockopt,
+	.setsockopt = windows_socket_setsockopt,
+	.getsockname = windows_socket_getsockname,
+	.getpeername = windows_socket_getpeername,
+	.shutdown = windows_socket_shutdown,
+	.sendfile = windows_socket_sendfile,
+	.splice = windows_socket_splice,
+	.tee = windows_socket_tee,
+	.copy_file_range = windows_socket_copy_file_range,
+	.ioctl = windows_socket_ioctl,
+	.ioctl_open_file = windows_socket_ioctl_open_file,
 };
