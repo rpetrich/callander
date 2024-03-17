@@ -186,16 +186,7 @@ static void sigsys_handler(int nr, siginfo_t *info, void *void_context)
 			.result = -EFAULT,
 		};
 		attempt_with_sufficient_stack(thread, syscall_body, &data);
-		mcontext_t *ctx = &((ucontext_t *)void_context)->uc_mcontext;
-		intptr_t result = data.result;
-		if (result == -ENOSYS) {
-#ifdef REG_ARG6
-			result = FS_SYSCALL(syscall, ctx->REG_ARG1, ctx->REG_ARG2, ctx->REG_ARG3, ctx->REG_ARG4, ctx->REG_ARG5, ctx->REG_ARG6);
-#else
-			result = FS_SYSCALL(syscall, ctx->REG_ARG1, ctx->REG_ARG2, ctx->REG_ARG3, ctx->REG_ARG4, ctx->REG_ARG5);
-#endif
-		}
-		ctx->REG_RESULT = result;
+		((ucontext_t *)void_context)->uc_mcontext.REG_RESULT = data.result;
 		return;
 	}
 	signal_handler handler = get_next_handler(thread, nr);
