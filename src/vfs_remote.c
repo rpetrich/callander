@@ -414,12 +414,12 @@ static intptr_t remote_file_tee(__attribute__((unused)) struct thread_storage *t
 	return remote_tee(file_in.handle, file_out.handle, len, flags);
 }
 
-static intptr_t remote_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
+static intptr_t remote_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, uint64_t *off_in, struct vfs_resolved_file file_out, uint64_t *off_out, size_t len, unsigned int flags)
 {
 	if (file_in.ops != file_out.ops) {
 		return -EINVAL;
 	}
-	return remote_copy_file_range(file_in.handle, off_in, file_out.handle, off_out, len, flags);
+	return remote_copy_file_range(file_in.handle, (off64_t *)off_in, file_out.handle, (off64_t *)off_out, len, flags);
 }
 
 static intptr_t remote_file_ioctl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
@@ -573,6 +573,7 @@ const struct vfs_path_ops remote_path_ops = {
 		.ioctl = remote_file_ioctl,
 		.ioctl_open_file = remote_file_ioctl_open_file,
 		.ppoll = remote_file_ppoll,
+		.mmap = vfs_mmap_via_pread,
 	},
 	.mkdirat = remote_path_mkdirat,
 	.mknodat = remote_path_mknodat,

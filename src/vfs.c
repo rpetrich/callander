@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "vfs.h"
 #include "attempt.h"
+#include "remote_library.h"
 
 intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length)
 {
@@ -13,6 +14,37 @@ intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thre
 		vfs_attempt_pop_close(&state);
 	}
 	return result;
+}
+
+intptr_t vfs_mmap_via_pread(struct thread_storage *thread, struct vfs_resolved_file file, void *addr, size_t len, int prot, int flags, size_t off)
+{
+	void *result = fs_mmap(addr, len, PROT_READ | PROT_WRITE, (flags & ~MAP_FILE) | MAP_ANONYMOUS, -1, 0);
+	if (!fs_is_map_failed(result)) {
+		size_t successful_reads = 0;
+		do {
+			intptr_t read_result = vfs_call(pread, file, result + successful_reads, len - successful_reads, off + successful_reads);
+			if (read_result <= 0) {
+				if (read_result == 0) {
+					// can't read past end of file, but can map. ignore short reads
+					break;
+				}
+				fs_munmap(result, len);
+				return read_result;
+			}
+			successful_reads += read_result;
+		} while (successful_reads < len);
+		if (prot != (PROT_READ | PROT_WRITE)) {
+			int prot_result = fs_mprotect(result, len, prot);
+			if (prot_result < 0) {
+				fs_munmap(result, len);
+				return prot_result;
+			}
+		}
+		if (prot == (PROT_READ|PROT_EXEC) && (flags & MAP_DENYWRITE)) {
+			discovered_remote_library_mapping(file, (uintptr_t)addr - off);
+		}
+	}
+	return (intptr_t)result;
 }
 
 intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_resolved_path resolved, char buf[PATH_MAX], const char **out_path)
