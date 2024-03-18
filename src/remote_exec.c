@@ -457,6 +457,9 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 	size_t argc = count_arg_bytes(argv, &string_size);
 	size_t envc = count_arg_bytes(envp, &string_size);
 	size_t header_size = sizeof(struct receive_start_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
+#ifdef AT_MINSIGSTKSZ
+	header_size += sizeof(ElfW(auxv_t));
+#endif
 	size_t dynv_size = ((string_size + header_size + (0xf + 8)) & ~0xf) - 8;
 	intptr_t dynv_base = (stack + (STACK_SIZE - dynv_size - sizeof(uint32_t))) & ~0xf;
 	char dynv_buf[dynv_size];
@@ -564,6 +567,9 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 				case AT_EGID:
 				case AT_SECURE:
 				case AT_HWCAP:
+#ifdef AT_MINSIGSTKSZ
+				case AT_MINSIGSTKSZ:
+#endif
 #ifdef AT_HWCAP2
 				case AT_HWCAP2:
 #endif
