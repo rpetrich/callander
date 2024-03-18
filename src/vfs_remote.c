@@ -1,23 +1,22 @@
 #define _GNU_SOURCE
 #include "vfs.h"
 #include "proxy.h"
-#include "remote.h"
 
 extern const struct vfs_path_ops remote_path_ops;
 
 static intptr_t remote_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
 {
-	return remote_mkdirat(resolved.info.handle, resolved.info.path, mode);
+	return PROXY_CALL(LINUX_SYS_mkdirat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(mode));
 }
 
 static intptr_t remote_path_mknodat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode, dev_t dev)
 {
-	return remote_mknodat(resolved.info.handle, resolved.info.path, mode, dev);
+	return PROXY_CALL(LINUX_SYS_mknodat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(mode), proxy_value(dev));
 }
 
 static intptr_t remote_path_openat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags, mode_t mode, struct vfs_resolved_file *out_file)
 {
-	int result = remote_openat(resolved.info.handle, resolved.info.path, flags, mode);
+	intptr_t result = PROXY_CALL(LINUX_SYS_openat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(flags), proxy_value(mode));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
 			.ops = &remote_path_ops.dirfd_ops,
@@ -30,22 +29,22 @@ static intptr_t remote_path_openat(__attribute__((unused)) struct thread_storage
 
 static intptr_t remote_path_unlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags)
 {
-	return remote_unlinkat(resolved.info.handle, resolved.info.path, flags);
+	return PROXY_CALL(LINUX_SYS_unlinkat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(flags));
 }
 
 static intptr_t remote_path_renameat2(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path old_resolved, struct vfs_resolved_path new_resolved, int flags)
 {
-	return remote_renameat2(old_resolved.info.handle, old_resolved.info.path, new_resolved.info.handle, new_resolved.info.path, flags);
+	return PROXY_CALL(LINUX_SYS_renameat2, proxy_value(old_resolved.info.handle), proxy_string(old_resolved.info.path), proxy_value(new_resolved.info.handle), proxy_string(new_resolved.info.path), proxy_value(flags));
 }
 
 static intptr_t remote_path_linkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path old_resolved, struct vfs_resolved_path new_resolved, int flags)
 {
-	return remote_linkat(old_resolved.info.handle, old_resolved.info.path, new_resolved.info.handle, new_resolved.info.path, flags);
+	return PROXY_CALL(LINUX_SYS_linkat, proxy_value(old_resolved.info.handle), proxy_string(old_resolved.info.path), proxy_value(new_resolved.info.handle), proxy_string(new_resolved.info.path), proxy_value(flags));
 }
 
 static intptr_t remote_path_symlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path new_resolved, const char *old_path)
 {
-	return remote_symlinkat(old_path, new_resolved.info.handle, new_resolved.info.path);
+	return PROXY_CALL(LINUX_SYS_symlinkat, proxy_string(old_path), proxy_value(new_resolved.info.handle), proxy_string(new_resolved.info.path));
 }
 
 static intptr_t remote_path_truncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length)
@@ -58,27 +57,27 @@ static intptr_t remote_path_truncate(__attribute__((unused)) struct thread_stora
 
 static intptr_t remote_path_fchmodat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode, int flags)
 {
-	return remote_fchmodat(resolved.info.handle, resolved.info.path, mode, flags);
+	return PROXY_CALL(LINUX_SYS_fchmodat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(mode), proxy_value(flags));
 }
 
 static intptr_t remote_path_fchownat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, uid_t owner, gid_t group, int flags)
 {
-	return remote_fchownat(resolved.info.handle, resolved.info.path, owner, group, flags);
+	return PROXY_CALL(LINUX_SYS_fchownat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(owner), proxy_value(group), proxy_value(flags));
 }
 
 static intptr_t remote_path_utimensat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const struct timespec times[2], int flags)
 {
-	return remote_utimensat(resolved.info.handle, resolved.info.path, times, flags);
+	return PROXY_CALL(LINUX_SYS_utimensat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_in(times, sizeof(struct timespec) * 2), proxy_value(flags));
 }
 
 static intptr_t remote_path_newfstatat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, struct fs_stat *out_stat, int flags)
 {
-    return remote_newfstatat(resolved.info.handle, resolved.info.path, out_stat, flags);
+	return PROXY_CALL(LINUX_SYS_newfstatat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_out(out_stat, sizeof(struct fs_stat)), proxy_value(flags));
 }
 
 static intptr_t remote_path_statx(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags, unsigned int mask, struct linux_statx *restrict statxbuf)
 {
-	return remote_statx(resolved.info.handle, resolved.info.path, flags, mask, statxbuf);
+	return PROXY_CALL(LINUX_SYS_statx, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(flags), proxy_value(mask), proxy_inout(statxbuf, sizeof(struct statx)));
 }
 
 static intptr_t remote_path_statfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, struct fs_statfs *out_buf)
@@ -92,14 +91,14 @@ static intptr_t remote_path_statfs(__attribute__((unused)) struct thread_storage
 	return FS_SYSCALL(LINUX_SYS_statfs, (intptr_t)resolved.info.path, (intptr_t)out_buf);
 }
 
-static intptr_t remote_path_faccessat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int mode, int flag)
+static intptr_t remote_path_faccessat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int mode, int flags)
 {
-	return remote_faccessat(resolved.info.handle, resolved.info.path, mode, flag);
+	return PROXY_CALL(LINUX_SYS_faccessat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(mode), proxy_value(flags));
 }
 
 static intptr_t remote_path_readlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, char *buf, size_t bufsz)
 {
-	return remote_readlinkat(resolved.info.handle, resolved.info.path, buf, bufsz);
+	return PROXY_CALL(LINUX_SYS_readlinkat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_out(buf, bufsz), proxy_value(bufsz));
 }
 
 static intptr_t remote_path_getxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, void *out_value, size_t size, int flags)
@@ -110,10 +109,7 @@ static intptr_t remote_path_getxattr(__attribute__((unused)) struct thread_stora
 	if (result != 0) {
 		return result;
 	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_lgetxattr(path, name, out_value, size);
-	}
-	return remote_getxattr(path, name, out_value, size);
+	return PROXY_CALL((flags & AT_SYMLINK_NOFOLLOW) ? LINUX_SYS_lgetxattr : LINUX_SYS_getxattr, proxy_string(path), proxy_string(name), proxy_out(out_value, size), proxy_value(size));
 }
 
 static intptr_t remote_path_setxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, const void *value, size_t size, int flags)
@@ -124,10 +120,7 @@ static intptr_t remote_path_setxattr(__attribute__((unused)) struct thread_stora
 	if (result != 0) {
 		return result;
 	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_lsetxattr(path, name, value, size, flags & ~AT_SYMLINK_NOFOLLOW);
-	}
-	return remote_setxattr(path, name, value, size, flags);
+	return PROXY_CALL((flags & AT_SYMLINK_NOFOLLOW) ? LINUX_SYS_lsetxattr : LINUX_SYS_setxattr, proxy_string(path), proxy_string(name), proxy_in(value, size), proxy_value(size), proxy_value(flags));
 }
 
 static intptr_t remote_path_removexattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, const char *name, int flags)
@@ -138,10 +131,7 @@ static intptr_t remote_path_removexattr(__attribute__((unused)) struct thread_st
 	if (result != 0) {
 		return result;
 	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_lremovexattr(path, name);
-	}
-	return remote_removexattr(path, name);
+	return PROXY_CALL((flags & AT_SYMLINK_NOFOLLOW) ? LINUX_SYS_lremovexattr : LINUX_SYS_removexattr, proxy_string(path), proxy_string(name));
 }
 
 static intptr_t remote_path_listxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, void *out_value, size_t size, int flags)
@@ -152,15 +142,12 @@ static intptr_t remote_path_listxattr(__attribute__((unused)) struct thread_stor
 	if (result != 0) {
 		return result;
 	}
-	if (flags & AT_SYMLINK_NOFOLLOW) {
-		return remote_llistxattr(path, out_value, size);
-	}
-	return remote_listxattr(path, out_value, size);
+	return PROXY_CALL((flags & AT_SYMLINK_NOFOLLOW) ? LINUX_SYS_llistxattr : LINUX_SYS_listxattr, proxy_string(path), proxy_out(out_value, size), proxy_value(size));
 }
 
 static intptr_t remote_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
-	intptr_t result = remote_socket(domain, type, protocol);
+	intptr_t result = PROXY_CALL(LINUX_SYS_socket | PROXY_NO_WORKER, proxy_value(domain), proxy_value(type), proxy_value(protocol));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file) {
 			.ops = &remote_path_ops.dirfd_ops,
@@ -173,188 +160,303 @@ static intptr_t remote_file_socket(__attribute__((unused)) struct thread_storage
 
 static intptr_t remote_file_close(struct vfs_resolved_file file)
 {
-	remote_close(file.handle);
+	PROXY_CALL(LINUX_SYS_close | PROXY_NO_RESPONSE, proxy_value(file.handle));
 	return 0;
 }
 
 static intptr_t remote_file_read(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz)
 {
-	return remote_read(file.handle, buf, bufsz);
+	trim_size(&bufsz);
+	return PROXY_CALL(LINUX_SYS_read, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz));	
 }
 
 static intptr_t remote_file_write(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *buf, size_t bufsz)
 {
-	return remote_write(file.handle, buf, bufsz);
+	trim_size(&bufsz);
+	return PROXY_CALL(LINUX_SYS_write, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz));	
 }
 
 static intptr_t remote_file_recvfrom(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	return remote_recvfrom(file.handle, buf, bufsz, flags, src_addr, addrlen);
+	trim_size(&bufsz);
+	return PROXY_CALL(LINUX_SYS_recvfrom, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_value(flags), src_addr ? proxy_out(src_addr, *addrlen) : proxy_value(0), proxy_inout(addrlen, sizeof(*addrlen)));
 }
 
 static intptr_t remote_file_sendto(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *buf, size_t bufsz, int flags, const struct sockaddr *dest_addr, socklen_t dest_len)
 {
-    return remote_sendto(file.handle, buf, bufsz, flags, dest_addr, dest_len);
+	trim_size(&bufsz);
+	return PROXY_CALL(LINUX_SYS_sendto, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_value(flags), proxy_in(dest_addr, dest_len), proxy_value(dest_len));
 }
 
 static intptr_t remote_file_lseek(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, int whence)
 {
-	return remote_lseek(file.handle, offset, whence);
+	return PROXY_CALL(LINUX_SYS_lseek, proxy_value(file.handle), proxy_value(offset), proxy_value(whence));
 }
 
 static intptr_t remote_file_fadvise64(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, size_t offset, size_t len, int advice)
 {
-	return remote_fadvise64( file.handle, offset, len, advice);
+	return PROXY_CALL(LINUX_SYS_fadvise64, proxy_value(file.handle), proxy_value(offset), proxy_value(len), proxy_value(advice));
 }
 
 static intptr_t remote_file_readahead(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, size_t count)
 {
-	return remote_readahead(file.handle, offset, count);
+	return PROXY_CALL(LINUX_SYS_readahead, proxy_value(file.handle), proxy_value(offset), proxy_value(count));
 }
 
 static intptr_t remote_file_pread(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, void *buf, size_t count, off_t offset)
 {
-	return remote_pread(file.handle, buf, count, offset);
+	trim_size(&count);
+	return PROXY_CALL(LINUX_SYS_pread64, proxy_value(file.handle), proxy_out(buf, count), proxy_value(count), proxy_value(offset));
 }
 
 static intptr_t remote_file_pwrite(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const void *buf, size_t count, off_t offset)
 {
-	return remote_pwrite(file.handle, buf, count, offset);
+	trim_size(&count);
+	return PROXY_CALL(LINUX_SYS_pwrite64, proxy_value(file.handle), proxy_in(buf, count), proxy_value(count), proxy_value(offset));
 }
 
 static intptr_t remote_file_flock(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int how)
 {
-	return remote_flock(file.handle, how);
+	return PROXY_CALL(LINUX_SYS_flock, proxy_value(file.handle), proxy_value(how));
 }
 
 static intptr_t remote_file_fsync(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
-	return remote_fsync(file.handle);
+	return PROXY_CALL(LINUX_SYS_fsync, proxy_value(file.handle));
 }
 
 static intptr_t remote_file_fdatasync(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
-	return remote_fdatasync(file.handle);
+	return PROXY_CALL(LINUX_SYS_fdatasync, proxy_value(file.handle));
 }
 
 static intptr_t remote_file_syncfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
-	return remote_syncfs(file.handle);
+	return PROXY_CALL(LINUX_SYS_syncfs, proxy_value(file.handle));
 }
 
 static intptr_t remote_file_sync_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t offset, off_t nbytes, unsigned int flags)
 {
-	return remote_sync_file_range(file.handle, offset, nbytes, flags);
+	return PROXY_CALL(LINUX_SYS_sync_file_range, proxy_value(file.handle), proxy_value(offset), proxy_value(nbytes), proxy_value(flags));
 }
 
 static intptr_t remote_file_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, off_t length)
 {
-	return remote_ftruncate(file.handle, length);
+	return PROXY_CALL(LINUX_SYS_ftruncate, proxy_value(file.handle), proxy_value(length));
 }
 
 static intptr_t remote_file_fallocate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int mode, off_t offset, off_t len)
 {
-	return remote_fallocate(file.handle, mode, offset, len);
+	return PROXY_CALL(LINUX_SYS_fallocate, proxy_value(file.handle), proxy_value(mode), proxy_value(offset), proxy_value(len));
 }
 
-static intptr_t remote_file_recvmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct msghdr *msg, int flags)
+static intptr_t remote_file_recvmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct msghdr *msghdr, int flags)
 {
-	return remote_recvmsg(thread, file.handle, msg, flags);
+	if (msghdr->msg_name != NULL || msghdr->msg_namelen != 0 || msghdr->msg_control != NULL || msghdr->msg_controllen != 0) {
+		// TODO: support names and control data
+		return -EINVAL;
+	}
+	int iovcnt = msghdr->msg_iovlen;
+	// allocate a local iovec
+	struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
+	struct attempt_cleanup_state state;
+	attempt_push_free(thread, &state, iov_remote);
+	// calculate the total size
+	size_t total_size = sizeof(struct iovec) * iovcnt;
+	for (int i = 0; i < iovcnt; i++) {
+		size_t len = msghdr->msg_iov[i].iov_len;
+		iov_remote[i].iov_len = len;
+		total_size += len;
+	}
+	// allocate a remote buffer
+	attempt_proxy_alloc_state remote_buf;
+	attempt_proxy_alloc(total_size, thread, &remote_buf);
+	// set up the vectors
+	intptr_t buf_cur = remote_buf.addr;
+	for (int i = 0; i < iovcnt; i++) {
+		size_t len = iov_remote[i].iov_len;
+		iov_remote[i].iov_base = (void *)buf_cur;
+		buf_cur += len;
+	}
+	// poke the iovec
+	intptr_t result = proxy_poke(buf_cur, sizeof(struct iovec) * iovcnt, iov_remote);
+	if (result < 0) {
+		attempt_pop_free(&state);
+		attempt_proxy_free(&remote_buf);
+		return result;
+	}
+	// perform the recvmsg remotely
+	struct msghdr copy = *msghdr;
+	copy.msg_iov = (struct iovec *)buf_cur;
+	result = PROXY_CALL(LINUX_SYS_recvmsg, proxy_value(file.handle), proxy_in(&copy, sizeof(struct msghdr)), proxy_value(flags));
+	if (result >= 0) {
+		// peek the bytes we received
+		buf_cur = remote_buf.addr;
+		for (int i = 0; i < iovcnt; i++) {
+			size_t len = iov_remote[i].iov_len;
+			intptr_t peek_result = proxy_peek(buf_cur, len, msghdr->msg_iov[i].iov_base);
+			if (peek_result < 0) {
+				attempt_pop_free(&state);
+				attempt_proxy_free(&remote_buf);
+				return peek_result;
+			}
+			buf_cur += len;
+		}
+	}
+	attempt_pop_free(&state);
+	attempt_proxy_free(&remote_buf);
+	return result;
 }
 
-static intptr_t remote_file_sendmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct msghdr *msg, int flags)
+static intptr_t remote_file_sendmsg(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct msghdr *msghdr, int flags)
 {
-	return remote_sendmsg(thread, file.handle, msg, flags);
+	if (msghdr->msg_name != NULL || msghdr->msg_namelen != 0 || msghdr->msg_control != NULL || msghdr->msg_controllen != 0) {
+		// TODO: support names and control data
+		return -EINVAL;
+	}
+	int iovcnt = msghdr->msg_iovlen;
+	// allocate a local iovec
+	struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
+	struct attempt_cleanup_state state;
+	attempt_push_free(thread, &state, iov_remote);
+	// calculate the total size
+	size_t total_size = sizeof(struct iovec) * iovcnt;
+	for (int i = 0; i < iovcnt; i++) {
+		size_t len = msghdr->msg_iov[i].iov_len;
+		iov_remote[i].iov_len = len;
+		total_size += len;
+	}
+	// allocate a remote buffer
+	attempt_proxy_alloc_state remote_buf;
+	attempt_proxy_alloc(total_size, thread, &remote_buf);
+	// poke the bytes to send
+	intptr_t buf_cur = remote_buf.addr;
+	for (int i = 0; i < iovcnt; i++) {
+		size_t len = iov_remote[i].iov_len;
+		intptr_t result = proxy_poke(buf_cur, len, msghdr->msg_iov[i].iov_base);
+		if (result < 0) {
+			attempt_pop_free(&state);
+			attempt_proxy_free(&remote_buf);
+			return result;
+		}
+		iov_remote[i].iov_base = (void *)buf_cur;
+		buf_cur += len;
+	}
+	// poke the iovec
+	intptr_t result = proxy_poke(buf_cur, sizeof(struct iovec) * iovcnt, iov_remote);
+	attempt_pop_free(&state);
+	if (result < 0) {
+		attempt_proxy_free(&remote_buf);
+		return result;
+	}
+	// perform the sendmsg remotely
+	struct msghdr copy = *msghdr;
+	copy.msg_iov = (struct iovec *)buf_cur;
+	result = PROXY_CALL(LINUX_SYS_sendmsg, proxy_value(file.handle), proxy_in(&copy, sizeof(struct msghdr)), proxy_value(flags));
+	attempt_proxy_free(&remote_buf);
+	return result;
 }
 
 static intptr_t remote_file_fcntl_basic(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, intptr_t argument)
 {
-	return remote_fcntl_basic(file.handle, cmd, argument);
+	return PROXY_CALL(LINUX_SYS_fcntl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(argument));
 }
 
 static intptr_t remote_file_fcntl_lock(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, struct flock *lock)
 {
-	return remote_fcntl_lock(file.handle, cmd, lock);
+	return PROXY_CALL(LINUX_SYS_fcntl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_inout(lock, sizeof(struct flock)));
 }
 
 static intptr_t remote_file_fcntl_int(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int cmd, int *value)
 {
-	return remote_fcntl_int(file.handle, cmd, value);
+	return PROXY_CALL(LINUX_SYS_fcntl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_inout(value, sizeof(int)));
 }
 
 static intptr_t remote_file_fchmod(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, mode_t mode)
 {
-	return remote_fchmod(file.handle, mode);
+	return PROXY_CALL(LINUX_SYS_fchmod, proxy_value(file.handle), proxy_value(mode));
 }
 
 static intptr_t remote_file_fchown(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, uid_t owner, gid_t group)
 {
-	return remote_fchown(file.handle, owner, group);
+	return PROXY_CALL(LINUX_SYS_fchown, proxy_value(file.handle), proxy_value(owner), proxy_value(group));
 }
 
 static intptr_t remote_file_fstat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat)
 {
-    return remote_fstat(file.handle, out_stat);
+	return PROXY_CALL(LINUX_SYS_fstat, proxy_value(file.handle), proxy_out(out_stat, sizeof(struct fs_stat)));
 }
 
 static intptr_t remote_file_fstatfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_statfs *out_buf)
 {
-	return remote_fstatfs(file.handle, out_buf);
+	return PROXY_CALL(LINUX_SYS_fstatfs, proxy_value(file.handle), proxy_out(out_buf, sizeof(struct fs_statfs)));
 }
 
+#define DEV_FD "/proc/self/fd/"
 static intptr_t remote_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
-	return remote_readlink_fd(file.handle, buf, size);
+	// readlink the fd remotely
+	char dev_path[64];
+	memcpy(dev_path, DEV_FD, sizeof(DEV_FD) - 1);
+	fs_utoa(file.handle, &dev_path[sizeof(DEV_FD) - 1]);
+	trim_size(&size);
+	return vfs_call(readlinkat, ((struct vfs_resolved_path){ .ops = &remote_path_ops, .info = { .handle = AT_FDCWD, .path = dev_path } }), buf, size);
 }
 
 static intptr_t remote_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
-	return remote_getdents(file.handle, buf, size);
+#ifndef __NR_getdents
+	return -ENOSYS;
+#else
+	trim_size(&size);
+	return PROXY_CALL(LINUX_SYS_getdents, proxy_value(file.handle), proxy_out(buf, size), proxy_value(size));
+#endif
 }
 
 static intptr_t remote_file_getdents64(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
-	return remote_getdents64(file.handle, buf, size);
+	trim_size(&size);
+	return PROXY_CALL(LINUX_SYS_getdents64, proxy_value(file.handle), proxy_out(buf, size), proxy_value(size));
 }
 
 static intptr_t remote_file_fgetxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name, void *out_value, size_t size)
 {
-	return remote_fgetxattr(file.handle, name, out_value, size);
+	return PROXY_CALL(LINUX_SYS_fgetxattr, proxy_value(file.handle), proxy_string(name), proxy_out(out_value, size), proxy_value(size));
 }
 
 static intptr_t remote_file_fsetxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name, const void *value, size_t size, int flags)
 {
-	return remote_fsetxattr(file.handle, name, value, size, flags);
+	return PROXY_CALL(LINUX_SYS_fgetxattr, proxy_value(file.handle), proxy_string(name), proxy_in(value, size), proxy_value(size), proxy_value(flags));
 }
 
 static intptr_t remote_file_fremovexattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *name)
 {
-	return remote_fremovexattr(file.handle, name);
+	return PROXY_CALL(LINUX_SYS_fremovexattr, proxy_value(file.handle), proxy_string(name));
 }
 
 static intptr_t remote_file_flistxattr(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, void *out_value, size_t size)
 {
-	return remote_flistxattr(file.handle, out_value, size);
+	return PROXY_CALL(LINUX_SYS_flistxattr, proxy_value(file.handle), proxy_out(out_value, size), proxy_value(size));
 }
 
 static intptr_t remote_file_connect(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct sockaddr *addr, size_t size)
 {
-	return remote_connect(file.handle, addr, size);
+	return PROXY_CALL(LINUX_SYS_connect, proxy_value(file.handle), proxy_in(addr, size), proxy_value(size));
 }
 
 static intptr_t remote_file_bind(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const struct sockaddr *addr, size_t size)
 {
-	return remote_bind(file.handle, addr, size);
+	return PROXY_CALL(LINUX_SYS_bind, proxy_value(file.handle), proxy_in(addr, size), proxy_value(size));
 }
 
 static intptr_t remote_file_listen(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int backlog)
 {
-	return remote_listen(file.handle, backlog);
+	return PROXY_CALL(LINUX_SYS_listen, proxy_value(file.handle), proxy_value(backlog));
 }
 
 static intptr_t remote_file_accept4(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen, int flags, struct vfs_resolved_file *out_file)
 {
-	int result = remote_accept4(file.handle, addr, addrlen, flags);
+	intptr_t result = PROXY_CALL(LINUX_SYS_accept4, proxy_value(file.handle), addrlen ? proxy_out(addr, *addrlen) : proxy_value(0), proxy_inout(addrlen, sizeof(*addrlen)), proxy_value(flags));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
 			.ops = &remote_path_ops.dirfd_ops,
@@ -367,27 +469,27 @@ static intptr_t remote_file_accept4(__attribute__((unused)) struct thread_storag
 
 static intptr_t remote_file_getsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, void *restrict optval, socklen_t *restrict optlen)
 {
-	return remote_getsockopt(file.handle, level, optname, optval, optlen);
+	return PROXY_CALL(LINUX_SYS_getsockopt | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(level), proxy_value(optname), proxy_out(optval, *optlen), proxy_inout(optlen, sizeof(*optlen)));
 }
 
 static intptr_t remote_file_setsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, const void *optval, socklen_t optlen)
 {
-	return remote_setsockopt(file.handle, level, optname, optval, optlen);
+	return PROXY_CALL(LINUX_SYS_setsockopt | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(level), proxy_value(optname), proxy_in(optval, optlen), proxy_value(optlen));
 }
 
 static intptr_t remote_file_getsockname(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
 {
-	return remote_getsockname(file.handle, addr, addrlen);
+	return PROXY_CALL(LINUX_SYS_getsockname | PROXY_NO_WORKER, proxy_value(file.handle), proxy_out(addr, *addrlen), proxy_inout(addrlen, sizeof(socklen_t)));
 }
 
 static intptr_t remote_file_getpeername(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen)
 {
-	return remote_getpeername(file.handle, addr, addrlen);
+	return PROXY_CALL(LINUX_SYS_getpeername | PROXY_NO_WORKER, proxy_value(file.handle), proxy_out(addr, *addrlen), proxy_inout(addrlen, sizeof(socklen_t)));
 }
 
 static intptr_t remote_file_shutdown(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int how)
 {
-	return remote_shutdown(file.handle, how);
+	return PROXY_CALL(LINUX_SYS_shutdown, proxy_value(file.handle), proxy_value(how));
 }
 
 static intptr_t remote_file_sendfile(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_out, struct vfs_resolved_file file_in, off_t *offset, size_t size)
@@ -395,7 +497,7 @@ static intptr_t remote_file_sendfile(__attribute__((unused)) struct thread_stora
 	if (file_in.ops != file_out.ops) {
 		return -EINVAL;
 	}
-	return remote_sendfile(file_out.handle, file_in.handle, offset, size);
+	return PROXY_CALL(LINUX_SYS_sendfile, proxy_value(file_out.handle), proxy_value(file_in.handle), proxy_inout(offset, sizeof(off_t)), proxy_value(size));
 }
 
 static intptr_t remote_file_splice(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off_t *off_in, struct vfs_resolved_file file_out, off_t *off_out, size_t size, unsigned int flags)
@@ -403,7 +505,7 @@ static intptr_t remote_file_splice(__attribute__((unused)) struct thread_storage
 	if (file_in.ops != file_out.ops) {
 		return -EINVAL;
 	}
-	return remote_splice(file_in.handle, off_in, file_out.handle, off_out, size, flags);
+	return PROXY_CALL(LINUX_SYS_splice, proxy_value(file_in.handle), proxy_inout(off_in, sizeof(off_t)), proxy_value(file_out.handle), proxy_inout(off_out, sizeof(off_t)), proxy_value(size), proxy_value(flags));
 }
 
 static intptr_t remote_file_tee(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, struct vfs_resolved_file file_out, size_t len, unsigned int flags)
@@ -411,7 +513,7 @@ static intptr_t remote_file_tee(__attribute__((unused)) struct thread_storage *t
 	if (file_in.ops != file_out.ops) {
 		return -EINVAL;
 	}
-	return remote_tee(file_in.handle, file_out.handle, len, flags);
+	return PROXY_CALL(LINUX_SYS_tee, proxy_value(file_in.handle), proxy_value(file_out.handle), proxy_value(len), proxy_value(flags));
 }
 
 static intptr_t remote_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, uint64_t *off_in, struct vfs_resolved_file file_out, uint64_t *off_out, size_t len, unsigned int flags)
@@ -419,7 +521,7 @@ static intptr_t remote_file_copy_file_range(__attribute__((unused)) struct threa
 	if (file_in.ops != file_out.ops) {
 		return -EINVAL;
 	}
-	return remote_copy_file_range(file_in.handle, (off64_t *)off_in, file_out.handle, (off64_t *)off_out, len, flags);
+	return PROXY_CALL(LINUX_SYS_copy_file_range, proxy_value(file_in.handle), proxy_inout(off_in, sizeof(off_t)), proxy_value(file_out.handle), proxy_inout(off_out, sizeof(off_t)), proxy_value(len), proxy_value(flags));
 }
 
 static intptr_t remote_file_ioctl(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg)
@@ -504,17 +606,17 @@ static intptr_t remote_file_ioctl_open_file(__attribute__((unused)) struct threa
 static intptr_t remote_file_ppoll(__attribute__((unused)) struct thread_storage *thread, struct vfs_poll_resolved_file *files, nfds_t nfiles, struct timespec *timeout, __attribute__((unused)) const sigset_t *sigmask)
 {
 	struct attempt_cleanup_state state;
-	struct pollfd *real_fds = malloc(sizeof(struct pollfd) * nfiles);
-	attempt_push_free(thread, &state, real_fds);
+	struct pollfd *remote_fds = malloc(sizeof(struct pollfd) * nfiles);
+	attempt_push_free(thread, &state, remote_fds);
 	for (nfds_t i = 0; i < nfiles; i++) {
-		real_fds[i].fd = files[i].file.handle;
-		real_fds[i].events = files[i].events;
-		real_fds[i].revents = files[i].revents;
+		remote_fds[i].fd = files[i].file.handle;
+		remote_fds[i].events = files[i].events;
+		remote_fds[i].revents = files[i].revents;
 	}
-	intptr_t result = remote_ppoll(real_fds, nfiles, timeout);
+	intptr_t result = PROXY_CALL(LINUX_SYS_ppoll, proxy_inout(remote_fds, sizeof(struct pollfd) * nfiles), proxy_value(nfiles), timeout != NULL ? proxy_inout(timeout, sizeof(struct timespec)) : proxy_value(0), proxy_value(0), proxy_value(0));
 	if (result > 0) {
 		for (nfds_t i = 0; i < nfiles; i++) {
-			files[i].revents = real_fds[i].revents;
+			files[i].revents = remote_fds[i].revents;
 		}
 	}
 	attempt_pop_free(&state);

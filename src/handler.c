@@ -12,7 +12,6 @@
 #include "paths.h"
 #include "proxy.h"
 #include "remote.h"
-#include "remote_library.h"
 #include "sockets.h"
 #include "target.h"
 #include "tracer.h"
@@ -1193,26 +1192,23 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			clear_fd_table_for_exit(arg1);
 			return FS_SYSCALL(LINUX_SYS_exit_group, arg1);
 		case LINUX_SYS_chdir: {
-			const char *path = (const char *)arg1;
-			path_info real;
-			if (lookup_real_path(AT_FDCWD, path, &real)) {
-				intptr_t real_fd = remote_openat(real.handle, real.path, O_PATH|O_DIRECTORY, 0);
-				if (real_fd < 0) {
-					return real_fd;
+			struct vfs_resolved_path resolved = vfs_resolve_path(AT_FDCWD, (const char *)arg1);
+			if (vfs_is_remote_path(&resolved)) {
+				struct vfs_resolved_file file;
+				intptr_t result = vfs_install_file(vfs_call(openat, resolved, O_PATH|O_DIRECTORY, 0, &file), &file, 0);
+				if (result < 0) {
+					return result;
 				}
-				int temp_fd = install_remote_fd(real_fd, 0);
-				if (temp_fd < 0) {
-					remote_close(real_fd);
-					return temp_fd;
-				}
-				int result = perform_dup3(temp_fd, CWD_FD, 0);
-				perform_close(temp_fd);
+				struct attempt_cleanup_state cleanup;
+				vfs_attempt_push_close(thread, &cleanup, &file);
+				result = perform_dup3(result, CWD_FD, 0);
+				vfs_attempt_pop_close(&cleanup);
 				return result;
 			}
-			if (real.handle != AT_FDCWD) {
+			if (resolved.info.handle != AT_FDCWD) {
 				return invalid_local_operation();
 			}
-			int result = chdir_become_local_path(real.path);
+			int result = chdir_become_local_path(resolved.info.path);
 #ifdef ENABLE_TRACER
 			if (result == 0) {
 				working_dir_changed(thread);
@@ -1221,10 +1217,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 		case LINUX_SYS_fchdir: {
-			intptr_t real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				struct fs_stat stat;
-				int result = remote_fstat(real_fd, &stat);
+				intptr_t result = vfs_call(fstat, file, &stat);
 				if (result < 0) {
 					return result;
 				}
@@ -1233,7 +1229,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				return perform_dup3(arg1, CWD_FD, 0);
 			}
-			int result = chdir_become_local_fd(real_fd);
+			int result = chdir_become_local_fd(file.handle);
 #ifdef ENABLE_TRACER
 			if (result == 0) {
 				working_dir_changed(thread);
@@ -1242,12 +1238,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return result;
 		}
 		case LINUX_SYS_getcwd: {
-			char *buf = (char *)arg1;
-			size_t size = (size_t)arg2;
-			intptr_t real_fd;
-			if (lookup_real_fd(CWD_FD, &real_fd)) {
-				// readlink the fd remotely
-				return remote_readlink_fd(real_fd, buf, size);
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
+				char *buf = (char *)arg1;
+				size_t size = (size_t)arg2;
+				return vfs_call(readlink_fd, file, buf, size);
 			}
 			return FS_SYSCALL(syscall, arg1, arg2);
 		}
@@ -1625,27 +1620,35 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_perf_event_open: {
 			intptr_t arg2_fd;
 			if (arg5 & PERF_FLAG_PID_CGROUP) {
-				if (lookup_real_fd(arg2, &arg2_fd)) {
+				struct vfs_resolved_file file = vfs_resolve_file(arg1);
+				if (vfs_is_remote_file(&file)) {
 					invalid_remote_operation();
 					return -EBADF;
 				}
+				arg2_fd = file.handle;
 			} else {
 				arg2_fd = arg2;
 			}
 			intptr_t arg4_fd;
-			if (lookup_real_fd(arg4, &arg4_fd)) {
-				invalid_remote_operation();
-				return -EBADF;
+			if (arg4 == -1) {
+				arg4_fd = -1;
+			} else {
+				struct vfs_resolved_file file = vfs_resolve_file(arg4);
+				if (vfs_is_remote_file(&file)) {
+					invalid_remote_operation();
+					return -EBADF;
+				}
+				arg4_fd = -1;
 			}
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2_fd, arg3, arg4_fd, arg5), arg5 & PERF_FLAG_FD_CLOEXEC ? O_CLOEXEC : 0);
 		}
 		case LINUX_SYS_kexec_file_load: {
-			intptr_t kernel_fd;
-			intptr_t initrd_fd;
-			if (lookup_real_fd(arg1, &kernel_fd) || lookup_real_fd(arg2, &initrd_fd)) {
+			struct vfs_resolved_file kernel_file = vfs_resolve_file(arg1);
+			struct vfs_resolved_file initrd_file = vfs_resolve_file(arg2);
+			if (vfs_is_remote_file(&kernel_file) || vfs_is_remote_file(&initrd_file)) {
 				return -EINVAL;
 			}
-			return FS_SYSCALL(syscall, kernel_fd, initrd_fd, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, kernel_file.handle, initrd_file.handle, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_tkill: {
 			if (arg1 == fs_gettid()) {
@@ -1663,11 +1666,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), O_CLOEXEC);
 		}
 		case LINUX_SYS_pidfd_send_signal: {
-			intptr_t real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
 		}
 #ifdef __NR_pidfd_getfd
 		case LINUX_SYS_pidfd_getfd: {
@@ -1682,67 +1685,45 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return -ENOSYS;
 		}
 		case LINUX_SYS_open_tree: {
-			int dirfd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(dirfd, path, &real)) {
+			struct vfs_resolved_path path = vfs_resolve_path(arg1, (const char *)arg2);
+			if (vfs_is_remote_path(&path)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, arg1, arg2, arg3);
+			return FS_SYSCALL(syscall, path.info.handle, (intptr_t)path.info.path, arg3);
 		}
 		case LINUX_SYS_move_mount: {
-			int from_dirfd = arg1;
-			const char *from_path = (const char *)arg2;
-			path_info from_real;
-			bool from_is_remote = lookup_real_path(from_dirfd, from_path, &from_real);
-			int to_dirfd = arg3;
-			const char *to_path = (const char *)arg4;
-			path_info to_real;
-			bool to_is_remote = lookup_real_path(to_dirfd, to_path, &to_real);
-			if (from_is_remote != to_is_remote) {
-				return invalid_local_remote_mixed_operation();
+			struct vfs_resolved_path from = vfs_resolve_path(arg1, (const char *)arg2);
+			struct vfs_resolved_path to = vfs_resolve_path(arg3, (const char *)arg4);
+			if (vfs_is_remote_path(&from) || vfs_is_remote_path(&to)) {
+				// TODO: support move_mount remotely
+				// return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from_real.handle), proxy_string(from_real.path), proxy_value(to_real.handle), proxy_string(to_real.path), proxy_value(arg5));
+				return invalid_remote_operation();
 			}
-			if (from_is_remote) {
-				return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from_real.handle), proxy_string(from_real.path), proxy_value(to_real.handle), proxy_string(to_real.path), proxy_value(arg5));
-			}
-			return FS_SYSCALL(syscall, from_real.handle, (intptr_t)from_real.path, to_real.handle, (intptr_t)to_real.path, arg5);
+			return FS_SYSCALL(syscall, from.info.handle, (intptr_t)from.info.path, to.info.handle, (intptr_t)to.info.path, arg5);
 		}
 		case LINUX_SYS_fsopen: {
-			const char *fsname = (const char *)arg1;
-			path_info real;
-			bool is_remote = lookup_real_path(AT_FDCWD, fsname, &real);
-			if (real.handle != AT_FDCWD) {
-				return is_remote ? invalid_remote_operation() : invalid_local_operation();
-			}
-			if (is_remote) {
-				return install_remote_fd(PROXY_LINUX_CALL(LINUX_SYS_fsopen, proxy_string(real.path), proxy_value(arg2)), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
-			}
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
 		}
 		case LINUX_SYS_fsconfig: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fsconfig, proxy_value(real_fd), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
+				return PROXY_LINUX_CALL(LINUX_SYS_fsconfig, proxy_value(file.handle), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_fsmount: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fsmount, proxy_value(real_fd), proxy_value(arg2), proxy_value(arg3));
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
+				return PROXY_LINUX_CALL(LINUX_SYS_fsmount, proxy_value(file.handle), proxy_value(arg2), proxy_value(arg3));
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3);
 		}
 		case LINUX_SYS_fspick: {
-			int fd = arg1;
-			const char *path = (const char *)arg2;
-			path_info real;
-			if (lookup_real_path(fd, path, &real)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fspick, proxy_value(real.handle), proxy_string(real.path), proxy_value(arg3));
+			struct vfs_resolved_path path = vfs_resolve_path(arg1, (const char *)arg2);
+			if (vfs_is_remote_path(&path)) {
+				return PROXY_LINUX_CALL(LINUX_SYS_fspick, proxy_value(path.info.handle), proxy_string(path.info.path), proxy_value(arg3));
 			}
-			return FS_SYSCALL(syscall, real.handle, (intptr_t)real.path, arg3);
+			return FS_SYSCALL(syscall, path.info.handle, (intptr_t)path.info.path, arg3);
 		}
 		case 0x666: {
 			return (intptr_t)get_fd_table();
