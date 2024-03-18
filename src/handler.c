@@ -45,14 +45,6 @@
 #include <termios.h>
 #include <utime.h>
 
-#undef PROXY_LINUX_CALL
-#define PROXY_LINUX_CALL(...) ({ \
-	if (proxy_get_target_platform() != TARGET_PLATFORM_LINUX) { \
-		DIE("attempt to call linux-only syscall directly at handler.c", __LINE__); \
-	} \
-	PROXY_CALL(__VA_ARGS__); \
-})
-
 #ifndef RENAME_EXCHANGE
 #define RENAME_EXCHANGE (1 << 1)
 #endif
