@@ -42,7 +42,7 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 {
 	// pass through anonymous memory mapping calls
 	if ((flags & MAP_ANONYMOUS) || (fd == -1)) {
-		return PROXY_CALL(__NR_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(fd), proxy_value(offset));
+		return PROXY_LINUX_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(fd), proxy_value(offset));
 	}
 #if 0
 	char path_buf[PATH_MAX];
@@ -65,7 +65,7 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 		return -EACCES;
 	}
 	// setup an anonymous mapping to write into
-	addr = PROXY_CALL(__NR_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | (flags & ~(MAP_SHARED | MAP_SHARED_VALIDATE))), proxy_value(-1), proxy_value(0));
+	addr = PROXY_LINUX_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | (flags & ~(MAP_SHARED | MAP_SHARED_VALIDATE))), proxy_value(-1), proxy_value(0));
 	if (fs_is_map_failed((void *)addr)) {
 		return addr;
 	}
@@ -650,7 +650,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 	char buf[512 * 1024];
 	if (debug) {
 		char *cur_buf = &buf[0];
-		add_gdb_attach_prefix(&cur_buf, PROXY_CALL(LINUX_SYS_getpid));
+		add_gdb_attach_prefix(&cur_buf, PROXY_LINUX_CALL(LINUX_SYS_getpid));
 		struct section_info sections;
 		result = load_section_info(thandler->fd, &thandler->local_info, &sections);
 		if (result == 0) {
@@ -687,7 +687,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		ERROR("spawning remote thread");
 		ERROR_FLUSH();
 	}
-	intptr_t clone_result = PROXY_CALL(LINUX_SYS_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(data.tid_ptr), proxy_value(data.tid_ptr), proxy_value(remote->sp), proxy_value(thandler->receive_start_addr));
+	intptr_t clone_result = PROXY_LINUX_CALL(LINUX_SYS_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(data.tid_ptr), proxy_value(data.tid_ptr), proxy_value(remote->sp), proxy_value(thandler->receive_start_addr));
 	if (clone_result < 0) {
 		ERROR("failed to clone", fs_strerror(clone_result));
 		return clone_result;
