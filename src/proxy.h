@@ -164,6 +164,19 @@ hello_message *proxy_get_hello_message(void);
 	PROXY_ARGS_(__VA_ARGS__, proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(0)) \
 }
 #define PROXY_CALL(syscall, ...) proxy_call(syscall, PROXY_ARGS(__VA_ARGS__))
+#if 1
+#define _PROXY_STR(x) _PROXY_STR2(x)
+#define _PROXY_STR2(x) #x
+#define PROXY_LINUX_CALL(...) ({ \
+	if (proxy_get_target_platform() != TARGET_PLATFORM_LINUX) { \
+		DIE("attempt to call linux-only syscall directly at " _PROXY_STR(__FILE__)":"_PROXY_STR(__LINE__)); \
+	} \
+	PROXY_CALL(__VA_ARGS__); \
+})
+#else
+#define PROXY_LINUX_CALL(...) ((proxy_get_target_platform() != TARGET_PLATFORM_LINUX) ? (intptr_t)-ENOSYS : PROXY_CALL(__VA_ARGS__))
+#endif
+
 
 __attribute__((warn_unused_result))
 intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer);
