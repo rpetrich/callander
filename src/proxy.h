@@ -169,7 +169,7 @@ hello_message *proxy_get_hello_message(void);
 #define _PROXY_STR2(x) #x
 #define PROXY_LINUX_CALL(...) ({ \
 	if (proxy_get_target_platform() != TARGET_PLATFORM_LINUX) { \
-		DIE("attempt to call linux-only syscall directly at " _PROXY_STR(__FILE__)":"_PROXY_STR(__LINE__)); \
+		DIE("attempt to call linux-only syscall directly at " __FILE__ ":"_PROXY_STR(__LINE__), __func__); \
 	} \
 	PROXY_CALL(__VA_ARGS__); \
 })
