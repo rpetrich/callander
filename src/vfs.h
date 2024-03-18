@@ -146,11 +146,21 @@ static inline struct vfs_resolved_file vfs_resolve_file(int fd)
 	return result;
 }
 
+static inline bool vfs_is_remote_file(const struct vfs_resolved_file *file)
+{
+	return file->ops != &local_path_ops.dirfd_ops;
+}
+
 static inline struct vfs_resolved_path vfs_resolve_path(int fd, const char *path)
 {
 	struct vfs_resolved_path result;
 	result.ops = lookup_real_path(fd, path, &result.info) ? vfs_path_ops_for_remote() : &local_path_ops;
 	return result;
+}
+
+static inline bool vfs_is_remote_path(const struct vfs_resolved_path *path)
+{
+	return path->ops != &local_path_ops;
 }
 
 static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved) {

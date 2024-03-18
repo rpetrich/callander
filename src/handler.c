@@ -520,92 +520,86 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_epoll_wait:
 #endif
 		case LINUX_SYS_epoll_pwait: {
-			int fd = arg1;
-			intptr_t real_fd;
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
 			struct epoll_event *events = (struct epoll_event *)arg2;
 			int maxevents = arg3;
 			int timeout = arg4;
-			if (lookup_real_fd(fd, &real_fd)) {
+			if (vfs_is_remote_file(&file)) {
 				// TODO: support pwait properly when remote
 				// TODO: support on aarch64
 #ifdef __NR_epoll_wait
-				return PROXY_LINUX_CALL(LINUX_SYS_epoll_wait, proxy_value(real_fd), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
+				return PROXY_LINUX_CALL(LINUX_SYS_epoll_wait, proxy_value(file.handle), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
 #else
 				return -ENOSYS;
 #endif
 			}
-			return FS_SYSCALL(syscall, real_fd, (intptr_t)events, maxevents, timeout, arg5);
+			return FS_SYSCALL(syscall, file.handle, (intptr_t)events, maxevents, timeout, arg5);
 		}
 		case LINUX_SYS_epoll_pwait2: {
 			return -ENOSYS;
 		}
 		case LINUX_SYS_epoll_ctl: {
 			// TODO: handle epoll_ctl with mixed remote and local fds
-			int epfd = arg1;
 			int op = arg2;
-			int fd = arg3;
 			struct epoll_event *event = (struct epoll_event *)arg4;
-			intptr_t real_epfd;
-			bool epfd_is_remote = lookup_real_fd(epfd, &real_epfd);
-			intptr_t real_fd;
-			bool fd_is_remote = lookup_real_fd(fd, &real_fd);
-			if (fd_is_remote) {
-				if (!epfd_is_remote) {
-					real_epfd = PROXY_LINUX_CALL(LINUX_SYS_epoll_create1 | PROXY_NO_WORKER, proxy_value(EPOLL_CLOEXEC));
-					if (real_epfd < 0) {
-						return real_epfd;
+			struct vfs_resolved_file ep_file = vfs_resolve_file(arg1);
+			struct vfs_resolved_file file = vfs_resolve_file(arg3);
+			if (vfs_is_remote_file(&file)) {
+				if (!vfs_is_remote_file(&ep_file)) {
+					intptr_t new_epfd = PROXY_LINUX_CALL(LINUX_SYS_epoll_create1 | PROXY_NO_WORKER, proxy_value(EPOLL_CLOEXEC));
+					if (new_epfd < 0) {
+						return new_epfd;
 					}
-					int result = become_remote_fd(epfd, real_epfd);
+					int result = become_remote_fd(arg1, new_epfd);
 					if (result < 0) {
-						remote_close(real_epfd);
+						remote_close(new_epfd);
 						return result;
 					}
+					// TODO: find a better way to transition between local and remote
+					ep_file.ops = &local_path_ops.dirfd_ops;
+					ep_file.handle = new_epfd;
 				}
-				return PROXY_LINUX_CALL(LINUX_SYS_epoll_ctl, proxy_value(real_epfd), proxy_value(op), proxy_value(real_fd), proxy_in(event, sizeof(*event)));
+				return PROXY_LINUX_CALL(LINUX_SYS_epoll_ctl, proxy_value(ep_file.handle), proxy_value(op), proxy_value(file.handle), proxy_in(event, sizeof(*event)));
 			}
-			if (epfd_is_remote) {
+			if (vfs_is_remote_file(&ep_file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_epfd, arg2, real_fd, arg4);
+			return FS_SYSCALL(syscall, ep_file.handle, arg2, file.handle, arg4);
 		}
 		case LINUX_SYS_mq_open: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2, arg3, arg4), arg2);
 		}
 		case LINUX_SYS_mq_timedsend: {
 			// TODO: handle mq_timedsend
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_mq_timedreceive: {
 			// TODO: handle mq_timedreceive
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_mq_notify: {
 			// TODO: handle mq_notify
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg1, arg2);
+			return FS_SYSCALL(syscall, file.handle, arg1, arg2);
 		}
 		case LINUX_SYS_mq_getsetattr: {
 			// TODO: handle mq_getsetattr
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg1, arg2, arg3);
+			return FS_SYSCALL(syscall, file.handle, arg1, arg2, arg3);
 		}
 #ifdef __NR_inotify_init
 		case LINUX_SYS_inotify_init: {
@@ -617,30 +611,25 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_inotify_add_watch: {
 			// TODO: handle inotify_add_watch
-			int fd = arg1;
-			intptr_t real_fd;
-			bool fd_is_remote = lookup_real_fd(fd, &real_fd);
-			const char *path = (const char *)arg2;
-			path_info real;
-			bool path_is_remote = lookup_real_path(AT_FDCWD, path, &real);
-			if (fd_is_remote != path_is_remote) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			struct vfs_resolved_path path = vfs_resolve_path(AT_FDCWD, (const char *)arg2);
+			if (vfs_is_remote_file(&file) != vfs_is_remote_path(&path)) {
 				return invalid_local_remote_mixed_operation();
 			}
-			if (real.handle != AT_FDCWD) {
-				return fd_is_remote ? invalid_remote_operation() : invalid_local_operation();
+			if (path.info.handle != AT_FDCWD) {
+				return vfs_is_remote_path(&path) ? invalid_remote_operation() : invalid_local_operation();
 			}
-			if (fd_is_remote) {
-				return PROXY_LINUX_CALL(LINUX_SYS_inotify_add_watch, proxy_value(real_fd), proxy_string(real.path), proxy_value(arg3));
+			if (vfs_is_remote_file(&file)) {
+				return PROXY_LINUX_CALL(LINUX_SYS_inotify_add_watch, proxy_value(file.handle), proxy_string(path.info.path), proxy_value(arg3));
 			}
-			return FS_SYSCALL(syscall, real_fd, (intptr_t)real.path, arg3);
+			return FS_SYSCALL(syscall, file.handle, (intptr_t)path.info.path, arg3);
 		}
 		case LINUX_SYS_inotify_rm_watch: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_inotify_rm_watch, real_fd, arg2);
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
+				return PROXY_LINUX_CALL(LINUX_SYS_inotify_rm_watch, file.handle, arg2);
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+			return FS_SYSCALL(syscall, file.handle, arg2);
 		}
 		case LINUX_SYS_splice: {
 			return vfs_call(splice, vfs_resolve_file(arg1), (off_t *)arg2, vfs_resolve_file(arg3), (off_t *)arg4, arg5, arg6);
@@ -652,12 +641,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return vfs_call(sync_file_range, vfs_resolve_file(arg1), arg2, arg3, arg4);
 		}
 		case LINUX_SYS_vmsplice: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
 		}
 #ifdef __NR_utime
 		case LINUX_SYS_utime: {
@@ -688,9 +676,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (fd == -1) {
 				real_fd = -1;
 			} else {
-				if (lookup_real_fd(fd, &real_fd)) {
+				struct vfs_resolved_file file = vfs_resolve_file(fd);
+				if (vfs_is_remote_file(&file)) {
 					return invalid_remote_operation();
 				}
+				real_fd = file.handle;
 			}
 			int result = FS_SYSCALL(syscall, real_fd, arg2, arg3);
 			if (fd == -1) {
@@ -705,9 +695,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			if (fd == -1) {
 				real_fd = -1;
 			} else {
-				if (lookup_real_fd(fd, &real_fd)) {
+				struct vfs_resolved_file file = vfs_resolve_file(arg1);
+				if (vfs_is_remote_file(&file)) {
 					return invalid_remote_operation();
 				}
+				real_fd = file.handle;
 			}
 			int result = FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
 			if (fd == -1) {
@@ -730,20 +722,18 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return vfs_call(fallocate, vfs_resolve_file(arg1), arg2, arg3, arg4);
 		}
 		case LINUX_SYS_timerfd_settime: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
 		}
 		case LINUX_SYS_timerfd_gettime: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+			return FS_SYSCALL(syscall, file.handle, arg2);
 		}
 #ifdef __NR_epoll_create
 		case LINUX_SYS_epoll_create: {
@@ -756,8 +746,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_readv:
 		case LINUX_SYS_preadv:
 		case LINUX_SYS_preadv2: {
-			intptr_t real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				const struct iovec *iov = (const struct iovec *)arg2;
 				int iovcnt = arg3;
 				// allocate buffer
@@ -782,7 +772,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				attempt_pop_free(&state);
 				if (result >= 0) {
 					// perform read remotely
-					result = PROXY_LINUX_CALL(syscall, proxy_value(real_fd), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
+					result = PROXY_LINUX_CALL(syscall, proxy_value(file.handle), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
 					if (result >= 0) {
 						// copy bytes into local buffers
 						buf_cur = remote_buf.addr;
@@ -807,13 +797,13 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				attempt_proxy_free(&remote_buf);
 				return result;
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5, arg6);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5, arg6);
 		}
 		case LINUX_SYS_writev:
 		case LINUX_SYS_pwritev:
 		case LINUX_SYS_pwritev2: {
-			intptr_t real_fd;
-			if (lookup_real_fd(arg1, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				const struct iovec *iov = (const struct iovec *)arg2;
 				int iovcnt = arg3;
 				// allocate buffer
@@ -844,25 +834,24 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				attempt_pop_free(&state);
 				if (result >= 0) {
 					// perform write remotely
-					result = PROXY_LINUX_CALL(syscall, proxy_value(real_fd), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
+					result = PROXY_LINUX_CALL(syscall, proxy_value(file.handle), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
 				}
 			pwrite_poke_failed:
 				// free buffers
 				attempt_proxy_free(&remote_buf);
 				return result;
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5, arg6);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5, arg6);
 		}
 		case LINUX_SYS_recvmmsg: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				struct mmsghdr *msgvec = (struct mmsghdr *)arg2;
 				unsigned int vlen = arg3;
 				int flags = arg4;
 				// TODO: handle the timeout in arg5
 				for (unsigned int i = 0; i < vlen; i++) {
-					intptr_t result = remote_recvmsg(thread, real_fd, &msgvec[i].msg_hdr, flags & ~MSG_WAITFORONE);
+					intptr_t result = vfs_call(recvmsg, file, &msgvec[i].msg_hdr, flags & ~MSG_WAITFORONE);
 					if (result <= 0) {
 						return i == 0 ? result : i;
 					}
@@ -873,7 +862,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				return vlen;
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_fanotify_init: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg1);
@@ -884,48 +873,43 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			uint64_t mask = arg3;
 			int dirfd = arg4;
 			const char *pathname = (const char *)arg5;
-			intptr_t real_fanotify_fd;
-			bool fanotify_fd_is_remote = lookup_real_fd(fanotify_fd, &real_fanotify_fd);
-			path_info real;
-			bool path_is_remote = lookup_real_path(dirfd, pathname, &real);
-			if (fanotify_fd_is_remote != path_is_remote) {
+			struct vfs_resolved_file file = vfs_resolve_file(fanotify_fd);
+			struct vfs_resolved_path path = vfs_resolve_path(dirfd, pathname);
+			if (vfs_is_remote_file(&file) != vfs_is_remote_path(&path)) {
 				return invalid_local_remote_mixed_operation();
 			}
-			if (fanotify_fd_is_remote) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fanotify_mark, proxy_value(real_fanotify_fd), proxy_value(flags), proxy_value(mask), proxy_value(real.handle), proxy_string(real.path));
+			if (vfs_is_remote_file(&file)) {
+				return PROXY_LINUX_CALL(LINUX_SYS_fanotify_mark, proxy_value(file.handle), proxy_value(flags), proxy_value(mask), proxy_value(path.info.handle), proxy_string(path.info.path));
 			}
-			return FS_SYSCALL(syscall, real_fanotify_fd, flags, mask, real.handle, (intptr_t)real.path);
+			return FS_SYSCALL(syscall, file.handle, flags, mask, path.info.handle, (intptr_t)path.info.path);
 		}
 		case LINUX_SYS_name_to_handle_at: {
 			// TODO: handle name_to_handle_at
-			int dfd = arg1;
-			intptr_t real_dfd;
-			if (lookup_real_fd(dfd, &real_dfd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_dfd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_open_by_handle_at: {
 			// TODO: handle open_by_handle_at
-			int dfd = arg1;
-			intptr_t real_dfd;
-			if (lookup_real_fd(dfd, &real_dfd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return install_local_fd(FS_SYSCALL(syscall, real_dfd, arg2, arg3, arg4, arg5), arg5);
+			return install_local_fd(FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5), arg5);
 		}
 		case LINUX_SYS_syncfs: {
 			return vfs_call(syncfs, vfs_resolve_file(arg1));
 		}
 		case LINUX_SYS_sendmmsg: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				struct mmsghdr *msgvec = (struct mmsghdr *)arg2;
 				unsigned int vlen = arg3;
 				int flags = arg4;
 				for (unsigned int i = 0; i < vlen; i++) {
-					intptr_t result = remote_sendmsg(thread, real_fd, &msgvec[i].msg_hdr, flags);
+					intptr_t result = vfs_call(sendmsg, file, &msgvec[i].msg_hdr, flags);
 					if (result <= 0) {
 						return i == 0 ? result : i;
 					}
@@ -933,23 +917,21 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				}
 				return vlen;
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3, arg4, arg5);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 		}
 		case LINUX_SYS_setns: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2);
+			return FS_SYSCALL(syscall, file.handle, arg2);
 		}
 		case LINUX_SYS_finit_module: {
-			int fd = arg1;
-			intptr_t real_fd;
-			if (lookup_real_fd(fd, &real_fd)) {
+			struct vfs_resolved_file file = vfs_resolve_file(arg1);
+			if (vfs_is_remote_file(&file)) {
 				return invalid_remote_operation();
 			}
-			return FS_SYSCALL(syscall, real_fd, arg2, arg3);
+			return FS_SYSCALL(syscall, file.handle, arg2, arg3);
 		}
 		case LINUX_SYS_memfd_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
