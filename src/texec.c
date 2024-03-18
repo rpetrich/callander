@@ -652,7 +652,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		char *cur_buf = &buf[0];
 		add_gdb_attach_prefix(&cur_buf, PROXY_CALL(LINUX_SYS_getpid));
 		struct section_info sections;
-		intptr_t result = load_section_info(thandler->fd, &thandler->local_info, &sections);
+		result = load_section_info(thandler->fd, &thandler->local_info, &sections);
 		if (result == 0) {
 			add_symbol_file_arg(&cur_buf, thandler->path, &sections, &thandler->local_info, &thandler->remote_info);
 		}
