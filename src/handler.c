@@ -1677,9 +1677,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			struct vfs_resolved_path from = vfs_resolve_path(arg1, (const char *)arg2);
 			struct vfs_resolved_path to = vfs_resolve_path(arg3, (const char *)arg4);
 			if (vfs_is_remote_path(&from) || vfs_is_remote_path(&to)) {
-				// TODO: support move_mount remotely
-				// return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from_real.handle), proxy_string(from_real.path), proxy_value(to_real.handle), proxy_string(to_real.path), proxy_value(arg5));
-				return invalid_remote_operation();
+				if (vfs_is_remote_path(&from) != vfs_is_remote_path(&to)) {
+					return invalid_local_remote_mixed_operation();
+				}
+				return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from.info.handle), proxy_string(from.info.path), proxy_value(to.info.handle), proxy_string(to.info.path), proxy_value(arg5));
 			}
 			return FS_SYSCALL(syscall, from.info.handle, (intptr_t)from.info.path, to.info.handle, (intptr_t)to.info.path, arg5);
 		}
