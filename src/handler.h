@@ -14,4 +14,10 @@ struct thread_storage;
 __attribute__((warn_unused_result))
 intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, ucontext_t *context);
 
+__attribute__((always_inline))
+static inline const int *handler_get_process_fd_table(void)
+{
+	return (const int *)FS_SYSCALL(0x666);
+}
+
 #endif
