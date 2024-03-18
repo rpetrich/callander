@@ -405,7 +405,7 @@ static intptr_t local_file_tee(__attribute__((unused)) struct thread_storage *th
 	return FS_SYSCALL(LINUX_SYS_tee, file_in.handle, file_out.handle, len, flags);
 }
 
-static intptr_t local_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
+static intptr_t local_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, uint64_t *off_in, struct vfs_resolved_file file_out, uint64_t *off_out, size_t len, unsigned int flags)
 {
 	if (file_in.ops != file_out.ops) {
 		return -EINVAL;
@@ -449,6 +449,11 @@ static intptr_t local_file_ppoll(__attribute__((unused)) struct thread_storage *
 	}
 	attempt_pop_free(&state);
 	return result;
+}
+
+static intptr_t local_file_mmap(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, void *addr, size_t length, int prot, int flags, size_t offset)
+{
+	return (intptr_t)fs_mmap(addr, length, prot, flags, file.handle, offset);
 }
 
 const struct vfs_path_ops local_path_ops = {
@@ -504,6 +509,7 @@ const struct vfs_path_ops local_path_ops = {
 		.ioctl = local_file_ioctl,
 		.ioctl_open_file = local_file_ioctl_open_file,
 		.ppoll = local_file_ppoll,
+		.mmap = local_file_mmap,
 	},
 	.mkdirat = local_path_mkdirat,
 	.mknodat = local_path_mknodat,

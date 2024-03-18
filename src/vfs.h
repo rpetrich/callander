@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <sys/types.h>
 #include <poll.h>
 
 #include "axon.h"
@@ -77,10 +78,11 @@ struct vfs_file_ops {
 	intptr_t (*sendfile)(struct thread_storage *, struct vfs_resolved_file out, struct vfs_resolved_file in, off_t *offset, size_t size);
 	intptr_t (*splice)(struct thread_storage *, struct vfs_resolved_file in, off_t *off_in, struct vfs_resolved_file out, off_t *off_out, size_t size, unsigned int flags);
 	intptr_t (*tee)(struct thread_storage *, struct vfs_resolved_file in, struct vfs_resolved_file out, size_t len, unsigned int flags);
-	intptr_t (*copy_file_range)(struct thread_storage *, struct vfs_resolved_file in, off64_t *off_in, struct vfs_resolved_file out, off64_t *off_out, size_t len, unsigned int flags);
+	intptr_t (*copy_file_range)(struct thread_storage *, struct vfs_resolved_file in, uint64_t *off_in, struct vfs_resolved_file out, uint64_t *off_out, size_t len, unsigned int flags);
 	intptr_t (*ioctl)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg);
 	intptr_t (*ioctl_open_file)(struct thread_storage *, struct vfs_resolved_file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file);
 	intptr_t (*ppoll)(struct thread_storage *, struct vfs_poll_resolved_file *files, nfds_t nfiles, struct timespec *timeout, const sigset_t *sigmask);
+	intptr_t (*mmap)(struct thread_storage *, struct vfs_resolved_file, void *addr, size_t length, int prot, int flags, size_t offset);
 };
 
 struct vfs_resolved_path {
@@ -172,6 +174,8 @@ static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolv
 #define vfs_call(name, target, ...) ({ __typeof__(target) _target = target; LIKELY(_target.ops->name != NULL) ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; })
 
 intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length);
+
+intptr_t vfs_mmap_via_pread(struct thread_storage *thread, struct vfs_resolved_file file, void *addr, size_t length, int prot, int flags, size_t offset);
 
 intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_resolved_path resolved, char buf[PATH_MAX], const char **out_path);
 

@@ -462,7 +462,7 @@ static intptr_t darwin_file_tee(__attribute__((unused)) struct thread_storage *t
 	return -EINVAL;
 }
 
-static intptr_t darwin_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
+static intptr_t darwin_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, uint64_t *off_in, struct vfs_resolved_file file_out, uint64_t *off_out, size_t len, unsigned int flags)
 {
 	return -EINVAL;
 }
@@ -528,6 +528,7 @@ const struct vfs_path_ops darwin_path_ops = {
         .copy_file_range = darwin_file_copy_file_range,
         .ioctl = darwin_file_ioctl,
         .ioctl_open_file = darwin_file_ioctl_open_file,
+		.mmap = vfs_mmap_via_pread,
     },
 	.mkdirat = darwin_path_mkdirat,
 	.mknodat = darwin_path_mknodat,

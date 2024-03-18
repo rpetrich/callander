@@ -259,50 +259,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_mmap: {
 			// TODO: need to update seccomp policy to trap to userspace
-			void *addr = (void *)arg1;
-			size_t len = arg2;
-			int prot = arg3;
-			int flags = arg4;
-			int fd = arg5;
-			off_t off = arg6;
-			intptr_t real_fd;
-			if ((flags & MAP_ANONYMOUS) == 0) {
-				if (lookup_real_fd(fd, &real_fd)) {
-					if ((flags & (MAP_PRIVATE | MAP_SHARED | MAP_SHARED_VALIDATE)) != MAP_PRIVATE) {
-						return invalid_remote_operation();
-					}
-					void *result = fs_mmap(addr, len, PROT_READ | PROT_WRITE, (flags & ~MAP_FILE) | MAP_ANONYMOUS, -1, 0);
-					if (!fs_is_map_failed(result)) {
-						size_t successful_reads = 0;
-						do {
-							intptr_t read_result = remote_pread(real_fd, result + successful_reads, len - successful_reads, off + successful_reads);
-							if (read_result <= 0) {
-								if (read_result == 0) {
-									// can't read past end of file, but can map. ignore short reads
-									break;
-								}
-								fs_munmap(result, len);
-								return read_result;
-							}
-							successful_reads += read_result;
-						} while (successful_reads < len);
-						if (prot != (PROT_READ | PROT_WRITE)) {
-							int prot_result = fs_mprotect(result, len, prot);
-							if (prot_result < 0) {
-								fs_munmap(result, len);
-								return prot_result;
-							}
-						}
-						if (prot == (PROT_READ|PROT_EXEC) && (flags & MAP_DENYWRITE)) {
-							discovered_remote_library_mapping(real_fd, (uintptr_t)addr - off);
-						}
-					}
-					return (intptr_t)result;
-				}
-			} else {
-				real_fd = -1;
+			if ((arg4 & MAP_ANONYMOUS) == 0) {
+				return vfs_call(mmap, vfs_resolve_file(arg5), (void *)arg1, arg2, arg3, arg4, arg6);
 			}
-			return FS_SYSCALL(syscall, arg1, arg2, arg3, arg4, real_fd, arg6);
+			return FS_SYSCALL(__NR_mmap, arg1, arg2, arg3, arg4, -1, arg6);
 		}
 		case LINUX_SYS_pread64: {
 			return vfs_call(pread, vfs_resolve_file(arg1), (char *)arg2, arg3, arg4);
@@ -996,7 +956,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
 		}
 		case LINUX_SYS_copy_file_range: {
-			return vfs_call(copy_file_range, vfs_resolve_file(arg1), (off64_t *)arg2, vfs_resolve_file(arg2), (off64_t *)arg3, arg4, arg5);
+			return vfs_call(copy_file_range, vfs_resolve_file(arg1), (uint64_t *)arg2, vfs_resolve_file(arg2), (uint64_t *)arg3, arg4, arg5);
 		}
 #ifdef __NR_readlink
 		case LINUX_SYS_readlink: {

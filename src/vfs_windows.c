@@ -616,7 +616,7 @@ static intptr_t windows_file_tee(__attribute__((unused)) struct thread_storage *
 	return -EINVAL;
 }
 
-static intptr_t windows_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
+static intptr_t windows_file_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, uint64_t *off_in, struct vfs_resolved_file file_out, uint64_t *off_out, size_t len, unsigned int flags)
 {
 	return -EINVAL;
 }
@@ -682,6 +682,7 @@ const struct vfs_path_ops windows_path_ops = {
 		.copy_file_range = windows_file_copy_file_range,
 		.ioctl = windows_file_ioctl,
 		.ioctl_open_file = windows_file_ioctl_open_file,
+		.mmap = vfs_mmap_via_pread,
 	},
 	.mkdirat = windows_path_mkdirat,
 	.mknodat = windows_path_mknodat,
@@ -935,7 +936,7 @@ static intptr_t windows_socket_tee(__attribute__((unused)) struct thread_storage
 	return -EINVAL;
 }
 
-static intptr_t windows_socket_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, off64_t *off_in, struct vfs_resolved_file file_out, off64_t *off_out, size_t len, unsigned int flags)
+static intptr_t windows_socket_copy_file_range(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file_in, uint64_t *off_in, struct vfs_resolved_file file_out, uint64_t *off_out, size_t len, unsigned int flags)
 {
 	return -EINVAL;
 }
