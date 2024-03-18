@@ -118,12 +118,12 @@ extern const struct vfs_path_ops local_path_ops;
 
 static inline const struct vfs_path_ops *vfs_path_ops_for_remote(void)
 {
-	extern const struct vfs_path_ops remote_path_ops;
+	extern const struct vfs_path_ops linux_path_ops;
 	extern const struct vfs_path_ops darwin_path_ops;
 	extern const struct vfs_path_ops windows_path_ops;
 	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
-			return &remote_path_ops;
+			return &linux_path_ops;
 		case TARGET_PLATFORM_DARWIN:
 			return &darwin_path_ops;
 		case TARGET_PLATFORM_WINDOWS:
