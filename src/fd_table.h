@@ -51,6 +51,6 @@ int chdir_become_local_path(const char *path);
 __attribute__((warn_unused_result))
 int chdir_become_local_fd(int local_fd);
 
-const int *get_fd_table(void);
+extern int fd_table[MAX_TABLE_SIZE];
 
 #endif

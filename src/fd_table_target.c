@@ -288,8 +288,3 @@ int chdir_become_local_fd(int local_fd)
 	}
 	return result;
 }
-
-const int *get_fd_table(void)
-{
-	return fd_table;
-}
