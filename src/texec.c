@@ -501,24 +501,20 @@ static void add_gdb_attach_prefix(char **buf, pid_t pid)
 	*buf += fs_itoa(pid, *buf);
 }
 
-static void add_symbol_file_arg(char **buf, const char *path, int fd, const struct binary_info *local_info, const struct binary_info *remote_info)
+static void add_symbol_file_arg(char **buf, const char *path, struct section_info *sections, const struct binary_info *local_info, const struct binary_info *remote_info)
 {
-	struct section_info sections;
-	intptr_t result = load_section_info(fd, local_info, &sections);
-	if (result == 0) {
-		const ElfW(Shdr) *text_section = find_section(local_info, &sections, ".text");
-		if (text_section != NULL) {
-			fs_memcpy(*buf, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
-			*buf += sizeof(" --eval-command=\"add-symbol-file ")-1;
-			size_t path_len = fs_strlen(path);
-			fs_memcpy(*buf, path, path_len);
-			*buf += path_len;
-			**buf = ' ';
-			(*buf)++;
-			*buf += fs_utoah((uintptr_t)remote_info->base + text_section->sh_addr, *buf);
-			fs_memcpy(*buf, "\"", sizeof("\""));
-			*buf += sizeof("\"")-1;
-		}
+	const ElfW(Shdr) *text_section = find_section(local_info, sections, ".text");
+	if (text_section != NULL) {
+		fs_memcpy(*buf, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
+		*buf += sizeof(" --eval-command=\"add-symbol-file ")-1;
+		size_t path_len = fs_strlen(path);
+		fs_memcpy(*buf, path, path_len);
+		*buf += path_len;
+		**buf = ' ';
+		(*buf)++;
+		*buf += fs_utoah((uintptr_t)remote_info->base + text_section->sh_addr, *buf);
+		fs_memcpy(*buf, "\"", sizeof("\""));
+		*buf += sizeof("\"")-1;
 	}
 }
 
@@ -655,11 +651,15 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 	if (debug) {
 		char *cur_buf = &buf[0];
 		add_gdb_attach_prefix(&cur_buf, PROXY_CALL(LINUX_SYS_getpid));
-		add_symbol_file_arg(&cur_buf, thandler->path, thandler->fd, &thandler->local_info, &thandler->remote_info);
-		// add_symbol_file_arg(&cur_buf, analysis.loader.main->loaded_path, fd, &analysis.loader.main->info, &main_info);
-		// if (state.analysis->loader.interpreter) {
-		// 	add_symbol_file_arg(&cur_buf, analysis.loader.main->info.interpreter, interpreter_fd, &analysis.loader.interpreter->info, &interpreter_info);
-		// }
+		struct section_info sections;
+		intptr_t result = load_section_info(thandler->fd, &thandler->local_info, &sections);
+		if (result == 0) {
+			add_symbol_file_arg(&cur_buf, thandler->path, &sections, &thandler->local_info, &thandler->remote_info);
+		}
+		add_symbol_file_arg(&cur_buf, remote->analysis.loader.main->loaded_path, &remote->analysis.loader.main->sections, &remote->analysis.loader.main->info, &remote->main_info);
+		if (remote->analysis.loader.interpreter) {
+			add_symbol_file_arg(&cur_buf, remote->analysis.loader.main->info.interpreter, &remote->analysis.loader.interpreter->sections, &remote->analysis.loader.interpreter->info, &remote->interpreter_info);
+		}
 		ERROR("remote debugging command", &buf[0]);
 		// wait to proceed
 		if (!wait_for_user_continue()) {
