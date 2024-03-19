@@ -18,6 +18,7 @@ AXON_BOOTSTRAP_ASM
 #include "remote_exec.h"
 #include "search.h"
 #include "time.h"
+#include "windows.h"
 
 #define PAGE_ALIGNMENT_MASK ~((uintptr_t)PAGE_SIZE - 1)
 
@@ -34,7 +35,7 @@ static inline size_t ceil_to_page(size_t size)
 
 void remote_munmap(intptr_t addr, size_t length)
 {
-	PROXY_CALL(__NR_munmap | PROXY_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length));
+	PROXY_LINUX_CALL(LINUX_SYS_munmap | PROXY_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length));
 }
 
 __attribute__((warn_unused_result))
@@ -42,7 +43,14 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 {
 	// pass through anonymous memory mapping calls
 	if ((flags & MAP_ANONYMOUS) || (fd == -1)) {
-		return PROXY_LINUX_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(fd), proxy_value(offset));
+		switch (proxy_get_target_platform()) {
+			case TARGET_PLATFORM_LINUX:
+				return PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(fd), proxy_value(offset));
+			case TARGET_PLATFORM_WINDOWS:
+				return translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, VirtualAlloc, proxy_value(addr), proxy_value(length), proxy_value(WINDOWS_MEM_COMMIT | WINDOWS_MEM_RESERVE), proxy_value(translate_prot_to_windows_protect(prot))));
+			default:
+				unknown_target();
+		}
 	}
 #if 0
 	char path_buf[PATH_MAX];
