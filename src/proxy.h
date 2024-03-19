@@ -17,6 +17,9 @@ struct iovec {
 #include <sys/uio.h>
 #endif
 
+#define _PROXY_STR(x) _PROXY_STR2(x)
+#define _PROXY_STR2(x) #x
+
 #define PROXY_SUPPORT_ALL_PLATFORMS
 
 // PROXY_FD is the connection to the victim target
@@ -165,8 +168,6 @@ hello_message *proxy_get_hello_message(void);
 }
 #define PROXY_CALL(syscall, ...) proxy_call(syscall, PROXY_ARGS(__VA_ARGS__))
 #if 1
-#define _PROXY_STR(x) _PROXY_STR2(x)
-#define _PROXY_STR2(x) #x
 #define PROXY_LINUX_CALL(...) ({ \
 	if (proxy_get_target_platform() != TARGET_PLATFORM_LINUX) { \
 		DIE("attempt to call linux-only syscall directly at " __FILE__ ":"_PROXY_STR(__LINE__), __func__); \
