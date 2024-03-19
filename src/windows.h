@@ -50,6 +50,16 @@ typedef uint32_t WINDOWS_DWORD;
 
 #define WINDOWS_MAX_PATH 260
 
+#define WINDOWS_MEM_COMMIT 0x1000
+#define WINDOWS_MEM_RESERVE 0x2000
+
+#define WINDOWS_PAGE_NOACCESS 0x1
+#define WINDOWS_PAGE_READONLY 0x2
+#define WINDOWS_PAGE_READWRITE 0x4
+#define WINDOWS_PAGE_EXECUTE 0x10
+#define WINDOWS_PAGE_EXECUTE_READ 0x20
+#define WINDOWS_PAGE_EXECUTE_READWRITE 0x40
+
 typedef int WINDOWS_BOOL;
 typedef uint8_t WINDOWS_BOOLEAN;
 
@@ -260,6 +270,25 @@ static inline WINDOWS_DWORD translate_open_flags_to_windows_desired_access(int f
 			return WINDOWS_GENERIC_WRITE;
 		default:
 			return 0;
+	}
+}
+
+static inline WINDOWS_DWORD translate_prot_to_windows_protect(int prot)
+{
+	switch (prot & (PROT_READ|PROT_WRITE|PROT_EXEC)) {
+		case PROT_NONE:
+			return WINDOWS_PAGE_NOACCESS;
+		case PROT_READ:
+			return WINDOWS_PAGE_READONLY;
+		case PROT_WRITE:
+		case PROT_READ|PROT_WRITE:
+			return WINDOWS_PAGE_READWRITE;
+		case PROT_EXEC:
+			return WINDOWS_PAGE_EXECUTE;
+		case PROT_EXEC|PROT_READ:
+			return WINDOWS_PAGE_EXECUTE_READ;
+		default:
+			return WINDOWS_PAGE_EXECUTE_READWRITE;
 	}
 }
 
