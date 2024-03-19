@@ -50,6 +50,10 @@ intptr_t translate_windows_error(intptr_t result)
 			return -ENOENT;
 		case 21:
 			return -EBUSY;
+		case 87:
+			return -EINVAL;
+		case 487:
+			return -EINVAL;
 		// TODO: translate more errors
 		default:
 			DIE("unknown windows error", result);

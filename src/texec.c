@@ -35,7 +35,61 @@ static inline size_t ceil_to_page(size_t size)
 
 void remote_munmap(intptr_t addr, size_t length)
 {
-	PROXY_LINUX_CALL(LINUX_SYS_munmap | PROXY_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length));
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			PROXY_LINUX_CALL(LINUX_SYS_munmap | PROXY_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length));
+			break;
+		case TARGET_PLATFORM_WINDOWS:
+			PROXY_WIN32_BOOL_CALL(kernel32.dll, VirtualFree, proxy_value(addr), proxy_value(0), proxy_value(WINDOWS_MEM_RELEASE));
+			break;
+		default:
+			unknown_target();
+	}
+}
+
+static intptr_t remote_mmap_anon(intptr_t addr, size_t length, int prot, int flags)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(-1), proxy_value(0));
+		case TARGET_PLATFORM_WINDOWS:
+			intptr_t result = PROXY_WIN32_CALL(kernel32.dll, VirtualAlloc, proxy_value(addr), proxy_value(length), proxy_value(WINDOWS_MEM_COMMIT | WINDOWS_MEM_RESERVE), proxy_value(translate_prot_to_windows_protect(prot)));
+			if (result == -487) {
+				// TODO: support splitting
+				result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, VirtualFree, proxy_value(addr), proxy_value(length), proxy_value(WINDOWS_MEM_DECOMMIT)));
+				if (result < 0) {
+					ERROR("failed VirtualFree", (uintptr_t)addr);
+					ERROR("length", length);
+					return result;
+				}
+				result = PROXY_WIN32_CALL(kernel32.dll, VirtualAlloc, proxy_value(addr), proxy_value(length), proxy_value(WINDOWS_MEM_COMMIT), proxy_value(translate_prot_to_windows_protect(prot)));
+				if (result < 0) {
+					ERROR("failed VirtualAlloc", (uintptr_t)addr);
+					ERROR("length", length);
+				}
+			}
+			if (result >= 0) {
+				ERROR("VirtualAlloc result", (uintptr_t)result);
+				ERROR("length", length);
+			}
+			return translate_windows_result(result);
+		default:
+			unknown_target();
+	}
+}
+
+int remote_mprotect(intptr_t addr, size_t length, int prot)
+{
+	switch (proxy_get_target_platform()) {
+		case TARGET_PLATFORM_LINUX:
+			return PROXY_CALL(LINUX_SYS_mprotect | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot));
+		case TARGET_PLATFORM_WINDOWS: {
+			WINDOWS_DWORD oldProtect;
+			return translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, VirtualProtect, proxy_value(addr), proxy_value(length), proxy_value(translate_prot_to_windows_protect(prot)), proxy_out(&oldProtect, sizeof(oldProtect))));
+		}
+		default:
+			unknown_target();
+	}
 }
 
 __attribute__((warn_unused_result))
@@ -43,14 +97,7 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 {
 	// pass through anonymous memory mapping calls
 	if ((flags & MAP_ANONYMOUS) || (fd == -1)) {
-		switch (proxy_get_target_platform()) {
-			case TARGET_PLATFORM_LINUX:
-				return PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(fd), proxy_value(offset));
-			case TARGET_PLATFORM_WINDOWS:
-				return translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, VirtualAlloc, proxy_value(addr), proxy_value(length), proxy_value(WINDOWS_MEM_COMMIT | WINDOWS_MEM_RESERVE), proxy_value(translate_prot_to_windows_protect(prot))));
-			default:
-				unknown_target();
-		}
+		return remote_mmap_anon(addr, length, prot, flags);
 	}
 #if 0
 	char path_buf[PATH_MAX];
@@ -73,7 +120,7 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 		return -EACCES;
 	}
 	// setup an anonymous mapping to write into
-	addr = PROXY_LINUX_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | (flags & ~(MAP_SHARED | MAP_SHARED_VALIDATE))), proxy_value(-1), proxy_value(0));
+	addr = remote_mmap_anon(addr, length, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | (flags & ~(MAP_SHARED | MAP_SHARED_VALIDATE)));
 	if (fs_is_map_failed((void *)addr)) {
 		return addr;
 	}
@@ -115,7 +162,7 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 #endif
 	// set the memory protection as requested, if different
 	if (prot != (PROT_READ | PROT_WRITE)) {
-		int protect_result = PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot));
+		int protect_result = remote_mprotect(addr, length, prot);
 		if (protect_result < 0) {
 			// unmap since the requested protection was invalid
 			remote_munmap(addr, length);
@@ -124,11 +171,6 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 	}
 #endif
 	return addr;
-}
-
-int remote_mprotect(intptr_t addr, size_t length, int prot)
-{
-	return PROXY_CALL(__NR_mprotect | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot));
 }
 
 intptr_t remote_mmap_stack(size_t size, int prot)
