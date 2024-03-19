@@ -4,6 +4,7 @@
 #include "patch.h"
 
 #include <signal.h>
+#include <stdbool.h>
 
 #define PATCH_SUPPORTED
 
@@ -18,6 +19,8 @@ bool patch_handle_illegal_instruction(struct thread_storage *thread, ucontext_t 
 typedef char *(*patch_address_formatter)(const uint8_t *, void *);
 
 #define PATCH_REQUIRES_MIGRATION
+
+bool patch_find_basic_block(const uint8_t *entry, const uint8_t *instruction, struct instruction_range *out_block);
 
 __attribute__((warn_unused_result))
 __attribute__((nonnull(2, 5, 7)))

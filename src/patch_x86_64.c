@@ -707,6 +707,21 @@ static char *naive_address_formatter(ins_ptr address, void *unused)
 	return result;
 }
 
+bool patch_find_basic_block(const uint8_t *entry, const uint8_t *instruction, struct instruction_range *out_block)
+{
+	struct searched_instructions searched = (struct searched_instructions){
+		.addresses = NULL,
+		.next = NULL,
+	};
+	const struct instruction_search basic_block_search = {
+		.addr = (ins_ptr)entry,
+		.searched = &searched,
+	};
+	bool found_basic_block = find_basic_block(get_thread_storage(), basic_block_search, instruction, out_block) && out_block->start != NULL;
+	cleanup_searched_instructions(&searched);
+	return found_basic_block;
+}
+
 // patch_body attempts to patch a syscall instruction already having taken the shard's lock
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 {

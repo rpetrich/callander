@@ -161,8 +161,25 @@ static char *loader_address_formatter(const ins_ptr address, void *loader)
 	return copy_address_description((const struct loader_context *)loader, address);
 }
 
+bool region_is_mapped(__attribute__((unused)) struct thread_storage *thread, const void *address, size_t length)
+{
+	intptr_t low = (intptr_t)address & -PAGE_SIZE;
+	intptr_t high = ((intptr_t)address + length + (PAGE_SIZE - 1)) & -PAGE_SIZE;
+	size_t page_delta = high - low;
+	unsigned char dummy[page_delta / PAGE_SIZE];
+	return fs_mincore((const void *)low, page_delta, dummy) != -ENOMEM;
+}
+
 static bool find_remote_patch_target(const struct loader_context *loader, const ins_ptr target, const ins_ptr entry, struct instruction_range *out_result)
 {
+#ifdef PATCH_REQUIRES_MIGRATION
+	struct instruction_range basic_block = { 0 };
+	if (!patch_find_basic_block(entry, target, &basic_block)) {
+		PATCH_LOG("could not find basic block");
+		return false;
+	}
+	return find_patch_target(basic_block, target, PCREL_JUMP_SIZE, PCREL_JUMP_SIZE, loader_address_formatter, (void *)loader, out_result);
+#else
 	struct instruction_range basic_block = (struct instruction_range){ .start = entry, .end = target };
 	struct decoded_ins decoded_end;
 	if (decode_ins(basic_block.end, &decoded_end)) {
@@ -170,12 +187,6 @@ static bool find_remote_patch_target(const struct loader_context *loader, const 
 	} else {
 		return false;
 	}
-#ifdef PATCH_REQUIRES_MIGRATION
-	if (decode_ins(basic_block.end, &decoded_end)) {
-		basic_block.end = next_ins(basic_block.end, &decoded_end);
-	}
-	return find_patch_target(basic_block, target, PCREL_JUMP_SIZE, PCREL_JUMP_SIZE, loader_address_formatter, (void *)loader, out_result);
-#else
 	out_result->start = target;
 	out_result->end = basic_block.end;
 	return true;
