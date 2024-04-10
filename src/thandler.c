@@ -36,7 +36,11 @@ __attribute__((used)) __attribute__((visibility("default")))
 void receive_syscall(intptr_t data[7])
 {
 	struct thread_storage *thread = get_thread_storage();
+#ifdef __aarch64__
+	data[0] = handle_syscall(thread, data[6], data[0], data[1], data[2], data[3], data[4], data[5], NULL);
+#else
 	data[0] = handle_syscall(thread, data[0], data[1], data[2], data[3], data[4], data[5], data[6], NULL);
+#endif
 }
 
 #ifdef PROXY_SUPPORT_ALL_PLATFORMS
