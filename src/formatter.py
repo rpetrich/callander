@@ -38,7 +38,10 @@ class BitflagPrinter:
     self.converter = converter
 
   def to_string(self):
-    val = int(self.val)
+    try:
+      val = int(self.val)
+    except:
+      val = int(self.val.format_string(raw=True, format='x'), 16)
     if val == 0:
       return "<empty>"
     regs = []
