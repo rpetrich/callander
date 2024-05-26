@@ -9853,7 +9853,46 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_CCMP: {
 				// TODO
 				LOG("ccmp");
-				clear_comparison_state(&self.current_state);
+				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
+					case ALWAYS_MATCHES: {
+						LOG("conditional always matches");
+						enum ins_operand_size size;
+						int left = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+						if (left == REGISTER_INVALID) {
+							LOG("ccmp with unsupported operand");
+							clear_comparison_state(&self.current_state);
+							break;
+						}
+						struct register_state right_state;
+						int right = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &right_state, NULL);
+						truncate_to_operand_size(&right_state, size);
+						bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
+						LOG("ccmp", name_for_register(left));
+						LOG("with", name_for_register(right));
+						LOG("value", temp_str(copy_register_state_description(&analysis->loader, right_state)));
+						if (applied_shift) {
+							clear_comparison_state(&self.current_state);
+						} else {
+							set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
+								.target_register = left,
+								.value = right_state,
+								.mask = mask_for_operand_size(size),
+								.mem_rm = self.current_state.mem_rm,
+								.sources = right == REGISTER_INVALID ? 0 : self.current_state.sources[right],
+								.validity = COMPARISON_SUPPORTS_ANY,
+							});
+						}
+						break;
+					}
+					case NEVER_MATCHES:
+						LOG("conditional never matches");
+						clear_comparison_state(&self.current_state);
+						break;
+					case POSSIBLY_MATCHES:
+						LOG("conditional sometimes matches");
+						clear_comparison_state(&self.current_state);
+						break;
+				}
 				break;
 			}
 			case ARM64_CFINV:
