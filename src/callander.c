@@ -3155,6 +3155,7 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 		update_known_function(analysis, new_binary, "longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "abort", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "pthread_exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		if (analysis->ld_profile != NULL) {
 			ins_ptr dl_start_profile = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_dl_start_profile", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
