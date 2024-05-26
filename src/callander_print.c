@@ -1668,6 +1668,403 @@ struct mtd_read_req {
 #define FS_IOC_ENABLE_VERITY_OLD _IO('f', 133)
 
 
+struct kdbus_notify_id_change {
+	__u64 id;
+	__u64 flags;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_notify_name_change {
+	struct kdbus_notify_id_change old_id;
+	struct kdbus_notify_id_change new_id;
+	char name[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_creds {
+	__u32 uid;
+	__u32 euid;
+	__u32 suid;
+	__u32 fsuid;
+	__u32 gid;
+	__u32 egid;
+	__u32 sgid;
+	__u32 fsgid;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_pids {
+	__u64 pid;
+	__u64 tid;
+	__u64 ppid;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_caps {
+	__u32 last_cap;
+	__u32 caps[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_audit {
+	__u32 sessionid;
+	__u32 loginuid;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_timestamp {
+	__u64 seqnum;
+	__u64 monotonic_ns;
+	__u64 realtime_ns;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_vec {
+	__u64 size;
+	union {
+		__u64 address;
+		__u64 offset;
+	};
+} __attribute__((__aligned__(8)));
+
+struct kdbus_bloom_parameter {
+	__u64 size;
+	__u64 n_hash;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_bloom_filter {
+	__u64 generation;
+	__u64 data[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_memfd {
+	__u64 start;
+	__u64 size;
+	int fd;
+	__u32 __pad;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_name {
+	__u64 flags;
+	char name[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_policy_access {
+	__u64 type;	/* USER, GROUP, WORLD */
+	__u64 access;	/* OWN, TALK, SEE */
+	__u64 id;	/* uid, gid, 0 */
+} __attribute__((__aligned__(8)));
+
+struct kdbus_item {
+	__u64 size;
+	__u64 type;
+	union {
+		__u8 data[0];
+		__u32 data32[0];
+		__u64 data64[0];
+		char str[0];
+
+		__u64 id;
+		struct kdbus_vec vec;
+		struct kdbus_creds creds;
+		struct kdbus_pids pids;
+		struct kdbus_audit audit;
+		struct kdbus_caps caps;
+		struct kdbus_timestamp timestamp;
+		struct kdbus_name name;
+		struct kdbus_bloom_parameter bloom_parameter;
+		struct kdbus_bloom_filter bloom_filter;
+		struct kdbus_memfd memfd;
+		int fds[0];
+		struct kdbus_notify_name_change name_change;
+		struct kdbus_notify_id_change id_change;
+		struct kdbus_policy_access policy_access;
+	};
+} __attribute__((__aligned__(8)));
+
+struct kdbus_msg {
+	__u64 size;
+	__u64 flags;
+	__s64 priority;
+	__u64 dst_id;
+	__u64 src_id;
+	__u64 payload_type;
+	__u64 cookie;
+	union {
+		__u64 timeout_ns;
+		__u64 cookie_reply;
+	};
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_msg_info {
+	__u64 offset;
+	__u64 msg_size;
+	__u64 return_flags;
+} __attribute__((__aligned__(8)));
+
+struct kdbus_cmd_send {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__u64 msg_address;
+	struct kdbus_msg_info reply;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_cmd_recv {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__s64 priority;
+	__u64 dropped_msgs;
+	struct kdbus_msg_info msg;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+struct kdbus_cmd_free {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__u64 offset;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+/**
+ * struct kdbus_cmd_hello - struct to say hello to kdbus
+ * @size:		The total size of the structure
+ * @flags:		Connection flags (KDBUS_HELLO_*), userspace → kernel
+ * @return_flags:	Command return flags, kernel → userspace
+ * @attach_flags_send:	Mask of metadata to attach to each message sent
+ *			off by this connection (KDBUS_ATTACH_*)
+ * @attach_flags_recv:	Mask of metadata to attach to each message receieved
+ *			by the new connection (KDBUS_ATTACH_*)
+ * @bus_flags:		The flags field copied verbatim from the original
+ *			KDBUS_CMD_BUS_MAKE ioctl. It's intended to be useful
+ *			to do negotiation of features of the payload that is
+ *			transferred (kernel → userspace)
+ * @id:			The ID of this connection (kernel → userspace)
+ * @pool_size:		Size of the connection's buffer where the received
+ *			messages are placed
+ * @offset:		Pool offset where additional items of type
+ *			kdbus_item_list are stored. They contain information
+ *			about the bus and the newly created connection.
+ * @items_size:		Copy of item_list.size stored in @offset.
+ * @id128:		Unique 128-bit ID of the bus (kernel → userspace)
+ * @items:		A list of items
+ *
+ * This struct is used with the KDBUS_CMD_HELLO ioctl.
+ */
+struct kdbus_cmd_hello {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__u64 attach_flags_send;
+	__u64 attach_flags_recv;
+	__u64 bus_flags;
+	__u64 id;
+	__u64 pool_size;
+	__u64 offset;
+	__u64 items_size;
+	__u8 id128[16];
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+/**
+ * struct kdbus_info - connection information
+ * @size:		total size of the struct
+ * @id:			64bit object ID
+ * @flags:		object creation flags
+ * @items:		list of items
+ *
+ * Note that the user is responsible for freeing the allocated memory with
+ * the KDBUS_CMD_FREE ioctl.
+ */
+struct kdbus_info {
+	__u64 size;
+	__u64 id;
+	__u64 flags;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+/**
+ * enum kdbus_list_flags - what to include into the returned list
+ * @KDBUS_LIST_UNIQUE:		active connections
+ * @KDBUS_LIST_ACTIVATORS:	activator connections
+ * @KDBUS_LIST_NAMES:		known well-known names
+ * @KDBUS_LIST_QUEUED:		queued-up names
+ */
+enum kdbus_list_flags {
+	KDBUS_LIST_UNIQUE		= 1ULL <<  0,
+	KDBUS_LIST_NAMES		= 1ULL <<  1,
+	KDBUS_LIST_ACTIVATORS		= 1ULL <<  2,
+	KDBUS_LIST_QUEUED		= 1ULL <<  3,
+};
+
+/**
+ * struct kdbus_cmd_list - list connections
+ * @size:		overall size of this object
+ * @flags:		flags for the query (KDBUS_LIST_*), userspace → kernel
+ * @return_flags:	command return flags, kernel → userspace
+ * @offset:		Offset in the caller's pool buffer where an array of
+ *			kdbus_info objects is stored.
+ *			The user must use KDBUS_CMD_FREE to free the
+ *			allocated memory.
+ * @list_size:		size of returned list in bytes
+ * @items:		Items for the command. Reserved for future use.
+ *
+ * This structure is used with the KDBUS_CMD_LIST ioctl.
+ */
+struct kdbus_cmd_list {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__u64 offset;
+	__u64 list_size;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+/**
+ * struct kdbus_cmd_info - struct used for KDBUS_CMD_CONN_INFO ioctl
+ * @size:		The total size of the struct
+ * @flags:		KDBUS_ATTACH_* flags, userspace → kernel
+ * @return_flags:	Command return flags, kernel → userspace
+ * @id:			The 64-bit ID of the connection. If set to zero, passing
+ *			@name is required. kdbus will look up the name to
+ *			determine the ID in this case.
+ * @offset:		Returned offset in the caller's pool buffer where the
+ *			kdbus_info struct result is stored. The user must
+ *			use KDBUS_CMD_FREE to free the allocated memory.
+ * @info_size:		Output buffer to report size of data at @offset.
+ * @items:		The optional item list, containing the
+ *			well-known name to look up as a KDBUS_ITEM_NAME.
+ *			Only needed in case @id is zero.
+ *
+ * On success, the KDBUS_CMD_CONN_INFO ioctl will return 0 and @offset will
+ * tell the user the offset in the connection pool buffer at which to find the
+ * result in a struct kdbus_info.
+ */
+struct kdbus_cmd_info {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__u64 id;
+	__u64 offset;
+	__u64 info_size;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+/**
+ * enum kdbus_cmd_match_flags - flags to control the KDBUS_CMD_MATCH_ADD ioctl
+ * @KDBUS_MATCH_REPLACE:	If entries with the supplied cookie already
+ *				exists, remove them before installing the new
+ *				matches.
+ */
+enum kdbus_cmd_match_flags {
+	KDBUS_MATCH_REPLACE	= 1ULL <<  0,
+};
+
+/**
+ * struct kdbus_cmd_match - struct to add or remove matches
+ * @size:		The total size of the struct
+ * @flags:		Flags for match command (KDBUS_MATCH_*),
+ *			userspace → kernel
+ * @return_flags:	Command return flags, kernel → userspace
+ * @cookie:		Userspace supplied cookie. When removing, the cookie
+ *			identifies the match to remove
+ * @items:		A list of items for additional information
+ *
+ * This structure is used with the KDBUS_CMD_MATCH_ADD and
+ * KDBUS_CMD_MATCH_REMOVE ioctl.
+ */
+struct kdbus_cmd_match {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	__u64 cookie;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+/**
+ * enum kdbus_make_flags - Flags for KDBUS_CMD_{BUS,ENDPOINT}_MAKE
+ * @KDBUS_MAKE_ACCESS_GROUP:	Make the bus or endpoint node group-accessible
+ * @KDBUS_MAKE_ACCESS_WORLD:	Make the bus or endpoint node world-accessible
+ */
+enum kdbus_make_flags {
+	KDBUS_MAKE_ACCESS_GROUP		= 1ULL <<  0,
+	KDBUS_MAKE_ACCESS_WORLD		= 1ULL <<  1,
+};
+
+/**
+ * enum kdbus_name_flags - flags for KDBUS_CMD_NAME_ACQUIRE
+ * @KDBUS_NAME_REPLACE_EXISTING:	Try to replace name of other connections
+ * @KDBUS_NAME_ALLOW_REPLACEMENT:	Allow the replacement of the name
+ * @KDBUS_NAME_QUEUE:			Name should be queued if busy
+ * @KDBUS_NAME_IN_QUEUE:		Name is queued
+ * @KDBUS_NAME_ACTIVATOR:		Name is owned by a activator connection
+ */
+enum kdbus_name_flags {
+	KDBUS_NAME_REPLACE_EXISTING	= 1ULL <<  0,
+	KDBUS_NAME_ALLOW_REPLACEMENT	= 1ULL <<  1,
+	KDBUS_NAME_QUEUE		= 1ULL <<  2,
+	KDBUS_NAME_IN_QUEUE		= 1ULL <<  3,
+	KDBUS_NAME_ACTIVATOR		= 1ULL <<  4,
+};
+
+/**
+ * struct kdbus_cmd - generic ioctl payload
+ * @size:		Overall size of this structure
+ * @flags:		Flags for this ioctl, userspace → kernel
+ * @return_flags:	Ioctl return flags, kernel → userspace
+ * @items:		Additional items to modify the behavior
+ *
+ * This is a generic ioctl payload object. It's used by all ioctls that only
+ * take flags and items as input.
+ */
+struct kdbus_cmd {
+	__u64 size;
+	__u64 flags;
+	__u64 return_flags;
+	struct kdbus_item items[0];
+} __attribute__((__aligned__(8)));
+
+#define KDBUS_IOCTL_MAGIC		0x95
+enum kdbus_ioctl_type {
+	/* bus owner (00-0f) */
+	KDBUS_CMD_BUS_MAKE =		_IOW(KDBUS_IOCTL_MAGIC, 0x00,
+					     struct kdbus_cmd),
+
+	/* endpoint owner (10-1f) */
+	KDBUS_CMD_ENDPOINT_MAKE =	_IOW(KDBUS_IOCTL_MAGIC, 0x10,
+					     struct kdbus_cmd),
+	KDBUS_CMD_ENDPOINT_UPDATE =	_IOW(KDBUS_IOCTL_MAGIC, 0x11,
+					     struct kdbus_cmd),
+
+	/* connection owner (80-ff) */
+	KDBUS_CMD_HELLO =		_IOWR(KDBUS_IOCTL_MAGIC, 0x80,
+					      struct kdbus_cmd_hello),
+	KDBUS_CMD_UPDATE =		_IOW(KDBUS_IOCTL_MAGIC, 0x81,
+					     struct kdbus_cmd),
+	KDBUS_CMD_BYEBYE =		_IOW(KDBUS_IOCTL_MAGIC, 0x82,
+					     struct kdbus_cmd),
+	KDBUS_CMD_FREE =		_IOW(KDBUS_IOCTL_MAGIC, 0x83,
+					     struct kdbus_cmd_free),
+	KDBUS_CMD_CONN_INFO =		_IOR(KDBUS_IOCTL_MAGIC, 0x84,
+					     struct kdbus_cmd_info),
+	KDBUS_CMD_BUS_CREATOR_INFO =	_IOR(KDBUS_IOCTL_MAGIC, 0x85,
+					     struct kdbus_cmd_info),
+	KDBUS_CMD_LIST =		_IOR(KDBUS_IOCTL_MAGIC, 0x86,
+					     struct kdbus_cmd_list),
+
+	KDBUS_CMD_SEND =		_IOW(KDBUS_IOCTL_MAGIC, 0x90,
+					     struct kdbus_cmd_send),
+	KDBUS_CMD_RECV =		_IOR(KDBUS_IOCTL_MAGIC, 0x91,
+					     struct kdbus_cmd_recv),
+
+	KDBUS_CMD_NAME_ACQUIRE =	_IOW(KDBUS_IOCTL_MAGIC, 0xa0,
+					     struct kdbus_cmd),
+	KDBUS_CMD_NAME_RELEASE =	_IOW(KDBUS_IOCTL_MAGIC, 0xa1,
+					     struct kdbus_cmd),
+
+	KDBUS_CMD_MATCH_ADD =		_IOW(KDBUS_IOCTL_MAGIC, 0xb0,
+					     struct kdbus_cmd_match),
+	KDBUS_CMD_MATCH_REMOVE =	_IOW(KDBUS_IOCTL_MAGIC, 0xb1,
+					     struct kdbus_cmd_match),
+};
+
 static struct enum_option ioctls[] = {
 	// ioctl_tty
     DESCRIBE_ENUM(TCGETS),
@@ -2746,6 +3143,23 @@ static struct enum_option ioctls[] = {
 	DESCRIBE_ENUM(F2FS_IOC_COMPRESS_FILE),
 	DESCRIBE_ENUM(F2FS_IOC_START_ATOMIC_REPLACE),
 	DESCRIBE_ENUM(F2FS_IOC_SHUTDOWN),
+	// kdbus
+	DESCRIBE_ENUM(KDBUS_CMD_BUS_MAKE),
+	DESCRIBE_ENUM(KDBUS_CMD_ENDPOINT_MAKE),
+	DESCRIBE_ENUM(KDBUS_CMD_ENDPOINT_UPDATE),
+	DESCRIBE_ENUM(KDBUS_CMD_HELLO),
+	DESCRIBE_ENUM(KDBUS_CMD_UPDATE),
+	DESCRIBE_ENUM(KDBUS_CMD_BYEBYE),
+	DESCRIBE_ENUM(KDBUS_CMD_FREE),
+	DESCRIBE_ENUM(KDBUS_CMD_CONN_INFO),
+	DESCRIBE_ENUM(KDBUS_CMD_BUS_CREATOR_INFO),
+	DESCRIBE_ENUM(KDBUS_CMD_LIST),
+	DESCRIBE_ENUM(KDBUS_CMD_SEND),
+	DESCRIBE_ENUM(KDBUS_CMD_RECV),
+	DESCRIBE_ENUM(KDBUS_CMD_NAME_ACQUIRE),
+	DESCRIBE_ENUM(KDBUS_CMD_NAME_RELEASE),
+	DESCRIBE_ENUM(KDBUS_CMD_MATCH_ADD),
+	DESCRIBE_ENUM(KDBUS_CMD_MATCH_REMOVE),
 	// loop
 	DESCRIBE_ENUM(LOOP_SET_FD),
 	DESCRIBE_ENUM(LOOP_CLR_FD),
