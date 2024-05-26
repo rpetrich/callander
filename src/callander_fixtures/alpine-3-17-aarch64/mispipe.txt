@@ -91,7 +91,7 @@ mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ ld-musl-
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
 madvise(any, any, MADV_FREE) @ ld-musl-aarch64.so.1+0x3e614(madvise+16)
-wait4(any, 0, WUNTRACED, 0) @ ld-musl-aarch64.so.1+0x5d210
 wait4(any, any, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
-wait4(any, 0, WUNTRACED, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+wait4(0x1-0xfffffffffffffffe, 0, WUNTRACED, 0) @ ld-musl-aarch64.so.1+0x5d210
 wait4(any, any, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+wait4(0x1-0xfffffffffffffffe, 0, WUNTRACED, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)

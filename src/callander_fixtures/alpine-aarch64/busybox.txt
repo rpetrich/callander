@@ -32,7 +32,7 @@ fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x538fc(freopen+96)
 fcntl(any u32, F_SETFL, NULL-0xfffffffffff7ff3f) @ ld-musl-aarch64.so.1+0x5391c(freopen+128)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x64e0c(dup2+80)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x650a0(fchdir+76)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-aarch64.so.1+0x65128(fchown+96)
+fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x65128(fchown+96)
 fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x656b8(pipe2+136)
 fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x656c0(pipe2+144)
 inotify_init1(0) @ ld-musl-aarch64.so.1+0x24440(inotify_init1+16)
@@ -173,8 +173,8 @@ futex(ld-musl-aarch64.so.1+0xb1160(key_lock*), any, 0-INT_MAX, ld-musl-aarch64.s
 futex(ld-musl-aarch64.so.1+0xb1dc8, FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb1dc8, any, any)
 futex(ld-musl-aarch64.so.1+0xb1e60(lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xb1e60(lock*), any u32, any u32)
 futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
-futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, any, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, any, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
+futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, 0x1-0x7fffffff, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
+futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, 0x1-0x7fffffff, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
@@ -255,17 +255,17 @@ getgid() @ ld-musl-aarch64.so.1+0x652d4(getgid+4)
 getegid() @ ld-musl-aarch64.so.1+0x652bc(getegid+4)
 gettid() @ ld-musl-aarch64.so.1+0x61aa8(__synccall*+292)
 sysinfo(any) @ ld-musl-aarch64.so.1+0x24c64(sysinfo+12)
-msgget(any, 0) @ ld-musl-aarch64.so.1+0x232c8(msgget+20)
+msgget(non-NULL, 0) @ ld-musl-aarch64.so.1+0x232c8(msgget+20)
 msgctl(any, 0, 0) @ ld-musl-aarch64.so.1+0x232a0(msgctl+20)
 msgctl(any, 0x2-0x3, any) @ ld-musl-aarch64.so.1+0x232a0(msgctl+20)
 msgctl(any, 0xb-0xc, any) @ ld-musl-aarch64.so.1+0x232a0(msgctl+20)
-semget(any, 0, 0) @ ld-musl-aarch64.so.1+0x233dc(semget+52)
+semget(non-NULL, 0, 0) @ ld-musl-aarch64.so.1+0x233dc(semget+52)
 semget(0x414e4547, 2, 0) @ ld-musl-aarch64.so.1+0x233dc(semget+52)
 semget(0x414e4547, 2, 0777) @ ld-musl-aarch64.so.1+0x233dc(semget+52)
 semctl(any, any, IPC_RMID-SEM_STAT_ANY, any) @ ld-musl-aarch64.so.1+0x2338c(semctl+80)
 semctl(any, any, SEM_STAT_ANY-0xffffffffffffffff, 0) @ ld-musl-aarch64.so.1+0x2338c(semctl+80)
-semop(any, any, 0x1-0x3) @ ld-musl-aarch64.so.1+0x233f4(semop+16)
-shmget(any, any, 0) @ ld-musl-aarch64.so.1+0x23498(shmget+28)
+semop(NULL-0xfffffffffffffffe, any, 0x1-0x3) @ ld-musl-aarch64.so.1+0x233f4(semop+16)
+shmget(non-NULL, any, 0) @ ld-musl-aarch64.so.1+0x23498(shmget+28)
 shmget(0x414e4547, any, 0644) @ ld-musl-aarch64.so.1+0x23498(shmget+28)
 shmctl(any, IPC_RMID, 0) @ ld-musl-aarch64.so.1+0x2344c(shmctl+20)
 shmctl(any, IPC_STAT-IPC_INFO, any) @ ld-musl-aarch64.so.1+0x2344c(shmctl+20)
@@ -293,28 +293,10 @@ connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
 getpeername(any, any, any) @ ld-musl-aarch64.so.1+0x41ae0(getpeername+28)
-sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, 0, any, 20) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, MSG_DONTWAIT, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, MSG_DONTWAIT|MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, 28, 0, any, 12) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, 60, 0, any, 16) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, any, 0, any, 20) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, any, MSG_DONTWAIT, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, any, MSG_DONTWAIT|MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, 28, 0, any, 12) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, 60, 0, any, 16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
-recvfrom(any, any, 72, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-recvfrom(any, any, 1024, MSG_PEEK|MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvfrom(any, any, 72, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvfrom(any, any, 1024, MSG_PEEK|MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+sendto(any, any, any, any u16, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
+sendto(any, any, any, any u16, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+recvfrom(any, any, any, any u8, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+recvfrom(any, any, any, any u8, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, SOL_IP-SOL_SOCKET, SO_DEBUG-SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IP-SOL_SOCKET, SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, SO_BROADCAST, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)

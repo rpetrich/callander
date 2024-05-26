@@ -52,8 +52,8 @@ readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-pwrite64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
-pwrite64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+pwrite64(any, any, NULL-0x7, any) @ ld-musl-aarch64.so.1+0x5d210
+pwrite64(any, any, NULL-0x7, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -97,8 +97,8 @@ ptrace(any, any, any, any) @ ld-musl-aarch64.so.1+0x24824(ptrace+104)
 sched_getaffinity(0, 128, any) @ ld-musl-aarch64.so.1+0x1c830(sysconf+248)
 restart_syscall()
 kill(any, SIGINT) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
 kill(any, SIGSTOP) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
+kill(0x1-0xfffffffffffffffe, SIGKILL) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
 tkill(any, SIGCONT-SIGSTOP) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
@@ -132,9 +132,9 @@ socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, any) @ ld-musl-aarch64.so.1+0x4
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-aarch64.so.1+0x454ec(socketpair+148)
 bind(any, any, 16) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
 bind(any, any, 28) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
-connect(any, any, 110) @ ld-musl-aarch64.so.1+0x5d210
+connect(STDIN_FILENO-0xfffffffffffffffe, any, 110) @ ld-musl-aarch64.so.1+0x5d210
 connect(any, ld-musl-aarch64.so.1+0x94f1a(addr*), 24) @ ld-musl-aarch64.so.1+0x5d210
-connect(any, any, 110) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+connect(STDIN_FILENO-0xfffffffffffffffe, any, 110) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(any, ld-musl-aarch64.so.1+0x94f1a(addr*), 24) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 sendto(any, any, any u32, MSG_NOSIGNAL, any, 16) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, any u32, MSG_NOSIGNAL, any, 28) @ ld-musl-aarch64.so.1+0x5d210

@@ -54,7 +54,7 @@ writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
 ppoll(any, any, any, 0, any u8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-ppoll(any, any, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+ppoll(any, non-NULL, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 ppoll(any, 0x2f-0x41, any u16, 0, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)

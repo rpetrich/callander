@@ -70,8 +70,8 @@ clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /sbin/ldconfig:0x453244
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ /sbin/ldconfig:0x453244
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
-clock_nanosleep(0xfffffffffffffffa, 0, any, any) @ /sbin/ldconfig:0x465c48
-clock_nanosleep(0xfffffffffffffffa, any, any, any) @ /sbin/ldconfig:0x465c9c
+clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /sbin/ldconfig:0x465c48
+clock_nanosleep(CLOCK_REALTIME, any, any, any) @ /sbin/ldconfig:0x465c9c
 restart_syscall()
 tgkill(any, any, SIGABRT) @ /sbin/ldconfig:0x40d0dc
 tgkill(any, any, SIGFPE) @ /sbin/ldconfig:0x40d0dc
@@ -93,7 +93,7 @@ sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ /sbin/ldconfig:0x466f34
 sendto(any, any, any, any, 0, 0) @ /sbin/ldconfig:0x466f8c
 recvmsg(any, any, MSG_CMSG_CLOEXEC) @ /sbin/ldconfig:0x466e5c
 recvmsg(any, any, any) @ /sbin/ldconfig:0x466ea4
-brk(any) @ /sbin/ldconfig:0x454728
+brk(0) @ /sbin/ldconfig:0x454728
 munmap(any, any) @ /sbin/ldconfig:0x430bc4
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /sbin/ldconfig:0x432674
 mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ /sbin/ldconfig:0x430b70
@@ -101,9 +101,8 @@ mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ 
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /sbin/ldconfig:0x430b70
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_DENYWRITE, -1, 0) @ /sbin/ldconfig:0x430b70
 mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ /sbin/ldconfig:0x430b70
-mmap(any, any, any, MAP_PRIVATE|MAP_DENYWRITE, any, any) @ /sbin/ldconfig:0x430b70
-mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, any, any) @ /sbin/ldconfig:0x430b70
+mmap(any, any, any, MAP_PRIVATE|MAP_DENYWRITE, STDIN_FILENO-0xfffffffffffffffe, any) @ /sbin/ldconfig:0x430b70
+mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, STDIN_FILENO-0xfffffffffffffffe, any) @ /sbin/ldconfig:0x430b70
 mmap(any, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /sbin/ldconfig:0x430b70
 mmap(non-NULL, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /sbin/ldconfig:0x430b70
 mprotect(any, any, any u32) @ /sbin/ldconfig:0x430be4
-madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig:0x430c04

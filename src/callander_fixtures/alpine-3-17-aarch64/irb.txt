@@ -33,7 +33,7 @@ fcntl(any u32, F_SETFL, NULL-0xfffffffffff7ff3f) @ ld-musl-aarch64.so.1+0x52ec4(
 fcntl(any, F_SETLKW, any) @ ld-musl-aarch64.so.1+0x5d210
 fcntl(any, F_SETLKW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x642e4(dup2+80)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-aarch64.so.1+0x64600(fchown+96)
+fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x64600(fchown+96)
 fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x64b78(pipe2+112)
 fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x64b80(pipe2+120)
 fcntl(any u32, F_SETFL, 2048) @ ld-musl-aarch64.so.1+0x64b98(pipe2+144)
@@ -255,7 +255,7 @@ recvfrom(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 recvfrom(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 setsockopt(any, any, any, any, any u32) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 getsockopt(any, any, any, any, any) @ ld-musl-aarch64.so.1+0x41d24(getsockopt+28)
-shutdown(any, any) @ ld-musl-aarch64.so.1+0x45368(shutdown+36)
+shutdown(any, SHUT_RD-SHUT_RDWR) @ ld-musl-aarch64.so.1+0x45368(shutdown+36)
 sendmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 sendmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 recvmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5d210

@@ -91,7 +91,7 @@ rt_sigaction(SIGALRM-SIGTERM, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc
 rt_sigaction(SIGTSTP-SIGTTIN, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
 rt_sigaction(SIGTTOU, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
 rt_sigaction(SIGWINCH, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
-rt_sigaction(SIGSETXID, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
+rt_sigaction(SIGSETXID, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f118(all_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50518(__block_all_sigs*+24)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f110(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50538(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x50554(__restore_sigs*+20)

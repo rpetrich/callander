@@ -40,8 +40,8 @@ ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+5
 unlinkat(AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x65190(unlink+24)
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ ld-musl-aarch64.so.1+0x549dc(rename+32)
 ftruncate(any, any) @ ld-musl-aarch64.so.1+0x646dc(ftruncate64+16)
-fallocate(any, 0, 0, 0x1-0x8000000) @ ld-musl-aarch64.so.1+0x211e4(posix_fallocate+24)
-fallocate(any, 1, 0, non-NULL) @ ld-musl-aarch64.so.1+0x24244(fallocate64+20)
+fallocate(STDIN_FILENO-0xfffffffffffffffe, 0, 0, 0x1-0x8000000) @ ld-musl-aarch64.so.1+0x211e4(posix_fallocate+24)
+fallocate(STDIN_FILENO-0xfffffffffffffffe, 1, 0, non-NULL) @ ld-musl-aarch64.so.1+0x24244(fallocate64+20)
 faccessat(AT_FDCWD, /usr/bin/links+0x18cb64, X_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 faccessat(AT_FDCWD, /usr/bin/links+0x18cb7f, X_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 chdir(any) @ ld-musl-aarch64.so.1+0x482ec(child*+888)
@@ -96,8 +96,8 @@ newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat6
 newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x54e8c(tempnam+252)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
-fsync(any) @ ld-musl-aarch64.so.1+0x5d210
-fsync(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x5d210
+fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC) @ ld-musl-aarch64.so.1+0x24b9c(timerfd_create+20)
 timerfd_settime(any, 0, any, 0) @ ld-musl-aarch64.so.1+0x24bc0(timerfd_settime+20)
 utimensat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x50ce8(utimensat+52)
@@ -179,8 +179,8 @@ socket(any, any, any) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(any, 0-0xfffffffffff7f7ff, any) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-aarch64.so.1+0x45494(socketpair+60)
 bind(any, any, any u32) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
+listen(STDIN_FILENO-0xfffffffffffffffe, 1) @ ld-musl-aarch64.so.1+0x42900(listen+36)
 listen(STDIN_FILENO-0xfffffffffffffffe, 128) @ ld-musl-aarch64.so.1+0x42900(listen+36)
-listen(any, 1) @ ld-musl-aarch64.so.1+0x42900(listen+36)
 accept(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 accept(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210

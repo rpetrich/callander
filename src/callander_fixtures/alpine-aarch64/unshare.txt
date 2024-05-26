@@ -67,8 +67,8 @@ futex(ld-musl-aarch64.so.1+0xb1160(key_lock*), any, 0-INT_MAX, ld-musl-aarch64.s
 futex(ld-musl-aarch64.so.1+0xb1dc8, FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb1dc8, any, any)
 futex(ld-musl-aarch64.so.1+0xb1e60(lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xb1e60(lock*), any u32, any u32)
 futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
-futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, any, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, any, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
+futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, 0x1-0x7fffffff, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
+futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, 0x1-0x7fffffff, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
@@ -126,5 +126,5 @@ mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-a
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e7c8(mmap+148)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e834(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x66cb8(reloc_all*+364)
-wait4(any, any, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-wait4(any, any, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+wait4(non-NULL, any, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
+wait4(non-NULL, any, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

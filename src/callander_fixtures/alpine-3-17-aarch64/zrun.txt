@@ -1,5 +1,5 @@
 callander: permitted syscalls: fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFD, any) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
-fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
+fcntl(STDIN_FILENO-0xfffffffffffffffe, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x2111c(open+136)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x5065c(fchmod+80)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x50854(fstatat64+108)
