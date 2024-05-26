@@ -1236,9 +1236,6 @@ static size_t sizeof_searched_instruction_data_entry(struct searched_instruction
 	return sizeof(struct searched_instruction_data_entry) + entry->used_count * sizeof(struct register_state);
 }
 
-__attribute__((nonnull(1, 2)))
-static char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head);
-
 void init_searched_instructions(struct searched_instructions *search)
 {
 	search->table = calloc(8, sizeof(*search->table));
@@ -3337,8 +3334,10 @@ struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, c
 __attribute__((nonnull(1)))
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
+typedef char *(*additional_print_callback)(const struct loader_context *loader, const struct analysis_frame *frame, void *callback_data);
+
 __attribute__((nonnull(1, 2)))
-static char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head)
+static char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data)
 {
 	size_t count = 0;
 	for (const struct analysis_frame *node = head; node != NULL; node = node->next) {
@@ -3384,6 +3383,17 @@ static char *copy_call_trace_description(const struct loader_context *context, c
 			description[new_length] = '\0';
 			length = new_length;
 		}
+		if (callback != NULL) {
+			char *additional = callback(context, node, callback_data);
+			if (additional != NULL) {
+				size_t additional_length = fs_strlen(additional);
+				size_t new_length = length + additional_length;
+				description = realloc(description, new_length + 1);
+				memcpy(&description[length], additional, additional_length + 1);
+				free(additional);
+				length = new_length;
+			}
+		}
 		list[i].description = description;
 		list[i].length = length;
 		total_size += length + 1;
@@ -3402,6 +3412,12 @@ static char *copy_call_trace_description(const struct loader_context *context, c
 	*dest = '\0';
 	free(list);
 	return result;
+}
+
+__attribute__((nonnull(1, 2)))
+char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head)
+{
+	return copy_call_trace_description_with_additional(context, head, NULL, NULL);
 }
 
 __attribute__((nonnull(1)))
@@ -3542,6 +3558,52 @@ static inline void add_syscall(struct recorded_syscalls *syscalls, struct record
 	syscalls->list[index] = syscall;
 }
 
+static char *record_syscall_trace_callback(const struct loader_context *loader, const struct analysis_frame *frame, void *callback_data)
+{
+	register_mask *relevant = callback_data;
+	char buf[1024*8];
+	size_t i = 0;
+	register_mask new_relevant = 0;
+	for_each_bit(*relevant, bit, r) {
+		if (register_is_partially_known(&frame->current_state.registers[r])) {
+			buf[i++] = ' ';
+			const char *name = name_for_register(r);
+			size_t len = fs_strlen(name);
+			memcpy(&buf[i], name, len);
+			i += len;
+			buf[i++] = '=';
+			char *description = copy_register_state_description(loader, frame->current_state.registers[r]);
+			len = fs_strlen(description);
+			memcpy(&buf[i], description, len);
+			i += len;
+			free(description);
+			register_mask sources = frame->current_state.sources[r];
+			new_relevant |= sources;
+			if (sources != 0) {
+				buf[i++] = '(';
+				buf[i++] = 'f';
+				buf[i++] = 'r';
+				buf[i++] = 'o';
+				buf[i++] = 'm';
+				for_each_bit(sources, bit2, r2) {
+					buf[i++] = ' ';
+					name = name_for_register(r2);
+					len = fs_strlen(name);
+					memcpy(&buf[i], name, len);
+					i += len;
+				}
+				buf[i++] = ')';
+			}
+		}
+	}
+	*relevant = new_relevant;
+	if (i == 0) {
+		return NULL;
+	}
+	buf[i] = '\0';
+	return strdup(buf);
+}
+
 void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects)
 {
 	struct recorded_syscalls *syscalls = &analysis->syscalls;
@@ -3606,7 +3668,8 @@ void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysi
 				}
 			}
 		}
-		ERROR("at", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+		register_mask relevant = syscall_argument_abi_used_registers_for_argc[info.attributes & SYSCALL_ARGC_MASK];
+		ERROR("at", temp_str(copy_call_trace_description_with_additional(&analysis->loader, &self, record_syscall_trace_callback, &relevant)));
 	}
 	// figure out which, if any, arguments to the function were used in the syscall
 	register_mask relevant_registers = syscall_argument_abi_used_registers_for_argc[info.attributes & SYSCALL_ARGC_MASK];
