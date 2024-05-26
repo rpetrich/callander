@@ -61,7 +61,7 @@ writev(any u32, any, any) @ ld-linux-aarch64.so.1+0xd1e4(_dl_debug_vdprintf*+244
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x7326c(__libc_message*+460)
 writev(STDERR_FILENO, any, NULL-0x2) @ libc.so.6+0xdde64(writev+52)
 writev(STDERR_FILENO, any, NULL-0x2) @ libc.so.6+0xddea4(writev+116)
-pread64(any, any, 511, any) @ libc.so.6+0xdcf08(__pread64_nocancel+8)
+pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdcf08(__pread64_nocancel+8)
 ppoll(any, 1, any, 0, 0) @ libc.so.6+0xdbdd8(poll+152)
 ppoll(any, 1, any, 0, 0) @ libc.so.6+0xdbe38(poll+248)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd726c(fstatat64+12)

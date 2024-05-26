@@ -68,7 +68,7 @@ write(any, any, non-NULL) @ /usr/sbin/ldconfig.real+0x38938
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x38ad4
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x38b14
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0x6cc48
-pread64(any, any, any, any) @ /usr/sbin/ldconfig.real+0x5bbe8
+pread64(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ /usr/sbin/ldconfig.real+0x5bbe8
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x745dc
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x7463c
 readlinkat(AT_FDCWD, any, any, 4095) @ /usr/sbin/ldconfig.real+0x384f8
