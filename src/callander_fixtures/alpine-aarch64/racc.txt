@@ -39,7 +39,7 @@ fcntl(any u32, F_SETFL, NULL-0xfffffffffff7ff3f) @ ld-musl-aarch64.so.1+0x5391c(
 fcntl(any, F_SETLKW, any) @ ld-musl-aarch64.so.1+0x5dc8c
 fcntl(any, F_SETLKW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x64e0c(dup2+80)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-aarch64.so.1+0x65128(fchown+96)
+fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x65128(fchown+96)
 fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x656b8(pipe2+136)
 fcntl(any u32, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x656c0(pipe2+144)
 fcntl(any u32, F_SETFL, 2048) @ ld-musl-aarch64.so.1+0x656d8(pipe2+168)
@@ -157,9 +157,6 @@ futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, any, any, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, any, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-aarch64.so.1+0xb2258(barrier_sem*), any, any, ld-musl-aarch64.so.1+0xb2258(barrier_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, any, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, any, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
 set_robust_list(0, 24) @ ld-musl-aarch64.so.1+0x5f358(pthread_exit+356)
 set_robust_list(any, 24) @ ld-musl-aarch64.so.1+0x60434(__pthread_mutex_trylock_owner*+204)
 nanosleep(any, any) @ ld-musl-aarch64.so.1+0x5dc8c
@@ -273,7 +270,7 @@ recvfrom(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 recvfrom(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, any, any, any, any u32) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 getsockopt(any, any, any, any, any) @ ld-musl-aarch64.so.1+0x41ec0(getsockopt+28)
-shutdown(any, any) @ ld-musl-aarch64.so.1+0x45bf4(shutdown+36)
+shutdown(any, SHUT_RD-SHUT_RDWR) @ ld-musl-aarch64.so.1+0x45bf4(shutdown+36)
 sendmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 sendmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c

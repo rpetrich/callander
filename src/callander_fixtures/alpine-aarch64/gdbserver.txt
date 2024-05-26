@@ -83,8 +83,8 @@ clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 ptrace(any, any, any, any) @ ld-musl-aarch64.so.1+0x24928(ptrace+104)
 restart_syscall()
 kill(any, SIGINT) @ ld-musl-aarch64.so.1+0x50590(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x50590(kill+20)
 kill(any, SIGSTOP) @ ld-musl-aarch64.so.1+0x50590(kill+20)
+kill(0x1-0xfffffffffffffffe, SIGKILL) @ ld-musl-aarch64.so.1+0x50590(kill+20)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20d1c(abort+84)
 tkill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
 tkill(any, SIGCONT-SIGSTOP) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
@@ -111,9 +111,9 @@ socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x45c54(sock
 socket(AF_UNIX, SOCK_STREAM, 0) @ ld-musl-aarch64.so.1+0x45c8c(socket+96)
 socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, any) @ ld-musl-aarch64.so.1+0x45d20(socketpair+60)
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-aarch64.so.1+0x45d78(socketpair+148)
-connect(any, any, 110) @ ld-musl-aarch64.so.1+0x5dc8c
+connect(STDIN_FILENO-0xfffffffffffffffe, any, 110) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, ld-musl-aarch64.so.1+0x95b22(addr*), 24) @ ld-musl-aarch64.so.1+0x5dc8c
-connect(any, any, 110) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+connect(STDIN_FILENO-0xfffffffffffffffe, any, 110) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 connect(any, ld-musl-aarch64.so.1+0x95b22(addr*), 24) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5dc8c
 sendmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

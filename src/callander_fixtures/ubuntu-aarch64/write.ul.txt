@@ -77,8 +77,6 @@ tgkill(any, any u32, SIGFPE) @ libc.so.6+0x7f1cc(__pthread_kill_implementation*+
 tgkill(any, any, SIGABRT) @ libc.so.6+0x7f1fc(__pthread_kill_implementation*+300)
 tgkill(any, any, SIGFPE) @ libc.so.6+0x7f1fc(__pthread_kill_implementation*+300)
 rt_sigaction(SIGHUP-SIGINT, any, any, 8) @ libc.so.6+0x3a79c(__libc_sigaction+124)
-rt_sigaction(SIGABRT, any, any, 8) @ libc.so.6+0x3a79c(__libc_sigaction+124)
-rt_sigaction(SIGALRM, any, any, 8) @ libc.so.6+0x3a79c(__libc_sigaction+124)
 rt_sigaction(SIGALRM, 0, any, 8) @ libc.so.6+0x3a83c(__libc_sigaction+284)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x148518(sigall_set*), any, 8) @ libc.so.6+0x7f130(__pthread_kill_implementation*+96)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x7f17c(__pthread_kill_implementation*+172)

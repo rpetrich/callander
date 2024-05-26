@@ -113,7 +113,6 @@ tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig.real+0x25ba8
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x25bdc
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x25bdc
 rt_sigaction(SIGABRT, any, any, 8) @ /usr/sbin/ldconfig.real+0x4baac
-rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig.real+0x4baac
 rt_sigaction(SIGALRM, 0, any, 8) @ /usr/sbin/ldconfig.real+0x4bb48
 rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig.real+0x8f5e0, any, 8) @ /usr/sbin/ldconfig.real+0x25b0c
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x25b5c

@@ -93,7 +93,7 @@ kill(any, SIGINT) @ ld-musl-aarch64.so.1+0x50590(kill+20)
 tkill(any u32, SIGSETXID) @ ld-musl-aarch64.so.1+0x5e724(cancel_handler*+176)
 tkill(non-NULL, SIGSETXID) @ ld-musl-aarch64.so.1+0x5ffec(pthread_kill+68)
 rt_sigaction(SIGALRM, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
-rt_sigaction(SIGSETXID, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
+rt_sigaction(SIGSETXID, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f118(all_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50518(__block_all_sigs*+24)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f110(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50538(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x50554(__restore_sigs*+20)
@@ -121,8 +121,8 @@ connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
 sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+recvfrom(STDIN_FILENO-0xfffffffffffffffe, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
+recvfrom(STDIN_FILENO-0xfffffffffffffffe, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 sendmsg(STDIN_FILENO-0xfffffffffffffffe, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c

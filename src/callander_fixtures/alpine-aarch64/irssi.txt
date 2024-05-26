@@ -79,8 +79,8 @@ newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarc
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
-fsync(any) @ ld-musl-aarch64.so.1+0x5dc8c
-fsync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x5dc8c
+fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
@@ -108,9 +108,6 @@ futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xb1df4,
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any u32, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
-futex(ld-musl-aarch64.so.1+0xb2258(barrier_sem*), any, any, ld-musl-aarch64.so.1+0xb2258(barrier_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, any, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, any, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
 set_robust_list(0, 24) @ ld-musl-aarch64.so.1+0x5f358(pthread_exit+356)
 set_robust_list(any, 24) @ ld-musl-aarch64.so.1+0x60434(__pthread_mutex_trylock_owner*+204)
@@ -133,7 +130,7 @@ tkill(any u32, SIGSETXID) @ ld-musl-aarch64.so.1+0x5e724(cancel_handler*+176)
 tkill(non-NULL, SIGSETXID) @ ld-musl-aarch64.so.1+0x5ffec(pthread_kill+68)
 tkill(any u32, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x61b18(__synccall*+404)
 rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-aarch64.so.1+0x20d08(abort+64)
-rt_sigaction(any, any, any, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
+rt_sigaction(any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x20d34(abort+108)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f118(all_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50518(__block_all_sigs*+24)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f110(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x50538(__block_app_sigs*+24)
@@ -168,8 +165,8 @@ shmdt(any) @ ld-musl-aarch64.so.1+0x2346c(shmdt+12)
 socket(any, any, any) @ ld-musl-aarch64.so.1+0x45c54(socket+40)
 socket(any, 0-0xfffffffffff7f7ff, any) @ ld-musl-aarch64.so.1+0x45c8c(socket+96)
 bind(any, any, any u32) @ ld-musl-aarch64.so.1+0x3fd4c(bind+32)
+listen(STDIN_FILENO-0xfffffffffffffffe, 1) @ ld-musl-aarch64.so.1+0x42aa8(listen+36)
 listen(STDIN_FILENO-0xfffffffffffffffe, 128) @ ld-musl-aarch64.so.1+0x42aa8(listen+36)
-listen(any, 1) @ ld-musl-aarch64.so.1+0x42aa8(listen+36)
 accept(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 accept(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
@@ -182,9 +179,9 @@ sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5
 sendto(any, any, any, 0, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvfrom(any, non-NULL, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 recvfrom(any, non-NULL, any, any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, IPPROTO_TCP, SO_DEBUG, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IP-SOL_SOCKET, SO_KEEPALIVE-SO_OOBINLINE, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
-setsockopt(any, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, 0x14-0x15, any, 16) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT-0x1f, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IPV6, TCP_FASTOPEN, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)

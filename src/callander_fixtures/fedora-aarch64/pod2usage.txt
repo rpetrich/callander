@@ -1,5 +1,5 @@
 callander: found syscall with unknown number: any u32
-callander: full call stack: libc.so.6+0xfd880(syscall)-libc.so.6+0xfd8a4(syscall+36)
+callander: full call stack: libc.so.6+0xfd7c0(syscall)-libc.so.6+0xfd7e4(syscall+36)
 libperl.so.5.38+0x520d0-libperl.so.5.38+0x520dc (br)
 libperl.so.5.38+0x183b80-libperl.so.5.38+0x183b8c (bl)
 libperl.so.5.38+0x183b78-libperl.so.5.38+0x183b7c (conditional continue)
