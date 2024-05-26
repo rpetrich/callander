@@ -4,6 +4,7 @@
 
 #include <sys/mount.h>
 #ifdef __linux__
+#include <asm/ioctls.h>
 #include <linux/bpf.h>
 #include <linux/fs.h>
 #include <linux/fsmap.h>
@@ -13,10 +14,89 @@
 #include <linux/nsfs.h>
 #include <linux/perf_event.h>
 #include <linux/seccomp.h>
+#include <linux/serial.h>
 #include <linux/socket.h>
+#include <linux/sockios.h>
 #include <linux/tiocl.h>
 #include <linux/userfaultfd.h>
 #include <linux/vt.h>
+#include <linux/auto_dev-ioctl.h>
+#include <linux/auto_fs.h>
+#include <linux/blkzoned.h>
+#include <linux/btrfs.h>
+#include <linux/cdrom.h>
+#include <linux/cec.h>
+#include <linux/cxl_mem.h>
+#include <linux/dm-ioctl.h>
+#include <linux/dma-buf.h>
+#include <linux/dma-heap.h>
+#include <linux/dvb/dmx.h>
+#include <linux/falloc.h>
+#include <linux/fb.h>
+#include <linux/fd.h>
+#include <linux/blktrace_api.h>
+#include <linux/blkpg.h>
+#include <linux/f2fs.h>
+#include <linux/fiemap.h>
+#include <linux/fs.h>
+#include <linux/fscrypt.h>
+#include <linux/fsl_hypervisor.h>
+#include <linux/fsmap.h>
+#include <linux/fsverity.h>
+#include <linux/fuse.h>
+#include <linux/gpio.h>
+#include <linux/gsmmux.h>
+#include <linux/hdreg.h>
+#include <linux/hiddev.h>
+#include <linux/hidraw.h>
+#include <linux/hpet.h>
+#include <linux/i2c.h>
+#include <linux/if_tun.h>
+#include <linux/iio/buffer.h>
+#include <linux/iio/events.h>
+#include <linux/input.h>
+#include <linux/loop.h>
+#include <linux/lp.h>
+#include <mtd/mtd-abi.h>
+#include <linux/mtio.h>
+#include <linux/nilfs2_api.h>
+#include <linux/nsfs.h>
+#include <linux/perf_event.h>
+#include <linux/pr.h>
+#include <linux/rtc.h>
+#include <linux/random.h>
+#include <linux/seccomp.h>
+#include <linux/sed-opal.h>
+#include <linux/spi/spidev.h>
+#include <linux/tipc.h>
+#include <linux/types.h>
+#include <linux/major.h>
+#include <linux/raid/md_u.h>
+#include <linux/usb/cdc-wdm.h>
+#include <linux/usb/functionfs.h>
+#include <linux/usb/g_printer.h>
+#include <linux/usb/g_uvc.h>
+#include <linux/usb/gadgetfs.h>
+#include <linux/usb/raw_gadget.h>
+#include <linux/usb/tmc.h>
+#include <linux/usbdevice_fs.h>
+#include <linux/watchdog.h>
+#include <linux/wireless.h>
+#include <scsi/sg.h>
+#include <drm/drm.h>
+typedef __u32 compat_ulong_t;
+#ifdef __x86_64__
+#include <asm/mtrr.h>
+#include <asm/amd_hsmp.h>
+#include <asm/mce.h>
+#include <asm/msr.h>
+#include <asm/sgx.h>
+#endif
+#include <linux/pktcdvd.h>
+#include <linux/uinput.h>
+#include <linux/mmtimer.h>
+#include <linux/kfd_ioctl.h>
+// #include <linux/socket.h>
 #endif
 #include <netinet/in.h>
 #include <netinet/ip.h>
@@ -384,6 +464,1210 @@ static struct enum_option signums[] = {
 #define SECCOMP_IOCTL_NOTIF_ADDFD SECCOMP_IOW(3, void)
 #endif
 
+#define SECCOMP_IOCTL_NOTIF_ID_VALID_WRONG_DIR SECCOMP_IOR(2, __u64)
+
+struct termios2 {
+	tcflag_t c_iflag;		/* input mode flags */
+	tcflag_t c_oflag;		/* output mode flags */
+	tcflag_t c_cflag;		/* control mode flags */
+	tcflag_t c_lflag;		/* local mode flags */
+	cc_t c_line;			/* line discipline */
+	cc_t c_cc[19];		/* control characters */
+	speed_t c_ispeed;		/* input speed */
+	speed_t c_ospeed;		/* output speed */
+};
+#define TCGETS2		_IOR('T', 0x2A, struct termios2)
+#define TCSETS2		_IOW('T', 0x2B, struct termios2)
+#define TCSETSW2	_IOW('T', 0x2C, struct termios2)
+#define TCSETSF2	_IOW('T', 0x2D, struct termios2)
+
+
+#define EVMS_MAJOR		117
+#define EVMS_GET_STRIPE_INFO	_IOR(EVMS_MAJOR, 0xF0, struct evms_stripe_info)
+
+struct evms_stripe_info {
+	uint32_t	size;		/* stripe unit 512-byte blocks */
+	uint32_t	width;		/* the number of stripe members or RAID data disks */
+};
+
+#define RAID_VERSION		_IOR (MD_MAJOR, 0x10, mdu_version_t)
+#define GET_ARRAY_INFO		_IOR (MD_MAJOR, 0x11, mdu_array_info_t)
+#define GET_DISK_INFO		_IOR (MD_MAJOR, 0x12, mdu_disk_info_t)
+#define RAID_AUTORUN		_IO (MD_MAJOR, 0x14)
+#define GET_BITMAP_FILE		_IOR (MD_MAJOR, 0x15, mdu_bitmap_file_t)
+#define CLEAR_ARRAY		_IO (MD_MAJOR, 0x20)
+#define ADD_NEW_DISK		_IOW (MD_MAJOR, 0x21, mdu_disk_info_t)
+#define HOT_REMOVE_DISK		_IO (MD_MAJOR, 0x22)
+#define SET_ARRAY_INFO		_IOW (MD_MAJOR, 0x23, mdu_array_info_t)
+#define SET_DISK_INFO		_IO (MD_MAJOR, 0x24)
+#define WRITE_RAID_INFO		_IO (MD_MAJOR, 0x25)
+#define UNPROTECT_ARRAY		_IO (MD_MAJOR, 0x26)
+#define PROTECT_ARRAY		_IO (MD_MAJOR, 0x27)
+#define HOT_ADD_DISK		_IO (MD_MAJOR, 0x28)
+#define SET_DISK_FAULTY		_IO (MD_MAJOR, 0x29)
+#define HOT_GENERATE_ERROR	_IO (MD_MAJOR, 0x2a)
+#define SET_BITMAP_FILE		_IOW (MD_MAJOR, 0x2b, int)
+#define RUN_ARRAY		_IOW (MD_MAJOR, 0x30, mdu_param_t)
+#define STOP_ARRAY		_IO (MD_MAJOR, 0x32)
+#define STOP_ARRAY_RO		_IO (MD_MAJOR, 0x33)
+#define RESTART_ARRAY_RW	_IO (MD_MAJOR, 0x34)
+#define CLUSTERED_DISK_NACK	_IO (MD_MAJOR, 0x35)
+
+
+#define RAW_SETBIND	_IO( 0xac, 0 )
+#define RAW_GETBIND	_IO( 0xac, 1 )
+
+#define RTC_PARAM_GET	_IOW('p', 0x13, struct rtc_param)  /* Get parameter */
+struct rtc_param {
+	__u64 param;
+	union {
+		__u64 uvalue;
+		__s64 svalue;
+		__u64 ptr;
+	};
+	__u32 index;
+	__u32 __pad;
+};
+#define RTC_PARAM_SET	_IOW('p', 0x14, struct rtc_param)  /* Set parameter */
+
+
+#define SCSI_IOCTL_GET_IDLUN		0x5382
+#define SCSI_IOCTL_PROBE_HOST		0x5385
+#define SCSI_IOCTL_GET_BUS_NUMBER	0x5386
+#define SCSI_IOCTL_GET_PCI		0x5387
+
+#define SG_GET_ACCESS_COUNT 0x2289  
+
+
+#define TW_OP_NOP	      0x0
+#define TW_OP_INIT_CONNECTION 0x1
+#define TW_OP_READ	      0x2
+#define TW_OP_WRITE	      0x3
+#define TW_OP_VERIFY	      0x4
+#define TW_OP_GET_PARAM	      0x12
+#define TW_OP_SET_PARAM	      0x13
+#define TW_OP_SECTOR_INFO     0x1a
+#define TW_OP_AEN_LISTEN      0x1c
+#define TW_OP_FLUSH_CACHE     0x0e
+#define TW_CMD_PACKET	      0x1d
+#define TW_CMD_PACKET_WITH_DATA 0x1f
+
+#ifndef DRM_IOCTL_SYNCOBJ_EVENTFD
+#define DRM_IOCTL_SYNCOBJ_EVENTFD	DRM_IOWR(0xCF, struct drm_syncobj_eventfd)
+struct drm_syncobj_eventfd {
+	__u32 handle;
+	__u32 flags;
+	__u64 point;
+	__s32 fd;
+	__u32 pad;
+};
+#endif
+
+#ifndef DRM_IOCTL_MODE_CLOSEFB
+#define DRM_IOCTL_MODE_CLOSEFB		DRM_IOWR(0xD0, struct drm_mode_closefb)
+struct drm_mode_closefb {
+	__u32 fb_id;
+	__u32 pad;
+};
+#endif
+
+#ifndef BTRFS_IOC_ENCODED_READ
+#define BTRFS_IOC_ENCODED_READ _IOR(BTRFS_IOCTL_MAGIC, 64, \
+				    struct btrfs_ioctl_encoded_io_args)
+struct btrfs_ioctl_encoded_io_args {
+	const struct iovec *iov;
+	unsigned long iovcnt;
+	__s64 offset;
+	__u64 flags;
+	__u64 len;
+	__u64 unencoded_len;
+	__u64 unencoded_offset;
+	__u32 compression;
+	__u32 encryption;
+	__u8 reserved[64];
+};
+#endif
+
+#ifndef BTRFS_IOC_ENCODED_WRITE
+#define BTRFS_IOC_ENCODED_WRITE _IOW(BTRFS_IOCTL_MAGIC, 64, \
+				     struct btrfs_ioctl_encoded_io_args)
+#endif
+
+#ifndef DMA_BUF_IOCTL_EXPORT_SYNC_FILE
+#define DMA_BUF_IOCTL_EXPORT_SYNC_FILE	_IOWR(DMA_BUF_BASE, 2, struct dma_buf_export_sync_file)
+struct dma_buf_export_sync_file {
+	__u32 flags;
+	__s32 fd;
+};
+#endif
+
+#ifndef DMA_BUF_IOCTL_IMPORT_SYNC_FILE
+#define DMA_BUF_IOCTL_IMPORT_SYNC_FILE	_IOW(DMA_BUF_BASE, 3, struct dma_buf_import_sync_file)
+struct dma_buf_import_sync_file {
+	__u32 flags;
+	__s32 fd;
+};
+#endif
+
+#ifndef EPOLL_IOC_TYPE
+struct epoll_params {
+	__u32 busy_poll_usecs;
+	__u16 busy_poll_budget;
+	__u8 prefer_busy_poll;
+
+	/* pad the struct to a multiple of 64bits */
+	__u8 __pad;
+};
+
+#define EPOLL_IOC_TYPE 0x8A
+
+#define EPIOCSPARAMS _IOW(EPOLL_IOC_TYPE, 0x01, struct epoll_params)
+#define EPIOCGPARAMS _IOR(EPOLL_IOC_TYPE, 0x02, struct epoll_params)
+#endif
+
+
+struct ext2_new_group_input {
+	__u32 group;		/* Group number for this data */
+	__u32 block_bitmap;	/* Absolute block number of block bitmap */
+	__u32 inode_bitmap;	/* Absolute block number of inode bitmap */
+	__u32 inode_table;	/* Absolute block number of inode table start */
+	__u32 blocks_count;	/* Total number of blocks in this group */
+	__u16 reserved_blocks;	/* Number of reserved blocks in this group */
+	__u16 unused;		/* Number of reserved GDT blocks in group */
+};
+
+struct ext4_new_group_input {
+	__u32 group;		/* Group number for this data */
+	__u64 block_bitmap;	/* Absolute block number of block bitmap */
+	__u64 inode_bitmap;	/* Absolute block number of inode bitmap */
+	__u64 inode_table;	/* Absolute block number of inode table start */
+	__u32 blocks_count;	/* Total number of blocks in this group */
+	__u16 reserved_blocks;	/* Number of reserved blocks in this group */
+	__u16 unused;
+};
+
+struct move_extent {
+	__s32 reserved;	/* original file descriptor */
+	__u32 donor_fd;	/* donor file descriptor */
+	__u64 orig_start;	/* logical start offset in block for orig */
+	__u64 donor_start;	/* logical start offset in block for donor */
+	__u64 len;	/* block length to be moved */
+	__u64 moved_len;	/* moved block length */
+};
+
+struct ext4_encryption_policy {
+	char version;
+	char contents_encryption_mode;
+	char filenames_encryption_mode;
+	char flags;
+	char master_key_descriptor[8];
+} __attribute__((__packed__));
+
+#define EXT2_IOC_GETFLAGS		_IOR('f', 1, long)
+#define EXT2_IOC_SETFLAGS		_IOW('f', 2, long)
+#define EXT2_IOC_GETVERSION		_IOR('v', 1, long)
+#define EXT2_IOC_SETVERSION		_IOW('v', 2, long)
+#define EXT2_IOC_GETVERSION_NEW		_IOR('f', 3, long)
+#define EXT2_IOC_SETVERSION_NEW		_IOW('f', 4, long)
+#define EXT2_IOC_GROUP_EXTEND		_IOW('f', 7, unsigned long)
+#define EXT2_IOC_GROUP_ADD		_IOW('f', 8,struct ext2_new_group_input)
+
+
+#define EXT4_IOC_RESIZE_FS		_IOW('f', 16, __u64)
+#define EXT4_IOC_MOVE_EXT      _IOWR('f', 15, struct move_extent)
+#define EXT4_IOC_SET_ENCRYPTION_POLICY      _IOR('f', 19, struct ext4_encryption_policy)
+#define EXT4_IOC_GET_ENCRYPTION_POLICY      _IOW('f', 21, struct ext4_encryption_policy)
+
+#define	EXT4_IOC_GETVERSION		_IOR('f', 3, long)
+#define	EXT4_IOC_SETVERSION		_IOW('f', 4, long)
+#define	EXT4_IOC_GETVERSION_OLD		FS_IOC_GETVERSION
+#define	EXT4_IOC_SETVERSION_OLD		FS_IOC_SETVERSION
+#define EXT4_IOC_GETRSVSZ		_IOR('f', 5, long)
+#define EXT4_IOC_SETRSVSZ		_IOW('f', 6, long)
+#define EXT4_IOC_GROUP_EXTEND		_IOW('f', 7, unsigned long)
+#define EXT4_IOC_GROUP_ADD		_IOW('f', 8, struct ext4_new_group_input)
+#define EXT4_IOC_MIGRATE		_IO('f', 9)
+#define EXT4_IOC_ALLOC_DA_BLKS		_IO('f', 12)
+#define EXT4_IOC_MOVE_EXT		_IOWR('f', 15, struct move_extent)
+#define EXT4_IOC_RESIZE_FS		_IOW('f', 16, __u64)
+#define EXT4_IOC_SWAP_BOOT		_IO('f', 17)
+#define EXT4_IOC_PRECACHE_EXTENTS	_IO('f', 18)
+#define EXT4_IOC_CLEAR_ES_CACHE		_IO('f', 40)
+#define EXT4_IOC_GETSTATE		_IOW('f', 41, __u32)
+#define EXT4_IOC_GET_ES_CACHE		_IOWR('f', 42, struct fiemap)
+#define EXT4_IOC_CHECKPOINT		_IOW('f', 43, __u32)
+#define EXT4_IOC_GETFSUUID		_IOR('f', 44, struct fsuuid)
+#define EXT4_IOC_SETFSUUID		_IOW('f', 44, struct fsuuid)
+#define EXT4_IOC_SHUTDOWN _IOR('X', 125, __u32)
+
+struct fsuuid {
+	__u32       fsu_len;
+	__u32       fsu_flags;
+	__u8        fsu_uuid[];
+};
+
+
+typedef struct dasd_information_t {
+	unsigned int devno;		/* S/390 devno */
+	unsigned int real_devno;	/* for aliases */
+	unsigned int schid;		/* S/390 subchannel identifier */
+	unsigned int cu_type  : 16;	/* from SenseID */
+	unsigned int cu_model :  8;	/* from SenseID */
+	unsigned int dev_type : 16;	/* from SenseID */
+	unsigned int dev_model : 8;	/* from SenseID */
+	unsigned int open_count;
+	unsigned int req_queue_len;
+	unsigned int chanq_len;		/* length of chanq */
+	char type[4];			/* from discipline.name, 'none' for unknown */
+	unsigned int status;		/* current device level */
+	unsigned int label_block;	/* where to find the VOLSER */
+	unsigned int FBA_layout;	/* fixed block size (like AIXVOL) */
+	unsigned int characteristics_size;
+	unsigned int confdata_size;
+	char characteristics[64];	/* from read_device_characteristics */
+	char configuration_data[256];	/* from read_configuration_data */
+} dasd_information_t;
+
+#define DASD_IOCTL_LETTER	 'D'
+#define BIODASDINFO _IOR(DASD_IOCTL_LETTER,1,dasd_information_t)
+
+
+#define HCIUARTSETPROTO		_IOW('U', 200, int)
+#define HCIUARTGETPROTO		_IOR('U', 201, int)
+#define HCIUARTGETDEVICE	_IOR('U', 202, int)
+#define HCIUARTSETFLAGS		_IOW('U', 203, int)
+#define HCIUARTGETFLAGS		_IOR('U', 204, int)
+
+#define HCIDEVUP	_IOW('H', 201, int)
+#define HCIDEVDOWN	_IOW('H', 202, int)
+#define HCIDEVRESET	_IOW('H', 203, int)
+#define HCIDEVRESTAT	_IOW('H', 204, int)
+
+#define HCIGETDEVLIST	_IOR('H', 210, int)
+#define HCIGETDEVINFO	_IOR('H', 211, int)
+#define HCIGETCONNLIST	_IOR('H', 212, int)
+#define HCIGETCONNINFO	_IOR('H', 213, int)
+#define HCIGETAUTHINFO	_IOR('H', 215, int)
+
+#define HCISETRAW	_IOW('H', 220, int)
+#define HCISETSCAN	_IOW('H', 221, int)
+#define HCISETAUTH	_IOW('H', 222, int)
+#define HCISETENCRYPT	_IOW('H', 223, int)
+#define HCISETPTYPE	_IOW('H', 224, int)
+#define HCISETLINKPOL	_IOW('H', 225, int)
+#define HCISETLINKMODE	_IOW('H', 226, int)
+#define HCISETACLMTU	_IOW('H', 227, int)
+#define HCISETSCOMTU	_IOW('H', 228, int)
+
+#define HCIBLOCKADDR	_IOW('H', 230, int)
+#define HCIUNBLOCKADDR	_IOW('H', 231, int)
+
+#define HCIINQUIRY	_IOR('H', 240, int)
+
+
+#define RDMA_IOCTL_MAGIC	0x1b
+#define RDMA_VERBS_IOCTL \
+	_IOWR(RDMA_IOCTL_MAGIC, 1, struct ib_uverbs_ioctl_hdr)
+struct ib_uverbs_attr {
+	__u16 attr_id;		/* command specific type attribute */
+	__u16 len;		/* only for pointers and IDRs array */
+	__u16 flags;		/* combination of UVERBS_ATTR_F_XXXX */
+	union {
+		struct {
+			__u8 elem_id;
+			__u8 reserved;
+		} enum_data;
+		__u16 reserved;
+	} attr_data;
+	union {
+		/*
+		 * ptr to command, inline data, idr/fd or
+		 * ptr to __u32 array of IDRs
+		 */
+		__aligned_u64 data;
+		/* Used by FD_IN and FD_OUT */
+		__s64 data_s64;
+	};
+};
+
+struct ib_uverbs_ioctl_hdr {
+	__u16 length;
+	__u16 object_id;
+	__u16 method_id;
+	__u16 num_attrs;
+	__aligned_u64 reserved1;
+	__u32 driver_id;
+	__u32 reserved2;
+	struct ib_uverbs_attr  attrs[];
+};
+
+
+#define FUNCTIONFS_DMABUF_ATTACH	_IOW('g', 131, int)
+#define FUNCTIONFS_DMABUF_DETACH	_IOW('g', 132, int)
+#define FUNCTIONFS_DMABUF_TRANSFER	_IOW('g', 133, struct usb_ffs_dmabuf_transfer_req)
+struct usb_ffs_dmabuf_transfer_req {
+	int fd;
+	__u32 flags;
+	__u64 length;
+} __attribute__((packed));
+
+#ifndef FS_IOC_GETFSUUID
+struct fsuuid2 {
+	__u8	len;
+	__u8	uuid[16];
+};
+#define FS_IOC_GETFSUUID		_IOR(0x15, 0, struct fsuuid2)
+#endif
+
+#ifndef FS_IOC_GETFSSYSFSPATH
+struct fs_sysfs_path {
+	__u8			len;
+	__u8			name[128];
+};
+#define FS_IOC_GETFSSYSFSPATH		_IOR(0x15, 1, struct fs_sysfs_path)
+#endif
+
+#ifndef FUSE_DEV_IOC_BACKING_OPEN
+#define FUSE_DEV_IOC_BACKING_OPEN	_IOW(FUSE_DEV_IOC_MAGIC, 1, struct fuse_backing_map)
+struct fuse_backing_map {
+	int32_t		fd;
+	uint32_t	flags;
+	uint64_t	padding;
+};
+#endif
+
+#ifndef FUSE_DEV_IOC_BACKING_CLOSE
+#define FUSE_DEV_IOC_BACKING_CLOSE	_IOW(FUSE_DEV_IOC_MAGIC, 2, uint32_t)
+#endif
+
+#ifndef INOTIFY_IOC_SETNEXTWD
+#define INOTIFY_IOC_SETNEXTWD	_IOW('I', 0, __s32)
+#endif
+
+#ifndef CDROM_TIMED_MEDIA_CHANGE
+#define CDROM_TIMED_MEDIA_CHANGE   0x5396  /* get the timestamp of the last media change */
+#endif
+
+#define PACKET_SETUP_DEV	_IOW('X', 1, unsigned int)
+#define PACKET_TEARDOWN_DEV	_IOW('X', 2, unsigned int)
+
+
+#ifndef GSMIOC_GETCONF_EXT
+#define GSMIOC_GETCONF_EXT      _IOR('G', 5, struct gsm_config_ext)
+struct gsm_config_ext {
+	__u32 keep_alive;
+	__u32 wait_config;
+	__u32 flags;
+	__u32 reserved[5];
+};
+#endif
+
+#ifndef GSMIOC_SETCONF_EXT
+#define GSMIOC_SETCONF_EXT      _IOW('G', 6, struct gsm_config_ext)
+#endif
+
+#ifndef GSMIOC_GETCONF_DLCI
+#define GSMIOC_GETCONF_DLCI     _IOWR('G', 7, struct gsm_dlci_config)
+struct gsm_dlci_config {
+	__u32 channel;
+	__u32 adaption;
+	__u32 mtu;
+	__u32 priority;
+	__u32 i;
+	__u32 k;
+	__u32 flags;
+	__u32 reserved[7];
+};
+#endif
+
+#ifndef GSMIOC_SETCONF_DLCI
+#define GSMIOC_SETCONF_DLCI     _IOW('G', 8, struct gsm_dlci_config)
+#endif
+
+
+struct opal_lr_status {
+	struct opal_session_info session;
+	__u64 range_start;
+	__u64 range_length;
+	__u32 RLE; /* Read Lock enabled */
+	__u32 WLE; /* Write Lock Enabled */
+	__u32 l_state;
+	__u8  align[4];
+};
+
+struct opal_status {
+	__u32 flags;
+	__u32 reserved;
+};
+
+struct opal_geometry {
+	__u8 align;
+	__u32 logical_block_size;
+	__u64 alignment_granularity;
+	__u64 lowest_aligned_lba;
+	__u8  __align[3];
+};
+
+struct opal_discovery {
+	__u64 data;
+	__u64 size;
+};
+
+struct opal_revert_lsp {
+	struct opal_key key;
+	__u32 options;
+	__u32 __pad;
+};
+
+#define IOC_OPAL_GET_STATUS         _IOR('p', 236, struct opal_status)
+#define IOC_OPAL_GET_LR_STATUS      _IOW('p', 237, struct opal_lr_status)
+#define IOC_OPAL_GET_GEOMETRY       _IOR('p', 238, struct opal_geometry)
+#define IOC_OPAL_DISCOVERY          _IOW('p', 239, struct opal_discovery)
+#define IOC_OPAL_REVERT_LSP         _IOW('p', 240, struct opal_revert_lsp)
+
+
+#define SIOCGETTUNNEL   (SIOCDEVPRIVATE + 0)
+#define SIOCADDTUNNEL   (SIOCDEVPRIVATE + 1)
+#define SIOCDELTUNNEL   (SIOCDEVPRIVATE + 2)
+#define SIOCCHGTUNNEL   (SIOCDEVPRIVATE + 3)
+#define SIOCGETPRL      (SIOCDEVPRIVATE + 4)
+#define SIOCADDPRL      (SIOCDEVPRIVATE + 5)
+#define SIOCDELPRL      (SIOCDEVPRIVATE + 6)
+#define SIOCCHGPRL      (SIOCDEVPRIVATE + 7)
+#define SIOCGET6RD      (SIOCDEVPRIVATE + 8)
+#define SIOCADD6RD      (SIOCDEVPRIVATE + 9)
+#define SIOCDEL6RD      (SIOCDEVPRIVATE + 10)
+#define SIOCCHG6RD      (SIOCDEVPRIVATE + 11)
+
+
+typedef enum zfs_ioc {
+	/*
+	 * Core features - 88/128 numbers reserved.
+	 */
+#ifdef __FreeBSD__
+	ZFS_IOC_FIRST =	0,
+#else
+	ZFS_IOC_FIRST =	('Z' << 8),
+#endif
+	ZFS_IOC = ZFS_IOC_FIRST,
+	ZFS_IOC_POOL_CREATE = ZFS_IOC_FIRST,	/* 0x5a00 */
+	ZFS_IOC_POOL_DESTROY,			/* 0x5a01 */
+	ZFS_IOC_POOL_IMPORT,			/* 0x5a02 */
+	ZFS_IOC_POOL_EXPORT,			/* 0x5a03 */
+	ZFS_IOC_POOL_CONFIGS,			/* 0x5a04 */
+	ZFS_IOC_POOL_STATS,			/* 0x5a05 */
+	ZFS_IOC_POOL_TRYIMPORT,			/* 0x5a06 */
+	ZFS_IOC_POOL_SCAN,			/* 0x5a07 */
+	ZFS_IOC_POOL_FREEZE,			/* 0x5a08 */
+	ZFS_IOC_POOL_UPGRADE,			/* 0x5a09 */
+	ZFS_IOC_POOL_GET_HISTORY,		/* 0x5a0a */
+	ZFS_IOC_VDEV_ADD,			/* 0x5a0b */
+	ZFS_IOC_VDEV_REMOVE,			/* 0x5a0c */
+	ZFS_IOC_VDEV_SET_STATE,			/* 0x5a0d */
+	ZFS_IOC_VDEV_ATTACH,			/* 0x5a0e */
+	ZFS_IOC_VDEV_DETACH,			/* 0x5a0f */
+	ZFS_IOC_VDEV_SETPATH,			/* 0x5a10 */
+	ZFS_IOC_VDEV_SETFRU,			/* 0x5a11 */
+	ZFS_IOC_OBJSET_STATS,			/* 0x5a12 */
+	ZFS_IOC_OBJSET_ZPLPROPS,		/* 0x5a13 */
+	ZFS_IOC_DATASET_LIST_NEXT,		/* 0x5a14 */
+	ZFS_IOC_SNAPSHOT_LIST_NEXT,		/* 0x5a15 */
+	ZFS_IOC_SET_PROP,			/* 0x5a16 */
+	ZFS_IOC_CREATE,				/* 0x5a17 */
+	ZFS_IOC_DESTROY,			/* 0x5a18 */
+	ZFS_IOC_ROLLBACK,			/* 0x5a19 */
+	ZFS_IOC_RENAME,				/* 0x5a1a */
+	ZFS_IOC_RECV,				/* 0x5a1b */
+	ZFS_IOC_SEND,				/* 0x5a1c */
+	ZFS_IOC_INJECT_FAULT,			/* 0x5a1d */
+	ZFS_IOC_CLEAR_FAULT,			/* 0x5a1e */
+	ZFS_IOC_INJECT_LIST_NEXT,		/* 0x5a1f */
+	ZFS_IOC_ERROR_LOG,			/* 0x5a20 */
+	ZFS_IOC_CLEAR,				/* 0x5a21 */
+	ZFS_IOC_PROMOTE,			/* 0x5a22 */
+	ZFS_IOC_SNAPSHOT,			/* 0x5a23 */
+	ZFS_IOC_DSOBJ_TO_DSNAME,		/* 0x5a24 */
+	ZFS_IOC_OBJ_TO_PATH,			/* 0x5a25 */
+	ZFS_IOC_POOL_SET_PROPS,			/* 0x5a26 */
+	ZFS_IOC_POOL_GET_PROPS,			/* 0x5a27 */
+	ZFS_IOC_SET_FSACL,			/* 0x5a28 */
+	ZFS_IOC_GET_FSACL,			/* 0x5a29 */
+	ZFS_IOC_SHARE,				/* 0x5a2a */
+	ZFS_IOC_INHERIT_PROP,			/* 0x5a2b */
+	ZFS_IOC_SMB_ACL,			/* 0x5a2c */
+	ZFS_IOC_USERSPACE_ONE,			/* 0x5a2d */
+	ZFS_IOC_USERSPACE_MANY,			/* 0x5a2e */
+	ZFS_IOC_USERSPACE_UPGRADE,		/* 0x5a2f */
+	ZFS_IOC_HOLD,				/* 0x5a30 */
+	ZFS_IOC_RELEASE,			/* 0x5a31 */
+	ZFS_IOC_GET_HOLDS,			/* 0x5a32 */
+	ZFS_IOC_OBJSET_RECVD_PROPS,		/* 0x5a33 */
+	ZFS_IOC_VDEV_SPLIT,			/* 0x5a34 */
+	ZFS_IOC_NEXT_OBJ,			/* 0x5a35 */
+	ZFS_IOC_DIFF,				/* 0x5a36 */
+	ZFS_IOC_TMP_SNAPSHOT,			/* 0x5a37 */
+	ZFS_IOC_OBJ_TO_STATS,			/* 0x5a38 */
+	ZFS_IOC_SPACE_WRITTEN,			/* 0x5a39 */
+	ZFS_IOC_SPACE_SNAPS,			/* 0x5a3a */
+	ZFS_IOC_DESTROY_SNAPS,			/* 0x5a3b */
+	ZFS_IOC_POOL_REGUID,			/* 0x5a3c */
+	ZFS_IOC_POOL_REOPEN,			/* 0x5a3d */
+	ZFS_IOC_SEND_PROGRESS,			/* 0x5a3e */
+	ZFS_IOC_LOG_HISTORY,			/* 0x5a3f */
+	ZFS_IOC_SEND_NEW,			/* 0x5a40 */
+	ZFS_IOC_SEND_SPACE,			/* 0x5a41 */
+	ZFS_IOC_CLONE,				/* 0x5a42 */
+	ZFS_IOC_BOOKMARK,			/* 0x5a43 */
+	ZFS_IOC_GET_BOOKMARKS,			/* 0x5a44 */
+	ZFS_IOC_DESTROY_BOOKMARKS,		/* 0x5a45 */
+	ZFS_IOC_RECV_NEW,			/* 0x5a46 */
+	ZFS_IOC_POOL_SYNC,			/* 0x5a47 */
+	ZFS_IOC_CHANNEL_PROGRAM,		/* 0x5a48 */
+	ZFS_IOC_LOAD_KEY,			/* 0x5a49 */
+	ZFS_IOC_UNLOAD_KEY,			/* 0x5a4a */
+	ZFS_IOC_CHANGE_KEY,			/* 0x5a4b */
+	ZFS_IOC_REMAP,				/* 0x5a4c */
+	ZFS_IOC_POOL_CHECKPOINT,		/* 0x5a4d */
+	ZFS_IOC_POOL_DISCARD_CHECKPOINT,	/* 0x5a4e */
+	ZFS_IOC_POOL_INITIALIZE,		/* 0x5a4f */
+	ZFS_IOC_POOL_TRIM,			/* 0x5a50 */
+	ZFS_IOC_REDACT,				/* 0x5a51 */
+	ZFS_IOC_GET_BOOKMARK_PROPS,		/* 0x5a52 */
+	ZFS_IOC_WAIT,				/* 0x5a53 */
+	ZFS_IOC_WAIT_FS,			/* 0x5a54 */
+	ZFS_IOC_VDEV_GET_PROPS,			/* 0x5a55 */
+	ZFS_IOC_VDEV_SET_PROPS,			/* 0x5a56 */
+	ZFS_IOC_POOL_SCRUB,			/* 0x5a57 */
+
+	/*
+	 * Per-platform (Optional) - 8/128 numbers reserved.
+	 */
+	ZFS_IOC_PLATFORM = ZFS_IOC_FIRST + 0x80,
+	ZFS_IOC_EVENTS_NEXT,			/* 0x81 (Linux) */
+	ZFS_IOC_EVENTS_CLEAR,			/* 0x82 (Linux) */
+	ZFS_IOC_EVENTS_SEEK,			/* 0x83 (Linux) */
+	ZFS_IOC_NEXTBOOT,			/* 0x84 (FreeBSD) */
+	ZFS_IOC_JAIL,				/* 0x85 (FreeBSD) */
+	ZFS_IOC_USERNS_ATTACH = ZFS_IOC_JAIL,	/* 0x85 (Linux) */
+	ZFS_IOC_UNJAIL,				/* 0x86 (FreeBSD) */
+	ZFS_IOC_USERNS_DETACH = ZFS_IOC_UNJAIL,	/* 0x86 (Linux) */
+	ZFS_IOC_SET_BOOTENV,			/* 0x87 */
+	ZFS_IOC_GET_BOOTENV,			/* 0x88 */
+	ZFS_IOC_LAST
+} zfs_ioc_t;
+
+#define	BLKZNAME		_IOR(0x12, 125, char[ZFS_MAX_DATASET_NAME_LEN])
+
+#define	ZFS_IOC_GETDOSFLAGS	_IOR(0x83, 1, uint64_t)
+#define	ZFS_IOC_SETDOSFLAGS	_IOW(0x83, 2, uint64_t)
+
+#define SECCOMP_IOCTL_NOTIF_SET_FLAGS	SECCOMP_IOW(4, __u64)
+
+
+#define MON_IOC_MAGIC 0x92
+
+#define MON_IOCQ_URB_LEN _IO(MON_IOC_MAGIC, 1)
+/* #2 used to be MON_IOCX_URB, removed before it got into Linus tree */
+#define MON_IOCG_STATS _IOR(MON_IOC_MAGIC, 3, struct mon_bin_stats)
+#define MON_IOCT_RING_SIZE _IO(MON_IOC_MAGIC, 4)
+#define MON_IOCQ_RING_SIZE _IO(MON_IOC_MAGIC, 5)
+#define MON_IOCX_GET   _IOW(MON_IOC_MAGIC, 6, struct mon_bin_get)
+#define MON_IOCX_MFETCH _IOWR(MON_IOC_MAGIC, 7, struct mon_bin_mfetch)
+#define MON_IOCH_MFLUSH _IO(MON_IOC_MAGIC, 8)
+/* #9 was MON_IOCT_SETAPI */
+#define MON_IOCX_GETX   _IOW(MON_IOC_MAGIC, 10, struct mon_bin_get)
+
+struct mon_bin_isodesc {
+	int          iso_status;
+	unsigned int iso_off;
+	unsigned int iso_len;
+	__u32 _pad;
+};
+
+/* per file statistic */
+struct mon_bin_stats {
+	__u32 queued;
+	__u32 dropped;
+};
+
+struct mon_bin_get {
+	struct mon_bin_hdr *hdr;	/* Can be 48 bytes or 64. */
+	void *data;
+	size_t alloc;		/* Length of data (can be zero) */
+};
+
+struct mon_bin_mfetch {
+	__u32 *offvec;	/* Vector of events fetched */
+	__u32 nfetch;		/* Number of events to fetch (out: fetched) */
+	__u32 nflush;		/* Number of events to flush */
+};
+
+struct space_resv {
+	__s16		l_type;
+	__s16		l_whence;
+	__s64		l_start;
+	__s64		l_len;		/* len == 0 means until end of file */
+	__s32		l_sysid;
+	__u32		l_pid;
+	__s32		l_pad[4];	/* reserved area */
+};
+
+#define FS_IOC_RESVSP		_IOW('X', 40, struct space_resv)
+#define FS_IOC_UNRESVSP		_IOW('X', 41, struct space_resv)
+#define FS_IOC_RESVSP64		_IOW('X', 42, struct space_resv)
+#define FS_IOC_UNRESVSP64	_IOW('X', 43, struct space_resv)
+#define FS_IOC_ZERO_RANGE	_IOW('X', 57, struct space_resv)
+
+
+typedef uint16_t domid_t;
+
+#ifdef __x86_64__
+typedef unsigned long xen_pfn_t;
+#else
+typedef uint64_t xen_pfn_t;
+#endif
+
+struct privcmd_hypercall {
+	__u64 op;
+	__u64 arg[5];
+};
+
+struct privcmd_mmap_entry {
+	__u64 va;
+	/*
+	 * This should be a GFN. It's not possible to change the name because
+	 * it's exposed to the user-space.
+	 */
+	__u64 mfn;
+	__u64 npages;
+};
+
+struct privcmd_mmap {
+	int num;
+	domid_t dom; /* target domain */
+	struct privcmd_mmap_entry *entry;
+};
+
+struct privcmd_mmapbatch {
+	int num;     /* number of pages to populate */
+	domid_t dom; /* target domain */
+	__u64 addr;  /* virtual address */
+	xen_pfn_t *arr; /* array of mfns - or'd with
+				  PRIVCMD_MMAPBATCH_*_ERROR on err */
+};
+
+#define PRIVCMD_MMAPBATCH_MFN_ERROR     0xf0000000U
+#define PRIVCMD_MMAPBATCH_PAGED_ERROR   0x80000000U
+
+struct privcmd_mmapbatch_v2 {
+	unsigned int num; /* number of pages to populate */
+	domid_t dom;      /* target domain */
+	__u64 addr;       /* virtual address */
+	const xen_pfn_t *arr; /* array of mfns */
+	int *err;  /* array of error codes */
+};
+
+struct privcmd_dm_op_buf {
+	void *uptr;
+	size_t size;
+};
+
+struct privcmd_dm_op {
+	domid_t dom;
+	__u16 num;
+	const struct privcmd_dm_op_buf *ubufs;
+};
+
+struct privcmd_mmap_resource {
+	domid_t dom;
+	__u32 type;
+	__u32 id;
+	__u32 idx;
+	__u64 num;
+	__u64 addr;
+};
+
+/* For privcmd_irqfd::flags */
+#define PRIVCMD_IRQFD_FLAG_DEASSIGN (1 << 0)
+
+struct privcmd_irqfd {
+	__u64 dm_op;
+	__u32 size; /* Size of structure pointed by dm_op */
+	__u32 fd;
+	__u32 flags;
+	domid_t dom;
+	__u8 pad[2];
+};
+
+/* For privcmd_ioeventfd::flags */
+#define PRIVCMD_IOEVENTFD_FLAG_DEASSIGN (1 << 0)
+
+struct privcmd_ioeventfd {
+	__u64 ioreq;
+	__u64 ports;
+	__u64 addr;
+	__u32 addr_len;
+	__u32 event_fd;
+	__u32 vcpus;
+	__u32 vq;
+	__u32 flags;
+	domid_t dom;
+	__u8 pad[2];
+};
+
+/*
+ * @cmd: IOCTL_PRIVCMD_HYPERCALL
+ * @arg: &privcmd_hypercall_t
+ * Return: Value returned from execution of the specified hypercall.
+ *
+ * @cmd: IOCTL_PRIVCMD_MMAPBATCH_V2
+ * @arg: &struct privcmd_mmapbatch_v2
+ * Return: 0 on success (i.e., arg->err contains valid error codes for
+ * each frame).  On an error other than a failed frame remap, -1 is
+ * returned and errno is set to EINVAL, EFAULT etc.  As an exception,
+ * if the operation was otherwise successful but any frame failed with
+ * -ENOENT, then -1 is returned and errno is set to ENOENT.
+ */
+#define IOCTL_PRIVCMD_HYPERCALL					\
+	_IOC(_IOC_NONE, 'P', 0, sizeof(struct privcmd_hypercall))
+#define IOCTL_PRIVCMD_MMAP					\
+	_IOC(_IOC_NONE, 'P', 2, sizeof(struct privcmd_mmap))
+#define IOCTL_PRIVCMD_MMAPBATCH					\
+	_IOC(_IOC_NONE, 'P', 3, sizeof(struct privcmd_mmapbatch))
+#define IOCTL_PRIVCMD_MMAPBATCH_V2				\
+	_IOC(_IOC_NONE, 'P', 4, sizeof(struct privcmd_mmapbatch_v2))
+#define IOCTL_PRIVCMD_DM_OP					\
+	_IOC(_IOC_NONE, 'P', 5, sizeof(struct privcmd_dm_op))
+#define IOCTL_PRIVCMD_RESTRICT					\
+	_IOC(_IOC_NONE, 'P', 6, sizeof(domid_t))
+#define IOCTL_PRIVCMD_MMAP_RESOURCE				\
+	_IOC(_IOC_NONE, 'P', 7, sizeof(struct privcmd_mmap_resource))
+#define IOCTL_PRIVCMD_IRQFD					\
+	_IOW('P', 8, struct privcmd_irqfd)
+#define IOCTL_PRIVCMD_IOEVENTFD					\
+	_IOW('P', 9, struct privcmd_ioeventfd)
+
+
+typedef uint32_t    prid_t;
+typedef __s64       xfs_off_t;
+
+typedef struct xfs_bstime {
+	__kernel_long_t tv_sec;		/* seconds		*/
+	__s32		tv_nsec;	/* and nanoseconds	*/
+} xfs_bstime_t;
+
+typedef struct xfs_flock64 {
+	__s16		l_type;
+	__s16		l_whence;
+	__s64		l_start;
+	__s64		l_len;		/* len == 0 means until end of file */
+	__s32		l_sysid;
+	__u32		l_pid;
+	__s32		l_pad[4];	/* reserve area			    */
+} xfs_flock64_t;
+
+struct dioattr {
+	__u32		d_mem;		/* data buffer memory alignment */
+	__u32		d_miniosz;	/* min xfer size		*/
+	__u32		d_maxiosz;	/* max xfer size		*/
+};
+
+struct getbmap {
+	__s64		bmv_offset;	/* file offset of segment in blocks */
+	__s64		bmv_block;	/* starting block (64-bit daddr_t)  */
+	__s64		bmv_length;	/* length of segment, blocks	    */
+	__s32		bmv_count;	/* # of entries in array incl. 1st  */
+	__s32		bmv_entries;	/* # of entries filled in (output)  */
+};
+
+struct xfs_fs_eofblocks {
+	__u32		eof_version;
+	__u32		eof_flags;
+	uid_t		eof_uid;
+	gid_t		eof_gid;
+	prid_t		eof_prid;
+	__u32		pad32;
+	__u64		eof_min_file_size;
+	__u64		pad64[12];
+};
+
+struct xfs_scrub_metadata {
+	__u32 sm_type;		/* What to check? */
+	__u32 sm_flags;		/* flags; see below. */
+	__u64 sm_ino;		/* inode number. */
+	__u32 sm_gen;		/* inode generation. */
+	__u32 sm_agno;		/* ag number. */
+	__u64 sm_reserved[5];	/* pad to 64 bytes */
+};
+
+struct xfs_ag_geometry {
+	uint32_t	ag_number;	/* i/o: AG number */
+	uint32_t	ag_length;	/* o: length in blocks */
+	uint32_t	ag_freeblks;	/* o: free space */
+	uint32_t	ag_icount;	/* o: inodes allocated */
+	uint32_t	ag_ifree;	/* o: inodes free */
+	uint32_t	ag_sick;	/* o: sick things in ag */
+	uint32_t	ag_checked;	/* o: checked metadata in ag */
+	uint32_t	ag_flags;	/* i/o: flags for this ag */
+	uint64_t	ag_reserved[12];/* o: zero */
+};
+
+struct xfs_fsop_geom_v1 {
+	__u32		blocksize;	/* filesystem (data) block size */
+	__u32		rtextsize;	/* realtime extent size		*/
+	__u32		agblocks;	/* fsblocks in an AG		*/
+	__u32		agcount;	/* number of allocation groups	*/
+	__u32		logblocks;	/* fsblocks in the log		*/
+	__u32		sectsize;	/* (data) sector size, bytes	*/
+	__u32		inodesize;	/* inode size in bytes		*/
+	__u32		imaxpct;	/* max allowed inode space(%)	*/
+	__u64		datablocks;	/* fsblocks in data subvolume	*/
+	__u64		rtblocks;	/* fsblocks in realtime subvol	*/
+	__u64		rtextents;	/* rt extents in realtime subvol*/
+	__u64		logstart;	/* starting fsblock of the log	*/
+	unsigned char	uuid[16];	/* unique id of the filesystem	*/
+	__u32		sunit;		/* stripe unit, fsblocks	*/
+	__u32		swidth;		/* stripe width, fsblocks	*/
+	__s32		version;	/* structure version		*/
+	__u32		flags;		/* superblock version flags	*/
+	__u32		logsectsize;	/* log sector size, bytes	*/
+	__u32		rtsectsize;	/* realtime sector size, bytes	*/
+	__u32		dirblocksize;	/* directory block size, bytes	*/
+};
+
+struct xfs_fsop_geom_v4 {
+	__u32		blocksize;	/* filesystem (data) block size */
+	__u32		rtextsize;	/* realtime extent size		*/
+	__u32		agblocks;	/* fsblocks in an AG		*/
+	__u32		agcount;	/* number of allocation groups	*/
+	__u32		logblocks;	/* fsblocks in the log		*/
+	__u32		sectsize;	/* (data) sector size, bytes	*/
+	__u32		inodesize;	/* inode size in bytes		*/
+	__u32		imaxpct;	/* max allowed inode space(%)	*/
+	__u64		datablocks;	/* fsblocks in data subvolume	*/
+	__u64		rtblocks;	/* fsblocks in realtime subvol	*/
+	__u64		rtextents;	/* rt extents in realtime subvol*/
+	__u64		logstart;	/* starting fsblock of the log	*/
+	unsigned char	uuid[16];	/* unique id of the filesystem	*/
+	__u32		sunit;		/* stripe unit, fsblocks	*/
+	__u32		swidth;		/* stripe width, fsblocks	*/
+	__s32		version;	/* structure version		*/
+	__u32		flags;		/* superblock version flags	*/
+	__u32		logsectsize;	/* log sector size, bytes	*/
+	__u32		rtsectsize;	/* realtime sector size, bytes	*/
+	__u32		dirblocksize;	/* directory block size, bytes	*/
+	__u32		logsunit;	/* log stripe unit, bytes	*/
+};
+
+struct xfs_fsop_geom {
+	__u32		blocksize;	/* filesystem (data) block size */
+	__u32		rtextsize;	/* realtime extent size		*/
+	__u32		agblocks;	/* fsblocks in an AG		*/
+	__u32		agcount;	/* number of allocation groups	*/
+	__u32		logblocks;	/* fsblocks in the log		*/
+	__u32		sectsize;	/* (data) sector size, bytes	*/
+	__u32		inodesize;	/* inode size in bytes		*/
+	__u32		imaxpct;	/* max allowed inode space(%)	*/
+	__u64		datablocks;	/* fsblocks in data subvolume	*/
+	__u64		rtblocks;	/* fsblocks in realtime subvol	*/
+	__u64		rtextents;	/* rt extents in realtime subvol*/
+	__u64		logstart;	/* starting fsblock of the log	*/
+	unsigned char	uuid[16];	/* unique id of the filesystem	*/
+	__u32		sunit;		/* stripe unit, fsblocks	*/
+	__u32		swidth;		/* stripe width, fsblocks	*/
+	__s32		version;	/* structure version		*/
+	__u32		flags;		/* superblock version flags	*/
+	__u32		logsectsize;	/* log sector size, bytes	*/
+	__u32		rtsectsize;	/* realtime sector size, bytes	*/
+	__u32		dirblocksize;	/* directory block size, bytes	*/
+	__u32		logsunit;	/* log stripe unit, bytes	*/
+	uint32_t	sick;		/* o: unhealthy fs & rt metadata */
+	uint32_t	checked;	/* o: checked fs & rt metadata	*/
+	__u64		reserved[17];	/* reserved space		*/
+};
+
+struct xfs_fsop_bulkreq {
+	__u64		*lastip;	/* last inode # pointer		*/
+	__s32		icount;		/* count of entries in buffer	*/
+	void		*ubuffer;/* user buffer for inode desc.	*/
+	__s32		*ocount;	/* output count pointer		*/
+};
+
+typedef struct xfs_fsop_handlereq {
+	__u32		fd;		/* fd for FD_TO_HANDLE		*/
+	void		*path;	/* user pathname		*/
+	__u32		oflags;		/* open flags			*/
+	void		*ihandle;/* user supplied handle		*/
+	__u32		ihandlen;	/* user supplied length		*/
+	void		*ohandle;/* user buffer for handle	*/
+	__u32		*ohandlen;/* user buffer length		*/
+} xfs_fsop_handlereq_t;
+
+struct xfs_bstat {
+	__u64		bs_ino;		/* inode number			*/
+	__u16		bs_mode;	/* type and mode		*/
+	__u16		bs_nlink;	/* number of links		*/
+	__u32		bs_uid;		/* user id			*/
+	__u32		bs_gid;		/* group id			*/
+	__u32		bs_rdev;	/* device value			*/
+	__s32		bs_blksize;	/* block size			*/
+	__s64		bs_size;	/* file size			*/
+	xfs_bstime_t	bs_atime;	/* access time			*/
+	xfs_bstime_t	bs_mtime;	/* modify time			*/
+	xfs_bstime_t	bs_ctime;	/* inode change time		*/
+	int64_t		bs_blocks;	/* number of blocks		*/
+	__u32		bs_xflags;	/* extended flags		*/
+	__s32		bs_extsize;	/* extent size			*/
+	__s32		bs_extents;	/* number of extents		*/
+	__u32		bs_gen;		/* generation count		*/
+	__u16		bs_projid_lo;	/* lower part of project id	*/
+	__u16		bs_forkoff;	/* inode fork offset in bytes	*/
+	__u16		bs_projid_hi;	/* higher part of project id	*/
+	uint16_t	bs_sick;	/* sick inode metadata		*/
+	uint16_t	bs_checked;	/* checked inode metadata	*/
+	unsigned char	bs_pad[2];	/* pad space, unused		*/
+	__u32		bs_cowextsize;	/* cow extent size		*/
+	__u32		bs_dmevmask;	/* DMIG event mask		*/
+	__u16		bs_dmstate;	/* DMIG state info		*/
+	__u16		bs_aextents;	/* attribute number of extents	*/
+};
+
+typedef struct xfs_swapext
+{
+	int64_t		sx_version;	/* version */
+	int64_t		sx_fdtarget;	/* fd of target file */
+	int64_t		sx_fdtmp;	/* fd of tmp file */
+	xfs_off_t	sx_offset;	/* offset into file */
+	xfs_off_t	sx_length;	/* leng from offset */
+	char		sx_pad[16];	/* pad space, unused */
+	struct xfs_bstat sx_stat;	/* stat of target b4 copy */
+} xfs_swapext_t;
+
+typedef struct xfs_growfs_data {
+	__u64		newblocks;	/* new data subvol size, fsblocks */
+	__u32		imaxpct;	/* new inode space percentage limit */
+} xfs_growfs_data_t;
+
+typedef struct xfs_growfs_log {
+	__u32		newblocks;	/* new log size, fsblocks */
+	__u32		isint;		/* 1 if new log is internal */
+} xfs_growfs_log_t;
+
+typedef struct xfs_growfs_rt {
+	__u64		newblocks;	/* new realtime size, fsblocks */
+	__u32		extsize;	/* new realtime extent size, fsblocks */
+} xfs_growfs_rt_t;
+
+typedef struct xfs_fsop_counts {
+	__u64	freedata;	/* free data section blocks */
+	__u64	freertx;	/* free rt extents */
+	__u64	freeino;	/* free inodes */
+	__u64	allocino;	/* total allocated inodes */
+} xfs_fsop_counts_t;
+
+typedef struct xfs_fsop_resblks {
+	__u64  resblks;
+	__u64  resblks_avail;
+} xfs_fsop_resblks_t;
+
+typedef struct xfs_error_injection {
+	__s32		fd;
+	__s32		errtag;
+} xfs_error_injection_t;
+
+typedef struct xfs_attrlist_cursor {
+	__u32		opaque[4];
+} xfs_attrlist_cursor_t;
+
+typedef struct xfs_fsop_attrlist_handlereq {
+	struct xfs_fsop_handlereq	hreq; /* handle interface structure */
+	struct xfs_attrlist_cursor	pos; /* opaque cookie, list offset */
+	__u32				flags;	/* which namespace to use */
+	__u32				buflen;	/* length of buffer supplied */
+	void				*buffer;	/* returned names */
+} xfs_fsop_attrlist_handlereq_t;
+
+typedef struct xfs_fsop_attrmulti_handlereq {
+	struct xfs_fsop_handlereq	hreq; /* handle interface structure */
+	__u32				opcount;/* count of following multiop */
+	struct xfs_attr_multiop		*ops; /* attr_multi data */
+} xfs_fsop_attrmulti_handlereq_t;
+
+struct xfs_bulk_ireq {
+	uint64_t	ino;		/* I/O: start with this inode	*/
+	uint32_t	flags;		/* I/O: operation flags		*/
+	uint32_t	icount;		/* I: count of entries in buffer */
+	uint32_t	ocount;		/* O: count of entries filled out */
+	uint32_t	agno;		/* I: see comment for IREQ_AGNO	*/
+	uint64_t	reserved[5];	/* must be zero			*/
+};
+
+struct xfs_bulkstat {
+	uint64_t	bs_ino;		/* inode number			*/
+	uint64_t	bs_size;	/* file size			*/
+
+	uint64_t	bs_blocks;	/* number of blocks		*/
+	uint64_t	bs_xflags;	/* extended flags		*/
+
+	int64_t		bs_atime;	/* access time, seconds		*/
+	int64_t		bs_mtime;	/* modify time, seconds		*/
+
+	int64_t		bs_ctime;	/* inode change time, seconds	*/
+	int64_t		bs_btime;	/* creation time, seconds	*/
+
+	uint32_t	bs_gen;		/* generation count		*/
+	uint32_t	bs_uid;		/* user id			*/
+	uint32_t	bs_gid;		/* group id			*/
+	uint32_t	bs_projectid;	/* project id			*/
+
+	uint32_t	bs_atime_nsec;	/* access time, nanoseconds	*/
+	uint32_t	bs_mtime_nsec;	/* modify time, nanoseconds	*/
+	uint32_t	bs_ctime_nsec;	/* inode change time, nanoseconds */
+	uint32_t	bs_btime_nsec;	/* creation time, nanoseconds	*/
+
+	uint32_t	bs_blksize;	/* block size			*/
+	uint32_t	bs_rdev;	/* device value			*/
+	uint32_t	bs_cowextsize_blks; /* cow extent size hint, blocks */
+	uint32_t	bs_extsize_blks; /* extent size hint, blocks	*/
+
+	uint32_t	bs_nlink;	/* number of links		*/
+	uint32_t	bs_extents;	/* 32-bit data fork extent counter */
+	uint32_t	bs_aextents;	/* attribute number of extents	*/
+	uint16_t	bs_version;	/* structure version		*/
+	uint16_t	bs_forkoff;	/* inode fork offset in bytes	*/
+
+	uint16_t	bs_sick;	/* sick inode metadata		*/
+	uint16_t	bs_checked;	/* checked inode metadata	*/
+	uint16_t	bs_mode;	/* type and mode		*/
+	uint16_t	bs_pad2;	/* zeroed			*/
+	uint64_t	bs_extents64;	/* 64-bit data fork extent counter */
+
+	uint64_t	bs_pad[6];	/* zeroed			*/
+};
+
+struct xfs_bulkstat_req {
+	struct xfs_bulk_ireq	hdr;
+	struct xfs_bulkstat	bulkstat[];
+};
+
+struct xfs_inumbers {
+	uint64_t	xi_startino;	/* starting inode number	*/
+	uint64_t	xi_allocmask;	/* mask of allocated inodes	*/
+	uint8_t		xi_alloccount;	/* # bits set in allocmask	*/
+	uint8_t		xi_version;	/* version			*/
+	uint8_t		xi_padding[6];	/* zero				*/
+};
+
+struct xfs_inumbers_req {
+	struct xfs_bulk_ireq	hdr;
+	struct xfs_inumbers	inumbers[];
+};
+
+#define XFS_IOC_ALLOCSP		_IOW ('X', 10, struct xfs_flock64)
+#define XFS_IOC_FREESP		_IOW ('X', 11, struct xfs_flock64)
+#define XFS_IOC_ALLOCSP64	_IOW ('X', 36, struct xfs_flock64)
+#define XFS_IOC_FREESP64	_IOW ('X', 37, struct xfs_flock64)
+
+#define XFS_IOC_DIOINFO		_IOR ('X', 30, struct dioattr)
+#define XFS_IOC_FSGETXATTR	FS_IOC_FSGETXATTR
+#define XFS_IOC_FSSETXATTR	FS_IOC_FSSETXATTR
+/*	XFS_IOC_ALLOCSP64 ----- deprecated 36	 */
+/*	XFS_IOC_FREESP64 ------ deprecated 37	 */
+#define XFS_IOC_GETBMAP		_IOWR('X', 38, struct getbmap)
+/*      XFS_IOC_FSSETDM ------- deprecated 39    */
+#define XFS_IOC_RESVSP		_IOW ('X', 40, struct xfs_flock64)
+#define XFS_IOC_UNRESVSP	_IOW ('X', 41, struct xfs_flock64)
+#define XFS_IOC_RESVSP64	_IOW ('X', 42, struct xfs_flock64)
+#define XFS_IOC_UNRESVSP64	_IOW ('X', 43, struct xfs_flock64)
+#define XFS_IOC_GETBMAPA	_IOWR('X', 44, struct getbmap)
+#define XFS_IOC_FSGETXATTRA	_IOR ('X', 45, struct fsxattr)
+/*	XFS_IOC_SETBIOSIZE ---- deprecated 46	   */
+/*	XFS_IOC_GETBIOSIZE ---- deprecated 47	   */
+#define XFS_IOC_GETBMAPX	_IOWR('X', 56, struct getbmap)
+#define XFS_IOC_ZERO_RANGE	_IOW ('X', 57, struct xfs_flock64)
+#define XFS_IOC_FREE_EOFBLOCKS	_IOR ('X', 58, struct xfs_fs_eofblocks)
+/*	XFS_IOC_GETFSMAP ------ hoisted 59         */
+#define XFS_IOC_SCRUB_METADATA	_IOWR('X', 60, struct xfs_scrub_metadata)
+#define XFS_IOC_AG_GEOMETRY	_IOWR('X', 61, struct xfs_ag_geometry)
+
+#define XFS_IOC_FSGEOMETRY_V1	     _IOR ('X', 100, struct xfs_fsop_geom_v1)
+#define XFS_IOC_FSBULKSTAT	     _IOWR('X', 101, struct xfs_fsop_bulkreq)
+#define XFS_IOC_FSBULKSTAT_SINGLE    _IOWR('X', 102, struct xfs_fsop_bulkreq)
+#define XFS_IOC_FSINUMBERS	     _IOWR('X', 103, struct xfs_fsop_bulkreq)
+#define XFS_IOC_PATH_TO_FSHANDLE     _IOWR('X', 104, struct xfs_fsop_handlereq)
+#define XFS_IOC_PATH_TO_HANDLE	     _IOWR('X', 105, struct xfs_fsop_handlereq)
+#define XFS_IOC_FD_TO_HANDLE	     _IOWR('X', 106, struct xfs_fsop_handlereq)
+#define XFS_IOC_OPEN_BY_HANDLE	     _IOWR('X', 107, struct xfs_fsop_handlereq)
+#define XFS_IOC_READLINK_BY_HANDLE   _IOWR('X', 108, struct xfs_fsop_handlereq)
+#define XFS_IOC_SWAPEXT		     _IOWR('X', 109, struct xfs_swapext)
+#define XFS_IOC_FSGROWFSDATA	     _IOW ('X', 110, struct xfs_growfs_data)
+#define XFS_IOC_FSGROWFSLOG	     _IOW ('X', 111, struct xfs_growfs_log)
+#define XFS_IOC_FSGROWFSRT	     _IOW ('X', 112, struct xfs_growfs_rt)
+#define XFS_IOC_FSCOUNTS	     _IOR ('X', 113, struct xfs_fsop_counts)
+#define XFS_IOC_SET_RESBLKS	     _IOWR('X', 114, struct xfs_fsop_resblks)
+#define XFS_IOC_GET_RESBLKS	     _IOR ('X', 115, struct xfs_fsop_resblks)
+#define XFS_IOC_ERROR_INJECTION	     _IOW ('X', 116, struct xfs_error_injection)
+#define XFS_IOC_ERROR_CLEARALL	     _IOW ('X', 117, struct xfs_error_injection)
+/*	XFS_IOC_ATTRCTL_BY_HANDLE -- deprecated 118	 */
+
+#define XFS_IOC_FREEZE		     _IOWR('X', 119, int)	/* aka FIFREEZE */
+#define XFS_IOC_THAW		     _IOWR('X', 120, int)	/* aka FITHAW */
+
+/*      XFS_IOC_FSSETDM_BY_HANDLE -- deprecated 121      */
+#define XFS_IOC_ATTRLIST_BY_HANDLE   _IOW ('X', 122, struct xfs_fsop_attrlist_handlereq)
+#define XFS_IOC_ATTRMULTI_BY_HANDLE  _IOW ('X', 123, struct xfs_fsop_attrmulti_handlereq)
+#define XFS_IOC_FSGEOMETRY_V4	     _IOR ('X', 124, struct xfs_fsop_geom_v4)
+#define XFS_IOC_GOINGDOWN	     _IOR ('X', 125, uint32_t)
+#define XFS_IOC_FSGEOMETRY	     _IOR ('X', 126, struct xfs_fsop_geom)
+#define XFS_IOC_BULKSTAT	     _IOR ('X', 127, struct xfs_bulkstat_req)
+#define XFS_IOC_INUMBERS	     _IOR ('X', 128, struct xfs_inumbers_req)
+
+
+#define BLKGETLASTSECT   _IO(0x12,108) /* get last sector of block device */
+#define BLKSETLASTSECT   _IO(0x12,109) /* set last sector of block device */
+
+
+#define MEMSETOOBSEL           _IOW('M', 9, struct nand_oobinfo)
+#define MEMREAD			_IOWR('M', 26, struct mtd_read_req)
+
+
+#define F2FS_IOC_ABORT_ATOMIC_WRITE	_IO(F2FS_IOCTL_MAGIC, 5)
+#define F2FS_IOC_START_ATOMIC_REPLACE	_IO(F2FS_IOCTL_MAGIC, 25)
+
+#define I2C_RETRIES	0x0701
+#define I2C_TIMEOUT	0x0702
+
+
+#define I2C_SLAVE	0x0703
+#define I2C_SLAVE_FORCE	0x0706
+#define I2C_TENBIT	0x0704
+#define I2C_FUNCS	0x0705
+#define I2C_RDWR	0x0707
+#define I2C_PEC		0x0708
+#define I2C_SMBUS	0x0720
+
+
+struct mtd_read_req_ecc_stats {
+	__u32 uncorrectable_errors;
+	__u32 corrected_bitflips;
+	__u32 max_bitflips;
+};
+
+struct mtd_read_req {
+	__u64 start;
+	__u64 len;
+	__u64 ooblen;
+	__u64 usr_data;
+	__u64 usr_oob;
+	__u8 mode;
+	__u8 padding[7];
+	struct mtd_read_req_ecc_stats ecc_stats;
+};
+
+
+#define FS_IOC_ENABLE_VERITY_OLD _IO('f', 133)
+
+
 static struct enum_option ioctls[] = {
 	// ioctl_tty
     DESCRIBE_ENUM(TCGETS),
@@ -426,18 +1710,27 @@ static struct enum_option ioctls[] = {
     DESCRIBE_ENUM(TIOCSBRK),
     DESCRIBE_ENUM(TIOCCBRK),
     DESCRIBE_ENUM(TIOCGSID),
-    // DESCRIBE_ENUM(TCGETS2),
-    // DESCRIBE_ENUM(TCSETS2),
-    // DESCRIBE_ENUM(TCSETSW2),
-    // DESCRIBE_ENUM(TCSETSF2),
+    DESCRIBE_ENUM(TCGETS2),
+    DESCRIBE_ENUM(TCSETS2),
+    DESCRIBE_ENUM(TCSETSW2),
+    DESCRIBE_ENUM(TCSETSF2),
     DESCRIBE_ENUM(TIOCGRS485),
     DESCRIBE_ENUM(TIOCSRS485),
     DESCRIBE_ENUM(TIOCGPTN),
     DESCRIBE_ENUM(TIOCSPTLCK),
+    DESCRIBE_ENUM(TIOCGDEV),
     DESCRIBE_ENUM(TCGETX),
     DESCRIBE_ENUM(TCSETX),
     DESCRIBE_ENUM(TCSETXF),
     DESCRIBE_ENUM(TCSETXW),
+    DESCRIBE_ENUM(TIOCSIG),
+    DESCRIBE_ENUM(TIOCVHANGUP),
+    DESCRIBE_ENUM(TIOCGPKT),
+    DESCRIBE_ENUM(TIOCGPTLCK),
+    DESCRIBE_ENUM(TIOCGEXCL),
+    DESCRIBE_ENUM(TIOCGPTPEER),
+    DESCRIBE_ENUM(TIOCGISO7816),
+    DESCRIBE_ENUM(TIOCSISO7816),
     DESCRIBE_ENUM(FIONCLEX),
     DESCRIBE_ENUM(FIOCLEX),
     DESCRIBE_ENUM(FIOASYNC),
@@ -455,6 +1748,11 @@ static struct enum_option ioctls[] = {
     // DESCRIBE_ENUM(TIOCGHAYESESP),
     // DESCRIBE_ENUM(TIOCSHAYESESP),
     DESCRIBE_ENUM(FIOQSIZE),
+    DESCRIBE_ENUM(FIOGETOWN),
+    DESCRIBE_ENUM(FIOSETOWN),
+    DESCRIBE_ENUM(SIOCATMARK),
+    DESCRIBE_ENUM(SIOCSPGRP),
+    DESCRIBE_ENUM(SIOCGPGRP),
     DESCRIBE_ENUM(SIOCADDRT),
     DESCRIBE_ENUM(SIOCDELRT),
     DESCRIBE_ENUM(SIOCRTMSG),
@@ -554,6 +1852,7 @@ static struct enum_option ioctls[] = {
     DESCRIBE_ENUM(KDGKBSENT),
     DESCRIBE_ENUM(KDSKBSENT),
     DESCRIBE_ENUM(KDGKBDIACR),
+    DESCRIBE_ENUM(KDSKBDIACR),
     DESCRIBE_ENUM(KDGETKEYCODE),
     DESCRIBE_ENUM(KDSETKEYCODE),
     DESCRIBE_ENUM(KDSIGACCEPT),
@@ -567,6 +1866,12 @@ static struct enum_option ioctls[] = {
     DESCRIBE_ENUM(VT_DISALLOCATE),
     DESCRIBE_ENUM(VT_RESIZE),
     DESCRIBE_ENUM(VT_RESIZEX),
+    DESCRIBE_ENUM(KDMAPDISP),
+    DESCRIBE_ENUM(KDUNMAPDISP),
+    DESCRIBE_ENUM(KDGKBDIACRUC),
+    DESCRIBE_ENUM(KDSKBDIACRUC),
+    DESCRIBE_ENUM(KDKBDREP),
+    DESCRIBE_ENUM(KDFONTOP),
     // ioctl_ficlone
     DESCRIBE_ENUM(FICLONERANGE),
     DESCRIBE_ENUM(FICLONE),
@@ -580,14 +1885,1511 @@ static struct enum_option ioctls[] = {
     // ioctl_iflags
     DESCRIBE_ENUM(FS_IOC_GETFLAGS),
     DESCRIBE_ENUM(FS_IOC_SETFLAGS),
-    // ioctl_ns
-    DESCRIBE_ENUM(NS_GET_USERNS),
-    DESCRIBE_ENUM(NS_GET_PARENT),
     // seccomp_unotify
     DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_RECV),
     DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_SEND),
     DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ID_VALID),
     DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ADDFD),
+#ifdef __x86_64__
+    // mtrr
+    DESCRIBE_ENUM(MTRRIOC_ADD_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_SET_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_DEL_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_GET_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_KILL_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_ADD_PAGE_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_SET_PAGE_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_DEL_PAGE_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_GET_PAGE_ENTRY),
+    DESCRIBE_ENUM(MTRRIOC_KILL_PAGE_ENTRY),
+    // amd_hsmp
+    DESCRIBE_ENUM(HSMP_IOCTL_CMD),
+    // mce
+	DESCRIBE_ENUM(MCE_GET_RECORD_LEN),
+	DESCRIBE_ENUM(MCE_GET_LOG_LEN),
+	DESCRIBE_ENUM(MCE_GETCLEAR_FLAGS),
+    // msr
+	DESCRIBE_ENUM(X86_IOC_RDMSR_REGS),
+	DESCRIBE_ENUM(X86_IOC_WRMSR_REGS),
+	// sgx
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_CREATE),
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_ADD_PAGES),
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_INIT),
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_PROVISION),
+	DESCRIBE_ENUM(SGX_IOC_VEPC_REMOVE_ALL),
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS),
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_MODIFY_TYPES),
+	DESCRIBE_ENUM(SGX_IOC_ENCLAVE_REMOVE_PAGES),
+#endif
+    // drm
+	DESCRIBE_ENUM(DRM_IOCTL_VERSION),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_UNIQUE),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_MAGIC),
+	DESCRIBE_ENUM(DRM_IOCTL_IRQ_BUSID),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_MAP),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_CLIENT),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_STATS),
+	DESCRIBE_ENUM(DRM_IOCTL_SET_VERSION),
+	DESCRIBE_ENUM(DRM_IOCTL_MODESET_CTL),
+	DESCRIBE_ENUM(DRM_IOCTL_GEM_CLOSE),
+	DESCRIBE_ENUM(DRM_IOCTL_GEM_FLINK),
+	DESCRIBE_ENUM(DRM_IOCTL_GEM_OPEN),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_CAP),
+	DESCRIBE_ENUM(DRM_IOCTL_SET_CLIENT_CAP),
+	DESCRIBE_ENUM(DRM_IOCTL_SET_UNIQUE),
+	DESCRIBE_ENUM(DRM_IOCTL_AUTH_MAGIC),
+	DESCRIBE_ENUM(DRM_IOCTL_BLOCK),
+	DESCRIBE_ENUM(DRM_IOCTL_UNBLOCK),
+	DESCRIBE_ENUM(DRM_IOCTL_CONTROL),
+	DESCRIBE_ENUM(DRM_IOCTL_ADD_MAP),
+	DESCRIBE_ENUM(DRM_IOCTL_ADD_BUFS),
+	DESCRIBE_ENUM(DRM_IOCTL_MARK_BUFS),
+	DESCRIBE_ENUM(DRM_IOCTL_INFO_BUFS),
+	DESCRIBE_ENUM(DRM_IOCTL_MAP_BUFS),
+	DESCRIBE_ENUM(DRM_IOCTL_FREE_BUFS),
+	DESCRIBE_ENUM(DRM_IOCTL_RM_MAP),
+	DESCRIBE_ENUM(DRM_IOCTL_SET_SAREA_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_SAREA_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_SET_MASTER),
+	DESCRIBE_ENUM(DRM_IOCTL_DROP_MASTER),
+	DESCRIBE_ENUM(DRM_IOCTL_ADD_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_RM_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_MOD_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_GET_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_SWITCH_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_NEW_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_RES_CTX),
+	DESCRIBE_ENUM(DRM_IOCTL_ADD_DRAW),
+	DESCRIBE_ENUM(DRM_IOCTL_RM_DRAW),
+	DESCRIBE_ENUM(DRM_IOCTL_DMA),
+	DESCRIBE_ENUM(DRM_IOCTL_LOCK),
+	DESCRIBE_ENUM(DRM_IOCTL_UNLOCK),
+	DESCRIBE_ENUM(DRM_IOCTL_FINISH),
+	DESCRIBE_ENUM(DRM_IOCTL_PRIME_HANDLE_TO_FD),
+	DESCRIBE_ENUM(DRM_IOCTL_PRIME_FD_TO_HANDLE),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_ACQUIRE),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_RELEASE),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_ENABLE),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_INFO),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_ALLOC),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_FREE),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_BIND),
+	DESCRIBE_ENUM(DRM_IOCTL_AGP_UNBIND),
+	DESCRIBE_ENUM(DRM_IOCTL_SG_ALLOC),
+	DESCRIBE_ENUM(DRM_IOCTL_SG_FREE),
+	DESCRIBE_ENUM(DRM_IOCTL_WAIT_VBLANK),
+	DESCRIBE_ENUM(DRM_IOCTL_CRTC_GET_SEQUENCE),
+	DESCRIBE_ENUM(DRM_IOCTL_CRTC_QUEUE_SEQUENCE),
+	DESCRIBE_ENUM(DRM_IOCTL_UPDATE_DRAW),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETRESOURCES),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETCRTC),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_SETCRTC),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_CURSOR),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETGAMMA),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_SETGAMMA),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETENCODER),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETCONNECTOR),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_ATTACHMODE),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_DETACHMODE),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETPROPERTY),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_SETPROPERTY),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETPROPBLOB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETFB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_ADDFB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_RMFB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_PAGE_FLIP),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_DIRTYFB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_CREATE_DUMB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_MAP_DUMB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_DESTROY_DUMB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETPLANERESOURCES),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETPLANE),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_SETPLANE),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_ADDFB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_OBJ_GETPROPERTIES),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_OBJ_SETPROPERTY),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_CURSOR),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_ATOMIC),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_CREATEPROPBLOB),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_DESTROYPROPBLOB),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_CREATE),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_DESTROY),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_FD_TO_HANDLE),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_WAIT),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_RESET),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_SIGNAL),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_CREATE_LEASE),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_LIST_LESSEES),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GET_LEASE),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_REVOKE_LEASE),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_TIMELINE_WAIT),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_QUERY),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_TRANSFER),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_TIMELINE_SIGNAL),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_GETFB),
+	DESCRIBE_ENUM(DRM_IOCTL_SYNCOBJ_EVENTFD),
+	DESCRIBE_ENUM(DRM_IOCTL_MODE_CLOSEFB),
+	// pktcdvd
+	DESCRIBE_ENUM(PACKET_CTRL_CMD),
+	// uinput
+	DESCRIBE_ENUM(UI_DEV_CREATE),
+	DESCRIBE_ENUM(UI_DEV_DESTROY),
+	DESCRIBE_ENUM(UI_DEV_SETUP),
+	DESCRIBE_ENUM(UI_SET_EVBIT),
+	DESCRIBE_ENUM(UI_SET_KEYBIT),
+	DESCRIBE_ENUM(UI_SET_RELBIT),
+	DESCRIBE_ENUM(UI_SET_ABSBIT),
+	DESCRIBE_ENUM(UI_SET_MSCBIT),
+	DESCRIBE_ENUM(UI_SET_LEDBIT),
+	DESCRIBE_ENUM(UI_SET_SNDBIT),
+	DESCRIBE_ENUM(UI_SET_FFBIT),
+	DESCRIBE_ENUM(UI_SET_PHYS),
+	DESCRIBE_ENUM(UI_SET_SWBIT),
+	DESCRIBE_ENUM(UI_SET_PROPBIT),
+	DESCRIBE_ENUM(UI_BEGIN_FF_UPLOAD),
+	DESCRIBE_ENUM(UI_END_FF_UPLOAD),
+	DESCRIBE_ENUM(UI_BEGIN_FF_ERASE),
+	DESCRIBE_ENUM(UI_END_FF_ERASE),
+	DESCRIBE_ENUM(UI_GET_VERSION),
+	// mmtimer
+	DESCRIBE_ENUM(MMTIMER_GETOFFSET),
+	DESCRIBE_ENUM(MMTIMER_GETRES),
+	DESCRIBE_ENUM(MMTIMER_GETFREQ),
+	DESCRIBE_ENUM(MMTIMER_GETBITS),
+	DESCRIBE_ENUM(MMTIMER_MMAPAVAIL),
+	DESCRIBE_ENUM(MMTIMER_GETCOUNTER),
+	// kfd_ioctl
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_VERSION),
+	DESCRIBE_ENUM(AMDKFD_IOC_CREATE_QUEUE),
+	DESCRIBE_ENUM(AMDKFD_IOC_DESTROY_QUEUE),
+	DESCRIBE_ENUM(AMDKFD_IOC_SET_MEMORY_POLICY),
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_CLOCK_COUNTERS),
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_PROCESS_APERTURES),
+	DESCRIBE_ENUM(AMDKFD_IOC_UPDATE_QUEUE),
+	DESCRIBE_ENUM(AMDKFD_IOC_CREATE_EVENT),
+	DESCRIBE_ENUM(AMDKFD_IOC_DESTROY_EVENT),
+	DESCRIBE_ENUM(AMDKFD_IOC_SET_EVENT),
+	DESCRIBE_ENUM(AMDKFD_IOC_RESET_EVENT),
+	DESCRIBE_ENUM(AMDKFD_IOC_WAIT_EVENTS),
+	// DESCRIBE_ENUM(AMDKFD_IOC_DBG_REGISTER_DEPRECATED),
+	// DESCRIBE_ENUM(AMDKFD_IOC_DBG_UNREGISTER_DEPRECATED),
+	// DESCRIBE_ENUM(AMDKFD_IOC_DBG_ADDRESS_WATCH_DEPRECATED),
+	// DESCRIBE_ENUM(AMDKFD_IOC_DBG_WAVE_CONTROL_DEPRECATED),
+	DESCRIBE_ENUM(AMDKFD_IOC_SET_SCRATCH_BACKING_VA),
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_TILE_CONFIG),
+	DESCRIBE_ENUM(AMDKFD_IOC_SET_TRAP_HANDLER),
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_PROCESS_APERTURES_NEW),
+	DESCRIBE_ENUM(AMDKFD_IOC_ACQUIRE_VM),
+	DESCRIBE_ENUM(AMDKFD_IOC_ALLOC_MEMORY_OF_GPU),
+	DESCRIBE_ENUM(AMDKFD_IOC_FREE_MEMORY_OF_GPU),
+	DESCRIBE_ENUM(AMDKFD_IOC_MAP_MEMORY_TO_GPU),
+	DESCRIBE_ENUM(AMDKFD_IOC_UNMAP_MEMORY_FROM_GPU),
+	DESCRIBE_ENUM(AMDKFD_IOC_SET_CU_MASK),
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_QUEUE_WAVE_STATE),
+	DESCRIBE_ENUM(AMDKFD_IOC_GET_DMABUF_INFO),
+	DESCRIBE_ENUM(AMDKFD_IOC_IMPORT_DMABUF),
+	DESCRIBE_ENUM(AMDKFD_IOC_ALLOC_QUEUE_GWS),
+	DESCRIBE_ENUM(AMDKFD_IOC_SMI_EVENTS),
+	DESCRIBE_ENUM(AMDKFD_IOC_SVM),
+	DESCRIBE_ENUM(AMDKFD_IOC_SET_XNACK_MODE),
+	// DESCRIBE_ENUM(AMDKFD_IOC_CRIU_OP),
+	// DESCRIBE_ENUM(AMDKFD_IOC_AVAILABLE_MEMORY),
+	// DESCRIBE_ENUM(AMDKFD_IOC_EXPORT_DMABUF),
+	// DESCRIBE_ENUM(AMDKFD_IOC_RUNTIME_ENABLE),
+	// DESCRIBE_ENUM(AMDKFD_IOC_DBG_TRAP),
+	// 3w-xxxx
+	DESCRIBE_ENUM(TW_OP_NOP),
+	DESCRIBE_ENUM(TW_OP_INIT_CONNECTION),
+	DESCRIBE_ENUM(TW_OP_READ),
+	DESCRIBE_ENUM(TW_OP_WRITE),
+	DESCRIBE_ENUM(TW_OP_VERIFY),
+	DESCRIBE_ENUM(TW_OP_GET_PARAM),
+	DESCRIBE_ENUM(TW_OP_SET_PARAM),
+	DESCRIBE_ENUM(TW_OP_SECTOR_INFO),
+	DESCRIBE_ENUM(TW_OP_AEN_LISTEN),
+	DESCRIBE_ENUM(TW_OP_FLUSH_CACHE),
+	DESCRIBE_ENUM(TW_CMD_PACKET),
+	DESCRIBE_ENUM(TW_CMD_PACKET_WITH_DATA),
+	// autofs
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_VERSION),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_PROTOVER),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_PROTOSUBVER),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_OPENMOUNT),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_CLOSEMOUNT),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_READY),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_FAIL),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_SETPIPEFD),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_CATATONIC),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_TIMEOUT),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_REQUESTER),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_EXPIRE),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_ASKUMOUNT),
+	DESCRIBE_ENUM(AUTOFS_DEV_IOCTL_ISMOUNTPOINT),
+	DESCRIBE_ENUM(AUTOFS_IOC_READY),
+	DESCRIBE_ENUM(AUTOFS_IOC_FAIL),
+	DESCRIBE_ENUM(AUTOFS_IOC_CATATONIC),
+	DESCRIBE_ENUM(AUTOFS_IOC_PROTOVER),
+	DESCRIBE_ENUM(AUTOFS_IOC_SETTIMEOUT32),
+	DESCRIBE_ENUM(AUTOFS_IOC_SETTIMEOUT),
+	DESCRIBE_ENUM(AUTOFS_IOC_EXPIRE),
+	// blkpg
+	DESCRIBE_ENUM(BLKPG),
+	// blkzoned
+	DESCRIBE_ENUM(BLKREPORTZONE),
+	DESCRIBE_ENUM(BLKRESETZONE),
+	DESCRIBE_ENUM(BLKGETZONESZ),
+	DESCRIBE_ENUM(BLKGETNRZONES),
+	DESCRIBE_ENUM(BLKOPENZONE),
+	DESCRIBE_ENUM(BLKCLOSEZONE),
+	DESCRIBE_ENUM(BLKFINISHZONE),
+	// bluetooth
+	DESCRIBE_ENUM(HCIUARTSETPROTO),
+	DESCRIBE_ENUM(HCIUARTGETPROTO),
+	DESCRIBE_ENUM(HCIUARTGETDEVICE),
+	DESCRIBE_ENUM(HCIUARTSETFLAGS),
+	DESCRIBE_ENUM(HCIUARTGETFLAGS),
+	// bluetooth/hci_sock
+	DESCRIBE_ENUM(HCIDEVUP),
+	DESCRIBE_ENUM(HCIDEVDOWN),
+	DESCRIBE_ENUM(HCIDEVRESET),
+	DESCRIBE_ENUM(HCIDEVRESTAT),
+	DESCRIBE_ENUM(HCIGETDEVLIST),
+	DESCRIBE_ENUM(HCIGETDEVINFO),
+	DESCRIBE_ENUM(HCIGETCONNLIST),
+	DESCRIBE_ENUM(HCIGETCONNINFO),
+	DESCRIBE_ENUM(HCIGETAUTHINFO),
+	DESCRIBE_ENUM(HCISETRAW),
+	DESCRIBE_ENUM(HCISETSCAN),
+	DESCRIBE_ENUM(HCISETAUTH),
+	DESCRIBE_ENUM(HCISETENCRYPT),
+	DESCRIBE_ENUM(HCISETPTYPE),
+	DESCRIBE_ENUM(HCISETLINKPOL),
+	DESCRIBE_ENUM(HCISETLINKMODE),
+	DESCRIBE_ENUM(HCISETACLMTU),
+	DESCRIBE_ENUM(HCISETSCOMTU),
+	DESCRIBE_ENUM(HCIBLOCKADDR),
+	DESCRIBE_ENUM(HCIUNBLOCKADDR),
+	DESCRIBE_ENUM(HCIINQUIRY),
+	// btrfs
+	DESCRIBE_ENUM(BTRFS_IOC_SNAP_CREATE),
+	DESCRIBE_ENUM(BTRFS_IOC_DEFRAG),
+	DESCRIBE_ENUM(BTRFS_IOC_RESIZE),
+	DESCRIBE_ENUM(BTRFS_IOC_SCAN_DEV),
+	DESCRIBE_ENUM(BTRFS_IOC_FORGET_DEV),
+	DESCRIBE_ENUM(BTRFS_IOC_TRANS_START),
+	DESCRIBE_ENUM(BTRFS_IOC_TRANS_END),
+	DESCRIBE_ENUM(BTRFS_IOC_SYNC),
+	DESCRIBE_ENUM(BTRFS_IOC_CLONE),
+	DESCRIBE_ENUM(BTRFS_IOC_ADD_DEV),
+	DESCRIBE_ENUM(BTRFS_IOC_RM_DEV),
+	DESCRIBE_ENUM(BTRFS_IOC_BALANCE),
+	DESCRIBE_ENUM(BTRFS_IOC_CLONE_RANGE),
+	DESCRIBE_ENUM(BTRFS_IOC_SUBVOL_CREATE),
+	DESCRIBE_ENUM(BTRFS_IOC_SNAP_DESTROY),
+	DESCRIBE_ENUM(BTRFS_IOC_DEFRAG_RANGE),
+	DESCRIBE_ENUM(BTRFS_IOC_TREE_SEARCH),
+	DESCRIBE_ENUM(BTRFS_IOC_TREE_SEARCH_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_INO_LOOKUP),
+	DESCRIBE_ENUM(BTRFS_IOC_DEFAULT_SUBVOL),
+	DESCRIBE_ENUM(BTRFS_IOC_SPACE_INFO),
+	DESCRIBE_ENUM(BTRFS_IOC_START_SYNC),
+	DESCRIBE_ENUM(BTRFS_IOC_WAIT_SYNC),
+	DESCRIBE_ENUM(BTRFS_IOC_SNAP_CREATE_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_SUBVOL_CREATE_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_SUBVOL_GETFLAGS),
+	DESCRIBE_ENUM(BTRFS_IOC_SUBVOL_SETFLAGS),
+	DESCRIBE_ENUM(BTRFS_IOC_SCRUB),
+	DESCRIBE_ENUM(BTRFS_IOC_SCRUB_CANCEL),
+	DESCRIBE_ENUM(BTRFS_IOC_SCRUB_PROGRESS),
+	DESCRIBE_ENUM(BTRFS_IOC_DEV_INFO),
+	DESCRIBE_ENUM(BTRFS_IOC_FS_INFO),
+	DESCRIBE_ENUM(BTRFS_IOC_BALANCE_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_BALANCE_CTL),
+	DESCRIBE_ENUM(BTRFS_IOC_BALANCE_PROGRESS),
+	DESCRIBE_ENUM(BTRFS_IOC_INO_PATHS),
+	DESCRIBE_ENUM(BTRFS_IOC_LOGICAL_INO),
+	DESCRIBE_ENUM(BTRFS_IOC_SET_RECEIVED_SUBVOL),
+	DESCRIBE_ENUM(BTRFS_IOC_SEND),
+	DESCRIBE_ENUM(BTRFS_IOC_DEVICES_READY),
+	DESCRIBE_ENUM(BTRFS_IOC_QUOTA_CTL),
+	DESCRIBE_ENUM(BTRFS_IOC_QGROUP_ASSIGN),
+	DESCRIBE_ENUM(BTRFS_IOC_QGROUP_CREATE),
+	DESCRIBE_ENUM(BTRFS_IOC_QGROUP_LIMIT),
+	DESCRIBE_ENUM(BTRFS_IOC_QUOTA_RESCAN),
+	DESCRIBE_ENUM(BTRFS_IOC_QUOTA_RESCAN_STATUS),
+	DESCRIBE_ENUM(BTRFS_IOC_QUOTA_RESCAN_WAIT),
+	DESCRIBE_ENUM(BTRFS_IOC_GET_FSLABEL),
+	DESCRIBE_ENUM(BTRFS_IOC_SET_FSLABEL),
+	DESCRIBE_ENUM(BTRFS_IOC_GET_DEV_STATS),
+	DESCRIBE_ENUM(BTRFS_IOC_DEV_REPLACE),
+	DESCRIBE_ENUM(BTRFS_IOC_FILE_EXTENT_SAME),
+	DESCRIBE_ENUM(BTRFS_IOC_GET_FEATURES),
+	DESCRIBE_ENUM(BTRFS_IOC_SET_FEATURES),
+	DESCRIBE_ENUM(BTRFS_IOC_GET_SUPPORTED_FEATURES),
+	DESCRIBE_ENUM(BTRFS_IOC_RM_DEV_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_LOGICAL_INO_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_GET_SUBVOL_INFO),
+	DESCRIBE_ENUM(BTRFS_IOC_GET_SUBVOL_ROOTREF),
+	DESCRIBE_ENUM(BTRFS_IOC_INO_LOOKUP_USER),
+	DESCRIBE_ENUM(BTRFS_IOC_SNAP_DESTROY_V2),
+	DESCRIBE_ENUM(BTRFS_IOC_ENCODED_READ),
+	DESCRIBE_ENUM(BTRFS_IOC_ENCODED_WRITE),
+	// cdrom
+	DESCRIBE_ENUM(CDROM_GET_MCN),
+	DESCRIBE_ENUM(CDROM_GET_UPC),
+	DESCRIBE_ENUM(CDROM_SET_OPTIONS),
+	DESCRIBE_ENUM(CDROM_CLEAR_OPTIONS),
+	DESCRIBE_ENUM(CDROM_SELECT_SPEED),
+	DESCRIBE_ENUM(CDROM_SELECT_DISC),
+	DESCRIBE_ENUM(CDROM_MEDIA_CHANGED),
+	DESCRIBE_ENUM(CDROM_DRIVE_STATUS),
+	DESCRIBE_ENUM(CDROM_DISC_STATUS),
+	DESCRIBE_ENUM(CDROM_CHANGER_NSLOTS),
+	DESCRIBE_ENUM(CDROM_LOCKDOOR),
+	DESCRIBE_ENUM(CDROM_DEBUG),
+	DESCRIBE_ENUM(CDROM_GET_CAPABILITY),
+	DESCRIBE_ENUM(CDROM_SEND_PACKET),
+	DESCRIBE_ENUM(CDROM_NEXT_WRITABLE),
+	DESCRIBE_ENUM(CDROM_LAST_WRITTEN),
+	DESCRIBE_ENUM(CDROM_TIMED_MEDIA_CHANGE),
+	DESCRIBE_ENUM(CDROMPAUSE),
+	DESCRIBE_ENUM(CDROMRESUME),
+	DESCRIBE_ENUM(CDROMPLAYMSF),
+	DESCRIBE_ENUM(CDROMPLAYTRKIND),
+	DESCRIBE_ENUM(CDROMREADTOCHDR),
+	DESCRIBE_ENUM(CDROMREADTOCENTRY),
+	DESCRIBE_ENUM(CDROMSTOP),
+	DESCRIBE_ENUM(CDROMSTART),
+	DESCRIBE_ENUM(CDROMEJECT),
+	DESCRIBE_ENUM(CDROMVOLCTRL),
+	DESCRIBE_ENUM(CDROMSUBCHNL),
+	DESCRIBE_ENUM(CDROMREADMODE2),
+	DESCRIBE_ENUM(CDROMREADMODE1),
+	DESCRIBE_ENUM(CDROMREADAUDIO),
+	DESCRIBE_ENUM(CDROMEJECT_SW),
+	DESCRIBE_ENUM(CDROMMULTISESSION),
+	DESCRIBE_ENUM(CDROM_GET_MCN),
+	DESCRIBE_ENUM(CDROM_GET_UPC),
+	DESCRIBE_ENUM(CDROMRESET),
+	DESCRIBE_ENUM(CDROMVOLREAD),
+	DESCRIBE_ENUM(CDROMREADRAW),
+	DESCRIBE_ENUM(CDROMREADCOOKED),
+	DESCRIBE_ENUM(CDROMSEEK),
+	DESCRIBE_ENUM(CDROMPLAYBLK),
+	DESCRIBE_ENUM(CDROMREADALL),
+	DESCRIBE_ENUM(CDROMGETSPINDOWN),
+	DESCRIBE_ENUM(CDROMSETSPINDOWN),
+	DESCRIBE_ENUM(CDROMCLOSETRAY),
+	DESCRIBE_ENUM(CDROMAUDIOBUFSIZ),
+	DESCRIBE_ENUM(DVD_READ_STRUCT),
+	DESCRIBE_ENUM(DVD_WRITE_STRUCT),
+	DESCRIBE_ENUM(DVD_AUTH),
+	DESCRIBE_ENUM(CDROM_SEND_PACKET),
+	DESCRIBE_ENUM(CDROM_NEXT_WRITABLE),
+	DESCRIBE_ENUM(CDROM_LAST_WRITTEN),
+	DESCRIBE_ENUM(CDROM_TIMED_MEDIA_CHANGE),
+	// cdrom packet
+	DESCRIBE_ENUM(PACKET_SETUP_DEV),
+	DESCRIBE_ENUM(PACKET_TEARDOWN_DEV),
+	// cxl_mem
+	DESCRIBE_ENUM(CXL_MEM_QUERY_COMMANDS),
+	DESCRIBE_ENUM(CXL_MEM_SEND_COMMAND),
+	// cec
+	DESCRIBE_ENUM(CEC_ADAP_G_CAPS),
+	DESCRIBE_ENUM(CEC_ADAP_G_PHYS_ADDR),
+	DESCRIBE_ENUM(CEC_ADAP_S_PHYS_ADDR),
+	DESCRIBE_ENUM(CEC_ADAP_G_LOG_ADDRS),
+	DESCRIBE_ENUM(CEC_ADAP_S_LOG_ADDRS),
+	DESCRIBE_ENUM(CEC_TRANSMIT),
+	DESCRIBE_ENUM(CEC_RECEIVE),
+	DESCRIBE_ENUM(CEC_DQEVENT),
+	DESCRIBE_ENUM(CEC_G_MODE),
+	DESCRIBE_ENUM(CEC_S_MODE),
+	DESCRIBE_ENUM(CEC_ADAP_G_CONNECTOR_INFO),
+	// dasd
+	DESCRIBE_ENUM(BIODASDINFO),
+	// dm-ioctl
+	DESCRIBE_ENUM(DM_VERSION),
+	DESCRIBE_ENUM(DM_REMOVE_ALL),
+	DESCRIBE_ENUM(DM_LIST_DEVICES),
+	DESCRIBE_ENUM(DM_DEV_CREATE),
+	DESCRIBE_ENUM(DM_DEV_REMOVE),
+	DESCRIBE_ENUM(DM_DEV_RENAME),
+	DESCRIBE_ENUM(DM_DEV_SUSPEND),
+	DESCRIBE_ENUM(DM_DEV_STATUS),
+	DESCRIBE_ENUM(DM_DEV_WAIT),
+	DESCRIBE_ENUM(DM_DEV_ARM_POLL),
+	DESCRIBE_ENUM(DM_TABLE_LOAD),
+	DESCRIBE_ENUM(DM_TABLE_CLEAR),
+	DESCRIBE_ENUM(DM_TABLE_DEPS),
+	DESCRIBE_ENUM(DM_TABLE_STATUS),
+	DESCRIBE_ENUM(DM_LIST_VERSIONS),
+	DESCRIBE_ENUM(DM_GET_TARGET_VERSION),
+	DESCRIBE_ENUM(DM_TARGET_MSG),
+	DESCRIBE_ENUM(DM_DEV_SET_GEOMETRY),
+	// dma-buf
+	DESCRIBE_ENUM(DMA_BUF_IOCTL_SYNC),
+	DESCRIBE_ENUM(DMA_BUF_SET_NAME),
+	DESCRIBE_ENUM(DMA_BUF_SET_NAME_A),
+	DESCRIBE_ENUM(DMA_BUF_SET_NAME_B),
+	DESCRIBE_ENUM(DMA_BUF_IOCTL_EXPORT_SYNC_FILE),
+	DESCRIBE_ENUM(DMA_BUF_IOCTL_IMPORT_SYNC_FILE),
+	// dma-heap
+	DESCRIBE_ENUM(DMA_HEAP_IOCTL_ALLOC),
+	// dmx
+	DESCRIBE_ENUM(DMX_START),
+	DESCRIBE_ENUM(DMX_STOP),
+	DESCRIBE_ENUM(DMX_SET_FILTER),
+	DESCRIBE_ENUM(DMX_SET_PES_FILTER),
+	DESCRIBE_ENUM(DMX_SET_BUFFER_SIZE),
+	DESCRIBE_ENUM(DMX_GET_PES_PIDS),
+	DESCRIBE_ENUM(DMX_GET_STC),
+	DESCRIBE_ENUM(DMX_ADD_PID),
+	DESCRIBE_ENUM(DMX_REMOVE_PID),
+	// eventpoll
+	DESCRIBE_ENUM(EPIOCSPARAMS),
+	DESCRIBE_ENUM(EPIOCGPARAMS),
+	// evms
+	DESCRIBE_ENUM(EVMS_GET_STRIPE_INFO),
+	// falloc
+	DESCRIBE_ENUM(FS_IOC_RESVSP),
+	DESCRIBE_ENUM(FS_IOC_UNRESVSP),
+	DESCRIBE_ENUM(FS_IOC_RESVSP64),
+	DESCRIBE_ENUM(FS_IOC_UNRESVSP64),
+	DESCRIBE_ENUM(FS_IOC_ZERO_RANGE),
+	// fb
+	DESCRIBE_ENUM(FBIOGET_VSCREENINFO),
+	DESCRIBE_ENUM(FBIOPUT_VSCREENINFO),
+	DESCRIBE_ENUM(FBIOGET_FSCREENINFO),
+	DESCRIBE_ENUM(FBIOGETCMAP),
+	DESCRIBE_ENUM(FBIOPUTCMAP),
+	DESCRIBE_ENUM(FBIOPAN_DISPLAY),
+	DESCRIBE_ENUM(FBIO_CURSOR),
+	DESCRIBE_ENUM(FBIOGET_CON2FBMAP),
+	DESCRIBE_ENUM(FBIOPUT_CON2FBMAP),
+	DESCRIBE_ENUM(FBIOBLANK),
+	DESCRIBE_ENUM(FBIOGET_VBLANK),
+	DESCRIBE_ENUM(FBIO_ALLOC),
+	DESCRIBE_ENUM(FBIO_FREE),
+	DESCRIBE_ENUM(FBIOGET_GLYPH),
+	DESCRIBE_ENUM(FBIOGET_HWCINFO),
+	DESCRIBE_ENUM(FBIOPUT_MODEINFO),
+	DESCRIBE_ENUM(FBIOGET_DISPINFO),
+	DESCRIBE_ENUM(FBIO_WAITFORVSYNC),
+	// fd
+	DESCRIBE_ENUM(FDCLRPRM),
+	DESCRIBE_ENUM(FDSETPRM),
+	DESCRIBE_ENUM(FDDEFPRM),
+	DESCRIBE_ENUM(FDGETPRM),
+	DESCRIBE_ENUM(FDMSGON),
+	DESCRIBE_ENUM(FDMSGOFF),
+	DESCRIBE_ENUM(FDFMTBEG),
+	DESCRIBE_ENUM(FDFMTTRK),
+	DESCRIBE_ENUM(FDFMTEND),
+	DESCRIBE_ENUM(FDSETEMSGTRESH),
+	DESCRIBE_ENUM(FDFLUSH),
+	DESCRIBE_ENUM(FDSETMAXERRS),
+	DESCRIBE_ENUM(FDGETMAXERRS),
+	DESCRIBE_ENUM(FDGETDRVTYP),
+	DESCRIBE_ENUM(FDSETDRVPRM),
+	DESCRIBE_ENUM(FDGETDRVPRM),
+	DESCRIBE_ENUM(FDGETDRVSTAT),
+	DESCRIBE_ENUM(FDPOLLDRVSTAT),
+	DESCRIBE_ENUM(FDRESET),
+	DESCRIBE_ENUM(FDGETFDCSTAT),
+	DESCRIBE_ENUM(FDWERRORCLR),
+	DESCRIBE_ENUM(FDWERRORGET),
+	DESCRIBE_ENUM(FDRAWCMD),
+	DESCRIBE_ENUM(FDTWADDLE),
+	DESCRIBE_ENUM(FDEJECT),
+	// fs
+	DESCRIBE_ENUM(BLKROSET),
+	DESCRIBE_ENUM(BLKROGET),
+	DESCRIBE_ENUM(BLKRRPART),
+	DESCRIBE_ENUM(BLKGETSIZE),
+	DESCRIBE_ENUM(BLKFLSBUF),
+	DESCRIBE_ENUM(BLKRASET),
+	DESCRIBE_ENUM(BLKRAGET),
+	DESCRIBE_ENUM(BLKFRASET),
+	DESCRIBE_ENUM(BLKFRAGET),
+	DESCRIBE_ENUM(BLKSECTSET),
+	DESCRIBE_ENUM(BLKSECTGET),
+	DESCRIBE_ENUM(BLKSSZGET),
+	DESCRIBE_ENUM(BLKBSZGET),
+	DESCRIBE_ENUM(BLKBSZSET),
+	DESCRIBE_ENUM(BLKGETSIZE64),
+	DESCRIBE_ENUM(BLKTRACESETUP),
+	DESCRIBE_ENUM(BLKTRACESTART),
+	DESCRIBE_ENUM(BLKTRACESTOP),
+	DESCRIBE_ENUM(BLKTRACETEARDOWN),
+	DESCRIBE_ENUM(BLKDISCARD),
+	DESCRIBE_ENUM(BLKIOMIN),
+	DESCRIBE_ENUM(BLKPBSZGET),
+	DESCRIBE_ENUM(BLKALIGNOFF),
+	DESCRIBE_ENUM(BLKDISCARDZEROES),
+	DESCRIBE_ENUM(BLKSECDISCARD),
+	DESCRIBE_ENUM(BLKROTATIONAL),
+	DESCRIBE_ENUM(BLKZEROOUT),
+	DESCRIBE_ENUM(BLKGETDISKSEQ),
+	DESCRIBE_ENUM(BMAP_IOCTL),
+	DESCRIBE_ENUM(FIBMAP),
+	DESCRIBE_ENUM(FIGETBSZ),
+	DESCRIBE_ENUM(FIFREEZE),
+	DESCRIBE_ENUM(FITHAW),
+	DESCRIBE_ENUM(FITRIM),
+	DESCRIBE_ENUM(FICLONE),
+	DESCRIBE_ENUM(FICLONERANGE),
+	DESCRIBE_ENUM(FIDEDUPERANGE),
+	DESCRIBE_ENUM(FSLABEL_MAX),
+	DESCRIBE_ENUM(FS_IOC_GETFLAGS),
+	DESCRIBE_ENUM(FS_IOC_SETFLAGS),
+	DESCRIBE_ENUM(FS_IOC_GETVERSION),
+	DESCRIBE_ENUM(FS_IOC_SETVERSION),
+	DESCRIBE_ENUM(FS_IOC_FIEMAP),
+	DESCRIBE_ENUM(FS_IOC32_GETFLAGS),
+	DESCRIBE_ENUM(FS_IOC32_SETFLAGS),
+	DESCRIBE_ENUM(FS_IOC32_GETVERSION),
+	DESCRIBE_ENUM(FS_IOC32_SETVERSION),
+	DESCRIBE_ENUM(FS_IOC_FSGETXATTR),
+	DESCRIBE_ENUM(FS_IOC_FSSETXATTR),
+	DESCRIBE_ENUM(FS_IOC_GETFSLABEL),
+	DESCRIBE_ENUM(FS_IOC_SETFSLABEL),
+	DESCRIBE_ENUM(FS_IOC_GETFSUUID),
+	DESCRIBE_ENUM(FS_IOC_GETFSSYSFSPATH),
+	DESCRIBE_ENUM(BLKIOOPT),
+	DESCRIBE_ENUM(BLKGETLASTSECT), // unused
+	DESCRIBE_ENUM(BLKSETLASTSECT), // unused
+	// fscrypt
+	DESCRIBE_ENUM(FS_IOC_SET_ENCRYPTION_POLICY),
+	DESCRIBE_ENUM(FS_IOC_GET_ENCRYPTION_PWSALT),
+	DESCRIBE_ENUM(FS_IOC_GET_ENCRYPTION_POLICY),
+	DESCRIBE_ENUM(FS_IOC_GET_ENCRYPTION_POLICY_EX),
+	DESCRIBE_ENUM(FS_IOC_ADD_ENCRYPTION_KEY),
+	DESCRIBE_ENUM(FS_IOC_REMOVE_ENCRYPTION_KEY),
+	DESCRIBE_ENUM(FS_IOC_REMOVE_ENCRYPTION_KEY_ALL_USERS),
+	DESCRIBE_ENUM(FS_IOC_GET_ENCRYPTION_KEY_STATUS),
+	DESCRIBE_ENUM(FS_IOC_GET_ENCRYPTION_NONCE),
+	// fsl_hypervisor
+	DESCRIBE_ENUM(FSL_HV_IOCTL_PARTITION_RESTART),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_PARTITION_GET_STATUS),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_PARTITION_START),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_PARTITION_STOP),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_MEMCPY),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_DOORBELL),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_GETPROP),
+	DESCRIBE_ENUM(FSL_HV_IOCTL_SETPROP),
+	// fsmap
+	DESCRIBE_ENUM(FS_IOC_GETFSMAP),
+	// fsverity
+	DESCRIBE_ENUM(FS_IOC_ENABLE_VERITY),
+	DESCRIBE_ENUM(FS_IOC_MEASURE_VERITY),
+	DESCRIBE_ENUM(FS_IOC_READ_VERITY_METADATA),
+	DESCRIBE_ENUM(FS_IOC_ENABLE_VERITY_OLD),
+	// fuse
+	DESCRIBE_ENUM(FUSE_DEV_IOC_CLONE),
+	DESCRIBE_ENUM(FUSE_DEV_IOC_BACKING_OPEN),
+	DESCRIBE_ENUM(FUSE_DEV_IOC_BACKING_CLOSE),
+	// gpio
+	DESCRIBE_ENUM(GPIO_GET_CHIPINFO_IOCTL),
+	DESCRIBE_ENUM(GPIO_GET_LINEINFO_UNWATCH_IOCTL),
+	DESCRIBE_ENUM(GPIO_V2_GET_LINEINFO_IOCTL),
+	DESCRIBE_ENUM(GPIO_V2_GET_LINEINFO_WATCH_IOCTL),
+	DESCRIBE_ENUM(GPIO_V2_GET_LINE_IOCTL),
+	DESCRIBE_ENUM(GPIO_V2_LINE_SET_CONFIG_IOCTL),
+	DESCRIBE_ENUM(GPIO_V2_LINE_GET_VALUES_IOCTL),
+	DESCRIBE_ENUM(GPIO_V2_LINE_SET_VALUES_IOCTL),
+	DESCRIBE_ENUM(GPIO_GET_LINEINFO_IOCTL),
+	DESCRIBE_ENUM(GPIO_GET_LINEHANDLE_IOCTL),
+	DESCRIBE_ENUM(GPIO_GET_LINEEVENT_IOCTL),
+	DESCRIBE_ENUM(GPIOHANDLE_GET_LINE_VALUES_IOCTL),
+	DESCRIBE_ENUM(GPIOHANDLE_SET_LINE_VALUES_IOCTL),
+	DESCRIBE_ENUM(GPIOHANDLE_SET_CONFIG_IOCTL),
+	DESCRIBE_ENUM(GPIO_GET_LINEINFO_WATCH_IOCTL),
+	// gsmmux
+	DESCRIBE_ENUM(GSMIOC_GETCONF),
+	DESCRIBE_ENUM(GSMIOC_SETCONF),
+	DESCRIBE_ENUM(GSMIOC_ENABLE_NET),
+	DESCRIBE_ENUM(GSMIOC_DISABLE_NET),
+	DESCRIBE_ENUM(GSMIOC_GETFIRST),
+	DESCRIBE_ENUM(GSMIOC_GETCONF_EXT),
+	DESCRIBE_ENUM(GSMIOC_SETCONF_EXT),
+	DESCRIBE_ENUM(GSMIOC_GETCONF_DLCI),
+	DESCRIBE_ENUM(GSMIOC_SETCONF_DLCI),
+	// hdio
+	DESCRIBE_ENUM(HDIO_GETGEO),
+	DESCRIBE_ENUM(HDIO_GET_UNMASKINTR),
+	DESCRIBE_ENUM(HDIO_GET_MULTCOUNT),
+	DESCRIBE_ENUM(HDIO_GET_QDMA),
+	DESCRIBE_ENUM(HDIO_SET_XFER),
+	DESCRIBE_ENUM(HDIO_OBSOLETE_IDENTITY),
+	DESCRIBE_ENUM(HDIO_GET_KEEPSETTINGS),
+	DESCRIBE_ENUM(HDIO_GET_32BIT),
+	DESCRIBE_ENUM(HDIO_GET_NOWERR),
+	DESCRIBE_ENUM(HDIO_GET_DMA),
+	DESCRIBE_ENUM(HDIO_GET_NICE),
+	DESCRIBE_ENUM(HDIO_GET_IDENTITY),
+	DESCRIBE_ENUM(HDIO_GET_WCACHE),
+	DESCRIBE_ENUM(HDIO_GET_ACOUSTIC),
+	DESCRIBE_ENUM(HDIO_GET_ADDRESS),
+	DESCRIBE_ENUM(HDIO_GET_BUSSTATE),
+	DESCRIBE_ENUM(HDIO_TRISTATE_HWIF),
+	DESCRIBE_ENUM(HDIO_DRIVE_RESET),
+	DESCRIBE_ENUM(HDIO_DRIVE_TASKFILE),
+	DESCRIBE_ENUM(HDIO_DRIVE_TASK),
+	DESCRIBE_ENUM(HDIO_DRIVE_CMD),
+	DESCRIBE_ENUM(HDIO_DRIVE_CMD_AEB),
+	DESCRIBE_ENUM(HDIO_SET_MULTCOUNT),
+	DESCRIBE_ENUM(HDIO_SET_UNMASKINTR),
+	DESCRIBE_ENUM(HDIO_SET_KEEPSETTINGS),
+	DESCRIBE_ENUM(HDIO_SET_32BIT),
+	DESCRIBE_ENUM(HDIO_SET_NOWERR),
+	DESCRIBE_ENUM(HDIO_SET_DMA),
+	DESCRIBE_ENUM(HDIO_SET_PIO_MODE),
+	DESCRIBE_ENUM(HDIO_SCAN_HWIF),
+	DESCRIBE_ENUM(HDIO_UNREGISTER_HWIF),
+	DESCRIBE_ENUM(HDIO_SET_NICE),
+	DESCRIBE_ENUM(HDIO_SET_WCACHE),
+	DESCRIBE_ENUM(HDIO_SET_ACOUSTIC),
+	DESCRIBE_ENUM(HDIO_SET_BUSSTATE),
+	DESCRIBE_ENUM(HDIO_SET_QDMA),
+	DESCRIBE_ENUM(HDIO_SET_ADDRESS),
+	// hiddev
+	DESCRIBE_ENUM(HIDIOCGVERSION),
+	DESCRIBE_ENUM(HIDIOCGDEVINFO),
+	DESCRIBE_ENUM(HIDIOCGSTRING),
+	// DESCRIBE_ENUM(HIDIOCGNAME), // variable size
+	DESCRIBE_ENUM(HIDIOCGREPORT),
+	DESCRIBE_ENUM(HIDIOCSREPORT),
+	DESCRIBE_ENUM(HIDIOCGREPORTINFO),
+	DESCRIBE_ENUM(HIDIOCGFIELDINFO),
+	DESCRIBE_ENUM(HIDIOCGUSAGE),
+	DESCRIBE_ENUM(HIDIOCSUSAGE),
+	DESCRIBE_ENUM(HIDIOCGUCODE),
+	DESCRIBE_ENUM(HIDIOCGFLAG),
+	DESCRIBE_ENUM(HIDIOCSFLAG),
+	DESCRIBE_ENUM(HIDIOCGCOLLECTIONINDEX),
+	DESCRIBE_ENUM(HIDIOCGCOLLECTIONINFO),
+	// DESCRIBE_ENUM(HIDIOCGPHYS), // variable size
+	DESCRIBE_ENUM(HIDIOCGUSAGES),
+	DESCRIBE_ENUM(HIDIOCSUSAGES),
+	// hidraw
+	DESCRIBE_ENUM(HIDIOCGRDESCSIZE),
+	DESCRIBE_ENUM(HIDIOCGRDESC),
+	DESCRIBE_ENUM(HIDIOCGRAWINFO),
+	// DESCRIBE_ENUM(HIDIOCGRAWNAME), // variable size
+	// DESCRIBE_ENUM(HIDIOCGRAWPHYS), // variable size
+	// DESCRIBE_ENUM(HIDIOCSFEATURE), // variable size
+	// DESCRIBE_ENUM(HIDIOCGFEATURE), // variable size
+	// DESCRIBE_ENUM(HIDIOCGRAWUNIQ), // variable size
+	// DESCRIBE_ENUM(HIDIOCSINPUT), // variable size
+	// DESCRIBE_ENUM(HIDIOCGINPUT), // variable size
+	// DESCRIBE_ENUM(HIDIOCSOUTPUT), // variable size
+	// DESCRIBE_ENUM(HIDIOCGOUTPUT), // variable size
+	// hpet
+	DESCRIBE_ENUM(HPET_IE_ON),
+	DESCRIBE_ENUM(HPET_IE_OFF),
+	DESCRIBE_ENUM(HPET_INFO),
+	DESCRIBE_ENUM(HPET_EPI),
+	DESCRIBE_ENUM(HPET_DPI),
+	DESCRIBE_ENUM(HPET_IRQFREQ),
+	// i2c
+	DESCRIBE_ENUM(I2C_RETRIES),
+	DESCRIBE_ENUM(I2C_TIMEOUT),
+	DESCRIBE_ENUM(I2C_SLAVE),
+	DESCRIBE_ENUM(I2C_SLAVE_FORCE),
+	DESCRIBE_ENUM(I2C_TENBIT),
+	DESCRIBE_ENUM(I2C_FUNCS),
+	DESCRIBE_ENUM(I2C_RDWR),
+	DESCRIBE_ENUM(I2C_PEC),
+	DESCRIBE_ENUM(I2C_SMBUS),
+	// if_pppox
+	// DESCRIBE_ENUM(PPPOEIOCSFWD),
+	// DESCRIBE_ENUM(PPPOEIOCDFWD),
+	// if_tun
+	DESCRIBE_ENUM(TUNSETNOCSUM),
+	DESCRIBE_ENUM(TUNSETDEBUG),
+	DESCRIBE_ENUM(TUNSETIFF),
+	DESCRIBE_ENUM(TUNSETPERSIST),
+	DESCRIBE_ENUM(TUNSETOWNER),
+	DESCRIBE_ENUM(TUNSETLINK),
+	DESCRIBE_ENUM(TUNSETGROUP),
+	DESCRIBE_ENUM(TUNGETFEATURES),
+	DESCRIBE_ENUM(TUNSETOFFLOAD),
+	DESCRIBE_ENUM(TUNSETTXFILTER),
+	DESCRIBE_ENUM(TUNGETIFF),
+	DESCRIBE_ENUM(TUNGETSNDBUF),
+	DESCRIBE_ENUM(TUNSETSNDBUF),
+	DESCRIBE_ENUM(TUNATTACHFILTER),
+	DESCRIBE_ENUM(TUNDETACHFILTER),
+	DESCRIBE_ENUM(TUNGETVNETHDRSZ),
+	DESCRIBE_ENUM(TUNSETVNETHDRSZ),
+	DESCRIBE_ENUM(TUNSETQUEUE),
+	DESCRIBE_ENUM(TUNSETIFINDEX),
+	DESCRIBE_ENUM(TUNGETFILTER),
+	DESCRIBE_ENUM(TUNSETVNETLE),
+	DESCRIBE_ENUM(TUNGETVNETLE),
+	DESCRIBE_ENUM(TUNSETVNETBE),
+	DESCRIBE_ENUM(TUNGETVNETBE),
+	DESCRIBE_ENUM(TUNSETSTEERINGEBPF),
+	DESCRIBE_ENUM(TUNSETFILTEREBPF),
+	DESCRIBE_ENUM(TUNSETCARRIER),
+	DESCRIBE_ENUM(TUNGETDEVNETNS),
+	// if_tunnel
+	DESCRIBE_ENUM(SIOCGETTUNNEL),
+	DESCRIBE_ENUM(SIOCADDTUNNEL),
+	DESCRIBE_ENUM(SIOCDELTUNNEL),
+	DESCRIBE_ENUM(SIOCCHGTUNNEL),
+	DESCRIBE_ENUM(SIOCGETPRL),
+	DESCRIBE_ENUM(SIOCADDPRL),
+	DESCRIBE_ENUM(SIOCDELPRL),
+	DESCRIBE_ENUM(SIOCCHGPRL),
+	DESCRIBE_ENUM(SIOCGET6RD),
+	DESCRIBE_ENUM(SIOCADD6RD),
+	DESCRIBE_ENUM(SIOCDEL6RD),
+	DESCRIBE_ENUM(SIOCCHG6RD),
+	// iio/buffer
+	DESCRIBE_ENUM(IIO_BUFFER_GET_FD_IOCTL),
+	// iio/events
+	DESCRIBE_ENUM(IIO_GET_EVENT_FD_IOCTL),
+	// inotify
+	DESCRIBE_ENUM(INOTIFY_IOC_SETNEXTWD),
+	// input
+	DESCRIBE_ENUM(EVIOCGVERSION),
+	DESCRIBE_ENUM(EVIOCGID),
+	DESCRIBE_ENUM(EVIOCGREP),
+	DESCRIBE_ENUM(EVIOCSREP),
+	DESCRIBE_ENUM(EVIOCGKEYCODE),
+	DESCRIBE_ENUM(EVIOCGKEYCODE_V2),
+	DESCRIBE_ENUM(EVIOCSKEYCODE),
+	DESCRIBE_ENUM(EVIOCSKEYCODE_V2),
+	// DESCRIBE_ENUM(EVIOCGNAME), // variable size
+	// DESCRIBE_ENUM(EVIOCGPHYS), // variable size
+	// DESCRIBE_ENUM(EVIOCGUNIQ), // variable size
+	// DESCRIBE_ENUM(EVIOCGPROP), // variable size
+	// DESCRIBE_ENUM(EVIOCGMTSLOTS), // variable size
+	// DESCRIBE_ENUM(EVIOCGKEY), // variable size
+	// DESCRIBE_ENUM(EVIOCGLED), // variable size
+	// DESCRIBE_ENUM(EVIOCGSND), // variable size
+	// DESCRIBE_ENUM(EVIOCGSW), // variable size
+	// DESCRIBE_ENUM(EVIOCGBIT), // variable size
+	// DESCRIBE_ENUM(EVIOCGABS), // variable size
+	// DESCRIBE_ENUM(EVIOCSABS), // variable size
+	DESCRIBE_ENUM(EVIOCSFF),
+	DESCRIBE_ENUM(EVIOCRMFF),
+	DESCRIBE_ENUM(EVIOCGEFFECTS),
+	DESCRIBE_ENUM(EVIOCGRAB),
+	DESCRIBE_ENUM(EVIOCREVOKE),
+	DESCRIBE_ENUM(EVIOCGMASK),
+	DESCRIBE_ENUM(EVIOCSMASK),
+	DESCRIBE_ENUM(EVIOCSCLOCKID),
+	// ext2
+	DESCRIBE_ENUM(EXT2_IOC_GETFLAGS),
+	DESCRIBE_ENUM(EXT2_IOC_SETFLAGS),
+	DESCRIBE_ENUM(EXT2_IOC_GETVERSION),
+	DESCRIBE_ENUM(EXT2_IOC_SETVERSION),
+	DESCRIBE_ENUM(EXT2_IOC_GETVERSION_NEW),
+	DESCRIBE_ENUM(EXT2_IOC_SETVERSION_NEW),
+	DESCRIBE_ENUM(EXT2_IOC_GROUP_EXTEND),
+	DESCRIBE_ENUM(EXT2_IOC_GROUP_ADD),
+	// ext4
+	DESCRIBE_ENUM(EXT4_IOC_GROUP_ADD),
+	DESCRIBE_ENUM(EXT4_IOC_RESIZE_FS),
+	DESCRIBE_ENUM(EXT4_IOC_MOVE_EXT),
+	DESCRIBE_ENUM(EXT4_IOC_SET_ENCRYPTION_POLICY),
+	DESCRIBE_ENUM(EXT4_IOC_GET_ENCRYPTION_POLICY),
+	DESCRIBE_ENUM(EXT4_IOC_GETVERSION),
+	DESCRIBE_ENUM(EXT4_IOC_SETVERSION),
+	DESCRIBE_ENUM(EXT4_IOC_GETVERSION_OLD),
+	DESCRIBE_ENUM(EXT4_IOC_SETVERSION_OLD),
+	DESCRIBE_ENUM(EXT4_IOC_GETRSVSZ),
+	DESCRIBE_ENUM(EXT4_IOC_SETRSVSZ),
+	DESCRIBE_ENUM(EXT4_IOC_GROUP_EXTEND),
+	DESCRIBE_ENUM(EXT4_IOC_GROUP_ADD),
+	DESCRIBE_ENUM(EXT4_IOC_MIGRATE),
+	DESCRIBE_ENUM(EXT4_IOC_ALLOC_DA_BLKS),
+	DESCRIBE_ENUM(EXT4_IOC_MOVE_EXT),
+	DESCRIBE_ENUM(EXT4_IOC_RESIZE_FS),
+	DESCRIBE_ENUM(EXT4_IOC_SWAP_BOOT),
+	DESCRIBE_ENUM(EXT4_IOC_PRECACHE_EXTENTS),
+	DESCRIBE_ENUM(EXT4_IOC_CLEAR_ES_CACHE),
+	DESCRIBE_ENUM(EXT4_IOC_GETSTATE),
+	DESCRIBE_ENUM(EXT4_IOC_GET_ES_CACHE),
+	DESCRIBE_ENUM(EXT4_IOC_CHECKPOINT),
+	DESCRIBE_ENUM(EXT4_IOC_GETFSUUID),
+	DESCRIBE_ENUM(EXT4_IOC_SETFSUUID),
+	DESCRIBE_ENUM(EXT4_IOC_SHUTDOWN),
+	// f2fs
+	DESCRIBE_ENUM(F2FS_IOC_START_ATOMIC_WRITE),
+	DESCRIBE_ENUM(F2FS_IOC_COMMIT_ATOMIC_WRITE),
+	DESCRIBE_ENUM(F2FS_IOC_START_VOLATILE_WRITE),
+	DESCRIBE_ENUM(F2FS_IOC_RELEASE_VOLATILE_WRITE),
+	DESCRIBE_ENUM(F2FS_IOC_ABORT_ATOMIC_WRITE),
+	DESCRIBE_ENUM(F2FS_IOC_GARBAGE_COLLECT),
+	DESCRIBE_ENUM(F2FS_IOC_WRITE_CHECKPOINT),
+	DESCRIBE_ENUM(F2FS_IOC_DEFRAGMENT),
+	DESCRIBE_ENUM(F2FS_IOC_MOVE_RANGE),
+	DESCRIBE_ENUM(F2FS_IOC_FLUSH_DEVICE),
+	DESCRIBE_ENUM(F2FS_IOC_GARBAGE_COLLECT_RANGE),
+	DESCRIBE_ENUM(F2FS_IOC_GET_FEATURES),
+	DESCRIBE_ENUM(F2FS_IOC_SET_PIN_FILE),
+	DESCRIBE_ENUM(F2FS_IOC_GET_PIN_FILE),
+	DESCRIBE_ENUM(F2FS_IOC_PRECACHE_EXTENTS),
+	DESCRIBE_ENUM(F2FS_IOC_RESIZE_FS),
+	DESCRIBE_ENUM(F2FS_IOC_GET_COMPRESS_BLOCKS),
+	DESCRIBE_ENUM(F2FS_IOC_RELEASE_COMPRESS_BLOCKS),
+	DESCRIBE_ENUM(F2FS_IOC_RESERVE_COMPRESS_BLOCKS),
+	DESCRIBE_ENUM(F2FS_IOC_SEC_TRIM_FILE),
+	DESCRIBE_ENUM(F2FS_IOC_GET_COMPRESS_OPTION),
+	DESCRIBE_ENUM(F2FS_IOC_SET_COMPRESS_OPTION),
+	DESCRIBE_ENUM(F2FS_IOC_DECOMPRESS_FILE),
+	DESCRIBE_ENUM(F2FS_IOC_COMPRESS_FILE),
+	DESCRIBE_ENUM(F2FS_IOC_START_ATOMIC_REPLACE),
+	DESCRIBE_ENUM(F2FS_IOC_SHUTDOWN),
+	// loop
+	DESCRIBE_ENUM(LOOP_SET_FD),
+	DESCRIBE_ENUM(LOOP_CLR_FD),
+	DESCRIBE_ENUM(LOOP_SET_STATUS),
+	DESCRIBE_ENUM(LOOP_GET_STATUS),
+	DESCRIBE_ENUM(LOOP_SET_STATUS64),
+	DESCRIBE_ENUM(LOOP_GET_STATUS64),
+	DESCRIBE_ENUM(LOOP_CHANGE_FD),
+	DESCRIBE_ENUM(LOOP_SET_CAPACITY),
+	DESCRIBE_ENUM(LOOP_SET_DIRECT_IO),
+	DESCRIBE_ENUM(LOOP_SET_BLOCK_SIZE),
+	DESCRIBE_ENUM(LOOP_CONFIGURE),
+	DESCRIBE_ENUM(LOOP_CTL_ADD),
+	DESCRIBE_ENUM(LOOP_CTL_REMOVE),
+	DESCRIBE_ENUM(LOOP_CTL_GET_FREE),
+	// lp
+	DESCRIBE_ENUM(LPCHAR),
+	DESCRIBE_ENUM(LPTIME),
+	DESCRIBE_ENUM(LPABORT),
+	DESCRIBE_ENUM(LPSETIRQ),
+	DESCRIBE_ENUM(LPGETIRQ),
+	DESCRIBE_ENUM(LPWAIT),
+	DESCRIBE_ENUM(LPCAREFUL),
+	DESCRIBE_ENUM(LPABORTOPEN),
+	DESCRIBE_ENUM(LPGETSTATUS),
+	DESCRIBE_ENUM(LPRESET),
+	DESCRIBE_ENUM(LPGETFLAGS),
+	DESCRIBE_ENUM(LPSETTIMEOUT),
+	// mtd
+	DESCRIBE_ENUM(MEMSETOOBSEL),
+	DESCRIBE_ENUM(MEMGETINFO),
+	DESCRIBE_ENUM(MEMERASE),
+	DESCRIBE_ENUM(MEMWRITEOOB),
+	DESCRIBE_ENUM(MEMREADOOB),
+	DESCRIBE_ENUM(MEMLOCK),
+	DESCRIBE_ENUM(MEMUNLOCK),
+	DESCRIBE_ENUM(MEMGETREGIONCOUNT),
+	DESCRIBE_ENUM(MEMGETREGIONINFO),
+	DESCRIBE_ENUM(MEMGETOOBSEL),
+	DESCRIBE_ENUM(MEMGETBADBLOCK),
+	DESCRIBE_ENUM(MEMSETBADBLOCK),
+	DESCRIBE_ENUM(OTPSELECT),
+	DESCRIBE_ENUM(OTPGETREGIONCOUNT),
+	DESCRIBE_ENUM(OTPGETREGIONINFO),
+	DESCRIBE_ENUM(OTPLOCK),
+	DESCRIBE_ENUM(ECCGETLAYOUT),
+	DESCRIBE_ENUM(ECCGETSTATS),
+	DESCRIBE_ENUM(MTDFILEMODE),
+	DESCRIBE_ENUM(MEMERASE64),
+	DESCRIBE_ENUM(MEMWRITEOOB64),
+	DESCRIBE_ENUM(MEMREADOOB64),
+	DESCRIBE_ENUM(MEMISLOCKED),
+	DESCRIBE_ENUM(MEMWRITE),
+	DESCRIBE_ENUM(OTPERASE),
+	DESCRIBE_ENUM(MEMREAD),
+	// usb/mon
+	DESCRIBE_ENUM(MON_IOCQ_URB_LEN),
+	DESCRIBE_ENUM(MON_IOCG_STATS),
+	DESCRIBE_ENUM(MON_IOCT_RING_SIZE),
+	DESCRIBE_ENUM(MON_IOCQ_RING_SIZE),
+	DESCRIBE_ENUM(MON_IOCX_GET),
+	DESCRIBE_ENUM(MON_IOCX_MFETCH),
+	DESCRIBE_ENUM(MON_IOCH_MFLUSH),
+	DESCRIBE_ENUM(MON_IOCX_GETX),
+	// mtio
+	DESCRIBE_ENUM(MTIOCTOP),
+	DESCRIBE_ENUM(MTIOCGET),
+	DESCRIBE_ENUM(MTIOCPOS),
+	// nilfs2_api
+	DESCRIBE_ENUM(NILFS_IOCTL_CHANGE_CPMODE),
+	DESCRIBE_ENUM(NILFS_IOCTL_DELETE_CHECKPOINT),
+	DESCRIBE_ENUM(NILFS_IOCTL_GET_CPINFO),
+	DESCRIBE_ENUM(NILFS_IOCTL_GET_CPSTAT),
+	DESCRIBE_ENUM(NILFS_IOCTL_GET_SUINFO),
+	DESCRIBE_ENUM(NILFS_IOCTL_GET_SUSTAT),
+	DESCRIBE_ENUM(NILFS_IOCTL_GET_VINFO),
+	DESCRIBE_ENUM(NILFS_IOCTL_GET_BDESCS),
+	DESCRIBE_ENUM(NILFS_IOCTL_CLEAN_SEGMENTS),
+	DESCRIBE_ENUM(NILFS_IOCTL_SYNC),
+	DESCRIBE_ENUM(NILFS_IOCTL_RESIZE),
+	DESCRIBE_ENUM(NILFS_IOCTL_SET_ALLOC_RANGE),
+	DESCRIBE_ENUM(NILFS_IOCTL_SET_SUINFO),
+	// nsfs
+	DESCRIBE_ENUM(NS_GET_USERNS),
+	DESCRIBE_ENUM(NS_GET_PARENT),
+	DESCRIBE_ENUM(NS_GET_NSTYPE),
+	DESCRIBE_ENUM(NS_GET_OWNER_UID),
+	// perf_event
+	DESCRIBE_ENUM(PERF_EVENT_IOC_ENABLE),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_DISABLE),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_REFRESH),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_RESET),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_PERIOD),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_SET_OUTPUT),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_SET_FILTER),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_ID),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_SET_BPF),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_PAUSE_OUTPUT),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_QUERY_BPF),
+	DESCRIBE_ENUM(PERF_EVENT_IOC_MODIFY_ATTRIBUTES),
+	// pr
+	DESCRIBE_ENUM(IOC_PR_REGISTER),
+	DESCRIBE_ENUM(IOC_PR_RESERVE),
+	DESCRIBE_ENUM(IOC_PR_RELEASE),
+	DESCRIBE_ENUM(IOC_PR_PREEMPT),
+	DESCRIBE_ENUM(IOC_PR_PREEMPT_ABORT),
+	DESCRIBE_ENUM(IOC_PR_CLEAR),
+	// raid
+	DESCRIBE_ENUM(RAID_VERSION),
+	DESCRIBE_ENUM(GET_ARRAY_INFO),
+	DESCRIBE_ENUM(GET_DISK_INFO),
+	DESCRIBE_ENUM(RAID_AUTORUN),
+	DESCRIBE_ENUM(GET_BITMAP_FILE),
+	DESCRIBE_ENUM(CLEAR_ARRAY),
+	DESCRIBE_ENUM(ADD_NEW_DISK),
+	DESCRIBE_ENUM(HOT_REMOVE_DISK),
+	DESCRIBE_ENUM(SET_ARRAY_INFO),
+	DESCRIBE_ENUM(SET_DISK_INFO),
+	DESCRIBE_ENUM(WRITE_RAID_INFO),
+	DESCRIBE_ENUM(UNPROTECT_ARRAY),
+	DESCRIBE_ENUM(PROTECT_ARRAY),
+	DESCRIBE_ENUM(HOT_ADD_DISK),
+	DESCRIBE_ENUM(SET_DISK_FAULTY),
+	DESCRIBE_ENUM(HOT_GENERATE_ERROR),
+	DESCRIBE_ENUM(SET_BITMAP_FILE),
+	DESCRIBE_ENUM(RUN_ARRAY),
+	DESCRIBE_ENUM(STOP_ARRAY),
+	DESCRIBE_ENUM(STOP_ARRAY_RO),
+	DESCRIBE_ENUM(RESTART_ARRAY_RW),
+	DESCRIBE_ENUM(CLUSTERED_DISK_NACK),
+	// random
+	DESCRIBE_ENUM(RNDGETENTCNT),
+	DESCRIBE_ENUM(RNDADDTOENTCNT),
+	DESCRIBE_ENUM(RNDGETPOOL),
+	DESCRIBE_ENUM(RNDADDENTROPY),
+	DESCRIBE_ENUM(RNDZAPENTCNT),
+	DESCRIBE_ENUM(RNDCLEARPOOL),
+	DESCRIBE_ENUM(RNDRESEEDCRNG),
+	// raw
+	DESCRIBE_ENUM(RAW_SETBIND),
+	DESCRIBE_ENUM(RAW_GETBIND),
+	// rdma
+	DESCRIBE_ENUM(RDMA_VERBS_IOCTL),
+	// rtc
+	DESCRIBE_ENUM(RTC_AIE_ON),
+	DESCRIBE_ENUM(RTC_AIE_OFF),
+	DESCRIBE_ENUM(RTC_UIE_ON),
+	DESCRIBE_ENUM(RTC_UIE_OFF),
+	DESCRIBE_ENUM(RTC_PIE_ON),
+	DESCRIBE_ENUM(RTC_PIE_OFF),
+	DESCRIBE_ENUM(RTC_WIE_ON),
+	DESCRIBE_ENUM(RTC_WIE_OFF),
+	DESCRIBE_ENUM(RTC_ALM_SET),
+	DESCRIBE_ENUM(RTC_ALM_READ),
+	DESCRIBE_ENUM(RTC_RD_TIME),
+	DESCRIBE_ENUM(RTC_SET_TIME),
+	DESCRIBE_ENUM(RTC_IRQP_READ),
+	DESCRIBE_ENUM(RTC_IRQP_SET),
+	DESCRIBE_ENUM(RTC_EPOCH_READ),
+	DESCRIBE_ENUM(RTC_EPOCH_SET),
+	DESCRIBE_ENUM(RTC_WKALM_SET),
+	DESCRIBE_ENUM(RTC_WKALM_RD),
+	DESCRIBE_ENUM(RTC_PLL_GET),
+	DESCRIBE_ENUM(RTC_PLL_SET),
+	DESCRIBE_ENUM(RTC_PARAM_GET),
+	DESCRIBE_ENUM(RTC_PARAM_SET),
+	DESCRIBE_ENUM(RTC_VL_READ),
+	DESCRIBE_ENUM(RTC_VL_CLR),
+	// seccomp
+	DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_RECV),
+	DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_SEND),
+	DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ID_VALID),
+	DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ADDFD),
+	DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_SET_FLAGS),
+	DESCRIBE_ENUM(SECCOMP_IOCTL_NOTIF_ID_VALID_WRONG_DIR),
+	// scsi
+	DESCRIBE_ENUM(SCSI_IOCTL_GET_IDLUN),
+	DESCRIBE_ENUM(SCSI_IOCTL_PROBE_HOST),
+	DESCRIBE_ENUM(SCSI_IOCTL_GET_BUS_NUMBER),
+	DESCRIBE_ENUM(SCSI_IOCTL_GET_PCI),
+	DESCRIBE_ENUM(SG_EMULATED_HOST),
+	DESCRIBE_ENUM(SG_SET_TRANSFORM),
+	DESCRIBE_ENUM(SG_GET_TRANSFORM),
+	DESCRIBE_ENUM(SG_SET_RESERVED_SIZE),
+	DESCRIBE_ENUM(SG_GET_RESERVED_SIZE),
+	DESCRIBE_ENUM(SG_GET_SCSI_ID),
+	DESCRIBE_ENUM(SG_SET_FORCE_LOW_DMA),
+	DESCRIBE_ENUM(SG_GET_LOW_DMA),
+	DESCRIBE_ENUM(SG_SET_FORCE_PACK_ID),
+	DESCRIBE_ENUM(SG_GET_PACK_ID),
+	DESCRIBE_ENUM(SG_GET_NUM_WAITING),
+	DESCRIBE_ENUM(SG_GET_SG_TABLESIZE),
+	DESCRIBE_ENUM(SG_GET_VERSION_NUM),
+	DESCRIBE_ENUM(SG_SCSI_RESET),
+	DESCRIBE_ENUM(SG_IO),
+	DESCRIBE_ENUM(SG_GET_REQUEST_TABLE),
+	DESCRIBE_ENUM(SG_SET_KEEP_ORPHAN),
+	DESCRIBE_ENUM(SG_GET_KEEP_ORPHAN),
+	DESCRIBE_ENUM(SG_GET_ACCESS_COUNT),
+	DESCRIBE_ENUM(SG_SET_TIMEOUT),
+	DESCRIBE_ENUM(SG_GET_TIMEOUT),
+	DESCRIBE_ENUM(SG_GET_COMMAND_Q),
+	DESCRIBE_ENUM(SG_SET_COMMAND_Q),
+	DESCRIBE_ENUM(SG_SET_DEBUG),
+	DESCRIBE_ENUM(SG_NEXT_CMD_LEN),
+	// sed-opal
+	DESCRIBE_ENUM(IOC_OPAL_SAVE),
+	DESCRIBE_ENUM(IOC_OPAL_LOCK_UNLOCK),
+	DESCRIBE_ENUM(IOC_OPAL_TAKE_OWNERSHIP),
+	DESCRIBE_ENUM(IOC_OPAL_ACTIVATE_LSP),
+	DESCRIBE_ENUM(IOC_OPAL_SET_PW),
+	DESCRIBE_ENUM(IOC_OPAL_ACTIVATE_USR),
+	DESCRIBE_ENUM(IOC_OPAL_REVERT_TPR),
+	DESCRIBE_ENUM(IOC_OPAL_LR_SETUP),
+	DESCRIBE_ENUM(IOC_OPAL_ADD_USR_TO_LR),
+	DESCRIBE_ENUM(IOC_OPAL_ENABLE_DISABLE_MBR),
+	DESCRIBE_ENUM(IOC_OPAL_ERASE_LR),
+	DESCRIBE_ENUM(IOC_OPAL_SECURE_ERASE_LR),
+	DESCRIBE_ENUM(IOC_OPAL_PSID_REVERT_TPR),
+	DESCRIBE_ENUM(IOC_OPAL_MBR_DONE),
+	DESCRIBE_ENUM(IOC_OPAL_WRITE_SHADOW_MBR),
+	DESCRIBE_ENUM(IOC_OPAL_GENERIC_TABLE_RW),
+	DESCRIBE_ENUM(IOC_OPAL_GET_STATUS),
+	DESCRIBE_ENUM(IOC_OPAL_GET_LR_STATUS),
+	DESCRIBE_ENUM(IOC_OPAL_GET_GEOMETRY),
+	DESCRIBE_ENUM(IOC_OPAL_DISCOVERY),
+	DESCRIBE_ENUM(IOC_OPAL_REVERT_LSP),
+	// sockios
+	DESCRIBE_ENUM(SIOCADDRT),
+	DESCRIBE_ENUM(SIOCDELRT),
+	DESCRIBE_ENUM(SIOCRTMSG),
+	DESCRIBE_ENUM(SIOCGIFNAME),
+	DESCRIBE_ENUM(SIOCSIFLINK),
+	DESCRIBE_ENUM(SIOCGIFCONF),
+	DESCRIBE_ENUM(SIOCGIFFLAGS),
+	DESCRIBE_ENUM(SIOCSIFFLAGS),
+	DESCRIBE_ENUM(SIOCGIFADDR),
+	DESCRIBE_ENUM(SIOCSIFADDR),
+	DESCRIBE_ENUM(SIOCGIFDSTADDR),
+	DESCRIBE_ENUM(SIOCSIFDSTADDR),
+	DESCRIBE_ENUM(SIOCGIFBRDADDR),
+	DESCRIBE_ENUM(SIOCSIFBRDADDR),
+	DESCRIBE_ENUM(SIOCGIFNETMASK),
+	DESCRIBE_ENUM(SIOCSIFNETMASK),
+	DESCRIBE_ENUM(SIOCGIFMETRIC),
+	DESCRIBE_ENUM(SIOCSIFMETRIC),
+	DESCRIBE_ENUM(SIOCGIFMEM),
+	DESCRIBE_ENUM(SIOCSIFMEM),
+	DESCRIBE_ENUM(SIOCGIFMTU),
+	DESCRIBE_ENUM(SIOCSIFMTU),
+	DESCRIBE_ENUM(SIOCSIFNAME),
+	DESCRIBE_ENUM(SIOCSIFHWADDR),
+	DESCRIBE_ENUM(SIOCGIFENCAP),
+	DESCRIBE_ENUM(SIOCSIFENCAP),
+	DESCRIBE_ENUM(SIOCGIFHWADDR),
+	DESCRIBE_ENUM(SIOCGIFSLAVE),
+	DESCRIBE_ENUM(SIOCSIFSLAVE),
+	DESCRIBE_ENUM(SIOCADDMULTI),
+	DESCRIBE_ENUM(SIOCDELMULTI),
+	DESCRIBE_ENUM(SIOCGIFINDEX),
+	DESCRIBE_ENUM(SIOGIFINDEX),
+	DESCRIBE_ENUM(SIOCSIFPFLAGS),
+	DESCRIBE_ENUM(SIOCGIFPFLAGS),
+	DESCRIBE_ENUM(SIOCDIFADDR),
+	DESCRIBE_ENUM(SIOCSIFHWBROADCAST),
+	DESCRIBE_ENUM(SIOCGIFCOUNT),
+	DESCRIBE_ENUM(SIOCGIFBR),
+	DESCRIBE_ENUM(SIOCSIFBR),
+	DESCRIBE_ENUM(SIOCGIFTXQLEN),
+	DESCRIBE_ENUM(SIOCSIFTXQLEN),
+	DESCRIBE_ENUM(SIOCETHTOOL),
+	DESCRIBE_ENUM(SIOCGMIIPHY),
+	DESCRIBE_ENUM(SIOCGMIIREG),
+	DESCRIBE_ENUM(SIOCSMIIREG),
+	DESCRIBE_ENUM(SIOCWANDEV),
+	DESCRIBE_ENUM(SIOCOUTQNSD),
+	DESCRIBE_ENUM(SIOCGSKNS),
+	DESCRIBE_ENUM(SIOCDARP),
+	DESCRIBE_ENUM(SIOCGARP),
+	DESCRIBE_ENUM(SIOCSARP),
+	DESCRIBE_ENUM(SIOCDRARP),
+	DESCRIBE_ENUM(SIOCGRARP),
+	DESCRIBE_ENUM(SIOCSRARP),
+	DESCRIBE_ENUM(SIOCGIFMAP),
+	DESCRIBE_ENUM(SIOCSIFMAP),
+	DESCRIBE_ENUM(SIOCADDDLCI),
+	DESCRIBE_ENUM(SIOCDELDLCI),
+	DESCRIBE_ENUM(SIOCGIFVLAN),
+	DESCRIBE_ENUM(SIOCSIFVLAN),
+	DESCRIBE_ENUM(SIOCBONDENSLAVE),
+	DESCRIBE_ENUM(SIOCBONDRELEASE),
+	DESCRIBE_ENUM(SIOCBONDSETHWADDR),
+	DESCRIBE_ENUM(SIOCBONDSLAVEINFOQUERY),
+	DESCRIBE_ENUM(SIOCBONDINFOQUERY),
+	DESCRIBE_ENUM(SIOCBONDCHANGEACTIVE),
+	DESCRIBE_ENUM(SIOCBRADDBR),
+	DESCRIBE_ENUM(SIOCBRDELBR),
+	DESCRIBE_ENUM(SIOCBRADDIF),
+	DESCRIBE_ENUM(SIOCBRDELIF),
+	DESCRIBE_ENUM(SIOCSHWTSTAMP),
+	DESCRIBE_ENUM(SIOCGHWTSTAMP),
+	DESCRIBE_ENUM(SIOCDEVPRIVATE),
+	DESCRIBE_ENUM(SIOCPROTOPRIVATE),
+	DESCRIBE_ENUM(SIOCGSTAMP),
+	DESCRIBE_ENUM(SIOCGSTAMPNS),
+	// spi
+	DESCRIBE_ENUM(SPI_IOC_MESSAGE(0)),
+	DESCRIBE_ENUM(SPI_IOC_MESSAGE(1)),
+	DESCRIBE_ENUM(SPI_IOC_MESSAGE(2)),
+	DESCRIBE_ENUM(SPI_IOC_RD_MODE),
+	DESCRIBE_ENUM(SPI_IOC_WR_MODE),
+	DESCRIBE_ENUM(SPI_IOC_RD_LSB_FIRST),
+	DESCRIBE_ENUM(SPI_IOC_WR_LSB_FIRST),
+	DESCRIBE_ENUM(SPI_IOC_RD_BITS_PER_WORD),
+	DESCRIBE_ENUM(SPI_IOC_WR_BITS_PER_WORD),
+	DESCRIBE_ENUM(SPI_IOC_RD_MAX_SPEED_HZ),
+	DESCRIBE_ENUM(SPI_IOC_WR_MAX_SPEED_HZ),
+	DESCRIBE_ENUM(SPI_IOC_RD_MODE32),
+	DESCRIBE_ENUM(SPI_IOC_WR_MODE32),
+	// tipc
+	DESCRIBE_ENUM(SIOCGETLINKNAME),
+	DESCRIBE_ENUM(SIOCGETNODEID),
+	// watchdog
+	DESCRIBE_ENUM(WDIOC_GETSUPPORT),
+	DESCRIBE_ENUM(WDIOC_GETSTATUS),
+	DESCRIBE_ENUM(WDIOC_GETBOOTSTATUS),
+	DESCRIBE_ENUM(WDIOC_GETTEMP),
+	DESCRIBE_ENUM(WDIOC_SETOPTIONS),
+	DESCRIBE_ENUM(WDIOC_KEEPALIVE),
+	DESCRIBE_ENUM(WDIOC_SETTIMEOUT),
+	DESCRIBE_ENUM(WDIOC_GETTIMEOUT),
+	DESCRIBE_ENUM(WDIOC_SETPRETIMEOUT),
+	DESCRIBE_ENUM(WDIOC_GETPRETIMEOUT),
+	DESCRIBE_ENUM(WDIOC_GETTIMELEFT),
+	// usb/cdc-wdm
+	DESCRIBE_ENUM(IOCTL_WDM_MAX_COMMAND),
+	// usb/functionfs
+	DESCRIBE_ENUM(FUNCTIONFS_FIFO_STATUS),
+	DESCRIBE_ENUM(FUNCTIONFS_FIFO_FLUSH),
+	DESCRIBE_ENUM(FUNCTIONFS_CLEAR_HALT),
+	DESCRIBE_ENUM(FUNCTIONFS_INTERFACE_REVMAP),
+	DESCRIBE_ENUM(FUNCTIONFS_ENDPOINT_REVMAP),
+	DESCRIBE_ENUM(FUNCTIONFS_ENDPOINT_DESC),
+	DESCRIBE_ENUM(FUNCTIONFS_DMABUF_ATTACH),
+	DESCRIBE_ENUM(FUNCTIONFS_DMABUF_DETACH),
+	DESCRIBE_ENUM(FUNCTIONFS_DMABUF_TRANSFER),
+	// usb/g_printer
+	DESCRIBE_ENUM(GADGET_GET_PRINTER_STATUS),
+	DESCRIBE_ENUM(GADGET_SET_PRINTER_STATUS),
+	// usb/g_uvc
+	DESCRIBE_ENUM(UVCIOC_SEND_RESPONSE),
+	// usb/gadgetfs
+	DESCRIBE_ENUM(GADGETFS_FIFO_STATUS),
+	DESCRIBE_ENUM(GADGETFS_FIFO_FLUSH),
+	DESCRIBE_ENUM(GADGETFS_CLEAR_HALT),
+	// usb/raw_gadget
+	DESCRIBE_ENUM(USB_RAW_IOCTL_INIT),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_RUN),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EVENT_FETCH),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP0_WRITE),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP0_READ),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_ENABLE),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_DISABLE),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_WRITE),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_READ),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_CONFIGURE),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_VBUS_DRAW),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EPS_INFO),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP0_STALL),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_SET_HALT),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_CLEAR_HALT),
+	DESCRIBE_ENUM(USB_RAW_IOCTL_EP_SET_WEDGE),
+	// usb/tmc
+	DESCRIBE_ENUM(USBTMC_IOCTL_INDICATOR_PULSE),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CLEAR),
+	DESCRIBE_ENUM(USBTMC_IOCTL_ABORT_BULK_OUT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_ABORT_BULK_IN),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CLEAR_OUT_HALT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CLEAR_IN_HALT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CTRL_REQUEST),
+	DESCRIBE_ENUM(USBTMC_IOCTL_GET_TIMEOUT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_SET_TIMEOUT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_EOM_ENABLE),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CONFIG_TERMCHAR),
+	DESCRIBE_ENUM(USBTMC_IOCTL_WRITE),
+	DESCRIBE_ENUM(USBTMC_IOCTL_READ),
+	DESCRIBE_ENUM(USBTMC_IOCTL_WRITE_RESULT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_API_VERSION),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_GET_CAPS),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_READ_STB),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_REN_CONTROL),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_GOTO_LOCAL),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_LOCAL_LOCKOUT),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_TRIGGER),
+	DESCRIBE_ENUM(USBTMC488_IOCTL_WAIT_SRQ),
+	DESCRIBE_ENUM(USBTMC_IOCTL_MSG_IN_ATTR),
+	DESCRIBE_ENUM(USBTMC_IOCTL_AUTO_ABORT),
+	DESCRIBE_ENUM(USBTMC_IOCTL_GET_STB),
+	DESCRIBE_ENUM(USBTMC_IOCTL_GET_SRQ_STB),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CANCEL_IO),
+	DESCRIBE_ENUM(USBTMC_IOCTL_CLEANUP_IO),
+	// usbdevice_fs
+	DESCRIBE_ENUM(USBDEVFS_CONTROL),
+	DESCRIBE_ENUM(USBDEVFS_BULK),
+	DESCRIBE_ENUM(USBDEVFS_RESETEP),
+	DESCRIBE_ENUM(USBDEVFS_SETINTERFACE),
+	DESCRIBE_ENUM(USBDEVFS_SETCONFIGURATION),
+	DESCRIBE_ENUM(USBDEVFS_GETDRIVER),
+	DESCRIBE_ENUM(USBDEVFS_SUBMITURB),
+	DESCRIBE_ENUM(USBDEVFS_DISCARDURB),
+	DESCRIBE_ENUM(USBDEVFS_REAPURB),
+	DESCRIBE_ENUM(USBDEVFS_REAPURB32),
+	DESCRIBE_ENUM(USBDEVFS_REAPURBNDELAY),
+	DESCRIBE_ENUM(USBDEVFS_DISCSIGNAL),
+	DESCRIBE_ENUM(USBDEVFS_CLAIMINTERFACE),
+	DESCRIBE_ENUM(USBDEVFS_RELEASEINTERFACE),
+	DESCRIBE_ENUM(USBDEVFS_CONNECTINFO),
+	DESCRIBE_ENUM(USBDEVFS_IOCTL),
+	DESCRIBE_ENUM(USBDEVFS_HUB_PORTINFO),
+	DESCRIBE_ENUM(USBDEVFS_RESET),
+	DESCRIBE_ENUM(USBDEVFS_CLEAR_HALT),
+	DESCRIBE_ENUM(USBDEVFS_DISCONNECT),
+	DESCRIBE_ENUM(USBDEVFS_CONNECT),
+	DESCRIBE_ENUM(USBDEVFS_CLAIM_PORT),
+	DESCRIBE_ENUM(USBDEVFS_RELEASE_PORT),
+	DESCRIBE_ENUM(USBDEVFS_GET_CAPABILITIES),
+	DESCRIBE_ENUM(USBDEVFS_DISCONNECT_CLAIM),
+	DESCRIBE_ENUM(USBDEVFS_ALLOC_STREAMS),
+	DESCRIBE_ENUM(USBDEVFS_FREE_STREAMS),
+	DESCRIBE_ENUM(USBDEVFS_DROP_PRIVILEGES),
+	DESCRIBE_ENUM(USBDEVFS_GET_SPEED),
+	// DESCRIBE_ENUM(USBDEVFS_CONNINFO_EX), // variable size
+	DESCRIBE_ENUM(USBDEVFS_FORBID_SUSPEND),
+	DESCRIBE_ENUM(USBDEVFS_ALLOW_SUSPEND),
+	DESCRIBE_ENUM(USBDEVFS_WAIT_FOR_RESUME),
+	// wireless
+	DESCRIBE_ENUM(SIOCSIWCOMMIT),
+	DESCRIBE_ENUM(SIOCGIWNAME),
+	DESCRIBE_ENUM(SIOCSIWNWID),
+	DESCRIBE_ENUM(SIOCGIWNWID),
+	DESCRIBE_ENUM(SIOCSIWFREQ),
+	DESCRIBE_ENUM(SIOCGIWFREQ),
+	DESCRIBE_ENUM(SIOCSIWMODE),
+	DESCRIBE_ENUM(SIOCGIWMODE),
+	DESCRIBE_ENUM(SIOCSIWSENS),
+	DESCRIBE_ENUM(SIOCGIWSENS),
+	DESCRIBE_ENUM(SIOCSIWRANGE),
+	DESCRIBE_ENUM(SIOCGIWRANGE),
+	DESCRIBE_ENUM(SIOCSIWPRIV),
+	DESCRIBE_ENUM(SIOCGIWPRIV),
+	DESCRIBE_ENUM(SIOCSIWSTATS),
+	DESCRIBE_ENUM(SIOCGIWSTATS),
+	DESCRIBE_ENUM(SIOCSIWSPY),
+	DESCRIBE_ENUM(SIOCGIWSPY),
+	DESCRIBE_ENUM(SIOCSIWTHRSPY),
+	DESCRIBE_ENUM(SIOCGIWTHRSPY),
+	DESCRIBE_ENUM(SIOCSIWAP),
+	DESCRIBE_ENUM(SIOCGIWAP),
+	DESCRIBE_ENUM(SIOCGIWAPLIST),
+	DESCRIBE_ENUM(SIOCSIWSCAN),
+	DESCRIBE_ENUM(SIOCGIWSCAN),
+	DESCRIBE_ENUM(SIOCSIWESSID),
+	DESCRIBE_ENUM(SIOCGIWESSID),
+	DESCRIBE_ENUM(SIOCSIWNICKN),
+	DESCRIBE_ENUM(SIOCGIWNICKN),
+	DESCRIBE_ENUM(SIOCSIWRATE),
+	DESCRIBE_ENUM(SIOCGIWRATE),
+	DESCRIBE_ENUM(SIOCSIWRTS),
+	DESCRIBE_ENUM(SIOCGIWRTS),
+	DESCRIBE_ENUM(SIOCSIWFRAG),
+	DESCRIBE_ENUM(SIOCGIWFRAG),
+	DESCRIBE_ENUM(SIOCSIWTXPOW),
+	DESCRIBE_ENUM(SIOCGIWTXPOW),
+	DESCRIBE_ENUM(SIOCSIWRETRY),
+	DESCRIBE_ENUM(SIOCGIWRETRY),
+	DESCRIBE_ENUM(SIOCSIWENCODE),
+	DESCRIBE_ENUM(SIOCGIWENCODE),
+	DESCRIBE_ENUM(SIOCSIWPOWER),
+	DESCRIBE_ENUM(SIOCGIWPOWER),
+	DESCRIBE_ENUM(SIOCSIWGENIE),
+	DESCRIBE_ENUM(SIOCGIWGENIE),
+	DESCRIBE_ENUM(SIOCSIWMLME),
+	DESCRIBE_ENUM(SIOCSIWAUTH),
+	DESCRIBE_ENUM(SIOCGIWAUTH),
+	DESCRIBE_ENUM(SIOCSIWENCODEEXT),
+	DESCRIBE_ENUM(SIOCGIWENCODEEXT),
+	DESCRIBE_ENUM(SIOCSIWPMKSA),
+	DESCRIBE_ENUM(SIOCIWFIRSTPRIV),
+	DESCRIBE_ENUM(SIOCIWLASTPRIV),
+	// xen
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_HYPERCALL),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_MMAP),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_MMAPBATCH),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_MMAPBATCH_V2),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_DM_OP),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_RESTRICT),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_MMAP_RESOURCE),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_IRQFD),
+	DESCRIBE_ENUM(IOCTL_PRIVCMD_IOEVENTFD),
+	// xfs
+	DESCRIBE_ENUM(XFS_IOC_ALLOCSP),
+	DESCRIBE_ENUM(XFS_IOC_FREESP),
+	DESCRIBE_ENUM(XFS_IOC_ALLOCSP64),
+	DESCRIBE_ENUM(XFS_IOC_FREESP64),
+	DESCRIBE_ENUM(XFS_IOC_DIOINFO),
+	DESCRIBE_ENUM(XFS_IOC_GETBMAP),
+	DESCRIBE_ENUM(XFS_IOC_RESVSP),
+	DESCRIBE_ENUM(XFS_IOC_UNRESVSP),
+	DESCRIBE_ENUM(XFS_IOC_RESVSP64),
+	DESCRIBE_ENUM(XFS_IOC_UNRESVSP64),
+	DESCRIBE_ENUM(XFS_IOC_GETBMAPA),
+	DESCRIBE_ENUM(XFS_IOC_FSGETXATTRA),
+	DESCRIBE_ENUM(XFS_IOC_GETBMAPX),
+	// DESCRIBE_ENUM(XFS_IOC_ZERO_RANGE),
+	DESCRIBE_ENUM(XFS_IOC_FREE_EOFBLOCKS),
+	DESCRIBE_ENUM(XFS_IOC_SCRUB_METADATA),
+	DESCRIBE_ENUM(XFS_IOC_AG_GEOMETRY),
+	DESCRIBE_ENUM(XFS_IOC_FSGEOMETRY_V1),
+	DESCRIBE_ENUM(XFS_IOC_FSBULKSTAT),
+	DESCRIBE_ENUM(XFS_IOC_FSBULKSTAT_SINGLE),
+	DESCRIBE_ENUM(XFS_IOC_FSINUMBERS),
+	DESCRIBE_ENUM(XFS_IOC_PATH_TO_FSHANDLE),
+	DESCRIBE_ENUM(XFS_IOC_PATH_TO_HANDLE),
+	DESCRIBE_ENUM(XFS_IOC_FD_TO_HANDLE),
+	DESCRIBE_ENUM(XFS_IOC_OPEN_BY_HANDLE),
+	DESCRIBE_ENUM(XFS_IOC_READLINK_BY_HANDLE),
+	DESCRIBE_ENUM(XFS_IOC_SWAPEXT),
+	DESCRIBE_ENUM(XFS_IOC_FSGROWFSDATA),
+	DESCRIBE_ENUM(XFS_IOC_FSGROWFSLOG),
+	DESCRIBE_ENUM(XFS_IOC_FSGROWFSRT),
+	DESCRIBE_ENUM(XFS_IOC_FSCOUNTS),
+	DESCRIBE_ENUM(XFS_IOC_SET_RESBLKS),
+	DESCRIBE_ENUM(XFS_IOC_GET_RESBLKS),
+	DESCRIBE_ENUM(XFS_IOC_ERROR_INJECTION),
+	DESCRIBE_ENUM(XFS_IOC_ERROR_CLEARALL),
+	DESCRIBE_ENUM(XFS_IOC_FREEZE),
+	DESCRIBE_ENUM(XFS_IOC_THAW),
+	DESCRIBE_ENUM(XFS_IOC_ATTRLIST_BY_HANDLE),
+	DESCRIBE_ENUM(XFS_IOC_ATTRMULTI_BY_HANDLE),
+	DESCRIBE_ENUM(XFS_IOC_FSGEOMETRY_V4),
+	DESCRIBE_ENUM(XFS_IOC_GOINGDOWN),
+	DESCRIBE_ENUM(XFS_IOC_FSGEOMETRY),
+	DESCRIBE_ENUM(XFS_IOC_BULKSTAT),
+	DESCRIBE_ENUM(XFS_IOC_INUMBERS),
+	// zfs
+	DESCRIBE_ENUM(ZFS_IOC_POOL_CREATE),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_DESTROY),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_IMPORT),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_EXPORT),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_CONFIGS),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_STATS),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_TRYIMPORT),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_SCAN),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_FREEZE),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_UPGRADE),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_GET_HISTORY),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_ADD),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_REMOVE),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_SET_STATE),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_ATTACH),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_DETACH),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_SETPATH),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_SETFRU),
+	DESCRIBE_ENUM(ZFS_IOC_OBJSET_STATS),
+	DESCRIBE_ENUM(ZFS_IOC_OBJSET_ZPLPROPS),
+	DESCRIBE_ENUM(ZFS_IOC_DATASET_LIST_NEXT),
+	DESCRIBE_ENUM(ZFS_IOC_SNAPSHOT_LIST_NEXT),
+	DESCRIBE_ENUM(ZFS_IOC_SET_PROP),
+	DESCRIBE_ENUM(ZFS_IOC_CREATE),
+	DESCRIBE_ENUM(ZFS_IOC_DESTROY),
+	DESCRIBE_ENUM(ZFS_IOC_ROLLBACK),
+	DESCRIBE_ENUM(ZFS_IOC_RENAME),
+	DESCRIBE_ENUM(ZFS_IOC_RECV),
+	DESCRIBE_ENUM(ZFS_IOC_SEND),
+	DESCRIBE_ENUM(ZFS_IOC_INJECT_FAULT),
+	DESCRIBE_ENUM(ZFS_IOC_CLEAR_FAULT),
+	DESCRIBE_ENUM(ZFS_IOC_INJECT_LIST_NEXT),
+	DESCRIBE_ENUM(ZFS_IOC_ERROR_LOG),
+	DESCRIBE_ENUM(ZFS_IOC_CLEAR),
+	DESCRIBE_ENUM(ZFS_IOC_PROMOTE),
+	DESCRIBE_ENUM(ZFS_IOC_SNAPSHOT),
+	DESCRIBE_ENUM(ZFS_IOC_DSOBJ_TO_DSNAME),
+	DESCRIBE_ENUM(ZFS_IOC_OBJ_TO_PATH),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_SET_PROPS),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_GET_PROPS),
+	DESCRIBE_ENUM(ZFS_IOC_SET_FSACL),
+	DESCRIBE_ENUM(ZFS_IOC_GET_FSACL),
+	DESCRIBE_ENUM(ZFS_IOC_SHARE),
+	DESCRIBE_ENUM(ZFS_IOC_INHERIT_PROP),
+	DESCRIBE_ENUM(ZFS_IOC_SMB_ACL),
+	DESCRIBE_ENUM(ZFS_IOC_USERSPACE_ONE),
+	DESCRIBE_ENUM(ZFS_IOC_USERSPACE_MANY),
+	DESCRIBE_ENUM(ZFS_IOC_USERSPACE_UPGRADE),
+	DESCRIBE_ENUM(ZFS_IOC_HOLD),
+	DESCRIBE_ENUM(ZFS_IOC_RELEASE),
+	DESCRIBE_ENUM(ZFS_IOC_GET_HOLDS),
+	DESCRIBE_ENUM(ZFS_IOC_OBJSET_RECVD_PROPS),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_SPLIT),
+	DESCRIBE_ENUM(ZFS_IOC_NEXT_OBJ),
+	DESCRIBE_ENUM(ZFS_IOC_DIFF),
+	DESCRIBE_ENUM(ZFS_IOC_TMP_SNAPSHOT),
+	DESCRIBE_ENUM(ZFS_IOC_OBJ_TO_STATS),
+	DESCRIBE_ENUM(ZFS_IOC_SPACE_WRITTEN),
+	DESCRIBE_ENUM(ZFS_IOC_SPACE_SNAPS),
+	DESCRIBE_ENUM(ZFS_IOC_DESTROY_SNAPS),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_REGUID),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_REOPEN),
+	DESCRIBE_ENUM(ZFS_IOC_SEND_PROGRESS),
+	DESCRIBE_ENUM(ZFS_IOC_LOG_HISTORY),
+	DESCRIBE_ENUM(ZFS_IOC_SEND_NEW),
+	DESCRIBE_ENUM(ZFS_IOC_SEND_SPACE),
+	DESCRIBE_ENUM(ZFS_IOC_CLONE),
+	DESCRIBE_ENUM(ZFS_IOC_BOOKMARK),
+	DESCRIBE_ENUM(ZFS_IOC_GET_BOOKMARKS),
+	DESCRIBE_ENUM(ZFS_IOC_DESTROY_BOOKMARKS),
+	DESCRIBE_ENUM(ZFS_IOC_RECV_NEW),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_SYNC),
+	DESCRIBE_ENUM(ZFS_IOC_CHANNEL_PROGRAM),
+	DESCRIBE_ENUM(ZFS_IOC_LOAD_KEY),
+	DESCRIBE_ENUM(ZFS_IOC_UNLOAD_KEY),
+	DESCRIBE_ENUM(ZFS_IOC_CHANGE_KEY),
+	DESCRIBE_ENUM(ZFS_IOC_REMAP),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_CHECKPOINT),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_DISCARD_CHECKPOINT),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_INITIALIZE),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_TRIM),
+	DESCRIBE_ENUM(ZFS_IOC_REDACT),
+	DESCRIBE_ENUM(ZFS_IOC_GET_BOOKMARK_PROPS),
+	DESCRIBE_ENUM(ZFS_IOC_WAIT),
+	DESCRIBE_ENUM(ZFS_IOC_WAIT_FS),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_GET_PROPS),
+	DESCRIBE_ENUM(ZFS_IOC_VDEV_SET_PROPS),
+	DESCRIBE_ENUM(ZFS_IOC_POOL_SCRUB),
+	DESCRIBE_ENUM(ZFS_IOC_PLATFORM),
+	DESCRIBE_ENUM(ZFS_IOC_EVENTS_NEXT),
+	DESCRIBE_ENUM(ZFS_IOC_EVENTS_CLEAR),
+	DESCRIBE_ENUM(ZFS_IOC_EVENTS_SEEK),
+	DESCRIBE_ENUM(ZFS_IOC_NEXTBOOT),
+	DESCRIBE_ENUM(ZFS_IOC_JAIL),
+	DESCRIBE_ENUM(ZFS_IOC_USERNS_ATTACH),
+	DESCRIBE_ENUM(ZFS_IOC_UNJAIL),
+	DESCRIBE_ENUM(ZFS_IOC_USERNS_DETACH),
+	DESCRIBE_ENUM(ZFS_IOC_SET_BOOTENV),
+	DESCRIBE_ENUM(ZFS_IOC_GET_BOOTENV),
 };
 
 static struct enum_option sighows[] = {
@@ -1332,7 +4134,13 @@ static void fill_ioctl_description(uintptr_t value, char buf[])
 		buf[i++] = 'R';
 	}
 	buf[i++] = '(';
-	i += fs_utoa(type, &buf[i]);
+	if ((type >= 'A' && type <= 'Z') || (type >= 'a' && type <= 'z') || type == '!' || type == '$') {
+		buf[i++] = '\'';
+		buf[i++] = type;
+		buf[i++] = '\'';
+	} else {
+		i += fs_utoah(type, &buf[i]);
+	}
 	buf[i++] = ',';
 	i += fs_itoa((intptr_t)nr, &buf[i]);
 	if (dir != 0 || size != 0) {
@@ -1340,6 +4148,11 @@ static void fill_ioctl_description(uintptr_t value, char buf[])
 		i += fs_itoa((intptr_t)size, &buf[i]);
 	}
 	buf[i++] = ')';
+	uintptr_t remaining = value & ~_IOC(dir, type, nr, size);
+	if (remaining != 0) {
+		buf[i++] = '|';
+		i += fs_utoah(remaining, &buf[i]);
+	}
 	buf[i++] = '\0';
 }
 
@@ -1347,10 +4160,11 @@ static void fill_ioctl_description(uintptr_t value, char buf[])
 
 static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], description_format_options description_options)
 {
-	char num_buf[64];
+	char num_buf[128];
 	if (flags == NULL) {
+		uintptr_t compared_value = (description_options & DESCRIBE_AS_IOCTL) ? (value & 0xffffffff) : value;
 		for (size_t i = 0; i < sizeof_options / sizeof(*options); i++) {
-			if (value == options[i].value) {
+			if (compared_value == options[i].value) {
 				return strdup(options[i].description);
 			}
 		}
