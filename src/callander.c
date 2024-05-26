@@ -4821,9 +4821,8 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 __attribute__((warn_unused_result))
 static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, enum ins_operand_size *out_size, struct additional_result *additional)
 {
-	struct register_state dest_state;
 	enum ins_operand_size size;
-	int dest = read_operand(loader, &decoded->decomposed.operands[0], regs, ins, &dest_state, &size);
+	int dest = read_operand(loader, &decoded->decomposed.operands[0], regs, ins, &additional->state, &size);
 	if (dest == REGISTER_INVALID) {
 		if (out_size != NULL) {
 			*out_size = OPERATION_SIZE_DWORD;
