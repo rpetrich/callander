@@ -5084,21 +5084,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			clear_match(&analysis->loader, &self->current_state, REGISTER_MEM, self->address);
 		}
 		check_register_mask(compare_state.sources);
-		continue_state = jump_state = self->current_state.registers[compare_state.target_register];
-		target_registers = self->current_state.matches[compare_state.target_register];
-		for_each_bit(target_registers, bit, r) {
-			// ignore registers that don't exactly match
-			// this can happen with partial register moves
-			if ((self->current_state.registers[r].value != jump_state.value) || (self->current_state.registers[r].max != jump_state.max)) {
-				target_registers &= ~bit;
-			}
-		}
-		target_registers |= mask_for_register(compare_state.target_register);
-		if (SHOULD_LOG) {
-			for_each_bit(target_registers, bit, target_register) {
-				ERROR_NOPREFIX("comparing", name_for_register(target_register));
-			}
-		}
+		jump_state = self->current_state.registers[compare_state.target_register];
 		if ((jump_state.value & ~compare_state.mask) != (jump_state.max & ~compare_state.mask)) {
 			jump_state.value = 0;
 			jump_state.max = compare_state.mask;
@@ -5106,12 +5092,23 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			jump_state.value &= compare_state.mask;
 			jump_state.max &= compare_state.mask;
 		}
-		if ((continue_state.value & ~compare_state.mask) != (continue_state.max & ~compare_state.mask)) {
-			continue_state.value = 0;
-			continue_state.max = compare_state.mask;
-		} else {
-			continue_state.value &= compare_state.mask;
-			continue_state.max &= compare_state.mask;
+		continue_state = jump_state;
+		target_registers = self->current_state.matches[compare_state.target_register];
+		for_each_bit(target_registers, bit, r) {
+			// ignore registers that don't exactly match
+			// this can happen with partial register moves
+			if ((self->current_state.registers[r].value != jump_state.value) || (self->current_state.registers[r].max != jump_state.max)) {
+				target_registers &= ~bit;
+				LOG("rejecting matching register because its range differs", name_for_register(r));
+				dump_registers(&analysis->loader, &self->current_state, bit | mask_for_register(compare_state.target_register));
+				LOG("mask", compare_state.mask);
+			}
+		}
+		target_registers |= mask_for_register(compare_state.target_register);
+		if (SHOULD_LOG) {
+			for_each_bit(target_registers, bit, target_register) {
+				ERROR_NOPREFIX("comparing", name_for_register(target_register));
+			}
 		}
 		switch (conditional_type) {
 			case INS_CONDITIONAL_TYPE_BELOW:
