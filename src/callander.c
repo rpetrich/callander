@@ -10109,7 +10109,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				// no speculation!
 				break;
 			case ARM64_CSEL: {
-				// TODO
 				enum ins_operand_size size;
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
@@ -10132,13 +10131,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
 					case ALWAYS_MATCHES:
 						LOG("conditional always matches");
-						dest_state = right_state;
-						usage = BASIC_OP_USED_RIGHT;
+						dest_state = left_state;
+						usage = BASIC_OP_USED_LEFT;
 						break;
 					case NEVER_MATCHES:
 						LOG("conditional never matches");
-						dest_state = left_state;
-						usage = BASIC_OP_USED_LEFT;
+						dest_state = right_state;
+						usage = BASIC_OP_USED_RIGHT;
 						break;
 					case POSSIBLY_MATCHES:
 						LOG("conditional sometimes matches");
@@ -10147,7 +10146,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 				}
 				self.current_state.registers[dest] = dest_state;
-				if (register_is_partially_known(&dest_state)) {
+				if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&dest_state) : register_is_partially_known_32bit(&dest_state)) {
 					update_sources_for_basic_op_usage(&self.current_state, dest, left, right, BASIC_OP_USED_BOTH);
 					if (usage != BASIC_OP_USED_BOTH) {
 						self.current_state.sources[dest] |= self.current_state.compare_state.sources;
@@ -10160,41 +10159,167 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_CSET: {
-				// TODO
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				LOG("cset", name_for_register(dest));
-				self.current_state.registers[dest].value = 0;
-				self.current_state.registers[dest].max = 1;
-				self.current_state.sources[dest] = 0;
+				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state)) {
+					case ALWAYS_MATCHES:
+						LOG("conditional always matches");
+						self.current_state.registers[dest].value = 1;
+						self.current_state.registers[dest].max = 1;
+						self.current_state.sources[dest] = 0;
+						break;
+					case NEVER_MATCHES:
+						LOG("conditional never matches");
+						self.current_state.registers[dest].value = 0;
+						self.current_state.registers[dest].max = 0;
+						self.current_state.sources[dest] = 0;
+						break;
+					case POSSIBLY_MATCHES:
+						LOG("conditional sometimes matches");
+						self.current_state.registers[dest].value = 0;
+						self.current_state.registers[dest].max = 1;
+						self.current_state.sources[dest] = self.current_state.compare_state.sources;
+						break;
+				}
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
 			}
-			case ARM64_CSETM:
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+			case ARM64_CSETM: {
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				LOG("csetm", name_for_register(dest));
+				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state)) {
+					case ALWAYS_MATCHES:
+						LOG("conditional always matches");
+						self.current_state.registers[dest].value = mask_for_operand_size(size);
+						self.current_state.registers[dest].max = mask_for_operand_size(size);
+						self.current_state.sources[dest] = 0;
+						break;
+					case NEVER_MATCHES:
+						LOG("conditional never matches");
+						self.current_state.registers[dest].value = 0;
+						self.current_state.registers[dest].max = 0;
+						self.current_state.sources[dest] = 0;
+						break;
+					case POSSIBLY_MATCHES:
+						LOG("conditional sometimes matches");
+						self.current_state.registers[dest].value = 0;
+						self.current_state.registers[dest].max = mask_for_operand_size(size);
+						self.current_state.sources[dest] = self.current_state.compare_state.sources;
+						break;
+				}
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
+			}
 			case ARM64_CSINC: {
-				// TODO
 				enum ins_operand_size size;
 				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
 				LOG("csinc", name_for_register(dest));
-				clear_register(&self.current_state.registers[dest]);
-				truncate_to_operand_size(&self.current_state.registers[dest], size);
-				self.current_state.sources[dest] = 0;
+				struct register_state left_state;
+				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &left_state, NULL);
+				if (left != REGISTER_INVALID) {
+					LOG("left source", name_for_register(left));
+				}
+				LOG("left", temp_str(copy_register_state_description(&analysis->loader, left_state)));
+				struct register_state right_state;
+				int right = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &right_state, NULL);
+				if (right != REGISTER_INVALID) {
+					LOG("right source", name_for_register(right));
+				}
+				struct register_state one;
+				set_register(&one, 1);
+				add_registers(&right_state, &one);
+				truncate_to_operand_size(&right_state, size);
+				LOG("right", temp_str(copy_register_state_description(&analysis->loader, right_state)));
+				enum basic_op_usage usage;
+				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
+					case ALWAYS_MATCHES:
+						LOG("conditional always matches");
+						dest_state = left_state;
+						usage = BASIC_OP_USED_LEFT;
+						break;
+					case NEVER_MATCHES:
+						LOG("conditional never matches");
+						dest_state = right_state;
+						usage = BASIC_OP_USED_RIGHT;
+						break;
+					case POSSIBLY_MATCHES:
+						LOG("conditional sometimes matches");
+						dest_state = union_of_register_states(left_state, right_state);
+						usage = BASIC_OP_USED_BOTH;
+						break;
+				}
+				self.current_state.registers[dest] = dest_state;
+				if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&dest_state) : register_is_partially_known_32bit(&dest_state)) {
+					update_sources_for_basic_op_usage(&self.current_state, dest, left, right, BASIC_OP_USED_BOTH);
+					if (usage != BASIC_OP_USED_BOTH) {
+						self.current_state.sources[dest] |= self.current_state.compare_state.sources;
+					}
+				} else {
+					self.current_state.sources[dest] = 0;
+				}
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
 			}
 			case ARM64_CSINV:
-			case ARM64_CSNEG:
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+			case ARM64_CSNEG: {
+				enum ins_operand_size size;
+				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &dest_state, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				LOG("csinc", name_for_register(dest));
+				struct register_state left_state;
+				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &left_state, NULL);
+				if (left != REGISTER_INVALID) {
+					LOG("left source", name_for_register(left));
+				}
+				LOG("left", temp_str(copy_register_state_description(&analysis->loader, left_state)));
+				enum basic_op_usage usage;
+				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
+					case ALWAYS_MATCHES:
+						LOG("conditional always matches");
+						dest_state = left_state;
+						usage = BASIC_OP_USED_LEFT;
+						break;
+					case NEVER_MATCHES:
+						LOG("conditional never matches");
+						clear_register(&dest_state);
+						truncate_to_operand_size(&dest_state, size);
+						usage = BASIC_OP_USED_RIGHT;
+						break;
+					case POSSIBLY_MATCHES:
+						LOG("conditional sometimes matches");
+						clear_register(&dest_state);
+						truncate_to_operand_size(&dest_state, size);
+						usage = BASIC_OP_USED_BOTH;
+						break;
+				}
+				self.current_state.registers[dest] = dest_state;
+				if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&dest_state) : register_is_partially_known_32bit(&dest_state)) {
+					update_sources_for_basic_op_usage(&self.current_state, dest, left, REGISTER_INVALID, BASIC_OP_USED_BOTH);
+					if (usage != BASIC_OP_USED_BOTH) {
+						self.current_state.sources[dest] |= self.current_state.compare_state.sources;
+					}
+				} else {
+					self.current_state.sources[dest] = 0;
+				}
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
+			}
 			case ARM64_CTERMEQ:
 			case ARM64_CTERMNE:
 				clear_comparison_state(&self.current_state);
