@@ -125,7 +125,7 @@ setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xdcf44(setsockopt+4
 recvmsg(any, any, 0) @ libc.so.6+0xdcb88(recvmsg+40)
 recvmsg(any, any, MSG_ERRQUEUE) @ libc.so.6+0xdcb88(recvmsg+40)
 recvmsg(any, any, any) @ libc.so.6+0xdcbcc(recvmsg+108)
-brk(0) @ libc.so.6+0xd2f28(brk+8)
+brk(any) @ libc.so.6+0xd2f28(brk+8)
 munmap(any, any) @ libc.so.6+0xd7784(munmap+4)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xdc2c4(mremap+4)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-linux-aarch64.so.1+0x175f8(mmap64+24)

@@ -14,8 +14,10 @@ ioctl(STDIN_FILENO, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x6494c(isatty+24)
 faccessat(AT_FDCWD, any, R_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20548(__init_libc*+380)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
-openat(any, any, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, any, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, any, O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, any, O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52598(fopen64+176)
 close(any) @ ld-musl-aarch64.so.1+0x5d210
@@ -127,7 +129,8 @@ munmap(any, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5d1a8
 mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e818(mremap+140)
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
-mmap(0, any, PROT_READ-PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, STDIN_FILENO-0xfffffffffffffffe, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, STDIN_FILENO-0xfffffffffffffffe, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, STDIN_FILENO-0xfffffffffffffffe, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e710(mmap+148)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)

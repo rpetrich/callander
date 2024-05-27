@@ -14,44 +14,10 @@ faccessat(AT_FDCWD, /usr/sbin/ldconfig.real+0x914b0, F_OK) @ /usr/sbin/ldconfig.
 chdir(/usr/sbin/ldconfig.real+0x91e90) @ /usr/sbin/ldconfig.real+0x37dc8
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x38c48
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig.real+0x37960
-openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, 0600) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37a44
-openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_LARGEFILE, 0600) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x37ad0
-openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, /usr/sbin/ldconfig.real+0x91240, O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig.real+0x38798
-openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x387e8
-openat(AT_FDCWD, /usr/sbin/ldconfig.real+0x91240, O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig.real+0x387e8
+openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig.real+0x37a44
+openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig.real+0x37ad0
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x38798
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real+0x387e8
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x5b4a4
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x5b534
 close(any) @ /usr/sbin/ldconfig.real+0x37d28
@@ -124,9 +90,11 @@ gettid() @ /usr/sbin/ldconfig.real+0x25bc0
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x3a988
 socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0x74d48
 socket(AF_UNIX-AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0x74d48
-connect(any, any, 0x10-0x1c) @ /usr/sbin/ldconfig.real+0x74ad4
+connect(any, any, 16) @ /usr/sbin/ldconfig.real+0x74ad4
+connect(any, any, 28) @ /usr/sbin/ldconfig.real+0x74ad4
 connect(any, any, 110) @ /usr/sbin/ldconfig.real+0x74ad4
-connect(any, any, 0x10-0x1c) @ /usr/sbin/ldconfig.real+0x74b14
+connect(any, any, 16) @ /usr/sbin/ldconfig.real+0x74b14
+connect(any, any, 28) @ /usr/sbin/ldconfig.real+0x74b14
 connect(any, any, 110) @ /usr/sbin/ldconfig.real+0x74b14
 getpeername(any u32, any, any) @ /usr/sbin/ldconfig.real+0x854c8
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real+0x74c7c

@@ -48,6 +48,7 @@ futex(librt.so.1+0x172d8(__active_timer_sigev_thread_lock*), FUTEX_UNLOCK_PI, 0,
 futex(librt.so.1+0x172d8(__active_timer_sigev_thread_lock*), FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, librt.so.1+0x172e8(__active_timer_sigev_thread_lock*+16), 383)
 setitimer(ITIMER_REAL, any, any) @ libc.so.6+0x966b4(setitimer+4)
 timer_create(CLOCK_REALTIME, any, any) @ librt.so.1+0x3c3c(timer_create+124)
+timer_create(0xfffffffffffffffe, any, any) @ librt.so.1+0x3c3c(timer_create+124)
 timer_settime(any u32, 0, any, 0) @ librt.so.1+0x3fb4(timer_settime+12)
 timer_delete(any u32) @ librt.so.1+0x3e70(timer_delete+24)
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ libc.so.6+0x9e454(clock_gettime+108)

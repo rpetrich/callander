@@ -2,6 +2,7 @@ callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xd889c(getcwd+
 dup(any u32) @ libc.so.6+0xd8648(dup+8)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdcbbc(__fcntl64_nocancel*+76)
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdcbbc(__fcntl64_nocancel*+76)
+fcntl(any, F_GETFL, /usr/bin/lsmem+0x5dac) @ libc.so.6+0xdcc80(__fcntl64_nocancel_adjusted*+48)
 ioctl(any, TCGETS, any) @ libc.so.6+0xdd360(tcgetattr+48)
 ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ libc.so.6+0xddd4c(ioctl+12)
 faccessat(AT_FDCWD, non-NULL, F_OK) @ libc.so.6+0xd7f00(access+16)

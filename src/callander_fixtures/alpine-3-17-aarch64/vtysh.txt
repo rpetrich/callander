@@ -50,21 +50,20 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b455, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, an
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b460, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x50f70(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b6b1, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x50f70(__fopen_rb_ca*+64)
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
-openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, any, O_RDONLY|O_CREAT|O_EXCL|O_NOFOLLOW-O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL-O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_APPEND|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/vtysh+0xf1940, O_RDONLY|O_CREAT|O_EXCL-O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL-O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_APPEND|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(AT_FDCWD, /usr/bin/vtysh+0xf1940, O_RDONLY|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/vtysh+0xf1940, O_RDONLY|O_CREAT|O_EXCL-O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x612b0(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x1ff28(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x41e58(if_indextoname+84)
@@ -146,7 +145,8 @@ clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 restart_syscall()
 kill(any, SIGHUP-SIGQUIT) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
-kill(any, SIGALRM-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
+kill(any, SIGALRM-SIGPROF) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
+kill(any, SIGIO-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any u32, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x24500(membarrier+304)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x4fc9c(raise+44)
@@ -184,8 +184,10 @@ getgid() @ ld-musl-aarch64.so.1+0x48148(child*+468)
 getgid() @ ld-musl-aarch64.so.1+0x647ac(getgid+4)
 getegid() @ ld-musl-aarch64.so.1+0x64794(getegid+4)
 gettid() @ ld-musl-aarch64.so.1+0x47774(_Fork+84)
-shmget(114, any, 0) @ ld-musl-aarch64.so.1+0x233b0(shmget+28)
-shmget(114, any, 0444) @ ld-musl-aarch64.so.1+0x233b0(shmget+28)
+shmget(114, 1, 0) @ ld-musl-aarch64.so.1+0x233b0(shmget+28)
+shmget(114, 1, 0444) @ ld-musl-aarch64.so.1+0x233b0(shmget+28)
+shmget(114, -1, 0) @ ld-musl-aarch64.so.1+0x233b0(shmget+28)
+shmget(114, -1, 0444) @ ld-musl-aarch64.so.1+0x233b0(shmget+28)
 shmat(NULL-0xfffffffffffffffe, 0, SHM_NORESERVE) @ ld-musl-aarch64.so.1+0x23348(shmat+12)
 shmdt(any) @ ld-musl-aarch64.so.1+0x23384(shmdt+12)
 socket(any, any, any) @ ld-musl-aarch64.so.1+0x453c8(socket+40)

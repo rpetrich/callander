@@ -2,6 +2,8 @@ callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xc48b8(getcwd+
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xc8a90(__fcntl64_nocancel_adjusted*+48)
 fcntl(any, F_GETFL, any) @ libc.so.6+0xc8a90(__fcntl64_nocancel_adjusted*+48)
 ioctl(any, TCGETS, any) @ libc.so.6+0xc9188(tcgetattr+48)
+ioctl(any, USBDEVFS_RESET, 0) @ libc.so.6+0xc9ac8(ioctl+8)
+openat(AT_FDCWD, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xc3af0(open+232)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xc8bd0(__open_nocancel+72)

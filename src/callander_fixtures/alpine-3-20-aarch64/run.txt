@@ -63,8 +63,10 @@ read(any u32, any, any) @ ld-musl-aarch64.so.1+0x53780(__stdio_read*+144)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 read(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 write(any, any, 4) @ ld-musl-aarch64.so.1+0x4914c(child*+408)
-write(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
-write(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+write(STDIN_FILENO, any, any) @ ld-musl-aarch64.so.1+0x607bc
+write(0x3--1, any, any) @ ld-musl-aarch64.so.1+0x607bc
+write(STDIN_FILENO, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+write(0x3--1, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x5373c(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
@@ -94,10 +96,10 @@ futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any, any u32)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xc2ab4, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any, 0x1-0x7fffffff, 0, ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any u32)
-futex(ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any, 0x1-0x7fffffff, 0, ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any u32)
-futex(ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any, 0x1-0x7fffffff, 0, ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any u32)
-futex(ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any, 0x1-0x7fffffff, 0, ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any u32)
 futex(ld-musl-aarch64.so.1+0xc1fd0(maplock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xc1fd0(maplock*), any u32, INT_MAX)
 futex(ld-musl-aarch64.so.1+0xc25e0(lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xc25e0(lock*), any u32, INT_MAX)
 futex(ld-musl-aarch64.so.1+0xc2628(key_lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xc2628(key_lock*), any u32, INT_MAX)

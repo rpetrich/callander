@@ -11,10 +11,11 @@ ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x53910(__stdout_write*+5
 faccessat(any, /sbin/blkzone+0x4244, F_OK) @ ld-musl-aarch64.so.1+0x6878c(faccessat+52)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(any, any, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, non-NULL, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /sbin/blkzone+0x4267, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, any, O_RDONLY-O_WRONLY|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /sbin/blkzone+0x4267, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDONLY-O_WRONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x53608(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x54b50(fopen+196)
