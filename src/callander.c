@@ -12378,6 +12378,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 					self.description = NULL;
+					if (binary_has_flags(binary_for_address(&analysis->loader, self.next->address), BINARY_IS_PERL)) {
+						ERROR("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
+						clear_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT]);
+						self.current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
+						clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_RESULT, ins);
+						goto finish_syscall;
+					}
 					ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
 					if (SHOULD_LOG) {
 						register_mask relevant_registers = mask_for_register((enum register_index)REGISTER_SYSCALL_NR);
@@ -13168,6 +13175,9 @@ static int special_binary_flags_for_path(const char *path)
 			}
 			if (path[4] == 'y' && path[5] == 't' && path[6] == 'h' && path[7] == 'o' && path[8] == 'n') {
 				result |= BINARY_IS_LIBPYTHON;
+			}
+			if (path[4] == 'e' && path[5] == 'r' && path[6] == 'l') {
+				result |= BINARY_IS_PERL;
 			}
 		} else if (path[3] == 'r' && path[4] == 'e' && path[5] == 'a' && path[6] == 'd') {
 			// result |= BINARY_IS_LIBREADLINE;
