@@ -282,7 +282,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
 				.value = { 0, 0 },
-				.mask = ~(uintptr_t)0,
+				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
 				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
@@ -294,7 +294,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
 				.value = { 0, 0 },
-				.mask = ~(uintptr_t)0,
+				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
 				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
@@ -307,7 +307,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
 				.value = { bit, bit },
-				.mask = ~(uintptr_t)0,
+				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
 				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
@@ -320,7 +320,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
 				.value = { bit, bit },
-				.mask = ~(uintptr_t)0,
+				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
 				.validity = reg != AARCH64_REGISTER_INVALID ? COMPARISON_SUPPORTS_EQUALITY : COMPARISON_IS_INVALID,
