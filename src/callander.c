@@ -4461,7 +4461,12 @@ static enum basic_op_usage basic_op_shl(BASIC_OP_ARGS)
 static enum basic_op_usage basic_op_sar(BASIC_OP_ARGS)
 {
 	if (source->value > operand_size * 8) {
+#ifdef __x86_64__
+		// shifts are masked on x86_64
 		clear_register(dest);
+#else
+		set_register(dest, 0);
+#endif
 		return BASIC_OP_USED_BOTH;
 	}
 	if (register_is_exactly_known(source)) {
