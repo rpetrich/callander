@@ -87,7 +87,6 @@
 typedef __u32 compat_ulong_t;
 #ifdef __x86_64__
 #include <asm/mtrr.h>
-#include <asm/amd_hsmp.h>
 #include <asm/mce.h>
 #include <asm/msr.h>
 #include <asm/sgx.h>
@@ -2064,6 +2063,51 @@ enum kdbus_ioctl_type {
 	KDBUS_CMD_MATCH_REMOVE =	_IOW(KDBUS_IOCTL_MAGIC, 0xb1,
 					     struct kdbus_cmd_match),
 };
+
+
+#define HSMP_MAX_MSG_LEN 8
+struct hsmp_message {
+	__u32	msg_id;			/* Message ID */
+	__u16	num_args;		/* Number of input argument words in message */
+	__u16	response_sz;		/* Number of expected output/response words */
+	__u32	args[HSMP_MAX_MSG_LEN];	/* argument/response buffer */
+	__u16	sock_ind;		/* socket number */
+};
+#define HSMP_BASE_IOCTL_NR	0xF8
+#define HSMP_IOCTL_CMD		_IOWR(HSMP_BASE_IOCTL_NR, 0, struct hsmp_message)
+
+
+#define SGX_IOC_VEPC_REMOVE_ALL \
+	_IO(SGX_MAGIC, 0x04)
+#define SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS \
+	_IOWR(SGX_MAGIC, 0x05, struct sgx_enclave_restrict_permissions)
+#define SGX_IOC_ENCLAVE_MODIFY_TYPES \
+	_IOWR(SGX_MAGIC, 0x06, struct sgx_enclave_modify_types)
+#define SGX_IOC_ENCLAVE_REMOVE_PAGES \
+	_IOWR(SGX_MAGIC, 0x07, struct sgx_enclave_remove_pages)
+
+struct sgx_enclave_restrict_permissions {
+	__u64 offset;
+	__u64 length;
+	__u64 permissions;
+	__u64 result;
+	__u64 count;
+};
+
+struct sgx_enclave_modify_types {
+	__u64 offset;
+	__u64 length;
+	__u64 page_type;
+	__u64 result;
+	__u64 count;
+};
+
+struct sgx_enclave_remove_pages {
+	__u64 offset;
+	__u64 length;
+	__u64 count;
+};
+
 
 static struct enum_option ioctls[] = {
 	// ioctl_tty
