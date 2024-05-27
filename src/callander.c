@@ -10296,20 +10296,25 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					case POSSIBLY_MATCHES:
 						LOG("conditional sometimes matches");
+						bool combined = combine_register_states(&left_state, &right_state, dest);
 						self.current_state.registers[dest] = left_state;
+						dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 						if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&left_state) : register_is_partially_known_32bit(&left_state)) {
-							update_sources_for_basic_op_usage(&self.current_state, dest, left, right, BASIC_OP_USED_LEFT);
+							update_sources_for_basic_op_usage(&self.current_state, dest, left, right, combined ? BASIC_OP_USED_BOTH : BASIC_OP_USED_LEFT);
 						} else {
 							self.current_state.sources[dest] = 0;
 						}
-						ANALYZE_PRIMARY_RESULT();
-						self.current_state.registers[dest] = right_state;
-						if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&right_state) : register_is_partially_known_32bit(&right_state)) {
-							update_sources_for_basic_op_usage(&self.current_state, dest, left, right, BASIC_OP_USED_RIGHT);
-						} else {
-							self.current_state.sources[dest] = 0;
+						if (!combined) {
+							ANALYZE_PRIMARY_RESULT();
+							self.current_state.registers[dest] = right_state;
+							dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+							if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&right_state) : register_is_partially_known_32bit(&right_state)) {
+								update_sources_for_basic_op_usage(&self.current_state, dest, left, right, BASIC_OP_USED_RIGHT);
+							} else {
+								self.current_state.sources[dest] = 0;
+							}
+							goto use_alternate_result;
 						}
-						goto use_alternate_result;
 				}
 				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
 				break;
