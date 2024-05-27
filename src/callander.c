@@ -9493,7 +9493,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					break;
 				}
-				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
