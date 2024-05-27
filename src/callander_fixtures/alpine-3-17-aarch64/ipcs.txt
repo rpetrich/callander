@@ -19,8 +19,8 @@ openat(AT_FDCWD, /usr/bin/ipcs+0xd8ae, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x5
 openat(AT_FDCWD, /usr/bin/ipcs+0xd917, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, /usr/bin/ipcs+0xd963, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, /usr/bin/ipcs+0xd998, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
-openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x612b0(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52598(fopen64+176)

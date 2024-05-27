@@ -21,21 +21,23 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl
 openat(AT_FDCWD, /usr/bin/lscpu+0x10156, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, /usr/bin/lscpu+0x1016f, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(any, any, O_RDONLY-O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/lscpu+0x10b46, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/lscpu+0x10137, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/lscpu+0x10b46, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/lscpu+0xfae5, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/lscpu+0x100cf, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/lscpu+0x100f8, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/lscpu+0x10137, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/lscpu+0x10137, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/lscpu+0x102a1, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/lscpu+0x102fb, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/lscpu+0x10b46, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/lscpu+0x10b46, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/lscpu+0x10187, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/lscpu+0x12090, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/lscpu+0x120e6, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/lscpu+0x12237, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
-close(any) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
+close(STDIN_FILENO-0xffffffffffffffe9) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
+close(0xffffffffffffffeb--1) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
 close(any) @ ld-musl-aarch64.so.1+0x53608(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x54b50(fopen+196)
 close(any) @ ld-musl-aarch64.so.1+0x607bc

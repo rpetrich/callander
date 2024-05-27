@@ -21,7 +21,8 @@ openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW|O_CLOEXEC, 0660) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/lxc-monitor+0x6849, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
-close(any) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
+close(STDIN_FILENO-0xffffffffffffffe9) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
+close(0xffffffffffffffeb--1) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
 close(any) @ ld-musl-aarch64.so.1+0x53608(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x607bc
 close(any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)

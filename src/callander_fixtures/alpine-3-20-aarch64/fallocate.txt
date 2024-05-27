@@ -1,12 +1,12 @@
 callander: permitted syscalls: dup(any) @ ld-musl-aarch64.so.1+0x68624(dup+16)
-fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21194(open+136)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x52cac(fstatat+88)
 ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x53910(__stdout_write*+56)
-fallocate(any, NULL-0x8, 0, any) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
-fallocate(any, 3, any, any) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
+fallocate(any, NULL-0x8, any, any) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
-openat(AT_FDCWD, any, O_RDWR-O_RDWR|O_CREAT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, O_RDWR-O_RDWR|O_CREAT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x53608(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x607bc

@@ -17,7 +17,8 @@ ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+5
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x65474(isatty+24)
 faccessat(AT_FDCWD, non-NULL, X_OK) @ ld-musl-aarch64.so.1+0x64c78(access+32)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, any, O_RDWR|O_NOCTTY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, any, O_RDWR|O_NOCTTY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x61dbc(__map_file*+44)

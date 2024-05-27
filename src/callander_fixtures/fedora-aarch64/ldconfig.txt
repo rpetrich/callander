@@ -20,7 +20,9 @@ openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x3c23c
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x3c2d4
 openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x3c8b4
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x3c8b4
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x3c910
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x3c910
+openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x3c910
+openat(AT_FDCWD, non-NULL, any, any) @ /usr/sbin/ldconfig+0x3c910
 close(any) @ /usr/sbin/ldconfig+0x3b6ec
 close(any) @ /usr/sbin/ldconfig+0x3b720
 close(any) @ /usr/sbin/ldconfig+0x3c654
@@ -63,7 +65,9 @@ clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x38780
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0x874bc
+clock_nanosleep(0xfffffffffffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x874bc
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0x87500
+clock_nanosleep(0xfffffffffffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x87500
 sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x63e08
 sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x63d48
 sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x63d08
@@ -88,8 +92,10 @@ sysinfo(any) @ /usr/sbin/ldconfig+0x3ed88
 socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0x8757c
 socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0x8757c
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0x8757c
-connect(any, any, 0x10-0x1c) @ /usr/sbin/ldconfig+0x8fbc4
-connect(any, any, 0x10-0x1c) @ /usr/sbin/ldconfig+0x8fc08
+connect(any, any, 16) @ /usr/sbin/ldconfig+0x8fbc4
+connect(any, any, 28) @ /usr/sbin/ldconfig+0x8fbc4
+connect(any, any, 16) @ /usr/sbin/ldconfig+0x8fc08
+connect(any, any, 28) @ /usr/sbin/ldconfig+0x8fc08
 getpeername(any, any, any) @ /usr/sbin/ldconfig+0x8fc84
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig+0x8fe7c
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig+0x8fed0

@@ -37,11 +37,34 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f1d0, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f1e0, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f268, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, any, O_RDWR, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0666) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2f0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, libk5crypto.so.3+0x1d738, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9efa0, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, libk5crypto.so.3+0x1d738, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9efa0, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
 close(any) @ ld-musl-aarch64.so.1+0x4214c(if_indextoname+84)
@@ -97,7 +120,7 @@ futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, libtirpc.so.3+0x4069c, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xc2ab4, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any, 0x1-0x7fffffff, 0, ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc06b0(barrier_sem*), any u32)
 futex(ld-musl-aarch64.so.1+0xc1fd0(maplock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xc1fd0(maplock*), any u32, INT_MAX)
 futex(ld-musl-aarch64.so.1+0xc25e0(lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xc25e0(lock*), any u32, INT_MAX)
 futex(ld-musl-aarch64.so.1+0xc2628(key_lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xc2628(key_lock*), any u32, INT_MAX)

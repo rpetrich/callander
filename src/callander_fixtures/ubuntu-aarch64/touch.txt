@@ -34,7 +34,7 @@ pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdcf08(__pr
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd726c(fstatat64+12)
 newfstatat(any, libc.so.6+0x151480, any, AT_EMPTY_PATH) @ libc.so.6+0xd726c(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xd726c(fstatat64+12)
-utimensat(STDIN_FILENO-0xfffffffffffffffe, 0, any, 0) @ libc.so.6+0xdc52c(__GI___utimensat64_helper*+12)
+utimensat(any, 0, any, 0) @ libc.so.6+0xdc52c(__GI___utimensat64_helper*+12)
 utimensat(AT_FDCWD, non-NULL, any, 0) @ libc.so.6+0xdc570(utimensat+16)
 utimensat(AT_FDCWD, non-NULL, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xdc570(utimensat+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1da04(_exit*+20)

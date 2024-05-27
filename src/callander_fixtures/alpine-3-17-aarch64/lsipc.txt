@@ -21,9 +21,9 @@ openat(AT_FDCWD, /usr/bin/lsipc+0x11f68, O_RDONLY, any) @ ld-musl-aarch64.so.1+0
 openat(AT_FDCWD, /usr/bin/lsipc+0x11fd1, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, /usr/bin/lsipc+0x1201d, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, /usr/bin/lsipc+0x12052, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
-openat(AT_FDCWD, any, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, any, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(AT_FDCWD, /usr/bin/lsipc+0x11f20, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/lsipc+0x11f20, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x612b0(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52598(fopen64+176)

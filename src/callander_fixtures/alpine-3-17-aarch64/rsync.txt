@@ -74,6 +74,7 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b707, O_RDONLY|O_CLOEXEC, any) @ ld-mus
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b71d, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52558(fopen64+112)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0700) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_NOFOLLOW, 0-0700) @ ld-musl-aarch64.so.1+0x5d210
@@ -90,6 +91,7 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CL
 openat(AT_FDCWD, /usr/bin/rsync+0x5dbe0, O_WRONLY-O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0700) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_NOFOLLOW, 0-0700) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)

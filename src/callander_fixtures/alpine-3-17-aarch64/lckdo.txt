@@ -1,4 +1,5 @@
-callander: permitted syscalls: dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x642b0(dup2+28)
+callander: permitted syscalls: dup3(any, STDIN_FILENO-STDOUT_FILENO, 0) @ ld-musl-aarch64.so.1+0x642b0(dup2+28)
+dup3(any, 0x3--1, 0) @ ld-musl-aarch64.so.1+0x642b0(dup2+28)
 fcntl(any, F_GETFD, 0) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
 fcntl(any, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
 fcntl(any, F_GETLK-F_SETLK, any) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)

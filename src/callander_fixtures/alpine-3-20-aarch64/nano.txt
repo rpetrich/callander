@@ -41,11 +41,17 @@ openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2f0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL-O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600-0666) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL-O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL-O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600-0666) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL-O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)

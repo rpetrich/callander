@@ -17,10 +17,13 @@ faccessat(AT_FDCWD, non-NULL, F_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 faccessat(any, /usr/bin/lsmem+0xc228, F_OK) @ ld-musl-aarch64.so.1+0x643e8(faccessat+56)
 faccessat(any, /usr/bin/lsmem+0xc2eb, F_OK) @ ld-musl-aarch64.so.1+0x643e8(faccessat+56)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20548(__init_libc*+380)
-openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, any, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, any, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 close(any) @ ld-musl-aarch64.so.1+0x1ff28(opendir+56)
-close(any) @ ld-musl-aarch64.so.1+0x2103c(fcntl+312)
+close(STDIN_FILENO-0xffffffffffffffe9) @ ld-musl-aarch64.so.1+0x2103c(fcntl+312)
+close(0xffffffffffffffeb--1) @ ld-musl-aarch64.so.1+0x2103c(fcntl+312)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x5d210
 close(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
