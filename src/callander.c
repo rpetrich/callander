@@ -5832,20 +5832,6 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 	return false;
 }
 
-#define ANALYZE_PRIMARY_RESULT() do { \
-	ins = next_ins(ins, &decoded); \
-	self.description = "primary result"; \
-	effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS); \
-} while(0)
-
-#define CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg) do { \
-	if (UNLIKELY(additional.used)) { \
-		ANALYZE_PRIMARY_RESULT(); \
-		self.current_state.registers[reg] = additional.state; \
-		goto use_alternate_result; \
-	} \
-} while(0)
-
 static void clear_comparison_state(struct registers *state)
 {
 	if (UNLIKELY(state->compare_state.validity != COMPARISON_IS_INVALID)) {
@@ -5861,6 +5847,237 @@ static void set_comparison_state(__attribute__((unused)) struct loader_context *
 	LOG("value", temp_str(copy_register_state_description(loader, state->registers[state->compare_state.target_register])));
 	LOG("with", temp_str(copy_register_state_description(loader, state->compare_state.value)));
 }
+
+static bool is_musl_cp_begin(ins_ptr entry)
+{
+#ifdef __x86_64__
+	// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
+	if (entry[0] == 0x49 && entry[1] == 0x89 && entry[2] == 0xfb) {
+		if (entry[3] == 0x48 && entry[4] == 0x89 && entry[5] == 0xf0) {
+			if (entry[6] == 0x48 && entry[7] == 0x89 && entry[8] == 0xd7) {
+				if (entry[9] == 0x48 && entry[10] == 0x89 && entry[11] == 0xce) {
+					if (entry[12] == 0x4C && entry[13] == 0x89 && entry[14] == 0xc2) {
+						if (entry[15] == 0x4D && entry[16] == 0x89 && entry[17] == 0xca) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+#endif
+#ifdef __aarch64__
+	if (self.entry[0] == 0xaa0103e8) {
+		if (self.entry[1] == 0xaa0203e0) {
+			if (self.entry[2] == 0xaa0303e1) {
+				if (self.entry[3] == 0xaa0403e2) {
+					if (self.entry[4] == 0xaa0503e3) {
+						if (self.entry[5] == 0xaa0603e4) {
+							if (self.entry[6] == 0xaa0703e5) {
+								self.description = NULL;
+								LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+								return EFFECT_NONE;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+#endif
+}
+
+enum syscall_analysis_result {
+	SYSCALL_ANALYSIS_CONTINUE,
+	SYSCALL_ANALYSIS_UPDATE_AND_RETURN,
+	SYSCALL_ANALYSIS_EXIT,
+};
+
+static uint8_t analyze_syscall_instruction(struct program_state *analysis, struct analysis_frame *self, const struct analysis_frame *caller, ins_ptr ins, function_effects required_effects, function_effects *effects)
+{
+	clear_comparison_state(&self->current_state);
+	if (register_is_exactly_known(&self->current_state.registers[REGISTER_SYSCALL_NR])) {
+	syscall_nr_is_known:
+		;
+		uintptr_t value = self->current_state.registers[REGISTER_SYSCALL_NR].value;
+		LOG("found syscall with known number", (int)value);
+		LOG("syscall name is", name_for_syscall(value));
+		self->description = NULL;
+		LOG("syscall address", temp_str(copy_call_trace_description(&analysis->loader, self)));
+		self->description = "syscall";
+		// special case musl's fopen
+#ifdef __x86_64__
+		uintptr_t musl_fopen_syscall = LINUX_SYS_open;
+		uintptr_t musl_fopen_mode_arg = 1;
+#endif
+#ifdef __aarch64__
+		uintptr_t musl_fopen_syscall = LINUX_SYS_openat;
+		uintptr_t musl_fopen_mode_arg = 2;
+#endif
+		if (value == musl_fopen_syscall && !register_is_partially_known(&self->current_state.registers[syscall_argument_abi_register_indexes[musl_fopen_mode_arg]])) {
+			struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
+			if (binary != NULL && (binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN))) {
+				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
+				if (name != NULL && (fs_strcmp(name, "fopen") == 0 || fs_strcmp(name, "fopen64") == 0)) {
+					size_t count = analysis->search.fopen_mode_count;
+					if (count != 0 && register_is_exactly_known(&analysis->search.fopen_modes[count-1])) {
+						const char *mode_str = (const char *)analysis->search.fopen_modes[count-1].value;
+						struct loaded_binary *mode_binary;
+						int prot = protection_for_address(&analysis->loader, mode_str, &mode_binary, NULL);
+						if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
+							int mode = musl_fmodeflags(mode_str);
+							set_register(&self->current_state.registers[syscall_argument_abi_register_indexes[musl_fopen_mode_arg]], mode);
+						}
+					}
+				}
+			}
+		}
+		record_syscall(analysis, value, *self, required_effects);
+		// syscalls always populate the result
+		clear_register(&self->current_state.registers[REGISTER_SYSCALL_RESULT]);
+		self->current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
+		clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_RESULT, ins);
+#ifdef __x86_64__
+		// x86 additionally clears r11
+		clear_register(&self->current_state.registers[REGISTER_R11]);
+		self->current_state.sources[REGISTER_R11] = 0;
+		clear_match(&analysis->loader, &self->current_state, REGISTER_R11, ins);
+#endif
+		switch (info_for_syscall(value).attributes & SYSCALL_RETURN_MASK) {
+			case SYSCALL_RETURNS_SELF_PID:
+				// getpid fills the pid into the result
+				if (analysis->loader.pid) {
+					set_register(&self->current_state.registers[REGISTER_SYSCALL_RESULT], analysis->loader.pid);
+				}
+				break;
+			case SYSCALL_RETURNS_NEVER:
+				// exit and exitgroup always exit the thread, rt_sigreturn always perform a non-local jump
+				*effects |= EFFECT_EXITS;
+				LOG("completing from exit or rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self->entry)));
+				return SYSCALL_ANALYSIS_UPDATE_AND_RETURN;
+		}
+	} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && binary_has_flags(analysis->loader.main, BINARY_IS_GOLANG)) {
+		vary_effects_by_registers(&analysis->search, &analysis->loader, self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
+	} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
+		self->description = "syscall";
+		analysis->loader.setxid_syscall = self->address;
+		analysis->loader.setxid_syscall_entry = self->entry;
+		LOG("found setxid dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, self)));
+	} else if (analysis->loader.searching_setxid_sighandler && analysis->loader.setxid_sighandler_syscall == NULL) {
+		self->description = "syscall";
+		analysis->loader.setxid_sighandler_syscall = self->address;
+		analysis->loader.setxid_sighandler_syscall_entry = self->entry;
+		LOG("found setxid_sighandler dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, self)));
+	} else if (self->address == analysis->loader.setxid_sighandler_syscall) {
+		self->description = NULL;
+		LOG("unknown setxid_sighandler syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, self)));
+	} else if (self->address == analysis->loader.setxid_syscall) {
+		self->description = NULL;
+		LOG("unknown setxid syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, self)));
+	} else {
+		struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
+		if (binary != NULL) {
+			if (binary->special_binary_flags & BINARY_IS_INTERPRETER && is_musl_cp_begin(self->entry)) {
+				// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
+				self->description = NULL;
+				LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, self)));
+				return SYSCALL_ANALYSIS_EXIT;
+			}
+			if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
+				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
+				if (name != NULL && fs_strcmp(name, "next_line") == 0) {
+					// this is a giant hack
+					self->current_state.registers[REGISTER_SYSCALL_NR].value = self->current_state.registers[REGISTER_SYSCALL_NR].max = LINUX_SYS_read;
+					goto syscall_nr_is_known;
+				}
+				if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
+					for (const struct analysis_frame *frame = self->next; frame != NULL; frame = frame->next) {
+						name = find_any_symbol_name_by_address(&analysis->loader, binary, frame->entry, NORMAL_SYMBOL | LINKER_SYMBOL);
+						if (name != NULL) {
+							if (is_setxid_name(name)) {
+								if (analysis->loader.setxid_syscall == NULL) {
+									self->description = NULL;
+									analysis->loader.setxid_syscall = self->address;
+									analysis->loader.setxid_syscall_entry = self->entry;
+									LOG("found __nptl_setxid/do_setxid", temp_str(copy_call_trace_description(&analysis->loader, self)));
+									return SYSCALL_ANALYSIS_CONTINUE;
+								}
+							} else if (fs_strcmp(name, "pthread_create") == 0) {
+								if (analysis->loader.setxid_sighandler_syscall == NULL) {
+									self->description = NULL;
+									analysis->loader.setxid_sighandler_syscall = self->address;
+									analysis->loader.setxid_sighandler_syscall_entry = self->entry;
+									LOG("found __nptl_setxid_sighandler", temp_str(copy_call_trace_description(&analysis->loader, self)));
+									return SYSCALL_ANALYSIS_CONTINUE;
+								}
+							}
+						}
+					}
+				}
+				if (analysis->loader.setxid_syscall == self->address || analysis->loader.setxid_sighandler_syscall == self->address) {
+					return SYSCALL_ANALYSIS_CONTINUE;
+				}
+			}
+		}
+		self->description = NULL;
+		if (binary_has_flags(binary_for_address(&analysis->loader, self->next->address), BINARY_IS_PERL)) {
+			LOG("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self->current_state.registers[REGISTER_SYSCALL_NR])));
+			clear_register(&self->current_state.registers[REGISTER_SYSCALL_RESULT]);
+			self->current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
+			clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_RESULT, ins);
+			return SYSCALL_ANALYSIS_CONTINUE;
+		}
+		ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self->current_state.registers[REGISTER_SYSCALL_NR])));
+		if (SHOULD_LOG) {
+			register_mask relevant_registers = mask_for_register((enum register_index)REGISTER_SYSCALL_NR);
+			for (const struct analysis_frame *ancestor = self;;) {
+				ERROR_NOPREFIX("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
+				register_mask new_relevant_registers = 0;
+				for_each_bit(relevant_registers, bit, i) {
+					new_relevant_registers |= ancestor->current_state.sources[i];
+				}
+				if (new_relevant_registers == 0) {
+					ERROR_NOPREFIX("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
+					break;
+				}
+				ERROR_NOPREFIX("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
+				dump_registers(&analysis->loader, &ancestor->current_state, new_relevant_registers);
+				ancestor = (struct analysis_frame *)ancestor->next;
+				if (ancestor == NULL) {
+					break;
+				}
+				relevant_registers = new_relevant_registers;
+			}
+		}
+		self->description = NULL;
+		ERROR("full call stack", temp_str(copy_call_trace_description(&analysis->loader, self)));
+		dump_nonempty_registers(&analysis->loader, &self->current_state, ALL_REGISTERS);
+		clear_register(&self->current_state.registers[REGISTER_SYSCALL_NR]);
+		self->current_state.sources[REGISTER_SYSCALL_NR] = 0;
+		clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_NR, ins);
+		if (required_effects & EFFECT_AFTER_STARTUP) {
+			analysis->syscalls.unknown = true;
+		}
+		DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
+	}
+	return SYSCALL_ANALYSIS_CONTINUE;
+}
+
+#define ANALYZE_PRIMARY_RESULT() do { \
+	ins = next_ins(ins, &decoded); \
+	self.description = "primary result"; \
+	effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS); \
+} while(0)
+
+#define CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg) do { \
+	if (UNLIKELY(additional.used)) { \
+		ANALYZE_PRIMARY_RESULT(); \
+		self.current_state.registers[reg] = additional.state; \
+		goto use_alternate_result; \
+	} \
+} while(0)
 
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags)
 {
@@ -6141,180 +6358,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 						break;
 					}
-					case 0x05: { // syscall
-						clear_comparison_state(&self.current_state);
-						if (register_is_exactly_known(&self.current_state.registers[REGISTER_SYSCALL_NR])) {
-						syscall_nr_is_known:
-							;
-							uintptr_t value = self.current_state.registers[REGISTER_SYSCALL_NR].value;
-							LOG("found syscall with known number", (int)value);
-							LOG("syscall name is", name_for_syscall(value));
-							self.description = NULL;
-							LOG("syscall address", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-							self.description = "syscall";
-							// special case musl's fopen
-							if (value == LINUX_SYS_open && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[1]])) {
-								struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-								if (binary != NULL && (binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN))) {
-									const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
-									if (name != NULL && (fs_strcmp(name, "fopen") == 0 || fs_strcmp(name, "fopen64") == 0)) {
-										size_t count = analysis->search.fopen_mode_count;
-										if (count != 0 && register_is_exactly_known(&analysis->search.fopen_modes[count-1])) {
-											const char *mode_str = (const char *)analysis->search.fopen_modes[count-1].value;
-											struct loaded_binary *mode_binary;
-											int prot = protection_for_address(&analysis->loader, mode_str, &mode_binary, NULL);
-											if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
-												int mode = musl_fmodeflags(mode_str);
-												set_register(&self.current_state.registers[syscall_argument_abi_register_indexes[1]], mode);
-											}
-										}
-									}
-								}
-							}
-							record_syscall(analysis, value, self, required_effects);
-							// syscalls always clear RAX and R11
-							clear_register(&self.current_state.registers[REGISTER_RAX]);
-							self.current_state.sources[REGISTER_RAX] = 0;
-							clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
-							clear_register(&self.current_state.registers[REGISTER_R11]);
-							self.current_state.sources[REGISTER_R11] = 0;
-							clear_match(&analysis->loader, &self.current_state, REGISTER_R11, ins);
-							switch (info_for_syscall(value).attributes & SYSCALL_RETURN_MASK) {
-								case SYSCALL_RETURNS_SELF_PID:
-									// getpid fills the pid into RAX
-									if (analysis->loader.pid) {
-										set_register(&self.current_state.registers[REGISTER_RAX], analysis->loader.pid);
-									}
-									break;
-								case SYSCALL_RETURNS_NEVER:
-									// exit and exitgroup always exit the thread, rt_sigreturn always perform a non-local jump
-									effects |= EFFECT_EXITS;
-									LOG("completing from exit or rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
-									goto update_and_return;
-							}
-						} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && binary_has_flags(analysis->loader.main, BINARY_IS_GOLANG)) {
-							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
-						} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
-							self.description = "syscall";
-							analysis->loader.setxid_syscall = self.address;
-							analysis->loader.setxid_syscall_entry = self.entry;
-							LOG("found setxid dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-						} else if (analysis->loader.searching_setxid_sighandler && analysis->loader.setxid_sighandler_syscall == NULL) {
-							self.description = "syscall";
-							analysis->loader.setxid_sighandler_syscall = self.address;
-							analysis->loader.setxid_sighandler_syscall_entry = self.entry;
-							LOG("found setxid_sighandler dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-						} else if (self.address == analysis->loader.setxid_sighandler_syscall) {
-							self.description = NULL;
-							LOG("unknown setxid_sighandler syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-						} else if (self.address == analysis->loader.setxid_syscall) {
-							self.description = NULL;
-							LOG("unknown setxid syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-						} else {
-							struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-							if (binary != NULL) {
-								if (binary->special_binary_flags & BINARY_IS_INTERPRETER) {
-									// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
-									if (self.entry[0] == 0x49 && self.entry[1] == 0x89 && self.entry[2] == 0xfb) {
-										if (self.entry[3] == 0x48 && self.entry[4] == 0x89 && self.entry[5] == 0xf0) {
-											if (self.entry[6] == 0x48 && self.entry[7] == 0x89 && self.entry[8] == 0xd7) {
-												if (self.entry[9] == 0x48 && self.entry[10] == 0x89 && self.entry[11] == 0xce) {
-													if (self.entry[12] == 0x4C && self.entry[13] == 0x89 && self.entry[14] == 0xc2) {
-														if (self.entry[15] == 0x4D && self.entry[16] == 0x89 && self.entry[17] == 0xca) {
-															self.description = NULL;
-															LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-															return EFFECT_NONE;
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-								if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
-									const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
-									if (name != NULL && fs_strcmp(name, "next_line") == 0) {
-										// this is a giant hack
-										self.current_state.registers[REGISTER_SYSCALL_NR].value = self.current_state.registers[REGISTER_SYSCALL_NR].max = LINUX_SYS_read;
-										goto syscall_nr_is_known;
-									}
-									if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
-										for (const struct analysis_frame *frame = self.next; frame != NULL; frame = frame->next) {
-											name = find_any_symbol_name_by_address(&analysis->loader, binary, frame->entry, NORMAL_SYMBOL | LINKER_SYMBOL);
-											if (name != NULL) {
-												if (is_setxid_name(name)) {
-													if (analysis->loader.setxid_syscall == NULL) {
-														self.description = NULL;
-														analysis->loader.setxid_syscall = self.address;
-														analysis->loader.setxid_syscall_entry = self.entry;
-														LOG("found __nptl_setxid/do_setxid", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-														goto finish_syscall;
-													}
-												} else if (fs_strcmp(name, "pthread_create") == 0) {
-													if (analysis->loader.setxid_sighandler_syscall == NULL) {
-														self.description = NULL;
-														analysis->loader.setxid_sighandler_syscall = self.address;
-														analysis->loader.setxid_sighandler_syscall_entry = self.entry;
-														LOG("found __nptl_setxid_sighandler", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-														goto finish_syscall;
-													}
-												}
-											}
-										}
-									}
-									if (analysis->loader.setxid_syscall == self.address || analysis->loader.setxid_sighandler_syscall == self.address) {
-										goto finish_syscall;
-									}
-								}
-							}
-							if (binary_has_flags(binary_for_address(&analysis->loader, self.next->address), BINARY_IS_PERL)) {
-								LOG("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
-								clear_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT]);
-								self.current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
-								clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_RESULT, ins);
-								goto finish_syscall;
-							}
-							self.description = NULL;
-							ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
-							if (SHOULD_LOG) {
-								register_mask relevant_registers = mask_for_register((enum register_index)REGISTER_SYSCALL_NR);
-								for (const struct analysis_frame *ancestor = &self;;) {
-									ERROR_NOPREFIX("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
-									register_mask new_relevant_registers = 0;
-									for_each_bit(relevant_registers, bit, i) {
-										new_relevant_registers |= ancestor->current_state.sources[i];
-									}
-									if (new_relevant_registers == 0) {
-										ERROR_NOPREFIX("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
-										break;
-									}
-									check_register_mask(new_relevant_registers);
-									ERROR_NOPREFIX("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
-									dump_registers(&analysis->loader, &ancestor->current_state, new_relevant_registers);
-									ancestor = (struct analysis_frame *)ancestor->next;
-									if (ancestor == NULL) {
-										break;
-									}
-									relevant_registers = new_relevant_registers;
-								}
-							}
-							self.description = NULL;
-							ERROR("full call stack", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-							dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
-							clear_register(&self.current_state.registers[REGISTER_SYSCALL_NR]);
-							self.current_state.sources[REGISTER_SYSCALL_NR] = 0;
-							clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_NR, ins);
-							clear_register(&self.current_state.registers[REGISTER_R11]);
-							self.current_state.sources[REGISTER_R11] = 0;
-							clear_match(&analysis->loader, &self.current_state, REGISTER_R11, ins);
-							if (required_effects & EFFECT_AFTER_STARTUP) {
-								analysis->syscalls.unknown = true;
-							}
-							DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
+					case 0x05: // syscall
+						switch (analyze_syscall_instruction(analysis, &self, caller, ins, required_effects, &effects)) {
+							case SYSCALL_ANALYSIS_CONTINUE:
+								break;
+							case SYSCALL_ANALYSIS_UPDATE_AND_RETURN:
+								goto update_and_return;
+							case SYSCALL_ANALYSIS_EXIT:
+								return EFFECT_EXITS;
 						}
-					finish_syscall:
 						break;
-					}
 					case 0x0b: // ud2
 						effects |= EFFECT_EXITS;
 						LOG("completing from ud2", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -12279,175 +12332,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_SUQADD:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			case ARM64_SVC: {
-				clear_comparison_state(&self.current_state);
-				if (register_is_exactly_known(&self.current_state.registers[REGISTER_SYSCALL_NR])) {
-				syscall_nr_is_known:
-					;
-					uintptr_t value = self.current_state.registers[REGISTER_SYSCALL_NR].value;
-					LOG("found syscall with known number", (int)value);
-					LOG("syscall name is", name_for_syscall(value));
-					self.description = NULL;
-					LOG("syscall address", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-					self.description = "syscall";
-					// special case musl's fopen
-					if (value == LINUX_SYS_openat && !register_is_partially_known(&self.current_state.registers[syscall_argument_abi_register_indexes[2]])) {
-						struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-						if (binary != NULL && (binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN))) {
-							const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
-							if (name != NULL && (fs_strcmp(name, "fopen") == 0 || fs_strcmp(name, "fopen64") == 0)) {
-								size_t count = analysis->search.fopen_mode_count;
-								if (count != 0 && register_is_exactly_known(&analysis->search.fopen_modes[count-1])) {
-									const char *mode_str = (const char *)analysis->search.fopen_modes[count-1].value;
-									struct loaded_binary *mode_binary;
-									int prot = protection_for_address(&analysis->loader, mode_str, &mode_binary, NULL);
-									if ((prot & (PROT_READ | PROT_WRITE)) == PROT_READ) {
-										int mode = musl_fmodeflags(mode_str);
-										set_register(&self.current_state.registers[syscall_argument_abi_register_indexes[2]], mode);
-									}
-								}
-							}
-						}
-					}
-					record_syscall(analysis, value, self, required_effects);
-					// syscalls always populate the result
-					clear_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT]);
-					self.current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
-					clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_RESULT, ins);
-					switch (info_for_syscall(value).attributes & SYSCALL_RETURN_MASK) {
-						case SYSCALL_RETURNS_SELF_PID:
-							// getpid fills the pid into RAX
-							if (analysis->loader.pid) {
-								set_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT], analysis->loader.pid);
-							}
-							break;
-						case SYSCALL_RETURNS_NEVER:
-							// exit and exitgroup always exit the thread, rt_sigreturn always perform a non-local jump
-							effects |= EFFECT_EXITS;
-							LOG("completing from exit or rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self.entry)));
-							goto update_and_return;
-					}
-				} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && binary_has_flags(analysis->loader.main, BINARY_IS_GOLANG)) {
-					vary_effects_by_registers(&analysis->search, &analysis->loader, &self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
-				} else if (analysis->loader.searching_setxid && analysis->loader.setxid_syscall == NULL) {
-					self.description = "syscall";
-					analysis->loader.setxid_syscall = self.address;
-					analysis->loader.setxid_syscall_entry = self.entry;
-					LOG("found setxid dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-				} else if (analysis->loader.searching_setxid_sighandler && analysis->loader.setxid_sighandler_syscall == NULL) {
-					self.description = "syscall";
-					analysis->loader.setxid_sighandler_syscall = self.address;
-					analysis->loader.setxid_sighandler_syscall_entry = self.entry;
-					LOG("found setxid_sighandler dynamic syscall", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-				} else if (self.address == analysis->loader.setxid_sighandler_syscall) {
-					self.description = NULL;
-					LOG("unknown setxid_sighandler syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-				} else if (self.address == analysis->loader.setxid_syscall) {
-					self.description = NULL;
-					LOG("unknown setxid syscall, assumed covered by set*id handlers", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-				} else {
-					struct loaded_binary *binary = binary_for_address(&analysis->loader, ins);
-					if (binary != NULL) {
-						if (binary->special_binary_flags & BINARY_IS_INTERPRETER) {
-							// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
-							if (self.entry[0] == 0xaa0103e8) {
-								if (self.entry[1] == 0xaa0203e0) {
-									if (self.entry[2] == 0xaa0303e1) {
-										if (self.entry[3] == 0xaa0403e2) {
-											if (self.entry[4] == 0xaa0503e3) {
-												if (self.entry[5] == 0xaa0603e4) {
-													if (self.entry[6] == 0xaa0703e5) {
-														self.description = NULL;
-														LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-														return EFFECT_NONE;
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-						if (binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
-							const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL);
-							if (name != NULL && fs_strcmp(name, "next_line") == 0) {
-								// this is a giant hack
-								self.current_state.registers[REGISTER_SYSCALL_NR].value = self.current_state.registers[REGISTER_SYSCALL_NR].max = LINUX_SYS_read;
-								goto syscall_nr_is_known;
-							}
-							if (analysis->loader.setxid_syscall == NULL || analysis->loader.setxid_sighandler_syscall == NULL) {
-								for (const struct analysis_frame *frame = self.next; frame != NULL; frame = frame->next) {
-									name = find_any_symbol_name_by_address(&analysis->loader, binary, frame->entry, NORMAL_SYMBOL | LINKER_SYMBOL);
-									if (name != NULL) {
-										if (is_setxid_name(name)) {
-											if (analysis->loader.setxid_syscall == NULL) {
-												self.description = NULL;
-												analysis->loader.setxid_syscall = self.address;
-												analysis->loader.setxid_syscall_entry = self.entry;
-												LOG("found __nptl_setxid/do_setxid", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-												goto finish_syscall;
-											}
-										} else if (fs_strcmp(name, "pthread_create") == 0) {
-											if (analysis->loader.setxid_sighandler_syscall == NULL) {
-												self.description = NULL;
-												analysis->loader.setxid_sighandler_syscall = self.address;
-												analysis->loader.setxid_sighandler_syscall_entry = self.entry;
-												LOG("found __nptl_setxid_sighandler", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-												goto finish_syscall;
-											}
-										}
-									}
-								}
-							}
-							if (analysis->loader.setxid_syscall == self.address || analysis->loader.setxid_sighandler_syscall == self.address) {
-								goto finish_syscall;
-							}
-						}
-					}
-					self.description = NULL;
-					if (binary_has_flags(binary_for_address(&analysis->loader, self.next->address), BINARY_IS_PERL)) {
-						LOG("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
-						clear_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT]);
-						self.current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
-						clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_RESULT, ins);
-						goto finish_syscall;
-					}
-					ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
-					if (SHOULD_LOG) {
-						register_mask relevant_registers = mask_for_register((enum register_index)REGISTER_SYSCALL_NR);
-						for (const struct analysis_frame *ancestor = &self;;) {
-							ERROR_NOPREFIX("from call site", temp_str(copy_address_description(&analysis->loader, ancestor->address)));
-							register_mask new_relevant_registers = 0;
-							for_each_bit(relevant_registers, bit, i) {
-								new_relevant_registers |= ancestor->current_state.sources[i];
-							}
-							if (new_relevant_registers == 0) {
-								ERROR_NOPREFIX("using no registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
-								break;
-							}
-							ERROR_NOPREFIX("using registers from block entry", temp_str(copy_address_description(&analysis->loader, ancestor->entry)));
-							dump_registers(&analysis->loader, &ancestor->current_state, new_relevant_registers);
-							ancestor = (struct analysis_frame *)ancestor->next;
-							if (ancestor == NULL) {
-								break;
-							}
-							relevant_registers = new_relevant_registers;
-						}
-					}
-					self.description = NULL;
-					ERROR("full call stack", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-					dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
-					clear_register(&self.current_state.registers[REGISTER_SYSCALL_NR]);
-					self.current_state.sources[REGISTER_SYSCALL_NR] = 0;
-					clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_NR, ins);
-					if (required_effects & EFFECT_AFTER_STARTUP) {
-						analysis->syscalls.unknown = true;
-					}
-					DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
+			case ARM64_SVC:
+				switch (analyze_syscall_instruction(analysis, &self, caller, ins, required_effects, &effects)) {
+					case SYSCALL_ANALYSIS_CONTINUE:
+						break;
+					case SYSCALL_ANALYSIS_UPDATE_AND_RETURN:
+						goto update_and_return;
+					case SYSCALL_ANALYSIS_EXIT:
+						return EFFECT_EXITS;
 				}
-			finish_syscall:
 				break;
-			}
 			case ARM64_SWP:
 			case ARM64_SWPA:
 			case ARM64_SWPAL:
