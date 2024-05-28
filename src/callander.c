@@ -12406,7 +12406,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					self.description = NULL;
 					if (binary_has_flags(binary_for_address(&analysis->loader, self.next->address), BINARY_IS_PERL)) {
-						ERROR("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
+						LOG("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
 						clear_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT]);
 						self.current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
 						clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_RESULT, ins);
