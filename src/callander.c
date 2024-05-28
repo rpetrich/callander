@@ -6267,6 +6267,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									}
 								}
 							}
+							if (binary_has_flags(binary_for_address(&analysis->loader, self.next->address), BINARY_IS_PERL)) {
+								LOG("found perl syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
+								clear_register(&self.current_state.registers[REGISTER_SYSCALL_RESULT]);
+								self.current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
+								clear_match(&analysis->loader, &self.current_state, REGISTER_SYSCALL_RESULT, ins);
+								goto finish_syscall;
+							}
 							self.description = NULL;
 							ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self.current_state.registers[REGISTER_SYSCALL_NR])));
 							if (SHOULD_LOG) {
