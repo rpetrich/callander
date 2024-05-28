@@ -500,8 +500,8 @@ static inline void clear_match_keep_stack(__attribute__((unused)) const struct l
 }
 
 // add_match_and_copy_sources maintains the mapping table describing which registers have identical values
-__attribute__((nonnull(1, 2, 5)))
-static void add_match_and_copy_sources(const struct loader_context *loader, struct registers *regs, int dest_reg, int source_reg, __attribute__((unused)) ins_ptr ins)
+__attribute__((nonnull(1, 2, 6)))
+static void add_match_and_sources(const struct loader_context *loader, struct registers *regs, int dest_reg, int source_reg, register_mask sources, __attribute__((unused)) ins_ptr ins)
 {
 #ifdef LOGGING
 	if (UNLIKELY(dest_reg < 0 || dest_reg >= REGISTER_COUNT)) {
@@ -509,9 +509,7 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 	}
 #endif
 	clear_match(loader, regs, dest_reg, ins);
-	if (source_reg == REGISTER_INVALID) {
-		regs->sources[dest_reg] = 0;
-	} else {
+	if (LIKELY(source_reg != REGISTER_INVALID)) {
 		register_mask mask = regs->matches[source_reg];
 		check_register_mask(mask);
 		regs->matches[source_reg] = mask | mask_for_register(dest_reg);
@@ -522,9 +520,9 @@ static void add_match_and_copy_sources(const struct loader_context *loader, stru
 			LOG("existing match", name_for_register(i));
 			regs->matches[i] |= mask_for_register(dest_reg);
 		}
-		check_register_mask(regs->sources[source_reg]);
-		regs->sources[dest_reg] = regs->sources[source_reg];
 	}
+	check_register_mask(sources);
+	regs->sources[dest_reg] = sources;
 }
 
 __attribute__((nonnull(1))) __attribute__((unused))
@@ -4075,7 +4073,7 @@ enum {
 	READ_RM_KEEP_MEM = 1,
 };
 
-static inline int read_rm_ref(const struct loader_context *loader, struct x86_ins_prefixes prefixes, ins_ptr *ins_modrm, size_t imm_size, struct registers *regs, int operation_size, int flags, struct register_state *out_state)
+static inline int read_rm_ref(const struct loader_context *loader, struct x86_ins_prefixes prefixes, ins_ptr *ins_modrm, size_t imm_size, struct registers *regs, int operation_size, int flags, struct register_state *out_state, register_mask *out_sources)
 {
 	if (UNLIKELY(prefixes.has_segment_override) && (flags & READ_RM_KEEP_MEM)) {
 	return_invalid:
@@ -4098,13 +4096,18 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 					break;
 			}
 		}
+		if (out_sources != NULL) {
+			*out_sources = 0;
+		}
 		return REGISTER_INVALID;
 	}
 	x86_mod_rm_t modrm = x86_read_modrm(*ins_modrm);
 	int result;
+	register_mask sources = 0;
 	if (x86_modrm_is_direct(modrm)) {
 		*ins_modrm += sizeof(x86_mod_rm_t);
 		result = x86_read_rm(modrm, prefixes);
+		sources = regs->sources[result];
 		goto return_result;
 	}
 	struct decoded_rm decoded = decode_rm(ins_modrm, prefixes, imm_size);
@@ -4113,6 +4116,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 #define PER_STACK_REGISTER_IMPL(offset) case offset: \
 			LOG("stack slot of", name_for_register(REGISTER_STACK_##offset)); \
 			result = REGISTER_STACK_##offset; \
+			sources = regs->sources[result]; \
 			goto return_result;
 	GENERATE_PER_STACK_REGISTER()
 #undef PER_STACK_REGISTER_IMPL
@@ -4121,9 +4125,9 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 	}
 	if (decoded_rm_equal(&decoded, &regs->mem_rm)) {
 		result = REGISTER_MEM;
+		sources = regs->sources[result];
 		goto return_result;
 	}
-	register_mask sources = 0;
 	uintptr_t addr = decoded.addr;
 	bool valid = false;
 	switch (decoded.rm) {
@@ -4131,7 +4135,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 			if (decoded.index == REGISTER_SP) {
 				if (register_is_exactly_known(&regs->registers[decoded.base])) {
 					addr += regs->registers[decoded.base].value;
-					sources = mask_for_register(decoded.base);
+					sources = regs->sources[decoded.base];
 					valid = true;
 				}
 			} else {
@@ -4140,7 +4144,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 				}
 				if (register_is_exactly_known(&regs->registers[decoded.base]) && register_is_exactly_known(&regs->registers[decoded.index])) {
 					addr += regs->registers[decoded.base].value + (regs->registers[decoded.index].value << decoded.scale);
-					sources = mask_for_register(decoded.base) | mask_for_register(decoded.index);
+					sources = regs->sources[decoded.base] | regs->sources[decoded.index];
 					valid = true;
 				}
 			}
@@ -4153,7 +4157,7 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 				record_stack_address_taken(loader, *ins_modrm, regs);
 			}
 			if (register_is_exactly_known(&regs->registers[decoded.rm])) {
-				sources = mask_for_register(decoded.rm);
+				sources = regs->sources[decoded.rm];
 				addr += regs->registers[decoded.rm].value;
 				valid = true;
 			}
@@ -4172,6 +4176,9 @@ static inline int read_rm_ref(const struct loader_context *loader, struct x86_in
 					}
 					LOG("loaded memory constant", temp_str(copy_register_state_description(loader, (struct register_state){ .value = value, .max = value })));
 					LOG("from", temp_str(copy_address_description(loader, (const void *)addr)));
+					if (out_sources != NULL) {
+						*out_sources = sources;
+					}
 					return REGISTER_INVALID;
 				}
 				LOG("clearing old mem r/m", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
@@ -4238,6 +4245,9 @@ return_result:
 			case OPERATION_SIZE_DWORD:
 				break;
 		}
+	}
+	if (out_sources != NULL) {
+		*out_sources = sources;
 	}
 	return result;
 }
@@ -4519,7 +4529,7 @@ static int perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, bas
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state dest;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &dest);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &dest, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm));
 	LOG("basic operand", name_for_register(reg));
@@ -4554,7 +4564,7 @@ static int perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state dest;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm));
 	LOG("basic operand", name_for_register(reg));
@@ -4582,7 +4592,7 @@ static int perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, bas
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state src;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &src);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &src, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(reg));
 	LOG("basic operand", name_for_register(rm));
@@ -4616,7 +4626,7 @@ static int perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
 	struct register_state src;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &src);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &src, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(reg));
 	LOG("basic operand", name_for_register(rm));
@@ -4643,7 +4653,7 @@ __attribute__((warn_unused_result))
 static int perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(uint8_t), regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &dest);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(uint8_t), regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &dest, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm));
 	dump_registers(loader, regs, mask_for_register(rm));
@@ -4703,7 +4713,7 @@ __attribute__((warn_unused_result))
 static int perform_basic_op_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, imm_size_for_prefixes(prefixes), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, imm_size_for_prefixes(prefixes), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm));
 	dump_registers(loader, regs, mask_for_register(rm));
@@ -4754,7 +4764,7 @@ __attribute__((warn_unused_result))
 static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
 {
 	struct register_state dest;
-	int rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(int8_t), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest);
+	int rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(int8_t), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &dest, NULL);
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm));
 	dump_registers(loader, regs, mask_for_register(rm));
@@ -6086,7 +6096,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case 0: // sldt r/m16
 							case 1: { // str r/m16
 								ins_ptr remaining = &decoded.unprefixed[2];
-								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM, NULL);
+								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM, NULL, NULL);
 								struct register_state state;
 								clear_register(&state);
 								truncate_to_16bit(&state);
@@ -6305,7 +6315,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					case 0x11: { // movups xmm/m, xmm
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM, NULL, NULL);
 						if (rm >= REGISTER_MEM) {
 							LOG("movups to mem", name_for_register(rm));
 							struct register_state value;
@@ -6387,7 +6397,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									clear_match(&analysis->loader, &self.current_state, reg, ins);
 								} else { // movbe r/m, r
 									ins_ptr remaining = &decoded.unprefixed[3];
-									int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+									int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 									clear_register(&self.current_state.registers[rm]);
 									self.current_state.sources[rm] = 0;
 									clear_match(&analysis->loader, &self.current_state, rm, ins);
@@ -6400,7 +6410,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						switch (decoded.unprefixed[2]) {
 							case 0x14: { // pextrb r/m8, xmm2, imm8
 								ins_ptr remaining = &decoded.unprefixed[3];
-								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, NULL);
+								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, NULL, NULL);
 								if (rm != REGISTER_INVALID) {
 									bool is_legacy = register_is_legacy_8bit_high(decoded.prefixes, &rm);
 									clear_register(&self.current_state.registers[rm]);
@@ -6416,7 +6426,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 							case 0x16: { // pextrd/q r/m, xmm2, imm8
 								ins_ptr remaining = &decoded.unprefixed[3];
-								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 								if (rm != REGISTER_INVALID) {
 									clear_register(&self.current_state.registers[rm]);
 									truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6427,7 +6437,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 							case 0x17: { // extractps r/m32, xmm1, imm8
 								ins_ptr remaining = &decoded.unprefixed[3];
-								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_WORD, READ_RM_KEEP_MEM, NULL);
+								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_WORD, READ_RM_KEEP_MEM, NULL, NULL);
 								if (rm != REGISTER_INVALID) {
 									clear_register(&self.current_state.registers[rm]);
 									truncate_to_32bit(&self.current_state.registers[rm]);
@@ -6482,7 +6492,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int dest = x86_read_reg(modrm, decoded.prefixes);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int source = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						register_mask sources;
+						int source = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, &sources);
 						LOG("from", name_for_register(source));
 						LOG("to", name_for_register(dest));
 						dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest) | mask_for_register(source));
@@ -6490,7 +6501,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case ALWAYS_MATCHES:
 								LOG("conditional always matches");
 								self.current_state.registers[dest] = self.current_state.registers[source];
-								add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+								add_match_and_sources(&analysis->loader, &self.current_state, dest, source, sources, ins);
 								self.current_state.sources[dest] |= self.current_state.compare_state.sources;
 								break;
 							case NEVER_MATCHES:
@@ -6530,7 +6541,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									x86_mod_rm_t lookahead_modrm = x86_read_modrm(&lookahead_decoded.unprefixed[2]);
 									if (reg == x86_read_reg(lookahead_modrm, lookahead_decoded.prefixes)) {
 										ins_ptr lookahead_temp = lookahead;
-										int lookahead_rm = read_rm_ref(&analysis->loader, lookahead_decoded.prefixes, &lookahead_temp, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM, NULL);
+										int lookahead_rm = read_rm_ref(&analysis->loader, lookahead_decoded.prefixes, &lookahead_temp, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM, NULL, NULL);
 										LOG("found xorps+movps, zeroing idiom to register", name_for_register(lookahead_rm));
 										set_register(&self.current_state.registers[lookahead_rm], 0);
 										self.current_state.sources[lookahead_rm] = 0;
@@ -6552,7 +6563,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 0x7e: { // movd/q r/m, mm
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							if (!decoded.prefixes.has_w) {
@@ -6600,7 +6611,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0x9f: {
 						LOG("found setcc", temp_str(copy_address_description(&analysis->loader, ins)));
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						LOG("to", name_for_register(rm));
 						switch (calculate_possible_conditions(x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
 							case ALWAYS_MATCHES:
@@ -6661,7 +6672,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xa4: { // shld r/m, r, imm8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6673,7 +6684,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xa5: { // shld r/m, r, cl
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6695,7 +6706,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xab: { // bts r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6707,7 +6718,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xac: { // shrd r/m, r, imm8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6719,7 +6730,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xad: { // shrd r/m, r, cl
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6745,7 +6756,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						self.current_state.sources[REGISTER_RAX] = 0;
 						clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, NULL);
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_16bit(&self.current_state.registers[rm]);
@@ -6768,7 +6779,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						self.current_state.sources[REGISTER_RAX] = 0;
 						clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
 						self.current_state.sources[rm] = 0;
 						clear_match(&analysis->loader, &self.current_state, rm, ins);
@@ -6784,7 +6795,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xb3: { // btr r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						clear_register(&self.current_state.registers[rm]);
 						truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
 						self.current_state.sources[rm] = 0;
@@ -6805,7 +6816,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						ins_ptr remaining = &decoded.unprefixed[2];
 						int source_size = decoded.unprefixed[1] == 0xb6 ? OPERATION_SIZE_BYTE : OPERATION_SIZE_HALF;
 						struct register_state src;
-						int source = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, source_size, READ_RM_KEEP_MEM, &src);
+						register_mask srcs;
+						int source = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, source_size, READ_RM_KEEP_MEM, &src, &srcs);
 						LOG("from", name_for_register(source));
 						uintptr_t mask = source_size == OPERATION_SIZE_BYTE ? 0xff : 0xffff;
 						if (source == REGISTER_INVALID || (source_size == OPERATION_SIZE_BYTE ? register_is_legacy_8bit_high(decoded.prefixes, &source) : false)) {
@@ -6856,7 +6868,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 						}
 						self.current_state.registers[dest] = src;
-						add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+						add_match_and_sources(&analysis->loader, &self.current_state, dest, source, srcs, ins);
 						if (register_is_exactly_known(&self.current_state.registers[dest]) || (register_is_partially_known(&self.current_state.registers[dest]) && self.current_state.registers[dest].max <= mask)) {
 							// zero extension where we can provide a range
 							self.current_state.registers[dest].value &= mask;
@@ -6898,7 +6910,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case 7: { // btc r/m, imm8
 								clear_comparison_state(&self.current_state);
 								ins_ptr remaining = &decoded.unprefixed[2];
-								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+								int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 								if (rm != REGISTER_INVALID) {
 									clear_register(&self.current_state.registers[rm]);
 									truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6913,7 +6925,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xbb: { // btc r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 						if (rm != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm]);
 							truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -6956,12 +6968,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int reg = x86_read_reg(modrm, decoded.prefixes);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+						register_mask sources;
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, &sources);
 						LOG("movsx r to", name_for_register(reg));
 						LOG("from r/m8", name_for_register(rm));
 						if (!register_is_legacy_8bit_high(decoded.prefixes, &rm) && self.current_state.registers[rm].max < 0x80 && register_is_partially_known_8bit(&self.current_state.registers[rm])) {
 							self.current_state.registers[reg] = self.current_state.registers[rm];
-							add_match_and_copy_sources(&analysis->loader, &self.current_state, reg, rm, ins);
+							add_match_and_sources(&analysis->loader, &self.current_state, reg, rm, sources, ins);
 							break;
 						}
 						clear_register(&self.current_state.registers[reg]);
@@ -6974,12 +6987,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int reg = x86_read_reg(modrm, decoded.prefixes);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						register_mask sources;
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, &sources);
 						LOG("movsx r to", name_for_register(reg));
 						LOG("from r/m", name_for_register(rm));
 						if (self.current_state.registers[rm].max < 0x8000 && register_is_partially_known_16bit(&self.current_state.registers[rm])) {
 							self.current_state.registers[reg] = self.current_state.registers[rm];
-							add_match_and_copy_sources(&analysis->loader, &self.current_state, reg, rm, ins);
+							add_match_and_sources(&analysis->loader, &self.current_state, reg, rm, sources, ins);
 							break;
 						}
 						clear_register(&self.current_state.registers[reg]);
@@ -6991,7 +7005,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xc0: { // xadd r/m8, r8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, NULL);
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						clear_register(&self.current_state.registers[rm]);
 						if (!register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
@@ -7011,7 +7025,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xc1: { // xadd r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						clear_register(&self.current_state.registers[rm]);
 						truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -7341,7 +7355,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct register_state comparator = self.current_state.registers[reg];
 				truncate_to_size_prefixes(&comparator, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = rm,
@@ -7359,7 +7373,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct register_state comparator = self.current_state.registers[reg];
 				truncate_to_size_prefixes(&comparator, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = rm,
@@ -7374,11 +7388,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x3a: { // cmp r8, r/m8
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+				struct register_state comparator;
+				register_mask sources;
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &comparator, &sources);
 				if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 					return INVALID_COMPARISON;
 				}
-				struct register_state comparator = self.current_state.registers[rm];
 				truncate_to_8bit(&comparator);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				if (register_is_legacy_8bit_high(decoded.prefixes, &reg)) {
@@ -7389,7 +7404,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					.value = comparator,
 					.mask = 0xff,
 					.mem_rm = self.current_state.mem_rm,
-					.sources = self.current_state.sources[rm],
+					.sources = sources,
 					.validity = COMPARISON_SUPPORTS_ANY,
 				});
 				break;
@@ -7397,8 +7412,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x3b: { // cmp r, r/m
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
-				struct register_state comparator = self.current_state.registers[rm];
+				struct register_state comparator;
+				register_mask sources;
+				read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &comparator, &sources);
 				truncate_to_size_prefixes(&comparator, decoded.prefixes);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
@@ -7407,7 +7423,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					.value = comparator,
 					.mask = mask,
 					.mem_rm = self.current_state.mem_rm,
-					.sources = self.current_state.sources[rm],
+					.sources = sources,
 					.validity = COMPARISON_SUPPORTS_ANY,
 				});
 				break;
@@ -7681,7 +7697,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				ins_ptr remaining = &decoded.unprefixed[1];
 				struct register_state source;
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, &source);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, &source, NULL);
 				truncate_to_32bit(&source);
 				if (register_is_exactly_known(&source)) {
 					set_register(&self.current_state.registers[reg], sign_extend(source.value, OPERATION_SIZE_WORD));
@@ -7811,7 +7827,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					case 7: { // cmp r/m, imm8
 						ins_ptr remaining = &decoded.unprefixed[1];
-						rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(uint8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+						rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(uint8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, NULL);
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 							clear_comparison_state(&self.current_state);
 						} else {
@@ -7873,10 +7889,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 						struct register_state comparator;
 						if (decoded.prefixes.has_operand_size_override) {
-							rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int16_t), &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM, NULL);
+							rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int16_t), &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM, NULL, NULL);
 							comparator.value = comparator.max = (uintptr_t)*(const ins_uint16 *)remaining & mask;
 						} else {
-							rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int32_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+							rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int32_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 							comparator.value = comparator.max = (decoded.prefixes.has_w ? (uintptr_t)*(const ins_int32 *)remaining : (uintptr_t)*(const ins_uint32 *)remaining) & mask;
 						}
 						set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
@@ -7983,7 +7999,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					case 7: { // cmp r/m, imm8
 						ins_ptr remaining = &decoded.unprefixed[1];
-						rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 						struct register_state comparator;
 						comparator.value = comparator.max = (uintptr_t)*(const int8_t *)remaining & mask;
@@ -8058,9 +8074,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				truncate_to_8bit(&dest);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+				struct register_state source;
+				register_mask rm_sources;
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &source, &rm_sources);
 				bool rm_is_legacy = register_is_legacy_8bit_high(decoded.prefixes, &rm);
-				struct register_state source = self.current_state.registers[rm];
 				if (rm_is_legacy) {
 					clear_register(&dest);
 				}
@@ -8073,7 +8090,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (rm_is_legacy) {
 					clear_register(&self.current_state.registers[rm]);
 				}
-				register_mask rm_sources = self.current_state.sources[rm];
 				self.current_state.sources[rm] = self.current_state.sources[reg];
 				self.current_state.sources[reg] = rm_sources;
 				clear_match(&analysis->loader, &self.current_state, rm, ins);
@@ -8086,14 +8102,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				struct register_state dest = self.current_state.registers[reg];
-				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
 				truncate_to_size_prefixes(&dest, decoded.prefixes);
-				struct register_state source = self.current_state.registers[rm];
+				ins_ptr remaining = &decoded.unprefixed[1];
+				struct register_state source;
+				register_mask rm_sources;
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, &source, &rm_sources);
 				truncate_to_size_prefixes(&source, decoded.prefixes);
 				self.current_state.registers[reg] = source;
 				self.current_state.registers[rm] = dest;
-				register_mask rm_sources = self.current_state.sources[rm];
 				self.current_state.sources[rm] = self.current_state.sources[reg];
 				self.current_state.sources[reg] = rm_sources;
 				clear_match(&analysis->loader, &self.current_state, rm, ins);
@@ -8104,7 +8120,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x88: { // mov r/m8, r8
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, NULL);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				LOG("mov r/m8 to", name_for_register(rm));
 				LOG("from r8", name_for_register(reg));
@@ -8120,7 +8136,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_register(&source);
 					clear_match(&analysis->loader, &self.current_state, rm, ins);
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, rm, reg, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, rm, reg, self.current_state.sources[reg], ins);
 				}
 				self.current_state.registers[rm] = source;
 				if (register_is_partially_known_8bit(&source)) {
@@ -8135,7 +8151,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x89: { // mov r/m, r
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				LOG("mov r/m to", name_for_register(rm));
 				LOG("from r", name_for_register(reg));
@@ -8148,7 +8164,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_match(&analysis->loader, &self.current_state, rm, ins);
 					self.current_state.sources[rm] = 0;
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, rm, reg, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, rm, reg, self.current_state.sources[reg], ins);
 				}
 				truncate_to_size_prefixes(&source, decoded.prefixes);
 				self.current_state.registers[rm] = source;
@@ -8166,7 +8182,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
 				struct register_state source;
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, &source);
+				register_mask sources;
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, &source, &sources);
 				LOG("mov r8 to", name_for_register(reg));
 				LOG("from r/m8", name_for_register(rm));
 				if (SHOULD_LOG) {
@@ -8186,7 +8203,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_match(&analysis->loader, &self.current_state, reg, ins);
 					self.current_state.sources[reg] = 0;
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, reg, rm, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, reg, rm, sources, ins);
 				}
 				self.current_state.registers[reg] = source;
 				if (register_is_partially_known_8bit(&source)) {
@@ -8203,7 +8220,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("mov r to", name_for_register(reg));
 				ins_ptr remaining = &decoded.unprefixed[1];
 				struct register_state source;
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, &source);
+				register_mask sources;
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, &source, &sources);
 				LOG("from r/m", name_for_register(rm));
 				if (SHOULD_LOG) {
 					if (UNLIKELY(pending_stack_clear) && rm >= REGISTER_STACK_0) {
@@ -8217,7 +8235,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_match(&analysis->loader, &self.current_state, reg, ins);
 					self.current_state.sources[reg] = self.current_state.sources[rm];
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, reg, rm, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, reg, rm, sources, ins);
 				}
 				self.current_state.registers[reg] = source;
 				if (register_is_partially_known_size_prefixes(&source, decoded.prefixes)) {
@@ -8230,7 +8248,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0x8c: { // mov r/m, Sreg
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 				clear_register(&self.current_state.registers[rm]);
 				truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
 				self.current_state.sources[rm] = 0;
@@ -8368,7 +8386,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x8f: { // pop r/m
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 				struct register_state empty;
 				clear_register(&empty);
 				truncate_to_size_prefixes(&empty, decoded.prefixes);
@@ -8605,7 +8623,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				if (modrm.reg == 0) {
 					ins_ptr remaining = &decoded.unprefixed[1];
-					int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+					int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, NULL);
 					LOG("mov r/m8 to", name_for_register(rm));
 					struct register_state state;
 					state.value = *remaining;
@@ -8623,7 +8641,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				if (modrm.reg == 0) {
 					ins_ptr remaining = &decoded.unprefixed[1];
-					int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, imm_size_for_prefixes(decoded.prefixes), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+					int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, imm_size_for_prefixes(decoded.prefixes), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 					LOG("mov r/m to", name_for_register(rm));
 					struct register_state state;
 					state.value = read_imm(decoded.prefixes, remaining);
@@ -8689,7 +8707,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd0: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, 1
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, NULL, NULL);
 				if (rm != REGISTER_INVALID) {
 					if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 						clear_register(&self.current_state.registers[rm]);
@@ -8705,7 +8723,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd1: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, 1
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 				if (rm != REGISTER_INVALID) {
 					clear_register(&self.current_state.registers[rm]);
 					truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -8717,7 +8735,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd2: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, cl
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM, NULL, NULL);
 				if (rm != REGISTER_INVALID) {
 					if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 						clear_register(&self.current_state.registers[rm]);
@@ -8733,7 +8751,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd3: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, cl
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL);
+				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM, NULL, NULL);
 				if (rm != REGISTER_INVALID) {
 					clear_register(&self.current_state.registers[rm]);
 					truncate_to_size_prefixes(&self.current_state.registers[rm], decoded.prefixes);
@@ -9017,7 +9035,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0: { // inc r/m8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, NULL, NULL);
 						struct register_state state = self.current_state.registers[rm];
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 							clear_register(&self.current_state.registers[rm]);
@@ -9033,7 +9051,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 1: { // dec r/m8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
 							clear_register(&self.current_state.registers[rm]);
 						} else {
@@ -9058,7 +9076,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0: { // inc r/m
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						struct register_state state = self.current_state.registers[rm];
 						truncate_to_size_prefixes(&state, decoded.prefixes);
 						state.value++;
@@ -9070,7 +9088,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 1: { // dec r/m
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						struct register_state state = self.current_state.registers[rm];
 						truncate_to_size_prefixes(&state, decoded.prefixes);
 						state.value--;
@@ -9258,7 +9276,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						goto update_and_return;
 					case 6: { // push
 						ins_ptr remaining = &decoded.unprefixed[1];
-						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL);
+						register_mask sources;
+						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, &sources);
 						struct register_state state = self.current_state.registers[rm];
 						if (rm >= REGISTER_STACK_0) {
 							if (rm >= REGISTER_COUNT-2) {
@@ -9272,7 +9291,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						truncate_to_size_prefixes(&state, decoded.prefixes);
 						push_stack(&self.current_state, 2);
 						self.current_state.registers[REGISTER_STACK_0] = state;
-						add_match_and_copy_sources(&analysis->loader, &self.current_state, REGISTER_STACK_0, rm, ins);
+						add_match_and_sources(&analysis->loader, &self.current_state, REGISTER_STACK_0, rm, sources, ins);
 						dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 						break;
 					}
