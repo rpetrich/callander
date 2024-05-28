@@ -8683,7 +8683,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT), &registers, (ins_ptr)state.value, &self);
 							}
 						} else {
-							if (effects &EFFECT_ENTER_CALLS) {
+							if (effects & EFFECT_ENTER_CALLS) {
 								LOG("mov is to executable address, assuming it could be called after startup");
 								queue_instruction(&analysis->search.queue, (ins_ptr)state.value, required_effects | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &empty_registers, self.address, "mov");
 							}
