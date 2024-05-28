@@ -2952,50 +2952,51 @@ static void handle_openssl_dso_load(struct program_state *analysis, ins_ptr ins,
 __attribute__((nonnull(1, 2, 3, 4)))
 static void intercept_jump_slot(struct program_state *analysis, struct loaded_binary *binary, const char *slot_name, instruction_reached_callback callback)
 {
-	const ElfW(Dyn) *dynamic = binary->info.dynamic;
-	size_t dynamic_size = binary->info.dynamic_size;
-	uintptr_t relaent = 0;
-	uintptr_t jmprel = 0;
-	uintptr_t pltrelsz = 0;
-	for (size_t i = 0; i < dynamic_size; i++) {
-		switch (dynamic[i].d_tag) {
-			case DT_RELAENT:
-				relaent = dynamic[i].d_un.d_val;
-				break;
-			case DT_JMPREL:
-				jmprel = dynamic[i].d_un.d_val;
-				break;
-			case DT_PLTRELSZ:
-				pltrelsz = dynamic[i].d_un.d_val;
-				break;
+	if (binary->has_sections) {
+		const ElfW(Dyn) *dynamic = binary->info.dynamic;
+		size_t relaent = sizeof(ElfW(Rela));
+		size_t dynamic_size = binary->info.dynamic_size;
+		for (size_t i = 0; i < dynamic_size; i++) {
+			switch (dynamic[i].d_tag) {
+				case DT_RELAENT:
+					relaent = dynamic[i].d_un.d_val;
+					break;
+			}
 		}
-	}
-	if (relaent && jmprel && pltrelsz) {
-		uintptr_t rela_base = (uintptr_t)apply_base_address(&binary->info, jmprel);
+		for (size_t i = 0; i < binary->info.section_entry_count; i++) {
+			const ElfW(Shdr) *section = (const ElfW(Shdr) *)((char *)binary->sections.sections + i * binary->info.section_entry_size);
+			if (section->sh_type != SHT_RELA) {
+				continue;
+			}
+			uintptr_t rela_base = (uintptr_t)apply_base_address(&binary->info, section->sh_addr);
+			size_t pltrelsz = section->sh_size;
 #ifdef __x86_64__
-		Elf32_Word required_type = R_X86_64_JUMP_SLOT;
+			Elf32_Word required_type = R_X86_64_JUMP_SLOT;
+			Elf32_Word alternate_type = R_X86_64_GLOB_DAT;
 #endif
 #ifdef __aarch64__
-		Elf32_Word required_type = R_AARCH64_JUMP_SLOT;
+			Elf32_Word required_type = R_AARCH64_JUMP_SLOT;
+			Elf32_Word alternate_type = R_AARCH64_GLOB_DAT;
 #endif
-		for (uintptr_t rel_off = 0; rel_off < pltrelsz; rel_off += relaent) {
-			const ElfW(Rela) *rel = (const ElfW(Rela) *)(rela_base + rel_off);
-			uintptr_t info = rel->r_info;
-			if (ELF64_R_TYPE(info) == required_type) {
-				Elf64_Word symbol_index = ELF64_R_SYM(info);
-				const ElfW(Sym) *symbol = (const ElfW(Sym) *)(binary->symbols.symbols + symbol_index * binary->symbols.symbol_stride);
-				const char *textual_name = symbol_name(&binary->symbols, symbol);
-				if (fs_strcmp(textual_name, slot_name) == 0) {
-					uintptr_t offset = rel->r_offset;
-					uintptr_t *target = (uintptr_t *)apply_base_address(&binary->info, offset);
-					uintptr_t old_value = *target;
-					struct loader_stub *stub = malloc(sizeof(struct loader_stub));
-					stub->dummy = 0;
-					stub->next = analysis->loader.stubs;
-					analysis->loader.stubs = stub;
-					*target = (uintptr_t)stub;
-					find_and_add_callback(analysis, (ins_ptr)stub, 0, 0, 0, EFFECT_NONE, callback, (void *)old_value);
-					break;
+			for (uintptr_t rel_off = 0; rel_off < pltrelsz; rel_off += relaent) {
+				const ElfW(Rela) *rel = (const ElfW(Rela) *)(rela_base + rel_off);
+				uintptr_t info = rel->r_info;
+				if ((ELF64_R_TYPE(info) == required_type) || (ELF64_R_TYPE(info) == alternate_type)) {
+					Elf64_Word symbol_index = ELF64_R_SYM(info);
+					const ElfW(Sym) *symbol = (const ElfW(Sym) *)(binary->symbols.symbols + symbol_index * binary->symbols.symbol_stride);
+					const char *textual_name = symbol_name(&binary->symbols, symbol);
+					if (fs_strcmp(textual_name, slot_name) == 0) {
+						uintptr_t offset = rel->r_offset;
+						uintptr_t *target = (uintptr_t *)apply_base_address(&binary->info, offset);
+						uintptr_t old_value = *target;
+						struct loader_stub *stub = malloc(sizeof(struct loader_stub));
+						stub->dummy = 0;
+						stub->next = analysis->loader.stubs;
+						analysis->loader.stubs = stub;
+						*target = (uintptr_t)stub;
+						find_and_add_callback(analysis, (ins_ptr)stub, 0, 0, 0, EFFECT_NONE, callback, (void *)old_value);
+						return;
+					}
 				}
 			}
 		}
