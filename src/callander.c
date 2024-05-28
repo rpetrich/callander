@@ -6847,6 +6847,13 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xb2: { // lss
+						LOG("found lss");
+						int dest = x86_read_reg(x86_read_modrm(&decoded.unprefixed[2]), decoded.prefixes);
+						LOG("to", name_for_register(dest));
+						clear_register(&self.current_state.registers[dest]);
+						truncate_to_size_prefixes(&self.current_state.registers[dest], decoded.prefixes);
+						self.current_state.sources[dest] = 0;
+						clear_match(&analysis->loader, &self.current_state, dest, ins);
 						break;
 					}
 					case 0xb3: { // btr r/m, r
@@ -6860,9 +6867,23 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xb4: { // lfs
+						LOG("found lfs");
+						int dest = x86_read_reg(x86_read_modrm(&decoded.unprefixed[2]), decoded.prefixes);
+						LOG("to", name_for_register(dest));
+						clear_register(&self.current_state.registers[dest]);
+						truncate_to_size_prefixes(&self.current_state.registers[dest], decoded.prefixes);
+						self.current_state.sources[dest] = 0;
+						clear_match(&analysis->loader, &self.current_state, dest, ins);
 						break;
 					}
 					case 0xb5: { // lgs
+						LOG("found lgs");
+						int dest = x86_read_reg(x86_read_modrm(&decoded.unprefixed[2]), decoded.prefixes);
+						LOG("to", name_for_register(dest));
+						clear_register(&self.current_state.registers[dest]);
+						truncate_to_size_prefixes(&self.current_state.registers[dest], decoded.prefixes);
+						self.current_state.sources[dest] = 0;
+						clear_match(&analysis->loader, &self.current_state, dest, ins);
 						break;
 					}
 					case 0xb6: // movzx r, r/m8
