@@ -6518,19 +6518,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								break;
 							case POSSIBLY_MATCHES:
 								LOG("conditional sometimes matches");
-								if (register_is_partially_known(&self.current_state.registers[dest]) && register_is_partially_known(&self.current_state.registers[source])) {
-									if (self.current_state.registers[source].value < self.current_state.registers[dest].value) {
-										self.current_state.registers[dest].value = self.current_state.registers[source].value;
-									}
-									if (self.current_state.registers[source].max > self.current_state.registers[dest].max) {
-										self.current_state.registers[dest].max = self.current_state.registers[source].max;
-									}
-									self.current_state.sources[dest] |= self.current_state.sources[source];
+								if (combine_register_states(&self.current_state.registers[dest], &self.current_state.registers[source], dest)) {
+									self.current_state.sources[dest] |= sources;
+									clear_match(&analysis->loader, &self.current_state, dest, ins);
 								} else {
-									clear_register(&self.current_state.registers[dest]);
-									self.current_state.sources[dest] = 0;
+									ANALYZE_PRIMARY_RESULT();
+									self.current_state.registers[dest] = self.current_state.registers[source];
+									add_match_and_sources(&analysis->loader, &self.current_state, dest, source, sources, ins);
+									goto use_alternate_result;
 								}
-								clear_match(&analysis->loader, &self.current_state, dest, ins);
 								break;
 						}
 						break;
