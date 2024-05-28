@@ -6065,6 +6065,48 @@ static uint8_t analyze_syscall_instruction(struct program_state *analysis, struc
 	return SYSCALL_ANALYSIS_CONTINUE;
 }
 
+static void analyze_memory_read(struct program_state *analysis, struct analysis_frame *self, ins_ptr ins, function_effects effects, struct loaded_binary *binary, const void *address)
+{
+	if (binary_for_address(&analysis->loader, ins) != binary) {	
+		return;
+	}
+	if ((effects & EFFECT_ENTER_CALLS) == 0) {
+		if (analysis->address_loaded != NULL) {
+			analysis->address_loaded(analysis, address, self, analysis->address_loaded_data);
+		}
+	} else {
+		add_address_to_list(&analysis->search.loaded_addresses, (uintptr_t)address);
+		LOG("formed address is readable, assuming it is data");
+		struct address_and_size symbol;
+		if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
+			if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+				analysis->loader.searching_libcrypto_dlopen = true;
+			}
+			typedef uintptr_t unaligned_uintptr __attribute__((aligned(1)));
+			const unaligned_uintptr *symbol_data = (const unaligned_uintptr *)symbol.address;
+			int size = symbol.size / sizeof(uintptr_t);
+			for (int i = 0; i < size; i++) {
+				uintptr_t data = symbol_data[i];
+				if (address_is_call_aligned(data) && protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
+					LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
+					LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
+#if 1
+					queue_instruction(&analysis->search.queue, (ins_ptr)data, effects, &empty_registers, ins, "skipped symbol in data section");
+#else
+					self.description = "load address";
+					struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
+					analyze_function(analysis, effects, &new_caller.current_state, (ins_ptr)data, &new_caller);
+#endif
+				}
+			}
+			if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
+				analyze_libcrypto_dlopen(analysis);
+				analysis->loader.searching_libcrypto_dlopen = false;
+			}
+		}
+	}
+}
+
 #define ANALYZE_PRIMARY_RESULT() do { \
 	ins = next_ins(ins, &decoded); \
 	self.description = "primary result"; \
@@ -8420,41 +8462,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						} else if (prot & PROT_READ) {
-							if ((effects & EFFECT_ENTER_CALLS) == 0) {
-								if (analysis->address_loaded != NULL) {
-									analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
-								}
-							} else {
-								add_address_to_list(&analysis->search.loaded_addresses, (uintptr_t)address);
-								LOG("rip-relative lea is to readable address, assuming it is data");
-								struct address_and_size symbol;
-								if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
-									if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
-										analysis->loader.searching_libcrypto_dlopen = true;
-									}
-									typedef uintptr_t unaligned_uintptr __attribute__((aligned(1)));
-									const unaligned_uintptr *symbol_data = (const unaligned_uintptr *)symbol.address;
-									int size = symbol.size / sizeof(uintptr_t);
-									for (int i = 0; i < size; i++) {
-										uintptr_t data = symbol_data[i];
-										if (address_is_call_aligned(data) && protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
-											LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
-											LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
-#if 1
-											queue_instruction(&analysis->search.queue, (ins_ptr)data, effects, &empty_registers, ins, "skipped symbol in data section");
-#else
-											self.description = "load address";
-											struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
-											analyze_function(analysis, effects, &empty_registers, (ins_ptr)data, &new_caller);
-#endif
-										}
-									}
-									if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
-										analyze_libcrypto_dlopen(analysis);
-										analysis->loader.searching_libcrypto_dlopen = false;
-									}
-								}
-							}
+							analyze_memory_read(analysis, &self, ins, effects, binary, address);
 						} else {
 							LOG("rip-relative lea is to unreadable address, not sure what it is");
 						}
@@ -9451,42 +9459,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 							}
 						}
-					} else if (prot & PROT_READ && binary_for_address(&analysis->loader, ins) == binary) {
-						if ((effects & EFFECT_ENTER_CALLS) == 0) {
-							if (analysis->address_loaded != NULL) {
-								analysis->address_loaded(analysis, address, &self, analysis->address_loaded_data);
-							}
-						} else {
-							add_address_to_list(&analysis->search.loaded_addresses, (uintptr_t)address);
-							LOG("formed address is readable, assuming it is data");
-							struct address_and_size symbol;
-							if (find_skipped_symbol_for_address(&analysis->loader, binary, address, &symbol)) {
-								if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
-									analysis->loader.searching_libcrypto_dlopen = true;
-								}
-								typedef uintptr_t unaligned_uintptr __attribute__((aligned(1)));
-								const unaligned_uintptr *symbol_data = (const unaligned_uintptr *)symbol.address;
-								int size = symbol.size / sizeof(uintptr_t);
-								for (int i = 0; i < size; i++) {
-									uintptr_t data = symbol_data[i];
-									if (address_is_call_aligned(data) && protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
-										LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
-										LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
-#if 1
-										queue_instruction(&analysis->search.queue, (ins_ptr)data, effects, &empty_registers, ins, "skipped symbol in data section");
-#else
-										self.description = "load address";
-										struct analysis_frame new_caller = { .address = &symbol_data[i], .description = "skipped symbol in data section", .next = &self, .current_state = empty_registers, .entry = (void *)&symbol_data[i], .entry_state = &empty_registers, .token = { 0 } };
-										analyze_function(analysis, effects, &new_caller.current_state, (ins_ptr)data, &new_caller);
-#endif
-									}
-								}
-								if (binary->special_binary_flags & BINARY_IS_LIBCRYPTO) {
-									analyze_libcrypto_dlopen(analysis);
-									analysis->loader.searching_libcrypto_dlopen = false;
-								}
-							}
-						}
+					} else if (prot & PROT_READ) {
+						analyze_memory_read(analysis, &self, ins, effects, binary, address);
 					}
 				}
 				goto skip_stack_clear;
