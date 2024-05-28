@@ -633,7 +633,7 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader, bo
 				}
 			}
 			if (!allow_unexpected) {
-				DIE("found unexpected binary", &mapping.path[0]);
+				DIE("found unexpected binary in running process", &mapping.path[0]);
 			}
 		}
 	next_mapping:
