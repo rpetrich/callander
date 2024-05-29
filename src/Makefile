@@ -152,10 +152,10 @@ THANDLER_OBJECTS := $(COMMON_OBJECTS) attempt_target.o darwin.o defaultlibs.o ex
 			tls.o tracer.o vfs.o vfs_local.o vfs_linux.o callander_print.o
 LOOKUP_OBJECTS := $(COMMON_OBJECTS) defaultlibs.o loader.o lookup_main.o resolver.o
 LIBCALLBOX_OBJECTS := $(COMMON_OBJECTS) $(ARCH_OBJECTS) $(PATCH_OBJECTS) \
-			$(COMMON_CALLANDER_OBJECTS)  libcallbox.o attempt.o defaultlibs.o loader.o mapped.o \
+			$(COMMON_CALLANDER_OBJECTS) callander_seccomp.o libcallbox.o attempt.o defaultlibs.o loader.o mapped.o \
 			proxy.o tls.o
-CALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_main.o
-LIBCALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) libcallander.o
+CALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_seccomp.o callander_main.o
+LIBCALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_seccomp.o libcallander.o
 LEXEC_OBJECTS := ${COMMON_OBJECTS} $(COMMON_CALLANDER_OBJECTS) $(PATCH_OBJECTS) lexec.o remote_exec.o tls.o attempt.o stack.o
 
 ifeq ($(TARGETOS),linux)
