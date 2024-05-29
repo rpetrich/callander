@@ -79,6 +79,7 @@ rt_sigreturn(any) @ libc.so.6+0x33d17
 ioctl(STDIN_FILENO, TCSETS, any) @ libc.so.6+0xe6048(tcsetattr+200)
 ioctl(STDIN_FILENO, TCGETS, any) @ libc.so.6+0xe6084(tcsetattr+260)
 ioctl(any, TCGETS, any) @ libc.so.6+0xe6139(tcgetattr+41)
+ioctl(STDIN_FILENO, TIOCGWINSZ-TIOCSWINSZ, any) @ libc.so.6+0xe69a5(ioctl+5)
 ioctl(STDIN_FILENO-STDOUT_FILENO, TIOCGWINSZ, any) @ libc.so.6+0xe69a5(ioctl+5)
 writev(any, any, any) @ ld-linux-x86-64.so.2+0xf8a5(_dl_debug_vdprintf+293)
 writev(any, any, 1) @ libc.so.6+0x73c8d(__libc_message+397)

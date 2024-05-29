@@ -114,7 +114,7 @@ fcntl(STDIN_FILENO-STDOUT_FILENO, F_SETLK, 0) @ ld-musl-x86_64.so.1+0x1c390(fcnt
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3ed7f(socket+114)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3ed99(socket+140)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49665(fchmod+44)
+fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49665(fchmod+44)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49822(fstatat64+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x49dbc(fdopen+159)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x49f59(__fopen_rb_ca*+85)

@@ -90,7 +90,8 @@ exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x4d117(pclose+35)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
-kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
+kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
+kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 fcntl(STDIN_FILENO-0x3ff, F_GETFL, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFL, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)

@@ -76,6 +76,7 @@ madvise(any, 0x1-0xffffffffffffbfff, MADV_DONTNEED) @ libc.so.6+0x111ba5(__madvi
 dup(any u32) @ libc.so.6+0x107aa5(dup+7)
 dup2(any u32, any u32) @ libc.so.6+0x107ae5(dup2+7)
 alarm(any u32) @ libc.so.6+0xe1ce5(alarm+7)
+getpid() @ ld-linux-x86-64.so.2+0x1e045(__GI___getpid+7)
 getpid() @ libc.so.6+0x4acf2(raise+212)
 getpid() @ libc.so.6+0xe2d35(__getpid+7)
 socket(any u32, any u32, 0) @ libc.so.6+0x11a015(__socket+7)

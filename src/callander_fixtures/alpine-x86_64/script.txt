@@ -5,7 +5,8 @@ read(any, any, 128) @ ld-musl-x86_64.so.1+0x57f61
 read(any, any, 1024) @ ld-musl-x86_64.so.1+0x57f61
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x57f61
-open(any, any, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
+open(any, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
+open(any, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, 0666) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x57f81(__map_file*+24)
@@ -51,7 +52,7 @@ ioctl(any, TCGETS-TCSETS, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCSCTTY, 1) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCSWINSZ, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCSPTLCK, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
-ioctl(any, _IOR(84,48,4), any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
+ioctl(any, TIOCGPTN, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x49e2b(fdopen+270)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a36a(__stdout_write*+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x5af5d(isatty+22)

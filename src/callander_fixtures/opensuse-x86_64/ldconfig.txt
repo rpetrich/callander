@@ -89,14 +89,7 @@ tgkill(any, any u32, SIGABRT) @ /sbin/ldconfig:0x40ec47
 tgkill(any, any u32, SIGFPE) @ /sbin/ldconfig:0x40ec47
 openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x465f0b
 openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x465f91
-openat(AT_FDCWD, any, O_RDONLY, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDWR, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /sbin/ldconfig:0x466bef
-openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_CLOEXEC, any) @ /sbin/ldconfig:0x466bef
+openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /sbin/ldconfig:0x466bef
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /sbin/ldconfig:0x466bef
 openat(any u32, /sbin/ldconfig:0x4bc92a, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig:0x466c94
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /sbin/ldconfig:0x4999d7

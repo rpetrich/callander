@@ -71,7 +71,6 @@ clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLO
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x55ba0(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
-exit(any u32) @ ld-musl-x86_64.so.1+0x57f36
 wait4(any, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 wait4(any, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x57f61
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
@@ -95,7 +94,7 @@ getcwd(any, 0x1000) @ ld-musl-x86_64.so.1+0x5adde(getcwd+71)
 getcwd(non-NULL, non-NULL) @ ld-musl-x86_64.so.1+0x5adde(getcwd+71)
 rename(any, non-NULL) @ ld-musl-x86_64.so.1+0x4d302(rename+6)
 unlink(any) @ ld-musl-x86_64.so.1+0x5b5fa(unlink+6)
-readlink(libglib-2.0.so.0+0xcab74, any, non-NULL) @ ld-musl-x86_64.so.1+0x5b224(readlink+27)
+readlink(libglib-2.0.so.0+0xcabd4, any, non-NULL) @ ld-musl-x86_64.so.1+0x5b224(readlink+27)
 readlink(ld-musl-x86_64.so.1+0x9511c, any, 512) @ ld-musl-x86_64.so.1+0x5b224(readlink+27)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x591d7(clock_gettime+80)
 getuid() @ ld-musl-x86_64.so.1+0x5af44(getuid+5)

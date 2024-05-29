@@ -60,6 +60,7 @@ dup2(STDERR_FILENO--1 as u32, STDIN_FILENO-STDERR_FILENO) @ libc.so.6+0x107ae5(d
 pause() @ libc.so.6+0xe1db1(pause+19)
 pause() @ libc.so.6+0xe1dd0(pause+50)
 alarm(any u32) @ libc.so.6+0xe1ce5(alarm+7)
+getpid() @ ld-linux-x86-64.so.2+0x1e045(__GI___getpid+7)
 getpid() @ libc.so.6+0x4acf2(raise+212)
 getpid() @ libc.so.6+0xe2d35(__getpid+7)
 getpid() @ libc.so.6+0x1117c7(syscall+25)

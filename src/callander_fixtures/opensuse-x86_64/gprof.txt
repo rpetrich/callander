@@ -32,6 +32,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x111ba5(__madv
 dup(any u32) @ libc.so.6+0x107aa5(dup+7)
 setitimer(ITIMER_REAL, 0, any) @ libc.so.6+0xd3355(setitimer+7)
 setitimer(ITIMER_REAL, any, 0) @ libc.so.6+0xd3355(setitimer+7)
+getpid() @ ld-linux-x86-64.so.2+0x1e045(__GI___getpid+7)
 getpid() @ libc.so.6+0x4acf2(raise+212)
 exit(0) @ libc.so.6+0x35294(__libc_start_main+310)
 fcntl(STDIN_FILENO-0xfffffffe, F_SETFL, any u16) @ libc.so.6+0x10c4ae(__fcntl64_nocancel_adjusted+32)

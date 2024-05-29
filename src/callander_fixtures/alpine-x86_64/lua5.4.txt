@@ -88,7 +88,8 @@ exit(any u32) @ ld-musl-x86_64.so.1+0x57f36
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x4cc3a(pclose+35)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
-kill(any, any) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
+kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
+kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
 fcntl(STDIN_FILENO-0x3ff, F_GETFL, 0) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, 0) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFL, any u32) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
@@ -145,7 +146,7 @@ futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-x86_64.so.1+0x99884(i
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 128, any u32)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, 0-INT_MAX, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x979c0(barrier_sem*), any u32, 0x1-0x7fffffff, any, 202, any)
+futex(ld-musl-x86_64.so.1+0x979c0(barrier_sem*), any u32, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0x98b60(lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99848(ctor_cond*+8), FUTEX_WAKE, INT_MAX, any, 202, any)
