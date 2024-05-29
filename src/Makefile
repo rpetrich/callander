@@ -63,7 +63,7 @@ endif
 # CFLAGS += -fstack-usage
 # LDFLAGS += -fstack-usage
 
-CFLAGS += -fno-omit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wshadow -Wdouble-promotion -Wundef -fcf-protection=none
+CFLAGS += -fno-omit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wdouble-promotion -Wundef -fcf-protection=none
 ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Software Foundation)
 	# cannot use floating point registers in trap handlers!
 	# CFLAGS += -mgeneral-regs-only
@@ -85,7 +85,7 @@ endif
 ifeq ($(TARGETMACHINE),aarch64)
 	CFLAGS += -Wno-psabi -march=armv8-a+lse
 	LDFLAGS += -Wno-psabi -march=armv8-a+lse
-	CFLAGS += -Wno-unused-function -Wno-unused-parameter -Wno-strict-aliasing -Wno-shadow -Wno-int-in-bool-context -Wno-implicit-fallthrough -Wno-sign-compare -Wno-double-promotion -Wno-format
+	CFLAGS += -Wno-unused-function -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-in-bool-context -Wno-implicit-fallthrough -Wno-sign-compare -Wno-double-promotion -Wno-format
 endif
 
 ifeq ($(COVERAGE),1)
