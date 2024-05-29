@@ -462,7 +462,7 @@ static inline void clear_match_keep_stack(__attribute__((unused)) const struct l
 	register_changed(regs, register_index, ins);
 }
 
-// add_match_and_copy_sources maintains the mapping table describing which registers have identical values
+// add_match_and_sources maintains the mapping table describing which registers have identical values
 __attribute__((nonnull(1, 2, 6)))
 static void add_match_and_sources(const struct loader_context *loader, struct registers *regs, int dest_reg, int source_reg, register_mask sources, __attribute__((unused)) ins_ptr ins)
 {
@@ -5789,8 +5789,8 @@ static void set_comparison_state(__attribute__((unused)) struct loader_context *
 
 static bool is_musl_cp_begin(ins_ptr entry)
 {
-#ifdef __x86_64__
 	// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
+#ifdef __x86_64__
 	if (entry[0] == 0x49 && entry[1] == 0x89 && entry[2] == 0xfb) {
 		if (entry[3] == 0x48 && entry[4] == 0x89 && entry[5] == 0xf0) {
 			if (entry[6] == 0x48 && entry[7] == 0x89 && entry[8] == 0xd7) {
@@ -5807,16 +5807,14 @@ static bool is_musl_cp_begin(ins_ptr entry)
 	return false;
 #endif
 #ifdef __aarch64__
-	if (self.entry[0] == 0xaa0103e8) {
-		if (self.entry[1] == 0xaa0203e0) {
-			if (self.entry[2] == 0xaa0303e1) {
-				if (self.entry[3] == 0xaa0403e2) {
-					if (self.entry[4] == 0xaa0503e3) {
-						if (self.entry[5] == 0xaa0603e4) {
-							if (self.entry[6] == 0xaa0703e5) {
-								self.description = NULL;
-								LOG("found musl __cp_begin", temp_str(copy_call_trace_description(&analysis->loader, &self)));
-								return EFFECT_NONE;
+	if (entry[0] == 0xaa0103e8) {
+		if (entry[1] == 0xaa0203e0) {
+			if (entry[2] == 0xaa0303e1) {
+				if (entry[3] == 0xaa0403e2) {
+					if (entry[4] == 0xaa0503e3) {
+						if (entry[5] == 0xaa0603e4) {
+							if (entry[6] == 0xaa0703e5) {
+								return true;
 							}
 						}
 					}
@@ -9476,7 +9474,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						if (decoded.decomposed.operands[2].immediate == 0xff || decoded.decomposed.operands[2].immediate == 0xffff) {
 							struct register_state source_state;
 							int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
-							add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+							if (source != REGISTER_INVALID) {
+								add_match_and_sources(&analysis->loader, &self.current_state, dest, source, self.current_state.sources[source], ins);
+							}
 						}
 					}
 				}
@@ -9535,7 +9535,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				LOG("autda/autdb to", name_for_register(dest));
 				LOG("from", name_for_register(source));
-				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
 					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -10740,7 +10740,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("from", name_for_register(source));
 				if (dest != REGISTER_INVALID) {
 					if (source != REGISTER_INVALID) {
-						add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+						add_match_and_sources(&analysis->loader, &self.current_state, dest, source, self.current_state.sources[source], ins);
 						self.current_state.registers[dest] = source_state;
 						if (register_is_partially_known(&source_state)) {
 							LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -10762,7 +10762,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						int source2 = source + 1;
 						LOG("loading second value from stack", name_for_register(source2));
 						source_state = self.current_state.registers[source2];
-						add_match_and_copy_sources(&analysis->loader, &self.current_state, dest2, source2, ins);
+						add_match_and_sources(&analysis->loader, &self.current_state, dest2, source2, self.current_state.sources[source2], ins);
 						self.current_state.registers[dest2] = source_state;
 						if (register_is_partially_known(&source_state)) {
 							LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -10883,7 +10883,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, &size);
 				if (source != REGISTER_INVALID) {
 					LOG("from", name_for_register(source));
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, dest, source, self.current_state.sources[source], ins);
 					truncate_to_operand_size(&source_state, mem_size);
 					if (is_signed) {
 						sign_extend_from_operand_size(&source_state, mem_size);
@@ -11402,7 +11402,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
 				LOG("mov to", name_for_register(dest));
 				LOG("from", name_for_register(source));
-				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
 					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -12025,7 +12025,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("stp to", name_for_register(dest));
 				LOG("from", name_for_register(source));
 				LOG("and", name_for_register(source2));
-				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
 					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -12037,7 +12037,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (mask_for_register(dest) & (STACK_REGISTERS & (STACK_REGISTERS >> 1))) {
 					int dest2 = dest + 1;
 					LOG("storing second value to stack", name_for_register(dest2));
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest2, source2, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, dest2, source2, source2 == REGISTER_INVALID ? 0 : self.current_state.sources[source2], ins);
 					self.current_state.registers[dest2] = source2_state;
 					if (register_is_partially_known(&source2_state)) {
 						LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source2_state)));
@@ -12082,7 +12082,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &source_state, NULL);
 				LOG("str to", name_for_register(dest));
 				LOG("from", name_for_register(source));
-				add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+				add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
 					LOG("value is known", temp_str(copy_register_state_description(&analysis->loader, source_state)));
@@ -12308,7 +12308,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					self.current_state.sources[dest] = source != REGISTER_INVALID ? self.current_state.sources[source] : 0;
 					clear_match(&analysis->loader, &self.current_state, dest, ins);
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				}
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
@@ -12335,7 +12335,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					self.current_state.sources[dest] = source != REGISTER_INVALID ? self.current_state.sources[source] : 0;
 					clear_match(&analysis->loader, &self.current_state, dest, ins);
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				}
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
@@ -12362,7 +12362,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					self.current_state.sources[dest] = source != REGISTER_INVALID ? self.current_state.sources[source] : 0;
 					clear_match(&analysis->loader, &self.current_state, dest, ins);
 				} else {
-					add_match_and_copy_sources(&analysis->loader, &self.current_state, dest, source, ins);
+					add_match_and_sources(&analysis->loader, &self.current_state, dest, source, source == REGISTER_INVALID ? 0 : self.current_state.sources[source], ins);
 				}
 				self.current_state.registers[dest] = source_state;
 				if (register_is_partially_known(&source_state)) {
