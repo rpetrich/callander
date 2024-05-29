@@ -2109,6 +2109,11 @@ struct sgx_enclave_remove_pages {
 };
 
 
+// workaround for old dma-buf header: https://lore.kernel.org/lkml/YoNx8a8+gvOWwfc9@kroah.com/T/
+#define u32 __u32
+#define u64 __u64
+
+
 static struct enum_option ioctls[] = {
 	// ioctl_tty
     DESCRIBE_ENUM(TCGETS),
