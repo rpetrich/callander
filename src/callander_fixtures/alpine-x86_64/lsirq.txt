@@ -1,4 +1,5 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
+open(/usr/bin/lsirq+0x64e2, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(/usr/bin/lsirq+0x64f1, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x57f81(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x4a10b(__stdio_close*+17)

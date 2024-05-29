@@ -59,7 +59,7 @@ exit(0) @ ld-musl-x86_64.so.1+0x5835a
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3f40b(socket+140)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49b88(fchmod+44)
+fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49b88(fchmod+44)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)

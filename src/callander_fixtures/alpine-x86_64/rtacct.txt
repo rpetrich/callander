@@ -1,8 +1,8 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
-write(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-write(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
+write(any, /sbin/rtacct+0xa980-/sbin/rtacct+0xf9ff, 0x1-0x5080) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+write(any, /sbin/rtacct+0xa980-/sbin/rtacct+0xf9ff, 0x1-0x5080) @ ld-musl-x86_64.so.1+0x57f61
 open(/sbin/rtacct+0x5279, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(/sbin/rtacct+0x5520, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)

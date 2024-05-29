@@ -61,7 +61,6 @@ clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLO
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x55ba0(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
-exit(any u32) @ ld-musl-x86_64.so.1+0x57f36
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49822(fstatat64+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x49dbc(fdopen+159)

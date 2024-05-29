@@ -118,7 +118,7 @@ futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-x86_64.so.1+0x99884(i
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 128, any u32)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(ld-musl-x86_64.so.1+0x97460(maplock*), any u32, 0-INT_MAX, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0x979c0(barrier_sem*), any u32, 0x1-0x7fffffff, any, 202, any)
+futex(ld-musl-x86_64.so.1+0x979c0(barrier_sem*), any u32, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0x98b60(lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99848(ctor_cond*+8), FUTEX_WAKE, INT_MAX, any, 202, any)

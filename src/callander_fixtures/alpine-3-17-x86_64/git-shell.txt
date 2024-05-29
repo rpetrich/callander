@@ -97,7 +97,6 @@ fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
@@ -129,6 +128,7 @@ gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x59638(clock_gettime+80)
 getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-x86_64.so.1+0x37713(getrlimit+73)
 sysinfo(any) @ ld-musl-x86_64.so.1+0x20657(sysinfo+6)
 getuid() @ ld-musl-x86_64.so.1+0x5b389(getuid+5)
+getppid() @ ld-musl-x86_64.so.1+0x5b36c(getppid+5)
 getpgid(0) @ ld-musl-x86_64.so.1+0x5b349(getpgid+9)
 sched_setscheduler(any, any, any) @ ld-musl-x86_64.so.1+0x5650e(pthread_create+1092)
 gettid() @ ld-musl-x86_64.so.1+0x41488(_Fork+70)

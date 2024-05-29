@@ -62,18 +62,18 @@ ioctl(any, SIOCGIFFLAGS-SIOCGIFADDR, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48
 ioctl(any, SIOCSIFHWADDR, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, SIOCGIFHWADDR, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, SIOCADDMULTI-SIOCGIFINDEX, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(137,160)-_IO(137,163), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,4), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,6)-_IO(139,7), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,11), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,15), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,20)-_IO(139,22), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,24)-_IO(139,27), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,42), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,48), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,50), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,52), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
-ioctl(any, _IO(139,54), any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCBRADDBR-SIOCBRDELIF, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWFREQ, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWMODE-SIOCGIWMODE, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCGIWRANGE, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCGIWSTATS, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWAP-SIOCSIWMLME, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWSCAN-SIOCGIWESSID, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWENCODE, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWGENIE, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWAUTH, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWENCODEEXT, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, SIOCSIWPMKSA, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a883(__stdout_write*+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x5b3a2(isatty+22)
@@ -83,12 +83,14 @@ readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
 select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
 select(any, any, any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
+select(0x1-0x400, any, any, 0, any) @ ld-musl-x86_64.so.1+0x583bc
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
-shmget(114, non-NULL, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
-shmget(114, non-NULL, 044) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
+shmget(114, 1, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
+shmget(114, 1, 044) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
+shmget(114, -1, 0) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
+shmget(114, -1, 044) @ ld-musl-x86_64.so.1+0x1f13d(shmget+26)
 shmat(any, 0, SHM_NORESERVE) @ ld-musl-x86_64.so.1+0x1f0ef(shmat+11)
 dup2(any, STDIN_FILENO-STDERR_FILENO) @ ld-musl-x86_64.so.1+0x5ae2e(dup2+15)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
@@ -119,10 +121,14 @@ sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 sendmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x583bc
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x583bc
-recvmsg(any, any, 0-MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmsg(any, any, MSG_PROBE) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+recvmsg(any, any, MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, MSG_ERRQUEUE) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, MSG_CMSG_CLOEXEC) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-recvmsg(any, any, 0-MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x583bc
+recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc
+recvmsg(any, any, MSG_PROBE) @ ld-musl-x86_64.so.1+0x583bc
+recvmsg(any, any, MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, MSG_ERRQUEUE) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, MSG_CMSG_CLOEXEC) @ ld-musl-x86_64.so.1+0x583bc
 shutdown(any, SHUT_RDWR) @ ld-musl-x86_64.so.1+0x3f34c(shutdown+23)

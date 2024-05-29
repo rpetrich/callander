@@ -104,6 +104,12 @@ openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x55594(_
 openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1283a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1284a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12859, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12863, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12870, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1287b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
@@ -111,5 +117,11 @@ openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1283a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1284a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12859, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12863, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12870, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1287b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)

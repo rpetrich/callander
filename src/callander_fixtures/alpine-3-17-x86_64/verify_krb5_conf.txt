@@ -103,7 +103,6 @@ clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLO
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
@@ -111,7 +110,7 @@ fcntl(any, F_SETFL-F_SETLK, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3f40b(socket+140)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49b88(fchmod+44)
+fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49b88(fchmod+44)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49d3b(fstatat64+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
 fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x4a2ef(fdopen+185)

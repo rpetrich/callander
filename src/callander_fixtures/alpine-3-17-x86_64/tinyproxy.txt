@@ -102,7 +102,6 @@ fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x56066(start*+78)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 wait4(-1, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(-1, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x204aa(do_setgroups*+66)
@@ -120,7 +119,7 @@ fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4a472(__fopen_rb_ca*+85)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4b735(fopen64+132)
 fsync(any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 fsync(any) @ ld-musl-x86_64.so.1+0x583bc
-chdir(/usr/bin/tinyproxy+0xfdd2) @ ld-musl-x86_64.so.1+0x5ad9b(chdir+6)
+chdir(/usr/bin/tinyproxy+0xff32) @ ld-musl-x86_64.so.1+0x5ad9b(chdir+6)
 unlink(non-NULL) @ ld-musl-x86_64.so.1+0x5ba2d(unlink+6)
 umask(127) @ ld-musl-x86_64.so.1+0x4a121(umask+8)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x59638(clock_gettime+80)

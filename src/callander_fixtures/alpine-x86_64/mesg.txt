@@ -36,7 +36,7 @@ dup(any) @ ld-musl-x86_64.so.1+0x5a9c4(dup+9)
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
-fcntl(any, F_GETFD, 0xfffffff7) @ ld-musl-x86_64.so.1+0x49665(fchmod+44)
+fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49665(fchmod+44)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49822(fstatat64+79)
 readlink(any, ld-musl-x86_64.so.1+0x99500(buf.0*), 32) @ ld-musl-x86_64.so.1+0x5b224(readlink+27)
 chmod(any, any u32) @ ld-musl-x86_64.so.1+0x49686(fchmod+77)
