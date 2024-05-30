@@ -240,7 +240,7 @@ setsockopt(any, SOL_SOCKET, SO_RCVBUF, any, 4) @ libc.so.6+0x102ce0(setsockopt+3
 setsockopt(any, SOL_SOCKET, 0x10, any, 4) @ libc.so.6+0x102ce0(setsockopt+32)
 setsockopt(any, SOL_SOCKET, 0x1a, any, 16) @ libc.so.6+0x102ce0(setsockopt+32)
 setsockopt(any, SOL_SOCKET, 0x21, any, 4) @ libc.so.6+0x102ce0(setsockopt+32)
-setsockopt(any, IPPROTO_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x102ce0(setsockopt+32)
+setsockopt(any, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x102ce0(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_RECVERR, any, 4) @ libc.so.6+0x102ce0(setsockopt+32)
 getsockopt(any, SOL_SOCKET, SO_RCVBUF, any, any) @ libc.so.6+0x10233c(getsockopt+28)
 recvmsg(any, any, 0) @ libc.so.6+0x102834(recvmsg+52)

@@ -129,7 +129,7 @@ setsockopt(any u32, SOL_SOCKET, SO_BROADCAST, any, 4) @ libc.so.6+0x10e0fc(setso
 setsockopt(any u32, SOL_SOCKET, 0x10, any, 4) @ libc.so.6+0x10e0fc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, 0x14-0x15, any, 16) @ libc.so.6+0x10e0fc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, 0x1a, any, 16) @ libc.so.6+0x10e0fc(setsockopt+12)
-setsockopt(any u32, IPPROTO_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x10e0fc(setsockopt+12)
+setsockopt(any u32, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x10e0fc(setsockopt+12)
 getsockopt(any u32, SOL_SOCKET, SO_ERROR, any, any) @ libc.so.6+0x10dc3c(getsockopt+12)
 clone(any u32, any, any, any u32, any) @ libc.so.6+0x10be04(clone+52)
 exit(0) @ libc.so.6+0x27574(__libc_start_call_main+164)

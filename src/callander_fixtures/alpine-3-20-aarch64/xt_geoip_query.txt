@@ -1,4 +1,3 @@
-callander: found perl syscall with unknown number: any
 callander: permitted syscalls: dup(any) @ ld-musl-aarch64.so.1+0x68624(dup+16)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x68650(dup2+28)
 dup3(any, any, O_CLOEXEC) @ ld-musl-aarch64.so.1+0x686b8(dup3+28)

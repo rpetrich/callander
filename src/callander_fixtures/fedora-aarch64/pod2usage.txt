@@ -1,4 +1,3 @@
-callander: found perl syscall with unknown number: any u32
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xf337c(getcwd+108)
 dup(any) @ libc.so.6+0xeffc8(dup+8)
 dup3(any, any, 0) @ libc.so.6+0xf000c(__dup2+44)

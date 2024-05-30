@@ -98,7 +98,7 @@ bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, 0x10e, IP_RECVERR, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_NETLINK, IP_RECVERR, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 getsockopt(any, SOL_IP, 0x53, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

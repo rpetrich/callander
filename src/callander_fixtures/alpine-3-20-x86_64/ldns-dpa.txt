@@ -75,7 +75,7 @@ setsockopt(any, SOL_SOCKET, 0x14-0x15, any, 16) @ ld-musl-x86_64.so.1+0x4137e(se
 setsockopt(any, SOL_IPV6, TCP_FASTOPEN, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IPV6, 0x31, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IPV6, 0x3e, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
-setsockopt(any, 0x11a, SO_DEBUG-SO_TYPE, any, any u32) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
+setsockopt(any, SOL_TLS, SO_DEBUG-SO_TYPE, any, any u32) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 getsockopt(any, SOL_IP, 0xe, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)
 getsockopt(any, SOL_SOCKET, 0x14-0x15, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)
 getsockopt(any, SOL_IPV6, 0x18, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)

@@ -114,9 +114,9 @@ setsockopt(any, SOL_IPV6, SO_SNDBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setso
 setsockopt(any, SOL_IPV6, TCP_USER_TIMEOUT, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_IPV6, 0x31, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_IPV6, 0x33, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, 0x3a, SO_DEBUG, any, 32) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, 0x107, SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, 0x10e, SO_ERROR, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_ICMPV6, SO_DEBUG, any, 32) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_PACKET, SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_NETLINK, SO_ERROR, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 getsockopt(any, SOL_SOCKET, SO_RCVBUF, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5837f
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
