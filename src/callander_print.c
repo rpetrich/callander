@@ -4924,7 +4924,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 
 __attribute__((unused))
 __attribute__((nonnull(1, 2, 4)))
-char *copy_call_description(const struct loader_context *context, const char *name, struct registers registers, const int *register_indexes, struct syscall_info info, bool include_symbol)
+char *copy_call_description(const struct loader_context *context, const char *name, const struct registers *registers, const int *register_indexes, struct syscall_info info, bool include_symbol)
 {
 	int argc = info.attributes & SYSCALL_ARGC_MASK;
 	size_t name_len = fs_strlen(name);
@@ -4937,9 +4937,9 @@ char *copy_call_description(const struct loader_context *context, const char *na
 		}
 		int reg = register_indexes[i];
 		if (include_symbol) {
-			args[i] = copy_argument_description(context, registers.registers[reg], info.arguments[i] & SYSCALL_ARG_TYPE_MASK);
+			args[i] = copy_argument_description(context, registers->registers[reg], info.arguments[i] & SYSCALL_ARG_TYPE_MASK);
 		} else {
-			args[i] = copy_register_state_description_simple(context, registers.registers[reg]);
+			args[i] = copy_register_state_description_simple(context, registers->registers[reg]);
 		}
 		arg_len[i] = fs_strlen(args[i]);
 		len += arg_len[i];

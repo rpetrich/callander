@@ -9,7 +9,7 @@ struct syscall_info info_for_syscall(uintptr_t nr);
 
 __attribute__((unused))
 __attribute__((nonnull(1, 2, 4)))
-extern char *copy_call_description(const struct loader_context *context, const char *name, struct registers registers, const int *register_indexes, struct syscall_info info, bool include_symbol);
+extern char *copy_call_description(const struct loader_context *context, const char *name, const struct registers *registers, const int *register_indexes, struct syscall_info info, bool include_symbol);
 
 __attribute__((nonnull(1)))
 extern char *copy_register_state_description(const struct loader_context *context, struct register_state reg);
