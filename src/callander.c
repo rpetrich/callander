@@ -3889,19 +3889,15 @@ static bool add_to_stack(const struct loader_context *loader, struct registers *
 	return true;
 }
 
-static inline int read_operand(struct loader_context *loader, const struct InstructionOperand *operand, struct registers *regs, const ins_ptr ins, struct register_state *out_state, enum ins_operand_size *out_size)
+static inline int read_operand(struct loader_context *loader, const struct InstructionOperand *operand, struct registers *regs, const ins_ptr ins, struct register_state out_state[static 1], enum ins_operand_size *out_size)
 {
 	switch (operand->operandClass) {
 		case REG: {
 			int reg = register_index_from_register(operand->reg[0]);
 			if (reg != AARCH64_REGISTER_INVALID) {
-				if (out_state != NULL) {
-					*out_state = regs->registers[reg];
-				}
+				*out_state = regs->registers[reg];
 			} else if (operand->reg[0] == REG_WZR || operand->reg[0] == REG_XZR) {
-				if (out_state != NULL) {
-					set_register(out_state, 0);
-				}
+				set_register(out_state, 0);
 			} else {
 				break;
 			}
@@ -3910,43 +3906,33 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 				// if truncating an address, consider the value unknown
 				struct loaded_binary *binary = binary_for_address(loader, (const void *)out_state->value);
 				if (binary != NULL) {
-					if (out_state != NULL) {
-						clear_register(out_state);
-					}
+					clear_register(out_state);
 					clear_match(loader, regs, reg, ins);
 				}
 			}
-			if (out_state != NULL) {
-				truncate_to_operand_size(out_state, size);
-			}
+			truncate_to_operand_size(out_state, size);
 			if (out_size != NULL) {
 				*out_size = size;
 			}
 			return reg;
 		}
 		case IMM32: {
-			if (out_state != NULL) {
-				set_register(out_state, operand->immediate);
-				truncate_to_operand_size(out_state, OPERATION_SIZE_WORD);
-			}
+			set_register(out_state, operand->immediate);
+			truncate_to_operand_size(out_state, OPERATION_SIZE_WORD);
 			if (out_size != NULL) {
 				*out_size = OPERATION_SIZE_WORD;
 			}
 			return AARCH64_REGISTER_INVALID;
 		}
 		case IMM64: {
-			if (out_state != NULL) {
-				set_register(out_state, operand->immediate);
-			}
+			set_register(out_state, operand->immediate);
 			if (out_size != NULL) {
 				*out_size = OPERATION_SIZE_DWORD;
 			}
 			return AARCH64_REGISTER_INVALID;
 		}
 		case LABEL: {
-			if (out_state != NULL) {
-				set_register(out_state, operand->immediate);
-			}
+			set_register(out_state, operand->immediate);
 			if (out_size != NULL) {
 				*out_size = OPERATION_SIZE_DWORD;
 			}
@@ -3954,9 +3940,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 		}
 		case MEM_REG: {
 			if (operand->reg[0] == REG_SP) {
-				if (out_state != NULL) {
-					*out_state = regs->registers[REGISTER_STACK_0];
-				}
+				*out_state = regs->registers[REGISTER_STACK_0];
 				if (out_size != NULL) {
 					*out_size = OPERATION_SIZE_DWORD;
 				}
@@ -3968,9 +3952,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			if (operand->reg[0] == REG_SP && (operand->immediate & 0x7) == 0) {
 				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
 				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
-					if (out_state != NULL) {
-						*out_state = regs->registers[reg];
-					}
+					*out_state = regs->registers[reg];
 					if (out_size != NULL) {
 						*out_size = OPERATION_SIZE_DWORD;
 					}
@@ -3983,9 +3965,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			if (operand->reg[0] == REG_SP) {
 				// adjust the stack
 				add_to_stack(loader, regs, operand->immediate, ins);
-				if (out_state != NULL) {
-					*out_state = regs->registers[REGISTER_STACK_0];
-				}
+				*out_state = regs->registers[REGISTER_STACK_0];
 				if (out_size != NULL) {
 					*out_size = OPERATION_SIZE_DWORD;
 				}
@@ -4007,9 +3987,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 					clear_match(loader, regs, reg, ins);
 				}
 			}
-			if (out_state != NULL) {
-				clear_register(out_state);
-			}
+			clear_register(out_state);
 			if (out_size != NULL) {
 				*out_size = OPERATION_SIZE_DWORD;
 			}
@@ -4018,8 +3996,106 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 		default:
 			break;
 	}
-	if (out_state != NULL) {
-		clear_register(out_state);
+	clear_register(out_state);
+	if (out_size != NULL) {
+		*out_size = OPERATION_SIZE_DWORD;
+	}
+	return AARCH64_REGISTER_INVALID;
+}
+
+static inline int get_operand(struct loader_context *loader, const struct InstructionOperand *operand, struct registers *regs, const ins_ptr ins, enum ins_operand_size *out_size)
+{
+	switch (operand->operandClass) {
+		case REG: {
+			int reg = register_index_from_register(operand->reg[0]);
+			if (reg != AARCH64_REGISTER_INVALID) {
+			} else {
+				break;
+			}
+			enum ins_operand_size size = get_register_size(operand->reg[0]);
+			if (size != OPERATION_SIZE_DWORD && regs->registers[reg].value > 0xffffffff) {
+				// if truncating an address, consider the value unknown
+				struct loaded_binary *binary = binary_for_address(loader, (const void *)regs->registers[reg].value);
+				if (binary != NULL) {
+					clear_match(loader, regs, reg, ins);
+				}
+			}
+			if (out_size != NULL) {
+				*out_size = size;
+			}
+			return reg;
+		}
+		case IMM32: {
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_WORD;
+			}
+			return AARCH64_REGISTER_INVALID;
+		}
+		case IMM64: {
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_DWORD;
+			}
+			return AARCH64_REGISTER_INVALID;
+		}
+		case LABEL: {
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_DWORD;
+			}
+			return AARCH64_REGISTER_INVALID;
+		}
+		case MEM_REG: {
+			if (operand->reg[0] == REG_SP) {
+				if (out_size != NULL) {
+					*out_size = OPERATION_SIZE_DWORD;
+				}
+				return REGISTER_STACK_0;
+			}
+			break;
+		}
+		case MEM_OFFSET: {
+			if (operand->reg[0] == REG_SP && (operand->immediate & 0x7) == 0) {
+				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
+				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
+					if (out_size != NULL) {
+						*out_size = OPERATION_SIZE_DWORD;
+					}
+					return reg;
+				}
+			}
+			break;
+		}
+		case MEM_PRE_IDX: {
+			if (operand->reg[0] == REG_SP) {
+				// adjust the stack
+				add_to_stack(loader, regs, operand->immediate, ins);
+				if (out_size != NULL) {
+					*out_size = OPERATION_SIZE_DWORD;
+				}
+				// and reference the data at the stack pointer
+				return REGISTER_STACK_0;
+			}
+			// fallthrough
+		}
+		case MEM_POST_IDX: {
+			if (operand->reg[0] == REG_SP) {
+				// adjust the stack
+				add_to_stack(loader, regs, operand->immediate, ins);
+			} else {
+				int reg = register_index_from_register(operand->reg[0]);
+				if (reg != REGISTER_INVALID) {
+					struct register_state imm;
+					set_register(&imm, operand->immediate);
+					add_registers(&regs->registers[reg], &imm);
+					clear_match(loader, regs, reg, ins);
+				}
+			}
+			if (out_size != NULL) {
+				*out_size = OPERATION_SIZE_DWORD;
+			}
+			return AARCH64_REGISTER_INVALID;
+		}
+		default:
+			break;
 	}
 	if (out_size != NULL) {
 		*out_size = OPERATION_SIZE_DWORD;
@@ -4801,7 +4877,7 @@ __attribute__((warn_unused_result))
 static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, enum ins_operand_size *out_size, struct additional_result *additional)
 {
 	enum ins_operand_size size;
-	int dest = read_operand(loader, &decoded->decomposed.operands[0], regs, ins, NULL, &size);
+	int dest = get_operand(loader, &decoded->decomposed.operands[0], regs, ins, &size);
 	if (dest == REGISTER_INVALID) {
 		if (out_size != NULL) {
 			*out_size = OPERATION_SIZE_DWORD;
@@ -4849,7 +4925,7 @@ static void perform_unknown_op(struct loader_context *loader, struct registers *
 {
 	LOG("unsupported op", get_operation(&decoded->decomposed));
 	enum ins_operand_size size;
-	int dest = read_operand(loader, &decoded->decomposed.operands[0], regs, ins, NULL, &size);
+	int dest = get_operand(loader, &decoded->decomposed.operands[0], regs, ins, &size);
 	if (dest == REGISTER_INVALID) {
 		return;
 	}
@@ -9410,8 +9486,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
 								}
 							} else {
-								int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, NULL);
-								int right = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, NULL, NULL);
+								int left = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL);
+								int right = get_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, NULL);
 								if (left != REGISTER_INVALID && right != REGISTER_INVALID) {
 									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(dest), mask_for_register(dest), mask_for_register(dest), 0);
 								}
@@ -9453,7 +9529,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_ADR: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -9468,7 +9544,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_ADRP: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -9534,7 +9610,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto skip_stack_clear;
 			}
 			case ARM64_AT: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -9549,7 +9625,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_AUTIA:
 			case ARM64_AUTIB: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -9576,7 +9652,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_AUTDZB:
 			case ARM64_AUTIZA:
 			case ARM64_AUTIZB: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10108,7 +10184,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_CMN: {
 				enum ins_operand_size size;
-				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int left = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (left == REGISTER_INVALID) {
 					LOG("cmn with unsupported operand");
 					clear_comparison_state(&self.current_state);
@@ -10262,7 +10338,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_CSINV:
 			case ARM64_CSNEG: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10359,7 +10435,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_CSET: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10390,7 +10466,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_CSETM: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -10755,8 +10831,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct register_state source_state;
 				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &source_state, NULL);
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
-				int dest2 = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
+				int dest2 = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (decoded.decomposed.operation == ARM64_LDPSW) {
 					truncate_to_operand_size(&source_state, OPERATION_SIZE_WORD);
 					sign_extend_from_operand_size(&source_state, OPERATION_SIZE_WORD);
@@ -10823,7 +10899,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDADDLH: {
 				LOG("ldadd*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int loaded = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (loaded == REGISTER_INVALID) {
 					break;
 				}
@@ -10866,7 +10942,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDXRB:
 			case ARM64_LDXRH: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11180,7 +11256,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDCLRLH: {
 				LOG("ldclr*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int loaded = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (loaded == REGISTER_INVALID) {
 					break;
 				}
@@ -11205,7 +11281,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDEORLH: {
 				LOG("ldeor*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int loaded = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (loaded == REGISTER_INVALID) {
 					break;
 				}
@@ -11233,7 +11309,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_LDSETLH: {
 				LOG("ldset*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int loaded = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (loaded == REGISTER_INVALID) {
 					break;
 				}
@@ -11310,7 +11386,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_LDUR: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11323,7 +11399,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURB: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11336,7 +11412,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURH: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11349,7 +11425,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURSB: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11361,7 +11437,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURSH: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11373,7 +11449,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case ARM64_LDURSW: {
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -11422,7 +11498,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_MOV: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -12042,7 +12118,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_STP: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					LOG("stp");
 					break;
@@ -12102,7 +12178,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_STR: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					LOG("str");
 					break;
@@ -12206,7 +12282,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("stlxr, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				// TODO
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, NULL);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -12312,7 +12388,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_SWPLH: {
 				LOG("swp*");
 				enum ins_operand_size size;
-				int loaded = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, NULL, &size);
+				int loaded = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (loaded == REGISTER_INVALID) {
 					break;
 				}
@@ -12325,7 +12401,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_SXTB: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -12352,7 +12428,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_SXTH: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
@@ -12379,7 +12455,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case ARM64_SXTW: {
 				enum ins_operand_size size;
-				int dest = read_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL, &size);
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
