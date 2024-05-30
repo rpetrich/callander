@@ -316,10 +316,10 @@ setsockopt(any, SOL_IP-SOL_SOCKET, SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x4
 setsockopt(any, SOL_SOCKET, SO_BROADCAST, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, IPV6_RECVERR, any, 40) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, 0x21, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
-setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
+setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x31, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
-setsockopt(any, 0x107, SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
+setsockopt(any, SOL_PACKET, SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 getsockopt(0x3, SOL_IP, SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
 shutdown(0x3, SHUT_WR) @ ld-musl-aarch64.so.1+0x46104(shutdown+36)
 sendmsg(any, any, any u8) @ ld-musl-aarch64.so.1+0x607bc

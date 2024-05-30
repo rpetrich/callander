@@ -328,4 +328,4 @@ membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+
 copy_file_range(any, any, any, 0, any, any u32) @ ld-musl-aarch64.so.1+0x24820(copy_file_range+16)
 statx(any, any, any, any u32, any) @ ld-musl-aarch64.so.1+0x25224(statx+28)
 faccessat2(AT_FDCWD, any, any, AT_EACCESS) @ ld-musl-aarch64.so.1+0x687bc(faccessat+100)
-452(0xffffffffffffff9c, any, any u32, 256, 256, any) @ ld-musl-aarch64.so.1+0x52ad8(fchmodat+48)
+fchmodat2(AT_FDCWD, any, any u32, 256) @ ld-musl-aarch64.so.1+0x52ad8(fchmodat+48)

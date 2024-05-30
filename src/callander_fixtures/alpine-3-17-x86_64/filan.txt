@@ -82,7 +82,7 @@ getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3bedb(getpeername+18)
 socketpair(AF_UNIX, SOCK_DGRAM, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair+43)
 socketpair(AF_UNIX, SOCK_DGRAM, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
 getsockopt(any, SOL_IP-SOL_SOCKET, any, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
-getsockopt(any, IPPROTO_TCP, any, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
+getsockopt(any, SOL_TCP, any, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 getsockopt(any, SOL_IPV6, 0x1a, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

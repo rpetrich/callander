@@ -137,7 +137,7 @@ bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair+43)
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
-setsockopt(any, IPPROTO_TCP, SO_DEBUG, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_TCP, SO_DEBUG, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 getsockopt(any, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 clone(0, any, any, any, any) @ ld-musl-x86_64.so.1+0x5837f

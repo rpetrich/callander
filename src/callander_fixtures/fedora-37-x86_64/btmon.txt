@@ -113,7 +113,7 @@ setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0x10e0fc(setsockopt+
 setsockopt(any u32, SOL_SOCKET, 0x10, any, 4) @ libc.so.6+0x10e0fc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, 0x1a, any, 16) @ libc.so.6+0x10e0fc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, 0x1d, any, 4) @ libc.so.6+0x10e0fc(setsockopt+12)
-setsockopt(any u32, 0x117, SO_DEBUG, any, 16) @ libc.so.6+0x10e0fc(setsockopt+12)
+setsockopt(any u32, SOL_ALG, SO_DEBUG, any, 16) @ libc.so.6+0x10e0fc(setsockopt+12)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, any, 0) @ libc.so.6+0xd6d35(_Fork+37)
 clone(any u32, any, any, any u32, any) @ libc.so.6+0x10be04(clone+52)
 exit(0) @ libc.so.6+0x27574(__libc_start_call_main+164)

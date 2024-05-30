@@ -133,7 +133,7 @@ connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41fe0(getsockname+28)
 sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
 sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
+setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x607bc
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x607bc

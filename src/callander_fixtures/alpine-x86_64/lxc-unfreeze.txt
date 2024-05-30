@@ -147,7 +147,7 @@ socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-x86_64.so.1+0x3ee21(socketpai
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 setsockopt(any, SOL_SOCKET, 0x10, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 setsockopt(any, SOL_SOCKET, 0x14-0x15, any, 16) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
-setsockopt(any, 0x10e, TCP_QUICKACK, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(any, SOL_NETLINK, TCP_QUICKACK, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 clone(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x377d5(syscall+153)
 clone(0, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f24
 clone(SIGCHLD|CLONE_VM|CLONE_FILES|CLONE_VFORK, any, 0, any u32, any) @ ld-musl-x86_64.so.1+0x57f24

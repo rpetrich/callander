@@ -258,7 +258,7 @@ setsockopt(any, SOL_IP-SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+
 setsockopt(any, SOL_SOCKET, SO_BROADCAST, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, SO_KEEPALIVE, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, 0xf-0x10, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
-setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
+setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x10, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IPV6, TCP_USER_TIMEOUT-0x13, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)

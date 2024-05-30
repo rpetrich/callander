@@ -66,7 +66,7 @@ recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x57f61
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3b411(getsockname+18)
 setsockopt(STDIN_FILENO-0x7fffffff, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
-setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
 kill(any, 0x0) @ ld-musl-x86_64.so.1+0x48d29(kill+12)

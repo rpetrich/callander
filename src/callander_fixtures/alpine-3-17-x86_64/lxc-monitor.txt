@@ -135,7 +135,7 @@ socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, any) @ ld-musl-x86_64.so.1+0x3f
 socketpair(AF_UNIX, SOCK_STREAM, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_SOCKET, 0x14-0x15, any, 16) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, 0x10e, TCP_QUICKACK, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_NETLINK, TCP_QUICKACK, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 clone(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x38702(syscall+153)
 clone(SIGCHLD|CLONE_NEWUSER, any, 0, any u32, any) @ ld-musl-x86_64.so.1+0x5837f
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)

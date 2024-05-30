@@ -113,7 +113,7 @@ setsockopt(any u32, SOL_SOCKET, SO_LINGER, any, 8) @ libc.so.6+0x119f98(setsocko
 setsockopt(any u32, SOL_SOCKET, 0x14-0x15, any, 16) @ libc.so.6+0x119f98(setsockopt+10)
 setsockopt(any u32, SOL_IPV6, TCP_FASTOPEN, any, 4) @ libc.so.6+0x119f98(setsockopt+10)
 setsockopt(any u32, SOL_IPV6, 0x3e, any, 4) @ libc.so.6+0x119f98(setsockopt+10)
-setsockopt(any, IPPROTO_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x119f98(setsockopt+10)
+setsockopt(any, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x119f98(setsockopt+10)
 getsockopt(any u32, SOL_IP, 0xe, any, any) @ libc.so.6+0x119a78(getsockopt+10)
 getsockopt(any u32, SOL_SOCKET, 0x14-0x15, any, any) @ libc.so.6+0x119a78(getsockopt+10)
 getsockopt(any u32, SOL_IPV6, 0x18, any, any) @ libc.so.6+0x119a78(getsockopt+10)

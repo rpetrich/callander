@@ -233,7 +233,7 @@ sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
-setsockopt(any, IPPROTO_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
+setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 getsockopt(STDIN_FILENO, SOL_SOCKET, SO_TYPE, any, any) @ ld-musl-aarch64.so.1+0x41ec0(getsockopt+28)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5dc8c

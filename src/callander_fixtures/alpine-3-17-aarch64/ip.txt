@@ -178,9 +178,9 @@ recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp
 recvfrom(any, any, 1024, MSG_PEEK|MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
-setsockopt(any, 0x10e, SO_DEBUG, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
-setsockopt(any, 0x10e, SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
-setsockopt(any, 0x10e, IP_RECVERR-TCP_QUICKACK, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
+setsockopt(any, SOL_NETLINK, SO_DEBUG, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
+setsockopt(any, SOL_NETLINK, SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
+setsockopt(any, SOL_NETLINK, IP_RECVERR-TCP_QUICKACK, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5d210
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5d210
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)

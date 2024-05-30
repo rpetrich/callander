@@ -82,7 +82,7 @@ getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
-setsockopt(any, 0x10e, IP_RECVERR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
+setsockopt(any, SOL_NETLINK, IP_RECVERR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c

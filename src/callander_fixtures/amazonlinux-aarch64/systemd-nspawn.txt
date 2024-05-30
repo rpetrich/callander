@@ -308,7 +308,7 @@ setsockopt(any u32, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ libc.so.6+0xdcf44
 setsockopt(any u32, SOL_SOCKET, 0x10, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, 0x15, any, 16) @ libc.so.6+0xdcf44(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_SNDBUFFORCE-0x22, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
-setsockopt(any u32, 0x10e, SO_TYPE, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
+setsockopt(any u32, SOL_NETLINK, SO_TYPE, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
 getsockopt(any u32, SOL_SOCKET, SO_ERROR, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 getsockopt(any u32, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 getsockopt(any u32, SOL_SOCKET, 0x11, any, any) @ libc.so.6+0xdc904(getsockopt+4)

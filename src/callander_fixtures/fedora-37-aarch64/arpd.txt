@@ -171,7 +171,7 @@ setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_REUSEADDR, any, 4) @ 
 setsockopt(any, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
 setsockopt(any, any, IPV6_RECVERR, any, any u32) @ libc.so.6+0xf30c8(setsockopt+24)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_KEEPALIVE, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
-setsockopt(any, 0x10e, IP_RECVERR, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
+setsockopt(any, SOL_NETLINK, IP_RECVERR, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
 recvmsg(any, any, 0) @ libc.so.6+0xf2d14(recvmsg+52)
 recvmsg(any, any, MSG_DONTWAIT) @ libc.so.6+0xf2d14(recvmsg+52)
 recvmsg(any, any, MSG_ERRQUEUE) @ libc.so.6+0xf2d14(recvmsg+52)

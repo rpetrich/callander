@@ -243,7 +243,7 @@ recvfrom(any, any, any u32, MSG_DONTWAIT, any, any) @ libc.so.6+0xdca88(recvfrom
 recvfrom(any, any, any u32, any, any, any) @ libc.so.6+0xdcae8(recvfrom+136)
 setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_REUSEADDR, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
-setsockopt(any u32, IPPROTO_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
+setsockopt(any u32, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
 getsockopt(any u32, SOL_SOCKET, SO_TYPE, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 getsockopt(any u32, SOL_SOCKET, 0x11, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 getsockopt(any u32, SOL_SOCKET, TCP_FASTOPEN_CONNECT-0x1f, any, any) @ libc.so.6+0xdc904(getsockopt+4)

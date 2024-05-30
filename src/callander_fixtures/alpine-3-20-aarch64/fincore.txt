@@ -87,4 +87,4 @@ mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-mus
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
 mincore(NULL-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x3e4ac(mincore+12)
-451(any u32, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+cachestat(any u32, any, any, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)

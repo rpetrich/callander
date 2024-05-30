@@ -243,4 +243,4 @@ mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
 wait4(any, any, 0-WNOHANG, 0) @ ld-musl-aarch64.so.1+0x607bc
 wait4(any, any, 0-WNOHANG, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x24c58(__membarrier_init*+12)
-452(0xffffffffffffff9c, any, NULL-0xfff, 256, 256, any) @ ld-musl-aarch64.so.1+0x52ad8(fchmodat+48)
+fchmodat2(AT_FDCWD, any, 0-07777, 256) @ ld-musl-aarch64.so.1+0x52ad8(fchmodat+48)

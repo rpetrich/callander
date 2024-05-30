@@ -167,7 +167,7 @@ setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xd28e4(setsockopt+4
 setsockopt(any u32, SOL_IP-SOL_SOCKET, SO_KEEPALIVE-SO_OOBINLINE, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_LINGER, any, 8) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, 0x14-0x15, any, 16) @ libc.so.6+0xd28e4(setsockopt+4)
-setsockopt(any u32, IPPROTO_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
+setsockopt(any u32, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_IPV6, IPV6_RECVERR-0x1a, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_IPV6, 0x3e, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 getsockopt(any u32, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ libc.so.6+0xd2354(getsockopt+4)

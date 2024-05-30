@@ -197,7 +197,7 @@ setsockopt(any, SOL_SOCKET, SO_REUSEADDR, any, 4) @ libc.so.6+0xf30c8(setsockopt
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
 setsockopt(any, SOL_SOCKET, 0x15, any, 16) @ libc.so.6+0xf30c8(setsockopt+24)
 setsockopt(any, SOL_SOCKET, SO_SNDBUFFORCE-0x21, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
-setsockopt(any, IPPROTO_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
+setsockopt(any, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xf30c8(setsockopt+24)
 getsockopt(any, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ libc.so.6+0xf2a74(getsockopt+20)
 getsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, any) @ libc.so.6+0xf2a74(getsockopt+20)
 getsockopt(any, SOL_SOCKET, 0x11, any, any) @ libc.so.6+0xf2a74(getsockopt+20)
