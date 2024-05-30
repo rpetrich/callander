@@ -413,7 +413,7 @@ struct recorded_syscalls {
 __attribute__((nonnull(1, 2)))
 char *copy_used_syscalls(const struct loader_context *context, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol);
 __attribute__((nonnull(1)))
-char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, struct registers registers, bool include_symbol);
+char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, const struct registers *registers, bool include_symbol);
 __attribute__((nonnull(1, 2)))
 void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader);
 __attribute__((nonnull(1)))
