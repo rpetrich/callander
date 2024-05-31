@@ -3,6 +3,8 @@
 
 #include "callander.h"
 
+#include <stdlib.h>
+
 extern struct syscall_decl const syscall_list[SYSCALL_DEFINED_COUNT];
 const char *name_for_syscall(uintptr_t nr);
 struct syscall_info info_for_syscall(uintptr_t nr);
@@ -19,5 +21,9 @@ extern char *copy_register_state_description(const struct loader_context *contex
 		if ((bit_name = temp & -temp), (index = _Generic(temp, register_mask: first_set_register_in_mask(temp), default: _Generic(temp, unsigned int: __builtin_ctz(temp), unsigned long: __builtin_ctzl(temp), unsigned long long: __builtin_ctzll(temp), __uint128_t: ctzuint128(temp)))), (temp ^= bit_name), true)
 
 extern char *copy_raw_syscall_description(intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6);
+
+const char *name_for_register(int register_index);
+
+char *copy_registers_description(const struct loader_context *loader, const struct registers *registers, register_mask mask);
 
 #endif

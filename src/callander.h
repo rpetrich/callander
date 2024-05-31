@@ -268,6 +268,9 @@ char *copy_address_description(const struct loader_context *context, const void 
 struct analysis_frame;
 __attribute__((nonnull(1, 2)))
 char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head);
+typedef char *(*additional_print_callback)(const struct loader_context *loader, const struct analysis_frame *frame, void *callback_data);
+__attribute__((nonnull(1, 2)))
+char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data);
 __attribute__((nonnull(1, 2)))
 struct loaded_binary *find_loaded_binary(const struct loader_context *context, const char *path);
 __attribute__((nonnull(1)))
