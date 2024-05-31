@@ -45,36 +45,6 @@
 #define SKIP_SHIFT
 #endif
 
-__attribute__((always_inline))
-static inline register_mask mask_for_conditional_register(bool conditional, enum register_index index)
-{
-#if REGISTER_COUNT > 64
-	union {
-		register_mask mask;
-		struct {
-			uint64_t low;
-			uint64_t high;
-		} parts;
-	} temp;
-	if (LIKELY(index <= 64)) {
-		temp.parts.low = (uint64_t)conditional << index;
-		temp.parts.high = 0;
-	} else {
-		temp.parts.low = 0;
-		temp.parts.high = (uint64_t)conditional << (index - 64);
-	}
-	return temp.mask;
-#else
-	return (register_mask)conditional << index;
-#endif
-}
-
-__attribute__((always_inline))
-static inline register_mask mask_for_register(enum register_index index)
-{
-	return mask_for_conditional_register(true, index);
-}
-
 #ifdef LOGGING
 bool should_log;
 #endif
@@ -165,8 +135,6 @@ static bool decoded_rm_references_register(const struct decoded_rm *rm, int regi
 	return false;
 #endif
 }
-
-static inline const char *name_for_register(int register_index);
 
 __attribute__((nonnull(1)))
 static bool decoded_rm_cannot_reference_stack_slot(const struct decoded_rm *rm)
@@ -669,122 +637,6 @@ static inline struct registers copy_call_argument_registers(const struct loader_
 	result.stack_address_taken = NULL;
 	result.compare_state.validity = COMPARISON_IS_INVALID;
 	return result;
-}
-
-static inline const char *name_for_register(int register_index)
-{
-	switch (register_index) {
-#if defined(__x86_64__)
-		case REGISTER_RAX:
-			return "ax";
-		case REGISTER_RCX:
-			return "cx";
-		case REGISTER_RDX:
-			return "dx";
-		case REGISTER_RBX:
-			return "bx";
-		case REGISTER_SP:
-			return "sp";
-		case REGISTER_RBP:
-			return "bp";
-		case REGISTER_RSI:
-			return "si";
-		case REGISTER_RDI:
-			return "di";
-		case REGISTER_R8:
-			return "r8";
-		case REGISTER_R9:
-			return "r9";
-		case REGISTER_R10:
-			return "r10";
-		case REGISTER_R11:
-			return "r11";
-		case REGISTER_R12:
-			return "r12";
-		case REGISTER_R13:
-			return "r13";
-		case REGISTER_R14:
-			return "r14";
-		case REGISTER_R15:
-			return "r15";
-#else
-#if defined(__aarch64__)
-		case REGISTER_X0:
-			return "r0";
-		case REGISTER_X1:
-			return "r1";
-		case REGISTER_X2:
-			return "r2";
-		case REGISTER_X3:
-			return "r3";
-		case REGISTER_X4:
-			return "r4";
-		case REGISTER_X5:
-			return "r5";
-		case REGISTER_X6:
-			return "r6";
-		case REGISTER_X7:
-			return "r7";
-		case REGISTER_X8:
-			return "r8";
-		case REGISTER_X9:
-			return "r9";
-		case REGISTER_X10:
-			return "r10";
-		case REGISTER_X11:
-			return "r11";
-		case REGISTER_X12:
-			return "r12";
-		case REGISTER_X13:
-			return "r13";
-		case REGISTER_X14:
-			return "r14";
-		case REGISTER_X15:
-			return "r15";
-		case REGISTER_X16:
-			return "r16";
-		case REGISTER_X17:
-			return "r17";
-		case REGISTER_X18:
-			return "r18";
-		case REGISTER_X19:
-			return "r19";
-		case REGISTER_X20:
-			return "r20";
-		case REGISTER_X21:
-			return "r21";
-		case REGISTER_X22:
-			return "r22";
-		case REGISTER_X23:
-			return "r23";
-		case REGISTER_X24:
-			return "r24";
-		case REGISTER_X25:
-			return "r25";
-		case REGISTER_X26:
-			return "r26";
-		case REGISTER_X27:
-			return "r27";
-		case REGISTER_X28:
-			return "r28";
-		case REGISTER_X29:
-			return "r29";
-		// case REGISTER_X30:
-		// 	return "r30";
-		case REGISTER_SP:
-			return "sp";
-#else
-#error "Unknown architecture"
-#endif
-#endif
-		case REGISTER_MEM:
-			return "mem";
-#define PER_STACK_REGISTER_IMPL(offset) case REGISTER_STACK_##offset: return "stack+" #offset;
-	GENERATE_PER_STACK_REGISTER()
-#undef PER_STACK_REGISTER_IMPL
-		default:
-			return "invalid";
-	}
 }
 
 __attribute__((always_inline))
@@ -1596,8 +1448,10 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 	register_mask widenable_registers = relevant_registers & ~data->preserved_registers;
 	register_mask profitable_registers = 0;
 	if (widenable_registers != 0 || total_processing_count > 60) {
-		LOG("loop heuristics");
+		LOG("loop heuristics with widenable");
 		dump_registers(loader, registers, widenable_registers);
+		LOG("additionally relevant");
+		dump_registers(loader, registers, relevant_registers & ~widenable_registers);
 		out_registers->compare_state.validity = COMPARISON_IS_INVALID;
 		size_t processing_count = 0;
 		register_mask definitely_widenable_registers = relevant_registers & ~data->preserved_and_kept_registers;
@@ -1627,18 +1481,22 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
 			register_mask widened = 0;
-			for_each_bit(relevant_registers & ALL_REGISTERS, bit, r) {
+			for_each_bit(relevant_registers, bit, r) {
+				LOG("relevant", name_for_register(r));
 				if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
 					continue;
 				}
 				if (((widenable_registers & bit) == 0) && (processing_count < (definitely_widenable_registers & bit ? 40 : 60))) {
+					LOG("not widenable, next", name_for_register(r));
 					goto continue_search;
 				}
 				if (out_registers->registers[r].value != registers->registers[r].value || out_registers->registers[r].max != registers->registers[r].max) {
 					if ((profitable_registers & bit) == 0) {
 						LOG("found register to be profitable", name_for_register(r));
-						dump_registers(loader, out_registers, bit);
+					} else {
+						LOG("register was already profitable", name_for_register(r));
 					}
+					dump_registers(loader, out_registers, bit);
 					profitable_registers |= bit;
 				}
 				if (entry->widen_count[r] < 4) {
@@ -1708,6 +1566,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				}
 			}
 			if (!collapse_registers(entry, out_registers->registers)) {
+				LOG("failed to collapse, continuing loop heuristics");
 				goto continue_search;
 			}
 			entry->effects = data->sticky_effects;
@@ -1716,7 +1575,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			dump_registers(loader, out_registers, widened);
 			register_mask unwidened = relevant_registers & ~widened;
 			if (unwidened) {
-				LOG("registers left as-is", temp_str(copy_address_description(loader, addr)));
+				LOG("registers left as-is");
 				dump_registers(loader, out_registers, unwidened);
 			}
 			if (entry->effects & EFFECT_PROCESSING) {
@@ -1729,18 +1588,20 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			offset += sizeof_searched_instruction_data_entry(entry);
 		}
 	}
-	if (count > 60) {
-		if (profitable_registers == 0) {
-			if (count >= 256) {
-				profitable_registers = widenable_registers & ALL_REGISTERS;
-				LOG("too many entries, widening all registers");
-			} else {
-				LOG("numerous entries, but no profitable registers");
-			}
+	if (count > 50) {
+		if (count >= 512) {
+			LOG("too many entries with no profitable, using relevant registers at", (intptr_t)count);
+			profitable_registers = relevant_registers;
+		} else if (count >= 256) {
+			LOG("too many entries with no profitable, using widenable registers at", (intptr_t)count);
+			profitable_registers = widenable_registers;
+		} else if (profitable_registers == 0) {
+			LOG("numerous entries, but no profitable registers at", (intptr_t)count);
 		} else {
-			profitable_registers &= widenable_registers;
-			LOG("too many entries, widening profitable registers");
+			LOG("too many entries, widening profitable registers to relevant ones at", (intptr_t)count);
+			profitable_registers |= widenable_registers;
 		}
+		dump_registers(loader, registers, profitable_registers);
 		if (profitable_registers != 0) {
 			*out_registers = *registers;
 			if (SHOULD_LOG) {
@@ -1782,6 +1643,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 	size_t result = data->end_offset;
 	add_new_entry_with_registers(table_entry, *out_wrote_registers ? out_registers : registers);
 	LOG("new entry at offset", (intptr_t)result);
+	LOG("index", (intptr_t)count);
 	return result;
 }
 
@@ -1908,11 +1770,11 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 	data->preserved_and_kept_registers = result.preserved_and_kept_registers | preserved_and_kept_registers;
 	int entry_offset = token->entry_offset;
 	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
+	struct registers copy;
 	if (SHOULD_LOG) {
-		ERROR_NOPREFIX("existing values (index)", (intptr_t)token->entry_offset);
-		struct registers regs = { 0 };
-		expand_registers(regs.registers, entry);
-		dump_registers(loader, &regs, data->relevant_registers);
+		ERROR_NOPREFIX("existing values (index)", (intptr_t)entry_offset);
+		expand_registers(copy.registers, entry);
+		dump_registers(loader, &copy, data->relevant_registers);
 	}
 	function_effects effects;
 	if (registers_are_subset_of_entry_registers(registers->registers, entry, data->relevant_registers)) {
@@ -1921,7 +1783,6 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 		effects = EFFECT_NONE;
 	}
 	if ((effects & required_effects) != required_effects) {
-		struct registers copy;
 		expand_registers(copy.registers, entry);
 		for (int i = 0; i < REGISTER_COUNT; i++) {
 			copy.sources[i] = registers->sources[i];
@@ -1962,9 +1823,33 @@ static uint16_t index_for_callback_and_data(struct searched_instructions *search
 	return count;
 }
 
-__attribute__((unused))
 __attribute__((nonnull(1, 2)))
 static char *copy_function_call_description(const struct loader_context *context, ins_ptr target, const struct registers *registers);
+
+__attribute__((nonnull(1, 2)))
+static char *copy_block_entry_description(const struct loader_context *loader, ins_ptr target, const struct registers *registers)
+{
+	register_mask mask = 0;
+	for (int r = 0; r < REGISTER_COUNT; r++) {
+		if (register_is_partially_known(&registers->registers[r])) {
+			mask |= mask_for_register(r);
+		}
+	}
+	char *name = copy_address_description(loader, target);
+	if (mask == 0) {
+		return name;
+	}
+	size_t name_len = fs_strlen(name);
+	char *description = copy_registers_description(loader, registers, mask);
+	size_t description_len = fs_strlen(description);
+	char *buf = malloc(name_len + description_len + 1);
+	fs_memcpy(buf, name, name_len);
+	free(name);
+	fs_memcpy(&buf[name_len], description, description_len);
+	free(description);
+	buf[name_len + description_len] = '\0';
+	return buf;
+}
 
 __attribute__((nonnull(1, 2, 7)))
 static void find_and_add_callback(struct program_state *analysis, ins_ptr addr, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects additional_effects, instruction_reached_callback callback, void *callback_data)
@@ -1994,7 +1879,7 @@ static void find_and_add_callback(struct program_state *analysis, ins_ptr addr, 
 			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&copy[offset];
 			token.entry_generation = entry->generation;
 			expand_registers(self.current_state.registers, entry);
-			LOG("invoking callback on existing entry", temp_str(copy_function_call_description(&analysis->loader, addr, &self.current_state)));
+			LOG("invoking callback on existing entry", temp_str(copy_block_entry_description(&analysis->loader, addr, &self.current_state)));
 			callback(analysis, addr, &self.current_state, entry->effects, &self, &token, callback_data);
 			offset += sizeof_searched_instruction_data_entry(entry);
 		}
@@ -3282,10 +3167,8 @@ struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, c
 __attribute__((nonnull(1)))
 static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
-typedef char *(*additional_print_callback)(const struct loader_context *loader, const struct analysis_frame *frame, void *callback_data);
-
 __attribute__((nonnull(1, 2)))
-static char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data)
+char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data)
 {
 	size_t count = 0;
 	for (const struct analysis_frame *node = head; node != NULL; node = node->next) {
@@ -6209,7 +6092,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		entry_state->modified |= entry->modified;
 		effects = entry->effects;
 		if ((effects & required_effects) == required_effects) {
-			LOG("skip", temp_str(copy_function_call_description(&analysis->loader, ins, entry_state)));
+			LOG("skip", temp_str(copy_block_entry_description(&analysis->loader, ins, entry_state)));
 			LOG("has effects:");
 			log_effects(effects);
 			LOG("was searching for effects:");
@@ -6234,7 +6117,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		self.current_state.sources[i] = mask_for_register(i);
 	}
-	LOG("entering block", temp_str(copy_function_call_description(&analysis->loader, ins, &self.current_state)));
+	analysis->current_frame = &self;
+	LOG("entering block", temp_str(copy_block_entry_description(&analysis->loader, ins, &self.current_state)));
 	register_mask pending_stack_clear = 0;
 	for (;;) {
 		self.address = ins;

@@ -7,6 +7,8 @@
 #define MORE_STACK_SLOTS 0
 #endif
 
+#include "axon.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -450,6 +452,36 @@ static inline int first_set_register_in_mask(register_mask mask) {
 	return __builtin_ctzll(mask);
 }
 #endif
+
+__attribute__((always_inline))
+static inline register_mask mask_for_conditional_register(bool conditional, enum register_index index)
+{
+#if REGISTER_COUNT > 64
+	union {
+		register_mask mask;
+		struct {
+			uint64_t low;
+			uint64_t high;
+		} parts;
+	} temp;
+	if (LIKELY(index <= 64)) {
+		temp.parts.low = (uint64_t)conditional << index;
+		temp.parts.high = 0;
+	} else {
+		temp.parts.low = 0;
+		temp.parts.high = (uint64_t)conditional << (index - 64);
+	}
+	return temp.mask;
+#else
+	return (register_mask)conditional << index;
+#endif
+}
+
+__attribute__((always_inline))
+static inline register_mask mask_for_register(enum register_index index)
+{
+	return mask_for_conditional_register(true, index);
+}
 
 #define ALL_REGISTERS ((~(register_mask)0) >> (sizeof(register_mask) * 8 - REGISTER_COUNT))
 #define STACK_REGISTERS ((~(register_mask)0 << (BASE_REGISTER_COUNT + 1)) & ALL_REGISTERS)

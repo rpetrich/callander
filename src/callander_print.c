@@ -4992,3 +4992,156 @@ char *copy_raw_syscall_description(intptr_t syscall, intptr_t arg1, intptr_t arg
 	*cur++ = '\0';
 	return buf;
 }
+
+const char *name_for_register(int register_index)
+{
+	switch (register_index) {
+#if defined(__x86_64__)
+		case REGISTER_RAX:
+			return "ax";
+		case REGISTER_RCX:
+			return "cx";
+		case REGISTER_RDX:
+			return "dx";
+		case REGISTER_RBX:
+			return "bx";
+		case REGISTER_SP:
+			return "sp";
+		case REGISTER_RBP:
+			return "bp";
+		case REGISTER_RSI:
+			return "si";
+		case REGISTER_RDI:
+			return "di";
+		case REGISTER_R8:
+			return "r8";
+		case REGISTER_R9:
+			return "r9";
+		case REGISTER_R10:
+			return "r10";
+		case REGISTER_R11:
+			return "r11";
+		case REGISTER_R12:
+			return "r12";
+		case REGISTER_R13:
+			return "r13";
+		case REGISTER_R14:
+			return "r14";
+		case REGISTER_R15:
+			return "r15";
+#else
+#if defined(__aarch64__)
+		case REGISTER_X0:
+			return "r0";
+		case REGISTER_X1:
+			return "r1";
+		case REGISTER_X2:
+			return "r2";
+		case REGISTER_X3:
+			return "r3";
+		case REGISTER_X4:
+			return "r4";
+		case REGISTER_X5:
+			return "r5";
+		case REGISTER_X6:
+			return "r6";
+		case REGISTER_X7:
+			return "r7";
+		case REGISTER_X8:
+			return "r8";
+		case REGISTER_X9:
+			return "r9";
+		case REGISTER_X10:
+			return "r10";
+		case REGISTER_X11:
+			return "r11";
+		case REGISTER_X12:
+			return "r12";
+		case REGISTER_X13:
+			return "r13";
+		case REGISTER_X14:
+			return "r14";
+		case REGISTER_X15:
+			return "r15";
+		case REGISTER_X16:
+			return "r16";
+		case REGISTER_X17:
+			return "r17";
+		case REGISTER_X18:
+			return "r18";
+		case REGISTER_X19:
+			return "r19";
+		case REGISTER_X20:
+			return "r20";
+		case REGISTER_X21:
+			return "r21";
+		case REGISTER_X22:
+			return "r22";
+		case REGISTER_X23:
+			return "r23";
+		case REGISTER_X24:
+			return "r24";
+		case REGISTER_X25:
+			return "r25";
+		case REGISTER_X26:
+			return "r26";
+		case REGISTER_X27:
+			return "r27";
+		case REGISTER_X28:
+			return "r28";
+		case REGISTER_X29:
+			return "r29";
+		// case REGISTER_X30:
+		// 	return "r30";
+		case REGISTER_SP:
+			return "sp";
+#else
+#error "Unknown architecture"
+#endif
+#endif
+		case REGISTER_MEM:
+			return "mem";
+#define PER_STACK_REGISTER_IMPL(offset) case REGISTER_STACK_##offset: return "stack+" #offset;
+	GENERATE_PER_STACK_REGISTER()
+#undef PER_STACK_REGISTER_IMPL
+		default:
+			return "invalid";
+	}
+}
+
+char *copy_registers_description(const struct loader_context *loader, const struct registers *registers, register_mask mask)
+{
+	const char *names[REGISTER_COUNT];
+	size_t name_lengths[REGISTER_COUNT];
+	char *descriptions[REGISTER_COUNT];
+	size_t description_lengths[REGISTER_COUNT];
+	size_t used = 0;
+	size_t characters = 1;
+	for_each_bit(mask, bit, r) {
+		// name
+		const char *name = name_for_register(r);
+		names[used] = name;
+		size_t name_length = fs_strlen(name);
+		name_lengths[used] = name_length;
+		// description
+		char *description = copy_register_state_description(loader, registers->registers[r]);
+		descriptions[used] = description;
+		size_t description_len = fs_strlen(description);
+		description_lengths[used] = description_len;
+		used++;
+		characters += name_length + 2 + description_len;
+	}
+	char *buf = malloc(characters);
+	size_t i = 0;
+	for (size_t r = 0; r < used; r++) {
+		buf[i++] = ' ';
+		memcpy(&buf[i], names[r], name_lengths[r]);
+		i += name_lengths[r];
+		buf[i++] = '=';
+		memcpy(&buf[i], descriptions[r], description_lengths[r]);
+		i += description_lengths[r];
+		free(descriptions[r]);
+	}
+	buf[i] = '\0';
+	return buf;
+}
