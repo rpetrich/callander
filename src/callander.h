@@ -502,6 +502,7 @@ struct program_state {
 	ins_ptr skipped_call;
 	address_loaded_callback address_loaded;
 	void *address_loaded_data;
+	struct analysis_frame *current_frame;
 };
 
 __attribute__((nonnull(1, 2, 6)))
