@@ -12665,6 +12665,7 @@ update_and_return:
 	push_reachable_region(&analysis->loader, &analysis->unreachables, self.entry, next_ins(ins, &decoded));
 #endif
 	entry_state->modified |= self.current_state.modified;
+	analysis->current_frame = self.next;
 	return effects;
 use_alternate_result:
 	self.description = "alternate result";

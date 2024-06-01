@@ -1358,10 +1358,25 @@ void __restore();
 
 static void *stack;
 
+static struct program_state analysis;
+
+static char *segfault_trace_callback(const struct loader_context *loader, const struct analysis_frame *frame, __attribute__((unused)) void *callback_data)
+{
+	register_mask mask = 0;
+	for (int r = 0; r < REGISTER_COUNT; r++) {
+		if (register_is_partially_known(&frame->current_state.registers[r])) {
+			mask |= mask_for_register(r);
+		}
+	}
+	return mask != 0 ? copy_registers_description(loader, &frame->current_state, mask) : NULL;
+}
+
 static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unused)) siginfo_t *info, __attribute__((unused)) void *void_context)
 {
 	if (info->si_code == SEGV_ACCERR && stack != NULL && info->si_addr >= stack && info->si_addr < (stack + STACK_GUARD_SIZE)) {
-		DIE("binary requires more stack to analyze than was configured at build time");
+		ERROR("binary requires more stack to analyze than was configured at build time");
+		ERROR_FLUSH();
+		DIE("analysis trace is", temp_str(copy_call_trace_description_with_additional(&analysis.loader, analysis.current_frame, segfault_trace_callback, NULL)));
 	}
 	struct fs_sigaction sa = {
 		.handler = SIG_DFL,
@@ -1392,7 +1407,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	// Find PATH and LD_PRELOAD
 	int envp_count = 0;
 	const char *path = "/bin:/usr/bin";
-	struct program_state analysis = { 0 };
 	for (char **s = envp; *s != NULL; s++) {
 		if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) == 0) {
 			analysis.ld_preload = *s + sizeof("LD_PRELOAD=")-1;
