@@ -4784,9 +4784,28 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	LOG("right", temp_str(copy_register_state_description(loader, right_state)));
 	additional->used = false;
 	enum basic_op_usage usage = op(&left_state, &right_state, left, applied_shift ? REGISTER_INVALID : right, size, additional);
-	truncate_to_operand_size(&left_state, size);
+	if (size == OPERATION_SIZE_DWORD) {
+		if (left_state.value != left_state.max && left_state.value > PAGE_SIZE) {
+			struct loaded_binary *binary = binary_for_address(loader, (const void *)left_state.value);
+			if (binary != NULL && binary != binary_for_address(loader, (const void *)left_state.max)) {
+				clear_register(&left_state);
+			}
+		}
+	} else {
+		truncate_to_operand_size(&left_state, size);
+	}
 	if (UNLIKELY(additional->used)) {
-		truncate_to_operand_size(&additional->state, size);
+		if (size == OPERATION_SIZE_DWORD) {
+			if (additional->state.value != additional->state.max && additional->state.value > PAGE_SIZE) {
+				struct loaded_binary *binary = binary_for_address(loader, (const void *)additional->state.value);
+				if (binary != NULL && binary != binary_for_address(loader, (const void *)additional->state.max)) {
+					additional->used = false;
+					clear_register(&left_state);
+				}
+			}
+		} else {
+			truncate_to_operand_size(&additional->state, size);
+		}
 		merge_and_log_additional_result(loader, &left_state, additional, left);
 	} else {
 		LOG("result", temp_str(copy_register_state_description(loader, left_state)));
