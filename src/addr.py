@@ -23,7 +23,7 @@ class AddrOffsetCommand(gdb.Command):
             memrange, perms, offset, devnum, size, path = (None, None, None, None, None, None)
 
             try:
-                memrange, perms, offset, devnum, size, path = re.split("\s+", line)
+                memrange, perms, offset, devnum, size, path = re.split("\\s+", line)
             except:
                 continue
 
@@ -73,7 +73,7 @@ class AddrOffsetFunction(gdb.Function):
             memrange, perms, offset, devnum, size, path = (None, None, None, None, None, None)
 
             try:
-                memrange, perms, offset, devnum, size, path = re.split("\s+", line)
+                memrange, perms, offset, devnum, size, path = re.split("\\s+", line)
             except:
                 continue
 
