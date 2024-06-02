@@ -1827,6 +1827,7 @@ __attribute__((nonnull(1, 2)))
 static char *copy_function_call_description(const struct loader_context *context, ins_ptr target, const struct registers *registers);
 
 __attribute__((nonnull(1, 2)))
+__attribute__((unused))
 static char *copy_block_entry_description(const struct loader_context *loader, ins_ptr target, const struct registers *registers)
 {
 	register_mask mask = 0;
