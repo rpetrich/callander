@@ -33,6 +33,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x1116b9(madvis
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x1116b9(madvise+9)
 dup2(any u32, STDIN_FILENO-0x7fffffff) @ libc.so.6+0x103a79(__dup2+9)
 alarm(any u32) @ libc.so.6+0xdd939(alarm+9)
+getpid() @ ld-linux-x86-64.so.2+0x22259(__GI___getpid+9)
 getpid() @ libc.so.6+0xe8729(__getpid+9)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, any, 0) @ libc.so.6+0xdd8a5(_Fork+37)
 exit(0) @ libc.so.6+0x2816c(__libc_start_call_main+156)

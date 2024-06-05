@@ -12,11 +12,10 @@ faccessat(AT_FDCWD, /sbin/ldconfig:0x470b08, F_OK) @ /sbin/ldconfig:0x453ecc
 chdir(/sbin/ldconfig:0x4714b0) @ /sbin/ldconfig:0x42fbc4
 chroot(non-NULL) @ /sbin/ldconfig:0x4309d4
 fchmodat(AT_FDCWD, any, 0644) @ /sbin/ldconfig:0x42f77c
-openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ /sbin/ldconfig:0x42f860
+openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x42f860
 openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x42f8ec
-openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /sbin/ldconfig:0x430578
-openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /sbin/ldconfig:0x430578
-openat(AT_FDCWD, any, any, any) @ /sbin/ldconfig:0x4305d0
+openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x430578
+openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x4305d0
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig:0x430648
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig:0x4306a0
 close(any) @ /sbin/ldconfig:0x42fb38

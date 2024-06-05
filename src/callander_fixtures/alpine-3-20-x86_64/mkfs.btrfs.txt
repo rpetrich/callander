@@ -59,12 +59,8 @@ ioctl(any, GET_ARRAY_INFO, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, BLKREPORTZONE, non-NULL) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4e968(fdopen+202)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4ef68(__stdout_write*+48)
-pwrite64(any, any, any u16, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-pwrite64(any, any, 1, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-pwrite64(any, any, 0x1000, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-pwrite64(any, any, any u16, any u32) @ ld-musl-x86_64.so.1+0x5e990
-pwrite64(any, any, 1, any) @ ld-musl-x86_64.so.1+0x5e990
-pwrite64(any, any, 0x1000, any) @ ld-musl-x86_64.so.1+0x5e990
+pwrite64(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+pwrite64(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4edb7(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4ef01(__stdio_write*+196)
 pipe(any) @ ld-musl-x86_64.so.1+0x6242f(pipe+9)

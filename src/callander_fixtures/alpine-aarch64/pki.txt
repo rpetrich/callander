@@ -25,8 +25,8 @@ openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c31c, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c332, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, any, any u32, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(AT_FDCWD, any, any u32, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x61dbc(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x20014(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x42368(if_nametoindex+116)
@@ -52,10 +52,10 @@ pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
 ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
-ppoll(any, 0x2b-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5dc8c
+ppoll(any, 0x22-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 ppoll(any, any, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-ppoll(any, 0x2b-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+ppoll(any, 0x22-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9cf7e, any, 512) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
 newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
@@ -143,12 +143,8 @@ accept(any, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
-sendto(any, any, any u32, any u16, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any u32, any u16, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-sendto(any, any, any, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+sendto(any, any, any, any u16, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+sendto(any, any, any, any u16, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 recvfrom(any, any, any, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

@@ -424,7 +424,7 @@ name_to_handle_at(AT_FDCWD, libudev.so.1+0x22d80, non-NULL, any, 0) @ libc.so.6+
 sendmmsg(any, any, any u32, any) @ libc.so.6+0xf3550(sendmmsg+64)
 sendmmsg(any, any, any u32, any) @ libc.so.6+0xf3598(sendmmsg+136)
 sched_setattr(any u32, any, 0) @ libc.so.6+0xec2a4(syscall+36)
-sched_getattr(any u32, any, any u32, 0) @ libc.so.6+0xec2a4(syscall+36)
+sched_getattr(any u32, any, any u32, any u8) @ libc.so.6+0xec2a4(syscall+36)
 getrandom(any, any, 0) @ libc.so.6+0x40184(__GI___arc4random_buf.part.0+84)
 getrandom(any, any, 0) @ libc.so.6+0x401b8(__GI___arc4random_buf.part.0+136)
 getrandom(any, any, 0) @ libc.so.6+0x42130(getentropy+64)

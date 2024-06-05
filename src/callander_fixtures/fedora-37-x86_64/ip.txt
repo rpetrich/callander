@@ -40,6 +40,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x104cb9(madvis
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x104cb9(madvise+9)
 dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xfba69(dup+9)
 alarm(any u32) @ libc.so.6+0xd6709(alarm+9)
+getpid() @ ld-linux-x86-64.so.2+0x21e69(__GI___getpid+9)
 getpid() @ libc.so.6+0xd8029(getpid+9)
 sendfile(any u32, any u32, 0, any) @ libc.so.6+0xff84c(sendfile+12)
 socket(any u32, SOCK_STREAM-SOCK_DGRAM, 0) @ libc.so.6+0x10e169(socket+9)
