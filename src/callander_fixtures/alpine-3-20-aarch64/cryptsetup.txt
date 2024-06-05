@@ -43,6 +43,7 @@ ioctl(any, IOC_OPAL_PSID_REVERT_TPR, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+4
 ioctl(any, IOC_OPAL_ACTIVATE_USR, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, _IOW('p',219,280)-IOC_OPAL_LOCK_UNLOCK, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, IOC_OPAL_ADD_USR_TO_LR, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
+ioctl(any, IOC_OPAL_SET_PW, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, BLKGETZONESZ, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, BLKBSZGET, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, BLKGETSIZE64, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)

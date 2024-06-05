@@ -12,10 +12,11 @@ faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b548, F_OK) @ /usr/sbin/ldconfig
 chdir(/usr/sbin/ldconfig.real:0x46bf38) @ /usr/sbin/ldconfig.real:0x42db44
 chroot(non-NULL) @ /usr/sbin/ldconfig.real:0x42e884
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig.real:0x42d710
-openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real:0x42d7e0
+openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42d7e0
 openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig.real:0x42d868
-openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real:0x42e448
-openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig.real:0x42e498
+openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e448
+openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e448
+openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig.real:0x42e498
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e50c
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e560
 close(any) @ /usr/sbin/ldconfig.real:0x42dab8

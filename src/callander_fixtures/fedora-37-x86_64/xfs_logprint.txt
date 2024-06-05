@@ -55,6 +55,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x104cb9(madvis
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x104cb9(madvise+9)
 madvise(any, 0x1-0xffffffffffffbfff, MADV_DONTNEED) @ libc.so.6+0x104cb9(madvise+9)
 dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xfba69(dup+9)
+getpid() @ ld-linux-x86-64.so.2+0x21e69(__GI___getpid+9)
 getpid() @ libc.so.6+0xd8029(getpid+9)
 socket(AF_INET, any u32, 17) @ libc.so.6+0x10e169(socket+9)
 socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, 0) @ libc.so.6+0x10e169(socket+9)

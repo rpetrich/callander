@@ -41,6 +41,7 @@ dup2(STDERR_FILENO--1 as u32, STDIN_FILENO-STDERR_FILENO) @ libc.so.6+0x103a79(_
 pause() @ libc.so.6+0xec5a2(pause+18)
 pause() @ libc.so.6+0xec5c4(pause+52)
 alarm(any u32) @ libc.so.6+0xdd939(alarm+9)
+getpid() @ ld-linux-x86-64.so.2+0x22259(__GI___getpid+9)
 getpid() @ libc.so.6+0xe8729(__getpid+9)
 getpid() @ libc.so.6+0x11385b(syscall+27)
 socket(any u16, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0x118069(socket+9)

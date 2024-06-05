@@ -1,1 +1,0 @@
-callander: binary requires more stack to analyze than was configured at build time

@@ -120,15 +120,13 @@ write(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
-pread64(any, any, 16, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-pread64(any, any, 25, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-pread64(any, any, 16, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-pread64(any, any, 25, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+pread64(any, any, any u8, any u8) @ ld-musl-aarch64.so.1+0x5dc8c
+pread64(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendfile(any, any, 0, any) @ ld-musl-aarch64.so.1+0x249f8(sendfile64+12)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
-ppoll(0, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
+ppoll(any, 0, any, any u8, any u8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
-ppoll(0, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+ppoll(any, 0, any, any u8, any u8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
@@ -155,6 +153,7 @@ set_tid_address(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aar
 unshare(any) @ ld-musl-aarch64.so.1+0x24d04(unshare+16)
 futex(any, FUTEX_WAIT, any, 0, any u32, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, any, 0-INT_MAX, any, any u32, any u32)
 futex(any, any, any, 0, 0, 0)
 futex(any, any, 1, any, any, any)
 futex(any, any, non-NULL, 0, 0, any)
@@ -166,14 +165,8 @@ futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xb1df4, ld-musl-aarch64.so.1+0xb1df4)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any u32, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-aarch64.so.1+0xb0418(maplock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xb0418(maplock*), any u32, any u32)
-futex(ld-musl-aarch64.so.1+0xb1120(lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xb1120(lock*), any u32, any u32)
-futex(ld-musl-aarch64.so.1+0xb1160(key_lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xb1160(key_lock*), any u32, any u32)
 futex(ld-musl-aarch64.so.1+0xb1dc8, FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb1dc8, any, any)
-futex(ld-musl-aarch64.so.1+0xb1e60(lock*), any, 0-INT_MAX, ld-musl-aarch64.so.1+0xb1e60(lock*), any u32, any u32)
 futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
-futex(ld-musl-aarch64.so.1+0xb22f4(caller_sem*), any, INT_MAX, ld-musl-aarch64.so.1+0xb22f4(caller_sem*), 0, any u32)
-futex(ld-musl-aarch64.so.1+0xb2314(target_sem*), any, INT_MAX, ld-musl-aarch64.so.1+0xb2314(target_sem*), 0, any u32)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
@@ -214,8 +207,8 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x508a4(__libc_sig
 rt_sigprocmask(SIG_SETMASK, 0, any, 8) @ ld-musl-aarch64.so.1+0x50ed4(__sigsetjmp_tail*+32)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x50ed4(__sigsetjmp_tail*+32)
 rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ ld-musl-aarch64.so.1+0x610e8(pthread_sigmask+24)
-rt_sigtimedwait(any, 0, any, 8) @ ld-musl-aarch64.so.1+0x5dc8c
-rt_sigtimedwait(any, 0, any, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+rt_sigtimedwait(any, 0, any, any u8) @ ld-musl-aarch64.so.1+0x5dc8c
+rt_sigtimedwait(any, 0, any, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x504d4
 setpriority(any u8, any u32, any) @ ld-musl-aarch64.so.1+0x3db0c(setpriority+24)
 getpriority(any u8, any u32) @ ld-musl-aarch64.so.1+0x3c9cc(getpriority+20)
@@ -293,14 +286,14 @@ socket(any, 0-0xfffffffffff7f7ff, 0) @ ld-musl-aarch64.so.1+0x45c8c(socket+96)
 socket(any, SOCK_DGRAM, 17) @ ld-musl-aarch64.so.1+0x45c8c(socket+96)
 bind(any, any, any u32) @ ld-musl-aarch64.so.1+0x3fd4c(bind+32)
 listen(0x3, 1) @ ld-musl-aarch64.so.1+0x42aa8(listen+36)
-accept(0x3, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
-accept(0x3, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+accept(any u16, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+accept(any u16, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41e94(getsockname+28)
 getpeername(any, any, any) @ ld-musl-aarch64.so.1+0x41ae0(getpeername+28)
-sendto(any, any, any, any u16, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
-sendto(any, any, any, any u16, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+sendto(any, any, any, any u16, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+sendto(any, any, any, any u16, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvfrom(any, any, any, any u8, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 recvfrom(any, any, any, any u8, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, SOL_IP-SOL_SOCKET, SO_DEBUG-SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
@@ -320,12 +313,8 @@ sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x5dc8c
 sendmsg(any, any, any u8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c
-recvmsg(any, any, MSG_DONTWAIT) @ ld-musl-aarch64.so.1+0x5dc8c
-recvmsg(0x3, any, MSG_PEEK) @ ld-musl-aarch64.so.1+0x5dc8c
-recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvmsg(any, any, MSG_DONTWAIT) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-recvmsg(0x3, any, MSG_PEEK) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+recvmsg(any, any, any u8) @ ld-musl-aarch64.so.1+0x5dc8c
+recvmsg(any, any, any u8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readahead(any, 0, any) @ ld-musl-aarch64.so.1+0x24978(readahead+8)
 brk(0) @ ld-musl-aarch64.so.1+0x2b624(__malloc_alloc_meta*+304)
 brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+336)

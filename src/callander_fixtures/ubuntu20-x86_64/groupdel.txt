@@ -60,6 +60,7 @@ madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x118c99(__madv
 dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0x10eab9(dup+9)
 alarm(0) @ libc.so.6+0xe2d99(alarm+9)
 alarm(15) @ libc.so.6+0xe2d99(alarm+9)
+getpid() @ ld-linux-x86-64.so.2+0x1f2e9(__GI___getpid*+9)
 getpid() @ libc.so.6+0x42fd1(raise+145)
 getpid() @ libc.so.6+0xe40c9(__getpid+9)
 getpid() @ libc.so.6+0x160eac(__pthread_unwind*+28)

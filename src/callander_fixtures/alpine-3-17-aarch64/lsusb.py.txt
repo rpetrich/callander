@@ -20,8 +20,8 @@ getcwd(any, non-NULL) @ ld-musl-aarch64.so.1+0x64710(getcwd+36)
 eventfd2(any u32, any) @ ld-musl-aarch64.so.1+0x241d4(eventfd+20)
 epoll_create1(EPOLL_CLOEXEC) @ ld-musl-aarch64.so.1+0x2413c(epoll_create1+16)
 epoll_ctl(any, 0x1-0x3, any, any) @ ld-musl-aarch64.so.1+0x24170(epoll_ctl+24)
-epoll_pwait(any, non-NULL, 0x1-0xfffffffffffffffe, any) @ ld-musl-aarch64.so.1+0x5d210
-epoll_pwait(any, non-NULL, 0x1-0xfffffffffffffffe, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+epoll_pwait(any, non-NULL, NULL-0xfffffffffffffffe, any) @ ld-musl-aarch64.so.1+0x5d210
+epoll_pwait(any, non-NULL, NULL-0xfffffffffffffffe, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 dup(any) @ ld-musl-aarch64.so.1+0x481a4(child*+560)
 dup(STDIN_FILENO-STDOUT_FILENO) @ ld-musl-aarch64.so.1+0x64284(dup+16)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x48250(child*+732)
@@ -177,9 +177,9 @@ sendfile(any, any, any, any) @ ld-musl-aarch64.so.1+0x248f4(sendfile64+12)
 pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
-ppoll(0, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
+ppoll(any, any u32, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
-ppoll(0, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+ppoll(any, any u32, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 splice(any, any, any, any, any, any u32) @ ld-musl-aarch64.so.1+0x24aa8(splice+16)
 readlinkat(AT_FDCWD, any, any, 0x1-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
@@ -265,8 +265,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e998(start*+128
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5ea90(pthread_create+172)
 rt_sigprocmask(any, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigpending(any, 8) @ ld-musl-aarch64.so.1+0x50268(sigpending+16)
-rt_sigtimedwait(any, any, any, 8) @ ld-musl-aarch64.so.1+0x5d210
-rt_sigtimedwait(any, any, any, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+rt_sigtimedwait(any, any, any, any u16) @ ld-musl-aarch64.so.1+0x5d210
+rt_sigtimedwait(any, any, any, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 setpriority(any, any u32, any) @ ld-musl-aarch64.so.1+0x3da54(setpriority+24)
 getpriority(any, any u32) @ ld-musl-aarch64.so.1+0x3c938(getpriority+20)
@@ -373,16 +373,14 @@ fadvise64(any, any, any, any) @ ld-musl-aarch64.so.1+0x211c0(posix_fadvise64+12)
 mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
-msync(any, any, MS_SYNC) @ ld-musl-aarch64.so.1+0x5d210
-msync(non-NULL, any, MS_INVALIDATE|MS_SYNC) @ ld-musl-aarch64.so.1+0x5d210
-msync(any, any, MS_SYNC) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-msync(non-NULL, any, MS_INVALIDATE|MS_SYNC) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+msync(any, any, any u8) @ ld-musl-aarch64.so.1+0x5d210
+msync(any, any, any u8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 madvise(any, any, any) @ ld-musl-aarch64.so.1+0x3e614(madvise+16)
 accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-aarch64.so.1+0x5d210
 accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 wait4(any, any, any, any) @ ld-musl-aarch64.so.1+0x24c78(wait4+20)
-wait4(any, any, any, 0) @ ld-musl-aarch64.so.1+0x5d210
-wait4(any, any, any, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+wait4(any, any, any, any u16) @ ld-musl-aarch64.so.1+0x5d210
+wait4(any, any, any, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 wait4(any, any, __WCLONE, 0) @ ld-musl-aarch64.so.1+0x644f8(faccessat+328)
 prlimit64(any, RLIMIT_CPU-RLIMIT_RTTIME, any, any) @ ld-musl-aarch64.so.1+0x2478c(prlimit64+20)
 prlimit64(0, RLIMIT_CPU-RLIMIT_RTTIME, 0, any) @ ld-musl-aarch64.so.1+0x3c9bc(getrlimit+44)

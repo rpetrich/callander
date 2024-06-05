@@ -372,7 +372,7 @@ add_key(libsystemd-shared-249.so+0x1fbbf0, non-NULL, any, any, 0xfffffffc) @ lib
 request_key(any, any, 0, 0) @ libc.so.6+0xe1c24(syscall+36)
 keyctl(3, any u32, any, any, any) @ libc.so.6+0xe1c24(syscall+36)
 keyctl(11, any u32, any, any, any) @ libc.so.6+0xe1c24(syscall+36)
-keyctl(11, any, non-NULL, any, 0) @ libc.so.6+0xe1c24(syscall+36)
+keyctl(11, any, any, any, any u8) @ libc.so.6+0xe1c24(syscall+36)
 keyctl(15, NULL-0xfffffffffffffffe, 150, 0, 0) @ libc.so.6+0xe1c24(syscall+36)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, 0, any) @ libc.so.6+0xb6f94(_Fork+36)
 clone(SIGCHLD, 0, any, any, any) @ libc.so.6+0xe1c24(syscall+36)

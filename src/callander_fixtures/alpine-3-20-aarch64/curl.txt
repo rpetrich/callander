@@ -5,8 +5,6 @@ epoll_create1(0) @ ld-musl-aarch64.so.1+0x24838(epoll_create1+16)
 epoll_ctl(any, 0x1-0x3, any, any) @ ld-musl-aarch64.so.1+0x2488c(epoll_ctl+24)
 epoll_pwait(any, any, 8, any) @ ld-musl-aarch64.so.1+0x607bc
 epoll_pwait(any, any, 8, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x686b8(dup3+28)
-dup3(any, any, O_CLOEXEC) @ ld-musl-aarch64.so.1+0x686b8(dup3+28)
 fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_GETFL, 0) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
