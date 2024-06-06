@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/bundler2.7"
-Failed to parse input.

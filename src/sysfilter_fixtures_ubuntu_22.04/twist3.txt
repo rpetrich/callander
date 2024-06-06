@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/twist3"
-Failed to parse input.

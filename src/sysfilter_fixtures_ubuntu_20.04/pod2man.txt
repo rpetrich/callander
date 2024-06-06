@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/pod2man"
-Failed to parse input.

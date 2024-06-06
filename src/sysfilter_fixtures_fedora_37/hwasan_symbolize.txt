@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/hwasan_symbolize"
-Failed to parse input.

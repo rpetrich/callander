@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/dracut"
-Failed to parse input.

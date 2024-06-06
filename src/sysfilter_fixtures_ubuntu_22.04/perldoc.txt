@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/perldoc"
-Failed to parse input.

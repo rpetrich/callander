@@ -1,2 +1,0 @@
-Failed to parse input file "/sbin/pam_namespace_helper"
-Failed to parse input.

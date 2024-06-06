@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/py3compile"
-Failed to parse input.

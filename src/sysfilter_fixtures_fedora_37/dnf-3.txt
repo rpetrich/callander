@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/dnf-3"
-Failed to parse input.

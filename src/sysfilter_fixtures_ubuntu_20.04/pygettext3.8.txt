@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/pygettext3.8"
-Failed to parse input.

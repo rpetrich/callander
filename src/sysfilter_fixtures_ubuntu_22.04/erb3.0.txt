@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/erb3.0"
-Failed to parse input.

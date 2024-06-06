@@ -1,1 +1,0 @@
-sysfilter_extract: chunk/marker.cpp:97: Link* MarkerList::createMarkerLink(Symbol*, size_t, Module*, bool): Assertion `"couldn't find the base of marker..." && 0' failed.

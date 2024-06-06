@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/expect_multixterm"
-Failed to parse input.

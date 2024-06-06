@@ -5,6 +5,8 @@
 
 #include <dirent.h>
 
+// only the very basics of windows support are included
+
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 extern const struct vfs_file_ops windows_socket_ops;

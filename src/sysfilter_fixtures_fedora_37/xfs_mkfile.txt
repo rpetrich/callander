@@ -1,2 +1,0 @@
-Failed to parse input file "/sbin/xfs_mkfile"
-Failed to parse input.

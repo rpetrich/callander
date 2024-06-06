@@ -59,10 +59,6 @@ else
 endif
 endif
 
-# record stack usage to objs-*/*.su
-# CFLAGS += -fstack-usage
-# LDFLAGS += -fstack-usage
-
 CFLAGS += -fno-omit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wdouble-promotion -Wundef -fcf-protection=none
 ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Software Foundation)
 	# cannot use floating point registers in trap handlers!
@@ -86,29 +82,6 @@ ifeq ($(TARGETMACHINE),aarch64)
 	CFLAGS += -Wno-psabi -march=armv8-a+lse
 	LDFLAGS += -Wno-psabi -march=armv8-a+lse
 	CFLAGS += -Wno-unused-function -Wno-unused-parameter -Wno-strict-aliasing -Wno-int-in-bool-context -Wno-implicit-fallthrough -Wno-sign-compare -Wno-double-promotion -Wno-format
-endif
-
-ifeq ($(COVERAGE),1)
-	CFLAGS += --coverage -DCOVERAGE=1 -fprofile-arcs -ftest-coverage
-endif
-
-ifeq ($(STACK_PROTECTOR),1)
-	CFLAGS += -fstack-protector -DSTACK_PROTECTOR=1
-else
-	CFLAGS += -fno-stack-protector
-endif
-
-ifeq ($(ADDRESS_SANITIZER),1)
-	CFLAGS += -fsanitize=address -static-libasan
-endif
-
-ifeq ($(UNDEFINED_SANITIZER),1)
-	CFLAGS += -fsanitize=undefined -static-libubsan
-	LDFLAGS += -fsanitize=undefined -static-libubsan
-endif
-
-ifeq ($(ANALYZER),1)
-	CFLAGS += -fanalyzer
 endif
 
 ifeq ($(TARGETMACHINE),aarch64)
@@ -150,13 +123,6 @@ THANDLER_OBJECTS := $(COMMON_OBJECTS) attempt_target.o darwin.o defaultlibs.o ex
 			fd_table_target.o fork_target.o handler.o intercept_target.o malloc.o paths_target.o \
 			proxy_target.o remote.o remote_library_target.o sockets_target.o stack.o thandler.o \
 			tls.o tracer.o vfs.o vfs_local.o vfs_linux.o callander_print.o
-LOOKUP_OBJECTS := $(COMMON_OBJECTS) defaultlibs.o loader.o lookup_main.o resolver.o
-LIBCALLBOX_OBJECTS := $(COMMON_OBJECTS) $(ARCH_OBJECTS) $(PATCH_OBJECTS) \
-			$(COMMON_CALLANDER_OBJECTS) callander_seccomp.o libcallbox.o attempt.o defaultlibs.o loader.o mapped.o \
-			proxy.o tls.o
-CALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_seccomp.o callander_main.o
-LIBCALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_seccomp.o libcallander.o
-LEXEC_OBJECTS := ${COMMON_OBJECTS} $(COMMON_CALLANDER_OBJECTS) $(PATCH_OBJECTS) lexec.o remote_exec.o tls.o attempt.o stack.o
 
 ifeq ($(TARGETOS),linux)
 CALLANDER_OPT := -Os -ftree-vectorize \
@@ -168,30 +134,12 @@ endif
 
 objdir = .objs-$(TARGETOS)-$(TARGETMACHINE)
 
-.PHONY: all test test-debug test-trace clean install
+.PHONY: all clean install
 
-all: axon tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault target target2 target3 texec thandler callander lookup libcallbox.so libcallander.so
-
-test: all
-	./compare.sh tests/sigsys_receive || exit 1
-	./compare.sh tests/sample_fs || exit 1
-	./compare.sh tests/sample || exit 1
-	./compare.sh tests/sample_dyn || exit 1
-	./compare.sh echo hi || exit 1
-	./compare.sh bash -c 'echo hi' || exit 1
-	./compare.sh tests/script.sh || exit 1
-	./compare.sh tests/fault || exit 1
-	./compare.sh tests/segfault || exit 1
-	./compare.sh ls -lah /proc/self/exe || exit 1
-
-test-debug: all
-	AXON_ADDR=$(BASE_ADDRESS) gdb --args ./axon tests/sample_fs
-
-test-trace: all
-	strace -f ./axon tests/sample_fs
+all: axon target target2 target3 texec thandler
 
 clean:
-	rm -f axon texec thandler target target2 target3 callander libcallander.so libcallbox.so lookup *.debug *.o *.gcno *.gcov *.gcda tests/sample tests/sample_fs tests/sample_fs_pie tests/sample_write tests/sample_dyn tests/sigsys_receive tests/fault tests/segfault
+	rm -f axon texec thandler target target2 target3 *.debug *.o *.gcno *.gcov *.gcda
 	rm -rf "$(objdir)"
 
 $(objdir)/%.o: %.c *.h Makefile
@@ -229,30 +177,6 @@ endif
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
-
-tests/sample: tests/sample.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
-
-tests/sample_dyn: tests/sample.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<"
-
-tests/sample_fs: tests/sample_fs.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -nostdlib -no-pie -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
-
-tests/sample_fs_pie: tests/sample_fs.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -pie -fPIC -O2 -ffreestanding -Wl,-e,impulse -o "$@" "$<"
-
-tests/sample_write: tests/sample_write.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -nostdlib -fPIC -O2  -nostdlib -shared -nostartfiles -ffreestanding -Wl,-e,impulse -o "$@" "$<"
-
-tests/sigsys_receive: tests/sigsys_receive.c Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
-
-tests/fault: tests/fault.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
-
-tests/segfault: tests/segfault.c *.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -static -no-pie -ffreestanding -o "$@" "$<"
 
 # full axon target payload
 target$(BINSUFFIX): target.c *.h Makefile
@@ -300,36 +224,3 @@ thandler: $(foreach obj,$(THANDLER_OBJECTS),$(objdir)/$(obj))
 	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
-
-callander: $(foreach obj,$(CALLANDER_OBJECTS),$(objdir)/$(obj))
-ifeq ($(STANDALONE),1)
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
-else
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
-endif
-	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
-	$(STRIP) -s -R .comment -D "$@"
-	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
-
-libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
-
-libcallbox.so: $(foreach obj,$(LIBCALLBOX_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
-
-callander_test: $(foreach obj,$(LIBCALLANDER_OBJECTS) callander_test_main.o,$(objdir)/$(obj))
-ifeq ($(STANDALONE),1)
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
-else
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
-endif
-	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
-	$(STRIP) -s -R .comment -D "$@"
-	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
-
-lexec: $(foreach obj,$(LEXEC_OBJECTS),$(objdir)/$(obj))
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -fPIE $^ -o "$@"
-# 	codesign -s gdb_codesign -o runtime --entitlements entitlements.xml "$@"
-
-systranslate: systranslate.c defaultlibs.c syscall_defs_x86_64.h Makefile
-	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -o "$@" "$<" defaultlibs.c
