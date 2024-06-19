@@ -12583,7 +12583,24 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_UADDWT:
 			case ARM64_UBFIZ:
 			case ARM64_UBFM:
-			case ARM64_UBFX:
+				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
+				break;
+			case ARM64_UBFX: {
+				enum ins_operand_size size;
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				LOG("ubfx to", name_for_register(dest));
+				struct register_state w_state;
+				read_operand(&analysis->loader, &decoded.decomposed.operands[3], &self.current_state, ins, &w_state, NULL);
+				self.current_state.registers[dest].value = 0;
+				self.current_state.registers[dest].max = ~(uint64_t)0 >> (64 - w_state.max);
+				truncate_to_operand_size(&self.current_state.registers[dest], size);
+				self.current_state.sources[dest] = 0;
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				break;
+			}
 			case ARM64_UCLAMP:
 			case ARM64_UCVTF:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
