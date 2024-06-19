@@ -4415,6 +4415,34 @@ static enum basic_op_usage basic_op_sar(BASIC_OP_ARGS)
 	return BASIC_OP_USED_BOTH;
 }
 
+__attribute__((unused))
+static enum basic_op_usage basic_op_mul(BASIC_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		switch (dest->value) {
+			case 0:
+				return BASIC_OP_USED_LEFT;
+			case 1:
+				*dest = *source;
+				return BASIC_OP_USED_BOTH;
+		}
+		if (register_is_exactly_known(source)) {
+			dest->value = dest->max = dest->value * source->value;
+			return BASIC_OP_USED_BOTH;
+		}
+	} else if (register_is_exactly_known(source)) {
+		switch (source->value) {
+			case 0:
+				set_register(dest, 0);
+				return BASIC_OP_USED_RIGHT;
+			case 1:
+				return BASIC_OP_USED_BOTH;
+		}
+	}
+	clear_register(dest);
+	return BASIC_OP_USED_BOTH;
+}
+
 
 static void merge_and_log_additional_result(__attribute__((unused)) struct loader_context *loader, struct register_state *dest, struct additional_result *additional, int reg)
 {
@@ -11483,7 +11511,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				add_address_to_list(&analysis->search.tls_addresses, (uintptr_t)ins);
 				break;
 			}
-			case ARM64_MUL:
+			case ARM64_MUL: {
+				struct additional_result additional;
+				int dest = perform_basic_op("mul", basic_op_mul, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_MVN:
 			case ARM64_MVNI:
 			case ARM64_NAND:
