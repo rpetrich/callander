@@ -10060,6 +10060,108 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_CINC:
 			case ARM64_CINV:
+			case ARM64_CNEG: {
+				enum ins_operand_size size;
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				switch (decoded.decomposed.operation) {
+					case ARM64_CINC:
+						LOG("cinc", name_for_register(dest));
+						break;
+					case ARM64_CINV:
+						LOG("cinv", name_for_register(dest));
+						break;
+					case ARM64_CNEG:
+						LOG("cneg", name_for_register(dest));
+						break;
+					default:
+						break;
+				}
+				struct register_state source_state;
+				int source = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &source_state, NULL);
+				if (source != REGISTER_INVALID) {
+					LOG("source", name_for_register(source));
+				}
+				truncate_to_operand_size(&source_state, size);
+				struct register_state alt_state = source_state;
+				LOG("value", temp_str(copy_register_state_description(&analysis->loader, source_state)));
+				switch (decoded.decomposed.operation) {
+					case ARM64_CINC: {
+						struct register_state one;
+						set_register(&one, 1);
+						add_registers(&alt_state, &one);
+						break;
+					}
+					case ARM64_CINV: {
+						if (register_is_exactly_known(&alt_state)) {
+							set_register(&alt_state, ~(uintptr_t)0 ^ alt_state.value);
+						} else {
+							clear_register(&alt_state);
+						}
+						break;
+					}
+					case ARM64_CNEG: {
+						if (register_is_exactly_known(&alt_state)) {
+							set_register(&alt_state, 0 - alt_state.value);
+						} else {
+							clear_register(&alt_state);
+						}
+						break;
+					}
+					default:
+						break;
+				}
+				truncate_to_operand_size(&alt_state, size);
+				LOG("alt", temp_str(copy_register_state_description(&analysis->loader, alt_state)));
+				clear_match(&analysis->loader, &self.current_state, dest, ins);
+				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[2].cond, &self.current_state)) {
+					case ALWAYS_MATCHES:
+						LOG("conditional always matches");
+						self.current_state.registers[dest] = source_state;
+						if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&source_state) : register_is_partially_known_32bit(&source_state)) {
+							update_sources_for_basic_op_usage(&self.current_state, dest, source, source, BASIC_OP_USED_LEFT);
+							self.current_state.sources[dest] |= self.current_state.compare_state.sources;
+						} else {
+							self.current_state.sources[dest] = 0;
+						}
+						break;
+					case NEVER_MATCHES:
+						LOG("conditional never matches");
+						self.current_state.registers[dest] = alt_state;
+						if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&alt_state) : register_is_partially_known_32bit(&alt_state)) {
+							update_sources_for_basic_op_usage(&self.current_state, dest, source, source, BASIC_OP_USED_RIGHT);
+							self.current_state.sources[dest] |= self.current_state.compare_state.sources;
+						} else {
+							self.current_state.sources[dest] = 0;
+						}
+						break;
+					case POSSIBLY_MATCHES:
+						LOG("conditional sometimes matches");
+						bool combined = combine_register_states(&source_state, &alt_state, dest);
+						self.current_state.registers[dest] = source_state;
+						dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+						if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&source_state) : register_is_partially_known_32bit(&source_state)) {
+							update_sources_for_basic_op_usage(&self.current_state, dest, source, source, combined ? BASIC_OP_USED_BOTH : BASIC_OP_USED_LEFT);
+						} else {
+							self.current_state.sources[dest] = 0;
+						}
+						if (!combined) {
+							ANALYZE_PRIMARY_RESULT();
+							self.current_state.registers[dest] = alt_state;
+							dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+							if (size == OPERATION_SIZE_DWORD ? register_is_partially_known(&alt_state) : register_is_partially_known_32bit(&alt_state)) {
+								update_sources_for_basic_op_usage(&self.current_state, dest, source, source, BASIC_OP_USED_RIGHT);
+							} else {
+								self.current_state.sources[dest] = 0;
+							}
+							goto use_alternate_result;
+						}
+				}
+				dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest));
+				break;
+			}
 			case ARM64_CLASTA:
 			case ARM64_CLASTB:
 			case ARM64_CMLA:
@@ -10233,9 +10335,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_comparison_state(&self.current_state);
 				break;
 			}
-			case ARM64_CNEG:
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
 			case ARM64_CNT: {
 				LOG("cnt");
 				break;
