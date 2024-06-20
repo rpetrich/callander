@@ -194,7 +194,7 @@ connect(STDIN_FILENO-0xfffffffffffffffe, any, 110) @ ld-musl-aarch64.so.1+0x6145
 connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), 24) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 getpeername(any, any, any) @ ld-musl-aarch64.so.1+0x41c10(getpeername+28)
 getsockopt(any, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
-getsockopt(any, SOL_SOCKET, 0x11, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
+getsockopt(any, SOL_SOCKET, SO_PEERCRED, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
 shutdown(any, SHUT_WR) @ ld-musl-aarch64.so.1+0x46104(shutdown+36)
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x607bc
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x607bc

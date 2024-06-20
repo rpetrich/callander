@@ -91,7 +91,7 @@ sendto(STDOUT_FILENO--1, /usr/bin/bluemoon+0x201f8, any, MSG_NOSIGNAL, 0, 0) @ l
 sendto(STDOUT_FILENO--1, /usr/bin/bluemoon+0x20818, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x10291c(__send+60)
 sendto(STDOUT_FILENO--1, /usr/bin/bluemoon+0x201f8, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x102970(__send+144)
 sendto(STDOUT_FILENO--1, /usr/bin/bluemoon+0x20818, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x102970(__send+144)
-setsockopt(any, SOL_IP, SO_REUSEADDR, any, any u32) @ libc.so.6+0x102ce0(setsockopt+32)
+setsockopt(any, SOL_IP, IP_TTL, any, any u32) @ libc.so.6+0x102ce0(setsockopt+32)
 brk(any) @ libc.so.6+0xf6fd4(brk+20)
 munmap(any, any) @ libc.so.6+0xfbd08(__munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, 0) @ libc.so.6+0x1004fc(mremap+60)

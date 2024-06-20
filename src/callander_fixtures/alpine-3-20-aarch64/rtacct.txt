@@ -87,7 +87,7 @@ accept(any, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 accept(any, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-getsockopt(any, SOL_SOCKET, 0x11, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
+getsockopt(any, SOL_SOCKET, SO_PEERCRED, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
 brk(any) @ ld-musl-aarch64.so.1+0x29954(__malloc_alloc_meta*+336)
 brk(0) @ ld-musl-aarch64.so.1+0x29a2c(__malloc_alloc_meta*+552)
 brk(any) @ ld-musl-aarch64.so.1+0x29a4c(__malloc_alloc_meta*+584)

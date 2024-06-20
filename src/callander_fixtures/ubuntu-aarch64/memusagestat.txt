@@ -132,7 +132,7 @@ recvfrom(any, any, any u32, MSG_DONTWAIT, any, any) @ libc.so.6+0xe7e24(recvfrom
 setsockopt(any, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xe8234(setsockopt+20)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF, any, 4) @ libc.so.6+0xe8234(setsockopt+20)
 setsockopt(any, SOL_SOCKET, SO_KEEPALIVE, any, 4) @ libc.so.6+0xe8234(setsockopt+20)
-setsockopt(any, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0xe8234(setsockopt+20)
+setsockopt(any, SOL_TCP, TCP_NODELAY, any, 4) @ libc.so.6+0xe8234(setsockopt+20)
 getsockopt(any, SOL_SOCKET, SO_SNDBUF, any, any) @ libc.so.6+0xe7c30(getsockopt+16)
 shutdown(any u32, SHUT_RDWR) @ libc.so.6+0xe8288(shutdown+8)
 sendmsg(any, any, 0) @ libc.so.6+0xe8084(sendmsg+52)

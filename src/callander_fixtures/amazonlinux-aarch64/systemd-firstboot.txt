@@ -214,7 +214,7 @@ recvfrom(any, any, any u32, MSG_DONTWAIT, any, any) @ libc.so.6+0xdca88(recvfrom
 recvfrom(any, any, any u32, any, any, any) @ libc.so.6+0xdcae8(recvfrom+136)
 setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_SNDBUF, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
-setsockopt(any u32, SOL_SOCKET, 0x15, any, 16) @ libc.so.6+0xdcf44(setsockopt+4)
+setsockopt(any u32, SOL_SOCKET, SO_SNDTIMEO_OLD, any, 16) @ libc.so.6+0xdcf44(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_SNDBUFFORCE, any, 4) @ libc.so.6+0xdcf44(setsockopt+4)
 getsockopt(any u32, SOL_SOCKET, SO_SNDBUF, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 sendmsg(any, any, MSG_NOSIGNAL) @ libpthread.so.0+0x13488(sendmsg+40)

@@ -109,8 +109,8 @@ sendto(any, any, 32, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendto(any, any, 40, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendto(any, any, 156, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
-setsockopt(any, SOL_NETLINK, IP_RECVERR, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
-getsockopt(any, SOL_SOCKET, 0x11, any, any) @ ld-musl-aarch64.so.1+0x41ec0(getsockopt+28)
+setsockopt(any, SOL_NETLINK, NETLINK_EXT_ACK, any, 4) @ ld-musl-aarch64.so.1+0x45bbc(setsockopt+32)
+getsockopt(any, SOL_SOCKET, SO_PEERCRED, any, any) @ ld-musl-aarch64.so.1+0x41ec0(getsockopt+28)
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c

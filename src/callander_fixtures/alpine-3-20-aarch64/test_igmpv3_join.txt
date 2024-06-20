@@ -52,7 +52,7 @@ sendto(any, any, 20, 0, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 sendto(any, any, 20, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-setsockopt(any, SOL_IP, 0x2e, any, 264) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
+setsockopt(any, SOL_IP, MCAST_JOIN_SOURCE_GROUP, any, 264) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 brk(any) @ ld-musl-aarch64.so.1+0x29954(__malloc_alloc_meta*+336)
 brk(0) @ ld-musl-aarch64.so.1+0x29a2c(__malloc_alloc_meta*+552)
 brk(any) @ ld-musl-aarch64.so.1+0x29a4c(__malloc_alloc_meta*+584)

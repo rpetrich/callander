@@ -114,7 +114,7 @@ socket(AF_NETLINK, SOCK_RAW, 15) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(AF_NETLINK, SOCK_RAW|SOCK_NONBLOCK|SOCK_CLOEXEC, 15) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(AF_NETLINK, SOCK_RAW, 15) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 bind(any, any, 12) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
-setsockopt(any, SOL_SOCKET, 0x10, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
+setsockopt(any, SOL_SOCKET, SO_PASSCRED, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5d210
 recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 brk(0) @ ld-musl-aarch64.so.1+0x2b5b4(__malloc_alloc_meta*+296)
