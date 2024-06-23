@@ -66,3 +66,8 @@ Now check which process is consuming CPU:
 top
 ```
 Note that the victim process "target" is running the computation, reading bytes out of its own /dev/random.
+
+
+# Notes
+
+The latest version is maintained alongside callander at github.com/rpetrich/callander
