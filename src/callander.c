@@ -13110,6 +13110,12 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		relocate_binary(&info);
 	}
 	LOG("loading", path);
+	char full_path_buf[PATH_MAX];
+	intptr_t len = fs_readlink_fd(fd, full_path_buf, PATH_MAX);
+	if (len >= 0) {
+		full_path_buf[len] = '\0';
+		full_path = full_path_buf;
+	}
 	if (full_path == NULL) {
 		full_path = path;
 	}
