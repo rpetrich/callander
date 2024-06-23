@@ -162,11 +162,10 @@ axon: $(foreach obj,$(OBJECTS),$(objdir)/$(obj))
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
-install: axon libaxon.so ld.so.preload
+install: axon libaxon.so
 	mkdir -p /bin
 	cp -a axon /bin/
 	mkdir -p /etc
-	cp -a ld.so.preload /etc/
 
 lookup: $(foreach obj,$(LOOKUP_OBJECTS),$(objdir)/$(obj))
 ifeq ($(STANDALONE),1)
