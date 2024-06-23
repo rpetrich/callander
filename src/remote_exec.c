@@ -509,7 +509,7 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 		aux_buf->a_un.a_val = (intptr_t)main_info->entrypoint;
 		aux_buf++;
 		aux_buf->a_type = AT_EXECFN;
-		aux_buf->a_un.a_val = dynv_base + string_cur;
+		aux_buf->a_un.a_val = dynv_base;
 		aux_buf++;
 		aux_buf->a_type = AT_PLATFORM;
 		aux_buf->a_un.a_val = dynv_base + string_cur;
@@ -556,10 +556,13 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 					aux_buf++;
 					break;
 				case AT_EXECFN:
-					aux_buf->a_un.a_val = dynv_base + string_cur;
+					aux_buf->a_un.a_val = dynv_base;
 					aux_buf++;
 					break;
 				case AT_CLKTCK:
+					aux_buf->a_un.a_val = aux->a_un.a_val;
+					aux_buf++;
+					break;
 				case AT_PAGESZ:
 				case AT_FLAGS:
 				case AT_UID:
