@@ -454,7 +454,7 @@ static void patch_remote_syscalls(struct remote_patches *patches, struct program
 
 static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, struct binary_info *main_info, struct binary_info *interpreter_info)
 {
-	size_t string_size = sizeof("x86_64") + 16;
+	size_t string_size = sizeof(ARCH_NAME) + 16;
 	size_t argc = count_arg_bytes(argv, &string_size);
 	size_t envc = count_arg_bytes(envp, &string_size);
 	size_t header_size = sizeof(struct receive_start_args) + sizeof(argc) + (argc + 1 + envc + 1) * sizeof(const char *) + 20 * sizeof(ElfW(auxv_t));
