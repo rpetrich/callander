@@ -1005,7 +1005,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	}
 	trampoline += tail_size;
 	// Construct a jump back to the original function
-	intptr_t return_offset = (uintptr_t)patch_target.end - (intptr_t)&trampoline[PCREL_JUMP_SIZE];
+	intptr_t return_offset = (intptr_t)patch_target.end - (intptr_t)trampoline;
 	// PC-relative jump
 	patch_write_pc_relative_jump(trampoline, return_offset);
 	trampoline += PCREL_JUMP_SIZE;
@@ -1037,7 +1037,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	uint8_t *ins = (uint8_t *)patch_target.start;
 	bool patch_with_ill = (uintptr_t)patch_target.end - (uintptr_t)patch_target.start < PCREL_JUMP_SIZE;
 	if (!patch_with_ill) {
-		int32_t offset = stub_address - (intptr_t)&patch_target.start[PCREL_JUMP_SIZE];
+		int32_t offset = stub_address - (intptr_t)patch_target.start;
 		patch_write_pc_relative_jump(ins, offset);
 	}
 	// Install nops in any trailing bytes, so that it's clean in the debugger
@@ -1146,6 +1146,6 @@ enum patch_status patch_function(struct thread_storage *thread, ins_ptr function
 
 void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump)
 {
-	*(int32_t *)&buf[1] = relative_jump;
+	*(int32_t *)&buf[1] = relative_jump - PCREL_JUMP_SIZE;
 	atomic_store((_Atomic uint8_t *)buf, INS_JMP_32_IMM);
 }

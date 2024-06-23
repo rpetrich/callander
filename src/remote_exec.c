@@ -366,34 +366,24 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 			cur += head_size;
 		}
 #endif
+#ifdef PATCH_INCLUDES_DATA
+		int fields_to_populate = 2;
+#else
+		int fields_to_populate = 1;
+#endif
 		// copy the prefix part of the trampoline
-		size_t prefix_size = (uintptr_t)template.address - (uintptr_t)template.start - 2 * sizeof(uintptr_t);
+		size_t prefix_size = (uintptr_t)template.address - (uintptr_t)template.start - fields_to_populate * sizeof(uintptr_t);
 		memcpy(&trampoline_buf[cur], template.start, prefix_size);
 		cur += prefix_size;
 		// move address of remote handler function into rcx
-#if 1
+#ifdef PATCH_INCLUDES_DATA
 		*(uintptr_t *)&trampoline_buf[cur] = data;
 		cur += sizeof(uintptr_t);
+#else
+		(void)data;
+#endif
 		*(uintptr_t *)&trampoline_buf[cur] = remote_handler;
 		cur += sizeof(uintptr_t);
-#else
-		trampoline_buf[cur++] = data;
-		trampoline_buf[cur++] = data >> 8;
-		trampoline_buf[cur++] = data >> 16;
-		trampoline_buf[cur++] = data >> 24;
-		trampoline_buf[cur++] = data >> 32;
-		trampoline_buf[cur++] = data >> 40;
-		trampoline_buf[cur++] = data >> 48;
-		trampoline_buf[cur++] = data >> 56;
-		trampoline_buf[cur++] = remote_handler;
-		trampoline_buf[cur++] = remote_handler >> 8;
-		trampoline_buf[cur++] = remote_handler >> 16;
-		trampoline_buf[cur++] = remote_handler >> 24;
-		trampoline_buf[cur++] = remote_handler >> 32;
-		trampoline_buf[cur++] = remote_handler >> 40;
-		trampoline_buf[cur++] = remote_handler >> 48;
-		trampoline_buf[cur++] = remote_handler >> 56;
-#endif
 		// copy the suffix part of the trampoline
 		memcpy(&trampoline_buf[cur], template.address, (uintptr_t)template.end - (uintptr_t)template.address);
 		cur += (uintptr_t)template.end - (uintptr_t)template.address;
@@ -412,7 +402,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 #endif
 		}
 		// jump back to the resume point in the function
-		int32_t resume_relative_offset = child_patch_end - (trampoline + cur /*+ PCREL_JUMP_SIZE*/);
+		int32_t resume_relative_offset = child_patch_end - (trampoline + cur);
 		patch_write_pc_relative_jump((ins_ptr)&trampoline_buf[cur], resume_relative_offset);
 		cur += PCREL_JUMP_SIZE;
 	}
@@ -422,7 +412,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 	}
 	patches->existing_trampoline = trampoline + cur;
 	// patch the original code to jump to the trampoline page
-	int32_t detour_relative_offset = trampoline - (child_patch_start /*+ PCREL_JUMP_SIZE*/);
+	int32_t detour_relative_offset = trampoline - child_patch_start;
 	uint8_t jump_buf[PCREL_JUMP_SIZE];
 	patch_write_pc_relative_jump((ins_ptr)&jump_buf, detour_relative_offset);
 	result = proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
