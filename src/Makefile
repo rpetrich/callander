@@ -17,7 +17,7 @@ else
 endif
 	BASE_ADDRESS=0x200000
 ifeq ($(TARGETMACHINE),x86_64)
-	CFLAGS+=-mno-red-zone -mfsgsbase
+	CFLAGS+=-mno-red-zone -mfsgsbase -mgeneral-regs-only
 	LDFLAGS+=-mfsgsbase
 endif
 else
