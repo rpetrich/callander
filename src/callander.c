@@ -10418,8 +10418,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				truncate_to_operand_size(&right_state, size);
 				LOG("right", temp_str(copy_register_state_description(&analysis->loader, right_state)));
+				enum possible_conditions possibilities = calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state);
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
-				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
+				switch (possibilities) {
 					case ALWAYS_MATCHES:
 						LOG("conditional always matches");
 						self.current_state.registers[dest] = left_state;
@@ -10502,8 +10503,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				}
 				LOG("csetm", name_for_register(dest));
+				enum possible_conditions possibilities = calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state);
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
-				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state)) {
+				switch (possibilities) {
 					case ALWAYS_MATCHES:
 						LOG("conditional always matches");
 						set_register(&self.current_state.registers[dest], mask_for_operand_size(size));
