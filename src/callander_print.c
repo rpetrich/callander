@@ -4006,6 +4006,7 @@ static struct enum_option clock_ids[] = {
 	DESCRIBE_ENUM(CLOCK_BOOTTIME),
 	DESCRIBE_ENUM(CLOCK_PROCESS_CPUTIME_ID),
 	DESCRIBE_ENUM(CLOCK_THREAD_CPUTIME_ID),
+	{ .value = 0xfffffffffffffffa, .description = "MAKE_PROCESS_CPUCLOCK(0, CPUCLOCK_SCHED)" },
 };
 
 static struct enum_option socket_levels[] = {
