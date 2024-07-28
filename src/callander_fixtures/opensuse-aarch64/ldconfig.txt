@@ -55,9 +55,7 @@ clock_gettime(CLOCK_REALTIME_COARSE, any) @ /sbin/ldconfig:0x453244
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /sbin/ldconfig:0x465c48
-clock_nanosleep(0xfffffffffffffffa, 0, any, any) @ /sbin/ldconfig:0x465c48
 clock_nanosleep(CLOCK_REALTIME, any, any, any) @ /sbin/ldconfig:0x465c9c
-clock_nanosleep(0xfffffffffffffffa, any, any, any) @ /sbin/ldconfig:0x465c9c
 restart_syscall()
 tgkill(any, any, SIGABRT) @ /sbin/ldconfig:0x40d0dc
 tgkill(any, any, SIGFPE) @ /sbin/ldconfig:0x40d0dc

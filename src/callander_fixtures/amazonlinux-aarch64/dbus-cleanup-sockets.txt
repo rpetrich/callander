@@ -14,7 +14,6 @@ openat(AT_FDCWD, libc.so.6+0x134010, O_RDONLY, any) @ libc.so.6+0x27d44(__gconv_
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0x2dc4c(_nl_load_domain+172)
 openat(AT_FDCWD, libc.so.6+0x134de8, O_RDWR|O_NOCTTY|O_NONBLOCK, any) @ libc.so.6+0x72704(__libc_message+548)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x7565c(_IO_file_open+272)
-openat(AT_FDCWD, 0, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xa678c(opendir+28)
 openat(AT_FDCWD, /usr/bin/dbus-cleanup-sockets+0x17d8, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xa678c(opendir+28)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xccd00(open+96)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xccd80(open+224)

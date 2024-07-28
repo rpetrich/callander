@@ -61,9 +61,7 @@ clock_gettime(CLOCK_REALTIME_COARSE, any) @ /usr/sbin/ldconfig+0x31694
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0x71fb4
-clock_nanosleep(0xfffffffffffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x71fb4
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0x71ff4
-clock_nanosleep(0xfffffffffffffffa, 0, any, any) @ /usr/sbin/ldconfig+0x71ff4
 sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x5ac08
 sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x5ac48
 sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x5abc8

@@ -112,7 +112,6 @@ futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, any u32, 0
 set_robust_list(any, 24) @ libpthread.so.0+0x5bc4(__nptl_set_robust+12)
 clock_gettime(CLOCK_REALTIME-CLOCK_PROCESS_CPUTIME_ID, any) @ libc.so.6+0x9e454(clock_gettime+108)
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ libc.so.6+0x9e454(clock_gettime+108)
-clock_gettime(CLOCK_BOOTTIME, any) @ libc.so.6+0x9e454(clock_gettime+108)
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0x9e540(clock_nanosleep+104)

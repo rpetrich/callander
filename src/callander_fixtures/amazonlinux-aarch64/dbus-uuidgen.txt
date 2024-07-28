@@ -33,8 +33,6 @@ openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL, any u32) @ libpthread.so.0+0x129a
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libpthread.so.0+0x129a0(__open+96)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_TRUNC, any u32) @ libpthread.so.0+0x129a0(__open+96)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, any u32) @ libpthread.so.0+0x129a0(__open+96)
-openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, any u32) @ libpthread.so.0+0x129a0(__open+96)
-openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, any u32) @ libpthread.so.0+0x129a0(__open+96)
 openat(AT_FDCWD, libsystemd.so.0+0x27b08, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libpthread.so.0+0x129a0(__open+96)
 openat(AT_FDCWD, libsystemd.so.0+0x27b18, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libpthread.so.0+0x129a0(__open+96)
 openat(AT_FDCWD, any, any, any) @ libpthread.so.0+0x12a20(__open+224)

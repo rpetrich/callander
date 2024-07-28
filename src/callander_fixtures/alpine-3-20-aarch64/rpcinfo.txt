@@ -90,8 +90,8 @@ writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
-ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
-ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f900, any, 512) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52cfc(fstatat+168)
@@ -169,13 +169,12 @@ sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x6
 sendto(any, any, any, 0, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
 sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 sendto(any, any, any, 0, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
-recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_LINGER, libkrb5.so.3+0xa408c, 8) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_IP, IP_RECVERR, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
-setsockopt(any, SOL_SOCKET, SO_BROADCAST, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_TCP, TCP_NODELAY, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
