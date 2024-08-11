@@ -75,6 +75,8 @@ tgkill(any, any u32, SIGFPE) @ libc.so.6+0x9224c(__pthread_kill_implementation+2
 tgkill(any, any, SIGABRT) @ libc.so.6+0x9227c(__pthread_kill_implementation+316)
 tgkill(any, any, SIGFPE) @ libc.so.6+0x9227c(__pthread_kill_implementation+316)
 rt_sigaction(SIGINT, any, any, 8) @ libc.so.6+0x4596c(__libc_sigaction+140)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x4596c(__libc_sigaction+140)
+rt_sigaction(SIGCHLD, any, any, 8) @ libc.so.6+0x4596c(__libc_sigaction+140)
 rt_sigaction(SIGTSTP, any, any, 8) @ libc.so.6+0x4596c(__libc_sigaction+140)
 rt_sigaction(SIGINT, 0, 0, 8) @ libc.so.6+0x45a08(__libc_sigaction+296)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x45a08(__libc_sigaction+296)

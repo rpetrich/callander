@@ -111,6 +111,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sig
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e998(start*+128)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5ea90(pthread_create+172)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 setgid(any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
 setgid(any) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
@@ -140,6 +141,8 @@ socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(any, SOCK_DGRAM, 17) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 socket(AF_UNIX, 0-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
+socket(AF_INET, SOCK_DGRAM, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
+socket(AF_INET6, SOCK_DGRAM, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 bind(any, any, NULL-0xfffffffe) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
 listen(any, any) @ ld-musl-aarch64.so.1+0x42900(listen+36)
 accept(any, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
@@ -160,8 +163,7 @@ sendmsg(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 brk(0) @ ld-musl-aarch64.so.1+0x2b5b4(__malloc_alloc_meta*+296)
 brk(any) @ ld-musl-aarch64.so.1+0x2b5d4(__malloc_alloc_meta*+328)
 brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+440)
-munmap(NULL-0xfffffffffffffffe, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
-munmap(non-NULL, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
+munmap(any, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5d1a8
 mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e818(mremap+140)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xb2230(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x5d1d0

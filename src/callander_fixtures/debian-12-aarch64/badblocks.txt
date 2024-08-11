@@ -100,13 +100,14 @@ tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 sigaltstack(0, any) @ libc.so.6+0xf7b5c
 rt_sigaction(SIGHUP-SIGINT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
-rt_sigaction(SIGUSR2-SIGALRM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
-rt_sigaction(SIGTERM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGUSR1, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGUSR2-SIGTERM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGSETXID, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGHUP-SIGINT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGUSR1, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
-rt_sigaction(SIGUSR2-SIGALRM, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
-rt_sigaction(SIGTERM, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
+rt_sigaction(SIGUSR2-SIGTERM, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGSETXID, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x7ed0c

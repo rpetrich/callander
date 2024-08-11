@@ -91,16 +91,19 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6e520(app_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fb18(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sigaction*+376)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x627b4(clock_gettime+104)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getuid() @ ld-musl-aarch64.so.1+0x6492c(getuid+4)
 getgid() @ ld-musl-aarch64.so.1+0x647ac(getgid+4)
 socket(AF_UNIX-AF_INET, SOCK_DGRAM-SOCK_RAW, 0) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
+socket(AF_INET6, SOCK_DGRAM, 0) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(AF_NETLINK, SOCK_RAW, 12) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(AF_NETLINK, SOCK_RAW, 16) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(AF_UNIX-AF_INET, 0-SOCK_RAW, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
+socket(AF_NETLINK, SOCK_RAW, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 sendto(any, any, NULL-0x400, 0, any, 12) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, 20, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, NULL-0x400, 0, any, 12) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)

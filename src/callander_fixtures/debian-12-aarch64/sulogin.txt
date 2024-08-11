@@ -1,7 +1,9 @@
 callander: permitted syscalls: getxattr(any, libselinux.so.1+0x23328, any, 20) @ libc.so.6+0xe72c8(getxattr+8)
 getcwd(non-NULL, any) @ libc.so.6+0xda984(getcwd+100)
 dup(any u32) @ libc.so.6+0xda748(dup+8)
-dup3(STDIN_FILENO-STDOUT_FILENO, STDIN_FILENO-STDERR_FILENO, 0) @ libc.so.6+0xda788(__dup2+40)
+dup3(STDIN_FILENO-STDOUT_FILENO, STDERR_FILENO, 0) @ libc.so.6+0xda788(__dup2+40)
+dup3(any, STDIN_FILENO-STDOUT_FILENO, 0) @ libc.so.6+0xda788(__dup2+40)
+dup3(0x3--1, STDERR_FILENO, 0) @ libc.so.6+0xda788(__dup2+40)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, libc.so.6+0x14fb3c) @ libc.so.6+0xded40
@@ -15,9 +17,9 @@ ioctl(any, TCSETS-TCSETSF, any) @ libc.so.6+0xdf2ac(tcsetattr+156)
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf2e8(tcsetattr+216)
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf410(tcgetattr+48)
 ioctl(STDIN_FILENO, TIOCNOTTY, 1) @ libc.so.6+0xdfe0c(ioctl+12)
-ioctl(STDIN_FILENO-STDERR_FILENO, TIOCGPGRP-TIOCSPGRP, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, TCFLSH, 2) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, TIOCSCTTY, 1) @ libc.so.6+0xdfe0c(ioctl+12)
+ioctl(any, TIOCGPGRP-TIOCSPGRP, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, TIOCGWINSZ-TIOCSWINSZ, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, TIOCGSERIAL-TIOCSSERIAL, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, TIOCSERCONFIG, any) @ libc.so.6+0xdfe0c(ioctl+12)
@@ -100,6 +102,7 @@ tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGHUP-SIGQUIT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGPIPE-SIGALRM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGCHLD, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGTSTP, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)

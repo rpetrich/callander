@@ -34,6 +34,7 @@ writev(any u32, any, any) @ ld-linux-aarch64.so.1+0x1b53c(_dl_debug_vdprintf+300
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x84f1c(__libc_message+476)
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xf5f14(__pread64_nocancel+20)
 newfstatat(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ libc.so.6+0xf0b88(fstatat64+24)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf0b88(fstatat64+24)
 newfstatat(any, libc.so.6+0x16d730, any, AT_EMPTY_PATH) @ libc.so.6+0xf0b88(fstatat64+24)
 capget(any, 0) @ libc.so.6+0x100f88(capget+8)
 capset(any, any) @ libc.so.6+0xfd7e4(syscall+36)

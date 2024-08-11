@@ -121,6 +121,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sig
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e998(start*+128)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5ea90(pthread_create+172)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 uname(any) @ ld-musl-aarch64.so.1+0x3e148(uname+12)
 umask(any u32) @ ld-musl-aarch64.so.1+0x50ca4(umask+16)
@@ -136,6 +137,8 @@ socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x453c8(socket+40)
 socket(any, SOCK_DGRAM, 17) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 socket(AF_UNIX, 0-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
+socket(AF_INET, SOCK_DGRAM, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
+socket(AF_INET6, SOCK_DGRAM, 0) @ ld-musl-aarch64.so.1+0x45400(socket+96)
 bind(any, any, 16) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
 bind(any, any, 28) @ ld-musl-aarch64.so.1+0x3fbe0(bind+32)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210

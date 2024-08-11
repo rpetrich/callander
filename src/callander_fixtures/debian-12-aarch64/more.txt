@@ -76,6 +76,8 @@ tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGINT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGCHLD, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGTSTP, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGINT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)

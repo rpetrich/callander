@@ -34,6 +34,7 @@ writev(STDERR_FILENO, any, any) @ /usr/sbin/ldconfig.real:0x42e730
 writev(STDERR_FILENO, any, any) @ /usr/sbin/ldconfig.real:0x42e774
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real:0x45a3f8
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ /usr/sbin/ldconfig.real:0x44dda0
+pread64(any, any, 400, any) @ /usr/sbin/ldconfig.real:0x44dda0
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real:0x46092c
 ppoll(any, any, any, 0, 0) @ /usr/sbin/ldconfig.real:0x460988
 readlinkat(AT_FDCWD, any, any, 4095) @ /usr/sbin/ldconfig.real:0x42e230
@@ -64,7 +65,8 @@ sched_yield() @ /usr/sbin/ldconfig.real:0x42d574
 restart_syscall()
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real:0x40d030
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real:0x40d030
-rt_sigaction(SIGABRT, any, any, 8) @ /usr/sbin/ldconfig.real:0x43f064
+rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real:0x43f064
+rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig.real:0x43f064
 rt_sigaction(SIGALRM, 0, any, 8) @ /usr/sbin/ldconfig.real:0x43f120
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /usr/sbin/ldconfig.real:0x40d004
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d054
@@ -86,12 +88,11 @@ brk(any) @ /usr/sbin/ldconfig.real:0x44dea0
 munmap(any, any) @ /usr/sbin/ldconfig.real:0x42ea64
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig.real:0x4303b4
 mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ /usr/sbin/ldconfig.real:0x42ea10
-mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /usr/sbin/ldconfig.real:0x42ea10
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /usr/sbin/ldconfig.real:0x42ea10
 mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ /usr/sbin/ldconfig.real:0x42ea10
 mmap(any, any, any, MAP_PRIVATE|MAP_DENYWRITE, STDIN_FILENO-0xfffffffffffffffe, any) @ /usr/sbin/ldconfig.real:0x42ea10
 mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, STDIN_FILENO-0xfffffffffffffffe, any) @ /usr/sbin/ldconfig.real:0x42ea10
 mmap(any, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /usr/sbin/ldconfig.real:0x42ea10
-mmap(non-NULL, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /usr/sbin/ldconfig.real:0x42ea10
+mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /usr/sbin/ldconfig.real:0x42ea10
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real:0x42ea84
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real:0x42eaa4

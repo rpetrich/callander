@@ -66,7 +66,12 @@ kill(any u32, SIGPIPE) @ libc.so.6+0x3a9c8(kill+8)
 tgkill(any, any u32, any) @ libc.so.6+0x809dc
 tgkill(any, any, SIGHUP-0xffffffffffffffff) @ libc.so.6+0x80a0c
 sigaltstack(any, 0) @ libc.so.6+0x3b048(sigaltstack+8)
-rt_sigaction(SIGHUP-SIGQUIT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGHUP-SIGQUIT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGSEGV, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGPIPE, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGTERM, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGXCPU-SIGXFSZ, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGSEGV, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)

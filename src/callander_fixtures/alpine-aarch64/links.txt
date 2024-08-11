@@ -1,4 +1,5 @@
-callander: permitted syscalls: getcwd(any, non-NULL) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
+callander: permitted syscalls: getcwd(any, 0x1000) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
+getcwd(non-NULL, non-NULL) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
 epoll_create1(0) @ ld-musl-aarch64.so.1+0x24220(epoll_create1+16)
 epoll_create1(EPOLL_CLOEXEC) @ ld-musl-aarch64.so.1+0x24220(epoll_create1+16)
 epoll_ctl(any, NULL-0x1, any, any) @ ld-musl-aarch64.so.1+0x24274(epoll_ctl+24)

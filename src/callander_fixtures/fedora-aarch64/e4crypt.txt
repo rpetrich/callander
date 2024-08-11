@@ -140,7 +140,7 @@ keyctl(10, 0x1-0xffffffff, /usr/sbin/e4crypt+0x20490, any, 0) @ libc.so.6+0xfd7e
 keyctl(18, 0, any, any, any) @ libc.so.6+0xfd7e4(syscall+36)
 clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xffa74(__clone+52)
 mmap(0, any, any, any, any, 0) @ libc.so.6+0xfb284(mmap+36)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xfb284(mmap+36)
+mmap(any, any, PROT_NONE-PROT_READ, any, any, 0) @ libc.so.6+0xfb284(mmap+36)
 fadvise64(any, any, any, 3) @ libc.so.6+0xf46d8(posix_fadvise+24)
 mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-aarch64.so.1+0x2b3c8(mprotect+8)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xfbb88(__mprotect+8)

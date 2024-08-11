@@ -99,6 +99,8 @@ tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGINT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGALRM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGINT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGALRM, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
@@ -113,7 +115,8 @@ setgroups(any, any) @ libc.so.6+0x7c420
 setgroups(any, any) @ libc.so.6+0xb596c(setgroups+44)
 uname(any) @ libc.so.6+0xb8648(uname+8)
 prctl(PR_CAPBSET_READ, any u32, any, any, any) @ libc.so.6+0xe8964(prctl+68)
-prctl(PR_GET_SECUREBITS, NULL-0x1, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_GET_SECUREBITS, 0, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_CAP_AMBIENT, 1, any u32, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 gettimeofday(any, any) @ libc.so.6+0xa9488
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)

@@ -204,8 +204,7 @@ tkill(non-NULL, SIGSETXID) @ ld-musl-aarch64.so.1+0x6307c(pthread_kill+68)
 tkill(any, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x64c24(__synccall*+396)
 sigaltstack(any, any) @ ld-musl-aarch64.so.1+0x523ac(sigaltstack+44)
 rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-aarch64.so.1+0x20ca4(abort+64)
-rt_sigaction(0x0-SIGTRAP, any, any, 8) @ ld-musl-aarch64.so.1+0x52154(__libc_sigaction*+140)
-rt_sigaction(SIGABRT-0xffffffffffffffff, any, any, 8) @ ld-musl-aarch64.so.1+0x52154(__libc_sigaction*+140)
+rt_sigaction(any, any, any, 8) @ ld-musl-aarch64.so.1+0x52154(__libc_sigaction*+140)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x20cd0(abort+108)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff8(all_mask*), any, 8) @ ld-musl-aarch64.so.1+0x51eb0(__block_all_sigs*+24)
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff0(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x51ed0(__block_app_sigs*+24)
@@ -248,6 +247,7 @@ getrusage(0, any) @ ld-musl-aarch64.so.1+0x3c778(getrusage+16)
 getrusage(-1, any) @ ld-musl-aarch64.so.1+0x3c778(getrusage+16)
 umask(any u32) @ ld-musl-aarch64.so.1+0x530f8(umask+16)
 prctl(PR_SET_NAME, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
+prctl(PR_SET_THP_DISABLE, 1, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x66704(clock_gettime+92)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-musl-aarch64.so.1+0x250d0(do_setgroups*+80)
@@ -301,7 +301,9 @@ munmap(any, any) @ ld-musl-aarch64.so.1+0x60754
 mremap(any, any, any, 0-MREMAP_MAYMOVE, any) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487c0(_Fork+48)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487f4
-clone(0, any, any, any, any) @ ld-musl-aarch64.so.1+0x6077c
+clone(0, any, 512, any, any) @ ld-musl-aarch64.so.1+0x6077c
+clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-aarch64.so.1+0x6077c
+clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x6077c
 mmap(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 fadvise64(any, any, any, any) @ ld-musl-aarch64.so.1+0x2122c(posix_fadvise+12)
 mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)

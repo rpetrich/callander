@@ -6,7 +6,7 @@ fcntl(any, F_SETFD, 1) @ libc.so.6+0xded40
 fcntl(any, F_GETFL, /usr/sbin/hwclock+0x12114) @ libc.so.6+0xded40
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf410(tcgetattr+48)
 ioctl(STDIN_FILENO-0xfffffffffffffffe, RTC_UIE_ON-RTC_UIE_OFF, 0) @ libc.so.6+0xdfe0c(ioctl+12)
-ioctl(STDIN_FILENO-0xfffffffffffffffe, RTC_PARAM_GET-RTC_PARAM_SET, any) @ libc.so.6+0xdfe0c(ioctl+12)
+ioctl(any, RTC_PARAM_GET-RTC_PARAM_SET, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, RTC_SET_TIME, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, RTC_RD_TIME, any) @ libc.so.6+0xdfe0c(ioctl+12)
 fstatfs(any, any) @ libc.so.6+0xd9708(fstatfs+8)
@@ -90,7 +90,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
 uname(any) @ libc.so.6+0xb8648(uname+8)
 prctl(PR_CAPBSET_READ, any u32, any, any, any) @ libc.so.6+0xe8964(prctl+68)
-prctl(PR_GET_SECUREBITS, NULL-0x1, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_GET_SECUREBITS, 0, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_CAP_AMBIENT, 1, any u32, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 gettimeofday(any, any) @ libc.so.6+0xa9488
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)

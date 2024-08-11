@@ -118,8 +118,7 @@ rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0x80940
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
-rt_sigprocmask(SIG_BLOCK-SIG_UNBLOCK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
-rt_sigprocmask(SIG_SETMASK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
 setresuid(any u32, any u32, any u32) @ libc.so.6+0x7c420
 setresuid(any u32, any u32, any u32) @ libc.so.6+0xba620(setresuid+64)
 setresgid(any u32, any u32, any u32) @ libc.so.6+0x7c420
@@ -163,8 +162,10 @@ mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3f48(mprotect+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe4048(madvise+8)
-wait4(any, any, any, 0) @ libc.so.6+0xb871c(wait4+44)
-wait4(any, any, any, 0) @ libc.so.6+0xb8764(wait4+116)
+wait4(any, any, 0, 0) @ libc.so.6+0xb871c(wait4+44)
+wait4(-1, any, any, 0) @ libc.so.6+0xb871c(wait4+44)
+wait4(any, any, 0, 0) @ libc.so.6+0xb8764(wait4+116)
+wait4(-1, any, any, 0) @ libc.so.6+0xb8764(wait4+116)
 prlimit64(0, any u8, 0, any) @ libc.so.6+0xdf7c4(__getrlimit+20)
 prlimit64(0, any u8, any, 0) @ libc.so.6+0xdf804(setrlimit64+20)
 getrandom(any, any, 0) @ libc.so.6+0x3ba64

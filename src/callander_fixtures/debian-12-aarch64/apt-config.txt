@@ -7,11 +7,11 @@ dup3(any, any, 0) @ libc.so.6+0xda788(__dup2+40)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 3) @ libc.so.6+0xded40
-fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETLK-F_SETLK, any) @ libc.so.6+0xded40
 fcntl(any, F_GETFD, 0) @ libc.so.6+0xded40
 fcntl(any, F_SETFD, NULL-0xfffffffe) @ libc.so.6+0xded40
 fcntl(any, F_GETFL, any) @ libc.so.6+0xded40
 fcntl(any, F_SETFL, any u32) @ libc.so.6+0xded40
+fcntl(any, F_GETLK-F_SETLK, any) @ libc.so.6+0xded40
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ libc.so.6+0xded40
 fcntl(any, F_ADD_SEALS, 15) @ libc.so.6+0xded40
 inotify_init1(IN_NONBLOCK|IN_CLOEXEC) @ libc.so.6+0xe9288(inotify_init1+8)
@@ -200,7 +200,9 @@ umask(any) @ libc.so.6+0xd9848(umask+8)
 prctl(any, any, any, any, any) @ libc.so.6+0xe3d24(syscall+36)
 prctl(PR_SET_PDEATHSIG, 2, 2, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_SET_PDEATHSIG, 15, 2, any, any) @ libc.so.6+0xe8964(prctl+68)
-prctl(PR_SET_NAME, any, any, any, any) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_SET_NAME, libsystemd.so.0+0x94830, any, any, any) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_SET_NAME, libsystemd.so.0+0x9b248, any, any, any) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_CAPBSET_READ, any, any, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_SET_MM, 0x8-0x9, any, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 gettimeofday(any, any) @ libc.so.6+0xa9488
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
@@ -280,7 +282,8 @@ statx(any, any, AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT, STATX_TYPE, any) @ libc.so.
 rseq(any, 32, 0, 0xd428bc00) @ libc.so.6+0x7ec50
 pidfd_send_signal(any u32, SIGKILL, 0, 0) @ libc.so.6+0xe3d24(syscall+36)
 close_range(any, -1 as u32, 0) @ libc.so.6+0xd8d00
-close_range(any u32, 0x3-0xffffffff, 0) @ libc.so.6+0xde9c8(close_range+8)
+close_range(any u32, -1 as u32, 0) @ libc.so.6+0xde9c8(close_range+8)
+close_range(3, 0x3-0xfffffffe, 0) @ libc.so.6+0xde9c8(close_range+8)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0xda1f8(faccessat+72)
 faccessat2(AT_FDCWD, any, X_OK|R_OK, AT_EACCESS) @ libc.so.6+0xda1f8(faccessat+72)
 faccessat2(AT_FDCWD, non-NULL, X_OK|W_OK|R_OK, AT_EACCESS) @ libc.so.6+0xda1f8(faccessat+72)

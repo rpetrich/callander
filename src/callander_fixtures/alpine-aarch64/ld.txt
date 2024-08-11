@@ -1,4 +1,5 @@
-callander: permitted syscalls: getcwd(any, non-NULL) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
+callander: permitted syscalls: getcwd(any, 0x1000) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
+getcwd(non-NULL, non-NULL) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
 dup(any) @ ld-musl-aarch64.so.1+0x64dac(dup+16)
 dup3(any, STDIN_FILENO-STDERR_FILENO, 0) @ ld-musl-aarch64.so.1+0x64dd8(dup2+28)
 fcntl(any, F_GETFD, 0) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
@@ -55,8 +56,10 @@ lseek(any, any, any) @ ld-musl-aarch64.so.1+0x65550(lseek64+12)
 read(any u32, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 read(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-write(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
-write(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dc8c
+write(STDERR_FILENO, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+write(STDERR_FILENO, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
@@ -110,6 +113,7 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0x6f110(app_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x50554(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x508a4(__libc_sigaction*+376)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x610e8(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x610e8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x504d4
 getrlimit(RLIMIT_NOFILE, any) @ ld-musl-aarch64.so.1+0x3ca94(getrlimit+112)
 setrlimit(any u32, any) @ ld-musl-aarch64.so.1+0x3db34(do_setrlimit*+24)

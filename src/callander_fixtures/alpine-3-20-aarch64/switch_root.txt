@@ -6,7 +6,8 @@ ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x53910(__stdout_write*+5
 unlinkat(any, any, 0) @ ld-musl-aarch64.so.1+0x695f4(unlinkat+20)
 unlinkat(any, any, AT_REMOVEDIR) @ ld-musl-aarch64.so.1+0x695f4(unlinkat+20)
 umount2(non-NULL, MNT_FORCE-MNT_DETACH) @ ld-musl-aarch64.so.1+0x24d30(umount2+16)
-mount(any, any, 0, 0x2000, 0) @ ld-musl-aarch64.so.1+0x24cf0(mount+12)
+mount(any, /sbin/switch_root+0x1c9f, 0, 0x2000, 0) @ ld-musl-aarch64.so.1+0x24cf0(mount+12)
+mount(non-NULL, any, 0, 0x2000, 0) @ ld-musl-aarch64.so.1+0x24cf0(mount+12)
 fstatfs(any, any) @ ld-musl-aarch64.so.1+0x52f6c(fstatfs+40)
 faccessat(AT_FDCWD, any, X_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 chdir(any) @ ld-musl-aarch64.so.1+0x68570(chdir+12)
@@ -63,6 +64,7 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff0(app_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x51eec(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sigaction*+344)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 brk(any) @ ld-musl-aarch64.so.1+0x29954(__malloc_alloc_meta*+336)

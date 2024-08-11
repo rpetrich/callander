@@ -42,11 +42,18 @@ fallocate(any, 16, any, any) @ libc.so.6+0xdeb3c(fallocate64+44)
 fallocate(any, 3, any, any) @ libc.so.6+0xdeb84(fallocate64+116)
 fallocate(any, 16, any, any) @ libc.so.6+0xdeb84(fallocate64+116)
 faccessat(AT_FDCWD, any, F_OK-W_OK) @ libc.so.6+0xda030(access+16)
-faccessat(any, any, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
 faccessat(any, any, R_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(any, libblkid.so.1+0x43d19, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(any, libblkid.so.1+0x45c19, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(any, libblkid.so.1+0x45c31, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(any, libblkid.so.1+0x45c49, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(any, libblkid.so.1+0x45c61, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(any, libblkid.so.1+0x45c81, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
+faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
 chdir(any) @ libc.so.6+0xda8c8(chdir+8)
 fchdir(any u32) @ libc.so.6+0xda908(fchdir+8)
 fchmod(STDIN_FILENO-0xfffffffe, any) @ libc.so.6+0xd98c8(fchmod+8)
+fchmod(any u32, any u32) @ libc.so.6+0xd98c8(fchmod+8)
 fchmodat(AT_FDCWD, any, any u32) @ libc.so.6+0xd9860(chmod+16)
 fchownat(AT_FDCWD, any, any u32, any u32, 0) @ libc.so.6+0xdb1dc(chown+28)
 fchown(any u32, any u32, any u32) @ libc.so.6+0xdb248(fchown+8)
@@ -135,7 +142,11 @@ tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 sigaltstack(0, any) @ libc.so.6+0xf7b5c
-rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(any, 0, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(any, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGHUP-SIGILL, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGPIPE, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGCONT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x7ed0c
@@ -148,7 +159,7 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x7f8c8(pthread_create+2308)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0x80940
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
-rt_sigprocmask(SIG_SETMASK, non-NULL, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0xd88ec
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0xd8970
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0xd8c0c

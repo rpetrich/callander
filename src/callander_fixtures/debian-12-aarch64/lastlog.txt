@@ -91,7 +91,8 @@ setreuid(any u32, any u32) @ libc.so.6+0x7c420
 setreuid(any u32, any u32) @ libc.so.6+0xe053c(setreuid+60)
 uname(any) @ libc.so.6+0xb8648(uname+8)
 prctl(PR_CAPBSET_READ, any u32, any, any, any) @ libc.so.6+0xe8964(prctl+68)
-prctl(PR_GET_SECUREBITS, NULL-0x1, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_GET_SECUREBITS, 0, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_CAP_AMBIENT, 1, any u32, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b908

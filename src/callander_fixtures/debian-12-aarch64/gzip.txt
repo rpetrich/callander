@@ -84,7 +84,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0x80940
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
-rt_sigprocmask(SIG_SETMASK, non-NULL, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b908
 getpid() @ libc.so.6+0xba088(getpid+8)

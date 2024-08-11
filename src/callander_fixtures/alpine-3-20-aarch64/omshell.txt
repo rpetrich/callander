@@ -53,8 +53,12 @@ lseek(any, any, any) @ ld-musl-aarch64.so.1+0x68de8(lseek+12)
 read(any u32, any, any) @ ld-musl-aarch64.so.1+0x53780(__stdio_read*+144)
 read(any, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
 read(any, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-write(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
-write(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+write(any, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
+write(any, /usr/bin/omshell+0x2515a0, any) @ ld-musl-aarch64.so.1+0x607bc
+write(STDERR_FILENO, any, any) @ ld-musl-aarch64.so.1+0x607bc
+write(any, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+write(any, /usr/bin/omshell+0x2515a0, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+write(STDERR_FILENO, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x5373c(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
 pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
@@ -110,6 +114,7 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff0(app_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x51eec(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sigaction*+344)
 rt_sigprocmask(SIG_BLOCK-SIG_UNBLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
 uname(any) @ ld-musl-aarch64.so.1+0x3df98(uname+12)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x66704(clock_gettime+92)

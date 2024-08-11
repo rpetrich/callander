@@ -49,6 +49,7 @@ pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdefc8(__pr
 sendfile(any u32, any u32, 0, any) @ libc.so.6+0xde4c8(sendfile+8)
 readlinkat(AT_FDCWD, any, any, any) @ libc.so.6+0xdb838(readlink+24)
 newfstatat(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ libc.so.6+0xd93bc(fstatat64+12)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd93bc(fstatat64+12)
 newfstatat(any, libc.so.6+0x1540a0, any, AT_EMPTY_PATH) @ libc.so.6+0xd93bc(fstatat64+12)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)

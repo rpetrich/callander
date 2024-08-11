@@ -90,7 +90,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0x80940
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
-rt_sigprocmask(SIG_SETMASK, non-NULL, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
 setpriority(0, 0, any u32) @ libc.so.6+0xdfc08(setpriority+8)
 getpriority(0, 0) @ libc.so.6+0xdfbbc(getpriority+12)
 setgid(any u32) @ libc.so.6+0x7c420

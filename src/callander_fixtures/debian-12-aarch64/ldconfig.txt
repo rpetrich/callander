@@ -74,7 +74,8 @@ tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x25618
 tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x25618
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig+0x2564c
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig+0x2564c
-rt_sigaction(SIGABRT, any, any, 8) @ /usr/sbin/ldconfig+0x4b624
+rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x4b624
+rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig+0x4b624
 rt_sigaction(SIGABRT, 0, 0, 8) @ /usr/sbin/ldconfig+0x4b6b4
 rt_sigaction(SIGALRM, 0, 0, 8) @ /usr/sbin/ldconfig+0x4b6b4
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x9378
@@ -88,6 +89,7 @@ gettid() @ /usr/sbin/ldconfig+0x25630
 sysinfo(any) @ /usr/sbin/ldconfig+0x3a708
 socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0x73dc8
 socket(AF_UNIX-AF_INET, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0x73dc8
+socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig+0x73dc8
 connect(any, any, 16) @ /usr/sbin/ldconfig+0x73b40
 connect(any, any, 28) @ /usr/sbin/ldconfig+0x73b40
 connect(any, any, 110) @ /usr/sbin/ldconfig+0x73b40

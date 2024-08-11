@@ -316,15 +316,6 @@ static inline bool registers_are_subset_of_registers(const struct register_state
 	return true;
 }
 
-static inline register_mask matching_registers(const struct register_state a[REGISTER_COUNT], const struct register_state b[REGISTER_COUNT])
-{
-	register_mask result = 0;
-	for (int i = 0; i < REGISTER_COUNT; i++) {
-		result |= mask_for_conditional_register((a[i].value == b[i].value) && (a[i].max == b[i].max), i);
-	}
-	return result;
-}
-
 __attribute__((nonnull(1, 2)))
 static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm *r);
 
@@ -14333,11 +14324,20 @@ static bool merge_recorded_syscall(const struct recorded_syscall *source, struct
 		target->registers = source->registers;
 		return true;
 	}
-	register_mask mismatched = ~matching_registers(source->registers.registers, target->registers.registers) & relevant_registers;
-	if ((mismatched != 0) && ((mismatched & -mismatched) == mismatched)) {
+	// find a lone mismatch
+	int mismatch_index = -1;
+	for_each_bit(relevant_registers, bit, i) {
+		if ((target->registers.registers[i].value != source->registers.registers[i].value) || (target->registers.registers[i].max != source->registers.registers[i].max)) {
+			if (mismatch_index == -1) {
+				mismatch_index = i;
+			} else {
+				return false;
+			}
+		}
+	}
+	if (mismatch_index != -1) {
 		// source and target differ by only a single register
-		int i = first_set_register_in_mask(mismatched);
-		return combine_register_states(&target->registers.registers[i], &source->registers.registers[i], i);
+		return combine_register_states(&target->registers.registers[mismatch_index], &source->registers.registers[mismatch_index], mismatch_index);
 	}
 	return false;
 }

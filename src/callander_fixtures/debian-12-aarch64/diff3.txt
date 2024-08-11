@@ -74,8 +74,9 @@ tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGSEGV) @ libc.so.6+0x80a0c
 sigaltstack(any, 0) @ libc.so.6+0x3b048(sigaltstack+8)
-rt_sigaction(SIGABRT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGSEGV, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGCHLD, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGSEGV, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigaction(SIGCHLD, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)

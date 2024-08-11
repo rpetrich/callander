@@ -41,6 +41,7 @@ futex(libc.so.6+0x1c66d0(__timer_active_sigev_thread_lock), FUTEX_LOCK_PI, 0, 0,
 futex(libc.so.6+0x1c66d0(__timer_active_sigev_thread_lock), FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(libc.so.6+0x1c66d0(__timer_active_sigev_thread_lock), FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 0, 134)
 futex(libc.so.6+0x1c66d0(__timer_active_sigev_thread_lock), FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, libc.so.6+0x1c66e0(__timer_active_sigev_thread_lock+16))
+futex(ld-linux-aarch64.so.1+0x50a88(_rtld_global+2696), FUTEX_WAIT, any u32, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x50a88(_rtld_global+2696), FUTEX_LOCK_PI, 0, 0, 128, 6)
 futex(ld-linux-aarch64.so.1+0x50a88(_rtld_global+2696), FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x50a88(_rtld_global+2696), FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 0, 134)

@@ -16,7 +16,8 @@ flistxattr(any, non-NULL, 0x10000) @ ld-musl-aarch64.so.1+0x24dd8(flistxattr+8)
 removexattr(any, any) @ ld-musl-aarch64.so.1+0x24e50(removexattr+12)
 lremovexattr(any, any) @ ld-musl-aarch64.so.1+0x24e6c(lremovexattr+12)
 fremovexattr(any, any) @ ld-musl-aarch64.so.1+0x24e8c(fremovexattr+16)
-getcwd(any, non-NULL) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
+getcwd(any, 0x1000) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
+getcwd(non-NULL, non-NULL) @ ld-musl-aarch64.so.1+0x65238(getcwd+36)
 eventfd2(any u32, any) @ ld-musl-aarch64.so.1+0x242d8(eventfd+20)
 dup(any) @ ld-musl-aarch64.so.1+0x48ac4(child*+560)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x48b70(child*+732)
@@ -29,6 +30,7 @@ fcntl(any, F_DUPFD, 0) @ ld-musl-aarch64.so.1+0x2113c(fcntl+336)
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, any) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
 fcntl(any, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
+fcntl(any, F_GETFL, 0) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
 fcntl(any, F_GETLK-F_SETLK, any) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21204(open+136)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x45cc0(socket+148)
@@ -169,9 +171,8 @@ fsync(any) @ ld-musl-aarch64.so.1+0x5dc8c
 fsync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 fdatasync(any) @ ld-musl-aarch64.so.1+0x5dc8c
 fdatasync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-utimensat(STDIN_FILENO-0xfffffffffffffffe, any, any, 0) @ ld-musl-aarch64.so.1+0x51720(utimensat+52)
+utimensat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x51720(utimensat+52)
 utimensat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x51720(utimensat+52)
-utimensat(0xffffffffffffff9d--1, any, any, 0) @ ld-musl-aarch64.so.1+0x51720(utimensat+52)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
@@ -229,6 +230,8 @@ tkill(any u32, SIGSETXID) @ ld-musl-aarch64.so.1+0x5e724(cancel_handler*+176)
 tkill(non-NULL, any) @ ld-musl-aarch64.so.1+0x5ffec(pthread_kill+68)
 tkill(any u32, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x61b18(__synccall*+404)
 sigaltstack(0, any) @ ld-musl-aarch64.so.1+0x50a1c(sigaltstack+80)
+sigaltstack(libpython3.11.so.1.0+0x4f3970, libpython3.11.so.1.0+0x4f3e58) @ ld-musl-aarch64.so.1+0x50a1c(sigaltstack+80)
+sigaltstack(libpython3.11.so.1.0+0x4f3e58, 0) @ ld-musl-aarch64.so.1+0x50a1c(sigaltstack+80)
 rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-aarch64.so.1+0x20d08(abort+64)
 rt_sigaction(any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5081c(__libc_sigaction*+240)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x20d34(abort+108)
@@ -314,7 +317,9 @@ munmap(any, any) @ ld-musl-aarch64.so.1+0x3e974(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5dc24
 mremap(any, NULL-0xfffffffffffff000, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e8d0(mremap+140)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x47ff8(_Fork+56)
-clone(0, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc4c
+clone(0, any, 0x1-0xffffffff, any, any) @ ld-musl-aarch64.so.1+0x5dc4c
+clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc4c
+clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x5dc4c
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e7c8(mmap+148)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e7c8(mmap+148)
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e7c8(mmap+148)

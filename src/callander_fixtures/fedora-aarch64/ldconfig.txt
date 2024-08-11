@@ -72,7 +72,8 @@ sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x63dc8
 restart_syscall()
 tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x2c0a4
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig+0x2c0d8
-rt_sigaction(SIGABRT, any, any, 8) @ /usr/sbin/ldconfig+0x4f93c
+rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x4f93c
+rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig+0x4f93c
 rt_sigaction(SIGABRT, 0, 0, 8) @ /usr/sbin/ldconfig+0x4f9d8
 rt_sigaction(SIGALRM, 0, 0, 8) @ /usr/sbin/ldconfig+0x4f9d8
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x10188

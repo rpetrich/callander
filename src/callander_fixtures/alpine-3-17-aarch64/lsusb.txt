@@ -1,4 +1,5 @@
-callander: permitted syscalls: getcwd(any, 0x1000-0x1001) @ ld-musl-aarch64.so.1+0x64710(getcwd+36)
+callander: permitted syscalls: getcwd(any, 0x1000) @ ld-musl-aarch64.so.1+0x64710(getcwd+36)
+getcwd(non-NULL, 0x1001) @ ld-musl-aarch64.so.1+0x64710(getcwd+36)
 eventfd2(0, EFD_NONBLOCK|EFD_CLOEXEC) @ ld-musl-aarch64.so.1+0x241d4(eventfd+20)
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFD, any) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x2107c(fcntl+376)
@@ -131,6 +132,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sig
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e998(start*+128)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5ea90(pthread_create+172)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 uname(any) @ ld-musl-aarch64.so.1+0x3e148(uname+12)
 prctl(PR_SET_NAME, libusb-1.0.so.0+0x14c8f, 0, any, any) @ ld-musl-aarch64.so.1+0x24740(prctl+104)
