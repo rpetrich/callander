@@ -524,6 +524,8 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
+void log_basic_blocks(const struct program_state *analysis);
+
 __attribute__((nonnull(1, 3, 4, 5)))
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);
 

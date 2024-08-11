@@ -1843,6 +1843,26 @@ static char *copy_block_entry_description(const struct loader_context *loader, i
 	return buf;
 }
 
+void log_basic_blocks(const struct program_state *analysis)
+{
+	struct registers state = { 0 };
+	struct searched_instruction_entry *table = analysis->search.table;
+	uint32_t count = next_index(analysis->search.mask);
+	for (uint32_t i = 0; i < count; i = next_index(i)) {
+		struct searched_instruction_entry *entry = entry_for_index(table, i);
+		if (entry->address != NULL) {
+			struct searched_instruction_data *data = entry->data;
+			size_t end_offset = data->end_offset;
+			for (size_t offset = 0; offset < end_offset; ) {
+				struct searched_instruction_data_entry *data_entry = entry_for_offset(data, offset);
+				expand_registers(state.registers, data_entry);
+				ERROR_NOPREFIX("block", temp_str(copy_block_entry_description(&analysis->loader, entry->address, &state)));
+				offset += sizeof_searched_instruction_data_entry(data_entry);
+			}
+		}
+	}
+}
+
 __attribute__((nonnull(1, 2, 7)))
 static void find_and_add_callback(struct program_state *analysis, ins_ptr addr, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects additional_effects, instruction_reached_callback callback, void *callback_data)
 {

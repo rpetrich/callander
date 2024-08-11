@@ -1448,6 +1448,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	int executable_index = 1;
 	bool show_permitted = false;
 	bool show_binaries = false;
+	bool show_basic_blocks = false;
 	bool allow_unexpected = false;
 	bool mutable_binary_mappings = true;
 	const char *profile_path = NULL;
@@ -1554,6 +1555,8 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			show_permitted = true;
 		} else if (fs_strcmp(arg, "--show-binaries") == 0) {
 			show_binaries = true;
+		} else if (fs_strcmp(arg, "--show-basic-blocks") == 0) {
+			show_basic_blocks = true;
 		} else if (fs_strcmp(arg, "--allow-unexpected-binaries") == 0) {
 			allow_unexpected = true;
 		} else if (fs_strcmp(arg, "--mutable-binary-mappings") == 0) {
@@ -1947,6 +1950,9 @@ skip_analysis:
 	}
 
 	if (skip_running) {
+		if (show_basic_blocks) {
+			log_basic_blocks(&analysis);
+		}
 		if (show_permitted) {
 			log_used_syscalls(&analysis.loader, &analysis.syscalls, true, true, true);
 		}
@@ -2116,6 +2122,9 @@ skip_analysis:
 		}
 	}
 #endif
+	if (show_basic_blocks) {
+		log_basic_blocks(&analysis);
+	}
 	cleanup_searched_instructions(&analysis.search);
 #ifdef STATS
 	ERROR("analyzed instruction count", analyzed_instruction_count);
