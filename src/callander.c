@@ -5486,36 +5486,84 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				}
 				break;
 #ifdef INS_CONDITIONAL_TYPE_BIT_CLEARED
-			case INS_CONDITIONAL_TYPE_BIT_CLEARED:
+			case INS_CONDITIONAL_TYPE_BIT_CLEARED: {
+				uintptr_t bit = (uintptr_t)1 << compare_state.value.value;
 				LOG("found tbz comparing", name_for_register(compare_state.target_register));
 				dump_register(&analysis->loader, continue_state);
 				// tbz %target_register
-				if (register_is_exactly_known(&jump_state)) {
-					if ((continue_state.value & compare_state.value.value) == 0) {
+				if (register_is_exactly_known(&continue_state)) {
+					if ((continue_state.value & bit) == 0) {
 						skip_continue = true;
 						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
 					} else {
 						skip_jump = true;
 						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
 					}
+					break;
+				}
+				// check if bit couldn't ever be set
+				if (continue_state.max < bit) {
+					skip_continue = true;
+					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+					break;
+				}
+				// check if bit couldn't ever be cleared
+				if (continue_state.value > bit) {
+					skip_jump = true;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+					break;
+				}
+				// check if testing the top bit in the range
+				if ((continue_state.max >> compare_state.value.value) == 0) {
+					continue_state.value = bit;
+					jump_state.max = bit - 1;
+					break;
+				}
+				if (continue_state.value < bit && (continue_state.max & bit)) {
+					continue_state.value = bit;
 				}
 				break;
+			}
 #endif
 #ifdef INS_CONDITIONAL_TYPE_BIT_SET
-			case INS_CONDITIONAL_TYPE_BIT_SET:
+			case INS_CONDITIONAL_TYPE_BIT_SET: {
+				uintptr_t bit = (uintptr_t)1 << compare_state.value.value;
 				LOG("found tbnz comparing", name_for_register(compare_state.target_register));
 				dump_register(&analysis->loader, continue_state);
-				// tbz %target_register
+				// tbnz %target_register
 				if (register_is_exactly_known(&continue_state)) {
-					if ((continue_state.value & compare_state.value.value) == 0) {
+					if ((continue_state.value & bit) == 0) {
 						skip_jump = true;
 						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
 					} else {
 						skip_continue = true;
 						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
 					}
+					break;
+				}
+				// check if bit couldn't ever be set
+				if (continue_state.max < bit) {
+					skip_jump = true;
+					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+					break;
+				}
+				// check if bit couldn't ever be cleared
+				if (continue_state.value > bit) {
+					skip_continue = true;
+					LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+					break;
+				}
+				// check if testing the top bit in the range
+				if ((continue_state.max >> compare_state.value.value) == 0) {
+					jump_state.value = bit;
+					continue_state.max = bit - 1;
+					break;
+				}
+				if (continue_state.value < bit && (continue_state.max & bit)) {
+					jump_state.value = bit;
 				}
 				break;
+			}
 #endif
 			default:
 				break;

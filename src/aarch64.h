@@ -303,10 +303,9 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 		}
 		case ARM64_TBZ: {
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
-			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
-				.value = { bit, bit },
+				.value = { ins->decomposed.operands[1].immediate, ins->decomposed.operands[1].immediate },
 				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
@@ -316,10 +315,9 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 		}
 		case ARM64_TBNZ: {
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
-			uintptr_t bit = (uintptr_t)1 << ins->decomposed.operands[1].immediate;
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
-				.value = { bit, bit },
+				.value = { ins->decomposed.operands[1].immediate, ins->decomposed.operands[1].immediate },
 				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
