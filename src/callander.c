@@ -5728,8 +5728,9 @@ enum possible_conditions {
 	POSSIBLY_MATCHES = 0x3,
 };
 
-static inline enum possible_conditions calculate_possible_conditions(ins_conditional_type cond, struct registers *current_state)
+static inline enum possible_conditions calculate_possible_conditions(const struct loader_context *loader, ins_conditional_type cond, struct registers *current_state)
 {
+	LOG("calculating possible conditions", temp_str(copy_register_state_description(loader, current_state->compare_state.value)));
 	switch (cond) {
 		case INS_CONDITIONAL_TYPE_BELOW:
 			if (current_state->compare_state.validity & COMPARISON_SUPPORTS_RANGE) {
@@ -6644,7 +6645,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("from", name_for_register(source));
 						LOG("to", name_for_register(dest));
 						dump_registers(&analysis->loader, &self.current_state, mask_for_register(dest) | mask_for_register(source));
-						switch (calculate_possible_conditions(x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
+						switch (calculate_possible_conditions(&analysis->loader, x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
 							case ALWAYS_MATCHES:
 								LOG("conditional always matches");
 								self.current_state.registers[dest] = self.current_state.registers[source];
@@ -6756,7 +6757,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						ins_ptr remaining = &decoded.unprefixed[2];
 						int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 						LOG("to", name_for_register(rm));
-						switch (calculate_possible_conditions(x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
+						switch (calculate_possible_conditions(&analysis->loader, x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
 							case ALWAYS_MATCHES:
 								LOG("conditional always matches");
 								self.current_state.registers[rm].value = 1;
@@ -10085,7 +10086,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_CCMP: {
 				// TODO
 				LOG("ccmp");
-				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
+				switch (calculate_possible_conditions(&analysis->loader, (enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state)) {
 					case ALWAYS_MATCHES: {
 						LOG("conditional always matches");
 						enum ins_operand_size size;
@@ -10191,7 +10192,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				truncate_to_operand_size(&alt_state, size);
 				LOG("alt", temp_str(copy_register_state_description(&analysis->loader, alt_state)));
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
-				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[2].cond, &self.current_state)) {
+				switch (calculate_possible_conditions(&analysis->loader, (enum aarch64_conditional_type)decoded.decomposed.operands[2].cond, &self.current_state)) {
 					case ALWAYS_MATCHES:
 						LOG("conditional always matches");
 						self.current_state.registers[dest] = source_state;
@@ -10493,7 +10494,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				truncate_to_operand_size(&right_state, size);
 				LOG("right", temp_str(copy_register_state_description(&analysis->loader, right_state)));
-				enum possible_conditions possibilities = calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state);
+				enum possible_conditions possibilities = calculate_possible_conditions(&analysis->loader, (enum aarch64_conditional_type)decoded.decomposed.operands[3].cond, &self.current_state);
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
 				switch (possibilities) {
 					case ALWAYS_MATCHES:
@@ -10547,7 +10548,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				}
 				LOG("cset", name_for_register(dest));
-				switch (calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state)) {
+				switch (calculate_possible_conditions(&analysis->loader, (enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state)) {
 					case ALWAYS_MATCHES:
 						LOG("conditional always matches");
 						self.current_state.registers[dest].value = 1;
@@ -10578,7 +10579,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					break;
 				}
 				LOG("csetm", name_for_register(dest));
-				enum possible_conditions possibilities = calculate_possible_conditions((enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state);
+				enum possible_conditions possibilities = calculate_possible_conditions(&analysis->loader, (enum aarch64_conditional_type)decoded.decomposed.operands[1].cond, &self.current_state);
 				clear_match(&analysis->loader, &self.current_state, dest, ins);
 				switch (possibilities) {
 					case ALWAYS_MATCHES:
