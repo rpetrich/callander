@@ -128,3 +128,4 @@ mmap(any, any, any, MAP_PRIVATE|MAP_DENYWRITE, STDIN_FILENO-0xfffffffffffffffe, 
 mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, STDIN_FILENO-0xfffffffffffffffe, any) @ /usr/sbin/ldconfig:0x428eb8(mmap64+24)
 mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /usr/sbin/ldconfig:0x428eb8(mmap64+24)
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig:0x428f44(mprotect+4)
+madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig:0x428f84(__madvise+4)

@@ -16,7 +16,8 @@ openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldc
 openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig.real:0x42d868
 openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e448
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e448
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig.real:0x42e498
+openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e498
+openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e498
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e50c
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42e560
 close(any) @ /usr/sbin/ldconfig.real:0x42dab8

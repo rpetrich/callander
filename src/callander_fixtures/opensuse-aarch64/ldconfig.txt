@@ -90,3 +90,4 @@ mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, STDIN_FILENO-0xffffffff
 mmap(any, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /sbin/ldconfig:0x430b70
 mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /sbin/ldconfig:0x430b70
 mprotect(any, any, any u32) @ /sbin/ldconfig:0x430be4
+madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig:0x430c04

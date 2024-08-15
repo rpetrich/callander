@@ -6,7 +6,7 @@ dup(any u32) @ libc.so.6+0xda748(dup+8)
 dup3(any, any, 0) @ libc.so.6+0xda788(__dup2+40)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
-fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 3) @ libc.so.6+0xded40
+fcntl(any, F_DUPFD, 3) @ libc.so.6+0xded40
 fcntl(any, F_GETFD, 0) @ libc.so.6+0xded40
 fcntl(any, F_SETFD, NULL-0xfffffffe) @ libc.so.6+0xded40
 fcntl(any, F_GETFL, any) @ libc.so.6+0xded40
@@ -31,6 +31,9 @@ unlinkat(AT_FDCWD, any, AT_REMOVEDIR) @ libc.so.6+0xdb930(rmdir+16)
 symlinkat(any, AT_FDCWD, any) @ libc.so.6+0xdb7ac(symlink+12)
 linkat(AT_FDCWD, any, AT_FDCWD, any, 0) @ libc.so.6+0xdb728(link+24)
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ libc.so.6+0x51f74(rename+20)
+statfs(libsystemd.so.0+0xa7698, any) @ libc.so.6+0xd96d4(statfs+4)
+statfs(libsystemd.so.0+0xa76a8, any) @ libc.so.6+0xd96d4(statfs+4)
+statfs(libsystemd.so.0+0xa76c0, any) @ libc.so.6+0xd96d4(statfs+4)
 statfs(libsystemd.so.0+0xa9000, any) @ libc.so.6+0xd96d4(statfs+4)
 ftruncate(any, any) @ libc.so.6+0xe24f8(ftruncate64+8)
 faccessat(AT_FDCWD, any, W_OK) @ libc.so.6+0xda030(access+16)
@@ -140,9 +143,7 @@ kill(any u32, SIGKILL) @ libc.so.6+0x49b4c
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
-tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
@@ -161,39 +162,35 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0xd8970
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0xd8c0c
 setgid(any) @ libc.so.6+0x7c0d4
 setgid(any) @ libc.so.6+0x7c420
+setgid(any u32) @ libc.so.6+0xba2f0(setgid+48)
 setgid(any) @ libc.so.6+0xe3d24(syscall+36)
 setuid(any) @ libc.so.6+0x7c0d4
 setuid(any) @ libc.so.6+0x7c420
 setuid(any u32) @ libc.so.6+0xba250(setuid+48)
 setuid(any) @ libc.so.6+0xe3d24(syscall+36)
+setresuid(any u32, any u32, any u32) @ libc.so.6+0x7c0d4
 setresuid(-1, any u32, -1) @ libc.so.6+0x7c0d4
+setresuid(any u32, any u32, any u32) @ libc.so.6+0x7c420
 setresuid(-1, any u32, -1) @ libc.so.6+0x7c420
+setresuid(any u32, any u32, any u32) @ libc.so.6+0xba620(setresuid+64)
 setresuid(-1, any u32, -1) @ libc.so.6+0xd8c78
+setresuid(-1, 0, -1) @ libc.so.6+0xe06a0(seteuid+64)
+getresuid(any, any, any) @ libc.so.6+0xba588(getresuid+8)
+setresgid(any u32, any u32, any u32) @ libc.so.6+0x7c0d4
 setresgid(-1, any u32, -1) @ libc.so.6+0x7c0d4
+setresgid(any u32, any u32, any u32) @ libc.so.6+0x7c420
 setresgid(-1, any u32, -1) @ libc.so.6+0x7c420
+setresgid(any u32, any u32, any u32) @ libc.so.6+0xba6e0(setresgid+64)
 setresgid(-1, any u32, -1) @ libc.so.6+0xd8e18
+setresgid(-1, NULL-0xfffffffe, -1) @ libc.so.6+0xe0770(setegid+64)
+getresgid(any, any, any) @ libc.so.6+0xba5c8(getresgid+8)
 setpgid(0, any u32) @ libc.so.6+0xba488(setpgid+8)
 getpgid(0) @ libc.so.6+0xba448(getpgid+8)
 setsid() @ libc.so.6+0xba548(setsid+8)
-getgroups(0, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x10000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x20000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x40000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x80000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x100000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x200000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x400000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x800000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x1000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x2000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x4000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x8000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x10000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x20000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x40000000, any) @ libc.so.6+0xba208(getgroups+8)
-getgroups(0x80000000, any) @ libc.so.6+0xba208(getgroups+8)
+getgroups(any u32, any) @ libc.so.6+0xba208(getgroups+8)
 setgroups(any, any) @ libc.so.6+0x7c0d4
 setgroups(any, any) @ libc.so.6+0x7c420
+setgroups(NULL-0x1, any) @ libc.so.6+0xb596c(setgroups+44)
 setgroups(any, any) @ libc.so.6+0xe3d24(syscall+36)
 uname(any) @ libc.so.6+0xb8648(uname+8)
 getrusage(0, any) @ libc.so.6+0xdf838(getrusage+8)
@@ -202,9 +199,11 @@ prctl(any, any, any, any, any) @ libc.so.6+0xe3d24(syscall+36)
 prctl(PR_SET_PDEATHSIG, 2, 2, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_SET_PDEATHSIG, 15, 2, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_SET_NAME, libsystemd.so.0+0x94830, any, any, any) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_SET_NAME, libsystemd.so.0+0x948c0, any, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_SET_NAME, libsystemd.so.0+0x9b248, any, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_CAPBSET_READ, any, any, any, any) @ libc.so.6+0xe8964(prctl+68)
 prctl(PR_SET_MM, 0x8-0x9, any, 0, 0) @ libc.so.6+0xe8964(prctl+68)
+prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) @ libc.so.6+0xe8964(prctl+68)
 gettimeofday(any, any) @ libc.so.6+0xa9488
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b908
@@ -257,7 +256,6 @@ recvmsg(any, any, MSG_DONTWAIT|MSG_CMSG_CLOEXEC) @ libc.so.6+0xea42c(recvmsg+108
 brk(any) @ libc.so.6+0xdfcc8(brk+8)
 munmap(any, any) @ libc.so.6+0xe3f08(munmap+8)
 mremap(any, any, any, 0-MREMAP_MAYMOVE, 0) @ libc.so.6+0xe8f34(mremap+52)
-mremap(any, any, any, 0-MREMAP_MAYMOVE, any) @ libc.so.6+0xe8f8c(mremap+140)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, 0, any) @ libc.so.6+0xb8ef4(_Fork+36)
 clone(SIGCHLD, 0, any, any, any) @ libc.so.6+0xe3d24(syscall+36)
 clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xe7f74(clone+52)
@@ -275,6 +273,9 @@ wait4(any, any, 0, 0) @ libc.so.6+0xb871c(wait4+44)
 wait4(any, any, 0, 0) @ libc.so.6+0xb8764(wait4+116)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xdf7c4(__getrlimit+20)
 prlimit64(0, RLIMIT_NOFILE, any, 0) @ libc.so.6+0xdf804(setrlimit64+20)
+setns(any u32, CLONE_NEWNS) @ libc.so.6+0xe9788(setns+8)
+setns(any u32, CLONE_NEWUSER) @ libc.so.6+0xe9788(setns+8)
+setns(any u32, CLONE_NEWPID) @ libc.so.6+0xe9788(setns+8)
 getrandom(any, any, 0) @ libc.so.6+0x3d928(getentropy+56)
 getrandom(any, any, GRND_NONBLOCK) @ libc.so.6+0x3dab4(getrandom+36)
 getrandom(any, any, GRND_INSECURE) @ libc.so.6+0x3dab4(getrandom+36)
@@ -284,8 +285,7 @@ statx(any, any, AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT, STATX_TYPE, any) @ libc.so.
 rseq(any, 32, 0, 0xd428bc00) @ libc.so.6+0x7ec50
 pidfd_send_signal(any u32, SIGKILL, 0, 0) @ libc.so.6+0xe3d24(syscall+36)
 close_range(any, -1 as u32, 0) @ libc.so.6+0xd8d00
-close_range(any u32, -1 as u32, 0) @ libc.so.6+0xde9c8(close_range+8)
-close_range(3, 0x3-0xfffffffe, 0) @ libc.so.6+0xde9c8(close_range+8)
+close_range(any u32, any u32, 0) @ libc.so.6+0xde9c8(close_range+8)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0xda1f8(faccessat+72)
 faccessat2(AT_FDCWD, any, X_OK|R_OK, AT_EACCESS) @ libc.so.6+0xda1f8(faccessat+72)
 faccessat2(AT_FDCWD, non-NULL, X_OK|W_OK|R_OK, AT_EACCESS) @ libc.so.6+0xda1f8(faccessat+72)

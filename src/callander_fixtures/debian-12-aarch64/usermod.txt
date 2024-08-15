@@ -135,12 +135,14 @@ capget(any, any) @ libc.so.6+0xe8fc8(capget+8)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 futex(any, FUTEX_WAIT, any u32, 0, any, any)
-futex(any, any, any u32, 0, 0, -1 as u32)
 futex(any, any, 1, 0, any, any)
+futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
 futex(any, any, INT_MAX, 0, any, any)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
+futex(any, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
+futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
 set_robust_list(any, 24) @ libc.so.6+0xb8f18(_Fork+72)
 setitimer(ITIMER_REAL, any, any) @ libc.so.6+0xabcc8(setitimer+8)
 clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ libc.so.6+0xb3a54(__clock_gettime+52)
@@ -161,9 +163,7 @@ kill(any u32, 0x0) @ libc.so.6+0x3a9c8(kill+8)
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
-tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGPIPE-SIGALRM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
@@ -238,6 +238,7 @@ clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ libc.so.6+0xb8f50(vfor
 mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3f48(mprotect+8)
+madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe4048(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe4048(madvise+8)
 wait4(any, any, 0, 0) @ libc.so.6+0xb871c(wait4+44)
 wait4(any, any, 0, 0) @ libc.so.6+0xb8764(wait4+116)

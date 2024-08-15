@@ -94,9 +94,7 @@ kill(any, any u32) @ libc.so.6+0x3a9c8(kill+8)
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
-tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 sigaltstack(0, any) @ libc.so.6+0xf7b5c
 rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
@@ -145,7 +143,7 @@ msgrcv(any, any, any, any, any) @ libc.so.6+0xeaf50(__libc_msgrcv+128)
 msgsnd(any, any, any u32, any) @ libc.so.6+0xeae1c(__libc_msgsnd+44)
 msgsnd(any, any, any u32, any) @ libc.so.6+0xeae64(__libc_msgsnd+116)
 semget(any, any, any) @ libc.so.6+0xeb060(semget+16)
-semctl(any, any, IPC_RMID-SEM_STAT_ANY, any) @ libc.so.6+0xeb120(semctl+144)
+semctl(any, any, any, any) @ libc.so.6+0xeb120(semctl+144)
 semtimedop(any, any, any, 0) @ libc.so.6+0xeb178(semtimedop+8)
 shmget(any, any, any) @ libc.so.6+0xeb230(shmget+16)
 shmctl(any, any, any) @ libc.so.6+0xeb26c(shmctl+12)
@@ -179,6 +177,7 @@ clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, 0, any) @ libc.so.6
 mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3f48(mprotect+8)
+madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe4048(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe4048(madvise+8)
 accept4(any, any, any, SOCK_CLOEXEC) @ libc.so.6+0xea9ec(accept4+44)
 accept4(any, any, any, SOCK_CLOEXEC) @ libc.so.6+0xeaa34(accept4+116)

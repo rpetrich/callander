@@ -1,5 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xd2760(getcwd+136)
-fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, any u32) @ libc.so.6+0xd6d4c(__fcntl64_nocancel_adjusted+52)
+fcntl(any, F_DUPFD, any u32) @ libc.so.6+0xd6d4c(__fcntl64_nocancel_adjusted+52)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xd6d4c(__fcntl64_nocancel_adjusted+52)
 fcntl(any, F_GETFL, any) @ libc.so.6+0xd6d4c(__fcntl64_nocancel_adjusted+52)
 fcntl(any, F_SETFL, any u32) @ libc.so.6+0xd6d4c(__fcntl64_nocancel_adjusted+52)
@@ -73,4 +73,5 @@ mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) @ libc.so.
 mmap(any, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xdc230(mmap+24)
 mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ libc.so.6+0xdc230(mmap+24)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xdc2a4(__mprotect+4)
+madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xdc394(__madvise+4)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xd773c(getrlimit+20)
