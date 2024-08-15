@@ -5728,7 +5728,7 @@ enum possible_conditions {
 	POSSIBLY_MATCHES = 0x3,
 };
 
-static inline enum possible_conditions calculate_possible_conditions(const struct loader_context *loader, ins_conditional_type cond, struct registers *current_state)
+static inline enum possible_conditions calculate_possible_conditions(__attribute__((unused)) const struct loader_context *loader, ins_conditional_type cond, struct registers *current_state)
 {
 	LOG("calculating possible conditions", temp_str(copy_register_state_description(loader, current_state->compare_state.value)));
 	switch (cond) {
