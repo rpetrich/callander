@@ -10449,10 +10449,21 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (dest == REGISTER_INVALID) {
 					break;
 				}
-				if (decoded.decomposed.operation == ARM64_CSINC) {
-					LOG("csinc", name_for_register(dest));
-				} else {
+				switch (decoded.decomposed.operation) {
+				case ARM64_CSEL:
 					LOG("csel", name_for_register(dest));
+					break;
+				case ARM64_CSINC:
+					LOG("csinc", name_for_register(dest));
+					break;
+				case ARM64_CSINV:
+					LOG("csinv", name_for_register(dest));
+					break;
+				case ARM64_CSNEG:
+					LOG("csneg", name_for_register(dest));
+					break;
+				default:
+					break;
 				}
 				struct register_state left_state;
 				int left = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &left_state, NULL);
