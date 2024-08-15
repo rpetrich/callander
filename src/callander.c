@@ -10486,7 +10486,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case ARM64_CSINV: {
 						if (register_is_exactly_known(&right_state)) {
-							set_register(&right_state, ~(uintptr_t)0 ^ right_state.value);
+							set_register(&right_state, ~right_state.value);
 						} else {
 							clear_register(&right_state);
 						}
@@ -10494,7 +10494,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case ARM64_CSNEG: {
 						if (register_is_exactly_known(&right_state)) {
-							set_register(&right_state, 0 - right_state.value);
+							set_register(&right_state, -right_state.value);
 						} else {
 							clear_register(&right_state);
 						}
