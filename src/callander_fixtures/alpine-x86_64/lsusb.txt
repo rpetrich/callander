@@ -90,7 +90,7 @@ sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x57f61
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x57f61
 bind(any, any, 12) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
-setsockopt(any, SOL_SOCKET, 0x10, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(any, SOL_SOCKET, SO_PASSCRED, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, ld-musl-x86_64.so.1+0x99fb8(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x57f24
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x55ba0(start*+78)

@@ -50,7 +50,7 @@ accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 listen(any, 5) @ ld-musl-x86_64.so.1+0x3be9a(listen+23)
-getsockopt(any, SOL_SOCKET, 0x11, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
+getsockopt(any, SOL_SOCKET, SO_PEERCRED, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
 fork() @ ld-musl-x86_64.so.1+0x40e0e(_Fork+39)
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff

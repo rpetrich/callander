@@ -89,12 +89,12 @@ recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x57f61
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3b411(getsockname+18)
-setsockopt(STDIN_FILENO-0x7fffffff, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
-setsockopt(any, SOL_IP, 0x40-0x41, non-NULL, any u32) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(STDIN_FILENO-0x7fffffff, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(any, SOL_IP, IPT_SO_SET_REPLACE-IPT_SO_SET_ADD_COUNTERS, non-NULL, any u32) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
-setsockopt(any, SOL_IPV6, 0x40-0x41, non-NULL, any u32) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
-getsockopt(any, SOL_IP, 0x40-0x41, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
-getsockopt(any, SOL_IPV6, 0x40-0x41, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
+setsockopt(any, SOL_IPV6, IP6T_SO_SET_REPLACE-IP6T_SO_SET_ADD_COUNTERS, non-NULL, any u32) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+getsockopt(any, SOL_IP, IPT_SO_SET_REPLACE-IPT_SO_SET_ADD_COUNTERS, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
+getsockopt(any, SOL_IPV6, IP6T_SO_SET_REPLACE-IP6T_SO_SET_ADD_COUNTERS, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f24
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff

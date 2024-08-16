@@ -112,7 +112,7 @@ getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3bedb(getpeername+18)
 setsockopt(any, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 getsockopt(any, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 getsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x5837f

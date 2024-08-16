@@ -63,8 +63,8 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 access(any, F_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
 access(non-NULL, W_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b069(pipe+6)
-select(0x1-0x400, 0, 0, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-select(0x1-0x400, 0, 0, any, any) @ ld-musl-x86_64.so.1+0x57f61
+select(any, 0, 0, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+select(any, 0, 0, any, any) @ ld-musl-x86_64.so.1+0x57f61
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x382ba(mremap+124)
 dup(any) @ ld-musl-x86_64.so.1+0x5a9c4(dup+9)
 dup2(any, STDIN_FILENO-STDERR_FILENO) @ ld-musl-x86_64.so.1+0x5a9df(dup2+15)
@@ -137,6 +137,7 @@ fchown(any, any u32, any u32) @ ld-musl-x86_64.so.1+0x5acbc(fchown+21)
 lchown(any, any u32, any u32) @ ld-musl-x86_64.so.1+0x5af99(lchown+10)
 umask(any u32) @ ld-musl-x86_64.so.1+0x49c08(umask+8)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x591d7(clock_gettime+80)
+getrlimit(0x3f04, any) @ ld-musl-x86_64.so.1+0x367ab(getrlimit+73)
 sysinfo(any) @ ld-musl-x86_64.so.1+0x1f733(sysinfo+6)
 getuid() @ ld-musl-x86_64.so.1+0x5af44(getuid+5)
 getgid() @ ld-musl-x86_64.so.1+0x5ae36(getgid+5)
@@ -222,6 +223,7 @@ utimensat(AT_FDCWD, any, non-NULL, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x
 timerfd_create(CLOCK_MONOTONIC, 0) @ ld-musl-x86_64.so.1+0x1f763(timerfd_create+12)
 fallocate(any, any, any, any) @ ld-musl-x86_64.so.1+0x1ef9b(fallocate64+15)
 timerfd_settime(any, 0, any, 0) @ ld-musl-x86_64.so.1+0x1f77e(timerfd_settime+15)
+prlimit64(0, 0x3f04, 0, any) @ ld-musl-x86_64.so.1+0x36780(getrlimit+30)
 getrandom(any, non-NULL, GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 getrandom(any, non-NULL, GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x57f61
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x1f248(__membarrier_init*+12)

@@ -119,7 +119,7 @@ getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3bedb(getpeername+18)
 setsockopt(any, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
-setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 getsockopt(any, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 getsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, any) @ ld-musl-x86_64.so.1+0x3c25c(getsockopt+21)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5837f

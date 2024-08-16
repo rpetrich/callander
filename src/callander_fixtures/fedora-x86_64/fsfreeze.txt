@@ -24,7 +24,7 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x907be(__pthread_kill_implem
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x959a6(pthread_sigmask+70)
 rt_sigreturn(any) @ libc.so.6+0x3e9a7
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x10973c(tcgetattr+44)
-ioctl(any u32, FIFREEZE-FITHAW, 0) @ libc.so.6+0x1113eb(ioctl+59)
+ioctl(any u32, FITHAW, 0) @ libc.so.6+0x1113eb(ioctl+59)
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ libc.so.6+0x10931c(__pread64_nocancel+12)
 writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xd35f(_dl_debug_vdprintf+303)
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x83b8b(__libc_message+475)

@@ -54,10 +54,10 @@ exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e
 wait4(any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD_CLOEXEC, 2) @ ld-musl-x86_64.so.1+0x1cfa4(fcntl+231)
+fcntl(any, F_DUPFD_CLOEXEC, 2) @ ld-musl-x86_64.so.1+0x1cfa4(fcntl+231)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1cfbf(fcntl+258)
-fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x1cfcf(fcntl+274)
-fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 2) @ ld-musl-x86_64.so.1+0x1cffe(fcntl+321)
+fcntl(any, F_DUPFD_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x1cfcf(fcntl+274)
+fcntl(any, F_DUPFD, 2) @ ld-musl-x86_64.so.1+0x1cffe(fcntl+321)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d089(open+127)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41453(socket+116)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x4146c(socket+141)

@@ -54,9 +54,9 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4944c(__libc_siga
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x578ce(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x49ad1(__restore_rt*+7)
-ioctl(STDIN_FILENO-0x3fffffff, MTIOCTOP, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, SIOCGIFINDEX, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
+ioctl(any, MTIOCTOP, any) @ ld-musl-x86_64.so.1+0x37874(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a344(fdopen+270)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a883(__stdout_write*+48)
 ioctl(STDIN_FILENO-STDOUT_FILENO, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x5b3a2(isatty+22)
@@ -88,7 +88,7 @@ recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x583bc
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
-setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a

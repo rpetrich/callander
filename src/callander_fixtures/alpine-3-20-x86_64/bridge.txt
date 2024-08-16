@@ -75,8 +75,8 @@ recvmsg(any, any, MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x5e990
 bind(any, any, 12) @ ld-musl-x86_64.so.1+0x3b081(bind+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3d3ed(getsockname+21)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
-setsockopt(any, SOL_NETLINK, SO_DEBUG, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
-setsockopt(any, SOL_NETLINK, IP_RECVERR-TCP_QUICKACK, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
+setsockopt(any, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
+setsockopt(any, SOL_NETLINK, NETLINK_EXT_ACK-NETLINK_GET_STRICT_CHK, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d089(open+127)

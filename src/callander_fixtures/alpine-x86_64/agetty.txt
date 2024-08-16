@@ -66,8 +66,8 @@ readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a2bb(__stdio_write*+81)
 access(/sbin/agetty+0xb15f, R_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
 access(/sbin/agetty+0xb1a5, F_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
-select(0x1-0x400, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-select(0x1-0x400, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
+select(any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+select(any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x382ba(mremap+124)
 dup(STDIN_FILENO) @ ld-musl-x86_64.so.1+0x5a9c4(dup+9)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
@@ -102,8 +102,8 @@ recvmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x57f61
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3b411(getsockname+18)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3b0a5(getpeername+18)
-setsockopt(STDIN_FILENO-0x7fffffff, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
-setsockopt(any, SOL_SOCKET, 0x10, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(STDIN_FILENO-0x7fffffff, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
+setsockopt(any, SOL_SOCKET, SO_PASSCRED, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x3ecb7(setsockopt+24)
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff

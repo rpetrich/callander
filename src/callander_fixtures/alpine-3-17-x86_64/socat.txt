@@ -136,9 +136,7 @@ exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 wait4(any, any, 0-WNOHANG, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0-WNOHANG, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x204aa(do_setgroups*+66)
-kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
-kill(any, SIGUSR1) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
-kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
+kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 uname(any) @ ld-musl-x86_64.so.1+0x38bb1(uname+6)
 shmdt(any) @ ld-musl-x86_64.so.1+0x1f117(shmdt+6)

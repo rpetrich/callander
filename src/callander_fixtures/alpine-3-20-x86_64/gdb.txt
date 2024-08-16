@@ -137,9 +137,9 @@ recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3b081(bind+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3d3ed(getsockname+21)
-setsockopt(any, SOL_TCP, SO_DEBUG, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
+setsockopt(any, SOL_TCP, TCP_NODELAY, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
-setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
+setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 getsockopt(any, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)
 clone(0, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
@@ -238,7 +238,7 @@ ptrace(PTRACE_GETREGS-PTRACE_SETFPREGS, any, 0, any) @ ld-musl-x86_64.so.1+0x209
 ptrace(PTRACE_ATTACH-PTRACE_DETACH, any, 0, 0) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 ptrace(PTRACE_DETACH, any, NULL-0x1, any u32) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 ptrace(PTRACE_SYSCALL, any, 1, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
-ptrace(PTRACE_GETSIGINFO-PTRACE_SETSIGINFO, any, 0, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
+ptrace(PTRACE_GETEVENTMSG-PTRACE_SETSIGINFO, any, 0, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 ptrace(PTRACE_GETREGSET-PTRACE_SETREGSET, any, 514, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 getuid() @ ld-musl-x86_64.so.1+0x44204(child*+372)
 getuid() @ ld-musl-x86_64.so.1+0x622f1(getuid+5)

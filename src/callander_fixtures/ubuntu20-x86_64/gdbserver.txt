@@ -137,7 +137,7 @@ socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, any) @ libc.so.6+0x1209fc(socke
 setsockopt(STDIN_FILENO-0xfffffffe, SOL_SOCKET, SO_KEEPALIVE, any, 4) @ libc.so.6+0x12096c(setsockopt+12)
 setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0x12096c(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, SO_REUSEADDR, any, 4) @ libc.so.6+0x12096c(setsockopt+12)
-setsockopt(any u32, SOL_TCP, SO_DEBUG, any, 4) @ libc.so.6+0x12096c(setsockopt+12)
+setsockopt(any u32, SOL_TCP, TCP_NODELAY, any, 4) @ libc.so.6+0x12096c(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_RECVERR, any, 4) @ libc.so.6+0x12096c(setsockopt+12)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, any, 0) @ libc.so.6+0xe2f3d(fork+77)
 vfork() @ libc.so.6+0xe30da(__vfork+10)

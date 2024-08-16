@@ -42,7 +42,7 @@ nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x583bc
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-semget(any, any u16, any u16) @ ld-musl-x86_64.so.1+0x1f0ab(semget+32)
+semget(any, any, any u16) @ ld-musl-x86_64.so.1+0x1f0ab(semget+32)
 msgget(any, any) @ ld-musl-x86_64.so.1+0x1efc5(msgget+12)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)

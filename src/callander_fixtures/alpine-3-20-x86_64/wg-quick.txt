@@ -104,7 +104,7 @@ readlink(ld-musl-x86_64.so.1+0x9d47c, any, 512) @ ld-musl-x86_64.so.1+0x62606(re
 chown(any, any u32, any u32) @ ld-musl-x86_64.so.1+0x61c83(chown+13)
 umask(any u32) @ ld-musl-x86_64.so.1+0x4e735(umask+11)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x5ff1d(clock_gettime+73)
-getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-x86_64.so.1+0x37feb(getrlimit+68)
+getrlimit(any, any) @ ld-musl-x86_64.so.1+0x37feb(getrlimit+68)
 getrusage(0, any) @ ld-musl-x86_64.so.1+0x3802d(getrusage+12)
 getrusage(-1, any) @ ld-musl-x86_64.so.1+0x3802d(getrusage+12)
 sysinfo(any) @ ld-musl-x86_64.so.1+0x20dcc(sysinfo+9)
@@ -177,6 +177,6 @@ pselect6(0x1-0x400, any, 0, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__sysca
 pselect6(0x1-0x400, any, 0, any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)
-prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-x86_64.so.1+0x37fc5(getrlimit+30)
-prlimit64(0, any u8, any, 0) @ ld-musl-x86_64.so.1+0x390a5(setrlimit+24)
+prlimit64(0, any, 0, any) @ ld-musl-x86_64.so.1+0x37fc5(getrlimit+30)
+prlimit64(0, any, any, 0) @ ld-musl-x86_64.so.1+0x390a5(setrlimit+24)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x20541(membarrier+26)

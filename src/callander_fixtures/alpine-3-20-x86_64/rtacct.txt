@@ -1,8 +1,8 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4edfb(__stdio_read*+145)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
-write(any, /sbin/rtacct+0x6880-/sbin/rtacct+0xb8ff, 0x1-0x5080) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-write(any, /sbin/rtacct+0x6880-/sbin/rtacct+0xb8ff, 0x1-0x5080) @ ld-musl-x86_64.so.1+0x5e990
+write(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+write(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 open(/sbin/rtacct+0x40c5, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/rtacct+0x40dd, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/rtacct+0x42f3, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
@@ -57,7 +57,7 @@ accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3b081(bind+23)
 listen(any, 5) @ ld-musl-x86_64.so.1+0x3df41(listen+26)
-getsockopt(any, SOL_SOCKET, 0x11, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)
+getsockopt(any, SOL_SOCKET, SO_PEERCRED, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)
 fork() @ ld-musl-x86_64.so.1+0x43974(_Fork+37)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e

@@ -119,11 +119,11 @@ exit(any) @ libc.so.6+0x108a48(clone+72)
 exit(any) @ libc.so.6+0x1097e4
 wait4(any u32, any, 0-WNOHANG, 0) @ libc.so.6+0xd3b11(wait4+17)
 wait4(any u32, any, 0-WNOHANG, 0) @ libc.so.6+0xd3b55(wait4+85)
+kill(any u32, 0x0) @ libc.so.6+0x3c265(kill+5)
 kill(any u32, SIGINT) @ libc.so.6+0x3c265(kill+5)
 kill(any u32, SIGKILL) @ libc.so.6+0x3c265(kill+5)
-kill(0x1-0xffffffff, 0x0) @ libc.so.6+0x3c265(kill+5)
-kill(0x1-0xffffffff, SIGTERM) @ libc.so.6+0x3c265(kill+5)
-kill(0x1-0xffffffff, SIGCONT) @ libc.so.6+0x3c265(kill+5)
+kill(any u32, SIGTERM) @ libc.so.6+0x3c265(kill+5)
+kill(any u32, SIGCONT) @ libc.so.6+0x3c265(kill+5)
 kill(any u32, SIGKILL) @ libc.so.6+0x4c3a5
 uname(any) @ libc.so.6+0xd3a45(uname+5)
 fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcdbf

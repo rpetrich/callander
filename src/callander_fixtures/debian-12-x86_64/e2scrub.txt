@@ -69,7 +69,7 @@ clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, any, 0) @ libc.so.6
 exit(0) @ libc.so.6+0x27274
 wait4(-1 as u32, any, any u32, 0) @ libc.so.6+0xd3b11(wait4+17)
 wait4(-1 as u32, any, any u32, 0) @ libc.so.6+0xd3b55(wait4+85)
-kill(any, any u32) @ libc.so.6+0x3c265(kill+5)
+kill(any u32, any u32) @ libc.so.6+0x3c265(kill+5)
 uname(any) @ libc.so.6+0xd3a45(uname+5)
 fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcdbf
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfcdbf
@@ -174,8 +174,8 @@ pselect6(any u32, any, 0, any, any, any) @ libc.so.6+0xfea3f(pselect+191)
 ppoll(any, 1, 0, 0, 0) @ libc.so.6+0x3d1d6
 set_robust_list(any, 24) @ libc.so.6+0xd42cb(_Fork+91)
 pipe2(any, 0) @ libc.so.6+0xf89f7(pipe+7)
-prlimit64(0, any u8, 0, any) @ libc.so.6+0xfd6de(__getrlimit+14)
-prlimit64(0, any u8, any, 0) @ libc.so.6+0xfd71f(setrlimit64+15)
+prlimit64(0, any u32, 0, any) @ libc.so.6+0xfd6de(__getrlimit+14)
+prlimit64(0, any u32, any, 0) @ libc.so.6+0xfd71f(setrlimit64+15)
 getrandom(any, any, 0) @ libc.so.6+0x3d103
 getrandom(any, 4, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)

@@ -76,8 +76,10 @@ readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4a7d4(__stdio_write*+81)
 access(non-NULL, R_OK) @ ld-musl-x86_64.so.1+0x5ad31(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
+select(any, 0, 0, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 select(0x1-0x400, 0, any, any, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 select(0x1-0x400, any, 0, 0, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+select(any, 0, 0, any, any) @ ld-musl-x86_64.so.1+0x583bc
 select(0x1-0x400, 0, any, any, any) @ ld-musl-x86_64.so.1+0x583bc
 select(0x1-0x400, any, 0, 0, any) @ ld-musl-x86_64.so.1+0x583bc
 select(0x1-0x400, any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc

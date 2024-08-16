@@ -69,7 +69,7 @@ access(any, R_OK-X_OK|R_OK) @ ld-musl-x86_64.so.1+0x5ad31(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b4ae(pipe+6)
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x391ed(mremap+124)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
-dup(STDIN_FILENO-STDOUT_FILENO) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
+dup(any) @ ld-musl-x86_64.so.1+0x5ae13(dup+9)
 dup2(any, STDIN_FILENO-STDERR_FILENO) @ ld-musl-x86_64.so.1+0x5ae2e(dup2+15)
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 socket(any, SOCK_DGRAM|SOCK_CLOEXEC, 17) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
@@ -91,7 +91,7 @@ sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x583bc
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3a2d9(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3c23b(getsockname+18)
-setsockopt(any, SOL_IPV6, 0x1a, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
+setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x3f329(setsockopt+24)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, ld-musl-x86_64.so.1+0x99fb0(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x5837f
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
