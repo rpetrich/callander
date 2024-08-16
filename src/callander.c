@@ -5381,7 +5381,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
 					// test %target_register; jl
-					if (has_sign_bit(jump_state.max, compare_state.mask) && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					if (has_sign_bit(jump_state.max, compare_state.mask)) {
 						LOG("signed comparison on potentially negative value, skipping narrowing");
 					} else {
 						if (jump_state.value >= compare_state.value.value) {
@@ -5404,7 +5404,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jge comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					if (has_sign_bit(jump_state.max, compare_state.mask) && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					if (has_sign_bit(jump_state.max, compare_state.mask)) {
 						LOG("signed comparison on potentially negative value, skipping narrowing");
 					} else {
 						// test %target_register; jge
@@ -5428,7 +5428,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jng comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					if (has_sign_bit(jump_state.max, compare_state.mask) && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					if (has_sign_bit(jump_state.max, compare_state.mask)) {
 						LOG("signed comparison on potentially negative value, skipping narrowing");
 					} else {
 						// test %target_register; jng
@@ -5459,7 +5459,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jg comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					if (has_sign_bit(jump_state.max, compare_state.mask) && !binary_has_flags(jump_binary, BINARY_IGNORES_SIGNEDNESS)) {
+					if (has_sign_bit(jump_state.max, compare_state.mask)) {
 						LOG("signed comparison on potentially negative value, skipping narrowing");
 					} else {
 						// test %target_register; jg
@@ -13261,8 +13261,6 @@ static int special_binary_flags_for_path(const char *path)
 				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			} else if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == '.') { // libgcrypt.
 				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-			} else if (path[4] == 'm' && path[5] == 'p' && path[6] == '.') { // libgmp.
-				result |= BINARY_IGNORES_SIGNEDNESS;
 			}
 		} else if (path[3] == 'h') {
 			if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == 'o' && path[10] == '.') { // libhcrypto.
