@@ -5124,15 +5124,25 @@ static inline bool has_sign_bit(uintptr_t value, uintptr_t mask)
 	return (value & sign_bit) != 0;
 }
 
-__attribute__((unused))
-static inline intptr_t sign_extend_from_mask(uintptr_t value, uintptr_t mask)
+__attribute__((always_inline))
+static inline bool split_signed_alternate(struct register_state *jump_state, struct register_state *continue_state, struct register_state *alternate_state, const struct register_comparison *comparison)
 {
-	mask = ~(mask >> 1);
-	if (value & mask) {
-		value |= mask;
+	uintptr_t mask = comparison->mask;
+	if (has_sign_bit(jump_state->max, mask)) {
+		LOG("signed comparison on potentially negative value, splitting");
+		alternate_state->max = mask;
+		alternate_state->value = mask & ~(mask >> 1);
+		continue_state->max = jump_state->max = mask >> 1;
+		return true;
 	}
-	return (intptr_t)mask;
+	return false;
 }
+
+enum alternate_type {
+	ALTERNATE_UNUSED = 0,
+	ALTERNATE_CONTINUE,
+	ALTERNATE_JUMP,
+};
 
 __attribute__((always_inline))
 static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
@@ -5147,7 +5157,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 	struct register_state jump_state;
 	struct register_state continue_state;
 	struct register_state alternate_state;
-	uint8_t uses_alternate_state = 0;
+	enum alternate_type uses_alternate_state = ALTERNATE_UNUSED;
 	register_mask target_registers = 0;
 	register_mask additional_sources = 0;
 	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value)) {
@@ -5192,7 +5202,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jb comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					// test %target_register; jb
+					// cmp %target_register; jb
 					if (jump_state.value >= compare_state.value.value) {
 						skip_jump = true;
 						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
@@ -5212,7 +5222,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jae comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					// test %target_register; jae
+					// cmp %target_register; jae
 					if (jump_state.max < compare_state.value.value) {
 						skip_jump = true;
 						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
@@ -5247,7 +5257,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 						} else if (continue_state.max == compare_state.value.value) {
 							continue_state.max--;
 						} else {
-							uses_alternate_state = 1;
+							uses_alternate_state = ALTERNATE_CONTINUE;
 							alternate_state.value = compare_state.value.value + 1;
 							alternate_state.max = continue_state.max;
 							continue_state.max = compare_state.value.value - 1;
@@ -5278,7 +5288,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 						} else if (jump_state.max == compare_state.value.value) {
 							jump_state.max--;
 						} else {
-							uses_alternate_state = 2;
+							uses_alternate_state = ALTERNATE_JUMP;
 							alternate_state.value = compare_state.value.value + 1;
 							alternate_state.max = jump_state.max;
 							jump_state.max = compare_state.value.value - 1;
@@ -5294,7 +5304,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jbe comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					// test %target_register; jbe
+					// cmp %target_register; jbe
 					if (jump_state.value > compare_state.value.value) {
 						skip_jump = true;
 						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
@@ -5314,7 +5324,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found ja comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					// test %target_register; ja
+					// cmp %target_register; ja
 					if (jump_state.max <= compare_state.value.value) {
 						skip_jump = true;
 						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
@@ -5336,7 +5346,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
 					if (compare_state.value.value == 0) {
 						uintptr_t msb = most_significant_bit(compare_state.mask);
-						// test %target_register; ja
+						// cmp %target_register; ja
 						if (jump_state.max < msb) {
 							skip_jump = true;
 							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
@@ -5359,7 +5369,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
 					if (compare_state.value.value == 0) {
 						uintptr_t msb = most_significant_bit(compare_state.mask);
-						// test %target_register; ja
+						// cmp %target_register; ja
 						if (jump_state.value >= msb) {
 							skip_jump = true;
 							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
@@ -5380,22 +5390,26 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jl comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					// test %target_register; jl
-					if (has_sign_bit(jump_state.max, compare_state.mask)) {
-						LOG("signed comparison on potentially negative value, skipping narrowing");
-					} else {
-						if (jump_state.value >= compare_state.value.value) {
+					// cmp %target_register; jl
+					if (split_signed_alternate(&jump_state, &continue_state, &alternate_state, &compare_state)) {
+						uses_alternate_state = ALTERNATE_JUMP;
+					}
+					if (jump_state.value >= compare_state.value.value) {
+						if (uses_alternate_state) {
+							uses_alternate_state = ALTERNATE_UNUSED;
+							jump_state = alternate_state;
+						} else {
 							skip_jump = true;
 							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
-						} else if (jump_state.max > compare_state.value.value) {
-							jump_state.max = compare_state.value.value;
 						}
-						if (continue_state.max < compare_state.value.value) {
-							skip_continue = true;
-							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
-						} else if (continue_state.value <= compare_state.value.value) {
-							continue_state.value = compare_state.value.value + 1;
-						}
+					} else if (jump_state.max > compare_state.value.value) {
+						jump_state.max = compare_state.value.value;
+					}
+					if (continue_state.max < compare_state.value.value) {
+						skip_continue = true;
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+					} else if (continue_state.value <= compare_state.value.value) {
+						continue_state.value = compare_state.value.value + 1;
 					}
 				}
 				break;
@@ -5404,22 +5418,26 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jge comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					if (has_sign_bit(jump_state.max, compare_state.mask)) {
-						LOG("signed comparison on potentially negative value, skipping narrowing");
-					} else {
-						// test %target_register; jge
-						if (jump_state.max < compare_state.value.value) {
-							skip_jump = true;
-							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
-						} else if (jump_state.value < compare_state.value.value) {
-							jump_state.value = compare_state.value.value;
-						}
-						if (continue_state.value >= compare_state.value.value) {
+					if (split_signed_alternate(&jump_state, &continue_state, &alternate_state, &compare_state)) {
+						uses_alternate_state = ALTERNATE_CONTINUE;
+					}
+					// cmp %target_register; jge
+					if (jump_state.max < compare_state.value.value) {
+						skip_jump = true;
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
+					} else if (jump_state.value < compare_state.value.value) {
+						jump_state.value = compare_state.value.value;
+					}
+					if (continue_state.value >= compare_state.value.value) {
+						if (uses_alternate_state) {
+							uses_alternate_state = ALTERNATE_UNUSED;
+							jump_state = alternate_state;
+						} else {
 							skip_continue = true;
 							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
-						} else if (continue_state.max >= compare_state.value.value) {
-							continue_state.max = compare_state.value.value - 1;
 						}
+					} else if (continue_state.max >= compare_state.value.value) {
+						continue_state.max = compare_state.value.value - 1;
 					}
 				}
 				break;
@@ -5428,29 +5446,28 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jng comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					if (has_sign_bit(jump_state.max, compare_state.mask)) {
-						LOG("signed comparison on potentially negative value, skipping narrowing");
-					} else {
-						// test %target_register; jng
-						if (register_is_partially_known(&continue_state)) {
-							if (jump_state.max > compare_state.value.value) {
-								jump_state.max = compare_state.value.value;
-							}
-							if (jump_state.value > compare_state.value.value) {
-								jump_state.value = compare_state.value.value;
-							}
-							if (continue_state.max < compare_state.value.value) {
-								continue_state.max = compare_state.value.value;
-							}
-							if (continue_state.value < compare_state.value.value) {
-								continue_state.value = compare_state.value.value;
-							}
-						} else {
-							jump_state.value = 0;
+					if (split_signed_alternate(&jump_state, &continue_state, &alternate_state, &compare_state)) {
+						uses_alternate_state = ALTERNATE_JUMP;
+					}
+					// cmp %target_register; jng
+					if (register_is_partially_known(&continue_state)) {
+						if (jump_state.max > compare_state.value.value) {
 							jump_state.max = compare_state.value.value;
-							continue_state.value = compare_state.value.value + 1;
-							continue_state.max = ~(uintptr_t)0;
 						}
+						if (jump_state.value > compare_state.value.value) {
+							jump_state.value = compare_state.value.value;
+						}
+						if (continue_state.max < compare_state.value.value) {
+							continue_state.max = compare_state.value.value;
+						}
+						if (continue_state.value < compare_state.value.value) {
+							continue_state.value = compare_state.value.value;
+						}
+					} else {
+						jump_state.value = 0;
+						jump_state.max = compare_state.value.value;
+						continue_state.value = compare_state.value.value + 1;
+						continue_state.max = ~(uintptr_t)0;
 					}
 				}
 				break;
@@ -5459,29 +5476,28 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					LOG("found jg comparing", name_for_register(compare_state.target_register));
 					dump_register(&analysis->loader, continue_state);
 					LOG("with", temp_str(copy_register_state_description(&analysis->loader, compare_state.value)));
-					if (has_sign_bit(jump_state.max, compare_state.mask)) {
-						LOG("signed comparison on potentially negative value, skipping narrowing");
-					} else {
-						// test %target_register; jg
-						if (register_is_partially_known(&continue_state)) {
-							if (continue_state.max > compare_state.value.value) {
-								continue_state.max = compare_state.value.value;
-							}
-							if (continue_state.value > compare_state.value.value) {
-								continue_state.value = compare_state.value.value;
-							}
-							if (jump_state.max < compare_state.value.value) {
-								jump_state.max = compare_state.value.value;
-							}
-							if (jump_state.value < compare_state.value.value) {
-								jump_state.value = compare_state.value.value;
-							}
-						} else {
-							continue_state.value = 0;
+					if (split_signed_alternate(&jump_state, &continue_state, &alternate_state, &compare_state)) {
+						uses_alternate_state = ALTERNATE_CONTINUE;
+					}
+					// cmp %target_register; jg
+					if (register_is_partially_known(&continue_state)) {
+						if (continue_state.max > compare_state.value.value) {
 							continue_state.max = compare_state.value.value;
-							jump_state.value = compare_state.value.value + 1;
-							jump_state.max = ~(uintptr_t)0;
 						}
+						if (continue_state.value > compare_state.value.value) {
+							continue_state.value = compare_state.value.value;
+						}
+						if (jump_state.max < compare_state.value.value) {
+							jump_state.max = compare_state.value.value;
+						}
+						if (jump_state.value < compare_state.value.value) {
+							jump_state.value = compare_state.value.value;
+						}
+					} else {
+						continue_state.value = 0;
+						continue_state.max = compare_state.value.value;
+						jump_state.value = compare_state.value.value + 1;
+						jump_state.max = ~(uintptr_t)0;
 					}
 				}
 				break;
@@ -5616,7 +5632,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
 			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, 0);
 			LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
-			if (uses_alternate_state == 1) {
+			if (uses_alternate_state == ALTERNATE_CONTINUE) {
 				LOG("taking additional continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
 				for_each_bit(target_registers, bit, r) {
 					self->current_state.registers[r] = alternate_state;
@@ -5641,7 +5657,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 		}
 		self->description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
 		jump_effects = analyze_instructions(analysis, required_effects, &self->current_state, jump_target, self, 0);
-		if (uses_alternate_state == 2) {
+		if (uses_alternate_state == ALTERNATE_JUMP) {
 			LOG("completing conditional jump after branch", temp_str(copy_address_description(&analysis->loader, ins)));
 			LOG("taking additional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
 			for_each_bit(target_registers, bit, r) {
@@ -5665,7 +5681,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
 			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, 0);
 			LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
-			if (uses_alternate_state == 1) {
+			if (uses_alternate_state == ALTERNATE_CONTINUE) {
 				LOG("taking additional continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
 				for_each_bit(target_registers, bit, r) {
 					self->current_state.registers[r] = alternate_state;
