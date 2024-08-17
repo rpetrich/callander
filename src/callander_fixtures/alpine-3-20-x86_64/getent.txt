@@ -11,7 +11,6 @@ open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 close(any) @ ld-musl-x86_64.so.1+0x3d51a(if_indextoname+70)
 close(any) @ ld-musl-x86_64.so.1+0x3d82e(if_nametoindex+80)
-close(STDIN_FILENO-0xfffffffe) @ ld-musl-x86_64.so.1+0x3fc65(cleanup*+27)
 close(any) @ ld-musl-x86_64.so.1+0x409c3(__res_msend_rc*+3272)
 close(any) @ ld-musl-x86_64.so.1+0x4ecca(__stdio_close*+20)
 close(any) @ ld-musl-x86_64.so.1+0x4ff5e(fopen+178)

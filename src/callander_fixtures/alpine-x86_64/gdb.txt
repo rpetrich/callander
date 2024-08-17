@@ -17,7 +17,6 @@ open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+
 close(any) @ ld-musl-x86_64.so.1+0x1b553(opendir+47)
 close(any) @ ld-musl-x86_64.so.1+0x1c340(fcntl+248)
 close(any) @ ld-musl-x86_64.so.1+0x3b801(if_nametoindex+84)
-close(STDIN_FILENO-0xfffffffe) @ ld-musl-x86_64.so.1+0x3d872(cleanup*+21)
 close(any) @ ld-musl-x86_64.so.1+0x3e4d5(__res_msend_rc*+3035)
 close(any) @ ld-musl-x86_64.so.1+0x41739(child*+476)
 close(any) @ ld-musl-x86_64.so.1+0x417ea(child*+653)
@@ -79,8 +78,8 @@ ioctl(any, TIOCSPTLCK, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCGPTN, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x49e2b(fdopen+270)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4a36a(__stdout_write*+48)
-ioctl(any, TCSBRK, 1) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-ioctl(any, TCSBRK, 1) @ ld-musl-x86_64.so.1+0x57f61
+ioctl(any, TCSBRK, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+ioctl(any, TCSBRK, any) @ ld-musl-x86_64.so.1+0x57f61
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x5af5d(isatty+22)
 pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x57f61
@@ -119,12 +118,10 @@ socket(any, any, any) @ ld-musl-x86_64.so.1+0x3ed28(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3ed58(socket+75)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
-recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
+sendto(any, any, any, any u16, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+sendto(any, any, any, any u16, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
+recvfrom(any, any, any, any u16, any u16, any u16) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+recvfrom(any, any, any, any u32, any u32, any u32) @ ld-musl-x86_64.so.1+0x57f61
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
@@ -325,7 +322,6 @@ tkill(any, any) @ ld-musl-x86_64.so.1+0x566f9(pthread_kill+65)
 tkill(any, SIGSYNCCALL) @ ld-musl-x86_64.so.1+0x57cc3(__synccall*+287)
 futex(any, any, any, any, any, any)
 sched_setaffinity(any, any, any) @ ld-musl-x86_64.so.1+0x48217(sched_setaffinity+9)
-sched_getaffinity(28, 128, any) @ ld-musl-x86_64.so.1+0x182d5(sysconf+264)
 sched_getaffinity(any, 0, non-NULL) @ ld-musl-x86_64.so.1+0x4823a(sched_getaffinity+9)
 sched_getaffinity(any, 8, non-NULL) @ ld-musl-x86_64.so.1+0x4823a(sched_getaffinity+9)
 sched_getaffinity(any, 16, non-NULL) @ ld-musl-x86_64.so.1+0x4823a(sched_getaffinity+9)

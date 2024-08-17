@@ -137,7 +137,9 @@ kill(any u32, 0x0) @ libc.so.6+0x3a9c8(kill+8)
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGALRM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)

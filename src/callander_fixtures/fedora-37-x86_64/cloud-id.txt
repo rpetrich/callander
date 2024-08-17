@@ -398,8 +398,6 @@ utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xff93c(__GI___utimensat64_helper+1
 utimensat(any u32, non-NULL, any, 0) @ libc.so.6+0xff981(utimensat+17)
 utimensat(any u32, non-NULL, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xff981(utimensat+17)
 fallocate(any u32, 0, any, any) @ libc.so.6+0xff814(posix_fallocate64+20)
-fallocate(any u32, 0, 0, non-NULL) @ libc.so.6+0xffe55(fallocate64+21)
-fallocate(any u32, 0, 0, non-NULL) @ libc.so.6+0xffe95(fallocate64+85)
 accept4(any u32, any, any, SOCK_CLOEXEC) @ libc.so.6+0x10e315(accept4+21)
 accept4(any u32, any, any, SOCK_CLOEXEC) @ libc.so.6+0x10e356(accept4+86)
 signalfd4(any u32, any, 8, SFD_NONBLOCK|SFD_CLOEXEC) @ libc.so.6+0x10c0b1(signalfd+17)

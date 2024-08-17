@@ -27,7 +27,7 @@ writev(any u32, any, any) @ /usr/sbin/ldconfig+0x91d45
 access(/usr/sbin/ldconfig+0xbbe1c, F_OK) @ /usr/sbin/ldconfig+0x81599
 sched_yield() @ /usr/sbin/ldconfig+0x51cf9
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x548fd
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x53179
+madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x53179
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig+0x53179
 alarm(any u32) @ /usr/sbin/ldconfig+0x811d9
 getpid() @ /usr/sbin/ldconfig+0x4b079

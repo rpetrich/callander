@@ -139,12 +139,8 @@ exit_group(any) @ ld-musl-x86_64.so.1+0x1bf8c(_Exit+8)
 inotify_add_watch(any, any, IN_CLOSE_NOWRITE) @ ld-musl-x86_64.so.1+0x1f084(inotify_add_watch+11)
 inotify_add_watch(any, any, IN_CREATE|IN_ISDIR) @ ld-musl-x86_64.so.1+0x1f084(inotify_add_watch+11)
 inotify_rm_watch(any, any) @ ld-musl-x86_64.so.1+0x1f09c(inotify_rm_watch+12)
-openat(any, libblkid.so.1+0x33de7, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-openat(any, libblkid.so.1+0x3695c, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-openat(any, libblkid.so.1+0x36e93, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-openat(any, libblkid.so.1+0x33de7, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
-openat(any, libblkid.so.1+0x3695c, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
-openat(any, libblkid.so.1+0x36e93, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
 newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)

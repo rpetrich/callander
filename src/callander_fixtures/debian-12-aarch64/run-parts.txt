@@ -1,8 +1,6 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xda984(getcwd+100)
-dup3(any, STDIN_FILENO-STDERR_FILENO, 0) @ libc.so.6+0xda788(__dup2+40)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
-fcntl(any, F_GETFL, 0) @ libc.so.6+0xded40
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf410(tcgetattr+48)
 faccessat(AT_FDCWD, non-NULL, X_OK) @ libc.so.6+0xda030(access+16)
 faccessat(AT_FDCWD, non-NULL, R_OK) @ libc.so.6+0xda030(access+16)
@@ -67,7 +65,9 @@ sched_get_priority_max(1) @ libc.so.6+0xd0908(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd0948(sched_get_priority_min+8)
 restart_syscall()
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGCHLD, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
@@ -75,9 +75,11 @@ rt_sigaction(SIGCHLD, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0x80940
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
-rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
-setsid() @ libc.so.6+0xba548(setsid+8)
-umask(any u32) @ libc.so.6+0xd9848(umask+8)
+rt_sigprocmask(SIG_BLOCK, 0, any, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+rt_sigprocmask(SIG_BLOCK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
+umask(NULL-0xfff) @ libc.so.6+0xd9848(umask+8)
+umask(0x80000000-0xffffffff) @ libc.so.6+0xd9848(umask+8)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b908
 getpid() @ libc.so.6+0xba088(getpid+8)
@@ -92,8 +94,8 @@ mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3eb8(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3f48(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe4048(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe4048(madvise+8)
-wait4(non-NULL, any, 0-WNOHANG, 0) @ libc.so.6+0xb871c(wait4+44)
-wait4(non-NULL, any, 0-WNOHANG, 0) @ libc.so.6+0xb8764(wait4+116)
+wait4(0x1-0x7fffffff, any, 0-WNOHANG, 0) @ libc.so.6+0xb871c(wait4+44)
+wait4(0x1-0x7fffffff, any, 0-WNOHANG, 0) @ libc.so.6+0xb8764(wait4+116)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xdf7c4(__getrlimit+20)
 getrandom(libc.so.6+0x1a6970, 8, GRND_NONBLOCK) @ libc.so.6+0x3dab4(getrandom+36)
 getrandom(libc.so.6+0x1a6970, 8, GRND_NONBLOCK) @ libc.so.6+0x3daf8(getrandom+104)

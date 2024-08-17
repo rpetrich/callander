@@ -119,7 +119,6 @@ munmap(any, any) @ /usr/sbin/ldconfig.real+0x38e48
 mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/sbin/ldconfig.real+0x3a8d4
 mmap(any, any, any, any, any, any) @ /usr/sbin/ldconfig.real+0x38dd8
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x38e88
-madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x38ec8
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x38ec8
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x85690
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x856d8

@@ -1,8 +1,9 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xda984(getcwd+100)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
-fcntl(any, F_DUPFD, 3) @ libc.so.6+0xded40
+fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 3) @ libc.so.6+0xded40
 fcntl(any, F_GETFL, /usr/bin/sha512sum+0x9f04) @ libc.so.6+0xded40
+fcntl(0xffffffff80000000--1, F_DUPFD, 3) @ libc.so.6+0xded40
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf410(tcgetattr+48)
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xd9b7c(__open+108)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9b7c(__open+108)
@@ -60,7 +61,9 @@ sched_get_priority_max(1) @ libc.so.6+0xd0908(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd0948(sched_get_priority_min+8)
 restart_syscall()
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)

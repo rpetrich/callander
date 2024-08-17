@@ -36,7 +36,6 @@ ioctl(any, FS_IOC_GETFSLABEL, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, BLKREPORTZONE, non-NULL) @ libc.so.6+0xdfe0c(ioctl+12)
 flock(any u32, LOCK_EX) @ libc.so.6+0xda508(flock+8)
 flock(any u32, LOCK_UN) @ libc.so.6+0xda508(flock+8)
-mkdirat(AT_FDCWD, any, 0700) @ libc.so.6+0xd9a80(mkdir+16)
 mkdirat(AT_FDCWD, libblkid.so.1+0x43560, 0755) @ libc.so.6+0xd9a80(mkdir+16)
 unlinkat(AT_FDCWD, any, 0) @ libc.so.6+0xdb8b0(unlink+16)
 linkat(AT_FDCWD, non-NULL, AT_FDCWD, non-NULL, 0) @ libc.so.6+0xdb728(link+24)
@@ -57,16 +56,15 @@ faccessat(any, libblkid.so.1+0x45c49, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
 faccessat(any, libblkid.so.1+0x45c61, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
 faccessat(any, libblkid.so.1+0x45c81, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xda2e0(faccessat+304)
-fchmod(any u32, 0644) @ libc.so.6+0xd98c8(fchmod+8)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xd9b7c(__open+108)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xd9c04(__open+244)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd9d2c(openat+108)
-openat(any, libblkid.so.1+0x42509, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9d2c(openat+108)
 openat(any, libblkid.so.1+0x441b1, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9d2c(openat+108)
+openat(any, libblkid.so.1+0x45c19, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9d2c(openat+108)
 openat(any, libblkid.so.1+0x47de9, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9d2c(openat+108)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd9db8(openat+248)
-openat(any, libblkid.so.1+0x42509, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9db8(openat+248)
 openat(any, libblkid.so.1+0x441b1, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9db8(openat+248)
+openat(any, libblkid.so.1+0x45c19, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9db8(openat+248)
 openat(any, libblkid.so.1+0x47de9, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9db8(openat+248)
 openat(AT_FDCWD, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xdee28(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xdee28(__open_nocancel+72)
@@ -144,7 +142,9 @@ restart_syscall()
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 sigaltstack(0, any) @ libc.so.6+0xf7b5c
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGALRM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)

@@ -45,7 +45,7 @@ access(/usr/sbin/ldconfig.real+0xd3042, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
 access(/usr/sbin/ldconfig.real+0xd3051, F_OK) @ /usr/sbin/ldconfig.real+0xa6f49
 sched_yield() @ /usr/sbin/ldconfig.real+0x72f39
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig.real+0x772bc
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x74439
+madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x74439
 alarm(any u32) @ /usr/sbin/ldconfig.real+0xa6d49
 getpid() @ /usr/sbin/ldconfig.real+0x208b1
 getpid() @ /usr/sbin/ldconfig.real+0xc18f9

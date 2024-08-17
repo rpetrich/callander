@@ -97,7 +97,8 @@ getsockopt(any, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, any) @ ld-musl
 getsockopt(any, SOL_IPV6, IPV6_MTU, any, any) @ ld-musl-x86_64.so.1+0x3d414(getsockopt+24)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e
-kill(any, any) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
+kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
+kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
 uname(any) @ ld-musl-x86_64.so.1+0x39680(uname+9)
 fcntl(STDIN_FILENO-0x3ff, F_GETFL, 0) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)

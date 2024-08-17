@@ -12,7 +12,6 @@ open(ld-musl-x86_64.so.1+0x9cfea, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__
 open(ld-musl-x86_64.so.1+0x9cfea, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x3d82e(if_nametoindex+80)
-close(STDIN_FILENO-0xfffffffe) @ ld-musl-x86_64.so.1+0x3fc65(cleanup*+27)
 close(any) @ ld-musl-x86_64.so.1+0x409c3(__res_msend_rc*+3272)
 close(any) @ ld-musl-x86_64.so.1+0x4ecca(__stdio_close*+20)
 close(any) @ ld-musl-x86_64.so.1+0x4ff5e(fopen+178)

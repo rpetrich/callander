@@ -91,7 +91,9 @@ restart_syscall()
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGHUP-SIGBUS, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGSEGV, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGALRM-SIGTERM, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)

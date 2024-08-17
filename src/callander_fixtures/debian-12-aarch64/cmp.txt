@@ -64,8 +64,10 @@ sched_get_priority_max(1) @ libc.so.6+0xd0908(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd0948(sched_get_priority_min+8)
 restart_syscall()
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any u32, SIGSEGV) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGSEGV) @ libc.so.6+0x80a0c
 sigaltstack(any, 0) @ libc.so.6+0x3b048(sigaltstack+8)
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)

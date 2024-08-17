@@ -17,7 +17,6 @@ open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+
 close(any) @ ld-musl-x86_64.so.1+0x1c150(opendir+52)
 close(any) @ ld-musl-x86_64.so.1+0x1cfe2(fcntl+293)
 close(any) @ ld-musl-x86_64.so.1+0x3d82e(if_nametoindex+80)
-close(STDIN_FILENO-0xfffffffe) @ ld-musl-x86_64.so.1+0x3fc65(cleanup*+27)
 close(any) @ ld-musl-x86_64.so.1+0x409c3(__res_msend_rc*+3272)
 close(any) @ ld-musl-x86_64.so.1+0x44267(child*+471)
 close(any) @ ld-musl-x86_64.so.1+0x44277(child*+487)
@@ -80,8 +79,8 @@ ioctl(any, TIOCSPTLCK, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, TIOCGPTN, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4e968(fdopen+202)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4ef68(__stdout_write*+48)
-ioctl(any, TCSBRK, 1) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-ioctl(any, TCSBRK, 1) @ ld-musl-x86_64.so.1+0x5e990
+ioctl(any, TCSBRK, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+ioctl(any, TCSBRK, any) @ ld-musl-x86_64.so.1+0x5e990
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x6230a(isatty+22)
 pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
@@ -95,8 +94,8 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 access(any, any) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
 pipe(any) @ ld-musl-x86_64.so.1+0x6242f(pipe+9)
-select(0x1-0x400, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-select(0x1-0x400, any, any, any, non-NULL) @ ld-musl-x86_64.so.1+0x5e990
+select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 sched_yield() @ ld-musl-x86_64.so.1+0x4cc46(sched_yield+9)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x44256(child*+454)
@@ -123,18 +122,14 @@ socket(any, 0-SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x
 socket(any, SOCK_DGRAM, 17) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
-recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5e990
-sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x5e990
-recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, any, any, any u32, any u32, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+sendmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+recvmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3b081(bind+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3d3ed(getsockname+21)
 setsockopt(any, SOL_TCP, TCP_NODELAY, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
@@ -153,8 +148,8 @@ exit(any u32) @ ld-musl-x86_64.so.1+0x5e965
 exit(1) @ ld-musl-x86_64.so.1+0x61de7(checker*+42)
 wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x20ec9(wait4+18)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x51ba6(pclose+35)
-wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
+wait4(any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+wait4(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 wait4(any, any, __WCLONE, 0) @ ld-musl-x86_64.so.1+0x61f72(faccessat+320)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x20adf(do_setgroups*+81)
 kill(any, any) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
@@ -183,7 +178,7 @@ fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x4ea1f(fdopen+385)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4eb0d(__fopen_rb_ca*+85)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
 fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x5e990
+fcntl(any, any u32, any) @ ld-musl-x86_64.so.1+0x5e990
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x61d96(dup3+109)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x61ff6(fchdir+33)
 fcntl(any, F_GETFD, any u32) @ ld-musl-x86_64.so.1+0x6205a(fchown+46)
@@ -238,7 +233,7 @@ ptrace(PTRACE_GETREGS-PTRACE_SETFPREGS, any, 0, any) @ ld-musl-x86_64.so.1+0x209
 ptrace(PTRACE_ATTACH-PTRACE_DETACH, any, 0, 0) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 ptrace(PTRACE_DETACH, any, NULL-0x1, any u32) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 ptrace(PTRACE_SYSCALL, any, 1, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
-ptrace(PTRACE_GETEVENTMSG-PTRACE_SETSIGINFO, any, 0, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
+ptrace(PTRACE_GETSIGINFO-PTRACE_SETSIGINFO, any, 0, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 ptrace(PTRACE_GETREGSET-PTRACE_SETREGSET, any, 514, any) @ ld-musl-x86_64.so.1+0x20913(ptrace+76)
 getuid() @ ld-musl-x86_64.so.1+0x44204(child*+372)
 getuid() @ ld-musl-x86_64.so.1+0x622f1(getuid+5)
@@ -280,10 +275,10 @@ setfsgid(any u32) @ ld-musl-x86_64.so.1+0x20a65(setfsgid+11)
 setfsgid(any u32) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
 getsid(any) @ ld-musl-x86_64.so.1+0x622dd(getsid+12)
 rt_sigpending(any, 8) @ ld-musl-x86_64.so.1+0x4dd28(sigpending+14)
-rt_sigtimedwait(any, any, any, 8) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-rt_sigtimedwait(any, any, any, 8) @ ld-musl-x86_64.so.1+0x5e990
-rt_sigsuspend(/usr/bin/gdb+0xa2c060, 8) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-rt_sigsuspend(/usr/bin/gdb+0xa2c060, 8) @ ld-musl-x86_64.so.1+0x5e990
+rt_sigtimedwait(any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+rt_sigtimedwait(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+rt_sigsuspend(any, 8) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+rt_sigsuspend(any, 8) @ ld-musl-x86_64.so.1+0x5e990
 sigaltstack(any, any) @ ld-musl-x86_64.so.1+0x4daf1(sigaltstack+35)
 mknod(any, any u32, any) @ ld-musl-x86_64.so.1+0x4e505(mknod+11)
 statfs(any, any) @ ld-musl-x86_64.so.1+0x4e5c5(statvfs+42)
@@ -327,7 +322,6 @@ tkill(any, any) @ ld-musl-x86_64.so.1+0x5d04b(pthread_kill+62)
 tkill(any, SIGSYNCCALL) @ ld-musl-x86_64.so.1+0x5e6ef(__synccall*+374)
 futex(any, any, any, any, any, any)
 sched_setaffinity(any, any, any) @ ld-musl-x86_64.so.1+0x4ca37(sched_setaffinity+12)
-sched_getaffinity(0, 128, any) @ ld-musl-x86_64.so.1+0x187d1(sysconf+276)
 sched_getaffinity(any, 0, non-NULL) @ ld-musl-x86_64.so.1+0x4ca60(sched_getaffinity+12)
 sched_getaffinity(any, 8, non-NULL) @ ld-musl-x86_64.so.1+0x4ca60(sched_getaffinity+12)
 sched_getaffinity(any, 16, non-NULL) @ ld-musl-x86_64.so.1+0x4ca60(sched_getaffinity+12)
@@ -364,15 +358,15 @@ clock_settime(any, any) @ ld-musl-x86_64.so.1+0x5ffc0(clock_settime+12)
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x5ff01(clock_gettime+45)
 clock_getres(any, any) @ ld-musl-x86_64.so.1+0x5fe76(clock_getres+12)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-clock_nanosleep(CLOCK_REALTIME-CLOCK_MONOTONIC, 0-TIMER_ABSTIME, any, any) @ ld-musl-x86_64.so.1+0x5e990
+clock_nanosleep(any u32, TIMER_ABSTIME, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+clock_nanosleep(any u32, 0-TIMER_ABSTIME, any, any) @ ld-musl-x86_64.so.1+0x5e990
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cc05(_Exit+8)
 utimes(any) @ ld-musl-x86_64.so.1+0x4e82d(utimensat+233)
-waitid(any u32, any u32, any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-waitid(any u32, any u32, any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
+waitid(any, any u32, any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+waitid(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, any, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-x86_64.so.1+0x4e19f(fchmodat+187)
-openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 mkdirat(any, any, any u32) @ ld-musl-x86_64.so.1+0x4e4d4(mkdirat+14)
 mknodat(any, any, any u32, any) @ ld-musl-x86_64.so.1+0x4e525(mknodat+17)
 fchownat(any, any, any u32, any u32, 0) @ ld-musl-x86_64.so.1+0x620ad(fchownat+20)
@@ -404,25 +398,25 @@ fallocate(any, 0, any, any) @ ld-musl-x86_64.so.1+0x1d126(posix_fallocate+19)
 eventfd2(any u32, any) @ ld-musl-x86_64.so.1+0x20310(eventfd+14)
 dup3(any, any, O_CLOEXEC) @ ld-musl-x86_64.so.1+0x61d4d(dup3+36)
 pipe2(any, any) @ ld-musl-x86_64.so.1+0x62455(pipe2+23)
-preadv(any, any, any, NULL-0xfffffffffffffffe, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-preadv(any, any, any, NULL-0xfffffffffffffffe, any) @ ld-musl-x86_64.so.1+0x5e990
-pwritev(any, any, any, NULL-0xfffffffffffffffe, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-pwritev(any, any, any, NULL-0xfffffffffffffffe, any) @ ld-musl-x86_64.so.1+0x5e990
+preadv(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+preadv(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+pwritev(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+pwritev(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-x86_64.so.1+0x37fc5(getrlimit+30)
 prlimit64(0, RLIMIT_CORE, any, 0) @ ld-musl-x86_64.so.1+0x390a5(setrlimit+24)
 prlimit64(0, RLIMIT_NOFILE, any, 0) @ ld-musl-x86_64.so.1+0x390a5(setrlimit+24)
 setns(any, any) @ ld-musl-x86_64.so.1+0x20b3e(setns+15)
 getrandom(any, any, any) @ ld-musl-x86_64.so.1+0x39150(syscall+86)
-getrandom(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-getrandom(any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+getrandom(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+getrandom(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 memfd_create(any, any u32) @ ld-musl-x86_64.so.1+0x2068c(memfd_create+11)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x20541(membarrier+26)
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x2067e(__membarrier_init*+12)
 copy_file_range(any, any, any, any, any, 0) @ ld-musl-x86_64.so.1+0x201fd(copy_file_range+17)
 preadv2(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-preadv2(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+preadv2(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 pwritev2(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-pwritev2(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+pwritev2(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 pidfd_send_signal(any, any, any, any u32) @ ld-musl-x86_64.so.1+0x39150(syscall+86)
 pidfd_open(any, any) @ ld-musl-x86_64.so.1+0x39150(syscall+86)
 faccessat2(any, any, any, any) @ ld-musl-x86_64.so.1+0x61e8b(faccessat+89)

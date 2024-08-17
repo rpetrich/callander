@@ -51,7 +51,6 @@ clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0xb3b50(clock_nanosleep+64)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0xb3b90(clock_nanosleep+128)
 sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xd0848(sched_setscheduler+8)
-sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xe3d24(syscall+36)
 sched_getscheduler(any u32) @ libc.so.6+0xd0888(__sched_getscheduler+8)
 sched_getparam(any u32, any) @ libc.so.6+0xd0808(sched_getparam+8)
 sched_getaffinity(0, 0x1000, any) @ libc.so.6+0xe6da8
@@ -60,14 +59,15 @@ sched_get_priority_max(any u32) @ libc.so.6+0xd0908(__sched_get_priority_max+8)
 sched_get_priority_min(any u32) @ libc.so.6+0xd0948(sched_get_priority_min+8)
 restart_syscall()
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x157c60, any, 8) @ libc.so.6+0x80940
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8098c
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86284(pthread_sigmask+68)
-getpriority(0, any u32) @ libc.so.6+0xdfbbc(getpriority+12)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b908
 getpid() @ libc.so.6+0xba088(getpid+8)
@@ -82,7 +82,6 @@ mprotect(any, any, any u32) @ libc.so.6+0xe3f48(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe4048(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe4048(madvise+8)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xdf7c4(__getrlimit+20)
-sched_setattr(any u32, any, 0) @ libc.so.6+0xe3d24(syscall+36)
 sched_getattr(any u32, any, 56, 0) @ libc.so.6+0xe3d24(syscall+36)
 getrandom(libc.so.6+0x1a6970, 8, GRND_NONBLOCK) @ libc.so.6+0x3dab4(getrandom+36)
 getrandom(libc.so.6+0x1a6970, 8, GRND_NONBLOCK) @ libc.so.6+0x3daf8(getrandom+104)

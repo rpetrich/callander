@@ -1,8 +1,10 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a1f3(__stdio_read*+77)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
-write(STDERR_FILENO, /sbin/tc+0x7ee00, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-write(STDERR_FILENO, /sbin/tc+0x7ee00, any) @ ld-musl-x86_64.so.1+0x57f61
+write(STDERR_FILENO, /sbin/tc+0x7ee00, NULL-0x1000) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+write(STDERR_FILENO, /sbin/tc+0x7ee00, 0x8000000000000000-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+write(STDERR_FILENO, /sbin/tc+0x7ee00, NULL-0x1000) @ ld-musl-x86_64.so.1+0x57f61
+write(STDERR_FILENO, /sbin/tc+0x7ee00, 0x8000000000000000-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x57f61
 open(ld-musl-x86_64.so.1+0x94be0, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x94beb, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x94c70, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
@@ -13,7 +15,6 @@ open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+
 close(any) @ ld-musl-x86_64.so.1+0x1b553(opendir+47)
 close(any) @ ld-musl-x86_64.so.1+0x3b523(if_indextoname+72)
 close(any) @ ld-musl-x86_64.so.1+0x3b801(if_nametoindex+84)
-close(STDIN_FILENO-0xfffffffe) @ ld-musl-x86_64.so.1+0x3d872(cleanup*+21)
 close(any) @ ld-musl-x86_64.so.1+0x3e4d5(__res_msend_rc*+3035)
 close(any) @ ld-musl-x86_64.so.1+0x4a10b(__stdio_close*+17)
 close(any) @ ld-musl-x86_64.so.1+0x4b232(fopen64+158)

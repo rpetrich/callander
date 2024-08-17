@@ -62,7 +62,7 @@ writev(any, any, 1) @ /usr/sbin/build-locale-archive:0x41e60d(__libc_message+397
 writev(any, any, NULL-0x41) @ /usr/sbin/build-locale-archive:0x46c7c2(_dl_debug_vdprintf+290)
 sched_yield() @ /usr/sbin/build-locale-archive:0x44ecd5(sched_yield+5)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/build-locale-archive:0x450f48(__mremap+8)
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /usr/sbin/build-locale-archive:0x44fe25(__madvise+5)
+madvise(any, any, MADV_DONTNEED) @ /usr/sbin/build-locale-archive:0x44fe25(__madvise+5)
 nanosleep(any, 0) @ /usr/sbin/build-locale-archive:0x44d9df(__nanosleep+15)
 nanosleep(any, 0) @ /usr/sbin/build-locale-archive:0x44da09(__nanosleep+57)
 getpid() @ /usr/sbin/build-locale-archive:0x40e05f(raise+207)

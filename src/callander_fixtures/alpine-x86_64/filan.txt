@@ -84,7 +84,8 @@ getsockopt(any, SOL_TCP, any, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt
 getsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt+21)
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
-kill(any, any) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
+kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
+kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
 fcntl(any, F_GETOWN_EX, any) @ ld-musl-x86_64.so.1+0x1c2ce(fcntl+134)
 fcntl(any, F_GETOWN, any) @ ld-musl-x86_64.so.1+0x1c2e0(fcntl+152)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)

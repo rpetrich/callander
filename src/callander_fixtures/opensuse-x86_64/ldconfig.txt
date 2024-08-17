@@ -31,7 +31,7 @@ mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE,
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4671fe
 mprotect(any, any, any u32) @ /sbin/ldconfig:0x467295
 munmap(any, any) @ /sbin/ldconfig:0x467255
-brk(NULL-0xfffffffffffffffe) @ /sbin/ldconfig:0x49a257
+brk(any) @ /sbin/ldconfig:0x49a257
 rt_sigaction(any, any, 0, 8) @ /sbin/ldconfig:0x47aacb
 rt_sigaction(SIGALRM, any, any, 8) @ /sbin/ldconfig:0x47aacb
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /sbin/ldconfig:0x40ec29
@@ -46,7 +46,7 @@ writev(any u32, any, any) @ /sbin/ldconfig:0x4a7fd6
 access(/sbin/ldconfig:0x4bcabe, F_OK) @ /sbin/ldconfig:0x499a35
 access(/sbin/ldconfig:0x4bcacd, F_OK) @ /sbin/ldconfig:0x499a35
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /sbin/ldconfig:0x468ca8
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ /sbin/ldconfig:0x4672d5
+madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig:0x4672d5
 alarm(any u32) @ /sbin/ldconfig:0x499755
 getpid() @ /sbin/ldconfig:0x40ec32
 getpid() @ /sbin/ldconfig:0x499865

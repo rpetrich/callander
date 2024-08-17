@@ -22,10 +22,11 @@ dup3(any, STDIN_FILENO-STDOUT_FILENO, 0) @ libc.so.6+0xda788(__dup2+40)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
 fcntl(any, F_SETLKW, any) @ libc.so.6+0xdec7c
+fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 3) @ libc.so.6+0xded40
 fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ libc.so.6+0xded40
-fcntl(any, F_DUPFD, 3) @ libc.so.6+0xded40
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xded40
 fcntl(any, F_GETFL-F_SETFL, any) @ libc.so.6+0xded40
+fcntl(0xffffffff80000000--1, F_DUPFD, 3) @ libc.so.6+0xded40
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf410(tcgetattr+48)
 ioctl(STDIN_FILENO-0x3fffffff, MTIOCTOP, any) @ libc.so.6+0xdfe0c(ioctl+12)
 ioctl(any, FDFLUSH, any) @ libc.so.6+0xdfe0c(ioctl+12)

@@ -12,8 +12,6 @@ fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 3) @ libc.so.6+0xf5c38(__fcntl64_nocancel_
 ioctl(any, TCSETSW, any) @ libc.so.6+0xf6390(tcsetattr+128)
 ioctl(any, TCGETS, any) @ libc.so.6+0xf63bc(tcsetattr+172)
 ioctl(any, TCGETS, any) @ libc.so.6+0xf64b8(tcgetattr+56)
-ioctl(STDIN_FILENO, TIOCSCTTY, 0) @ libc.so.6+0xfabcc(ioctl+12)
-ioctl(STDIN_FILENO, TIOCCONS, any) @ libc.so.6+0xfabcc(ioctl+12)
 ioctl(STDIN_FILENO-0xfffffffffffffffe, TIOCGWINSZ-TIOCSWINSZ, libexpect5.45.4.so+0x540c8) @ libc.so.6+0xfabcc(ioctl+12)
 ioctl(STDIN_FILENO-0xfffffffffffffffe, TIOCGPTPEER, 258) @ libc.so.6+0xfabcc(ioctl+12)
 ioctl(STDIN_FILENO-0xfffffffffffffffe, TIOCSPTLCK, any) @ libc.so.6+0xfabcc(ioctl+12)

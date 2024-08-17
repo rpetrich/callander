@@ -26,7 +26,7 @@ writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xc61d
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x7f353
 sched_yield() @ libc.so.6+0xedf15(sched_yield+5)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0x1098e9(mremap+41)
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x1019f5(madvise+5)
+madvise(any, any, MADV_DONTNEED) @ libc.so.6+0x1019f5(madvise+5)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x1019f5(madvise+5)
 dup(any u32) @ libc.so.6+0xf8965(dup+5)
 getpid() @ ld-linux-x86-64.so.2+0x20cb5
@@ -71,8 +71,8 @@ tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8adf7
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8adf7
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8ae2a
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8ae2a
-ioprio_set(0x1-0x2, any u32, any u32) @ libc.so.6+0x101717(syscall+23)
-ioprio_get(0x1-0x2, any u32) @ libc.so.6+0x101717(syscall+23)
+ioprio_set(1, 0, any u32) @ libc.so.6+0x101717(syscall+23)
+ioprio_get(1, 0) @ libc.so.6+0x101717(syscall+23)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7eff(__open+79)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7f7e(__open+206)
 openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf807d(openat+61)

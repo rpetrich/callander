@@ -199,7 +199,6 @@ futex(ld-musl-x86_64.so.1+0x98ba0(key_lock*), any u32, 0-INT_MAX, any, 202, any 
 futex(ld-musl-x86_64.so.1+0x99900(lock*), any u32, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, ld-musl-x86_64.so.1+0x99ee4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0x99ee0(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, any, 202, any)
-sched_getaffinity(28, 128, any) @ ld-musl-x86_64.so.1+0x19218(sysconf+255)
 getdents64(any, any, 2048) @ ld-musl-x86_64.so.1+0x1c499(readdir64+30)
 set_tid_address(any) @ ld-musl-x86_64.so.1+0x5605a(start*+66)
 restart_syscall()

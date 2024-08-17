@@ -26,7 +26,7 @@ writev(any u32, any, any) @ ld-linux-x86-64.so.2+0xc61d
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x7f353
 sched_yield() @ libc.so.6+0xedf15(sched_yield+5)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0x1098e9(mremap+41)
-madvise(NULL-0xfffffffffffffffe, any, MADV_DONTNEED) @ libc.so.6+0x1019f5(madvise+5)
+madvise(any, any, MADV_DONTNEED) @ libc.so.6+0x1019f5(madvise+5)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0x1019f5(madvise+5)
 dup(any u32) @ libc.so.6+0xf8965(dup+5)
 getpid() @ ld-linux-x86-64.so.2+0x20cb5
@@ -36,10 +36,8 @@ fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcdbf
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfcdbf
 getcwd(non-NULL, any) @ libc.so.6+0xf8bbc(getcwd+124)
 sysinfo(any) @ libc.so.6+0x109fa5(sysinfo+5)
-getpriority(0, any u32) @ libc.so.6+0xfda55(getpriority+5)
 sched_getparam(any u32, any) @ libc.so.6+0xede85(sched_getparam+5)
 sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xedeb5(sched_setscheduler+5)
-sched_setscheduler(any u32, any u32, any) @ libc.so.6+0x101717(syscall+23)
 sched_getscheduler(any u32) @ libc.so.6+0xedee5(__sched_getscheduler+5)
 sched_get_priority_max(any u32) @ libc.so.6+0xedf45(__sched_get_priority_max+5)
 sched_get_priority_min(any u32) @ libc.so.6+0xedf75(sched_get_priority_min+5)
@@ -87,7 +85,6 @@ newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf7758(fstatat64
 newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf7758(fstatat64+8)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf7758(fstatat64+8)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xfd6de(__getrlimit+14)
-sched_setattr(any u32, any, 0) @ libc.so.6+0x101717(syscall+23)
 sched_getattr(any u32, any, 56, 0) @ libc.so.6+0x101717(syscall+23)
 getrandom(libc.so.6+0x1d9478, 8, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)
 getrandom(libc.so.6+0x1d9478, 8, GRND_NONBLOCK) @ libc.so.6+0x3f1cd(getrandom+77)

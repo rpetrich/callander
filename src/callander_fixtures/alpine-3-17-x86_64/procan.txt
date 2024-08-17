@@ -80,7 +80,8 @@ socketpair(AF_UNIX, SOCK_DGRAM, 0, any) @ ld-musl-x86_64.so.1+0x3f442(socketpair
 socketpair(AF_UNIX, SOCK_DGRAM, 0, any) @ ld-musl-x86_64.so.1+0x3f493(socketpair+124)
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
+kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
+kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 fcntl(STDIN_FILENO-0x3ff, F_GETFL, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(STDIN_FILENO-0x3ff, F_SETLK, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFL, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)

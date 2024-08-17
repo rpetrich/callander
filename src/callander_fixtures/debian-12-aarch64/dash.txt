@@ -89,11 +89,11 @@ tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGINT) @ libc.so.6+0x809dc
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGINT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
 sigaltstack(0, any) @ libc.so.6+0xf7b5c
-rt_sigsuspend(any, 8) @ libc.so.6+0x3aa40(__sigsuspend+32)
-rt_sigsuspend(any, 8) @ libc.so.6+0x3aa78(__sigsuspend+88)
 rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
