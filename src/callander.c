@@ -5450,7 +5450,18 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 						uses_alternate_state = ALTERNATE_JUMP;
 					}
 					// cmp %target_register; jng
-					if (register_is_partially_known(&continue_state)) {
+					if (jump_state.value > compare_state.value.value) {
+						if (uses_alternate_state) {
+							uses_alternate_state = ALTERNATE_UNUSED;
+							jump_state = alternate_state;
+						} else {
+							LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
+							skip_jump = true;
+						}
+					} else if (continue_state.max < compare_state.value.value) {
+						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+						skip_continue = true;
+					} else {
 						if (jump_state.max > compare_state.value.value) {
 							jump_state.max = compare_state.value.value;
 						}
@@ -5463,11 +5474,6 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 						if (continue_state.value < compare_state.value.value) {
 							continue_state.value = compare_state.value.value;
 						}
-					} else {
-						jump_state.value = 0;
-						jump_state.max = compare_state.value.value;
-						continue_state.value = compare_state.value.value + 1;
-						continue_state.max = ~(uintptr_t)0;
 					}
 				}
 				break;
@@ -5480,7 +5486,18 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 						uses_alternate_state = ALTERNATE_CONTINUE;
 					}
 					// cmp %target_register; jg
-					if (register_is_partially_known(&continue_state)) {
+					if (continue_state.value > compare_state.value.value) {
+						if (uses_alternate_state) {
+							uses_alternate_state = ALTERNATE_UNUSED;
+							continue_state = alternate_state;
+						} else {
+							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+							skip_continue = true;
+						}
+					} else if (jump_state.max < compare_state.value.value) {
+						LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
+						skip_jump = true;
+					} else {
 						if (continue_state.max > compare_state.value.value) {
 							continue_state.max = compare_state.value.value;
 						}
@@ -5493,11 +5510,6 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 						if (jump_state.value < compare_state.value.value) {
 							jump_state.value = compare_state.value.value;
 						}
-					} else {
-						continue_state.value = 0;
-						continue_state.max = compare_state.value.value;
-						jump_state.value = compare_state.value.value + 1;
-						jump_state.max = ~(uintptr_t)0;
 					}
 				}
 				break;
