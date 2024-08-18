@@ -16,6 +16,8 @@ openat(AT_FDCWD, /usr/bin/lscpu+0x11418, O_RDONLY, any) @ libc.so.6+0xc3a68(open
 openat(AT_FDCWD, /usr/bin/lscpu+0x114a8, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, /usr/bin/lscpu+0x11538, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, /usr/bin/lscpu+0x11568, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
+openat(AT_FDCWD, /usr/bin/lscpu+0x12c68, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
+openat(AT_FDCWD, /usr/bin/lscpu+0x12c88, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, /usr/bin/lscpu+0x12ca8, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, /usr/bin/lscpu+0x12cc0, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xc3af0(open+232)

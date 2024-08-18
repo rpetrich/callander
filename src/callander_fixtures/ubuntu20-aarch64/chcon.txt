@@ -23,6 +23,7 @@ openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_LARGEFILE|O_CLOEXEC, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_NOATIME|O_CLOEXEC, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_LARGEFILE|O_NOATIME|O_CLOEXEC, any) @ libc.so.6+0xc3a68(open+96)
+openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, /usr/bin/chcon+0xc2f8, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xc3af0(open+232)
 openat(any, any, any, any) @ libc.so.6+0xc3c00(openat64+96)

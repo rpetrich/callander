@@ -59,7 +59,7 @@ ioctl(any, TCGETS, any) @ /usr/sbin/build-locale-archive:0x465559(tcgetattr+41)
 pread64(any u32, any, any u32, any u32) @ /usr/sbin/build-locale-archive:0x44ed01(__pread64_nocancel+8)
 pread64(any, any, any, any) @ /usr/sbin/build-locale-archive:0x44ed25
 writev(any, any, 1) @ /usr/sbin/build-locale-archive:0x41e60d(__libc_message+397)
-writev(any, any, NULL-0x41) @ /usr/sbin/build-locale-archive:0x46c7c2(_dl_debug_vdprintf+290)
+writev(any, any, any) @ /usr/sbin/build-locale-archive:0x46c7c2(_dl_debug_vdprintf+290)
 sched_yield() @ /usr/sbin/build-locale-archive:0x44ecd5(sched_yield+5)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/build-locale-archive:0x450f48(__mremap+8)
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/build-locale-archive:0x44fe25(__madvise+5)

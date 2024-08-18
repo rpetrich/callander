@@ -289,7 +289,7 @@ socket(any, 0-SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0
 socket(any, SOCK_DGRAM, 17) @ ld-musl-aarch64.so.1+0x45c8c(socket+96)
 bind(any, any, any u32) @ ld-musl-aarch64.so.1+0x3fd4c(bind+32)
 listen(0x3, 1) @ ld-musl-aarch64.so.1+0x42aa8(listen+36)
-accept(any u16, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+accept(any u8, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 accept(any u16, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dc8c
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

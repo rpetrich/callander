@@ -51,7 +51,6 @@ wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x4cc3a(pclose+35)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 fcntl(any, F_SETFD, 0) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
-fcntl(any, F_SETLK, 0) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x4178f(child*+562)
 fcntl(any, F_SETFD, any) @ ld-musl-x86_64.so.1+0x417a3(child*+582)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4182b(child*+718)

@@ -101,7 +101,6 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ lib
 openat(AT_FDCWD, libc.so.6+0x1db5f4, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x119a1a(__open_nocancel+74)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x113d3c(fstatat64+12)
 newfstatat(any u32, libc.so.6+0x1d844f, any, AT_EMPTY_PATH) @ libc.so.6+0x113d3c(fstatat64+12)
-newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0x113d3c(fstatat64+12)
 fallocate(any u32, 0, any, any) @ libc.so.6+0x118f34(posix_fallocate+20)
 fallocate(any u32, any u32, any, any) @ libc.so.6+0x1197c8(fallocate+24)
 fallocate(any u32, any u32, any, any) @ libc.so.6+0x11980d(fallocate+93)

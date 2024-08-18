@@ -108,7 +108,7 @@ openat(AT_FDCWD, libsystemd.so.0+0xd6938, O_RDONLY|O_CLOEXEC|O_PATH, any) @ libc
 openat(AT_FDCWD, libsystemd.so.0+0xd9870, O_RDONLY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xf43fc(openat+268)
 openat(AT_FDCWD, libudev.so.1+0x409f0, O_RDONLY|O_NOCTTY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xf43fc(openat+268)
 openat(AT_FDCWD, /usr/sbin/NetworkManager+0x2cbb68, O_RDONLY|O_NOCTTY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xf43fc(openat+268)
-openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xf5d94(__open_nocancel+84)
+openat(AT_FDCWD, any, any, any) @ libc.so.6+0xf5d94(__open_nocancel+84)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xf5df0(__open_nocancel+176)
 openat(any, libmount.so.1+0x51b18, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xf5e70(__GI___openat64_nocancel+80)
 openat(AT_FDCWD, any, O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xf5e70(__GI___openat64_nocancel+80)

@@ -62,7 +62,6 @@ exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
 fcntl(STDIN_FILENO, F_GETFL, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(STDIN_FILENO, F_SETFL, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
-fcntl(STDIN_FILENO, F_SETLK, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4a2d5(fdopen+159)
 fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x4a2ef(fdopen+185)

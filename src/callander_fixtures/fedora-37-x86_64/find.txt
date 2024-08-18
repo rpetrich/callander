@@ -57,7 +57,6 @@ fcntl(any u32, F_GETFD-F_GETFL, any) @ libc.so.6+0xffff2(__fcntl64_nocancel_adju
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0xffff2(__fcntl64_nocancel_adjusted+34)
 fcntl(any u32, F_DUPFD_CLOEXEC, any u32) @ libc.so.6+0xffff2(__fcntl64_nocancel_adjusted+34)
 fcntl(any, F_GETFD, any) @ libc.so.6+0xffff2(__fcntl64_nocancel_adjusted+34)
-fcntl(any, F_GETSIG, any) @ libc.so.6+0xffff2(__fcntl64_nocancel_adjusted+34)
 getcwd(non-NULL, any) @ libc.so.6+0xfbcd0(getcwd+128)
 chdir(any) @ libc.so.6+0xfbbf9(chdir+9)
 fchdir(any u32) @ libc.so.6+0xfbc29(fchdir+9)

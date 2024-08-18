@@ -36,7 +36,6 @@ fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcdbf
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfcdbf
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, any u32) @ libc.so.6+0xfce4e
 fcntl(any u32, F_GETFL-F_SETFL, any) @ libc.so.6+0xfce4e
-fcntl(any u32, F_GETSIG, any) @ libc.so.6+0xfce4e
 fsync(any u32) @ libc.so.6+0xfeb0e(fsync+14)
 fsync(any u32) @ libc.so.6+0xfeb38(fsync+56)
 fdatasync(any u32) @ libc.so.6+0xfebce(fdatasync+14)
@@ -97,7 +96,6 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ lib
 openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf7758(fstatat64+8)
 newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf7758(fstatat64+8)
-newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf7758(fstatat64+8)
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ libc.so.6+0x58ab8(renameat+8)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xfd6de(__getrlimit+14)
 renameat2(AT_FDCWD, any, AT_FDCWD, any, 1) @ libc.so.6+0x58aed(renameat2+13)

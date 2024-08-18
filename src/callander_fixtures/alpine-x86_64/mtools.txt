@@ -85,7 +85,6 @@ wait4(-1, any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x48d29(kill+12)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b3d7(do_setxid*+69)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
-fcntl(any, F_SETLK, 1) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3ed7f(socket+114)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3ed99(socket+140)

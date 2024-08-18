@@ -51,7 +51,6 @@ kill(any u32, SIGPIPE) @ libc.so.6+0x3c265(kill+5)
 fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcdbf
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfcdbf
 fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ libc.so.6+0xfce4e
-fcntl(STDIN_FILENO-STDERR_FILENO, F_GETSIG, any) @ libc.so.6+0xfce4e
 fcntl(any u32, F_GETFL, /usr/bin/sdiff+0xaa4e) @ libc.so.6+0xfce4e
 fcntl(any u32, F_GETFL, /usr/bin/sdiff+0xaa78) @ libc.so.6+0xfce4e
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0xfce4e

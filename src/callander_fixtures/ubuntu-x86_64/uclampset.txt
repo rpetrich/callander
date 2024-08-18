@@ -92,7 +92,6 @@ openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0x119a1a(__open_nocancel+7
 openat(AT_FDCWD, libc.so.6+0x1db5f4, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x119a1a(__open_nocancel+74)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x113d3c(fstatat64+12)
 newfstatat(any u32, libc.so.6+0x1d844f, any, AT_EMPTY_PATH) @ libc.so.6+0x113d3c(fstatat64+12)
-newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0x113d3c(fstatat64+12)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0x11a2e2(getrlimit+18)
 sched_setattr(any u32, any, 0) @ libc.so.6+0x11e88b(syscall+27)
 sched_getattr(any u32, any, 56, 0) @ libc.so.6+0x11e88b(syscall+27)

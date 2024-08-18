@@ -84,7 +84,6 @@ fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, any u32) @ libc.so.6+0x119962(__fcntl
 fcntl(any u32, F_GETFD, 0) @ libc.so.6+0x119962(__fcntl64_nocancel_adjusted*+34)
 fcntl(any u32, F_SETFD, NULL-0xfffffffe) @ libc.so.6+0x119962(__fcntl64_nocancel_adjusted*+34)
 fcntl(any u32, F_GETFL-F_SETFL, any) @ libc.so.6+0x119962(__fcntl64_nocancel_adjusted*+34)
-fcntl(any u32, F_GETSIG, any) @ libc.so.6+0x119962(__fcntl64_nocancel_adjusted*+34)
 getcwd(non-NULL, any) @ libc.so.6+0x115263(getcwd+147)
 chdir(any) @ libc.so.6+0x115179(chdir+9)
 fchdir(any u32) @ libc.so.6+0x1151a9(fchdir+9)

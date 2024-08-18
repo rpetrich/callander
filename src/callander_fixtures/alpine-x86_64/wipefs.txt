@@ -74,7 +74,6 @@ exit(0) @ ld-musl-x86_64.so.1+0x57eff
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b3d7(do_setxid*+69)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
-fcntl(any, F_SETLK, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x49822(fstatat64+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x49dbc(fdopen+159)

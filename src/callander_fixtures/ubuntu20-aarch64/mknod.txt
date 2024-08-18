@@ -11,6 +11,7 @@ faccessat(AT_FDCWD, libselinux.so.1+0x1ee30, F_OK) @ libc.so.6+0xc3ef8(access+16
 fchmodat(AT_FDCWD, any, any u32) @ libc.so.6+0xc3890(chmod+16)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ libc.so.6+0xc3a68(open+96)
+openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xc3a68(open+96)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xc3af0(open+232)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xc8bd0(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xc8bd0(__open_nocancel+72)

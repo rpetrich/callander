@@ -113,7 +113,6 @@ openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf8106(openat+19
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf7758(fstatat64+8)
 newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf7758(fstatat64+8)
-newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf7758(fstatat64+8)
 pipe2(any, O_CLOEXEC) @ libc.so.6+0xf8a25(pipe2+5)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xfd6de(__getrlimit+14)
 getrandom(libc.so.6+0x1d9478, 8, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)

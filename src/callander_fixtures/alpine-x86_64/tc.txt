@@ -102,7 +102,6 @@ getsockopt(any, SOL_IP, 0x53, any, any) @ ld-musl-x86_64.so.1+0x3b432(getsockopt
 exit(0) @ ld-musl-x86_64.so.1+0x55b4e(pthread_exit+486)
 exit(0) @ ld-musl-x86_64.so.1+0x57eff
 fcntl(any, F_GETFD, 0) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
-fcntl(any, F_SETLK, 0) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3ed7f(socket+114)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x3ed99(socket+140)

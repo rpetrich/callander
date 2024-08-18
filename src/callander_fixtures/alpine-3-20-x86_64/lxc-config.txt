@@ -83,7 +83,7 @@ pipe(any) @ ld-musl-x86_64.so.1+0x6242f(pipe+9)
 sched_yield() @ ld-musl-x86_64.so.1+0x4cc46(sched_yield+9)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x61cf4(dup+12)
-dup2(any, any) @ ld-musl-x86_64.so.1+0x61d15(dup2+18)
+dup2(any, STDIN_FILENO-STDERR_FILENO) @ ld-musl-x86_64.so.1+0x61d15(dup2+18)
 dup2(any, STDERR_FILENO) @ ld-musl-x86_64.so.1+0x61d6d(dup3+68)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x5e990

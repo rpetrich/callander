@@ -72,7 +72,7 @@ pipe(any) @ ld-musl-x86_64.so.1+0x6242f(pipe+9)
 select(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 select(any, any, any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
-dup2(any, any) @ ld-musl-x86_64.so.1+0x61d15(dup2+18)
+dup2(any, STDIN_FILENO-STDERR_FILENO) @ ld-musl-x86_64.so.1+0x61d15(dup2+18)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x5e990
 setitimer(ITIMER_REAL, any, any) @ ld-musl-x86_64.so.1+0x4d85d(setitimer+12)

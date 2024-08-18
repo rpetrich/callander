@@ -62,7 +62,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/glibc_post_upgrade.x86_64:0x4
 rt_sigreturn(any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x442247
 ioctl(any, TCGETS, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x458c39(tcgetattr+41)
 writev(any, any, 1) @ /usr/sbin/glibc_post_upgrade.x86_64:0x409ced(__libc_message+397)
-writev(any, any, NULL-0x41) @ /usr/sbin/glibc_post_upgrade.x86_64:0x460122(_dl_debug_vdprintf+290)
+writev(any, any, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x460122(_dl_debug_vdprintf+290)
 access(/usr/sbin/glibc_post_upgrade.x86_64:0x470974, X_OK) @ /usr/sbin/glibc_post_upgrade.x86_64:0x4348d8(__access+8)
 sched_yield() @ /usr/sbin/glibc_post_upgrade.x86_64:0x434525(sched_yield+5)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/glibc_post_upgrade.x86_64:0x4365f8(__mremap+8)

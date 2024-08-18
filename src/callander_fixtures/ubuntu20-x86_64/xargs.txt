@@ -61,7 +61,6 @@ fcntl(any u32, F_DUPFD, any u32) @ libc.so.6+0x113662(__fcntl64_nocancel_adjuste
 fcntl(any u32, F_GETFD-F_GETFL, any) @ libc.so.6+0x113662(__fcntl64_nocancel_adjusted*+34)
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0x113662(__fcntl64_nocancel_adjusted*+34)
 fcntl(any, F_GETFD, any) @ libc.so.6+0x113662(__fcntl64_nocancel_adjusted*+34)
-fcntl(any, F_GETSIG, any) @ libc.so.6+0x113662(__fcntl64_nocancel_adjusted*+34)
 getcwd(non-NULL, any) @ libc.so.6+0x10ed10(getcwd+128)
 sysinfo(any) @ libc.so.6+0x11ffe9(sysinfo+9)
 gettid() @ libc.so.6+0x42fdb(raise+155)

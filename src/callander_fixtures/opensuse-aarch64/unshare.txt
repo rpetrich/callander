@@ -15,6 +15,7 @@ openat(AT_FDCWD, /usr/bin/unshare+0x9dc8, O_WRONLY, any) @ libc.so.6+0xd18a0(ope
 openat(AT_FDCWD, /usr/bin/unshare+0x9e48, O_WRONLY, any) @ libc.so.6+0xd18a0(open+104)
 openat(AT_FDCWD, /usr/bin/unshare+0xa910, O_WRONLY, any) @ libc.so.6+0xd18a0(open+104)
 openat(AT_FDCWD, /usr/bin/unshare+0xa970, O_WRONLY, any) @ libc.so.6+0xd18a0(open+104)
+openat(AT_FDCWD, /usr/bin/unshare+0xac90, O_RDONLY, any) @ libc.so.6+0xd18a0(open+104)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0xd192c(open+244)
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xd6e98(__open_nocancel+80)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd6e98(__open_nocancel+80)

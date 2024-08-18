@@ -48,7 +48,6 @@ fcntl(any u32, F_GETFD-F_SETFD, any) @ libc.so.6+0xfce4e
 fcntl(any u32, F_GETFL, /usr/bin/xargs+0xd79e) @ libc.so.6+0xfce4e
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0xfce4e
 fcntl(any, F_GETFD, any) @ libc.so.6+0xfce4e
-fcntl(any, F_GETSIG, any) @ libc.so.6+0xfce4e
 getcwd(non-NULL, any) @ libc.so.6+0xf8bbc(getcwd+124)
 sysinfo(any) @ libc.so.6+0x109fa5(sysinfo+5)
 sched_getparam(any u32, any) @ libc.so.6+0xede85(sched_getparam+5)
@@ -100,7 +99,6 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ lib
 openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf7758(fstatat64+8)
 newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf7758(fstatat64+8)
-newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf7758(fstatat64+8)
 set_robust_list(any, 24) @ libc.so.6+0xd42cb(_Fork+91)
 pipe2(any, 0) @ libc.so.6+0xf89f7(pipe+7)
 prlimit64(0, RLIMIT_STACK, 0, any) @ libc.so.6+0xfd6de(__getrlimit+14)

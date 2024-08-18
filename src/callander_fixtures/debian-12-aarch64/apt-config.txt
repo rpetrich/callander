@@ -146,7 +146,9 @@ tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
 tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
-rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(any, 0, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(any, any, 0, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
+rt_sigaction(SIGINT-SIGQUIT, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x7ed0c
@@ -275,7 +277,6 @@ madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe4048(madvise+8)
 wait4(any, any, 0, 0) @ libc.so.6+0xb871c(wait4+44)
 wait4(any, any, 0, 0) @ libc.so.6+0xb8764(wait4+116)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xdf7c4(__getrlimit+20)
-prlimit64(0, RLIMIT_NOFILE, any, 0) @ libc.so.6+0xdf804(setrlimit64+20)
 getrandom(any, any, 0) @ libc.so.6+0x3d928(getentropy+56)
 getrandom(any, any, GRND_NONBLOCK) @ libc.so.6+0x3dab4(getrandom+36)
 getrandom(any, any, GRND_INSECURE) @ libc.so.6+0x3dab4(getrandom+36)

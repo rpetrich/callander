@@ -14,8 +14,8 @@ faccessat(AT_FDCWD, /usr/sbin/ldconfig+0x91a80, F_OK) @ /usr/sbin/ldconfig+0x5d2
 chdir(/usr/sbin/ldconfig+0x92490) @ /usr/sbin/ldconfig+0x391c8
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x3a108
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig+0x38d24
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x38e00
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x38e88
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x38e00
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x38e88
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x39c10
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x39c64
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x5d164

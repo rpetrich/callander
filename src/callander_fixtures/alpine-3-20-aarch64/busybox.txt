@@ -122,7 +122,7 @@ write(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 write(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x5373c(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
-pread64(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x607bc
+pread64(any, any, any u8, any u8) @ ld-musl-aarch64.so.1+0x607bc
 pread64(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 sendfile(any, any, 0, non-NULL) @ ld-musl-aarch64.so.1+0x25038(sendfile+12)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)

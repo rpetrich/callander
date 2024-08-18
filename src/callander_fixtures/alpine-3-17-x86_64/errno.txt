@@ -53,7 +53,6 @@ exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 fcntl(any, F_SETFD, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
-fcntl(any, F_SETLK, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x41dc1(child*+562)
 fcntl(any, F_SETFD, any) @ ld-musl-x86_64.so.1+0x41dd5(child*+582)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41e5d(child*+718)

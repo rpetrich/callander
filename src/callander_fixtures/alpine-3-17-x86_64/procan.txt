@@ -83,7 +83,6 @@ exit(0) @ ld-musl-x86_64.so.1+0x5835a
 kill(any, SIGHUP-SIGQUIT) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, SIGPIPE-SIGPROF) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 fcntl(STDIN_FILENO-0x3ff, F_GETFL, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
-fcntl(STDIN_FILENO-0x3ff, F_SETLK, 0) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFL, any u32) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)

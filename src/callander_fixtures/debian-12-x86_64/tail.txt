@@ -40,7 +40,6 @@ fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcdbf
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfcdbf
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, any u32) @ libc.so.6+0xfce4e
 fcntl(any u32, F_GETFL-F_SETFL, any) @ libc.so.6+0xfce4e
-fcntl(any u32, F_GETSIG, any) @ libc.so.6+0xfce4e
 getcwd(non-NULL, any) @ libc.so.6+0xf8bbc(getcwd+124)
 sysinfo(any) @ libc.so.6+0x109fa5(sysinfo+5)
 fstatfs(any u32, any) @ libc.so.6+0xf7b25(fstatfs+5)

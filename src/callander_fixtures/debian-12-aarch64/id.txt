@@ -86,7 +86,6 @@ geteuid() @ libc.so.6+0xba148(geteuid+8)
 getgid() @ libc.so.6+0xba188(getgid+8)
 getegid() @ libc.so.6+0xba1c8(getegid+8)
 gettid() @ libc.so.6+0x809f0
-gettid() @ libc.so.6+0xe9888(gettid+8)
 sysinfo(any) @ libc.so.6+0xe9648(sysinfo+8)
 socket(AF_UNIX, SOCK_STREAM, 0) @ libc.so.6+0xea808(socket+8)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ libc.so.6+0xea808(socket+8)

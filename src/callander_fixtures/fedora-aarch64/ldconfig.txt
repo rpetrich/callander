@@ -14,12 +14,12 @@ faccessat(AT_FDCWD, /usr/sbin/ldconfig+0xa4660, F_OK) @ /usr/sbin/ldconfig+0x63e
 chdir(/usr/sbin/ldconfig+0xa5000) @ /usr/sbin/ldconfig+0x3b648
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x3cb88
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig+0x3b67c
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x3c0cc
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x3c160
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x3c0cc
+openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x3c160
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x3c23c
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x3c2d4
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x3c8b4
-openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x3c910
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x3c910
 close(any) @ /usr/sbin/ldconfig+0x3b6ec
 close(any) @ /usr/sbin/ldconfig+0x3b720
 close(any) @ /usr/sbin/ldconfig+0x3c654
