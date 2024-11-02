@@ -1729,6 +1729,7 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 struct previous_register_masks {
 	register_mask relevant_registers;
 	register_mask preserved_and_kept_registers;
+	struct searched_instruction_data_entry *entry;
 };
 
 static inline struct previous_register_masks add_relevant_registers(struct searched_instructions *search, const struct loader_context *loader, ins_ptr addr, const struct registers *registers, function_effects required_effects, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, struct effect_token *token)
@@ -1752,15 +1753,16 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 		}
 	}
 	struct searched_instruction_data *data = entry_for_index(table, index)->data;
+	int entry_offset = token->entry_offset;
+	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 	struct previous_register_masks result = (struct previous_register_masks){
 		.relevant_registers = data->relevant_registers,
 		.preserved_and_kept_registers = data->preserved_and_kept_registers,
+		.entry = entry,
 	};
 	data->relevant_registers = result.relevant_registers | relevant_registers;
 	data->preserved_registers |= preserved_registers;
 	data->preserved_and_kept_registers = result.preserved_and_kept_registers | preserved_and_kept_registers;
-	int entry_offset = token->entry_offset;
-	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 	struct registers copy;
 	if (SHOULD_LOG) {
 		ERROR_NOPREFIX("existing values (index)", (intptr_t)entry_offset);
