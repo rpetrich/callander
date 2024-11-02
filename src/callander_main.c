@@ -770,15 +770,7 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	if (result < 0) {
 		DIE("failed to peek under program counter", fs_strerror(result));
 	}
-#if defined(__x86_64__)
-	long new_bytes = 0xfdeb050f;
-#else
-#if defined(__aarch64__)
-	long new_bytes = 0xd4000001;
-#else
-#error "Unsupported architecture"
-#endif
-#endif
+	long new_bytes = ins_syscall_poke_pattern(original_bytes);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.USER_REG_PC, (void *)new_bytes);
 	if (result < 0) {
 		DIE("failed to poke a syscall", fs_strerror(result));
@@ -2027,16 +2019,7 @@ skip_analysis:
 	if (result < 0) {
 		DIE("failed to peek", fs_strerror(result));
 	}
-#if defined(__x86_64__)
-	long new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
-#else
-#if defined(__aarch64__)
-	// TODO: add breakpoint
-	long new_bytes = 0;
-#else
-#error "Unknown architecture"
-#endif
-#endif
+	long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)new_bytes);
 	if (result < 0) {
 		DIE("failed to poke", fs_strerror(result));
@@ -2096,7 +2079,7 @@ skip_analysis:
 					if (result < 0) {
 						DIE("failed to peek", fs_strerror(result));
 					}
-					new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
+					new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 					result = fs_ptrace(PTRACE_POKETEXT, tracee, child_addr, (void *)new_bytes);
 					if (result < 0) {
 						DIE("failed to poke", fs_strerror(result));
@@ -2166,7 +2149,7 @@ skip_analysis:
 		if (result < 0) {
 			DIE("failed to peek at blocked function", fs_strerror(result));
 		}
-		new_bytes = (original_bytes & ~(long)0xff) | 0xcc;
+		new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)addr, (void *)new_bytes);
 		if (result < 0) {
 			DIE("failed to poke at blocked function", fs_strerror(result));

@@ -559,6 +559,17 @@ static inline bool address_is_call_aligned(__attribute__((unused)) uintptr_t add
 	return true;
 }
 
+static inline long ins_syscall_poke_pattern(long original_bytes)
+{
+	(void)original_bytes;
+	return 0xfdeb050f;
+}
+
+static inline long ins_breakpoint_poke_pattern(long original_bytes)
+{
+	return (original_bytes & ~(long)0xff) | 0xcc;
+}
+
 #else
 #if defined(__aarch64__)
 
@@ -601,6 +612,19 @@ static inline bool address_is_call_aligned(uintptr_t address)
 {
 	return (address & 0x3) == 0;
 }
+
+static inline long ins_syscall_poke_pattern(long original_bytes)
+{
+	(void)original_bytes;
+	return 0xd4000001;
+}
+
+static inline long ins_breakpoint_poke_pattern(long original_bytes)
+{
+	(void)original_bytes;
+	return 0xd4200000;
+}
+
 
 #else
 #error "Unsupported architecture"
