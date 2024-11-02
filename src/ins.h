@@ -561,8 +561,7 @@ static inline bool address_is_call_aligned(__attribute__((unused)) uintptr_t add
 
 static inline long ins_syscall_poke_pattern(long original_bytes)
 {
-	(void)original_bytes;
-	return 0xfdeb050f;
+	return (original_bytes & ~(long)0xffffffff) | 0xfdeb050f;
 }
 
 static inline long ins_breakpoint_poke_pattern(long original_bytes)
@@ -618,14 +617,12 @@ static inline bool address_is_call_aligned(uintptr_t address)
 
 static inline long ins_syscall_poke_pattern(long original_bytes)
 {
-	(void)original_bytes;
-	return 0xd4000001;
+	return (original_bytes & ~(long)0xffffffff) | 0xd4000001;
 }
 
 static inline long ins_breakpoint_poke_pattern(long original_bytes)
 {
-	(void)original_bytes;
-	return 0xd4200000;
+	return (original_bytes & ~(long)0xffffffff) | 0xd4200000;
 }
 
 #define INS_BREAKPOINT_LEN 4
