@@ -361,6 +361,7 @@ enum effects {
 	EFFECT_ENTER_CALLS   = 1 << 7, // set if should traverse calls instead of recording loads
 	EFFECT_MODIFIES_STACK = 1 << 8, // set if the function could potentially modify the stack
 	EFFECT_STICKY_JUMPS_TO_SELF = 1 << 8, // set if the block jumps into itself to ignore reading off the end of jump tables
+	EFFECT_TEMPORARY_IN_VARY_EFFECTS = 1 << 9, // set temporarily while varying effects
 	VALID_EFFECTS        = (EFFECT_MODIFIES_STACK << 1) - 1,
 	DEFAULT_EFFECTS = EFFECT_EXITS | EFFECT_RETURNS | EFFECT_MODIFIES_STACK,
 };

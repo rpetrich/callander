@@ -3303,7 +3303,8 @@ __attribute__((nonnull(1, 2, 3)))
 static void vary_effects_by_registers(struct searched_instructions *search, const struct loader_context *loader, const struct analysis_frame *self, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, function_effects required_effects)
 {
 	// mark ancestor functions as varying by registers until we find one that no longer passes data into the call site
-	for (const struct analysis_frame *ancestor = self;;) {
+	const struct analysis_frame *ancestor = self;
+	for (;;) {
 		register_mask new_relevant_registers = 0;
 		register_mask new_preserved_registers = 0;
 		register_mask new_preserved_and_kept_registers = 0;
@@ -3362,11 +3363,17 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		}
 		struct previous_register_masks existing = add_relevant_registers(search, loader, ancestor->entry, ancestor->entry_state, required_effects, new_relevant_registers, new_preserved_registers, new_preserved_and_kept_registers, (struct effect_token *)&ancestor->token);
 		if ((existing.relevant_registers & new_relevant_registers) == new_relevant_registers && (existing.preserved_and_kept_registers & new_preserved_and_kept_registers) == new_preserved_and_kept_registers) {
-			if (SHOULD_LOG) {
-				ERROR_NOPREFIX("relevant and preserved registers have already been added");
+			if ((existing.entry->effects & EFFECT_TEMPORARY_IN_VARY_EFFECTS) == 0) {
+				if (SHOULD_LOG) {
+					ERROR_NOPREFIX("relevant and preserved registers have already been added");
+				}
+				break;
 			}
-			break;
+			if (SHOULD_LOG) {
+				ERROR_NOPREFIX("ancestor is reprocessing, continuing even though relevant and preserved registers were already added");
+			}
 		}
+		existing.entry->effects |= EFFECT_TEMPORARY_IN_VARY_EFFECTS;
 		ancestor = ancestor->next;
 		if (ancestor == NULL) {
 			if (SHOULD_LOG) {
@@ -3377,6 +3384,11 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 		relevant_registers = new_relevant_registers;
 		preserved_registers = new_preserved_and_kept_registers;
 		preserved_and_kept_registers = new_preserved_and_kept_registers;
+	}
+	// clean up EFFECT_TEMPORARY_IN_VARY_EFFECTS
+	for (const struct analysis_frame *ancestor_clean = self; ancestor_clean != ancestor; ancestor_clean = ancestor_clean->next) {
+		struct searched_instruction_data_entry *entry = entry_for_offset(entry_for_index(search->table, ancestor_clean->token.index)->data, ancestor_clean->token.entry_offset);
+		entry->effects &= ~EFFECT_TEMPORARY_IN_VARY_EFFECTS;
 	}
 }
 
