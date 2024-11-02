@@ -29,18 +29,6 @@
 #include "qsort.h"
 #include "search.h"
 
-#if defined(__x86_64__)
-#define BREAKPOINT_LEN 1
-#define BREAKS_AFTER_BREAKPOINT 1
-#else
-#if defined(__aarch64__)
-#define BREAKPOINT_LEN 4
-#define BREAKS_AFTER_BREAKPOINT 0
-#else
-#error "Unknown architecture"
-#endif
-#endif
-
 
 #ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
@@ -2129,12 +2117,12 @@ skip_analysis:
 		DIE("failed to read registers", fs_strerror(result));
 	}
 	// rewind back to where the breakpoint was
-	if (regs.USER_REG_PC != (BREAKS_AFTER_BREAKPOINT ? (child_main + BREAKPOINT_LEN) : child_main)) {
+	if (regs.USER_REG_PC != (INS_BREAKS_AFTER_BREAKPOINT ? (child_main + INS_BREAKPOINT_LEN) : child_main)) {
 		ERROR("interrupted at wrong child address", (uintptr_t)regs.USER_REG_PC);
-		ERROR("expected", (uintptr_t)child_main + BREAKPOINT_LEN);
+		ERROR("expected", (uintptr_t)child_main + INS_BREAKPOINT_LEN);
 	}
-	if (BREAKS_AFTER_BREAKPOINT) {
-		regs.USER_REG_PC -= BREAKPOINT_LEN;
+	if (INS_BREAKS_AFTER_BREAKPOINT) {
+		regs.USER_REG_PC -= INS_BREAKPOINT_LEN;
 	}
 	for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 		struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
@@ -2337,7 +2325,10 @@ skip_analysis:
 					if (result < 0) {
 						DIE("failed to read registers back", fs_strerror(result));
 					}
-					uintptr_t breakpoint_address = regs.USER_REG_PC - BREAKPOINT_LEN;
+					uintptr_t breakpoint_address = regs.USER_REG_PC;
+					if (INS_BREAKS_AFTER_BREAKPOINT) {
+						breakpoint_address -= INS_BREAKPOINT_LEN;
+					}
 					for (uint32_t i = 0; i < analysis.known_symbols.blocked_symbol_count; i++) {
 						struct blocked_symbol symbol = analysis.known_symbols.blocked_symbols[i];
 						uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);

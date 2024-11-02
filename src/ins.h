@@ -570,6 +570,9 @@ static inline long ins_breakpoint_poke_pattern(long original_bytes)
 	return (original_bytes & ~(long)0xff) | 0xcc;
 }
 
+#define INS_BREAKPOINT_LEN 1
+#define INS_BREAKS_AFTER_BREAKPOINT 1
+
 #else
 #if defined(__aarch64__)
 
@@ -625,6 +628,8 @@ static inline long ins_breakpoint_poke_pattern(long original_bytes)
 	return 0xd4200000;
 }
 
+#define INS_BREAKPOINT_LEN 4
+#define INS_BREAKS_AFTER_BREAKPOINT 0
 
 #else
 #error "Unsupported architecture"
