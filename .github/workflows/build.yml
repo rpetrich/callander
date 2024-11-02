@@ -12,7 +12,7 @@ jobs:
   build-x86_64:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: make -j -k
       working-directory: src
     - run: src/callander --show-permitted echo hi
@@ -28,7 +28,7 @@ jobs:
     steps:
     - run: sudo apt-get update
     - run: sudo apt-get install gcc-aarch64-linux-gnu
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: git submodule update --init
     - run: make -j -k TARGETMACHINE=aarch64
       working-directory: src
@@ -44,7 +44,7 @@ jobs:
     steps:
     - run: sudo apt-get update
     - run: sudo apt-get install mingw-w64
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: git submodule update --init
     - run: make -j -k target.exe TARGETOS=windows TARGETMACHINE=x86_64
       working-directory: src
