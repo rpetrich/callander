@@ -11,13 +11,19 @@ on:
 jobs:
   build-x86_64:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
     steps:
     - uses: actions/checkout@v4
     - run: make -j -k
       working-directory: src
     - run: src/callander --show-permitted echo hi
-    - run: tar cfz callander-x86_64-$GITHUB_SHA.tgz callander callander.debug
+    - run: tar cfz callander-x86_64-${{ github.sha }}.tgz callander callander.debug
       working-directory: src
+    - uses: actions/attest-build-provenance@v1
+      with:
+        subject-path: callander-x86_64-${{ github.sha }}.tgz
     - uses: actions/upload-artifact@v4
       with:
         name: callander-x86_64
@@ -25,6 +31,9 @@ jobs:
 
   build-aarch64:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
     steps:
     - run: sudo apt-get update
     - run: sudo apt-get install gcc-aarch64-linux-gnu
@@ -32,8 +41,11 @@ jobs:
     - run: git submodule update --init
     - run: make -j -k TARGETMACHINE=aarch64
       working-directory: src
-    - run: tar cfz callander-aarch64-$GITHUB_SHA.tgz callander callander.debug
+    - run: tar cfz callander-aarch64-${{ github.sha }}.tgz callander callander.debug
       working-directory: src
+    - uses: actions/attest-build-provenance@v1
+      with:
+        subject-path: callander-aarch64-${{ github.sha }}.tgz
     - uses: actions/upload-artifact@v4
       with:
         name: callander-aarch64
