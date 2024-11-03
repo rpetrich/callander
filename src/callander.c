@@ -1382,7 +1382,8 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 	size_t total_processing_count = 0;
 	for (size_t offset = 0; offset < end_offset; ) {
 		struct searched_instruction_data_entry *entry = entry_for_offset(data, offset);
-		total_processing_count += (entry->effects & EFFECT_PROCESSING) == EFFECT_PROCESSING;
+		bool is_processing = (entry->effects & EFFECT_PROCESSING) == EFFECT_PROCESSING;
+		total_processing_count += is_processing;
 		if ((entry->effects & required_effects) != required_effects) {
 			goto continue_search_initial;
 		}
@@ -1431,7 +1432,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			}
 			entry->effects = data->sticky_effects;
 			LOG("superset of existing at offset, reprocessing effects", (intptr_t)offset);
-			if (entry->effects & EFFECT_PROCESSING) {
+			if (is_processing) {
 				entry->generation++;
 				LOG("processing, so bumping the generation counter");
 			}
@@ -1457,9 +1458,8 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 			if ((entry->effects & required_effects) != required_effects) {
 				goto continue_search;
 			}
-			if (entry->effects & EFFECT_PROCESSING) {
-				processing_count++;
-			}
+			bool is_processing = entry->effects & EFFECT_PROCESSING;
+			processing_count += is_processing;
 			expand_registers(out_registers->registers, entry);
 #pragma GCC unroll 64
 			for (int i = 0; i < REGISTER_COUNT; i++) {
@@ -1575,7 +1575,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				LOG("registers left as-is");
 				dump_registers(loader, out_registers, unwidened);
 			}
-			if (entry->effects & EFFECT_PROCESSING) {
+			if (is_processing) {
 				entry->generation++;
 				LOG("processing, so bumping the generation counter");
 			}
