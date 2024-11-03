@@ -1165,7 +1165,7 @@ struct loader_stub {
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 2, 3, 4)))
-static inline void push_reachable_region(const struct loader_context *loader, struct reachable_instructions *reachable, ins_ptr entry, ins_ptr exit)
+static inline void push_reachable_region(__attribute__((unused)) const struct loader_context *loader, struct reachable_instructions *reachable, ins_ptr entry, ins_ptr exit)
 {
 	LOG("reachable entry", temp_str(copy_address_description(loader, entry)));
 	LOG("reachable exit", temp_str(copy_address_description(loader, exit)));
