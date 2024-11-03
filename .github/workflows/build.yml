@@ -23,7 +23,7 @@ jobs:
       working-directory: src
     - uses: actions/attest-build-provenance@v1
       with:
-        subject-path: ${{ github.workspace }}/callander-x86_64-${{ github.sha }}.tgz
+        subject-path: '${{ github.workspace }}/*.tgz'
     - uses: actions/upload-artifact@v4
       with:
         name: callander-x86_64
@@ -45,7 +45,7 @@ jobs:
       working-directory: src
     - uses: actions/attest-build-provenance@v1
       with:
-        subject-path: ${{ github.workspace }}/callander-aarch64-${{ github.sha }}.tgz
+        subject-path: '${{ github.workspace }}/*.tgz'
     - uses: actions/upload-artifact@v4
       with:
         name: callander-aarch64
