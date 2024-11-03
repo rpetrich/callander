@@ -1864,8 +1864,10 @@ void log_basic_blocks(const struct program_state *analysis)
 			size_t end_offset = data->end_offset;
 			for (size_t offset = 0; offset < end_offset; ) {
 				struct searched_instruction_data_entry *data_entry = entry_for_offset(data, offset);
-				expand_registers(state.registers, data_entry);
-				ERROR_NOPREFIX("block", temp_str(copy_block_entry_description(&analysis->loader, entry->address, &state)));
+				if ((data_entry->effects & required_effects) == required_effects) {
+					expand_registers(state.registers, data_entry);
+					ERROR_NOPREFIX("block", temp_str(copy_block_entry_description(&analysis->loader, entry->address, &state)));
+				}
 				offset += sizeof_searched_instruction_data_entry(data_entry);
 			}
 		}
