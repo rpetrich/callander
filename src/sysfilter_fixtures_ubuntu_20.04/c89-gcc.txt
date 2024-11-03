@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/c89-gcc"
-Failed to parse input.

@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/jsonpatch-3.11"
-Failed to parse input.

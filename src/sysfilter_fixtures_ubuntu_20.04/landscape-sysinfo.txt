@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/landscape-sysinfo"
-Failed to parse input.

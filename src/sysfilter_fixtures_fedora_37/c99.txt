@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/c99"
-Failed to parse input.

@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/hash"
-Failed to parse input.

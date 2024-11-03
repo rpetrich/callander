@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/corelist"
-Failed to parse input.

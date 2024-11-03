@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/make-dummy-cert"
-Failed to parse input.

@@ -1,2 +1,0 @@
-Failed to parse input file "/sbin/plymouth-set-default-theme"
-Failed to parse input.

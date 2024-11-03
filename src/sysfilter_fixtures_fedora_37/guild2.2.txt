@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/guild2.2"
-Failed to parse input.

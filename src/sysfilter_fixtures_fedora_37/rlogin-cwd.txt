@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/rlogin-cwd"
-Failed to parse input.

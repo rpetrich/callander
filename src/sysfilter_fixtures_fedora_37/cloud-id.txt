@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/cloud-id"
-Failed to parse input.

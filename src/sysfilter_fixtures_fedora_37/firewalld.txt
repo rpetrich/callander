@@ -1,2 +1,0 @@
-Failed to parse input file "/sbin/firewalld"
-Failed to parse input.

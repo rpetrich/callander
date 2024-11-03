@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/ucf"
-Failed to parse input.

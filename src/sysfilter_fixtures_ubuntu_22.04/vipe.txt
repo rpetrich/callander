@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/vipe"
-Failed to parse input.

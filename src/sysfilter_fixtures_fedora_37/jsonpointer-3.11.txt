@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/jsonpointer-3.11"
-Failed to parse input.

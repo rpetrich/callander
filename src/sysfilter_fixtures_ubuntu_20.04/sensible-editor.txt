@@ -1,2 +1,0 @@
-Failed to parse input file "/usr/bin/sensible-editor"
-Failed to parse input.
