@@ -40,6 +40,7 @@ pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xe727c(__pr
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xe1420(fstatat64+16)
 newfstatat(any, libc.so.6+0x159aa0, any, AT_EMPTY_PATH) @ libc.so.6+0xe1420(fstatat64+16)
 newfstatat(AT_FDCWD, non-NULL, any, 0) @ libc.so.6+0xe1420(fstatat64+16)
+exit(0) @ libc.so.6+0x2b5b4(__libc_start_call_main+164)
 exit(any) @ libc.so.6+0xf0820(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1c6c8(_exit+24)
 exit_group(any) @ libc.so.6+0xc068c(_Exit+28)

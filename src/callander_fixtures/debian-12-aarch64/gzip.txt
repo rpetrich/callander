@@ -54,6 +54,7 @@ fdatasync(any) @ libc.so.6+0xe0f34(fdatasync+84)
 utimensat(any, 0, any, 0) @ libc.so.6+0xde5ec
 utimensat(AT_FDCWD, /usr/bin/gzip+0x288c8, any, 0) @ libc.so.6+0xde5ec
 utimensat(AT_FDCWD, /usr/bin/gzip+0x288c8, any, 0) @ libc.so.6+0xde630(utimensat+16)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 futex(any, any, 1, 0, any, any)

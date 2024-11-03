@@ -67,6 +67,7 @@ fsync(any) @ libc.so.6+0xe0e04(fsync+36)
 fsync(any) @ libc.so.6+0xe0e34(fsync+84)
 sync_file_range(any, any, any, SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE|SYNC_FILE_RANGE_WAIT_AFTER) @ libc.so.6+0xdea5c(sync_file_range+44)
 sync_file_range(any, any, any, SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE|SYNC_FILE_RANGE_WAIT_AFTER) @ libc.so.6+0xdeaa4(sync_file_range+116)
+exit(0) @ libc.so.6+0x277ac
 exit(0) @ libc.so.6+0x7ec94
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)

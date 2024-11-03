@@ -52,10 +52,10 @@ pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, any, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
-ppoll(any, 0x22-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5d210
+ppoll(any, 0x21-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, any, 0, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-ppoll(any, 0x22-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+ppoll(any, 0x21-0x41, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c369, any, 512) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
 newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)

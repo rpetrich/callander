@@ -201,10 +201,10 @@ accept(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 accept(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 connect(STDIN_FILENO-0xfffffffffffffffe, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
 connect(any, ld-musl-aarch64.so.1+0xa0e40(log_addr*), 12) @ ld-musl-aarch64.so.1+0x607bc
-connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), any u32) @ ld-musl-aarch64.so.1+0x607bc
+connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), 24) @ ld-musl-aarch64.so.1+0x607bc
 connect(STDIN_FILENO-0xfffffffffffffffe, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 connect(any, ld-musl-aarch64.so.1+0xa0e40(log_addr*), 12) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), 24) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 getsockname(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x41fe0(getsockname+28)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)

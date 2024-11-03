@@ -1,4 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /sbin/ldconfig:0x42fc60
+fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ /sbin/ldconfig:0x43042c
 fcntl(any, F_SETFD, 1) @ /sbin/ldconfig:0x43042c
 fcntl(any, F_GETFL, any) @ /sbin/ldconfig:0x43042c
 fcntl(any, F_SETLKW, any) @ /sbin/ldconfig:0x43042c
@@ -7,6 +8,7 @@ mkdirat(AT_FDCWD, any, 0700) @ /sbin/ldconfig:0x42f7c4
 unlinkat(AT_FDCWD, any, 0) @ /sbin/ldconfig:0x430390
 symlinkat(any, AT_FDCWD, any) @ /sbin/ldconfig:0x4302fc
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ /sbin/ldconfig:0x40ec68
+faccessat(AT_FDCWD, /sbin/ldconfig:0x470d88, F_OK) @ /sbin/ldconfig:0x438050
 faccessat(AT_FDCWD, /sbin/ldconfig:0x470af8, F_OK) @ /sbin/ldconfig:0x453ecc
 faccessat(AT_FDCWD, /sbin/ldconfig:0x470b08, F_OK) @ /sbin/ldconfig:0x453ecc
 chdir(/sbin/ldconfig:0x4714b0) @ /sbin/ldconfig:0x42fbc4
@@ -47,6 +49,7 @@ fsync(any) @ /sbin/ldconfig:0x430a10
 fsync(any) @ /sbin/ldconfig:0x430a40
 fdatasync(any) @ /sbin/ldconfig:0x430ac0
 fdatasync(any) @ /sbin/ldconfig:0x430af0
+exit(0) @ /sbin/ldconfig:0x406504
 exit_group(any) @ /sbin/ldconfig:0x429300
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
@@ -67,9 +70,14 @@ rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /sbin/ldconfig:0x40d0b4
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /sbin/ldconfig:0x40d100
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /sbin/ldconfig:0x40d1b4
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /sbin/ldconfig:0x40d21c
+uname(any) @ /sbin/ldconfig:0x453c34
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ /sbin/ldconfig:0x40d0bc
 getpid() @ /sbin/ldconfig:0x453dc4
+getuid() @ /sbin/ldconfig:0x453dd4
+geteuid() @ /sbin/ldconfig:0x453de4
+getgid() @ /sbin/ldconfig:0x453df4
+getegid() @ /sbin/ldconfig:0x453e04
 gettid() @ /sbin/ldconfig:0x40d0c8
 sysinfo(any) @ /sbin/ldconfig:0x432694
 socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /sbin/ldconfig:0x466ff4

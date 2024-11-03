@@ -1,4 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real:0x42dc08
+fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ /usr/sbin/ldconfig.real:0x42e308
 fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig.real:0x42e308
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig.real:0x42e308
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig.real:0x42e308
@@ -7,6 +8,7 @@ mkdirat(AT_FDCWD, any, 0700) @ /usr/sbin/ldconfig.real:0x42d750
 unlinkat(AT_FDCWD, any, 0) @ /usr/sbin/ldconfig.real:0x42e270
 symlinkat(any, AT_FDCWD, any) @ /usr/sbin/ldconfig.real:0x42e1ec
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ /usr/sbin/ldconfig.real:0x40e83c
+faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b5f8, F_OK) @ /usr/sbin/ldconfig.real:0x43464c
 faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b538, F_OK) @ /usr/sbin/ldconfig.real:0x44d628
 faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b548, F_OK) @ /usr/sbin/ldconfig.real:0x44d628
 chdir(/usr/sbin/ldconfig.real:0x46bf38) @ /usr/sbin/ldconfig.real:0x42db44
@@ -47,6 +49,7 @@ fsync(any) @ /usr/sbin/ldconfig.real:0x42e8c0
 fsync(any) @ /usr/sbin/ldconfig.real:0x42e8f0
 fdatasync(any) @ /usr/sbin/ldconfig.real:0x42e970
 fdatasync(any) @ /usr/sbin/ldconfig.real:0x42e9a0
+exit(0) @ /usr/sbin/ldconfig.real:0x4067c4
 exit_group(any) @ /usr/sbin/ldconfig.real:0x427ae0
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 2177, 1)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
@@ -71,9 +74,14 @@ rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /usr/sbin/ldconfig.real:0x40d004
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d054
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d0e0
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d164
+uname(any) @ /usr/sbin/ldconfig.real:0x44d3b4
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ /usr/sbin/ldconfig.real:0x40d00c
 getpid() @ /usr/sbin/ldconfig.real:0x45f9d4
+getuid() @ /usr/sbin/ldconfig.real:0x44d534
+geteuid() @ /usr/sbin/ldconfig.real:0x44d544
+getgid() @ /usr/sbin/ldconfig.real:0x44d554
+getegid() @ /usr/sbin/ldconfig.real:0x44d564
 gettid() @ /usr/sbin/ldconfig.real:0x40d018
 sysinfo(any) @ /usr/sbin/ldconfig.real:0x4303d4
 socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real:0x460d34

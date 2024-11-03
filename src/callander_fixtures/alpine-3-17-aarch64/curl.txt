@@ -75,7 +75,7 @@ pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
-ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
+ppoll(any, 0-INT_MAX, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, NULL-0x1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(non-NULL, 0x1-0x7fffffff, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c369, any, 512) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)

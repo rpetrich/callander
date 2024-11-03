@@ -90,7 +90,7 @@ setsockopt(STDIN_FILENO-0xfffffffe, SOL_TCP, TCP_NODELAY, any, 4) @ libc.so.6+0x
 setsockopt(STDIN_FILENO-0xfffffffe, SOL_IPV6, IPV6_V6ONLY, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IP-SOL_SOCKET, SO_KEEPALIVE-SO_OOBINLINE, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, 16) @ libc.so.6+0x127acc(setsockopt+12)
-setsockopt(any u32, SOL_TCP, TCP_ULP, libcrypto.so.3+0x361760, 4) @ libc.so.6+0x127acc(setsockopt+12)
+setsockopt(any u32, SOL_TCP, TCP_ULP, libcrypto.so.3+0x3617a0, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_MTU_DISCOVER, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_DONTFRAG, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_TLS, TLS_TX-TLS_RX, any, any u32) @ libc.so.6+0x127acc(setsockopt+12)

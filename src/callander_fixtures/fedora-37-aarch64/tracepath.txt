@@ -41,6 +41,7 @@ newfstatat(AT_FDCWD, libc.so.6+0x1540a8, any, 0) @ libc.so.6+0xe1420(fstatat64+1
 newfstatat(AT_FDCWD, libc.so.6+0x159c00, any, 0) @ libc.so.6+0xe1420(fstatat64+16)
 newfstatat(AT_FDCWD, libc.so.6+0x15bca8, any, 0) @ libc.so.6+0xe1420(fstatat64+16)
 newfstatat(AT_FDCWD, libc.so.6+0x15c488, any, 0) @ libc.so.6+0xe1420(fstatat64+16)
+exit(0) @ libc.so.6+0x2b5b4(__libc_start_call_main+164)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1c6c8(_exit+24)
 exit_group(any) @ libc.so.6+0xc068c(_Exit+28)
 futex(any, any, 1, 0, any, any)

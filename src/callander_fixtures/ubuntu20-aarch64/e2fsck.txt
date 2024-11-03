@@ -96,6 +96,7 @@ newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xc36d4(__fxstatat+28
 fstat(any, any) @ libc.so.6+0xc334c(__fxstat+20)
 fsync(any) @ libc.so.6+0xca980(fsync+40)
 fsync(any) @ libc.so.6+0xca9b0(fsync+88)
+exit(0) @ libc.so.6+0x20e7c(__libc_start_main+340)
 exit(any) @ libc.so.6+0xd1630(thread_start*+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1803c(_exit*+20)
 exit_group(any) @ libc.so.6+0xa4168(_Exit+24)

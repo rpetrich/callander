@@ -38,6 +38,7 @@ utimensat(AT_FDCWD, non-NULL, 0x350-0x10000034f, 0) @ libc.so.6+0xd6a60(utimensa
 utimensat(AT_FDCWD, non-NULL, 0x350-0x10000034f, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd6a60(utimensat+16)
 utimensat(AT_FDCWD, non-NULL, /usr/bin/touch+0x30350, 0) @ libc.so.6+0xd6a60(utimensat+16)
 utimensat(AT_FDCWD, non-NULL, /usr/bin/touch+0x30350, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd6a60(utimensat+16)
+exit(0) @ libc.so.6+0x24008(__libc_start_main+336)
 exit_group(any) @ ld-linux-aarch64.so.1+0x186dc(_exit+20)
 exit_group(any) @ libc.so.6+0xb0178(_Exit+24)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)

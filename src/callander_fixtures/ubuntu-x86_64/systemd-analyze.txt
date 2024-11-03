@@ -125,7 +125,7 @@ setsockopt(any u32, SOL_TCP, TCP_NODELAY, any, 4) @ libc.so.6+0x127acc(setsockop
 setsockopt(any u32, SOL_TCP, TCP_KEEPIDLE-TCP_KEEPCNT, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_TCP, TCP_DEFER_ACCEPT, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_TCP, TCP_CONGESTION, non-NULL, any u32) @ libc.so.6+0x127acc(setsockopt+12)
-setsockopt(any u32, SOL_TCP, TCP_ULP, libcrypto.so.3+0x361760, 4) @ libc.so.6+0x127acc(setsockopt+12)
+setsockopt(any u32, SOL_TCP, TCP_ULP, libcrypto.so.3+0x3617a0, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_UNICAST_HOPS, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_MTU_DISCOVER, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_V6ONLY, any, 4) @ libc.so.6+0x127acc(setsockopt+12)

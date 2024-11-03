@@ -58,6 +58,7 @@ newfstatat(any, libc.so.6+0x151480, any, AT_EMPTY_PATH) @ libc.so.6+0xd726c(fsta
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xd726c(fstatat64+12)
 timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC) @ libc.so.6+0xe7308(timerfd_create+8)
 timerfd_settime(any, 0, any, 0) @ libc.so.6+0xe683c(timerfd_settime+12)
+exit(0) @ libc.so.6+0x27424(__libc_start_call_main*+148)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1da04(_exit*+20)
 exit_group(any) @ libc.so.6+0xb7048(_exit+24)
 futex(any, FUTEX_WAIT, any u32, 0, any, any)

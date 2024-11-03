@@ -5,12 +5,12 @@ lsetxattr(any, libselinux.so.1+0x22f90, any, any, 0) @ libc.so.6+0xe7408(lsetxat
 getxattr(any, libselinux.so.1+0x22f90, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
 getxattr(any, libselinux.so.1+0x22f90, non-NULL, any) @ libc.so.6+0xe72c8(getxattr+8)
 getxattr(any, libselinux.so.1+0x23328, any, 20) @ libc.so.6+0xe72c8(getxattr+8)
+getxattr(any, /usr/bin/tar+0x6af18, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
+getxattr(any, /usr/bin/tar+0x6af30, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
 getxattr(any, libacl.so.1+0x5d98, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
 getxattr(any, libacl.so.1+0x5d98, any, non-NULL) @ libc.so.6+0xe72c8(getxattr+8)
 getxattr(any, libacl.so.1+0x5dd8, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
 getxattr(any, libacl.so.1+0x5dd8, any, non-NULL) @ libc.so.6+0xe72c8(getxattr+8)
-getxattr(any, /usr/bin/tar+0x6af18, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
-getxattr(any, /usr/bin/tar+0x6af30, 0, 0) @ libc.so.6+0xe72c8(getxattr+8)
 lgetxattr(any, any, any, any) @ libc.so.6+0xe7348(lgetxattr+8)
 fgetxattr(STDOUT_FILENO--1 as u32, any, any, any) @ libc.so.6+0xe71c8(fgetxattr+8)
 llistxattr(any, any, any) @ libc.so.6+0xe7388(llistxattr+8)
@@ -95,6 +95,7 @@ fsync(any) @ libc.so.6+0xe0e04(fsync+36)
 fsync(any) @ libc.so.6+0xe0e34(fsync+84)
 utimensat(any, 0, any, 0) @ libc.so.6+0xde5ec
 utimensat(any, non-NULL, any, any) @ libc.so.6+0xde630(utimensat+16)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 futex(any, FUTEX_WAIT, any u32, 0, any, any)

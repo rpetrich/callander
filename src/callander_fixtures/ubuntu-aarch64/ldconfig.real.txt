@@ -1,4 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x37e64
+fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ /usr/sbin/ldconfig.real+0x385fc
 fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig.real+0x385fc
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig.real+0x385fc
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig.real+0x385fc
@@ -9,6 +10,7 @@ mkdirat(AT_FDCWD, any, 0700) @ /usr/sbin/ldconfig.real+0x379a0
 unlinkat(AT_FDCWD, any, 0) @ /usr/sbin/ldconfig.real+0x38540
 symlinkat(any, AT_FDCWD, any) @ /usr/sbin/ldconfig.real+0x384ac
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ /usr/sbin/ldconfig.real+0x183a4
+faccessat(AT_FDCWD, /usr/sbin/ldconfig.real+0x91760, F_OK) @ /usr/sbin/ldconfig.real+0x3fc48
 faccessat(AT_FDCWD, /usr/sbin/ldconfig.real+0x914a0, F_OK) @ /usr/sbin/ldconfig.real+0x5b5a0
 faccessat(AT_FDCWD, /usr/sbin/ldconfig.real+0x914b0, F_OK) @ /usr/sbin/ldconfig.real+0x5b5a0
 chdir(/usr/sbin/ldconfig.real+0x91e90) @ /usr/sbin/ldconfig.real+0x37dc8
@@ -48,7 +50,9 @@ fsync(any) @ /usr/sbin/ldconfig.real+0x38c88
 fsync(any) @ /usr/sbin/ldconfig.real+0x38cb8
 fdatasync(any) @ /usr/sbin/ldconfig.real+0x38d38
 fdatasync(any) @ /usr/sbin/ldconfig.real+0x38d68
+exit(0) @ /usr/sbin/ldconfig.real+0x1034c
 exit_group(any) @ /usr/sbin/ldconfig.real+0x31be8
+set_tid_address(any) @ /usr/sbin/ldconfig.real+0x3eea4
 futex(any, FUTEX_WAIT, any u32, 0, any, any)
 futex(any, any, 1, 0, any, any)
 futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
@@ -62,6 +66,7 @@ futex(any, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
 futex(/usr/sbin/ldconfig.real+0xd95cc, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 futex(/usr/sbin/ldconfig.real+0xd9920, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
+set_robust_list(any, 24) @ /usr/sbin/ldconfig.real+0x3eee8
 setitimer(ITIMER_REAL, any, any) @ /usr/sbin/ldconfig.real+0x72cd8
 clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig.real+0x31774
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ /usr/sbin/ldconfig.real+0x31774
@@ -92,6 +97,10 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x26674
 uname(any) @ /usr/sbin/ldconfig.real+0x5afc8
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ /usr/sbin/ldconfig.real+0x31c88
+getuid() @ /usr/sbin/ldconfig.real+0x5b188
+geteuid() @ /usr/sbin/ldconfig.real+0x5b1c8
+getgid() @ /usr/sbin/ldconfig.real+0x5b208
+getegid() @ /usr/sbin/ldconfig.real+0x5b248
 gettid() @ /usr/sbin/ldconfig.real+0x25bc0
 sysinfo(any) @ /usr/sbin/ldconfig.real+0x3a988
 socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real+0x74d48
@@ -118,7 +127,9 @@ mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/sbin/ldconfig.real+0x3a8d4
 mmap(any, any, any, any, any, any) @ /usr/sbin/ldconfig.real+0x38dd8
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x38e88
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x38ec8
+prlimit64(0, RLIMIT_STACK, 0, any) @ /usr/sbin/ldconfig.real+0x38984
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x85690
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x856d8
 getrandom(/usr/sbin/ldconfig.real+0xd91b0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x4c60c
 getrandom(/usr/sbin/ldconfig.real+0xd91b0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x4c650
+rseq(any, 32, 0, 0xd428bc00) @ /usr/sbin/ldconfig.real+0x3ef1c

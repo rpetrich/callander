@@ -121,7 +121,7 @@ setsockopt(any u32, SOL_IP-SOL_SOCKET, SO_RCVBUF-SO_OOBINLINE, any, 4) @ libc.so
 setsockopt(any u32, SOL_SOCKET, SO_SNDBUF, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, 16) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_SOCKET, SO_SNDBUFFORCE-SO_RCVBUFFORCE, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
-setsockopt(any u32, SOL_TCP, TCP_ULP, libcrypto.so.3+0x361760, 4) @ libc.so.6+0x127acc(setsockopt+12)
+setsockopt(any u32, SOL_TCP, TCP_ULP, libcrypto.so.3+0x3617a0, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_MTU_DISCOVER, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_IPV6, IPV6_DONTFRAG, any, 4) @ libc.so.6+0x127acc(setsockopt+12)
 setsockopt(any u32, SOL_NETLINK, NETLINK_DROP_MEMBERSHIP-NETLINK_PKTINFO, any, 4) @ libc.so.6+0x127acc(setsockopt+12)

@@ -58,6 +58,7 @@ newfstatat(any, libc.so.6+0x159aa0, any, AT_EMPTY_PATH) @ libc.so.6+0xe1420(fsta
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xe1420(fstatat64+16)
 fsync(any) @ libc.so.6+0xe920c(fsync+44)
 fsync(any) @ libc.so.6+0xe9240(fsync+96)
+exit(0) @ libc.so.6+0x2b5b4(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x84e3c(start_thread+252)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1c6c8(_exit+24)
 exit_group(any) @ libc.so.6+0xc068c(_Exit+28)

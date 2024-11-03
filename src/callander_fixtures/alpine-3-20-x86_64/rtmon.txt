@@ -25,6 +25,7 @@ ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4e968(fdopen+202)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4ef68(__stdout_write*+48)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4edb7(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4ef01(__stdio_write*+196)
+sched_yield() @ ld-musl-x86_64.so.1+0x4cc46(sched_yield+9)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e

@@ -85,6 +85,7 @@ readlinkat(any u32, any, non-NULL, any) @ libc.so.6+0xdb888(readlinkat+8)
 newfstatat(any, any, any, any) @ libc.so.6+0xd93bc(fstatat64+12)
 utimensat(any, 0, any, 0) @ libc.so.6+0xde5ec
 utimensat(any, non-NULL, any, any) @ libc.so.6+0xde630(utimensat+16)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 futex(any, FUTEX_WAIT, any u32, 0, any, any)

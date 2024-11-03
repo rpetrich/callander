@@ -59,6 +59,7 @@ newfstatat(any, libc.so.6+0x1540a0, any, AT_EMPTY_PATH) @ libc.so.6+0xd93bc(fsta
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xd93bc(fstatat64+12)
 capget(any, any) @ libc.so.6+0xe8fc8(capget+8)
 capset(any, any) @ libc.so.6+0xe9008(capset+8)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 unshare(any u32) @ libc.so.6+0xe9688(unshare+8)

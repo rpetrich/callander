@@ -54,6 +54,7 @@ ppoll(any, 1, any, 0, 0) @ libc.so.6+0xdded4(__poll+244)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd93bc(fstatat64+12)
 newfstatat(any, libc.so.6+0x1540a0, any, AT_EMPTY_PATH) @ libc.so.6+0xd93bc(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xd93bc(fstatat64+12)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 futex(any, any, 1, 0, any, any)
@@ -101,7 +102,7 @@ getegid() @ libc.so.6+0xba1c8(getegid+8)
 gettid() @ libc.so.6+0x809f0
 sysinfo(any) @ libc.so.6+0xe9648(sysinfo+8)
 msgctl(any, any, any) @ libc.so.6+0xeb00c(msgctl+12)
-semctl(any, 0, any, any) @ libc.so.6+0xeb120(semctl+144)
+semctl(any, any, any, any) @ libc.so.6+0xeb120(semctl+144)
 shmctl(any, any, any) @ libc.so.6+0xeb26c(shmctl+12)
 socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0xea808(socket+8)
 connect(any, any, 110) @ libc.so.6+0xea04c(connect+44)

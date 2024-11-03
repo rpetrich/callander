@@ -121,6 +121,7 @@ newfstatat(any, libc.so.6+0x1540a0, any, AT_EMPTY_PATH) @ libc.so.6+0xd93bc(fsta
 fsync(any) @ libc.so.6+0xe0e04(fsync+36)
 fsync(any) @ libc.so.6+0xe0e34(fsync+84)
 capset(any, any) @ libc.so.6+0xe3d24(syscall+36)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 waitid(P_PID, any u32, any, WEXITED, 0) @ libc.so.6+0xb880c(waitid+60)
@@ -158,8 +159,10 @@ tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2d0
 tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c33c
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
 tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
+tgkill(any, any u32, SIGTERM) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a0c
+tgkill(any, any, SIGTERM) @ libc.so.6+0x80a0c
 rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a894(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a928(__libc_sigaction+280)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2746c(abort+160)
@@ -187,6 +190,7 @@ gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b908
 getpid() @ libc.so.6+0xba088(getpid+8)
 getpid() @ libc.so.6+0xe3d24(syscall+36)
+getppid() @ libc.so.6+0xba0c8(getppid+8)
 getuid() @ libc.so.6+0xba108(getuid+8)
 geteuid() @ libc.so.6+0xba148(geteuid+8)
 getgid() @ libc.so.6+0xba188(getgid+8)

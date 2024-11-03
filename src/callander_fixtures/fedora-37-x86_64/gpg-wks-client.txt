@@ -79,7 +79,7 @@ readlink(/usr/bin/gpg-wks-client+0x19ad5, any, 3327) @ libc.so.6+0xfcae9(readlin
 readlink(/usr/bin/gpg-wks-client+0x19ad5, any, 3583) @ libc.so.6+0xfcae9(readlink+9)
 readlink(/usr/bin/gpg-wks-client+0x19ad5, any, 3839) @ libc.so.6+0xfcae9(readlink+9)
 readlink(/usr/bin/gpg-wks-client+0x19ad5, any, 4095) @ libc.so.6+0xfcae9(readlink+9)
-chmod(non-NULL, any u32) @ libc.so.6+0xfad19(chmod+9)
+chmod(any, any u32) @ libc.so.6+0xfad19(chmod+9)
 gettimeofday(any, any) @ libc.so.6+0xc6d5e(__gettimeofday_syscall+14)
 getrusage(0, any) @ libc.so.6+0x100909(getrusage+9)
 sysinfo(any) @ libc.so.6+0x10d439(sysinfo+9)

@@ -96,6 +96,7 @@ fdatasync(STDIN_FILENO-0xfffffffffffffffe) @ libc.so.6+0xe0f34(fdatasync+84)
 utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xde5ec
 utimensat(any, non-NULL, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xde630(utimensat+16)
 capget(any, any) @ libc.so.6+0xe8fc8(capget+8)
+exit(0) @ libc.so.6+0x277ac
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b884
 exit_group(any) @ libc.so.6+0xb8f88(_Exit+24)
 futex(any, FUTEX_WAIT, any u32, 0, any, any)
