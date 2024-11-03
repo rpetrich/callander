@@ -197,6 +197,6 @@ binaries that run on any recent Linux kernel.
 
 The logo was generously provided by my frequent collaborator, [Kelly Shortridge](https://kellyshortridge.com/). Without this and other contributions, Callander would not exist.
 
-aarch64 disassembly uses Vector35's [arch-arm64](https://github.com/Vector35/arch-arm64) disassembler.
+aarch64 disassembly uses Vector35's [arm64 disassembler](https://github.com/Vector35/binaryninja-api/tree/dev/arch/arm64).
 
 x86 disassembly uses length disassembler by Stefan Johnson.
