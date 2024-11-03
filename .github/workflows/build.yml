@@ -18,7 +18,7 @@ jobs:
     - run: src/callander --show-permitted echo hi
     - run: tar cfz callander-x86_64-$GITHUB_SHA.tgz callander callander.debug
       working-directory: src
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: callander-x86_64
         path: src/callander-x86_64-*.tgz
@@ -34,7 +34,7 @@ jobs:
       working-directory: src
     - run: tar cfz callander-aarch64-$GITHUB_SHA.tgz callander callander.debug
       working-directory: src
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: callander-aarch64
         path: src/callander-aarch64-*.tgz
