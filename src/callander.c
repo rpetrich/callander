@@ -1020,6 +1020,7 @@ struct searched_instruction_data {
 	uint32_t end_offset;
 	function_effects sticky_effects;
 	uint16_t callback_index;
+	ins_ptr next_ins;
 	struct searched_instruction_data_entry entries[];
 };
 
@@ -1163,39 +1164,23 @@ struct loader_stub {
 };
 
 __attribute__((always_inline))
-__attribute__((nonnull(1, 2)))
-static inline void push_unreachable_breakpoint(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) ins_ptr breakpoint)
-{
-#if BREAK_ON_UNREACHABLES
-	size_t old_count = unreachables->breakpoint_count;
-	size_t new_count = old_count + 1;
-	if (new_count > unreachables->breakpoint_buffer_size) {
-		unreachables->breakpoint_buffer_size = (new_count * 2);
-		unreachables->breakpoints = realloc(unreachables->breakpoints, unreachables->breakpoint_buffer_size * sizeof(*unreachables->breakpoints));
-	}
-	unreachables->breakpoints[old_count] = breakpoint;
-	unreachables->breakpoint_count = new_count;
-#endif
-}
-
-#if BREAK_ON_UNREACHABLES
-__attribute__((always_inline))
 __attribute__((nonnull(1, 2, 3, 4)))
-static inline void push_reachable_region(const struct loader_context *loader, struct unreachable_instructions *unreachables, ins_ptr entry, ins_ptr exit)
+static inline void push_reachable_region(const struct loader_context *loader, struct reachable_instructions *reachable, ins_ptr entry, ins_ptr exit)
 {
 	LOG("reachable entry", temp_str(copy_address_description(loader, entry)));
 	LOG("reachable exit", temp_str(copy_address_description(loader, exit)));
-	size_t old_count = unreachables->reachable_region_count;
+	size_t old_count = reachable->count;
 	size_t new_count = old_count + 1;
-	if (new_count > unreachables->reachable_region_buffer_size) {
-		unreachables->reachable_region_buffer_size = (new_count * 2);
-		unreachables->reachable_regions = realloc(unreachables->reachable_regions, unreachables->reachable_region_buffer_size * sizeof(*unreachables->reachable_regions));
+	if (new_count > reachable->buffer_size) {
+		reachable->buffer_size = (new_count * 2);
+		reachable->regions = realloc(reachable->regions, reachable->buffer_size * sizeof(*reachable->regions));
 	}
-	unreachables->reachable_regions[old_count].entry = entry;
-	unreachables->reachable_regions[old_count].exit = exit;
-	unreachables->reachable_region_count = new_count;
+	reachable->regions[old_count] = (struct reachable_region){
+		.entry = entry,
+		.exit = exit,
+	};
+	reachable->count = new_count;
 }
-#endif
 
 __attribute__((always_inline))
 __attribute__((nonnull(2)))
@@ -1322,6 +1307,27 @@ static void add_new_entry_with_registers(struct searched_instruction_entry *tabl
 		entry->registers[j++] = registers->registers[i];
 	}
 	data->end_offset = new_end_offset;
+}
+
+void populate_reachable_regions(struct program_state *analysis)
+{
+	struct searched_instruction_entry *table = analysis->search.table;
+	uint32_t count = next_index(analysis->search.mask);
+	for (uint32_t i = 0; i < count; i = next_index(i)) {
+		struct searched_instruction_entry *entry = entry_for_index(table, i);
+		if (entry->address != NULL) {
+			struct searched_instruction_data *data = entry->data;
+			size_t end_offset = data->end_offset;
+			for (size_t offset = 0; offset < end_offset; ) {
+				struct searched_instruction_data_entry *data_entry = entry_for_offset(data, offset);
+				if (data_entry->effects & EFFECT_AFTER_STARTUP) {
+					push_reachable_region(&analysis->loader, &analysis->reachable, entry->address, data->next_ins);
+					break;
+				}
+				offset += sizeof_searched_instruction_data_entry(data_entry);
+			}
+		}
+	}
 }
 
 static inline bool combine_register_states(struct register_state *out_state, const struct register_state *combine_state, __attribute__((unused)) int register_index)
@@ -1713,7 +1719,7 @@ static inline struct searched_instruction_entry *table_entry_for_token(struct se
 }
 
 __attribute__((always_inline))
-static inline void set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects, register_mask modified)
+static inline struct searched_instruction_data *set_effects(struct searched_instructions *search, ins_ptr addr, struct effect_token *token, function_effects new_effects, register_mask modified)
 {
 	struct searched_instruction_entry *table_entry = table_entry_for_token(search, addr, token);
 	uint32_t entry_offset = token->entry_offset;
@@ -1724,6 +1730,7 @@ static inline void set_effects(struct searched_instructions *search, ins_ptr add
 	} else {
 		LOG("skipping setting effects because the generation changed");
 	}
+	return table_entry->data;
 }
 
 struct previous_register_masks {
@@ -5040,7 +5047,7 @@ enum {
 	MAX_LOOKUP_TABLE_SIZE = 0x408,
 };
 
-static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr ins, struct decoded_ins *decoded)
+static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr ins, struct decoded_ins *decoded, __attribute__((unused)) function_effects required_effects)
 {
 	// skip over function stubs that simply call into a target function
 	ins_ptr ret = ins;
@@ -5050,9 +5057,6 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 	for (;;) {
 		if (is_landing_pad_ins(decoded)) {
 			ins_ptr next = next_ins(ins, decoded);
-#if BREAK_ON_UNREACHABLES
-			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next);
-#endif
 			ins = next;
 			if (UNLIKELY(!decode_ins(ins, decoded))) {
 				return NULL;
@@ -5070,9 +5074,9 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 			if ((protection_for_address(&analysis->loader, jump_target, &binary, NULL) & PROT_EXEC) == 0) {
 				break;
 			}
-#if BREAK_ON_UNREACHABLES
-			push_reachable_region(&analysis->loader, &analysis->unreachables, ins, next_ins(ins, decoded));
-#endif
+			if (required_effects & EFFECT_AFTER_STARTUP) {
+				push_reachable_region(&analysis->loader, &analysis->reachable, ret, next_ins(ins, decoded));
+			}
 			ins = jump_target;
 			ret = jump_target;
 			if (UNLIKELY(!decode_ins(ins, decoded))) {
@@ -5083,6 +5087,9 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 	if (UNLIKELY(ins != ret)) {
 		if (UNLIKELY(!decode_ins(ret, decoded))) {
 			return NULL;
+		}
+		if (required_effects & EFFECT_AFTER_STARTUP) {
+			push_reachable_region(&analysis->loader, &analysis->reachable, ret, next_ins(ins, decoded));
 		}
 	}
 	return ret;
@@ -5626,13 +5633,11 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
 			self->description = "skip conditional jump";
 			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | compare_state.sources, 0, 0, required_effects);
-			push_unreachable_breakpoint(&analysis->unreachables, jump_target);
 		}
 		if (skip_continue) {
 			LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
 			self->description = "skip conditional continue";
 			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | compare_state.sources, 0, 0, required_effects);
-			push_unreachable_breakpoint(&analysis->unreachables, continue_target);
 		}
 		if (!(skip_jump || skip_continue) && compare_state.sources != 0) {
 			self->description = "conditional jump predicate";
@@ -6210,7 +6215,7 @@ static void analyze_memory_read(struct program_state *analysis, struct analysis_
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags)
 {
 	struct decoded_ins decoded;
-	ins = skip_prefix_jumps(analysis, ins, &decoded);
+	ins = skip_prefix_jumps(analysis, ins, &decoded, required_effects);
 	if (ins == NULL) {
 		return DEFAULT_EFFECTS;
 	}
@@ -9018,7 +9023,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("resuming from call", temp_str(copy_address_description(&analysis->loader, ins)));
 					if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 						LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-						push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 						goto update_and_return;
 					}
 					LOG("function may return, proceeding with effects:");
@@ -9303,7 +9307,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
 								if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 									LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-									push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 									goto update_and_return;
 								}
 								LOG("function may return, proceeding with effects:");
@@ -9351,7 +9354,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										LOG("resuming from call*", temp_str(copy_address_description(&analysis->loader, ins)));
 										if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 											LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-											push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 											goto update_and_return;
 										}
 										LOG("function may return, proceeding with effects:");
@@ -9842,7 +9844,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						struct registers registers = empty_registers;
 						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, (ins_ptr)self.current_state.registers[rtld_fini_reg].value, &self);
 					}
-					goto update_and_return;
+					// this is __libc_start_main or equivalent
+					effects = (effects | EFFECT_AFTER_STARTUP) & ~EFFECT_ENTRY_POINT;
+					required_effects = (required_effects | EFFECT_AFTER_STARTUP) & ~EFFECT_ENTRY_POINT;
 				}
 				struct loaded_binary *binary = NULL;
 				function_effects more_effects = DEFAULT_EFFECTS;
@@ -9866,7 +9870,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					LOG("resuming from bl", temp_str(copy_address_description(&analysis->loader, ins)));
 					if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 						LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-						push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 						goto update_and_return;
 					}
 					LOG("function may return, proceeding with effects:");
@@ -9956,7 +9959,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("resuming from blr", temp_str(copy_address_description(&analysis->loader, ins)));
 						if ((more_effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 							LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
-							push_unreachable_breakpoint(&analysis->unreachables, next_ins(ins, &decoded));
 							goto update_and_return;
 						}
 						LOG("function may return, proceeding with effects:");
@@ -12933,21 +12935,18 @@ update_and_return:
 		LOG("final effects:");
 		log_effects(effects);
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
-		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified);
+		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified)->next_ins = next_ins(ins, &decoded);
 	} else {
 		effects &= ~EFFECT_RETURNS;
 		LOG("final effects:");
 		log_effects(effects);
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
-		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified);
+		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified)->next_ins = next_ins(ins, &decoded);
 		effects &= ~EFFECT_STICKY_EXITS;
 	}
 	if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
 		LOG("exit-only block", temp_str(copy_address_description(&analysis->loader, self.entry)));
 	}
-#if BREAK_ON_UNREACHABLES
-	push_reachable_region(&analysis->loader, &analysis->unreachables, self.entry, next_ins(ins, &decoded));
-#endif
 	entry_state->modified |= self.current_state.modified;
 	analysis->current_frame = self.next;
 	return effects;
@@ -14013,30 +14012,32 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 	if (init_array_ptr != 0) {
 		const uintptr_t *inits = (const uintptr_t *)apply_base_address(&new_binary->info, init_array_ptr);
 		for (size_t i = 0; i < init_array_count; i++) {
-			LOG("analyzing initializer function", i);
+			ins_ptr init_function = (ins_ptr)(inits[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, inits[i]) : inits[i]);
+			LOG("analyzing initializer function", temp_str(copy_address_description(&analysis->loader, init_function)));
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "init", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, (ins_ptr)(inits[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, inits[i]) : inits[i]), &new_caller);
+			analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, init_function, &new_caller);
 		}
 	}
 	if (init != 0) {
-		LOG("analyzing initializer function");
 		ins_ptr init_function = (ins_ptr)apply_base_address(&new_binary->info, init);
+		LOG("analyzing initializer function", temp_str(copy_address_description(&analysis->loader, init_function)));
 		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "init", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, init_function, &new_caller);
 	}
 	if (fini_array_ptr != 0) {
 		const uintptr_t *finis = (const uintptr_t *)apply_base_address(&new_binary->info, fini_array_ptr);
 		for (size_t i = 0; i < fini_array_count; i++) {
-			LOG("analyzing finalizer function", i);
+			ins_ptr fini_function = (ins_ptr)(finis[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, finis[i]) : finis[i]);
+			LOG("analyzing finalizer function", temp_str(copy_address_description(&analysis->loader, fini_function)));
 			struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-			analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, (ins_ptr)(finis[i] < (uintptr_t)new_binary->info.base ? (uintptr_t)apply_base_address(&new_binary->info, finis[i]) : finis[i]), &new_caller);
+			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, fini_function, &new_caller);
 		}
 	}
 	if (fini != 0) {
-		LOG("analyzing finalizer function");
 		ins_ptr fini_function = (ins_ptr)apply_base_address(&new_binary->info, fini);
+		LOG("analyzing finalizer function", temp_str(copy_address_description(&analysis->loader, fini_function)));
 		struct analysis_frame new_caller = { .address = new_binary->info.base, .description = "fini", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
-		analyze_function(analysis, EFFECT_PROCESSED | effects, &registers, fini_function, &new_caller);
+		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, fini_function, &new_caller);
 	}
 	if (binary_has_flags(new_binary, BINARY_IS_GOLANG)) {
 		void *legacy_init_task = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "main..inittask", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);

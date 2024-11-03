@@ -13,7 +13,6 @@
 #include "loader.h"
 
 #define STORE_LAST_MODIFIED 1
-#define BREAK_ON_UNREACHABLES 0
 #define RECORD_WHERE_STACK_ADDRESS_TAKEN 0
 
 // #define LOGGING
@@ -483,15 +482,10 @@ struct reachable_region {
 	ins_ptr exit;
 };
 
-struct unreachable_instructions {
-#if BREAK_ON_UNREACHABLES
-	ins_ptr *breakpoints;
-	size_t breakpoint_count;
-	size_t breakpoint_buffer_size;
-	struct reachable_region *reachable_regions;
-	size_t reachable_region_count;
-	size_t reachable_region_buffer_size;
-#endif
+struct reachable_instructions {
+	struct reachable_region *regions;
+	size_t count;
+	size_t buffer_size;
 };
 
 typedef void (*address_loaded_callback)(struct program_state *, ins_ptr, const struct analysis_frame *, void *callback_data);
@@ -506,7 +500,7 @@ struct program_state {
 	const char *ld_profile;
 	struct dlopen_path *dlopen;
 	const char *main_function_name;
-	struct unreachable_instructions unreachables;
+	struct reachable_instructions reachable;
 	ins_ptr skipped_call;
 	address_loaded_callback address_loaded;
 	void *address_loaded_data;
@@ -525,6 +519,8 @@ __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
 void log_basic_blocks(const struct program_state *analysis);
+
+void populate_reachable_regions(struct program_state *analysis);
 
 __attribute__((nonnull(1, 3, 4, 5)))
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);

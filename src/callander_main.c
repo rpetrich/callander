@@ -864,91 +864,103 @@ static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_st
 	}
 }
 
-#if BREAK_ON_UNREACHABLES
-static int compare_addresses(const void *left, const void *right, __attribute__((unused)) void *data)
-{
-	ins_ptr const *left_address = left;
-	ins_ptr const *right_address = right;
-	if ((uintptr_t)*left_address < (uintptr_t)*right_address) {
-		return -1;
-	}
-	if ((uintptr_t)*left_address > (uintptr_t)*right_address) {
-		return 1;
-	}
-	return 0;
-}
-
 static int compare_reachable_regions(const void *left, const void *right, __attribute__((unused)) void *data)
 {
 	const struct reachable_region *left_region = left;
 	const struct reachable_region *right_region = right;
-	if ((uintptr_t)left_region->exit < (uintptr_t)right_region->exit) {
-		return -1;
-	}
-	if ((uintptr_t)left_region->exit > (uintptr_t)right_region->exit) {
-		return 1;
-	}
 	if ((uintptr_t)left_region->entry < (uintptr_t)right_region->entry) {
 		return -1;
 	}
 	if ((uintptr_t)left_region->entry > (uintptr_t)right_region->entry) {
 		return 1;
 	}
+	if ((uintptr_t)left_region->exit < (uintptr_t)right_region->exit) {
+		return -1;
+	}
+	if ((uintptr_t)left_region->exit > (uintptr_t)right_region->exit) {
+		return 1;
+	}
 	return 0;
 }
 
-static void prune_unreachable_instructions(__attribute__((unused)) struct unreachable_instructions *unreachables, __attribute__((unused)) struct loader_context *loader)
+static void poke_breakpoint_region(pid_t tracee, intptr_t address, size_t size)
 {
-	size_t breakpoint_count = unreachables->breakpoint_count;
-	qsort_r_freestanding(unreachables->breakpoints, breakpoint_count, sizeof(*unreachables->breakpoints), compare_addresses, NULL);
-	for (size_t i = 1; i < breakpoint_count; i++) {
-		if (unreachables->breakpoints[i] < unreachables->breakpoints[i-1]) {
-			DIE("sorting breakpoints failed");
+	for (ssize_t i = 0; i < (ssize_t)size - INS_BREAKPOINT_LEN; i += INS_BREAKPOINT_LEN) {
+		long original_bytes;
+		intptr_t result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)address + i, &original_bytes);
+		if (result < 0) {
+			DIE("failed to peek", fs_strerror(result));
+		}
+		long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
+		result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)address + i, (void *)new_bytes);
+		if (result < 0) {
+			DIE("failed to poke", fs_strerror(result));
 		}
 	}
-	size_t reachable_region_count = unreachables->reachable_region_count;
-	if (UNLIKELY(reachable_region_count == 0)) {
+}
+
+static inline bool bsearch_address_callback(int index, void *items, void *needle)
+{
+	const struct reachable_region *regions = (const struct reachable_region *)items;
+	return (uintptr_t)regions[index].entry >= (uintptr_t)needle;
+}
+
+static void poke_breakpoints_for_section(struct program_state *analysis, pid_t tracee, uintptr_t address, size_t size)
+{
+	uintptr_t end = address + size;
+	size_t i = (size_t)bsearch_bool(analysis->reachable.count, analysis->reachable.regions, (void *)address, bsearch_address_callback);
+	for (; i < analysis->reachable.count; i++) {
+		if ((uintptr_t)analysis->reachable.regions[i].entry > end) {
+			break;
+		}
+		if ((uintptr_t)analysis->reachable.regions[i].entry > address) {
+			LOG("unreachable start", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)));
+			LOG("unreachable end", temp_str(copy_address_description(&analysis->loader, analysis->reachable.regions[i].entry)));
+			poke_breakpoint_region(tracee, translate_analysis_address_to_child(&analysis->loader, (void *)address), (size_t)analysis->reachable.regions[i].entry - address);
+		}
+		if ((uintptr_t)analysis->reachable.regions[i].exit > address) {
+			address = (uintptr_t)analysis->reachable.regions[i].exit;
+		}
+	}
+	LOG("unreachable start", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)));
+	LOG("unreachable end", temp_str(copy_address_description(&analysis->loader, (ins_ptr)end)));
+	poke_breakpoint_region(tracee, translate_analysis_address_to_child(&analysis->loader, (void *)address), end - address);
+}
+
+static void attach_unreachable_breakpoints(struct program_state *analysis, pid_t tracee)
+{
+	if (UNLIKELY(analysis->reachable.count == 0)) {
 		return;
 	}
-	qsort_r_freestanding(unreachables->reachable_regions, reachable_region_count, sizeof(*unreachables->reachable_regions), compare_reachable_regions, NULL);
-	for (size_t i = 1; i < reachable_region_count; i++) {
-		if (unreachables->reachable_regions[i].exit < unreachables->reachable_regions[i-1].exit) {
-			DIE("sorting reachable regions failed");
+	qsort_r_freestanding(analysis->reachable.regions, analysis->reachable.count, sizeof(*analysis->reachable.regions), compare_reachable_regions, NULL);
+	for (struct loaded_binary *binary = analysis->loader.binaries; binary != NULL; binary = binary->next) {
+		if ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) {
+			continue;
 		}
-		if (unreachables->reachable_regions[i].exit == unreachables->reachable_regions[i-1].exit) {
-			if (unreachables->reachable_regions[i].entry < unreachables->reachable_regions[i-1].entry) {
-				DIE("sorting reachable regions failed");
-			}
-		}
-	}
-	size_t j = 0;
-	ins_ptr last_breakpoint = NULL;
-	for (size_t i = 0; i < breakpoint_count; i++) {
-		ins_ptr breakpoint = unreachables->breakpoints[i];
-		if (breakpoint == last_breakpoint) {
-			// prune duplicates
-			unreachables->breakpoints[i] = NULL;
-		} else {
-			last_breakpoint = breakpoint;
-			// prune breakpoints that were marked as reachable
-			while ((uintptr_t)breakpoint >= (uintptr_t)unreachables->reachable_regions[j].exit) {
-				j++;
-				if (UNLIKELY(j == reachable_region_count)) {
-					return;
+		if (LIKELY(binary->has_sections)) {
+			size_t count = binary->info.section_entry_count;
+			size_t entry_size = binary->info.section_entry_size;
+			const char *sections = (const char *)binary->sections.sections;
+			for (size_t i = 0; i < count; i++) {
+				const ElfW(Shdr) *section = (const ElfW(Shdr) *)(sections + i * entry_size);
+				if (section->sh_addr != 0) {
+					uint64_t flags = section->sh_flags;
+					if ((flags & (SHF_ALLOC|SHF_EXECINSTR)) == (SHF_ALLOC|SHF_EXECINSTR)) {
+						poke_breakpoints_for_section(analysis, tracee, apply_base_address(&binary->info, section->sh_addr), section->sh_size);
+					}
 				}
-				LOG("advancing to entry", temp_str(copy_address_description(loader, unreachables->reachable_regions[j].entry)));
-				LOG("advancing to exit", temp_str(copy_address_description(loader, unreachables->reachable_regions[j].exit)));
 			}
-			if ((uintptr_t)unreachables->reachable_regions[j].entry <= (uintptr_t)breakpoint) {
-				unreachables->breakpoints[i] = NULL;
-				LOG("pruning unreachable instruction that was later discovered to be reachable", temp_str(copy_address_description(loader, breakpoint)));
-			} else {
-				LOG("keeping unreachable instruction", temp_str(copy_address_description(loader, breakpoint)));
+		} else {
+			const char *phbuffer = (const char *)binary->info.program_header;
+			for (size_t i = 0; i < binary->info.header_entry_count; i++) {
+				const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[binary->info.header_entry_size * i];
+				if (ph->p_type == PT_LOAD && (ph->p_flags & PF_X) == PF_X) {
+					poke_breakpoints_for_section(analysis, tracee, apply_base_address(&binary->info, ph->p_vaddr), ph->p_memsz);
+				}
 			}
 		}
 	}
 }
-#endif
 
 static void add_dlopen_path(struct program_state *analysis, const char *path)
 {
@@ -1430,6 +1442,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	bool show_binaries = false;
 	bool show_basic_blocks = false;
 	bool allow_unexpected = false;
+	bool trap_unreachable_code = false;
 	bool mutable_binary_mappings = true;
 	const char *profile_path = NULL;
 	bool strict_profile = false;
@@ -1543,6 +1556,8 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			mutable_binary_mappings = true;
 		} else if (fs_strcmp(arg, "--immutable-binary-mappings") == 0) {
 			mutable_binary_mappings = false;
+		} else if (fs_strcmp(arg, "--trap-unreachable-code") == 0) {
+			trap_unreachable_code = true;
 		} else if (fs_strcmp(arg, "--profile") == 0) {
 			profile_path = argv[executable_index+1];
 			if (profile_path == NULL) {
@@ -2052,31 +2067,11 @@ skip_analysis:
 			DIE("failed to find base address for", binary->path);
 		}
 	}
-	// patch in unreachable breakpoints
-#if BREAK_ON_UNREACHABLES
-	if (attach) {
-		prune_unreachable_instructions(&analysis.unreachables, &analysis.loader);
-		size_t breakpoint_count = analysis.unreachables.breakpoint_count;
-		for (size_t i = 0; i < breakpoint_count; i++) {
-			ins_ptr addr = analysis.unreachables.breakpoints[i];
-			if (addr != NULL) {
-				LOG("patching breakpoint to unreachable instruction", temp_str(copy_address_description(&analysis.loader, addr)));
-				void *child_addr = (void *)translate_analysis_address_to_child(&analysis.loader, addr);
-				if (child_addr != NULL) {
-					result = fs_ptrace(PTRACE_PEEKTEXT, tracee, child_addr, &original_bytes);
-					if (result < 0) {
-						DIE("failed to peek", fs_strerror(result));
-					}
-					new_bytes = ins_breakpoint_poke_pattern(original_bytes);
-					result = fs_ptrace(PTRACE_POKETEXT, tracee, child_addr, (void *)new_bytes);
-					if (result < 0) {
-						DIE("failed to poke", fs_strerror(result));
-					}
-				}
-			}
-		}
+	// patch breakpoint instructions over unreachable code
+	if (trap_unreachable_code) {
+		populate_reachable_regions(&analysis);
+		attach_unreachable_breakpoints(&analysis, tracee);
 	}
-#endif
 #if 0
 	{
 		for (uint32_t i = 0; i < analysis.search.mask; i++) {
@@ -2345,18 +2340,23 @@ skip_analysis:
 							break;
 						}
 					}
-#if BREAK_ON_UNREACHABLES
-					size_t breakpoint_count = analysis.unreachables.breakpoint_count;
-					for (size_t i = 0; i < breakpoint_count; i++) {
-						ins_ptr addr = analysis.unreachables.breakpoints[i];
-						uintptr_t child_addr = translate_analysis_address_to_child(&analysis.loader, addr);
-						if (child_addr == breakpoint_address) {
-							ERROR("assumed unreachable instruction was somehow reached", temp_str(copy_address_description(&analysis.loader, addr)));
-							ERROR("perhaps callander's analysis is insufficient?");
-							break;
+					for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
+						if (binary->child_base <= breakpoint_address && breakpoint_address < binary->child_base + binary->info.size) {
+							ins_ptr translated = (ins_ptr)(breakpoint_address - binary->child_base + (uintptr_t)binary->info.base);
+							ERROR("trapped at", temp_str(copy_address_description(&analysis.loader, translated)));
+							if (trap_unreachable_code) {
+								size_t i = (size_t)bsearch_bool(analysis.reachable.count, analysis.reachable.regions, (void *)translated, bsearch_address_callback);
+								if (i < analysis.reachable.count && analysis.reachable.regions[i].entry <= translated && translated < analysis.reachable.regions[i].exit) {
+									ERROR("in reachable block");
+								} else {
+									ERROR("assumed unreachable instruction was somehow reached");
+									DIE("perhaps callander's analysis is insufficient?");
+								}
+							}
+							goto error_exit;
 						}
 					}
-#endif
+					DIE("trapped at", breakpoint_address);
 				} else {
 					result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 					if (result < 0) {
@@ -2364,6 +2364,7 @@ skip_analysis:
 					}
 					goto wait_for_child;
 				}
+			error_exit:
 				free_loader_context(&analysis.loader);
 				ERROR_FLUSH();
 				return 128 + WSTOPSIG(status);
