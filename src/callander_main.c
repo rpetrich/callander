@@ -1946,7 +1946,7 @@ skip_analysis:
 
 	if (skip_running) {
 		if (show_basic_blocks) {
-			log_basic_blocks(&analysis);
+			log_basic_blocks(&analysis, EFFECT_AFTER_STARTUP);
 		}
 		if (show_permitted) {
 			log_used_syscalls(&analysis.loader, &analysis.syscalls, true, true, true);
@@ -2089,7 +2089,7 @@ skip_analysis:
 	}
 #endif
 	if (show_basic_blocks) {
-		log_basic_blocks(&analysis);
+		log_basic_blocks(&analysis, EFFECT_AFTER_STARTUP);
 	}
 	cleanup_searched_instructions(&analysis.search);
 #ifdef STATS

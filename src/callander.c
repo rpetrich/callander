@@ -1852,7 +1852,7 @@ static char *copy_block_entry_description(const struct loader_context *loader, i
 	return buf;
 }
 
-void log_basic_blocks(const struct program_state *analysis)
+void log_basic_blocks(const struct program_state *analysis, function_effects required_effects)
 {
 	struct registers state = { 0 };
 	struct searched_instruction_entry *table = analysis->search.table;

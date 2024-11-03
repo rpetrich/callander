@@ -518,7 +518,7 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 
-void log_basic_blocks(const struct program_state *analysis);
+void log_basic_blocks(const struct program_state *analysis, function_effects required_effects);
 
 void populate_reachable_regions(struct program_state *analysis);
 
