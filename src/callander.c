@@ -14394,6 +14394,7 @@ struct register_state translate_register_state_to_child(struct loader_context *l
 
 static int compare_found_syscalls(const void *a, const void *b, void *data)
 {
+	struct loader_context *loader = data;
 	const struct recorded_syscall *syscalla = a;
 	const struct recorded_syscall *syscallb = b;
 	if (syscalla->nr < syscallb->nr) {
@@ -14405,17 +14406,14 @@ static int compare_found_syscalls(const void *a, const void *b, void *data)
 	int attributes = info_for_syscall(syscalla->nr).attributes;
 	if ((attributes & SYSCALL_CAN_BE_FROM_ANYWHERE) == 0) {
 		uintptr_t ins_a = (uintptr_t)syscalla->ins;
+		struct loaded_binary *binary_a = binary_for_address(loader, syscalla->ins);
+		if (binary_a != NULL) {
+			ins_a += ((uintptr_t)binary_a->id << 48) - (uintptr_t)binary_a->info.base;
+		}
 		uintptr_t ins_b = (uintptr_t)syscallb->ins;
-		if (data != NULL) {
-			struct loader_context *loader = data;
-			struct loaded_binary *binary_a = binary_for_address(loader, syscalla->ins);
-			if (binary_a != NULL) {
-				ins_a += ((uintptr_t)binary_a->id << 48) - (uintptr_t)binary_a->info.base;
-			}
-			struct loaded_binary *binary_b = binary_for_address(loader, syscallb->ins);
-			if (binary_b != NULL) {
-				ins_b += ((uintptr_t)binary_b->id << 48) - (uintptr_t)binary_b->info.base;
-			}
+		struct loaded_binary *binary_b = binary_for_address(loader, syscallb->ins);
+		if (binary_b != NULL) {
+			ins_b += ((uintptr_t)binary_b->id << 48) - (uintptr_t)binary_b->info.base;
 		}
 		if (ins_a < ins_b) {
 			return -1;
@@ -14426,26 +14424,42 @@ static int compare_found_syscalls(const void *a, const void *b, void *data)
 	}
 	for (int i = 0; i < (attributes & SYSCALL_ARGC_MASK); i++) {
 		int reg = syscall_argument_abi_register_indexes[i];
-		const struct register_state *register_a = &syscalla->registers.registers[reg];
-		const struct register_state *register_b = &syscallb->registers.registers[reg];
-		// bool a_is_known = register_is_partially_known(register_a);
-		// bool b_is_known = register_is_partially_known(register_b);
-		// if (b_is_known && !a_is_known) {
-		// 	return -1;
-		// }
-		// if (!b_is_known && a_is_known) {
-		// 	return 1;
-		// }
-		if (register_a->value < register_b->value) {
+		const struct register_state register_a = syscalla->registers.registers[reg];
+		const struct register_state register_b = syscallb->registers.registers[reg];
+		struct loaded_binary *binary_a = binary_for_address(loader, (void *)register_a.value);
+		struct loaded_binary *binary_b = binary_for_address(loader, (void *)register_b.value);
+		if (binary_a != binary_b) {
+			int id_a = binary_a != NULL ? binary_a->id : -1;
+			int id_b = binary_b != NULL ? binary_b->id : -1;
+			if (id_a < id_b) {
+				return -1;
+			}
+			if (id_a > id_b) {
+				return 1;
+			}
+		}
+		if (register_a.value < register_b.value) {
 			return -1;
 		}
-		if (register_a->value > register_b->value) {
+		if (register_a.value > register_b.value) {
 			return 1;
 		}
-		if (register_a->max < register_b->max) {
+		binary_a = binary_for_address(loader, (void *)register_a.max);
+		binary_b = binary_for_address(loader, (void *)register_b.max);
+		if (binary_a != binary_b) {
+			int id_a = binary_a != NULL ? binary_a->id : -1;
+			int id_b = binary_b != NULL ? binary_b->id : -1;
+			if (id_a < id_b) {
+				return -1;
+			}
+			if (id_a > id_b) {
+				return 1;
+			}
+		}
+		if (register_a.max < register_b.max) {
 			return -1;
 		}
-		if (register_a->max > register_b->max) {
+		if (register_a.max > register_b.max) {
 			return 1;
 		}
 	}
