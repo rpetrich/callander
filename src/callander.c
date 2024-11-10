@@ -781,12 +781,6 @@ static inline void dump_registers(const struct loader_context *loader, const str
 					case REGISTER_X28:
 						ERROR_NOPREFIX("r28", temp_str(copy_register_state_description(loader, state->registers[i])));
 						break;
-					case REGISTER_X29:
-						ERROR_NOPREFIX("r29", temp_str(copy_register_state_description(loader, state->registers[i])));
-						break;
-					// case REGISTER_X30:
-					// 	ERROR_NOPREFIX("r30", temp_str(copy_register_state_description(loader, state->registers[i])));
-					// 	break;
 #else
 #error "Unsupported architecture"
 #endif
@@ -3857,7 +3851,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			return AARCH64_REGISTER_INVALID;
 		}
 		case MEM_REG: {
-			if (operand->reg[0] == REG_SP) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				*out_state = regs->registers[REGISTER_STACK_0];
 				if (out_size != NULL) {
 					*out_size = OPERATION_SIZE_DWORD;
@@ -3867,7 +3861,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			break;
 		}
 		case MEM_OFFSET: {
-			if (operand->reg[0] == REG_SP && (operand->immediate & 0x7) == 0) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP && (operand->immediate & 0x7) == 0) {
 				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
 				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
 					*out_state = regs->registers[reg];
@@ -3880,7 +3874,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			break;
 		}
 		case MEM_PRE_IDX: {
-			if (operand->reg[0] == REG_SP) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				// adjust the stack
 				add_to_stack(loader, regs, operand->immediate, ins);
 				*out_state = regs->registers[REGISTER_STACK_0];
@@ -3893,7 +3887,7 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			// fallthrough
 		}
 		case MEM_POST_IDX: {
-			if (operand->reg[0] == REG_SP) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				// adjust the stack
 				add_to_stack(loader, regs, operand->immediate, ins);
 			} else {
@@ -3962,7 +3956,7 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 			return AARCH64_REGISTER_INVALID;
 		}
 		case MEM_REG: {
-			if (operand->reg[0] == REG_SP) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				if (out_size != NULL) {
 					*out_size = OPERATION_SIZE_DWORD;
 				}
@@ -3971,7 +3965,7 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 			break;
 		}
 		case MEM_OFFSET: {
-			if (operand->reg[0] == REG_SP && (operand->immediate & 0x7) == 0) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP && (operand->immediate & 0x7) == 0) {
 				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
 				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
 					if (out_size != NULL) {
@@ -3983,7 +3977,7 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 			break;
 		}
 		case MEM_PRE_IDX: {
-			if (operand->reg[0] == REG_SP) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				// adjust the stack
 				add_to_stack(loader, regs, operand->immediate, ins);
 				if (out_size != NULL) {
@@ -3995,7 +3989,7 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 			// fallthrough
 		}
 		case MEM_POST_IDX: {
-			if (operand->reg[0] == REG_SP) {
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				// adjust the stack
 				add_to_stack(loader, regs, operand->immediate, ins);
 			} else {

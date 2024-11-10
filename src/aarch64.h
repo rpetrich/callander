@@ -24,13 +24,13 @@ struct aarch64_instruction {
 static inline enum aarch64_register_index register_index_from_register(enum Register reg)
 {
 	switch (reg) {
-		case REG_W0...REG_W30:
+		case REG_W0...REG_W29:
 			return (enum aarch64_register_index)(reg - REG_W0);
-		case REG_X0...REG_X30:
+		case REG_X0...REG_X29:
 			return (enum aarch64_register_index)(reg - REG_X0);
-		case REG_B0...REG_B30:
+		case REG_B0...REG_B29:
 			return (enum aarch64_register_index)(reg - REG_B0);
-		case REG_H0...REG_H30:
+		case REG_H0...REG_H29:
 			return (enum aarch64_register_index)(reg - REG_H0);
 		case REG_WSP:
 		case REG_SP:

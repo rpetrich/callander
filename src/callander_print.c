@@ -5594,10 +5594,6 @@ const char *name_for_register(int register_index)
 			return "r27";
 		case REGISTER_X28:
 			return "r28";
-		case REGISTER_X29:
-			return "r29";
-		// case REGISTER_X30:
-		// 	return "r30";
 		case REGISTER_SP:
 			return "sp";
 #else
