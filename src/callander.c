@@ -383,6 +383,9 @@ static inline void clear_match(const struct loader_context *loader, struct regis
 			clear_register(&regs->registers[i]);
 			mask |= regs->matches[i];
 			regs->matches[i] = 0;
+#if STORE_LAST_MODIFIED
+			regs->last_modify_ins[i] = ins;
+#endif
 		}
 	}
 	if (UNLIKELY(mask != 0)) {
@@ -12898,12 +12901,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (SHOULD_LOG && register_is_partially_known(&self.current_state.registers[i])) {
 						ERROR_NOPREFIX("clearing", name_for_register(i));
 					}
+#if STORE_LAST_MODIFIED
+					if (register_is_partially_known(&self.current_state.registers[i])) {
+						self.current_state.last_modify_ins[i] = ins;
+					}
+#endif
 					clear_register(&self.current_state.registers[i]);
 					self.current_state.sources[i] = 0;
 					self.current_state.matches[i] = 0;
-#if STORE_LAST_MODIFIED
-					self.current_state.last_modify_ins[i] = ins;
-#endif
 				}
 			}
 			for (int i = 0; i < REGISTER_STACK_0; i++) {
