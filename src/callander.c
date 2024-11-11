@@ -9822,22 +9822,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("found bl", temp_str(copy_function_call_description(&analysis->loader, dest, &self.current_state)));
 				if (required_effects & EFFECT_ENTRY_POINT) {
 					int main_reg = sysv_argument_abi_register_indexes[0];
-					if (register_is_exactly_known(&self.current_state.registers[main_reg]) && self.current_state.registers[main_reg].value != 0) {
+					if (register_is_exactly_known(&self.current_state.registers[main_reg]) && binary_for_address(&analysis->loader, (ins_ptr)self.current_state.registers[main_reg].value) != NULL) {
 						analysis->main = self.current_state.registers[main_reg].value;
-						LOG("bl in init, assuming arg 0 is the main function");
+						LOG("bl in init, assuming arg 0 is the main function", temp_str(copy_address_description(&analysis->loader, (ins_ptr)analysis->main)));
 						self.description = "main";
 						struct registers registers = empty_registers;
 						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, (ins_ptr)self.current_state.registers[main_reg].value, &self);
 					}
 					int fini_reg = sysv_argument_abi_register_indexes[4];
-					if (register_is_exactly_known(&self.current_state.registers[fini_reg]) && self.current_state.registers[fini_reg].value != 0) {
+					if (register_is_exactly_known(&self.current_state.registers[fini_reg]) && binary_for_address(&analysis->loader, (ins_ptr)self.current_state.registers[fini_reg].value) != NULL) {
 						LOG("bl in init, assuming arg 4 is the fini function");
 						self.description = "fini";
 						struct registers registers = empty_registers;
 						analyze_function(analysis, (required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, (ins_ptr)self.current_state.registers[fini_reg].value, &self);
 					}
 					int rtld_fini_reg = sysv_argument_abi_register_indexes[4];
-					if (register_is_exactly_known(&self.current_state.registers[rtld_fini_reg]) && self.current_state.registers[rtld_fini_reg].value != 0) {
+					if (register_is_exactly_known(&self.current_state.registers[rtld_fini_reg]) && binary_for_address(&analysis->loader, (ins_ptr)self.current_state.registers[rtld_fini_reg].value) != NULL) {
 						LOG("bl in init, assuming arg 4 is the rtld_fini function");
 						self.description = "rtld_fini";
 						struct registers registers = empty_registers;
