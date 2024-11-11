@@ -5556,7 +5556,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					break;
 				}
 				// check if bit couldn't ever be cleared
-				if (continue_state.value > bit) {
+				if ((continue_state.value & bit) && ((continue_state.value | (bit - 1)) <= continue_state.max)) {
 					skip_jump = true;
 					LOG("skipping jump", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
 					break;
