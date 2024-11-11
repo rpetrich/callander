@@ -12347,7 +12347,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("stnt1*, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
-			case ARM64_STR: {
+			case ARM64_STR:
+			case ARM64_STRB:
+			case ARM64_STRH: {
 				enum ins_operand_size size;
 				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
@@ -12372,14 +12374,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				pending_stack_clear &= ~mask_for_register(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_STRB:
-				LOG("strb, memory not supported yet");
-				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
-				break;
-			case ARM64_STRH:
-				LOG("strh, memory not supported yet");
-				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
-				break;
 			case ARM64_STSET:
 			case ARM64_STSETB:
 			case ARM64_STSETH:
