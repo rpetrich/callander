@@ -1,13 +1,13 @@
 callander: permitted syscalls: setxattr(any, any, any, any, 0) @ ld-musl-aarch64.so.1+0x2553c(setxattr+16)
 getxattr(any, any, any, any) @ ld-musl-aarch64.so.1+0x254e0(getxattr+4)
-listxattr(any, any, any) @ ld-musl-aarch64.so.1+0x25508(listxattr+4)
+listxattr(any, NULL-0x7fffffffffffffff, NULL-0x7fffffffffffffff) @ ld-musl-aarch64.so.1+0x25508(listxattr+4)
 getcwd(any, 0x1000) @ ld-musl-aarch64.so.1+0x68adc(getcwd+36)
 getcwd(non-NULL, 1025) @ ld-musl-aarch64.so.1+0x68adc(getcwd+36)
 dup(any) @ ld-musl-aarch64.so.1+0x68624(dup+16)
 dup3(any, STDIN_FILENO-STDERR_FILENO, 0) @ ld-musl-aarch64.so.1+0x68650(dup2+28)
+fcntl(STDIN_FILENO-0xfffffffffffffffe, F_SETFL, 0x20000) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
-fcntl(any, F_SETFL, 0x20000) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_SETFL, 0x20800) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21194(open+136)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x461c4(socket+132)
@@ -81,8 +81,8 @@ pselect6(any, /usr/bin/vim+0x31bdd8, /usr/bin/vim+0x31be58, /usr/bin/vim+0x31bed
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 pselect6(any, /usr/bin/vim+0x31bdd8, /usr/bin/vim+0x31be58, /usr/bin/vim+0x31bed8, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
-ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
-ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
+ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readlinkat(AT_FDCWD, any, any, 0xfff-0x1000) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f900, any, 512) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
@@ -189,7 +189,6 @@ sendto(any, any, any u32, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x6
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 getsockopt(STDIN_FILENO-0x3ff, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
-getsockopt(0xffffffff80000000--1, SOL_SOCKET, SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0x4200c(getsockopt+28)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x607bc
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x607bc
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)

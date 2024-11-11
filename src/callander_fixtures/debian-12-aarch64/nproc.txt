@@ -22,10 +22,10 @@ lseek(any, any, any) @ libc.so.6+0xd9fec(lseek+12)
 read(any, any, any) @ libc.so.6+0xd9e64(__read+36)
 read(any, any, any) @ libc.so.6+0xd9ea8(__read+104)
 read(any, any, any) @ libc.so.6+0xdef88(__read_nocancel+8)
-write(any, any, non-NULL) @ libc.so.6+0xd9f34(write+36)
-write(any, any, non-NULL) @ libc.so.6+0xd9f78(write+104)
-write(any, any, non-NULL) @ libc.so.6+0xdf008(__write_nocancel+8)
-writev(any u32, any, any) @ ld-linux-aarch64.so.1+0xb69c
+write(any, any, any) @ libc.so.6+0xd9f34(write+36)
+write(any, any, any) @ libc.so.6+0xd9f78(write+104)
+write(any, any, any) @ libc.so.6+0xdf008(__write_nocancel+8)
+writev(any, any, any) @ ld-linux-aarch64.so.1+0xb69c
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a9c
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdefc8(__pread64_nocancel+8)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd93bc(fstatat64+12)
@@ -52,7 +52,6 @@ sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xd0848(sched_setscheduler
 sched_getscheduler(any u32) @ libc.so.6+0xd0888(__sched_getscheduler+8)
 sched_getparam(any u32, any) @ libc.so.6+0xd0808(sched_getparam+8)
 sched_getaffinity(0, 128, any) @ libc.so.6+0xd09b8(sched_getaffinity+24)
-sched_getaffinity(0, INT_MAX, any) @ libc.so.6+0xd09b8(sched_getaffinity+24)
 sched_getaffinity(0, 0x1000, any) @ libc.so.6+0xe6da8
 sched_yield() @ libc.so.6+0xd08c8(sched_yield+8)
 sched_get_priority_max(1) @ libc.so.6+0xd0908(__sched_get_priority_max+8)

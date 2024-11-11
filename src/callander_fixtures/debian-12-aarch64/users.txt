@@ -25,10 +25,10 @@ lseek(any, any, any) @ libc.so.6+0xd9fec(lseek+12)
 read(any, any, any) @ libc.so.6+0xd9e64(__read+36)
 read(any, any, any) @ libc.so.6+0xd9ea8(__read+104)
 read(any, any, any) @ libc.so.6+0xdef88(__read_nocancel+8)
-write(any, any, non-NULL) @ libc.so.6+0xd9f34(write+36)
-write(any, any, non-NULL) @ libc.so.6+0xd9f78(write+104)
-write(any, any, non-NULL) @ libc.so.6+0xdf008(__write_nocancel+8)
-writev(any u32, any, any) @ ld-linux-aarch64.so.1+0xb69c
+write(any, any, any) @ libc.so.6+0xd9f34(write+36)
+write(any, any, any) @ libc.so.6+0xd9f78(write+104)
+write(any, any, any) @ libc.so.6+0xdf008(__write_nocancel+8)
+writev(any, any, any) @ ld-linux-aarch64.so.1+0xb69c
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a9c
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdefc8(__pread64_nocancel+8)
 pread64(any, any, 400, any) @ libc.so.6+0xdefc8(__pread64_nocancel+8)
@@ -61,7 +61,7 @@ sched_yield() @ libc.so.6+0xd08c8(sched_yield+8)
 sched_get_priority_max(1) @ libc.so.6+0xd0908(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd0948(sched_get_priority_min+8)
 restart_syscall()
-kill(0x1-0xffffffff, 0x0) @ libc.so.6+0x3a9c8(kill+8)
+kill(0-INT_MAX, 0x0) @ libc.so.6+0x3a9c8(kill+8)
 tgkill(any, any u32, SIGABRT) @ libc.so.6+0x809dc
 tgkill(any, any u32, SIGFPE) @ libc.so.6+0x809dc
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a0c

@@ -32,12 +32,12 @@ read(any, any, any) @ /usr/sbin/ldconfig.real+0x37b90
 read(any, any, any) @ /usr/sbin/ldconfig.real+0x388f8
 write(any, any, any) @ /usr/sbin/ldconfig.real+0x37c1c
 write(any, any, any) @ /usr/sbin/ldconfig.real+0x37c60
-write(any, any, non-NULL) @ /usr/sbin/ldconfig.real+0x38938
+write(any, any, any) @ /usr/sbin/ldconfig.real+0x38938
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x38ad4
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x38b14
-writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0x6cc48
+writev(any, any, any) @ /usr/sbin/ldconfig.real+0x6cc48
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ /usr/sbin/ldconfig.real+0x5bbe8
-pread64(any, any, 400, any) @ /usr/sbin/ldconfig.real+0x5bbe8
+pread64(any, any, 0x20-0xffff, any) @ /usr/sbin/ldconfig.real+0x5bbe8
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x745dc
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x7463c
 readlinkat(AT_FDCWD, any, any, 4095) @ /usr/sbin/ldconfig.real+0x384f8
@@ -126,6 +126,7 @@ munmap(any, any) @ /usr/sbin/ldconfig.real+0x38e48
 mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/sbin/ldconfig.real+0x3a8d4
 mmap(any, any, any, any, any, any) @ /usr/sbin/ldconfig.real+0x38dd8
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x38e88
+madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x38ec8
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x38ec8
 prlimit64(0, RLIMIT_STACK, 0, any) @ /usr/sbin/ldconfig.real+0x38984
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x85690

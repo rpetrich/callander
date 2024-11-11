@@ -105,8 +105,8 @@ pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
-ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
-ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
+ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readlinkat(AT_FDCWD, any, any, 4095) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f900, any, 512) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
@@ -249,7 +249,7 @@ mremap(any, NULL-0xfffffffffffff000, 0x8000000000000000-0xffffffffffffffff, MREM
 add_key(any, any, any, any, any u32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 request_key(any, any, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 keyctl(9, any u32, any u32, any, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-keyctl(11, NULL-0xffffffa0, any, any, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+keyctl(11, NULL-0xffffffa0, any, NULL-0x7fffffffffffffff, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487c0(_Fork+48)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x6077c
 mmap(0, NULL-0x7ffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)

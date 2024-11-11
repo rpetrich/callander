@@ -3,7 +3,6 @@ fcntl(any, F_SETFD, 1) @ libc.so.6+0xdec7c
 fcntl(any, F_GETFL, any) @ libc.so.6+0xdec7c
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 3) @ libc.so.6+0xded40
 fcntl(any, F_GETFL-F_SETFL, any) @ libc.so.6+0xded40
-fcntl(0xffffffff80000000--1, F_DUPFD, 3) @ libc.so.6+0xded40
 inotify_init1(0) @ libc.so.6+0xe7ec8(inotify_init+8)
 inotify_add_watch(any u32, any, any u32) @ libc.so.6+0xe9248(inotify_add_watch+8)
 inotify_rm_watch(any u32, any u32) @ libc.so.6+0xe92c8(inotify_rm_watch+8)
@@ -29,10 +28,10 @@ lseek(any, any, any) @ libc.so.6+0xd9fec(lseek+12)
 read(any, any, any) @ libc.so.6+0xd9e64(__read+36)
 read(any, any, any) @ libc.so.6+0xd9ea8(__read+104)
 read(any, any, any) @ libc.so.6+0xdef88(__read_nocancel+8)
-write(any, any, non-NULL) @ libc.so.6+0xd9f34(write+36)
-write(any, any, non-NULL) @ libc.so.6+0xd9f78(write+104)
-write(any, any, non-NULL) @ libc.so.6+0xdf008(__write_nocancel+8)
-writev(any u32, any, any) @ ld-linux-aarch64.so.1+0xb69c
+write(any, any, any) @ libc.so.6+0xd9f34(write+36)
+write(any, any, any) @ libc.so.6+0xd9f78(write+104)
+write(any, any, any) @ libc.so.6+0xdf008(__write_nocancel+8)
+writev(any, any, any) @ ld-linux-aarch64.so.1+0xb69c
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a9c
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdefc8(__pread64_nocancel+8)
 ppoll(0, 0, 0, 0, any) @ libc.so.6+0xb8a1c(pause+44)

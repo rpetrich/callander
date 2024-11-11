@@ -8,12 +8,12 @@ write(any, non-NULL, any) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(/usr/bin/setpriv+0xcf40, O_RDWR, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
 open(/usr/bin/setpriv+0xd2c0, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b1e9(fopen64+85)
-open(libcap-ng.so.0+0x502a, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(/usr/bin/setpriv+0xc063, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(/usr/bin/setpriv+0xcf40, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-open(libcap-ng.so.0+0x502a, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+open(libcap-ng.so.0+0x502a, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 open(/usr/bin/setpriv+0xc063, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 open(/usr/bin/setpriv+0xcf40, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+open(libcap-ng.so.0+0x502a, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x57f81(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x4a10b(__stdio_close*+17)
 close(any) @ ld-musl-x86_64.so.1+0x4b232(fopen64+158)

@@ -31,10 +31,10 @@ lseek(any, any, any) @ libc.so.6+0xd9fec(lseek+12)
 read(any, any, any) @ libc.so.6+0xd9e64(__read+36)
 read(any, any, any) @ libc.so.6+0xd9ea8(__read+104)
 read(any, any, any) @ libc.so.6+0xdef88(__read_nocancel+8)
-write(any, any, non-NULL) @ libc.so.6+0xd9f34(write+36)
-write(any, any, non-NULL) @ libc.so.6+0xd9f78(write+104)
-write(any, any, non-NULL) @ libc.so.6+0xdf008(__write_nocancel+8)
-writev(any u32, any, any) @ ld-linux-aarch64.so.1+0xb69c
+write(any, any, any) @ libc.so.6+0xd9f34(write+36)
+write(any, any, any) @ libc.so.6+0xd9f78(write+104)
+write(any, any, any) @ libc.so.6+0xdf008(__write_nocancel+8)
+writev(any, any, any) @ ld-linux-aarch64.so.1+0xb69c
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a9c
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdefc8(__pread64_nocancel+8)
 ppoll(any, 1, any, 0, 0) @ libc.so.6+0xdde74(__poll+148)

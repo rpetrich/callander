@@ -26,8 +26,8 @@ ioprio_get(1, any u32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 mkdirat(AT_FDCWD, any, 0700) @ ld-musl-aarch64.so.1+0x52e5c(mkdir+24)
 unlinkat(AT_FDCWD, non-NULL, 0) @ ld-musl-aarch64.so.1+0x695d0(unlink+24)
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ ld-musl-aarch64.so.1+0x57228(rename+28)
-statfs(libsensors.so.5+0x200c8, any) @ ld-musl-aarch64.so.1+0x52f34(statfs+36)
 statfs(/usr/bin/htop+0x39f92, any) @ ld-musl-aarch64.so.1+0x52f34(statfs+36)
+statfs(libsensors.so.5+0x200c8, any) @ ld-musl-aarch64.so.1+0x52f34(statfs+36)
 statfs(/usr/bin/htop+0x39f92, any) @ ld-musl-aarch64.so.1+0x52fb0(statvfs+52)
 faccessat(AT_FDCWD, non-NULL, R_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 faccessat(AT_FDCWD, /usr/bin/htop+0x39fa2, F_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
@@ -35,7 +35,13 @@ faccessat(any u32, any, any u32) @ ld-musl-aarch64.so.1+0x68714(checker*+64)
 faccessat(AT_FDCWD, any, F_OK) @ ld-musl-aarch64.so.1+0x6878c(faccessat+52)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(STDIN_FILENO-0xfffffffffffffffe, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, O_RDONLY-O_WRONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_PATH, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_PATH, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(STDIN_FILENO-0xfffffffffffffffe, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, any, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -69,8 +75,8 @@ readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x5373c(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-pselect6(any, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-pselect6(any, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+pselect6(0x1-0x400, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+pselect6(0x1-0x400, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
 ppoll(any, 0x1-0x2, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
 ppoll(any, 0x1-0x2, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -116,8 +122,6 @@ clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 sched_setaffinity(any, 8, any) @ ld-musl-aarch64.so.1+0x51008(sched_setaffinity+16)
 sched_getaffinity(any, 128, any) @ ld-musl-aarch64.so.1+0x5103c(sched_getaffinity+16)
-sched_get_priority_max(0xffffffff80000000-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x51120(sched_get_priority_max+16)
-sched_get_priority_min(0xffffffff80000000-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x51140(sched_get_priority_min+16)
 restart_syscall()
 kill(any, any) @ ld-musl-aarch64.so.1+0x51f28(kill+20)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20cb8(abort+84)

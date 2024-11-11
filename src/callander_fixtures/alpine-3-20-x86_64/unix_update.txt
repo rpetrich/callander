@@ -1,15 +1,15 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4edfb(__stdio_read*+145)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
-open(ld-musl-x86_64.so.1+0x9d09a, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(ld-musl-x86_64.so.1+0x9d1bc, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(ld-musl-x86_64.so.1+0x9d1db, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/unix_update+0x502c, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/unix_update+0x503c, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/unix_update+0x5144, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/unix_update+0x515b, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/unix_update+0x51a0, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/unix_update+0x51ad, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(ld-musl-x86_64.so.1+0x9d09a, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(ld-musl-x86_64.so.1+0x9d1bc, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(ld-musl-x86_64.so.1+0x9d1db, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)

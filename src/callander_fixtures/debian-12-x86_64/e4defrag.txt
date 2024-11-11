@@ -207,9 +207,9 @@ openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf8106(openat+19
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 openat(AT_FDCWD, non-NULL, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xfceef(__open_nocancel+63)
-openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 openat(AT_FDCWD, /usr/sbin/e4defrag+0x625e, O_WRONLY|O_CREAT|O_APPEND-O_RDWR|O_CREAT|O_APPEND, 0100) @ libc.so.6+0xfceef(__open_nocancel+63)
 openat(AT_FDCWD, /usr/sbin/e4defrag+0x625e, O_WRONLY|O_CREAT|O_APPEND-O_RDWR|O_CREAT|O_APPEND, 0666) @ libc.so.6+0xfceef(__open_nocancel+63)
+openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfceef(__open_nocancel+63)
 openat(STDIN_FILENO-0xfffffffe, NULL-0xfffffffffffffffe, O_RDONLY|O_NONBLOCK|O_DIRECTORY, any) @ libc.so.6+0xfcf84
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ ld-linux-x86-64.so.2+0x20758
 newfstatat(any u32, ld-linux-x86-64.so.2+0x28c99, any, AT_EMPTY_PATH) @ ld-linux-x86-64.so.2+0x20758

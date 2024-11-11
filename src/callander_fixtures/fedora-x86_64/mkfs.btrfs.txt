@@ -244,7 +244,6 @@ statx(any u32, libudev.so.1+0x2a190-libudev.so.1+0x2a191, 0, STATX_TYPE|STATX_IN
 rseq(any, any u32, 0, 0x53053053) @ libc.so.6+0x8e8c1(start_thread+705)
 clone3(non-NULL, 88) @ libc.so.6+0x115acb(__GI___clone3+27)
 faccessat2(any u32, any, R_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
-faccessat2(any u32, libudev.so.1+0x2a15f, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
 faccessat2(any u32, libblkid.so.1+0x2c473, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
 faccessat2(any u32, libblkid.so.1+0x3034c, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
 faccessat2(any u32, libblkid.so.1+0x3035d, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
@@ -252,4 +251,5 @@ faccessat2(any u32, libblkid.so.1+0x30373, F_OK, 0) @ libc.so.6+0x103ce2(faccess
 faccessat2(any u32, libblkid.so.1+0x30389, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
 faccessat2(any u32, libblkid.so.1+0x303a3, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
 faccessat2(any u32, libblkid.so.1+0x303ad, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
+faccessat2(any u32, libudev.so.1+0x2a15f, F_OK, 0) @ libc.so.6+0x103ce2(faccessat+50)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0x103ce2(faccessat+50)

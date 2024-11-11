@@ -23,6 +23,7 @@ dup(any) @ ld-musl-aarch64.so.1+0x49170(child*+444)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x491cc(child*+536)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x492c0(child*+780)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x68650(dup2+28)
+dup3(any, any, O_CLOEXEC) @ ld-musl-aarch64.so.1+0x686b8(dup3+28)
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
@@ -155,7 +156,7 @@ pwritev(any, any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+
 sendfile(any, any, any, any) @ ld-musl-aarch64.so.1+0x25038(sendfile+12)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
 ppoll(any u16, any u8, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x607bc
-ppoll(any u16, 0, any u16, any u16, any u16) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+ppoll(any u8, 0, any u8, any u8, any u8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 splice(any, any, any, any, any, any u32) @ ld-musl-aarch64.so.1+0x25200(splice+16)
 readlinkat(AT_FDCWD, any, any, 0x1-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 readlinkat(STDIN_FILENO-0xffffffffffffff9b, any, any, 0x1000) @ ld-musl-aarch64.so.1+0x69120(readlinkat+24)
@@ -208,8 +209,8 @@ clock_gettime(any, any) @ ld-musl-aarch64.so.1+0x666e4(clock_gettime+60)
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any, any) @ ld-musl-aarch64.so.1+0x66610(clock_getres+16)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
-clock_nanosleep(any u16, any u8, any, any u16) @ ld-musl-aarch64.so.1+0x607bc
-clock_nanosleep(any u16, TIMER_ABSTIME, any, any u16) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, any, 0) @ ld-musl-aarch64.so.1+0x607bc
+clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, any, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 sched_setscheduler(any u32, any, any) @ ld-musl-aarch64.so.1+0x62660(pthread_create+576)
 sched_setaffinity(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x51008(sched_setaffinity+16)
 sched_getaffinity(any, NULL-0x1ffffffffffffff8, non-NULL) @ ld-musl-aarch64.so.1+0x5103c(sched_getaffinity+16)
@@ -291,10 +292,10 @@ gettid() @ ld-musl-aarch64.so.1+0x64b68(__synccall*+208)
 sysinfo(any) @ ld-musl-aarch64.so.1+0x253ac(sysinfo+12)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x46168(socket+40)
 socket(AF_UNIX, SOCK_STREAM, 0) @ ld-musl-aarch64.so.1+0x461a0(socket+96)
-connect(any, any, any u16) @ ld-musl-aarch64.so.1+0x607bc
-connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), any u16) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-sendmsg(any, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
-sendmsg(any, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), 24) @ ld-musl-aarch64.so.1+0x607bc
+connect(any, ld-musl-aarch64.so.1+0xa0fd8(addr*), 24) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x607bc
+sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 brk(any) @ ld-musl-aarch64.so.1+0x29954(__malloc_alloc_meta*+336)
 brk(0) @ ld-musl-aarch64.so.1+0x29a2c(__malloc_alloc_meta*+552)
 brk(any) @ ld-musl-aarch64.so.1+0x29a4c(__malloc_alloc_meta*+584)

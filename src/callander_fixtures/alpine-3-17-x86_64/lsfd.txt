@@ -1,11 +1,11 @@
 callander: permitted syscalls: read(any, any, any) @ ld-musl-x86_64.so.1+0x4a70c(__stdio_read*+77)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x583bc
-open(ld-musl-x86_64.so.1+0x94b63, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
-open(ld-musl-x86_64.so.1+0x94cb9, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/bin/lsfd+0x12c9d, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/bin/lsfd+0x12e7c, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(/bin/lsfd+0x13894, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(ld-musl-x86_64.so.1+0x94b63, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
+open(ld-musl-x86_64.so.1+0x94cb9, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4b706(fopen64+85)
 open(non-NULL, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 open(non-NULL, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x583dc(__map_file*+24)

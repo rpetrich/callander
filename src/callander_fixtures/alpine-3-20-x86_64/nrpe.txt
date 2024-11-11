@@ -9,10 +9,10 @@ open(ld-musl-x86_64.so.1+0x9d0ff, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl
 open(ld-musl-x86_64.so.1+0x9d10a, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4eaec(__fopen_rb_ca*+52)
 open(ld-musl-x86_64.so.1+0x9d15b, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4eaec(__fopen_rb_ca*+52)
 open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(libcrypto.so.3+0x3233d2, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d09a, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d1b1, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d1bc, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(libcrypto.so.3+0x3233d2, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)

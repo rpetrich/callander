@@ -96,9 +96,9 @@ getpid() @ ld-musl-x86_64.so.1+0x627de(do_setxid*+69)
 sendfile(any, any, any, any) @ ld-musl-x86_64.so.1+0x20a50(sendfile+14)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x413ff(socket+32)
 socket(AF_UNIX, SOCK_STREAM, 0) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
-connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-connect(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
-sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5e990
+sendmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 clone(0, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953

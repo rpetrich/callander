@@ -30,12 +30,12 @@ read(any, any, any) @ /sbin/ldconfig:0x42f9ac
 read(any, any, any) @ /sbin/ldconfig:0x4306d8
 write(any, any, any) @ /sbin/ldconfig:0x42fa30
 write(any, any, any) @ /sbin/ldconfig:0x42fa74
-write(any, any, non-NULL) @ /sbin/ldconfig:0x430710
+write(any, any, any) @ /sbin/ldconfig:0x430710
 writev(STDERR_FILENO, any, 0x1-0x2) @ /sbin/ldconfig:0x43087c
 writev(STDERR_FILENO, any, any) @ /sbin/ldconfig:0x4308c4
 writev(any u32, any, any) @ /sbin/ldconfig:0x461218
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ /sbin/ldconfig:0x454618
-pread64(any, any, 0x1f-0xffff, any) @ /sbin/ldconfig:0x454618
+pread64(any, any, 0x20-0xffff, any) @ /sbin/ldconfig:0x454618
 ppoll(any, 1, any, 0, 0) @ /sbin/ldconfig:0x466bd8
 ppoll(any, any, any, 0, 0) @ /sbin/ldconfig:0x466c3c
 readlinkat(AT_FDCWD, any, any, 4095) @ /sbin/ldconfig:0x43034c
@@ -99,3 +99,4 @@ mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, STDIN_FILENO-0xffffffff
 mmap(any, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /sbin/ldconfig:0x430b70
 mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ /sbin/ldconfig:0x430b70
 mprotect(any, any, any u32) @ /sbin/ldconfig:0x430be4
+madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig:0x430c04

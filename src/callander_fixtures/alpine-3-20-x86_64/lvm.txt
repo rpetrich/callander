@@ -5,10 +5,10 @@ write(any, any, NULL-0x100000007) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+
 write(any, any, NULL-0x100000007) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(libdevmapper.so.1.02+0x39551, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(libdevmapper.so.1.02+0x395eb, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/lvm+0x15be56, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/sbin/lvm+0x15be56, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(libdevmapper.so.1.02+0x39551, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(libdevmapper.so.1.02+0x395eb, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)

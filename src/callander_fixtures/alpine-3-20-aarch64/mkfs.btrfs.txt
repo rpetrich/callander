@@ -42,6 +42,7 @@ mkdirat(AT_FDCWD, libblkid.so.1+0x2445d, 0755) @ ld-musl-aarch64.so.1+0x52e5c(mk
 unlinkat(AT_FDCWD, non-NULL, 0) @ ld-musl-aarch64.so.1+0x695d0(unlink+24)
 linkat(AT_FDCWD, non-NULL, AT_FDCWD, non-NULL, 0) @ ld-musl-aarch64.so.1+0x68da4(link+32)
 renameat(AT_FDCWD, non-NULL, AT_FDCWD, non-NULL) @ ld-musl-aarch64.so.1+0x57228(rename+28)
+ftruncate(any, any) @ ld-musl-aarch64.so.1+0x68aa8(ftruncate+16)
 faccessat(AT_FDCWD, any, F_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 faccessat(any, libblkid.so.1+0x24bfe, F_OK) @ ld-musl-aarch64.so.1+0x6878c(faccessat+52)
 faccessat(any, libblkid.so.1+0x275f6, F_OK) @ ld-musl-aarch64.so.1+0x6878c(faccessat+52)

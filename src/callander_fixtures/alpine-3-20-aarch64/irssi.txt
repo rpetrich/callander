@@ -75,8 +75,8 @@ pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
-ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
-ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
+ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 newfstatat(STDIN_FILENO-0xfffffffffffffffe, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
 newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
@@ -252,4 +252,4 @@ getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x607bc
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x24b10(membarrier+28)
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x24c58(__membarrier_init*+12)
-pidfd_open(0x1-0xffffffff, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+pidfd_open(0-INT_MAX, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)

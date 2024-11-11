@@ -14,13 +14,13 @@ openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fo
 openat(AT_FDCWD, /usr/bin/setpriv+0x4c44, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, /usr/bin/setpriv+0x5c26, O_RDWR, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, libcap-ng.so.0+0x3b96, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, /usr/bin/setpriv+0x4bdd, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, /usr/bin/setpriv+0x5c26, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, libcap-ng.so.0+0x3b96, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, libcap-ng.so.0+0x3b96, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/setpriv+0x4bdd, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /usr/bin/setpriv+0x5c26, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, libcap-ng.so.0+0x3b96, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x53608(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x54b50(fopen+196)
@@ -111,6 +111,7 @@ prctl(PR_CAP_AMBIENT, 3, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-musl-aarch64.so.1+0x250d0(do_setgroups*+80)
 getpid() @ ld-musl-aarch64.so.1+0x69318(do_setxid*+80)
+getuid() @ ld-musl-aarch64.so.1+0x68cf8(getuid+4)
 gettid() @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 gettid() @ ld-musl-aarch64.so.1+0x64b68(__synccall*+208)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x46168(socket+40)

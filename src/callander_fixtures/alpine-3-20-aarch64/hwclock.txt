@@ -10,7 +10,6 @@ ioctl(any, RTC_PARAM_GET-RTC_PARAM_SET, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioct
 ioctl(any, RTC_SET_TIME, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, RTC_VL_READ, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, RTC_RD_TIME, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
-ioctl(0xffffffff80000000--1, RTC_UIE_OFF, 0) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x5322c(fdopen+184)
 ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x53910(__stdout_write*+56)
 faccessat(AT_FDCWD, any, R_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
@@ -33,8 +32,8 @@ lseek(any, any, any) @ ld-musl-aarch64.so.1+0x68de8(lseek+12)
 read(any u32, any, any) @ ld-musl-aarch64.so.1+0x53780(__stdio_read*+144)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x5373c(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
-pselect6(any, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-pselect6(any, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+pselect6(0x1-0x400, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+pselect6(0x1-0x400, any, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
 newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52cfc(fstatat+168)

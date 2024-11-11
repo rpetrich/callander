@@ -33,7 +33,7 @@ read(any, any, any) @ /usr/sbin/ldconfig+0x38688
 write(STDERR_FILENO, /usr/sbin/ldconfig+0x8c078, 45) @ /usr/sbin/ldconfig+0xffc8
 write(any, any, any) @ /usr/sbin/ldconfig+0x37958
 write(any, any, any) @ /usr/sbin/ldconfig+0x3799c
-write(any, any, non-NULL) @ /usr/sbin/ldconfig+0x386c8
+write(any, any, any) @ /usr/sbin/ldconfig+0x386c8
 writev(any, any, any) @ /usr/sbin/ldconfig+0x38850
 writev(any, any, any) @ /usr/sbin/ldconfig+0x38890
 writev(any u32, any, any) @ /usr/sbin/ldconfig+0x6bfc8
