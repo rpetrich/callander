@@ -4816,6 +4816,16 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 	}
 }
 
+static inline void fixup_arithmetic_outside_binary_bounds(struct loader_context *loader, struct register_state *state, uintptr_t orig_value)
+{
+	if (state->value != state->max && state->value > PAGE_SIZE) {
+		struct loaded_binary *binary = binary_for_address(loader, (const void *)orig_value);
+		if (binary != NULL && (binary != binary_for_address(loader, (const void *)state->value) || binary != binary_for_address(loader, (const void *)state->max))) {
+			clear_register(state);
+		}
+	}
+}
+
 __attribute__((warn_unused_result))
 static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, enum ins_operand_size *out_size, struct additional_result *additional)
 {
@@ -4843,26 +4853,16 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	bool applied_shift = apply_operand_shift(&right_state, &decoded->decomposed.operands[2]);
 	LOG("right", temp_str(copy_register_state_description(loader, right_state)));
 	additional->used = false;
+	uintptr_t orig_value = left_state.value;
 	enum basic_op_usage usage = op(&left_state, &right_state, left, applied_shift ? REGISTER_INVALID : right, size, additional);
 	if (size == OPERATION_SIZE_DWORD) {
-		if (left_state.value != left_state.max && left_state.value > PAGE_SIZE) {
-			struct loaded_binary *binary = binary_for_address(loader, (const void *)left_state.value);
-			if (binary != NULL && binary != binary_for_address(loader, (const void *)left_state.max)) {
-				clear_register(&left_state);
-			}
-		}
+		fixup_arithmetic_outside_binary_bounds(loader, &left_state, orig_value);
 	} else {
 		truncate_to_operand_size(&left_state, size);
 	}
 	if (UNLIKELY(additional->used)) {
 		if (size == OPERATION_SIZE_DWORD) {
-			if (additional->state.value != additional->state.max && additional->state.value > PAGE_SIZE) {
-				struct loaded_binary *binary = binary_for_address(loader, (const void *)additional->state.value);
-				if (binary != NULL && binary != binary_for_address(loader, (const void *)additional->state.max)) {
-					additional->used = false;
-					clear_register(&left_state);
-				}
-			}
+			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, orig_value);
 		} else {
 			truncate_to_operand_size(&additional->state, size);
 		}
