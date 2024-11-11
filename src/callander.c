@@ -5576,7 +5576,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 #ifdef INS_CONDITIONAL_TYPE_BIT_SET
 			case INS_CONDITIONAL_TYPE_BIT_SET: {
 				uintptr_t bit = (uintptr_t)1 << compare_state.value.value;
-				LOG("found tbnz comparing", name_for_register(compare_state.target_register));
+				LOG("found tbnz comparing bit", compare_state.value.value);
 				dump_register(&analysis->loader, continue_state);
 				// tbnz %target_register
 				if (register_is_exactly_known(&continue_state)) {
