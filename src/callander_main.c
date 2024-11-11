@@ -543,8 +543,12 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		analyze_function(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, loaded->info.entrypoint, &new_caller);
 		if (analysis->main == (uintptr_t)loaded->info.entrypoint) {
 			// reanalyze, since we didn't find a main
+			LOG("reanalyzing entrypoint since we didn't find the main function");
 			new_caller.current_state = empty_registers;
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, loaded->info.entrypoint, &new_caller);
+			if (analysis->main == (uintptr_t)loaded->info.entrypoint) {
+				LOG("still could not find the main function, proceeding with entrypoint");
+			}
 		}
 	}
 	// interpreter entrypoint
