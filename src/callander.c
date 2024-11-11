@@ -5428,8 +5428,8 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					if (continue_state.max < compare_state.value.value) {
 						skip_continue = true;
 						LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
-					} else if (continue_state.value <= compare_state.value.value) {
-						continue_state.value = compare_state.value.value + 1;
+					} else if (continue_state.value < compare_state.value.value) {
+						continue_state.value = compare_state.value.value;
 					}
 				}
 				break;
