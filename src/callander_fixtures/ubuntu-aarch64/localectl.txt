@@ -107,7 +107,6 @@ splice(STDIN_FILENO, 0, STDOUT_FILENO, 0, any, any u32) @ libc.so.6+0xe659c(spli
 readlinkat(AT_FDCWD, any, non-NULL, 511) @ libc.so.6+0xd96f8(readlink+24)
 readlinkat(AT_FDCWD, non-NULL, any, 4095) @ libc.so.6+0xd96f8(readlink+24)
 readlinkat(any u32, non-NULL, non-NULL, any) @ libc.so.6+0xd9748(readlinkat+8)
-newfstatat(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ libc.so.6+0xd726c(fstatat64+12)
 newfstatat(any, any, any, 0-AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT) @ libc.so.6+0xd726c(fstatat64+12)
 newfstatat(any, libsystemd-shared-249.so+0x21eaa8, any, AT_EMPTY_PATH) @ libc.so.6+0xd726c(fstatat64+12)
 newfstatat(any, libc.so.6+0x151480, any, AT_EMPTY_PATH) @ libc.so.6+0xd726c(fstatat64+12)

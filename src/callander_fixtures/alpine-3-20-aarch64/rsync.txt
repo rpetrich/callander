@@ -74,28 +74,18 @@ openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND, 0666) @ ld-musl-aarch64.so.1+0x
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2e0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2f0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(any, /usr/bin/rsync+0x4f5b0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f620, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f690, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f700, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f770, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f7e0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f850, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f8c0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f930, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f9a0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fa10, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fa80, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4faf0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fb60, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fbd0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fc40, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fcb0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fd20, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fd90, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fe00, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fe70, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fee0, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4f8c0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4f930, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4f9a0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4fe00, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4fe70, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4fee0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4ff50, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x4ffc0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x50030, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x500a0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, /usr/bin/rsync+0x50110, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, /usr/bin/rsync+0x50180, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, /usr/bin/rsync+0x501f0, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, /usr/bin/rsync+0x50260, any, any) @ ld-musl-aarch64.so.1+0x607bc
@@ -118,29 +108,17 @@ openat(any, /usr/bin/rsync+0x50960, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, /usr/bin/rsync+0x509d0, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, /usr/bin/rsync+0x50a40, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f5b0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f620, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f690, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f700, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f770, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f7e0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f850, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f8c0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f930, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f9a0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fa10, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fa80, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4faf0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fb60, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fbd0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fc40, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fcb0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fd20, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fd90, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fe00, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fe70, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fee0, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50180, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x4f9a0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x4fe00, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x4fe70, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x4fee0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x4ff50, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x4ffc0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x50030, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x500a0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x50110, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, /usr/bin/rsync+0x50180, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/rsync+0x501f0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/rsync+0x50260, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, /usr/bin/rsync+0x502d0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -213,24 +191,29 @@ exit(0) @ ld-musl-aarch64.so.1+0x623b8(start*+104)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48730(__post_Fork*+44)
 set_tid_address(any) @ ld-musl-aarch64.so.1+0x623ac(start*+92)
+futex(any, FUTEX_WAIT, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
-futex(any, any, 0-INT_MAX, any, any u32, INT_MAX)
-futex(any, any, any, 0, any u32, 0)
-futex(any, any, 1, any, any, any)
+futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, INT_MAX)
+futex(any, FUTEX_WAKE, 1, any, any, any)
 futex(any, FUTEX_WAKE, INT_MAX, any, any, any)
 futex(any, FUTEX_REQUEUE, 0, 1, any, any)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, INT_MAX)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any u32)
-futex(ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any u32)
-futex(ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any u32)
-futex(ld-musl-aarch64.so.1+0xc2680(vmlock*), any, non-NULL, 0, any u32, ld-musl-aarch64.so.1+0xc2684)
+futex(ld-musl-aarch64.so.1+0xc1e90(exit_sem*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1e90(exit_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1eb0(caller_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc1ed0(target_sem*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, ld-musl-aarch64.so.1+0xc1ed0(target_sem*), any u32)
+futex(ld-musl-aarch64.so.1+0xc2680(vmlock*), FUTEX_WAIT, non-NULL, 0, any u32, ld-musl-aarch64.so.1+0xc2684)
+futex(ld-musl-aarch64.so.1+0xc2680(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any u32, ld-musl-aarch64.so.1+0xc2684)
 futex(ld-musl-aarch64.so.1+0xc2680(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, ld-musl-aarch64.so.1+0xc2680(vmlock*), any)
-futex(ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*), any, non-NULL, 0, any u32, ld-musl-aarch64.so.1+0xc2ed0(tl_lock_waiters*))
+futex(ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*), FUTEX_WAIT, non-NULL, 0, any u32, ld-musl-aarch64.so.1+0xc2ed0(tl_lock_waiters*))
+futex(ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any u32, ld-musl-aarch64.so.1+0xc2ed0(tl_lock_waiters*))
 set_robust_list(0, 24) @ ld-musl-aarch64.so.1+0x62340(pthread_exit+460)
 set_robust_list(any, 24) @ ld-musl-aarch64.so.1+0x63454(__pthread_mutex_trylock_owner*+92)
 nanosleep(any, any) @ ld-musl-aarch64.so.1+0x607bc

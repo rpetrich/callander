@@ -6,7 +6,7 @@ fcntl(any, F_GETFD, any) @ libc.so.6+0xded40
 fcntl(any, F_SETFD, any u32) @ libc.so.6+0xded40
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ libc.so.6+0xded40
 ioctl(any, TCGETS, any) @ libc.so.6+0xdf410(tcgetattr+48)
-unlinkat(any u32, any, any u32) @ libc.so.6+0xdb908(unlinkat+8)
+unlinkat(any u32, any, 0-0x100ff|AT_SYMLINK_NOFOLLOW|AT_REMOVEDIR|AT_SYMLINK_FOLLOW|AT_NO_AUTOMOUNT|AT_EMPTY_PATH|AT_STATX_FORCE_SYNC|AT_STATX_DONT_SYNC|AT_RECURSIVE) @ libc.so.6+0xdb908(unlinkat+8)
 fstatfs(any, any) @ libc.so.6+0xd9708(fstatfs+8)
 faccessat(any, any, W_OK) @ libc.so.6+0xda2e0(faccessat+304)
 fchdir(any u32) @ libc.so.6+0xda908(fchdir+8)

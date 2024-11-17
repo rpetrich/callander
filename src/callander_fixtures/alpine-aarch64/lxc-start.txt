@@ -88,7 +88,14 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDWR|O_NOFOLLOW, any) @ ld-musl
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND|O_CLOEXEC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, /usr/bin/lxc-start+0xd90f4, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, /usr/bin/lxc-start+0xe3d3d, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, /usr/bin/lxc-start+0xe3d93, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, /usr/bin/lxc-start+0xe46ca, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, /usr/bin/lxc-start+0xe5446, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, /usr/bin/lxc-start+0xe5a3c, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, /usr/bin/lxc-start+0xd90f4, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, /usr/bin/lxc-start+0xe3d3d, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
@@ -141,24 +148,30 @@ exit(1) @ ld-musl-aarch64.so.1+0x64e80(checker*+40)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48040(_Fork+128)
 unshare(CLONE_NEWNS) @ ld-musl-aarch64.so.1+0x24d04(unshare+16)
+futex(any, FUTEX_WAIT, any, 0, 0, 0)
+futex(any, FUTEX_WAIT, non-NULL, 0, 0, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
 futex(any, FUTEX_WAIT, 0xffffffff80000000-0xffffffffffffffff, 0, 0x80000000-0xffffffff, any)
-futex(any, any, 0-INT_MAX, any, any u32, any u32)
-futex(any, any, any, 0, 0, 0)
-futex(any, any, 1, any, any, any)
-futex(any, any, non-NULL, 0, 0, any)
+futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, any u32)
+futex(any, FUTEX_WAKE, 1, any, any, any)
 futex(any, FUTEX_REQUEUE, 0, 1, ld-musl-aarch64.so.1+0xb1df4, ld-musl-aarch64.so.1+0xb1df4)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any u32, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0, 0)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, 0, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0xffffffff80000000-0xffffffffffffffff, 0, 0x80000000-0xffffffff, any)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, any u32)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xb1df4, ld-musl-aarch64.so.1+0xb1df4)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any u32, any)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
 futex(ld-musl-aarch64.so.1+0xb1dc8, FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb1dc8, any, any)
-futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
-futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), any, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
+futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), FUTEX_WAIT, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
+futex(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, ld-musl-aarch64.so.1+0xb22e4(tl_lock_waiters*), ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*))
+futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAIT, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
+futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, ld-musl-aarch64.so.1+0xb233c, ld-musl-aarch64.so.1+0xb2338(vmlock*))
 futex(ld-musl-aarch64.so.1+0xb2338(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, ld-musl-aarch64.so.1+0xb2338(vmlock*), any, any)
 set_robust_list(0, 24) @ ld-musl-aarch64.so.1+0x5f358(pthread_exit+356)
 set_robust_list(any, 24) @ ld-musl-aarch64.so.1+0x60434(__pthread_mutex_trylock_owner*+204)

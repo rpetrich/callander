@@ -146,7 +146,7 @@ splice(STDIN_FILENO, 0, STDOUT_FILENO, 0, 0x10000, 0) @ libc.so.6+0xdbd6c(splice
 splice(STDIN_FILENO, 0, STDOUT_FILENO, 0, 0x10000, 0) @ libc.so.6+0xdbdc4(splice+132)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xcc670(__xstat+16)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xcc730(__lxstat64+16)
-newfstatat(STDIN_FILENO-0xfffffffffffffffe, any, any, any) @ libc.so.6+0xcc898(__fxstatat+24)
+newfstatat(STDIN_FILENO-0xfffffffffffffffe, any, any, 0) @ libc.so.6+0xcc898(__fxstatat+24)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xcc898(__fxstatat+24)
 fstat(any, any) @ libc.so.6+0xcc6d0(__fxstat+16)
 capset(any, any) @ libc.so.6+0xd7520(syscall+32)
