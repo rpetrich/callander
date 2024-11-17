@@ -13252,7 +13252,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			if (symbol->st_value != 0 && symbol->st_shndx != SHN_UNDEF) {
 				value = apply_base_address(&binary->info, symbol->st_value);
 #if defined(__x86_64__)
-			} else if (type != R_X86_64_RELATIVE && type != R_X86_64_IRELATIVE && type != R_X86_64_DTPMOD64 && type != R_X86_64_DTPOFF64 && type != R_X86_64_TPOFF64 && type != R_X86_64_TPOFF32) {
+			} else if (type != R_X86_64_RELATIVE && type != R_X86_64_IRELATIVE && type != R_X86_64_DTPMOD64 && type != R_X86_64_DTPOFF64 && type != R_X86_64_TPOFF64 && type != R_X86_64_TPOFF32 && type != R_X86_64_TLSDESC) {
 				struct loaded_binary *other_binary = NULL;
 				struct symbol_version_info version = binary->symbols.symbol_versions != NULL ? symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index] & 0x7fff) : (struct symbol_version_info){ 0 };
 				value = (uintptr_t)resolve_loaded_symbol(context, textual_name, version.version_name, NORMAL_SYMBOL, &other_binary, NULL);
