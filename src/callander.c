@@ -4896,6 +4896,197 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	return dest;
 }
 
+#define UNARY_OP_ARGS struct register_state dest[static 1], __attribute__((unused)) int dest_reg, __attribute__((unused)) int source_reg, __attribute__((unused)) enum ins_operand_size operand_size, __attribute__((unused)) struct additional_result additional[static 1]
+typedef __attribute__((warn_unused_result)) bool (*unary_op)(UNARY_OP_ARGS);
+
+static bool unary_op_cls(UNARY_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		switch (operand_size) {
+			case OPERATION_SIZE_DWORD:
+				set_register(dest, __builtin_clzll(~(uint64_t)dest->value));
+				break;
+			case OPERATION_SIZE_WORD:
+				set_register(dest, __builtin_clz(~(uint32_t)dest->value));
+				break;
+			case OPERATION_SIZE_HALF:
+				set_register(dest, __builtin_clz(~(uint16_t)dest->value) - 16);
+				break;
+			case OPERATION_SIZE_BYTE:
+				set_register(dest, __builtin_clz(~(uint8_t)dest->value) - 24);
+				break;
+		}
+		return true;
+	} else {
+		clear_register(dest);
+		return false;
+	}
+}
+
+static bool unary_op_clz(UNARY_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		switch (operand_size) {
+			case OPERATION_SIZE_DWORD:
+				set_register(dest, __builtin_clzll((uint64_t)dest->value));
+				break;
+			case OPERATION_SIZE_WORD:
+				set_register(dest, __builtin_clz((uint32_t)dest->value));
+				break;
+			case OPERATION_SIZE_HALF:
+				set_register(dest, __builtin_clz((uint16_t)dest->value) - 16);
+				break;
+			case OPERATION_SIZE_BYTE:
+				set_register(dest, __builtin_clz((uint8_t)dest->value) - 24);
+				break;
+		}
+		return true;
+	} else {
+		clear_register(dest);
+		return false;
+	}
+}
+
+static bool unary_op_neg(UNARY_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		switch (operand_size) {
+			case OPERATION_SIZE_DWORD:
+				set_register(dest, -(int64_t)dest->value);
+				break;
+			case OPERATION_SIZE_WORD:
+				set_register(dest, -(int32_t)dest->value);
+				break;
+			case OPERATION_SIZE_HALF:
+				set_register(dest, -(int16_t)dest->value);
+				break;
+			case OPERATION_SIZE_BYTE:
+				set_register(dest, -(int8_t)dest->value);
+				break;
+		}
+		return true;
+	} else {
+		clear_register(dest);
+		return false;
+	}
+}
+
+static bool unary_op_mvn(UNARY_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		switch (operand_size) {
+			case OPERATION_SIZE_DWORD:
+				set_register(dest, ~dest->value);
+				break;
+			case OPERATION_SIZE_WORD:
+				set_register(dest, ~(uint32_t)dest->value);
+				break;
+			case OPERATION_SIZE_HALF:
+				set_register(dest, ~(uint16_t)dest->value);
+				break;
+			case OPERATION_SIZE_BYTE:
+				set_register(dest, ~(uint8_t)dest->value);
+				break;
+		}
+		return true;
+	} else {
+		clear_register(dest);
+		return false;
+	}
+}
+
+static bool unary_op_rev(UNARY_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		switch (operand_size) {
+			case OPERATION_SIZE_DWORD:
+				set_register(dest, __builtin_bswap64(dest->value));
+				break;
+			case OPERATION_SIZE_WORD:
+				set_register(dest, __builtin_bswap32(dest->value));
+				break;
+			case OPERATION_SIZE_HALF:
+				set_register(dest, __builtin_bswap16(dest->value));
+				break;
+			case OPERATION_SIZE_BYTE:
+				break;
+		}
+		return true;
+	} else {
+		clear_register(dest);
+		return false;
+	}
+}
+
+static bool unary_op_rbit(UNARY_OP_ARGS)
+{
+	if (register_is_exactly_known(dest)) {
+		uintptr_t result = 0;
+		for (int i = 0; i < operand_size * 8; i++) {
+			if (dest->value & ((uint64_t)1 << i)) {
+				result |= (uint64_t)1 << (operand_size * 8 - i);
+			}
+		}
+		set_register(dest, result);
+		return true;
+	} else {
+		clear_register(dest);
+		return false;
+	}
+}
+
+__attribute__((warn_unused_result))
+static int perform_unary_op(__attribute__((unused)) const char *name, unary_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded, enum ins_operand_size *out_size, struct additional_result *additional)
+{
+	enum ins_operand_size size;
+	int dest = get_operand(loader, &decoded->decomposed.operands[0], regs, ins, &size);
+	if (dest == REGISTER_INVALID) {
+		if (out_size != NULL) {
+			*out_size = OPERATION_SIZE_DWORD;
+		}
+		return REGISTER_INVALID;
+	}
+	LOG("unary operation", name);
+	LOG("unary destination", name_for_register(dest));
+	struct register_state state;
+	int source = read_operand(loader, &decoded->decomposed.operands[1], regs, ins, &state, NULL);
+	if (source != REGISTER_INVALID) {
+		LOG("source", name_for_register(source));
+	}
+	bool applied_shift = apply_operand_shift(&state, &decoded->decomposed.operands[1]);
+	LOG("value", temp_str(copy_register_state_description(loader, state)));
+	additional->used = false;
+	uintptr_t orig_value = state.value;
+	bool usage = op(&state, dest, applied_shift ? REGISTER_INVALID : source, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		fixup_arithmetic_outside_binary_bounds(loader, &state, orig_value);
+	} else {
+		truncate_to_operand_size(&state, size);
+	}
+	if (UNLIKELY(additional->used)) {
+		if (size == OPERATION_SIZE_DWORD) {
+			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, orig_value);
+		} else {
+			truncate_to_operand_size(&additional->state, size);
+		}
+		merge_and_log_additional_result(loader, &state, additional, dest);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, state)));
+	}
+	regs->registers[dest] = state;
+	if (register_is_partially_known(&state)) {
+		update_sources_for_basic_op_usage(regs, dest, source, source, usage);
+	} else {
+		regs->sources[dest] = 0;
+	}
+	clear_match(loader, regs, dest, ins);
+	if (out_size != NULL) {
+		*out_size = size;
+	}
+	return dest;
+}
+
+
 static void perform_unknown_op(struct loader_context *loader, struct registers *regs, ins_ptr ins, const struct aarch64_instruction *decoded)
 {
 	LOG("unsupported op", get_operation(&decoded->decomposed));
