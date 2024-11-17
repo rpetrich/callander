@@ -2622,7 +2622,7 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
 					clear_match(&analysis->loader, state, third_arg, ins);
 				} else {
 					while (binary_has_flags(binary, BINARY_IS_LIBC)) {
-						if (name != NULL && fs_strcmp(name, "posix_spawnp") == 0) {
+						if (name != NULL && (fs_strcmp(name, "posix_spawnp") == 0 || fs_strcmp(name, "posix_spawn") == 0)) {
 							set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 							clear_match(&analysis->loader, state, third_arg, ins);
 							break;
