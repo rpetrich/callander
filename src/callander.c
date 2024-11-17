@@ -4784,6 +4784,19 @@ static int perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, ba
 
 #ifdef __aarch64__
 
+static enum basic_op_usage basic_op_ror(BASIC_OP_ARGS)
+{
+	if (register_is_exactly_known(dest) && register_is_exactly_known(source)) {
+		uintptr_t low = dest->value >> source->value;
+		uintptr_t high = dest->value << (8 * operand_size - source->value);
+		set_register(dest, low | high);
+		return BASIC_OP_USED_BOTH;
+	} else {
+		clear_register(dest);
+		return BASIC_OP_USED_NEITHER;
+	}
+}
+
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int left_reg, int right_reg, enum basic_op_usage usage)
 {
 	if (UNLIKELY(dest_reg == REGISTER_INVALID)) {
@@ -10299,10 +10312,24 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("clrex");
 				break;
 			}
-			case ARM64_CLS:
-			case ARM64_CLZ:
-				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
-				break;
+			case ARM64_CLS: {
+				struct additional_result additional;
+				int dest = perform_unary_op("cls", unary_op_cls, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
+			case ARM64_CLZ: {
+				struct additional_result additional;
+				int dest = perform_unary_op("clz", unary_op_clz, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_CMEQ: {
 				LOG("cmgt");
 				break;
@@ -11751,7 +11778,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
 				goto skip_stack_clear;
 			}
-			case ARM64_MVN:
+			case ARM64_MVN: {
+				struct additional_result additional;
+				int dest = perform_unary_op("mvn", unary_op_mvn, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_MVNI:
 			case ARM64_NAND:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
@@ -11764,7 +11799,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
 				break;
-			case ARM64_NEG:
+			case ARM64_NEG: {
+				struct additional_result additional;
+				int dest = perform_unary_op("neg", unary_op_neg, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_NEGS:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
@@ -11908,10 +11951,18 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_RADDHNB:
 			case ARM64_RADDHNT:
 			case ARM64_RAX1:
-			case ARM64_RBIT:
 			case ARM64_RDFFR:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
+			case ARM64_RBIT: {
+				struct additional_result additional;
+				int dest = perform_unary_op("rbit", unary_op_rbit, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_RDFFRS:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				clear_comparison_state(&self.current_state);
@@ -11925,10 +11976,18 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				// handled earlier in is_return_ins check
 				UNSUPPORTED_INSTRUCTION();
 				break;
+			case ARM64_REV: {
+				struct additional_result additional;
+				int dest = perform_unary_op("rev", unary_op_rev, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				if (UNLIKELY(dest == REGISTER_INVALID)) {
+					break;
+				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(dest);
+				goto skip_stack_clear;
+			}
 			case ARM64_REV16:
 			case ARM64_REV32:
 			case ARM64_REV64:
-			case ARM64_REV:
 			case ARM64_REVB:
 			case ARM64_REVD:
 			case ARM64_REVH:
@@ -11947,7 +12006,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_ROR:
 			case ARM64_RORV: {
 				struct additional_result additional;
-				int dest = perform_basic_op("ror", basic_op_unknown, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
+				int dest = perform_basic_op("ror", basic_op_ror, &analysis->loader, &self.current_state, ins, &decoded, NULL, &additional);
 				if (UNLIKELY(dest == REGISTER_INVALID)) {
 					break;
 				}
@@ -12707,10 +12766,36 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_UADDW2:
 			case ARM64_UADDWB:
 			case ARM64_UADDWT:
-			case ARM64_UBFIZ:
 			case ARM64_UBFM:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
+			case ARM64_UBFIZ: {
+				enum ins_operand_size size;
+				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
+				if (dest == REGISTER_INVALID) {
+					break;
+				}
+				LOG("ubfiz to", name_for_register(dest));
+				struct register_state lsb_state;
+				read_operand(&analysis->loader, &decoded.decomposed.operands[2], &self.current_state, ins, &lsb_state, NULL);
+				struct register_state w_state;
+				read_operand(&analysis->loader, &decoded.decomposed.operands[3], &self.current_state, ins, &w_state, NULL);
+				self.current_state.registers[dest].value = 0;
+				if (w_state.max == 1) {
+					// shifting a single bit into position
+					self.current_state.registers[dest].max = 0;
+					ANALYZE_PRIMARY_RESULT();
+					set_register(&self.current_state.registers[dest], (uint64_t)1 << lsb_state.max);
+					goto use_alternate_result;
+				} else {
+					// shifting multiple bits
+					self.current_state.registers[dest].max = ~(uint64_t)0 >> (64 - (w_state.max + lsb_state.max));
+					truncate_to_operand_size(&self.current_state.registers[dest], size);
+					self.current_state.sources[dest] = 0;
+					clear_match(&analysis->loader, &self.current_state, dest, ins);
+				}
+				break;
+			}
 			case ARM64_UBFX: {
 				enum ins_operand_size size;
 				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
