@@ -58,6 +58,9 @@ extern void load_existing(struct binary_info *out_info, uintptr_t load_address);
 // relocate_binary will apply relocation fixups to a loaded binary
 extern void relocate_binary(struct binary_info *info);
 
+// apply_relr_table will apply only relr relocation fixups to a loaded binary
+extern void apply_relr_table(struct binary_info *info, const uintptr_t *relative, size_t size);
+
 // apply_postrelocation_readonly will make any pages marked readonly after relocation readonly
 extern int apply_postrelocation_readonly(struct binary_info *info);
 
