@@ -6143,6 +6143,8 @@ static void set_comparison_state(__attribute__((unused)) struct loader_context *
 	LOG("with", temp_str(copy_register_state_description(loader, state->compare_state.value)));
 }
 
+#define TLSDESC_ADDR (uintptr_t)0x43534544534C54
+
 static bool is_musl_cp_begin(ins_ptr entry)
 {
 	// a giant hack -- this is for musl's cancel_handler comparing the interrupted pc to __cp_begin and __cp_end
@@ -9544,7 +9546,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										encountered_non_executable_address(&analysis->loader, "call*", &self, dest);
 										LOG("call* to non-executable address, assuming all effects", temp_str(copy_address_description(&analysis->loader, ins)));
 										effects |= DEFAULT_EFFECTS;
-										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, ALL_REGISTERS);
+										clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary_for_address(&analysis->loader, ins), ins, (uintptr_t)dest == TLSDESC_ADDR ? mask_for_register(REGISTER_RAX) : ALL_REGISTERS);
 									} else if ((effects & EFFECT_ENTER_CALLS) == 0) {
 										LOG("skipping call when searching for address loads");
 										analysis->skipped_call = dest;
@@ -10134,14 +10136,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				} else {
 					ins_ptr dest = (ins_ptr)target_state.value;
 					LOG("found blr", temp_str(copy_function_call_description(&analysis->loader, dest, &self.current_state)));
-					if (dest == 0) {
+					if (dest == NULL) {
 						LOG("found call to NULL, assuming all effects");
 						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 					} else if ((protection_for_address(&analysis->loader, (void *)dest, &binary, NULL) & PROT_EXEC) == 0) {
 						encountered_non_executable_address(&analysis->loader, "call", &self, (ins_ptr)dest);
 						LOG("found call to non-executable address, assuming all effects");
 						effects |= DEFAULT_EFFECTS;
-						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
+						clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, (uintptr_t)dest == TLSDESC_ADDR ? mask_for_register(REGISTER_X0) : ALL_REGISTERS);
 					} else {
 						self.description = "blr";
 #if STORE_LAST_MODIFIED
@@ -13397,6 +13399,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				break;
 			case R_X86_64_TLSDESC:
 				LOG("tlsdesc relocation for, not supported", textual_name);
+				*(ins_uint64 *)relo_target = TLSDESC_ADDR;
 				break;
 			case R_X86_64_TLSDESC_CALL:
 				LOG("tlsdesc call relocation for, not supported", textual_name);
@@ -13484,6 +13487,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				break;
 			case R_AARCH64_TLSDESC:
 				LOG("tls tlsdesc relocation for, not supported", textual_name);
+				*(ins_uint64 *)relo_target = TLSDESC_ADDR;
 				break;
 			case R_AARCH64_IRELATIVE:
 				LOG("GNU magic to support STT_GNU_IFUNC/__attribute__((ifunc(\"...\"))), not supported", textual_name);
