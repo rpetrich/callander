@@ -1,0 +1,5 @@
+FROM amazonlinux:2.0.20241113.1
+RUN yum -y install gdb binutils less expect git gcc clang ruby ruby-libs
+RUN amazon-linux-extras install epel -y
+RUN yum -y update
+RUN yum -y install --enablerepo=amzn2-core-debuginfo glibc-debuginfo moreutils-parallel

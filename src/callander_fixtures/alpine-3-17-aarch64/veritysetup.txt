@@ -193,7 +193,7 @@ setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_REUSEADDR, any, 4) @ 
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_TCP, TCP_NODELAY, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_IP-SOL_SOCKET, SO_KEEPALIVE-SO_OOBINLINE, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, 16) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
-setsockopt(any, SOL_TCP, TCP_ULP, libcrypto.so.3+0x2abc22, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
+setsockopt(any, SOL_TCP, TCP_ULP, libcrypto.so.3+0x2aefa2, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_MTU_DISCOVER, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_DONTFRAG, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)

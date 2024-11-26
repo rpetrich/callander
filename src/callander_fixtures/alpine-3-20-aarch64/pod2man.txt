@@ -68,8 +68,8 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDONLY|O_CLOEXEC, any) @ ld-mus
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2e0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2f0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f318, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003f|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003f|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
 close(STDIN_FILENO-0xffffffffffffffe9) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
@@ -193,7 +193,7 @@ getpgid(any) @ ld-musl-aarch64.so.1+0x68c9c(getpgid+16)
 getgroups(any, any) @ ld-musl-aarch64.so.1+0x68b94(getgroups+16)
 setgroups(any, any) @ ld-musl-aarch64.so.1+0x250a0(do_setgroups*+32)
 setgroups(any, any) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
-getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
+getrlimit(0x20, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
 umask(any u32) @ ld-musl-aarch64.so.1+0x530f8(umask+16)
 prctl(PR_SET_NAME, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x66704(clock_gettime+92)
@@ -275,6 +275,6 @@ accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp
 wait4(any, any, any, 0) @ ld-musl-aarch64.so.1+0x607bc
 wait4(any, any, any, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 wait4(any, any, __WCLONE, 0) @ ld-musl-aarch64.so.1+0x6888c(faccessat+308)
-prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
+prlimit64(0, 0x20, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x24b10(membarrier+28)
 faccessat2(AT_FDCWD, any, any, AT_EACCESS) @ ld-musl-aarch64.so.1+0x687bc(faccessat+100)

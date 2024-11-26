@@ -23,8 +23,8 @@ fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x532d4(fdopen+352)
 fcntl(any, F_SETFL, any) @ ld-musl-aarch64.so.1+0x532ec(fdopen+376)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x53404(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x54b00(fopen+116)
-ioctl(any, TCGETS, libcrypto.so.3+0x462d9c) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
-ioctl(any, TCSETS, libcrypto.so.3+0x462ddc) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
+ioctl(any, TCGETS, libcrypto.so.3+0x462bdc) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
+ioctl(any, TCSETS, libcrypto.so.3+0x462c1c) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, TIOCOUTQ, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, FIONBIO, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, SIOCGIFNAME, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
@@ -149,14 +149,10 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff8(all_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff0(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x51ed0(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x51eec(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sigaction*+344)
-rt_sigprocmask(SIG_SETMASK, 0, 0, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, 0, libcrypto.so.3+0x462590, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, libcrypto.so.3+0x462590, 0, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, libcrypto.so.3+0x462590, libcrypto.so.3+0x462590, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x623d4(start*+132)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x62760(pthread_create+832)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
-rt_sigprocmask(SIG_SETMASK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
 uname(any) @ ld-musl-aarch64.so.1+0x3df98(uname+12)
 getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
@@ -251,8 +247,8 @@ mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
 accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-aarch64.so.1+0x607bc
 accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
+recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 wait4(0xffffffff80000000-0xffffffffffffffff, any, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 wait4(0xffffffff80000000-0xffffffffffffffff, any, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)

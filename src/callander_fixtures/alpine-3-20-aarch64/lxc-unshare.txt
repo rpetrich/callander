@@ -85,23 +85,23 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f268, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, an
 openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(any, any, O_WRONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, liblxc.so.1+0xcdd80, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC-O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, liblxc.so.1+0xe254a, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, liblxc.so.1+0xe3ebf, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, liblxc.so.1+0xe416f, O_RDONLY-63|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, liblxc.so.1+0xe41c5, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, liblxc.so.1+0xcdef0, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC-O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, liblxc.so.1+0xe26ba, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, liblxc.so.1+0xe402f, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, liblxc.so.1+0xe42df, O_RDONLY-63|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, liblxc.so.1+0xe4335, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(0xfffffffffffffff7, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(0xfffffffffffffff7, liblxc.so.1+0xe4076, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(0xfffffffffffffff7, liblxc.so.1+0xe41e6, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, any, O_WRONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, liblxc.so.1+0xcdd80, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC-O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, liblxc.so.1+0xe254a, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, liblxc.so.1+0xe3ebf, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, liblxc.so.1+0xe416f, O_RDONLY-63|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, liblxc.so.1+0xe41c5, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, liblxc.so.1+0xcdef0, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC-O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, liblxc.so.1+0xe26ba, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, liblxc.so.1+0xe402f, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, liblxc.so.1+0xe42df, O_RDONLY-63|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, liblxc.so.1+0xe4335, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY-63|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(0xfffffffffffffff7, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(0xfffffffffffffff7, liblxc.so.1+0xe4076, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(0xfffffffffffffff7, liblxc.so.1+0xe41e6, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
 close(STDIN_FILENO-0xffffffffffffffe9) @ ld-musl-aarch64.so.1+0x210e0(fcntl+324)
@@ -319,14 +319,14 @@ getrandom(any, 10, GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*
 getrandom(any, 12, GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 getrandom(any, 16, GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 getrandom(any, 24, GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-memfd_create(liblxc.so.1+0xe4a34, MFD_CLOEXEC) @ ld-musl-aarch64.so.1+0x24c70(memfd_create+16)
+memfd_create(liblxc.so.1+0xe4ba4, MFD_CLOEXEC) @ ld-musl-aarch64.so.1+0x24c70(memfd_create+16)
 bpf(BPF_PROG_LOAD, any, 120) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 bpf(0x8-0x9, any, 120) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 pidfd_send_signal(any u32, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-open_tree(any u32, liblxc.so.1+0xe254a, 0x81001) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-open_tree(any u32, liblxc.so.1+0xe254a, 0x89001) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+open_tree(any u32, liblxc.so.1+0xe26ba, 0x81001) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+open_tree(any u32, liblxc.so.1+0xe26ba, 0x89001) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 open_tree(0xfffffff7, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-move_mount(any u32, liblxc.so.1+0xe254a, any u32, liblxc.so.1+0xe254a, 68) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+move_mount(any u32, liblxc.so.1+0xe26ba, any u32, liblxc.so.1+0xe26ba, 68) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 move_mount(0xfffffff7, 0, 0xfffffff7, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 fsopen(0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 fsconfig(0xfffffff7, 0xffffffea, 0, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
@@ -334,7 +334,7 @@ fsmount(0xfffffff7, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 clone3(any, 64) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 close_range(3, -1 as u32, 2) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 openat2(any u32, any, any, 24) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-openat2(0xfffffff7, liblxc.so.1+0xe254a, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-mount_setattr(any u32, liblxc.so.1+0xe254a, 0x1000, any, 32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
-mount_setattr(any u32, liblxc.so.1+0xe254a, 0x9000, any, 32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+openat2(0xfffffff7, liblxc.so.1+0xe26ba, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+mount_setattr(any u32, liblxc.so.1+0xe26ba, 0x1000, any, 32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+mount_setattr(any u32, liblxc.so.1+0xe26ba, 0x9000, any, 32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 mount_setattr(0xfffffff7, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)

@@ -28,13 +28,13 @@ openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bdae, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(AT_FDCWD, libcrypto.so.3+0x2d5635, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(AT_FDCWD, libcrypto.so.3+0x2d5641, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, libcrypto.so.3+0x2d8de5, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, libcrypto.so.3+0x2d8df1, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bdae, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-openat(AT_FDCWD, libcrypto.so.3+0x2d5635, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-openat(AT_FDCWD, libcrypto.so.3+0x2d5641, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, libcrypto.so.3+0x2d8de5, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, libcrypto.so.3+0x2d8df1, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x61dbc(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x20014(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x41ff4(if_indextoname+84)

@@ -271,7 +271,7 @@ prctl(PR_SET_NAME, libsystemd-shared-256.8-1.fc41.so+0x3744e0, any, any, any) @ 
 prctl(PR_GET_NAME, non-NULL, any, any, any) @ libc.so.6+0xf8c48(prctl+8)
 prctl(PR_CAPBSET_READ, any, any, any, any) @ libc.so.6+0xf8c48(prctl+8)
 prctl(PR_SET_MM, 0x8-0x9, any, 0, 0) @ libc.so.6+0xf8c48(prctl+8)
-prctl(0x53564d41, 0, any, any, any) @ libc.so.6+0xf8f0c(__set_vma_name+172)
+prctl(PR_SET_VMA, 0, any, any, any) @ libc.so.6+0xf8f0c(__set_vma_name+172)
 gettimeofday(any, 0) @ libc.so.6+0xbb0f4(__gettimeofday_syscall+20)
 gettimeofday(any, non-NULL) @ libc.so.6+0xbb114(__gettimeofday_syscall+52)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)

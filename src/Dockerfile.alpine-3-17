@@ -1,4 +1,4 @@
-FROM alpine:3.17.6
+FROM alpine:3.17.10
 RUN apk add --no-cache bash musl-dbg binutils expect git bash-dbg gdb moreutils ruby ruby-dbg perl \
 	coreutils ethtool hwids doas logrotate lsof lm_sensors lxc lxc-templates nano pciutils strace tmux usbutils vim xtables-addons curl acct arpon arpwatch awall bridge-utils bwm-ng ca-certificates conntrack-tools cutter cyrus-sasl dhcp dhcpcd dhcrelay dnsmasq fping fprobe htop igmpproxy ip6tables iproute2 iproute2-qos iptables iputils irssi iw kea ldns-tools links ncurses-terminfo net-snmp net-snmp-tools nrpe nsd opennhrp openvpn pingu ppp quagga quagga-nhrp rng-tools sntpc socat ssmtp strongswan sysklogd tcpdump tinyproxy unbound wireguard-tools wireless-tools wpa_supplicant zonenotify btrfs-progs cksfv dosfstools cryptsetup e2fsprogs e2fsprogs-extra efibootmgr f2fs-tools grub-efi lvm2 mdadm mkinitfs mtools nfs-utils parted rsync sfdisk util-linux xfsprogs zfs
 COPY callander callander.debug /bin/

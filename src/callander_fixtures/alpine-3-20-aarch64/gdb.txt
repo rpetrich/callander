@@ -413,6 +413,6 @@ preadv2(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 preadv2(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 pwritev2(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pwritev2(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-pidfd_send_signal(any u32, any u32, 0, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
+pidfd_send_signal(any u32, any u32, 0, any u32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 pidfd_open(any u32, any u32) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 faccessat2(any, any, any, 1-0xffffffffffff00ff|AT_SYMLINK_NOFOLLOW|AT_EACCESS|AT_SYMLINK_FOLLOW|AT_NO_AUTOMOUNT|AT_EMPTY_PATH|AT_STATX_FORCE_SYNC|AT_STATX_DONT_SYNC|AT_RECURSIVE) @ ld-musl-aarch64.so.1+0x687bc(faccessat+100)

@@ -50,7 +50,7 @@ openat(AT_FDCWD, any, O_RDWR|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(AT_FDCWD, libk5crypto.so.3+0x1d568, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(AT_FDCWD, libk5crypto.so.3+0x1d038, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -61,7 +61,7 @@ openat(AT_FDCWD, any, O_RDWR|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b1a6, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(AT_FDCWD, libk5crypto.so.3+0x1d568, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(AT_FDCWD, libk5crypto.so.3+0x1d038, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x612b0(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x1ff28(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x41e58(if_indextoname+84)
@@ -182,7 +182,7 @@ recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
 recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_IP, IP_RECVERR, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
-setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_LINGER, libkrb5.so.3+0xa5c88, 8) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
+setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_LINGER, libkrb5.so.3+0xa3b60, 8) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 getsockopt(any, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0x41d24(getsockopt+28)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5d210
@@ -195,9 +195,9 @@ brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+440)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5d1a8
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e818(mremap+140)
-add_key(libkrb5.so.3+0x791e8, any, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
-add_key(libkrb5.so.3+0x79217, any, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
-add_key(libkrb5.so.3+0x79276, any, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
+add_key(libkrb5.so.3+0x770c0, any, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
+add_key(libkrb5.so.3+0x770ef, any, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
+add_key(libkrb5.so.3+0x7714e, any, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
 keyctl(0, 0xfffffffb, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
 keyctl(0, 0xfffffffd, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
 keyctl(6, any u32, any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)

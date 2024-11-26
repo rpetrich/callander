@@ -193,13 +193,10 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff8(all_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff0(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x51ed0(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x51eec(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sigaction*+344)
-rt_sigprocmask(SIG_SETMASK, 0, 0, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, 0, libcrypto.so.3+0x462590, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, libcrypto.so.3+0x462590, 0, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, libcrypto.so.3+0x462590, libcrypto.so.3+0x462590, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x623d4(start*+132)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x62760(pthread_create+832)
-rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
+rt_sigprocmask(SIG_BLOCK-SIG_UNBLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
+rt_sigprocmask(SIG_UNBLOCK-SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
 setpriority(0, 0, any) @ ld-musl-aarch64.so.1+0x3d930(setpriority+24)
 getpriority(0, 0) @ ld-musl-aarch64.so.1+0x3c67c(getpriority+20)
@@ -294,8 +291,8 @@ mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
 mlock(non-NULL, any) @ ld-musl-aarch64.so.1+0x3e4c8(mlock+12)
 munlock(NULL-0xffffffffffffffef, any) @ ld-musl-aarch64.so.1+0x3e6c8(munlock+12)
 munlock(0xfffffffffffffff1-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x3e6c8(munlock+12)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
+recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 getrandom(any, non-NULL, 0-GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x607bc

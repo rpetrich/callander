@@ -98,7 +98,7 @@ rt_sigprocmask(SIG_BLOCK, libc.so.6+0x170bf0(sigall_set), any, 8) @ libc.so.6+0x
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8df94(__pthread_kill_implementation+180)
 rt_sigprocmask(SIG_SETMASK, any, any, 8) @ libc.so.6+0x93fac(pthread_sigmask+76)
 prctl(PR_SET_NAME, non-NULL, any, any, any) @ libc.so.6+0xf8c48(prctl+8)
-prctl(0x53564d41, 0, any, any, any) @ libc.so.6+0xf8f0c(__set_vma_name+172)
+prctl(PR_SET_VMA, 0, any, any, any) @ libc.so.6+0xf8f0c(__set_vma_name+172)
 getcpu(any, 0, 0) @ libc.so.6+0xe7828(sched_getcpu+104)
 gettimeofday(any, 0) @ libc.so.6+0xbb0f4(__gettimeofday_syscall+20)
 gettimeofday(any, non-NULL) @ libc.so.6+0xbb114(__gettimeofday_syscall+52)

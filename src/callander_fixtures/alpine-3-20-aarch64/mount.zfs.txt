@@ -19,11 +19,11 @@ fcntl(any, F_SETLKW, any) @ ld-musl-aarch64.so.1+0x607bc
 fcntl(any, F_SETLKW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x68684(dup2+80)
 inotify_init1(IN_CLOEXEC) @ ld-musl-aarch64.so.1+0x24a60(inotify_init1+16)
-inotify_add_watch(STDIN_FILENO-0xfffffffffffffffe, libzfs.so.4+0x5507f, IN_CREATE) @ ld-musl-aarch64.so.1+0x24a90(inotify_add_watch+20)
+inotify_add_watch(STDIN_FILENO-0xfffffffffffffffe, libzfs.so.4+0x5518f, IN_CREATE) @ ld-musl-aarch64.so.1+0x24a90(inotify_add_watch+20)
 ioctl(any, BLKSSZGET, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, BLKIOMIN-BLKPBSZGET, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, TCGETS, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
-ioctl(any, TCSETS, libcrypto.so.3+0x462ddc) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
+ioctl(any, TCSETS, libcrypto.so.3+0x462c1c) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, TCSETSF, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, FIONBIO, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
 ioctl(any, ZFS_IOC_POOL_STATS-ZFS_IOC_POOL_TRYIMPORT, any) @ ld-musl-aarch64.so.1+0x3c8d0(ioctl+48)
@@ -48,9 +48,9 @@ unlinkat(AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x695d0(unlink+24)
 linkat(AT_FDCWD, any, AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x68da4(link+32)
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ ld-musl-aarch64.so.1+0x57228(rename+28)
 mount(any, any, /sbin/mount.zfs+0x2309, any, any) @ ld-musl-aarch64.so.1+0x24cf0(mount+12)
-mount(any, any, libzfs.so.4+0x55582, any, any) @ ld-musl-aarch64.so.1+0x24cf0(mount+12)
+mount(any, any, libzfs.so.4+0x55692, any, any) @ ld-musl-aarch64.so.1+0x24cf0(mount+12)
 statfs(any, any) @ ld-musl-aarch64.so.1+0x52f34(statfs+36)
-truncate(libzfs.so.4+0x57f75, 0) @ ld-musl-aarch64.so.1+0x6945c(truncate+12)
+truncate(libzfs.so.4+0x58085, 0) @ ld-musl-aarch64.so.1+0x6945c(truncate+12)
 faccessat(AT_FDCWD, any, F_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 faccessat(AT_FDCWD, any, R_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 faccessat(any, libblkid.so.1+0x24bfe, F_OK) @ ld-musl-aarch64.so.1+0x6878c(faccessat+52)
@@ -86,9 +86,9 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x60
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, /sbin/mount.zfs+0x24ba, O_RDWR|O_CREAT|O_NOFOLLOW, 0644) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9efa0, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, libzfs.so.4+0x4fb96, O_RDWR|O_EXCL|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, libzfs.so.4+0x53f0d, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, libzfs.so.4+0x57f90, O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, libzfs.so.4+0x4fca6, O_RDWR|O_EXCL|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, libzfs.so.4+0x5401d, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, libzfs.so.4+0x580a0, O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0600) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, libblkid.so.1+0x272f1, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, libblkid.so.1+0x272f9, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, libblkid.so.1+0x275f6, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -105,9 +105,9 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x61
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, /sbin/mount.zfs+0x24ba, O_RDWR|O_CREAT|O_NOFOLLOW, 0644) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9efa0, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, libzfs.so.4+0x4fb96, O_RDWR|O_EXCL|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, libzfs.so.4+0x53f0d, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, libzfs.so.4+0x57f90, O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, libzfs.so.4+0x4fca6, O_RDWR|O_EXCL|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, libzfs.so.4+0x5401d, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, libzfs.so.4+0x580a0, O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
 close(any) @ ld-musl-aarch64.so.1+0x4214c(if_indextoname+84)
@@ -203,19 +203,16 @@ rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff8(all_mask*), any, 8) @ ld-
 rt_sigprocmask(SIG_BLOCK, ld-musl-aarch64.so.1+0xa0ff0(app_mask*), any, 8) @ ld-musl-aarch64.so.1+0x51ed0(__block_app_sigs*+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x51eec(__restore_sigs*+20)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sigaction*+344)
-rt_sigprocmask(SIG_SETMASK, 0, 0, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, 0, libcrypto.so.3+0x462590, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, libcrypto.so.3+0x462590, 0, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
-rt_sigprocmask(SIG_SETMASK, libcrypto.so.3+0x462590, libcrypto.so.3+0x462590, 8) @ ld-musl-aarch64.so.1+0x528bc(__sigsetjmp_tail*+32)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x623d4(start*+132)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x62760(pthread_create+832)
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
-rt_sigprocmask(SIG_SETMASK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigqueueinfo(any, any, any) @ ld-musl-aarch64.so.1+0x195f4
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
 uname(any) @ ld-musl-aarch64.so.1+0x3df98(uname+12)
 getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
 prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
+prctl(PR_GET_NAME, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x66704(clock_gettime+92)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-musl-aarch64.so.1+0x68cc0(getpid+4)
@@ -309,8 +306,8 @@ mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
+recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 wait4(0x1-0x7fffffff, any, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 wait4(0x1-0x7fffffff, any, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)

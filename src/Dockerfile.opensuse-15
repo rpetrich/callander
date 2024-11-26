@@ -1,0 +1,5 @@
+FROM opensuse/leap:15.6
+RUN zypper --non-interactive install gdb binutils less moreutils moreutils-parallel expect git gcc clang ruby
+RUN zypper --non-interactive mr -e repo-debug
+RUN zypper --non-interactive mr -e repo-debug-update
+# RUN zypper --non-interactive install --oldpackage glibc-2.31-150300.20.7.x86_64 glibc-debuginfo-2.31-150300.20.7.x86_64

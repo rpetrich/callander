@@ -94,10 +94,10 @@ uname(any) @ /usr/sbin/ldconfig+0x2b488
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff3, 0, 0, 0) @ /usr/sbin/ldconfig+0x2ec08
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff5, 0, 0, 0) @ /usr/sbin/ldconfig+0x2ec08
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff7, 0, 0, 0) @ /usr/sbin/ldconfig+0x2ec08
-prctl(0x53564d41, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0x89c10) @ /usr/sbin/ldconfig+0x2ec08
-prctl(0x53564d41, 0, NULL-0xfffffffffffffffe, any u32, /usr/sbin/ldconfig+0x89dc8) @ /usr/sbin/ldconfig+0x2eccc
-prctl(0x53564d41, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0x8a6b8) @ /usr/sbin/ldconfig+0x2eccc
-prctl(0x53564d41, 0, any, any, /usr/sbin/ldconfig+0x8a680) @ /usr/sbin/ldconfig+0x2eccc
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0x89c10) @ /usr/sbin/ldconfig+0x2ec08
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any u32, /usr/sbin/ldconfig+0x89dc8) @ /usr/sbin/ldconfig+0x2eccc
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0x8a6b8) @ /usr/sbin/ldconfig+0x2eccc
+prctl(PR_SET_VMA, 0, any, any, /usr/sbin/ldconfig+0x8a680) @ /usr/sbin/ldconfig+0x2eccc
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ /usr/sbin/ldconfig+0x28a48
 gettid() @ /usr/sbin/ldconfig+0x1b6bc
