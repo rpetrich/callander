@@ -72,9 +72,9 @@ static inline int pntz(size_t p[2]) {
 	return 0;
 }
 
-static void cycle(size_t width, unsigned char* ar[], int n)
+__attribute__((always_inline))
+static inline void cycle(size_t width, unsigned char* ar[], int n, unsigned char tmp[256])
 {
-	unsigned char tmp[256];
 	size_t l;
 	int i;
 
@@ -84,7 +84,7 @@ static void cycle(size_t width, unsigned char* ar[], int n)
 
 	ar[n] = tmp;
 	while(width) {
-		l = sizeof(tmp) < width ? sizeof(tmp) : width;
+		l = 256 < width ? 256 : width;
 		memcpy(ar[n], ar[0], l);
 		for(i = 0; i < n; i++) {
 			memcpy(ar[i], ar[i + 1], l);
@@ -143,7 +143,8 @@ static void sift(unsigned char *head, size_t width, cmpfun cmp, void *arg, int p
 			pshift -= 2;
 		}
 	}
-	cycle(width, ar, i);
+	unsigned char tmp[256];
+	cycle(width, ar, i, tmp);
 }
 
 static void trinkle(unsigned char *head, size_t width, cmpfun cmp, void *arg, size_t pp[2], int pshift, int trusty, size_t lp[])
@@ -180,7 +181,8 @@ static void trinkle(unsigned char *head, size_t width, cmpfun cmp, void *arg, si
 		trusty = 0;
 	}
 	if(!trusty) {
-		cycle(width, ar, i);
+		unsigned char tmp[256];
+		cycle(width, ar, i, tmp);
 		sift(head, width, cmp, arg, pshift, lp);
 	}
 }
