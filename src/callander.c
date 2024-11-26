@@ -13612,6 +13612,8 @@ static int special_binary_flags_for_path(const char *path)
 		result |= BINARY_IS_LIBCAP;
 	} else if (fs_strncmp(path, "ruby", sizeof("ruby")-1) == 0) {
 		result |= BINARY_IS_RUBY;
+	} else if (fs_strncmp(path, "perl", sizeof("perl")-1) == 0) {
+		result |= BINARY_IS_PERL;
 	}
 	return result;
 }
