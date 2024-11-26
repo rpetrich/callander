@@ -522,19 +522,6 @@ struct evms_stripe_info {
 #define RAW_SETBIND	_IO( 0xac, 0 )
 #define RAW_GETBIND	_IO( 0xac, 1 )
 
-#define RTC_PARAM_GET	_IOW('p', 0x13, struct rtc_param)  /* Get parameter */
-struct rtc_param {
-	__u64 param;
-	union {
-		__u64 uvalue;
-		__s64 svalue;
-		__u64 ptr;
-	};
-	__u32 index;
-	__u32 __pad;
-};
-#define RTC_PARAM_SET	_IOW('p', 0x14, struct rtc_param)  /* Set parameter */
-
 
 #define SCSI_IOCTL_GET_IDLUN		0x5382
 #define SCSI_IOCTL_PROBE_HOST		0x5385
@@ -888,47 +875,6 @@ struct gsm_dlci_config {
 #ifndef GSMIOC_SETCONF_DLCI
 #define GSMIOC_SETCONF_DLCI     _IOW('G', 8, struct gsm_dlci_config)
 #endif
-
-
-struct opal_lr_status {
-	struct opal_session_info session;
-	__u64 range_start;
-	__u64 range_length;
-	__u32 RLE; /* Read Lock enabled */
-	__u32 WLE; /* Write Lock Enabled */
-	__u32 l_state;
-	__u8  align[4];
-};
-
-struct opal_status {
-	__u32 flags;
-	__u32 reserved;
-};
-
-struct opal_geometry {
-	__u8 align;
-	__u32 logical_block_size;
-	__u64 alignment_granularity;
-	__u64 lowest_aligned_lba;
-	__u8  __align[3];
-};
-
-struct opal_discovery {
-	__u64 data;
-	__u64 size;
-};
-
-struct opal_revert_lsp {
-	struct opal_key key;
-	__u32 options;
-	__u32 __pad;
-};
-
-#define IOC_OPAL_GET_STATUS         _IOR('p', 236, struct opal_status)
-#define IOC_OPAL_GET_LR_STATUS      _IOW('p', 237, struct opal_lr_status)
-#define IOC_OPAL_GET_GEOMETRY       _IOR('p', 238, struct opal_geometry)
-#define IOC_OPAL_DISCOVERY          _IOW('p', 239, struct opal_discovery)
-#define IOC_OPAL_REVERT_LSP         _IOW('p', 240, struct opal_revert_lsp)
 
 
 #define SIOCGETTUNNEL   (SIOCDEVPRIVATE + 0)
@@ -1664,23 +1610,6 @@ struct xfs_inumbers_req {
 #define SOL_MCTP	285
 #define SOL_SMC		286
 #define SOL_VSOCK	287
-
-struct mtd_read_req_ecc_stats {
-	__u32 uncorrectable_errors;
-	__u32 corrected_bitflips;
-	__u32 max_bitflips;
-};
-
-struct mtd_read_req {
-	__u64 start;
-	__u64 len;
-	__u64 ooblen;
-	__u64 usr_data;
-	__u64 usr_oob;
-	__u8 mode;
-	__u8 padding[7];
-	struct mtd_read_req_ecc_stats ecc_stats;
-};
 
 
 #define FS_IOC_ENABLE_VERITY_OLD _IO('f', 133)
@@ -4683,6 +4612,7 @@ static struct enum_option prctls[] = {
 	DESCRIBE_ENUM(PR_SVE_SET_VL),
 	DESCRIBE_ENUM(PR_SVE_GET_VL),
 #endif
+	DESCRIBE_ENUM(PR_SET_VMA),
 };
 
 static struct enum_option flock_operations[] = {

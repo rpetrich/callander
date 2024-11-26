@@ -18,6 +18,7 @@
 #include <errno.h>
 #ifdef __linux__
 #include <linux/futex.h>
+#include <linux/limits.h>
 #include <linux/membarrier.h>
 #endif
 #include <limits.h>
