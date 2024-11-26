@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-x86_64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       attestations: write
@@ -30,7 +30,7 @@ jobs:
         path: src/callander-x86_64-*.tgz
 
   build-aarch64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       attestations: write
@@ -52,7 +52,7 @@ jobs:
         path: src/callander-aarch64-*.tgz
 
   build-windows:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - run: sudo apt-get update
     - run: sudo apt-get install mingw-w64
