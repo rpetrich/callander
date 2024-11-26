@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any u32
+callander: full call stack: /usr/bin/qemu-hppa-static+0x21a380-/usr/bin/qemu-hppa-static+0x21a39c
+/usr/bin/qemu-hppa-static+0x21a374-/usr/bin/qemu-hppa-static+0x21a37c (conditional continue)
+/usr/bin/qemu-hppa-static+0x21a350-/usr/bin/qemu-hppa-static+0x21a370 (conditional continue)
+/usr/bin/qemu-hppa-static+0x21a340-/usr/bin/qemu-hppa-static+0x21a348 (conditional jump)
+/usr/bin/qemu-hppa-static+0x1daea4 (adrp+add)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

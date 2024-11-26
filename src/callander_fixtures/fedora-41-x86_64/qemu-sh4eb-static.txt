@@ -1,0 +1,5 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/qemu-sh4eb-static+0x7d87
+/usr/bin/qemu-sh4eb-static+0x7d81-/usr/bin/qemu-sh4eb-static+0x7d85 (conditional continue)
+/usr/bin/qemu-sh4eb-static+0x5ebe8 (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

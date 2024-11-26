@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any u32
+callander: full call stack: /usr/bin/qemu-sparc64-static+0x223c00-/usr/bin/qemu-sparc64-static+0x223c1c
+/usr/bin/qemu-sparc64-static+0x223bf4-/usr/bin/qemu-sparc64-static+0x223bfc (conditional continue)
+/usr/bin/qemu-sparc64-static+0x223bd0-/usr/bin/qemu-sparc64-static+0x223bf0 (conditional continue)
+/usr/bin/qemu-sparc64-static+0x223bc0-/usr/bin/qemu-sparc64-static+0x223bc8 (conditional jump)
+/usr/bin/qemu-sparc64-static+0x1e47a4 (adrp+add)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

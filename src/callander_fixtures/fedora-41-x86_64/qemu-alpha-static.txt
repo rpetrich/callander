@@ -1,0 +1,5 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/qemu-alpha-static+0x7497
+/usr/bin/qemu-alpha-static+0x7491-/usr/bin/qemu-alpha-static+0x7495 (conditional continue)
+/usr/bin/qemu-alpha-static+0x5d398 (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

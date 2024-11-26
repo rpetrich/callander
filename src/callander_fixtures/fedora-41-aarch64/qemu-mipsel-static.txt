@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any u32
+callander: full call stack: /usr/bin/qemu-mipsel-static+0x295800-/usr/bin/qemu-mipsel-static+0x29581c
+/usr/bin/qemu-mipsel-static+0x2957f4-/usr/bin/qemu-mipsel-static+0x2957fc (conditional continue)
+/usr/bin/qemu-mipsel-static+0x2957d0-/usr/bin/qemu-mipsel-static+0x2957f0 (conditional continue)
+/usr/bin/qemu-mipsel-static+0x2957c0-/usr/bin/qemu-mipsel-static+0x2957c8 (conditional jump)
+/usr/bin/qemu-mipsel-static+0x256324 (adrp+add)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

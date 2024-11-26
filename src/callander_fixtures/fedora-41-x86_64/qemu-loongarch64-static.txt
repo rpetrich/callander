@@ -1,0 +1,5 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/qemu-loongarch64-static+0x19017
+/usr/bin/qemu-loongarch64-static+0x19011-/usr/bin/qemu-loongarch64-static+0x19015 (conditional continue)
+/usr/bin/qemu-loongarch64-static+0xc5738 (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function
