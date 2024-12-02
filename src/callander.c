@@ -6487,6 +6487,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			log_effects(effects);
 			LOG("was searching for effects:");
 			log_effects(required_effects);
+			vary_effects_by_registers(search, &analysis->loader, caller, table_entry->data->relevant_registers, table_entry->data->relevant_registers, table_entry->data->preserved_and_kept_registers, required_effects);
 			return (effects & EFFECT_STICKY_EXITS) ? (effects & ~(EFFECT_STICKY_EXITS | EFFECT_RETURNS)) : effects;
 		}
 		if (!wrote_registers) {
