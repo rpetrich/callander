@@ -5659,7 +5659,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 					if (continue_state.value >= compare_state.value.value) {
 						if (uses_alternate_state) {
 							uses_alternate_state = ALTERNATE_UNUSED;
-							jump_state = alternate_state;
+							continue_state = alternate_state;
 						} else {
 							skip_continue = true;
 							LOG("skipping continue", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
