@@ -6404,6 +6404,7 @@ static void analyze_memory_read(struct program_state *analysis, struct analysis_
 				if (address_is_call_aligned(data) && protection_for_address_in_binary(binary, data, NULL) & PROT_EXEC) {
 					LOG("found reference to executable address at", temp_str(copy_address_description(&analysis->loader, &symbol_data[i])));
 					LOG("value of address is, assuming callable", temp_str(copy_address_description(&analysis->loader, (ins_ptr)data)));
+					LOG("from", temp_str(copy_call_trace_description(&analysis->loader, self)));
 #if 1
 					queue_instruction(&analysis->search.queue, (ins_ptr)data, effects, &empty_registers, ins, "skipped symbol in data section");
 #else
