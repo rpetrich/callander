@@ -538,7 +538,7 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		.token = { 0 },
 	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
-	struct loaded_binary *binary = register_dlopen(analysis, libz_entry->l_name, NULL, false, true, false);
+	struct loaded_binary *binary = register_dlopen(analysis, libz_entry->l_name, NULL, DLOPEN_OPTION_ANALYZE_SYMBOLS);
 	if (binary == NULL) {
 		DIE("could not load libz for analysis");
 	}

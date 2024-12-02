@@ -177,6 +177,9 @@ enum {
 	BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED = 1 << 14,
 	BINARY_IS_LIBPYTHON = 1 << 15,
 	BINARY_IS_PERL = 1 << 16,
+	BINARY_IS_LIBP11KIT = 1 << 17,
+	BINARY_IS_LIBKRB5 = 1 << 18,
+	BINARY_IS_LIBSASL2 = 1 << 19,
 };
 
 enum {
@@ -513,8 +516,17 @@ __attribute__((nonnull(1, 2)))
 int finish_loading_binary(struct program_state *analysis, struct loaded_binary *new_binary, function_effects effects, bool skip_analysis);
 __attribute__((nonnull(1, 2, 3, 4)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
+
+enum dlopen_options {
+	DLOPEN_OPTION_ANALYZE_CODE = 1 << 0,
+	DLOPEN_OPTION_ANALYZE_SYMBOLS = 1 << 1,
+	DLOPEN_OPTION_RECURSE_INTO_FOLDERS = 1 << 2,
+	DLOPEN_OPTION_IGNORE_ENOENT = 1 << 3,
+
+	DLOPEN_OPTION_ANALYZE = DLOPEN_OPTION_ANALYZE_CODE | DLOPEN_OPTION_ANALYZE_SYMBOLS,
+};
 __attribute__((nonnull(1, 2)))
-struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols, bool recursive);
+struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options);
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 

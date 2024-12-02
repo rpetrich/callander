@@ -473,7 +473,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 				char *preload_path = malloc(i - cur + 1);
 				fs_memcpy(preload_path, &ld_preload[cur], i - cur);
 				preload_path[i - cur] = '\0';
-				struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, false, false, false);
+				struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, DLOPEN_OPTION_ANALYZE);
 				if (binary == NULL) {
 					DIE("failed to load shared object specified via LD_PRELOAD", preload_path);
 					free(preload_path);
@@ -491,7 +491,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	}
 
 	for (struct dlopen_path *dlopen = analysis->dlopen; dlopen != NULL; dlopen = dlopen->next) {
-		register_dlopen(analysis, dlopen->path, NULL, false, false, true);
+		register_dlopen(analysis, dlopen->path, NULL, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS);
 	}
 
 	// finish loading the main binary

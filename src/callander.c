@@ -2204,7 +2204,7 @@ static int loader_find_executable_in_sysrooted_paths(const struct loader_context
 
 static int load_all_needed_and_relocate(struct program_state *analysis);
 
-static struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols)
+static struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options)
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
 	if (binary == NULL) {
@@ -2230,14 +2230,14 @@ static struct loaded_binary *register_dlopen_file(struct program_state *analysis
 		}
 		for (struct loaded_binary *other = analysis->loader.binaries; other != NULL; other = other->next) {
 			if (other->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) {
-				result = finish_loading_binary(analysis, other, EFFECT_NONE, skip_analysis);
+				result = finish_loading_binary(analysis, other, EFFECT_NONE, (options & DLOPEN_OPTION_ANALYZE_CODE) == 0);
 				if (result != 0) {
 					ERROR("failed to load interpreter or libc", other->path);
 					return NULL;
 				}
 			}
 		}
-		result = finish_loading_binary(analysis, new_binary, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, skip_analysis);
+		result = finish_loading_binary(analysis, new_binary, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, (options & DLOPEN_OPTION_ANALYZE_CODE) == 0);
 		if (result != 0) {
 			LOG("failed to finish loading dlopen'ed path, assuming it will fail at runtime", path);
 			return NULL;
@@ -2246,9 +2246,7 @@ static struct loaded_binary *register_dlopen_file(struct program_state *analysis
 	} else if (binary->special_binary_flags & BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED) {
 		return binary;
 	}
-	if (skip_analyzing_symbols) {
-		LOG("skipping analysis for", path);
-	} else {
+	if (options & DLOPEN_OPTION_ANALYZE_SYMBOLS) {
 		binary->special_binary_flags |= BINARY_HAS_FUNCTION_SYMBOLS_ANALYZED;
 		struct analysis_frame dlopen_caller = { .address = binary->info.base, .description = "dlopen", .next = caller, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
 		if (binary->has_symbols) {
@@ -2263,13 +2261,15 @@ static struct loaded_binary *register_dlopen_file(struct program_state *analysis
 		} else {
 			LOG("skipping linker analyzing symbols for", path);
 		}
+	} else {
+		LOG("skipping symbol analysis for", path);
 	}
 	return binary;
 }
 
-struct loaded_binary *register_dlopen_file_owning_path(struct program_state *analysis, char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols)
+struct loaded_binary *register_dlopen_file_owning_path(struct program_state *analysis, char *path, const struct analysis_frame *caller, enum dlopen_options options)
 {
-	struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
+	struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, options);
 	if (!binary) {
 		free(path);
 	} else if (binary->path == path) {
@@ -2300,23 +2300,10 @@ static ins_ptr find_function_entry(struct loader_context *loader, ins_ptr ins)
 
 static void load_openssl_modules(struct program_state *analysis, const struct analysis_frame *caller)
 {
-	char buf[PATH_MAX];
-	const char *path = apply_loader_sysroot(&analysis->loader, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", buf);
-	if (fs_access(path, R_OK) == 0) {
-		register_dlopen(analysis, path, caller, false, false, true);
-	}
-	path = apply_loader_sysroot(&analysis->loader, "/lib/engines-3", buf);
-	if (fs_access(path, R_OK) == 0) {
-		register_dlopen(analysis, path, caller, false, false, true);
-	}
-	path = apply_loader_sysroot(&analysis->loader, "/lib64/engines-3", buf);
-	if (fs_access(path, R_OK) == 0) {
-		register_dlopen(analysis, path, caller, false, false, true);
-	}
-	path = apply_loader_sysroot(&analysis->loader, "/usr/lib64/openssl/engines", buf);
-	if (fs_access(path, R_OK) == 0) {
-		register_dlopen(analysis, path, caller, false, false, true);
-	}
+	register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/ossl-modules", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
+	register_dlopen(analysis, "/lib/engines-3", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
+	register_dlopen(analysis, "/lib64/engines-3", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
+	register_dlopen(analysis, "/usr/lib64/openssl/engines", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
 }
 
 static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
@@ -2329,6 +2316,23 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 	LOG("with effects", (uintptr_t)effects);
 	struct register_state *first_arg = &state->registers[sysv_argument_abi_register_indexes[0]];
 	if (!register_is_exactly_known(first_arg)) {
+		const struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->address);
+		if (binary_has_flags(binary, BINARY_IS_LIBP11KIT)) {
+			register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/pkcs11", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
+			return;
+		}
+		if (binary_has_flags(binary, BINARY_IS_LIBKRB5)) {
+			register_dlopen(analysis, "/lib/"ARCH_NAME"-linux-gnu/krb5/plugins", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
+			return;
+		}
+		if (binary_has_flags(binary, BINARY_IS_LIBSASL2)) {
+			register_dlopen(analysis, "/usr/lib/"ARCH_NAME"-linux-gnu/sasl2", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
+			return;
+		}
+		if (binary_has_flags(binary, BINARY_IS_LIBCRYPTO)) {
+			load_openssl_modules(analysis, caller);
+			return;
+		}
 		// check if we're searching for gconv and if so attach handle_gconv_find_shlib as callback
 		if (analysis->loader.searching_gconv_dlopen || analysis->loader.searching_libcrypto_dlopen) {
 			struct analysis_frame self = {
@@ -2379,7 +2383,7 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 		.token = *token,
 	};
 	vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(sysv_argument_abi_register_indexes[0]), mask_for_register(sysv_argument_abi_register_indexes[0]), mask_for_register(sysv_argument_abi_register_indexes[0]), EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_EXITS | EFFECT_ENTER_CALLS);
-	register_dlopen_file(analysis, needed_path, caller, false, false);
+	register_dlopen_file(analysis, needed_path, caller, DLOPEN_OPTION_ANALYZE);
 }
 
 static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
@@ -2443,7 +2447,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 							*path_buf++ = '/';
 							fs_memcpy(path_buf, name, suffix_len + 1);
 							LOG("found gconv library", path);
-							register_dlopen_file_owning_path(analysis, path, caller, true, true);
+							register_dlopen_file_owning_path(analysis, path, caller, 0);
 						}
 						needle++;
 					} else {
@@ -2482,7 +2486,7 @@ static void discovered_nss_provider(struct program_state *analysis, const struct
 	*buf++ = '.';
 	*buf++ = '2';
 	*buf++ = '\0';
-	register_dlopen_file_owning_path(analysis, library_name, caller, false, false);
+	register_dlopen_file_owning_path(analysis, library_name, caller, DLOPEN_OPTION_ANALYZE);
 }
 
 __attribute__((nonnull(1, 2)))
@@ -14943,15 +14947,17 @@ char *copy_used_binaries(const struct loader_context *loader)
 	return message;
 }
 
-struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, bool skip_analysis, bool skip_analyzing_symbols, bool recursive)
+struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options)
 {
-	if (!recursive) {
-		return register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
+	if ((options & DLOPEN_OPTION_RECURSE_INTO_FOLDERS) == 0) {
+		return register_dlopen_file(analysis, path, caller, options);
 	}
 	char path_buf[PATH_MAX];
 	int fd = fs_open(apply_loader_sysroot(&analysis->loader, path, path_buf), O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0);
-	if (fd == -ENOTDIR) {
-		struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, skip_analysis, skip_analyzing_symbols);
+	if (fd == -ENOENT && (options & DLOPEN_OPTION_IGNORE_ENOENT)) {
+		return NULL;
+	} else if (fd == -ENOTDIR) {
+		struct loaded_binary *binary = register_dlopen_file(analysis, path, caller, options);
 		if (binary == NULL) {
 			DIE("failed to load shared object specified via --dlopen", path);
 		}
@@ -14988,7 +14994,7 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 						subpath_buf += prefix_len;
 						*subpath_buf++ = '/';
 						fs_memcpy(subpath_buf, name, suffix_len + 1);
-						register_dlopen(analysis, subpath, caller, skip_analysis, skip_analyzing_symbols, true);
+						register_dlopen(analysis, subpath, caller, options & ~DLOPEN_OPTION_IGNORE_ENOENT);
 					}
 					needle++;
 				} else {
