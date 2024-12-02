@@ -5840,11 +5840,21 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			LOG("skipping jump because value wasn't possible", temp_str(copy_address_description(&analysis->loader, jump_target)));
 			self->description = "skip conditional jump";
 			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | compare_state.sources, 0, 0, required_effects);
+		} else {
+			LOG("jump value", temp_str(copy_register_state_description(&analysis->loader, jump_state)));
+			if (uses_alternate_state == ALTERNATE_JUMP) {
+				LOG("additional jump value", temp_str(copy_register_state_description(&analysis->loader, alternate_state)));
+			}
 		}
 		if (skip_continue) {
 			LOG("skipping continue because value wasn't possible", temp_str(copy_address_description(&analysis->loader, continue_target)));
 			self->description = "skip conditional continue";
 			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | compare_state.sources, 0, 0, required_effects);
+		} else {
+			LOG("continue value", temp_str(copy_register_state_description(&analysis->loader, continue_state)));
+			if (uses_alternate_state == ALTERNATE_CONTINUE) {
+				LOG("additional continue value", temp_str(copy_register_state_description(&analysis->loader, alternate_state)));
+			}
 		}
 		if (!(skip_jump || skip_continue) && compare_state.sources != 0) {
 			self->description = "conditional jump predicate";
