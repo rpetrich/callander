@@ -6509,7 +6509,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		self.current_state.sources[i] = mask_for_register(i);
 	}
 	analysis->current_frame = &self;
-	LOG("entering block", temp_str(copy_block_entry_description(&analysis->loader, ins, &self.current_state)));
+	if (required_effects & EFFECT_AFTER_STARTUP) {
+		LOG("entering block", temp_str(copy_block_entry_description(&analysis->loader, ins, &self.current_state)));
+	} else {
+		LOG("entering init block", temp_str(copy_block_entry_description(&analysis->loader, ins, &self.current_state)));
+	}
 	register_mask pending_stack_clear = 0;
 	for (;;) {
 		self.address = ins;
