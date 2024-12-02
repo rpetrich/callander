@@ -64,10 +64,12 @@ class AddrOffsetFunction(gdb.Function):
 
         maps_lines = open(maps_path).read().split("\n")
 
-        # addr = int(arg.format_string(format="x"), 16)
         if arg is None:
             return "missing arg"
-        addr = int(str(arg), 0)
+        if hasattr(arg, "format_string"):
+            addr = int(arg.format_string(format="x"), 16)
+        else:
+            addr = int(str(arg), 0)
 
         for line in maps_lines:
             memrange, perms, offset, devnum, size, path = (None, None, None, None, None, None)
