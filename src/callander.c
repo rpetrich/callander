@@ -6097,6 +6097,9 @@ static inline enum possible_conditions calculate_possible_conditions(__attribute
 
 static bool is_stack_preserving_function(struct loader_context *loader, struct loaded_binary *binary, ins_ptr addr)
 {
+	if (binary_has_flags(binary, BINARY_IS_LIBCRYPTO)) {
+		return true;
+	}
 	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
 		const char *name = find_any_symbol_name_by_address(loader, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL);
 		if (name != NULL) {
