@@ -5094,6 +5094,7 @@ static int perform_unary_op(__attribute__((unused)) const char *name, unary_op o
 static void perform_unknown_op(struct loader_context *loader, struct registers *regs, ins_ptr ins, const struct aarch64_instruction *decoded)
 {
 	LOG("unsupported op", get_operation(&decoded->decomposed));
+	LOG("at", temp_str(copy_address_description(loader, ins)));
 	enum ins_operand_size size;
 	int dest = get_operand(loader, &decoded->decomposed.operands[0], regs, ins, &size);
 	if (dest == REGISTER_INVALID) {
