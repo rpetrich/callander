@@ -10379,7 +10379,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								.value = right_state,
 								.mask = mask_for_operand_size(size),
 								.mem_rm = self.current_state.mem_rm,
-								.sources = right == REGISTER_INVALID ? 0 : self.current_state.sources[right],
+								.sources = (right == REGISTER_INVALID ? 0 : self.current_state.sources[right]) | self.current_state.compare_state.sources,
 								.validity = COMPARISON_SUPPORTS_ANY,
 							});
 						}
