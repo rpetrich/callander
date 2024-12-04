@@ -343,6 +343,27 @@ void load_existing(struct binary_info *out_info, uintptr_t load_address)
 	out_info->section_entry_count = header->e_shnum;
 }
 
+static void apply_relr_table(struct binary_info *info, const uintptr_t *relative, size_t size)
+{
+	const uintptr_t *end = relative + size / sizeof(uintptr_t);
+	uintptr_t base = (uintptr_t)info->base;
+	uintptr_t *where = (uintptr_t *)base;
+	for (; relative < end; ++relative) {
+		uintptr_t entry = *relative;
+		if (entry & 1) {
+			for (long i = 0; (entry >>= 1) != 0; i++) {
+				if (entry & 1) {
+					where[i] += base;
+				}
+			}
+			where += CHAR_BIT * sizeof(uintptr_t) - 1;
+		} else {
+			where = (uintptr_t *)(base + entry);
+			*where++ += base;
+		}
+	}
+}
+
 void relocate_binary(struct binary_info *info)
 {
 	uintptr_t relr = 0;
@@ -386,28 +407,6 @@ void relocate_binary(struct binary_info *info)
 		const ElfW(Rel) *rel = (const ElfW(Rel) *)(rel_base + rel_off);
 		if (rel->r_info == ELF_REL_RELATIVE) {
 			*(uintptr_t *)(base + rel->r_offset) += base;
-		}
-	}
-}
-
-void apply_relr_table(struct binary_info *info, const uintptr_t *relative, size_t size)
-{
-	const uintptr_t *end = relative + size / sizeof(uintptr_t);
-	// ElfW(Addr) offset = 0;
-	uintptr_t base = (uintptr_t)info->base;
-	uintptr_t *where = (uintptr_t *)base;
-	for (; relative < end; ++relative) {
-		uintptr_t entry = *relative;
-		if (entry & 1) {
-			for (long i = 0; (entry >>= 1) != 0; i++) {
-				if (entry & 1) {
-					where[i] += base;
-				}
-			}
-			where += CHAR_BIT * sizeof(uintptr_t) - 1;
-		} else {
-			where = (uintptr_t *)(base + entry);
-			*where++ += base;
 		}
 	}
 }

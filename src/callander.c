@@ -14068,18 +14068,7 @@ static int relocate_loaded_library(struct program_state *analysis, struct loaded
 		}
 		for (size_t i = 0; i < new_binary->info.section_entry_count; i++) {
 			const ElfW(Shdr) *section = (const ElfW(Shdr) *)((char *)new_binary->sections.sections + i * new_binary->info.section_entry_size);
-			const ElfW(Shdr) *rela_section = NULL;
-			switch (section->sh_type) {
-				case SHT_RELA: {
-					rela_section = section;
-					break;
-				}
-				case SHT_RELR: {
-					apply_relr_table(&new_binary->info, (const uintptr_t *)apply_base_address(&new_binary->info, section->sh_addr), section->sh_size);
-					break;
-				}
-			}
-			if (rela_section != NULL) {
+			if (section->sh_type == SHT_RELA) {
 				int result = apply_relocation_table(&analysis->loader, new_binary, section->sh_addr, relaent, section->sh_size);
 				if (result < 0) {
 					return result;
