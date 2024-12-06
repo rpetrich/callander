@@ -5357,7 +5357,7 @@ __attribute__((always_inline))
 static inline bool split_signed_alternate(struct register_state *jump_state, struct register_state *continue_state, struct register_state *alternate_state, const struct register_comparison *comparison)
 {
 	uintptr_t mask = comparison->mask;
-	if (has_sign_bit(jump_state->max, mask)) {
+	if (has_sign_bit(jump_state->max, mask) && !has_sign_bit(jump_state->value, mask)) {
 		LOG("signed comparison on potentially negative value, splitting");
 		alternate_state->max = mask;
 		alternate_state->value = mask & ~(mask >> 1);
