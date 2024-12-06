@@ -893,34 +893,35 @@ static char *copy_decoded_rm_description(const struct loader_context *loader, st
 #endif
 }
 
-static inline void log_effects(__attribute__((unused)) function_effects effects)
+static const char *effects_description(function_effects effects)
 {
-	if (SHOULD_LOG) {
-		if (effects & EFFECT_RETURNS) {
-			ERROR_NOPREFIX("returns");
-		}
-		if (effects & EFFECT_EXITS) {
-			ERROR_NOPREFIX("exits");
-		}
-		if (effects & EFFECT_STICKY_EXITS) {
-			ERROR_NOPREFIX("sticky exits");
-		}
-		if (effects & EFFECT_PROCESSED) {
-			ERROR_NOPREFIX("processed");
-		}
-		if (effects & EFFECT_PROCESSING) {
-			ERROR_NOPREFIX("processing");
-		}
-		if (effects & EFFECT_AFTER_STARTUP) {
-			ERROR_NOPREFIX("after startup");
-		}
-		if (effects & EFFECT_ENTRY_POINT) {
-			ERROR_NOPREFIX("as entry point");
-		}
-		if (effects & EFFECT_MODIFIES_STACK) {
-			ERROR_NOPREFIX("modifies stack");
-		}
+	static char buffer[PAGE_SIZE];
+	char *buf = buffer;
+	if (effects & EFFECT_RETURNS) {
+		buf = fs_strcpy(buf, ", returns");
 	}
+	if (effects & EFFECT_EXITS) {
+		buf = fs_strcpy(buf, ", exits");
+	}
+	if (effects & EFFECT_STICKY_EXITS) {
+		buf = fs_strcpy(buf, ", sticky-exits");
+	}
+	if (effects & EFFECT_PROCESSED) {
+		buf = fs_strcpy(buf, ", processed");
+	}
+	if (effects & EFFECT_PROCESSING) {
+		buf = fs_strcpy(buf, ", processing");
+	}
+	if (effects & EFFECT_AFTER_STARTUP) {
+		buf = fs_strcpy(buf, ", after-startup");
+	}
+	if (effects & EFFECT_ENTRY_POINT) {
+		buf = fs_strcpy(buf, ", as-entrypoint");
+	}
+	if (effects & EFFECT_MODIFIES_STACK) {
+		buf = fs_strcpy(buf, ", modifies-stack");
+	}
+	return buf == buffer ? "(none)" : &buffer[2];
 }
 
 struct queued_instruction {
@@ -1732,8 +1733,9 @@ static inline struct searched_instruction_data *set_effects(struct searched_inst
 
 struct previous_register_masks {
 	register_mask relevant_registers;
+	register_mask preserved_registers;
 	register_mask preserved_and_kept_registers;
-	struct searched_instruction_data_entry *entry;
+	struct searched_instruction_data *data;
 };
 
 static inline struct previous_register_masks add_relevant_registers(struct searched_instructions *search, const struct loader_context *loader, ins_ptr addr, const struct registers *registers, function_effects required_effects, register_mask relevant_registers, register_mask preserved_registers, register_mask preserved_and_kept_registers, struct effect_token *token)
@@ -1761,8 +1763,9 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 	struct searched_instruction_data_entry *entry = entry_for_offset(data, entry_offset);
 	struct previous_register_masks result = (struct previous_register_masks){
 		.relevant_registers = data->relevant_registers,
+		.preserved_registers = data->preserved_registers,
 		.preserved_and_kept_registers = data->preserved_and_kept_registers,
-		.entry = entry,
+		.data = data,
 	};
 	data->relevant_registers = result.relevant_registers | relevant_registers;
 	data->preserved_registers |= preserved_registers;
@@ -3374,18 +3377,26 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 			ERROR_NOPREFIX("from ins at", temp_str(copy_address_description(loader, ancestor->address)));
 		}
 		struct previous_register_masks existing = add_relevant_registers(search, loader, ancestor->entry, ancestor->entry_state, required_effects, new_relevant_registers, new_preserved_registers, new_preserved_and_kept_registers, (struct effect_token *)&ancestor->token);
-		if ((existing.relevant_registers & new_relevant_registers) == new_relevant_registers && (existing.preserved_and_kept_registers & new_preserved_and_kept_registers) == new_preserved_and_kept_registers) {
-			if ((existing.entry->effects & EFFECT_TEMPORARY_IN_VARY_EFFECTS) == 0) {
+		if (
+			((existing.relevant_registers & new_relevant_registers) == new_relevant_registers) &&
+			((existing.preserved_registers & new_preserved_registers) == new_preserved_registers) &&
+			((existing.preserved_and_kept_registers & new_preserved_and_kept_registers) == new_preserved_and_kept_registers)
+		) {
+			if ((existing.data->sticky_effects & EFFECT_TEMPORARY_IN_VARY_EFFECTS) == 0) {
 				if (SHOULD_LOG) {
-					ERROR_NOPREFIX("relevant and preserved registers have already been added");
+					if (ancestor->next != NULL) {
+						ERROR_NOPREFIX("relevant and preserved registers already added, stopping before", temp_str(copy_address_description(loader, ancestor->next->entry)));
+					} else {
+						ERROR_NOPREFIX("relevant and preserved registers already added, stopping");
+					}
 				}
 				break;
 			}
 			if (SHOULD_LOG) {
-				ERROR_NOPREFIX("ancestor is reprocessing, continuing even though relevant and preserved registers were already added");
+				ERROR_NOPREFIX("ancestor is processing, continuing even though relevant and preserved registers were already added");
 			}
 		}
-		existing.entry->effects |= EFFECT_TEMPORARY_IN_VARY_EFFECTS;
+		existing.data->sticky_effects |= EFFECT_TEMPORARY_IN_VARY_EFFECTS;
 		ancestor = ancestor->next;
 		if (ancestor == NULL) {
 			if (SHOULD_LOG) {
@@ -3394,13 +3405,13 @@ static void vary_effects_by_registers(struct searched_instructions *search, cons
 			break;
 		}
 		relevant_registers = new_relevant_registers;
-		preserved_registers = new_preserved_and_kept_registers;
+		preserved_registers = new_preserved_registers;
 		preserved_and_kept_registers = new_preserved_and_kept_registers;
 	}
 	// clean up EFFECT_TEMPORARY_IN_VARY_EFFECTS
 	for (const struct analysis_frame *ancestor_clean = self; ancestor_clean != ancestor; ancestor_clean = ancestor_clean->next) {
-		struct searched_instruction_data_entry *entry = entry_for_offset(entry_for_index(search->table, ancestor_clean->token.index)->data, ancestor_clean->token.entry_offset);
-		entry->effects &= ~EFFECT_TEMPORARY_IN_VARY_EFFECTS;
+		struct searched_instruction_data *data = entry_for_index(search->table, ancestor_clean->token.index)->data;
+		data->sticky_effects &= ~EFFECT_TEMPORARY_IN_VARY_EFFECTS;
 	}
 }
 
@@ -6465,7 +6476,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		self.token.entry_offset = entry_offset;
 		register_mask relevant_registers = table_entry->data->relevant_registers;
 		if (relevant_registers != 0/* && (data->entries[entry_index].effects & ~EFFECT_STICKY_EXITS) != 0*/) {
-			vary_effects_by_registers(search, &analysis->loader, caller, relevant_registers, table_entry->data->preserved_and_kept_registers, table_entry->data->preserved_and_kept_registers, 0);
+			vary_effects_by_registers(search, &analysis->loader, caller, relevant_registers, table_entry->data->preserved_registers, table_entry->data->preserved_and_kept_registers, 0);
 			if (UNLIKELY(self.token.generation != search->generation)) {
 				table_entry = find_searched_instruction_table_entry(search, ins, &self.token);
 			}
@@ -6474,25 +6485,25 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		struct searched_instruction_data_entry *entry = entry_for_offset(table_entry->data, entry_offset);
 		self.token.entry_generation = entry->generation;
 		if (entry->effects & EFFECT_PROCESSING) {
-			if (!wrote_registers) {
-				wrote_registers = true;
-				self.current_state = *entry_state;
-			}
-			if (!registers_are_subset_of_entry_registers(self.current_state.registers, entry, ~relevant_registers)) {
+			if (!registers_are_subset_of_entry_registers(entry_state->registers, entry, ~table_entry->data->relevant_registers)) {
 				LOG("queuing because subset of existing processing entry, but expanded set of registers are not subset");
-				dump_nonempty_registers(&analysis->loader, &self.current_state, ~relevant_registers);
-				queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, &self.current_state, ins, "in progress");
+				dump_nonempty_registers(&analysis->loader, &self.current_state, ~table_entry->data->relevant_registers);
+				queue_instruction(&analysis->search.queue, ins, required_effects & ~EFFECT_PROCESSING, entry_state, ins, "in progress");
+			} else {
+				LOG("not queuing processing because irrelevant registers are a subset");
 			}
 		}
 		entry_state->modified |= entry->modified;
 		effects = entry->effects;
 		if ((effects & required_effects) == required_effects) {
-			LOG("skip", temp_str(copy_block_entry_description(&analysis->loader, ins, entry_state)));
-			LOG("has effects:");
-			log_effects(effects);
-			LOG("was searching for effects:");
-			log_effects(required_effects);
-			vary_effects_by_registers(search, &analysis->loader, caller, table_entry->data->relevant_registers, table_entry->data->relevant_registers, table_entry->data->preserved_and_kept_registers, required_effects);
+			if (SHOULD_LOG) {
+				LOG("skip", temp_str(copy_block_entry_description(&analysis->loader, ins, entry_state)));
+				expand_registers(self.current_state.registers, entry);
+				LOG("existing", temp_str(copy_block_entry_description(&analysis->loader, ins, &self.current_state)));
+				LOG("has effects", effects_description(effects));
+				LOG("was searching for effects", effects_description(required_effects));
+			}
+			vary_effects_by_registers(search, &analysis->loader, caller, table_entry->data->relevant_registers, table_entry->data->preserved_registers, table_entry->data->preserved_and_kept_registers, required_effects);
 			return (effects & EFFECT_STICKY_EXITS) ? (effects & ~(EFFECT_STICKY_EXITS | EFFECT_RETURNS)) : effects;
 		}
 		if (!wrote_registers) {
@@ -9254,8 +9265,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						goto update_and_return;
 					}
-					LOG("function may return, proceeding with effects:");
-					log_effects(more_effects);
+					LOG("function may return, proceeding with effects", effects_description(more_effects));
 					struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
 					if (caller_binary != NULL) {
 						struct frame_details frame;
@@ -9538,8 +9548,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
 									goto update_and_return;
 								}
-								LOG("function may return, proceeding with effects:");
-								log_effects(more_effects);
+								LOG("function may return, proceeding with effects", effects_description(more_effects));
 							}
 						} else {
 							bool is_null;
@@ -9585,8 +9594,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
 											goto update_and_return;
 										}
-										LOG("function may return, proceeding with effects:");
-										log_effects(more_effects);
+										LOG("function may return, proceeding with effects", effects_description(more_effects));
 									}
 								}
 							}
@@ -10101,8 +10109,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
 						goto update_and_return;
 					}
-					LOG("function may return, proceeding with effects:");
-					log_effects(more_effects);
+					LOG("function may return, proceeding with effects", effects_description(more_effects));
 					struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
 					if (caller_binary != NULL) {
 						struct frame_details frame;
@@ -10190,8 +10197,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							LOG("completing from call to exit-only function", temp_str(copy_address_description(&analysis->loader, self.entry)));
 							goto update_and_return;
 						}
-						LOG("function may return, proceeding with effects:");
-						log_effects(more_effects);
+						LOG("function may return, proceeding with effects", effects_description(more_effects));
 						struct loaded_binary *caller_binary = binary_for_address(&analysis->loader, ins);
 						if (caller_binary != NULL) {
 							struct frame_details frame;
@@ -13229,14 +13235,12 @@ update_and_return:
 		if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == 0) {
 			effects |= EFFECT_RETURNS;
 		}
-		LOG("final effects:");
-		log_effects(effects);
+		LOG("final effects", effects_description(effects));
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified)->next_ins = next_ins(ins, &decoded);
 	} else {
 		effects &= ~EFFECT_RETURNS;
-		LOG("final effects:");
-		log_effects(effects);
+		LOG("final effects", effects_description(effects));
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified)->next_ins = next_ins(ins, &decoded);
 		effects &= ~EFFECT_STICKY_EXITS;
