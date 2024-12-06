@@ -13620,18 +13620,25 @@ static int special_binary_flags_for_path(const char *path)
 			if (path[4] == 'e' && path[5] == 'r' && path[6] == 'l') {
 				result |= BINARY_IS_PERL;
 			}
+			if (path[4] == '1' && path[5] == '1' && path[6] == '-' && path[7] == 'k' && path[8] == 'i' && path[9] == 't' && path[10] == '.') {
+				result |= BINARY_IS_LIBP11KIT;
+			}
 		} else if (path[3] == 'r' && path[4] == 'e' && path[5] == 'a' && path[6] == 'd') {
 			// result |= BINARY_IS_LIBREADLINE;
 		} else if (path[3] == 's') {
 			if (path[4] == 'e' && path[5] == 'c' && path[6] == 'c' && path[7] == 'o' && path[8] == 'm' && path[9] == 'p' && path[10] == '.') { // libseccomp.
 				result |= BINARY_IS_SECCOMP;
 			}
+			if (path[4] == 'a' && path[5] == 's' && path[6] == 'l' && path[7] == '2' && path[8] == '.') {
+				result |= BINARY_IS_LIBSASL2;
+			}
 		} else if (path[3] == 'n') {
 			if (path[4] == 's' && path[5] == 's' && path[6] == '_' && path[7] == 's' && path[8] == 'y' && path[9] == 's' && path[10] == 't' && path[11] == 'e' && path[12] == 'm' && path[13] == 'd' && path[14] == '.') { // libnss_systemd.
 				result |= BINARY_IS_LIBNSS_SYSTEMD;
 			}
 		} else if (path[3] == 'k') {
-			if (path[4] == 'r' && path[5] == 'b' && path[6] == '5' && path[7] == '.') { // libkrb5.
+			if (path[4] == 'r' && path[5] == 'b' && path[6] == '5' && (path[7] == '.' || path[7] == 's')) { // libkrb5
+				result |= BINARY_IS_LIBKRB5;
 				// result |= BINARY_ASSUME_FUNCTION_CALLfS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
 			}
 		} else if (path[3] == 'r') {
