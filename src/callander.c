@@ -6739,7 +6739,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case SYSCALL_ANALYSIS_UPDATE_AND_RETURN:
 								goto update_and_return;
 							case SYSCALL_ANALYSIS_EXIT:
-								return EFFECT_EXITS;
+								effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
+								goto update_and_return;
 						}
 						break;
 					case 0x0b: // ud2
@@ -7843,12 +7844,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				register_mask sources;
 				int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM, &comparator, &sources);
 				if (register_is_legacy_8bit_high(decoded.prefixes, &rm)) {
-					return INVALID_COMPARISON;
+					clear_comparison_state(&self.current_state);
+					break;
 				}
 				truncate_to_8bit(&comparator);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				if (register_is_legacy_8bit_high(decoded.prefixes, &reg)) {
-					return INVALID_COMPARISON;
+					clear_comparison_state(&self.current_state);
+					break;
 				}
 				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
 					.target_register = reg,
@@ -12832,7 +12835,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case SYSCALL_ANALYSIS_UPDATE_AND_RETURN:
 						goto update_and_return;
 					case SYSCALL_ANALYSIS_EXIT:
-						return EFFECT_EXITS;
+						effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
+						goto update_and_return;
 				}
 				break;
 			case ARM64_SWP:
