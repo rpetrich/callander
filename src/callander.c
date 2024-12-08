@@ -8916,8 +8916,22 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_comparison_state(&self.current_state);
 				break;
 			case 0xaa: // stos m8, al
+				if (decoded.prefixes.has_rep) {
+					set_register(&self.current_state.registers[REGISTER_RCX], 0);
+				} else {
+					clear_register(&self.current_state.registers[REGISTER_RCX]);
+				}
+				self.current_state.sources[REGISTER_RCX] = 0;
+				clear_match(&analysis->loader, &self.current_state, REGISTER_RCX, ins);
 				break;
 			case 0xab: // stos m, *ax
+				if (decoded.prefixes.has_rep) {
+					set_register(&self.current_state.registers[REGISTER_RCX], 0);
+				} else {
+					clear_register(&self.current_state.registers[REGISTER_RCX]);
+				}
+				self.current_state.sources[REGISTER_RCX] = 0;
+				clear_match(&analysis->loader, &self.current_state, REGISTER_RCX, ins);
 				break;
 			case 0xac: // lods m, al
 				clear_register(&self.current_state.registers[REGISTER_RAX]);
