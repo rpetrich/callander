@@ -10612,6 +10612,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				struct register_state right_state;
 				int right = read_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &right_state, NULL);
+				if (!register_is_exactly_known(&right_state)) {
+					LOG("cmn with ranged comparison");
+					clear_comparison_state(&self.current_state);
+					break;
+				}
 				set_register(&right_state, -right_state.value);
 				truncate_to_operand_size(&right_state, size);
 				bool applied_shift = apply_operand_shift(&right_state, &decoded.decomposed.operands[1]);
