@@ -893,7 +893,7 @@ static char *copy_decoded_rm_description(const struct loader_context *loader, st
 #endif
 }
 
-static const char *effects_description(function_effects effects)
+__attribute__((unused)) static const char *effects_description(function_effects effects)
 {
 	static char buffer[PAGE_SIZE];
 	char *buf = buffer;
