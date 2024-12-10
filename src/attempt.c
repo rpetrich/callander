@@ -97,6 +97,8 @@ static void attempt_internal(attempt_body body, void *data, uintptr_t sp)
 #ifndef __clang__
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdangling-pointer"
 #endif
 __attribute__((used))
 void attempt(struct thread_storage *thread, attempt_body body, void *data)
@@ -111,6 +113,7 @@ void attempt(struct thread_storage *thread, attempt_body body, void *data)
 	CALL_SPILLED_WITH_ARGS_AND_SP(attempt_internal, body, &attempt);
 }
 #ifndef __clang__
+#pragma GCC diagnostic pop
 #pragma GCC pop_options
 #endif
 
