@@ -13314,6 +13314,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 						LOG("symbol value is NULL");
 					} else {
 						ERROR("symbol is in another castle", textual_name);
+						ERROR("type", type);
 						if (version.version_name != NULL) {
 							ERROR("version", version.version_name);
 							if (version.library_name != NULL) {
