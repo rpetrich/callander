@@ -2025,38 +2025,6 @@ struct hsmp_message {
 #define HSMP_IOCTL_CMD		_IOWR(HSMP_BASE_IOCTL_NR, 0, struct hsmp_message)
 
 
-#define SGX_IOC_VEPC_REMOVE_ALL \
-	_IO(SGX_MAGIC, 0x04)
-#define SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS \
-	_IOWR(SGX_MAGIC, 0x05, struct sgx_enclave_restrict_permissions)
-#define SGX_IOC_ENCLAVE_MODIFY_TYPES \
-	_IOWR(SGX_MAGIC, 0x06, struct sgx_enclave_modify_types)
-#define SGX_IOC_ENCLAVE_REMOVE_PAGES \
-	_IOWR(SGX_MAGIC, 0x07, struct sgx_enclave_remove_pages)
-
-struct sgx_enclave_restrict_permissions {
-	__u64 offset;
-	__u64 length;
-	__u64 permissions;
-	__u64 result;
-	__u64 count;
-};
-
-struct sgx_enclave_modify_types {
-	__u64 offset;
-	__u64 length;
-	__u64 page_type;
-	__u64 result;
-	__u64 count;
-};
-
-struct sgx_enclave_remove_pages {
-	__u64 offset;
-	__u64 length;
-	__u64 count;
-};
-
-
 // workaround for old dma-buf header: https://lore.kernel.org/lkml/YoNx8a8+gvOWwfc9@kroah.com/T/
 #define u32 __u32
 #define u64 __u64
