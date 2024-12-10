@@ -15059,10 +15059,9 @@ void finish_analysis(struct program_state *analysis)
 {
 	struct queued_instruction ins;
 	while (dequeue_instruction(&analysis->search.queue, &ins)) {
-		LOG("dequeuing", temp_str(copy_address_description(&analysis->loader, ins.ins)));
-		dump_nonempty_registers(&analysis->loader, &ins.registers, ALL_REGISTERS);
+		LOG("dequeuing", temp_str(copy_block_entry_description(&analysis->loader, ins.ins, &ins.registers)));
+		LOG("required effects", effects_description(ins.effects));
 		struct analysis_frame queued_caller = { .address = ins.caller, .description = ins.description, .next = NULL, .current_state = empty_registers, .entry = ins.caller, .entry_state = &empty_registers, .token = { 0 } };
-		// TODO: determine if this should always be considered a function entry point
 		analyze_function(analysis, ins.effects, &ins.registers, ins.ins, &queued_caller);
 	}
 
