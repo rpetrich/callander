@@ -7289,6 +7289,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										LOG("unsigned lookup table rejected because range of index is too large", max - value);
 										self.description = "rejected lookup table";
 										LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
+										effects |= EFFECT_RETURNS;
 									} else {
 										self.description = "lookup table";
 										vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(base) | mask_for_register(index), mask_for_register(base)/* | mask_for_register(index)*/, mask_for_register(base)/* | mask_for_register(index)*/, required_effects);
@@ -8047,7 +8048,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									LOG("reusing previous base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
 								} else {
 									LOG("missing base address for lookup table that previously had a base address, skipping");
-									effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
 									goto update_and_return;
 								}
 							}
@@ -8095,6 +8095,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									self.description = "rejected lookup table";
 									LOG("trace", temp_str(copy_call_trace_description(&analysis->loader, &self)));
 									requires_known_target = true;
+									effects |= EFFECT_RETURNS;
 								} else {
 									self.description = "lookup table";
 									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(base) | mask_for_register(index), mask_for_register(base) | mask_for_register(index), mask_for_register(base)/* | mask_for_register(index)*/, required_effects);
@@ -11506,7 +11507,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									LOG("reusing previous base address", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
 								} else {
 									LOG("missing base address for lookup table that previously had a base address, skipping");
-									effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
 									goto update_and_return;
 								}
 							}
@@ -11538,6 +11538,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									if (decoded.decomposed.operation != ARM64_LDR) {
 										requires_known_target = true;
 									}
+									effects |= EFFECT_RETURNS;
 								} else {
 									self.description = "lookup table";
 									vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(reg) | mask_for_register(index), mask_for_register(reg) | mask_for_register(index), mask_for_register(reg)/* | mask_for_register(index)*/, required_effects);
