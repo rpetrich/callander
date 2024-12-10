@@ -3938,8 +3938,7 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 	switch (operand->operandClass) {
 		case REG: {
 			int reg = register_index_from_register(operand->reg[0]);
-			if (reg != AARCH64_REGISTER_INVALID) {
-			} else {
+			if (reg == AARCH64_REGISTER_INVALID) {
 				break;
 			}
 			enum ins_operand_size size = get_register_size(operand->reg[0]);
