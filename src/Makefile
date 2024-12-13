@@ -312,6 +312,8 @@ endif
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 callander: callander_$(NATIVEMACHINE)
+	rm -rf "$@" "$@.debug"
+	ln callander_$(NATIVEMACHINE) "$@.debug" || cp -a callander_$(NATIVEMACHINE) "$@.debug"
 	ln callander_$(NATIVEMACHINE) "$@" || cp -a callander_$(NATIVEMACHINE) "$@"
 
 libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
