@@ -6117,8 +6117,10 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 				LOG("found golang stack preserving function", temp_str(copy_address_description(loader, addr)));
 				return true;
 			}
+		} else {
+			// TODO: find a better way to annotate known stack preserving go runtime functions properly without symbols
+			return true;
 		}
-		return false;
 	}
 	if (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
 		const char *name = find_any_symbol_name_by_address(loader, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL);
