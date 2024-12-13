@@ -311,10 +311,10 @@ endif
 	$(STRIP) -s -R .comment -D "$@"
 	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
-callander: callander_$(NATIVEMACHINE)
+callander: callander_$(TARGETMACHINE)
 	rm -rf "$@" "$@.debug"
-	ln callander_$(NATIVEMACHINE) "$@.debug" || cp -a callander_$(NATIVEMACHINE) "$@.debug"
-	ln callander_$(NATIVEMACHINE) "$@" || cp -a callander_$(NATIVEMACHINE) "$@"
+	ln callander_$(TARGETMACHINE) "$@.debug" || cp -a callander_$(NATIVEMACHINE) "$@.debug"
+	ln callander_$(TARGETMACHINE) "$@" || cp -a callander_$(NATIVEMACHINE) "$@"
 
 libcallander.so: $(foreach obj,$(LIBCALLANDER_OBJECTS),$(objdir)/$(obj))
 	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
