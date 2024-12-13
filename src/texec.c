@@ -15,6 +15,7 @@ AXON_BOOTSTRAP_ASM
 #include "loader.h"
 #include "proxy.h"
 #include "proxy_target.h"
+#include "handler.h"
 #include "remote_exec.h"
 #include "search.h"
 #include "time.h"
@@ -373,7 +374,7 @@ bool remote_should_try_to_patch(const struct recorded_syscall *syscall)
 static void transfer_fd_table(uintptr_t fd_table_addr)
 {
 	// poke the remote file table
-	const int *local_table = (const int *)FS_SYSCALL(0x666);
+	const int *local_table = handler_get_process_fd_table();
 	for (int i = 0; i < MAX_TABLE_SIZE; i++) {
 		int value = local_table[i];
 		if (value != 0) {
