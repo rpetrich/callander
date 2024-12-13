@@ -34,7 +34,12 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 			}
 		}
 		if (out_path) {
-			*out_path = name;
+			int getpath_result = fs_fd_getpath(result, buf);
+			if (getpath_result < 0) {
+				fs_close(result);
+				return getpath_result;
+			}
+			*out_path = buf;
 		}
 		return result;
 	}
@@ -66,14 +71,24 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 				if (result >= 0) {
 					if (!require_executable) {
 						if (out_path) {
-							*out_path = full_path;
+							int getpath_result = fs_fd_getpath(result, buf);
+							if (getpath_result < 0) {
+								fs_close(result);
+								return getpath_result;
+							}
+							*out_path = buf;
 						}
 						return result;
 					}
 					struct fs_stat stat;
 					if (verify_allowed_to_exec(result, &stat, uid, gid) == 0) {
 						if (out_path) {
-							*out_path = full_path;
+							int getpath_result = fs_fd_getpath(result, buf);
+							if (getpath_result < 0) {
+								fs_close(result);
+								return getpath_result;
+							}
+							*out_path = buf;
 						}
 						return result;
 					}
