@@ -359,7 +359,6 @@ setsockopt(any u32, any u32, any u32, any, any u32) @ libc.so.6+0xdcf44(setsocko
 getsockopt(any u32, any u32, any u32, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 getsockopt(any, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ libc.so.6+0xdc904(getsockopt+4)
 shutdown(any u32, SHUT_RD-SHUT_RDWR) @ libc.so.6+0xdcf84(shutdown+4)
-shutdown(any u32, 0x80000000-0xffffffff) @ libc.so.6+0xdcf84(shutdown+4)
 sendmsg(any, any, any) @ libpthread.so.0+0x13488(sendmsg+40)
 sendmsg(any, any, any) @ libpthread.so.0+0x134cc(sendmsg+108)
 recvmsg(any, any, any) @ libpthread.so.0+0x133a8(recvmsg+40)

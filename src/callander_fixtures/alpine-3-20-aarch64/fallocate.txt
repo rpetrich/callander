@@ -1,7 +1,11 @@
 callander: permitted syscalls: dup(any) @ ld-musl-aarch64.so.1+0x68624(dup+16)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x52cac(fstatat+88)
 ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x53910(__stdout_write*+56)
-fallocate(any, NULL-0x8, any, any) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
+fallocate(any, 0, any, NULL-0xfffffffffffffffd) @ ld-musl-aarch64.so.1+0x2124c(posix_fallocate+20)
+fallocate(any, 0, any, -1) @ ld-musl-aarch64.so.1+0x2124c(posix_fallocate+20)
+fallocate(any, NULL-0x18, any, any) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
+fallocate(any, NULL-0x28, any, NULL-0xfffffffffffffffd) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
+fallocate(any, NULL-0x28, any, -1) @ ld-musl-aarch64.so.1+0x24964(fallocate+20)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
 openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0666) @ ld-musl-aarch64.so.1+0x607bc
@@ -74,9 +78,6 @@ munmap(any, any) @ ld-musl-aarch64.so.1+0x60754
 mmap(0, NULL-0x7ffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ, MAP_SHARED, any, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ, MAP_SHARED, any, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 fadvise64(any, any, any, 2) @ ld-musl-aarch64.so.1+0x2122c(posix_fadvise+12)
 fadvise64(any, any, any, 4) @ ld-musl-aarch64.so.1+0x2122c(posix_fadvise+12)

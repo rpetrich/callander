@@ -61,8 +61,8 @@ socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x413ff(socke
 socket(0x0-AF_PACKET, 0-SOCK_DGRAM, 0) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
 connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5e990
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)

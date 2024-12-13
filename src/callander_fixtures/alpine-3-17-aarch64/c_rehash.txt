@@ -54,8 +54,8 @@ readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5d210
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5d210
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)

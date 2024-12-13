@@ -104,5 +104,4 @@ newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_6
 newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)
-timerfd_settime(any, 0, any, 8) @ ld-musl-x86_64.so.1+0x20e23(timerfd_settime+18)
-timerfd_settime(any, TFD_TIMER_ABSTIME, any, 0) @ ld-musl-x86_64.so.1+0x20e23(timerfd_settime+18)
+timerfd_settime(any, 0-TFD_TIMER_ABSTIME, any, 0) @ ld-musl-x86_64.so.1+0x20e23(timerfd_settime+18)

@@ -74,71 +74,7 @@ openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND, 0666) @ ld-musl-aarch64.so.1+0x
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2e0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f2f0, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f8c0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f930, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4f9a0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fe00, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fe70, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4fee0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4ff50, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x4ffc0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50030, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x500a0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50110, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50180, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x501f0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50260, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x502d0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50340, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x503b0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50420, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50490, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50500, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50570, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x505e0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50650, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x506c0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50730, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x507a0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50810, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50880, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x508f0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50960, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x509d0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, /usr/bin/rsync+0x50a40, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4f9a0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fe00, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fe70, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4fee0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4ff50, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x4ffc0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50030, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x500a0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50110, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50180, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x501f0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50260, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x502d0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50340, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x503b0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50420, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50490, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50500, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50570, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x505e0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50650, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x506c0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50730, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x507a0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50810, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50880, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x508f0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50960, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x509d0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, /usr/bin/rsync+0x50a40, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
@@ -180,8 +116,8 @@ newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarc
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x52c90(fstatat+60)
-fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x607bc
-fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+fsync(any) @ ld-musl-aarch64.so.1+0x607bc
+fsync(any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 utimensat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x53138(utimensat+48)
 utimensat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x53138(utimensat+48)
 exit(any) @ ld-musl-aarch64.so.1+0x6075c
@@ -299,16 +235,12 @@ brk(any) @ ld-musl-aarch64.so.1+0x29a4c(__malloc_alloc_meta*+584)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x3e718(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x60754
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
-mremap(any, NULL-0xfffffffffffff000, 0x8000000000000000-0xffffffffffffffff, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487c0(_Fork+48)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-aarch64.so.1+0x6077c
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x6077c
 mmap(0, NULL-0x7ffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ, MAP_SHARED, any, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ, MAP_SHARED, any, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)

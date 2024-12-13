@@ -44,14 +44,24 @@ faccessat(any, libblkid.so.1+0x2764d, F_OK) @ ld-musl-aarch64.so.1+0x6878c(facce
 faccessat(any, libblkid.so.1+0x27657, F_OK) @ ld-musl-aarch64.so.1+0x6878c(faccessat+52)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9edb8, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
 openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, libblkid.so.1+0x247e4, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(any, libblkid.so.1+0x272f1, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, libblkid.so.1+0x272f9, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, libblkid.so.1+0x275f6, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, libblkid.so.1+0x27607, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, libblkid.so.1+0x2761d, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, libblkid.so.1+0x27633, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, libblkid.so.1+0x2764d, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, libblkid.so.1+0x27657, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, libblkid.so.1+0x272f1, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, libblkid.so.1+0x272f9, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, libblkid.so.1+0x275f6, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, libblkid.so.1+0x27607, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, libblkid.so.1+0x2761d, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, libblkid.so.1+0x27633, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, libblkid.so.1+0x2764d, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, libblkid.so.1+0x27657, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
@@ -128,6 +138,7 @@ clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 sched_setscheduler(any u32, any, any) @ ld-musl-aarch64.so.1+0x62660(pthread_create+576)
 sched_setaffinity(0, 128, any) @ ld-musl-aarch64.so.1+0x51008(sched_setaffinity+16)
+sched_getaffinity(0, 128, any) @ ld-musl-aarch64.so.1+0x1c390(sysconf+432)
 restart_syscall()
 kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x51f28(kill+20)
 kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x69324(do_setxid*+92)
@@ -152,7 +163,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_si
 rt_sigtimedwait(any, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
 rt_sigtimedwait(any, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
-getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
+getrlimit(RLIMIT_FSIZE, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
+getrlimit(RLIMIT_AS, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
 setrlimit(any u32, any) @ ld-musl-aarch64.so.1+0x3d958(do_setrlimit*+24)
 getcpu(any, 0, 0) @ ld-musl-aarch64.so.1+0x51168(sched_getcpu+24)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x66704(clock_gettime+92)
@@ -169,21 +181,18 @@ brk(any) @ ld-musl-aarch64.so.1+0x29a4c(__malloc_alloc_meta*+584)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x3e718(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x60754
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
-mremap(any, NULL-0xfffffffffffff000, 0x8000000000000000-0xffffffffffffffff, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487c0(_Fork+48)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x6077c
 mmap(0, NULL-0x7ffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ, MAP_SHARED, any, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ, MAP_SHARED, any, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 fadvise64(any, 0, 0, 1) @ ld-musl-aarch64.so.1+0x2122c(posix_fadvise+12)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
-prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
+prlimit64(0, RLIMIT_FSIZE, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
+prlimit64(0, RLIMIT_AS, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
 prlimit64(0, RLIMIT_FSIZE, any, 0) @ ld-musl-aarch64.so.1+0x3d98c(setrlimit+36)
 prlimit64(0, RLIMIT_AS, any, 0) @ ld-musl-aarch64.so.1+0x3d98c(setrlimit+36)
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x24c58(__membarrier_init*+12)

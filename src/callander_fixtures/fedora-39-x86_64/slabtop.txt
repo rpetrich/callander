@@ -217,7 +217,7 @@ newfstatat(AT_FDCWD, libsystemd.so.0+0xb8ad4, any, AT_EMPTY_PATH) @ libc.so.6+0x
 unlinkat(AT_FDCWD, libsystemd.so.0+0xc547f, AT_REMOVEDIR) @ libc.so.6+0x108e29(unlinkat+9)
 unlinkat(AT_FDCWD, libsystemd.so.0+0xc548f, AT_REMOVEDIR) @ libc.so.6+0x108e29(unlinkat+9)
 readlinkat(any u32, any, non-NULL, any) @ libc.so.6+0x10851c(readlinkat+12)
-pselect6(1, any, 0, 15, any, 0) @ libc.so.6+0x1132bc(select+172)
+pselect6(1, any, 0, 0, any, 0) @ libc.so.6+0x1132bc(select+172)
 pselect6(1, any, any, any, any, 0) @ libc.so.6+0x113355(select+325)
 ppoll(any, 0x1-0x2, any, 0, 8) @ libc.so.6+0x10839b(ppoll+75)
 ppoll(any, any, any, any, 8) @ libc.so.6+0x1083ee(ppoll+158)

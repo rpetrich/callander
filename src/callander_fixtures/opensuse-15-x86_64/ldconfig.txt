@@ -1,94 +1,111 @@
-callander: permitted syscalls: read(any u32, any, any) @ /sbin/ldconfig:0x465ffc
-read(any u32, any, any) @ /sbin/ldconfig:0x466032
-read(any u32, any, any) @ /sbin/ldconfig:0x466d12
-write(any u32, any, any) @ /sbin/ldconfig:0x4660b1
-write(any u32, any, any) @ /sbin/ldconfig:0x4660e5
-write(any u32, any, any) @ /sbin/ldconfig:0x466d55
-close(any u32) @ /sbin/ldconfig:0x4661a1
-close(any u32) @ /sbin/ldconfig:0x4661c5
-close(any u32) @ /sbin/ldconfig:0x466a75
-stat(any, any) @ /sbin/ldconfig:0x465d33
-fstat(any u32, any) @ /sbin/ldconfig:0x465d91
-lstat(any, any) @ /sbin/ldconfig:0x465df3
-poll(any, 1, any u32) @ /sbin/ldconfig:0x4b4491
-poll(any, 1, any u32) @ /sbin/ldconfig:0x4b44c7
-lseek(any u32, any, any) @ /sbin/ldconfig:0x466155
-mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /sbin/ldconfig:0x4671a1
-mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /sbin/ldconfig:0x4671a1
-mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4671a1
-mmap(any, NULL-0xfffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_DENYWRITE, -1 as u32, 0) @ /sbin/ldconfig:0x4671a1
-mmap(any, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1 as u32, 0) @ /sbin/ldconfig:0x4671a1
-mmap(any, any, any u32, MAP_PRIVATE|MAP_DENYWRITE, any u32, any) @ /sbin/ldconfig:0x4671a1
-mmap(any, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, any u32, any) @ /sbin/ldconfig:0x4671a1
-mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4671a1
-mmap(0, NULL-0xfffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_DENYWRITE, -1 as u32, 0) @ /sbin/ldconfig:0x4671fe
-mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /sbin/ldconfig:0x4671fe
-mmap(0, any, any u32, MAP_PRIVATE|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /sbin/ldconfig:0x4671fe
-mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /sbin/ldconfig:0x4671fe
-mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /sbin/ldconfig:0x4671fe
-mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /sbin/ldconfig:0x4671fe
-mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4671fe
-mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /sbin/ldconfig:0x4671fe
-mprotect(any, any, any u32) @ /sbin/ldconfig:0x467295
-munmap(any, any) @ /sbin/ldconfig:0x467255
-brk(any) @ /sbin/ldconfig:0x49a257
-rt_sigaction(any, any, 0, 8) @ /sbin/ldconfig:0x47aacb
-rt_sigaction(SIGALRM, any, any, 8) @ /sbin/ldconfig:0x47aacb
-rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /sbin/ldconfig:0x40ec29
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /sbin/ldconfig:0x40ec69
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /sbin/ldconfig:0x47ac84
-rt_sigreturn(any) @ /sbin/ldconfig:0x47a9f7
-ioctl(any u32, TCGETS, any) @ /sbin/ldconfig:0x49a186
-pread64(any u32, any, any, any) @ /sbin/ldconfig:0x49a128
-writev(STDERR_FILENO, any, any u32) @ /sbin/ldconfig:0x466e91
-writev(STDERR_FILENO, any, any u32) @ /sbin/ldconfig:0x466ec5
-writev(any u32, any, any) @ /sbin/ldconfig:0x4a7fd6
-access(/sbin/ldconfig:0x4bcabe, F_OK) @ /sbin/ldconfig:0x499a35
-access(/sbin/ldconfig:0x4bcacd, F_OK) @ /sbin/ldconfig:0x499a35
-mremap(any, any, any, MREMAP_MAYMOVE, any) @ /sbin/ldconfig:0x468ca8
-madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig:0x4672d5
-alarm(any u32) @ /sbin/ldconfig:0x499755
-getpid() @ /sbin/ldconfig:0x40ec32
-getpid() @ /sbin/ldconfig:0x499865
-socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /sbin/ldconfig:0x4b4815
-connect(any u32, any, 110) @ /sbin/ldconfig:0x4b45f1
-connect(any u32, any, 110) @ /sbin/ldconfig:0x4b4625
-sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ /sbin/ldconfig:0x4b475a
-sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ /sbin/ldconfig:0x4b47a4
-recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ /sbin/ldconfig:0x4b46a1
-recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ /sbin/ldconfig:0x4b46d5
-fcntl(any u32, F_SETFD, 1) @ /sbin/ldconfig:0x466ace
-fcntl(any u32, F_GETFL, any) @ /sbin/ldconfig:0x466ace
-fcntl(any u32, F_SETLKW, any) @ /sbin/ldconfig:0x466ace
-fsync(any u32) @ /sbin/ldconfig:0x467031
-fsync(any u32) @ /sbin/ldconfig:0x467055
-fdatasync(any u32) @ /sbin/ldconfig:0x4670c1
-fdatasync(any u32) @ /sbin/ldconfig:0x4670e5
-getcwd(non-NULL, any) @ /sbin/ldconfig:0x466310
-chdir(/sbin/ldconfig:0x4bbe49) @ /sbin/ldconfig:0x466225
-rename(any, any) @ /sbin/ldconfig:0x4108d5
-mkdir(any, 0700) @ /sbin/ldconfig:0x465e85
-unlink(any) @ /sbin/ldconfig:0x466a35
-symlink(any, any) @ /sbin/ldconfig:0x4669b5
-readlink(any, non-NULL, 511) @ /sbin/ldconfig:0x4669f5
-readlink(/sbin/ldconfig:0x4be37a, any, 0x1000) @ /sbin/ldconfig:0x4a9462
-chmod(any, 0644) @ /sbin/ldconfig:0x465e45
-sysinfo(any) @ /sbin/ldconfig:0x468ce5
-chroot(non-NULL) @ /sbin/ldconfig:0x466fe5
-gettid() @ /sbin/ldconfig:0x40ec3c
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any, any)
+callander: permitted syscalls: read(any u32, any, any) @ /sbin/ldconfig+0x5b99b
+read(any u32, any, any) @ /sbin/ldconfig+0x5b9da
+read(any u32, any, any) @ /sbin/ldconfig+0x5bec2
+write(any u32, any, any) @ /sbin/ldconfig+0x5bb3e
+write(any u32, any, any) @ /sbin/ldconfig+0x5bb7d
+write(any u32, any, any) @ /sbin/ldconfig+0x5bf05
+close(any u32) @ /sbin/ldconfig+0x5adfe
+close(any u32) @ /sbin/ldconfig+0x5ae28
+close(any u32) @ /sbin/ldconfig+0x5bbe5
+fstat(any u32, any) @ /sbin/ldconfig+0x5ae95
+poll(any, 1, any u32) @ /sbin/ldconfig+0xad7ae
+poll(any, any, any u32) @ /sbin/ldconfig+0xad7ed
+lseek(any u32, any, any) @ /sbin/ldconfig+0x5b685
+mmap(any, any, any u32, any u32, any u32, any) @ /sbin/ldconfig+0x5cec0
+mmap(0, any, any u32, any u32, any u32, any) @ /sbin/ldconfig+0x5cf16
+mprotect(any, any, any u32) @ /sbin/ldconfig+0x5cf65
+munmap(any, any) @ /sbin/ldconfig+0x5cfa5
+brk(any) @ /sbin/ldconfig+0x5bf95
+rt_sigaction(SIGABRT, any, 0, 8) @ /sbin/ldconfig+0x70a2d
+rt_sigaction(SIGALRM, any, any, 8) @ /sbin/ldconfig+0x70a2d
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /sbin/ldconfig+0x106ac
+rt_sigprocmask(SIG_BLOCK, /sbin/ldconfig+0xcf690, any, 8) @ /sbin/ldconfig+0x2f679
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /sbin/ldconfig+0x2f6c2
+rt_sigreturn(any) @ /sbin/ldconfig+0x70957
+ioctl(any u32, TCGETS, any) @ /sbin/ldconfig+0x8b144
+pread64(any u32, any, any, any) @ /sbin/ldconfig+0x8b0e8
+writev(STDERR_FILENO, any, any u32) @ /sbin/ldconfig+0x5dcae
+writev(any u32, any, any u32) @ /sbin/ldconfig+0x5dceb
+writev(any u32, any, any) @ /sbin/ldconfig+0x9de0b
+access(/sbin/ldconfig+0xc7719, F_OK) @ /sbin/ldconfig+0x8aac5
+mremap(any, any, any, MREMAP_MAYMOVE, any) @ /sbin/ldconfig+0x5dde9
+madvise(any, any, MADV_DONTNEED) @ /sbin/ldconfig+0x5ce45
+madvise(any, any, MADV_HUGEPAGE) @ /sbin/ldconfig+0x5ce45
+alarm(any u32) @ /sbin/ldconfig+0x86975
+getpid() @ /sbin/ldconfig+0x57cc5
+socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /sbin/ldconfig+0xadbb5
+connect(any u32, any, 110) @ /sbin/ldconfig+0xad97e
+connect(any u32, any, any u32) @ /sbin/ldconfig+0xad9b9
+sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ /sbin/ldconfig+0xadaf7
+sendto(any u32, any, any, any u32, 0, 0) @ /sbin/ldconfig+0xadb42
+recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ /sbin/ldconfig+0xada33
+recvmsg(any u32, any, any u32) @ /sbin/ldconfig+0xada75
+fcntl(any u32, F_SETFD, 1) @ /sbin/ldconfig+0x5bc5f
+fcntl(any u32, F_GETFL, any) @ /sbin/ldconfig+0x5bc5f
+fcntl(any u32, F_SETLKW, any) @ /sbin/ldconfig+0x5bc5f
+fsync(any u32) @ /sbin/ldconfig+0x5c67e
+fsync(any u32) @ /sbin/ldconfig+0x5c6a8
+fdatasync(any u32) @ /sbin/ldconfig+0x5c5de
+fdatasync(any u32) @ /sbin/ldconfig+0x5c608
+getcwd(non-NULL, any) @ /sbin/ldconfig+0x5af8c
+chdir(/sbin/ldconfig+0xc6b82) @ /sbin/ldconfig+0x5ad75
+rename(any, any) @ /sbin/ldconfig+0x23195
+mkdir(any, 0700) @ /sbin/ldconfig+0x5b6f5
+unlink(any) @ /sbin/ldconfig+0x5baf5
+symlink(any, any) @ /sbin/ldconfig+0x5bab5
+readlink(any, non-NULL, 511) @ /sbin/ldconfig+0x5ba45
+chmod(any, 0644) @ /sbin/ldconfig+0x5adb5
+sysinfo(any) @ /sbin/ldconfig+0x5de75
+sched_getparam(any u32, any) @ /sbin/ldconfig+0x8a905
+sched_setscheduler(any u32, any u32, any) @ /sbin/ldconfig+0x8aa05
+sched_getscheduler(any u32) @ /sbin/ldconfig+0x8a945
+sched_get_priority_max(1) @ /sbin/ldconfig+0x8a985
+sched_get_priority_min(1) @ /sbin/ldconfig+0x8a9c5
+chroot(non-NULL) @ /sbin/ldconfig+0x5bfe5
+gettid() @ /sbin/ldconfig+0x2f715
+futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
+futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any)
+futex(any, any u8, 1, 0, any, any u32)
+futex(any, any u8, INT_MAX, 0, any u32, any)
+futex(any, any u8, INT_MAX, 0, any, any u32)
+futex(any, any u32, any u32, 0, 0, -1 as u32)
+futex(any, FUTEX_WAKE, 1, 0, any, any)
+futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
-getdents64(any u32, any, any) @ /sbin/ldconfig:0x498e35
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
+futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
+futex(/sbin/ldconfig+0x109b54, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NULL-0x1, any)
+sched_getaffinity(0, 0x1000, any) @ /sbin/ldconfig+0x5cc02
+getdents64(any u32, any, any) @ /sbin/ldconfig+0x861e1
 restart_syscall()
-clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /sbin/ldconfig:0x498d32
-clock_gettime(CLOCK_REALTIME_COARSE, any) @ /sbin/ldconfig:0x498d32
-clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /sbin/ldconfig:0x4b3598
-clock_nanosleep(any u32, any u32, any, any) @ /sbin/ldconfig:0x4b35ef
-exit_group(any u32) @ /sbin/ldconfig:0x45f1a4
-tgkill(any, any u32, SIGABRT) @ /sbin/ldconfig:0x40ec47
-tgkill(any, any u32, SIGFPE) @ /sbin/ldconfig:0x40ec47
-openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x465f0b
-openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x465f91
-openat(AT_FDCWD, any, any u32, any) @ /sbin/ldconfig:0x466bef
-openat(any u32, /sbin/ldconfig:0x4bc92a, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig:0x466c94
-newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /sbin/ldconfig:0x4999d7
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /sbin/ldconfig+0x57885
+clock_gettime(CLOCK_REALTIME_COARSE, any) @ /sbin/ldconfig+0x57885
+clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /sbin/ldconfig+0xb7571
+clock_nanosleep(any u32, any u32, any, any) @ /sbin/ldconfig+0xb75b3
+exit_group(any u32) @ /sbin/ldconfig+0x57c93
+tgkill(any u32, any u32, SIGABRT) @ /sbin/ldconfig+0x2f6ff
+tgkill(any u32, any u32, SIGFPE) @ /sbin/ldconfig+0x2f6ff
+tgkill(any u32, any u32, SIGABRT) @ /sbin/ldconfig+0x2f72a
+tgkill(any u32, any u32, SIGFPE) @ /sbin/ldconfig+0x2f72a
+openat(AT_FDCWD, any, O_RDONLY-62|O_CREAT|O_EXCL, any) @ /sbin/ldconfig+0x5b77c
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig+0x5b77c
+openat(AT_FDCWD, any, O_RDONLY-62|O_CREAT|O_EXCL, any) @ /sbin/ldconfig+0x5b7f6
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig+0x5b7f6
+openat(any u32, /sbin/ldconfig+0xc7572, O_RDONLY, any) @ /sbin/ldconfig+0x5b89a
+openat(any u32, any, any u32, any) @ /sbin/ldconfig+0x5b926
+openat(AT_FDCWD, any, O_RDONLY, any) @ /sbin/ldconfig+0x5bdac
+openat(AT_FDCWD, any, O_RDWR, any) @ /sbin/ldconfig+0x5bdac
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /sbin/ldconfig+0x5bdac
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /sbin/ldconfig+0x5bdac
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /sbin/ldconfig+0x5bdac
+openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /sbin/ldconfig+0x5bdac
+openat(AT_FDCWD, /sbin/ldconfig+0xc75cb, O_RDONLY|O_DIRECTORY, any) @ /sbin/ldconfig+0x5bdac
+newfstatat(any u32, any, any, 0) @ /sbin/ldconfig+0x5aed8
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /sbin/ldconfig+0x5aed8
+readlinkat(AT_FDCWD, /sbin/ldconfig+0xc9084, any, 0x1000) @ /sbin/ldconfig+0x9dbad
+getrandom(/sbin/ldconfig+0x109570, 8, GRND_NONBLOCK) @ /sbin/ldconfig+0x31063
+getrandom(any, 8, GRND_NONBLOCK) @ /sbin/ldconfig+0xa2abe
+getrandom(any, any, any u32) @ /sbin/ldconfig+0xa2afd

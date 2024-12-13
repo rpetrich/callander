@@ -303,7 +303,7 @@ prctl(PR_SET_NAME-PR_GET_NAME, non-NULL, any, any, any) @ libc.so.6+0xf4ebc(prct
 prctl(PR_CAPBSET_READ, any, any, any, any) @ libc.so.6+0xf4ebc(prctl+12)
 prctl(PR_SET_MM, 0x8-0x9, any, 0, 0) @ libc.so.6+0xf4ebc(prctl+12)
 prctl(PR_GET_CHILD_SUBREAPER, any, 0, 0, 0) @ libc.so.6+0xf4ebc(prctl+12)
-prctl(0x53564d41, 0, any, any, any) @ libc.so.6+0xf50ad(__set_vma_name+125)
+prctl(PR_SET_VMA, 0, any, any, any) @ libc.so.6+0xf50ad(__set_vma_name+125)
 chroot(libsystemd-shared-256.8-1.fc41.so+0x345199) @ libc.so.6+0xe8a79(chroot+9)
 chroot(any) @ libc.so.6+0xf231b(syscall+27)
 mount(any, any, any, any, any) @ libc.so.6+0xf57fc(mount+12)

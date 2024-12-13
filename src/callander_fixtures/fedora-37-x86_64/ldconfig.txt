@@ -82,8 +82,8 @@ tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x21a38
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x21a38
 tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x21a69
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x21a69
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x51ef3
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x51f6e
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x51ef3
+openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x51f6e
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x52bb3
 openat(any u32, /usr/sbin/ldconfig+0xbb980, O_RDONLY, any) @ /usr/sbin/ldconfig+0x814a1
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x8152e

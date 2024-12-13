@@ -41,7 +41,7 @@ read(any, any, any) @ libc.so.6+0xd9a28(__read+104)
 read(any, any, any) @ libc.so.6+0xdeb08(__read_nocancel+8)
 write(any, any, any) @ libc.so.6+0xd9ab4(write+36)
 write(any, any, any) @ libc.so.6+0xd9af8(write+104)
-write(any, any, any) @ libc.so.6+0xdeb88(__write_nocancel+8)
+write(any, any, NULL-0x7fffffffffffffff) @ libc.so.6+0xdeb88(__write_nocancel+8)
 writev(any, any, any) @ ld-linux-aarch64.so.1+0xb61c
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a5c
 writev(any, any, 2) @ libc.so.6+0xdfa9c(writev+44)

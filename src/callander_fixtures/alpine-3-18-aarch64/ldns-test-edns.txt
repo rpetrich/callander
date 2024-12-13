@@ -1,4 +1,6 @@
-callander: permitted syscalls: fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21204(open+136)
+callander: permitted syscalls: fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, any) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
+fcntl(STDIN_FILENO-0xfffffffffffffffe, F_SETFL, NULL-0xfffffffe) @ ld-musl-aarch64.so.1+0x21164(fcntl+376)
+fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x21204(open+136)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x45cc0(socket+148)
 fcntl(any, F_SETFL, 2048) @ ld-musl-aarch64.so.1+0x45cd8(socket+172)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x5128c(fstatat64+108)
@@ -51,8 +53,8 @@ readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
@@ -62,7 +64,7 @@ newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstata
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
-exit_group(NULL-0x1) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
 futex(any, FUTEX_WAIT, non-NULL, 0, 0, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)

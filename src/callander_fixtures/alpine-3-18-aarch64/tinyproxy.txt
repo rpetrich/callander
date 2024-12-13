@@ -43,9 +43,9 @@ close(any) @ ld-musl-aarch64.so.1+0x61de4(__map_file*+84)
 close(any) @ ld-musl-aarch64.so.1+0x61e30(__map_file*+160)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x65550(lseek64+12)
 read(any u32, any, any) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
-read(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dc8c
+read(any, any, 0x1-0x101) @ ld-musl-aarch64.so.1+0x5dc8c
 read(any, non-NULL, any) @ ld-musl-aarch64.so.1+0x5dc8c
-read(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+read(any, any, 0x1-0x101) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 read(any, non-NULL, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

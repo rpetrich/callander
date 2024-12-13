@@ -356,7 +356,7 @@ prctl(PR_SET_NAME, /usr/bin/systemd-analyze+0x103d2d, any, any, any) @ libc.so.6
 prctl(PR_SET_NAME, /usr/bin/systemd-analyze+0x103ddc, any, any, any) @ libc.so.6+0xeff98(prctl+8)
 prctl(PR_GET_NAME, any, any, any, any) @ libc.so.6+0xeff98(prctl+8)
 prctl(PR_CAPBSET_READ, any, any, any, any) @ libc.so.6+0xeff98(prctl+8)
-prctl(PR_CAPBSET_DROP, 0, any, any, any) @ libc.so.6+0xeff98(prctl+8)
+prctl(PR_CAPBSET_DROP, NULL-0x1, any, any, any) @ libc.so.6+0xeff98(prctl+8)
 prctl(PR_GET_SECUREBITS, any, any, any, any) @ libc.so.6+0xeff98(prctl+8)
 prctl(PR_SET_SECUREBITS, any u32, any, any, any) @ libc.so.6+0xeff98(prctl+8)
 prctl(PR_SET_TIMERSLACK, NULL-0xfffffffffffffffe, any, any, any) @ libc.so.6+0xeff98(prctl+8)

@@ -3,6 +3,8 @@ ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+5
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9b2e1, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20548(__init_libc*+380)
 close(any) @ ld-musl-aarch64.so.1+0x43ddc(__rtnetlink_enumerate*+136)
 close(any) @ ld-musl-aarch64.so.1+0x51180(__stdio_close*+24)
+close(any) @ ld-musl-aarch64.so.1+0x5d210
+close(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x64a28(lseek64+12)
 read(any u32, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
@@ -59,10 +61,10 @@ sendto(any, any, 20, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, 20, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+setsockopt(any, SOL_IP, MCAST_JOIN_SOURCE_GROUP, any, 264) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)
 brk(0) @ ld-musl-aarch64.so.1+0x2b5b4(__malloc_alloc_meta*+296)
 brk(any) @ ld-musl-aarch64.so.1+0x2b5d4(__malloc_alloc_meta*+328)
 brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+440)
-munmap(NULL-0xfffffffffffffffe, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, non-NULL) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5d1a8
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e818(mremap+140)

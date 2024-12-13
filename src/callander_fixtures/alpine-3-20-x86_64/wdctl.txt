@@ -101,11 +101,25 @@ exit_group(any) @ ld-musl-x86_64.so.1+0x1cc05(_Exit+8)
 openat(any, /bin/wdctl+0x50c3, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, /bin/wdctl+0x56e7, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, /bin/wdctl+0x571b, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x5729, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x5731, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x573c, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x5745, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, /bin/wdctl+0x579c, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x5982, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x5985, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /bin/wdctl+0x59fd, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, /bin/wdctl+0x50c3, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, /bin/wdctl+0x56e7, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, /bin/wdctl+0x571b, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x5729, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x5731, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x573c, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x5745, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, /bin/wdctl+0x579c, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x5982, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x5985, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /bin/wdctl+0x59fd, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+108)
 newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
 faccessat(any, /bin/wdctl+0x50c3, F_OK) @ ld-musl-x86_64.so.1+0x61e5e(faccessat+44)

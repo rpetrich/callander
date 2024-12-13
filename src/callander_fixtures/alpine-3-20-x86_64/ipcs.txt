@@ -4,10 +4,19 @@ open(/usr/bin/ipcs+0x50ba, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75
 open(/usr/bin/ipcs+0x50ef, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(/usr/bin/ipcs+0x5e02, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d09a, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(ld-musl-x86_64.so.1+0x9d1b1, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d1bc, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(/usr/bin/ipcs+0x51aa, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+open(/usr/bin/ipcs+0x51c2, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+open(/usr/bin/ipcs+0x51da, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(/usr/bin/ipcs+0x5b63, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+open(/usr/bin/ipcs+0x5b7b, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+open(/usr/bin/ipcs+0x5b93, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+open(/usr/bin/ipcs+0x51aa, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+open(/usr/bin/ipcs+0x51c2, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+open(/usr/bin/ipcs+0x51da, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(/usr/bin/ipcs+0x5b63, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+open(/usr/bin/ipcs+0x5b7b, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+open(/usr/bin/ipcs+0x5b93, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x4ecca(__stdio_close*+20)
 close(any) @ ld-musl-x86_64.so.1+0x4ff5e(fopen+178)

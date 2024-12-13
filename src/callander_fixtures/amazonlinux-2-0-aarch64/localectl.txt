@@ -33,6 +33,8 @@ faccessat(AT_FDCWD, /usr/bin/localectl+0x417f8, F_OK) @ libc.so.6+0xcd1f4(access
 faccessat(AT_FDCWD, /usr/bin/localectl+0x41808, F_OK) @ libc.so.6+0xcd1f4(access+20)
 faccessat(AT_FDCWD, libc.so.6+0x13b588, F_OK) @ libc.so.6+0xcd1f4(access+20)
 faccessat(AT_FDCWD, libc.so.6+0x13b598, F_OK) @ libc.so.6+0xcd1f4(access+20)
+chdir(libc.so.6+0x133a60) @ libc.so.6+0xcdbc4(chdir+4)
+chdir(libc.so.6+0x138ee8) @ libc.so.6+0xcdbc4(chdir+4)
 fchdir(any u32) @ libc.so.6+0xcdc04(fchdir+4)
 chroot(/usr/bin/localectl+0x422c8) @ libc.so.6+0xd4084(chroot+4)
 chroot(any) @ libc.so.6+0xd7520(syscall+32)

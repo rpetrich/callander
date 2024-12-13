@@ -195,10 +195,10 @@ accept(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 accept(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(STDIN_FILENO-0xfffffffffffffffe, any, any u32) @ ld-musl-aarch64.so.1+0x5d210
 connect(any, ld-musl-aarch64.so.1+0x94f0e(log_addr*), 12) @ ld-musl-aarch64.so.1+0x5d210
-connect(any, ld-musl-aarch64.so.1+0x94f1a(addr*), any u32) @ ld-musl-aarch64.so.1+0x5d210
+connect(any, ld-musl-aarch64.so.1+0x94f1a(addr*), 24) @ ld-musl-aarch64.so.1+0x5d210
 connect(STDIN_FILENO-0xfffffffffffffffe, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(any, ld-musl-aarch64.so.1+0x94f0e(log_addr*), 12) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-connect(any, ld-musl-aarch64.so.1+0x94f1a(addr*), any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+connect(any, ld-musl-aarch64.so.1+0x94f1a(addr*), 24) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 getsockname(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x41cf8(getsockname+28)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -227,7 +227,8 @@ recvmsg(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 brk(0) @ ld-musl-aarch64.so.1+0x2b5b4(__malloc_alloc_meta*+296)
 brk(any) @ ld-musl-aarch64.so.1+0x2b5d4(__malloc_alloc_meta*+328)
 brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+440)
-munmap(any, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
+munmap(any, non-NULL) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
+munmap(non-NULL, any) @ ld-musl-aarch64.so.1+0x3e8bc(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x5d1a8
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e818(mremap+140)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x4775c(_Fork+60)

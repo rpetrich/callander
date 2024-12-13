@@ -42,9 +42,9 @@ munmap(any, any) @ ld-musl-x86_64.so.1+0x57ef5
 brk(0) @ ld-musl-x86_64.so.1+0x25e74(__malloc_alloc_meta*+242)
 brk(any) @ ld-musl-x86_64.so.1+0x25e99(__malloc_alloc_meta*+279)
 brk(any) @ ld-musl-x86_64.so.1+0x25ec3(__malloc_alloc_meta*+321)
-rt_sigaction(SIGABRT, any, 8, 8) @ ld-musl-x86_64.so.1+0x1bfe8(abort+78)
+rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-x86_64.so.1+0x1bfe8(abort+78)
 rt_sigaction(SIGSETXID-SIGSYNCCALL, any, 0, 8) @ ld-musl-x86_64.so.1+0x48fa8(__libc_sigaction*+282)
-rt_sigprocmask(SIG_UNBLOCK, any, 8, 8) @ ld-musl-x86_64.so.1+0x1c019(abort+127)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x1c019(abort+127)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937c8(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x48cd3(__block_all_sigs*+23)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937c0(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x48ced(__block_app_sigs*+23)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x48d05(__restore_sigs*+21)
@@ -53,8 +53,7 @@ rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x5745f(pthread_sig
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x5745f(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x495ae(__restore_rt*+7)
 ioctl(any, TW_OP_NOP-SIOCADDPRL, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
-ioctl(any, SIOCGET6RD, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
-ioctl(any, SIOCDEL6RD, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
+ioctl(any, SIOCGET6RD-SIOCDEL6RD, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TUNSETIFF, any) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TUNSETPERSIST, NULL-0x1) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
 ioctl(any, TUNSETOWNER, NULL-0xfffffffe) @ ld-musl-x86_64.so.1+0x3690c(ioctl+48)
@@ -89,12 +88,8 @@ accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 recvfrom(any, any, 1024, MSG_PEEK|MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvfrom(any, any, 1024, MSG_PEEK|MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)

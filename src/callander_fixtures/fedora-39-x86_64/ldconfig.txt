@@ -84,12 +84,27 @@ tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x20967
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x20967
 tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x2099a
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x2099a
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c0c3
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c133
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c0c3
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig+0x4c0c3
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c0c3
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c0c3
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig+0x4c0c3
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c0c3
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c133
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig+0x4c133
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c133
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c133
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig+0x4c133
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c133
 openat(any u32, /usr/sbin/ldconfig+0xbb1a1, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c1d0
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x4c245
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c622
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c622
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig+0x4c622
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c622
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c622
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c622
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c622
+openat(AT_FDCWD, /usr/sbin/ldconfig+0xbb3e0, O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig+0x4c622
 newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x4b77c
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x4b77c
 newfstatat(any u32, /usr/sbin/ldconfig+0xcae6d, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x4b77c

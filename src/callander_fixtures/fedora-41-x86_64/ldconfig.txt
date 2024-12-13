@@ -64,10 +64,10 @@ sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x83e49
 sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x83db9
 sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x83de9
 sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x83e19
-prctl(0x53564d41, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0xb9b92) @ /usr/sbin/ldconfig+0x4e6ac
-prctl(0x53564d41, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0xb9c28) @ /usr/sbin/ldconfig+0x4e74d
-prctl(0x53564d41, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0xb9de8) @ /usr/sbin/ldconfig+0x4e74d
-prctl(0x53564d41, 0, any, any, /usr/sbin/ldconfig+0xb9dba) @ /usr/sbin/ldconfig+0x4e74d
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0xb9b92) @ /usr/sbin/ldconfig+0x4e6ac
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0xb9c28) @ /usr/sbin/ldconfig+0x4e74d
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig+0xb9de8) @ /usr/sbin/ldconfig+0x4e74d
+prctl(PR_SET_VMA, 0, any, any, /usr/sbin/ldconfig+0xb9dba) @ /usr/sbin/ldconfig+0x4e74d
 arch_prctl(0x5002, 1) @ /usr/sbin/ldconfig+0x5939c
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x4c9c9
 gettid() @ /usr/sbin/ldconfig+0x20695
@@ -98,12 +98,27 @@ tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x20677
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x20677
 tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x206aa
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x206aa
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c291
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c303
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c291
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig+0x4c291
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c291
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c291
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig+0x4c291
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c291
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c303
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig+0x4c303
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c303
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c303
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig+0x4c303
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c303
 openat(any u32, /usr/sbin/ldconfig+0xba1a9, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c3a0
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x4c415
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c7f0
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x4c7f0
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig+0x4c7f0
+openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c7f0
+openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig+0x4c7f0
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c7f0
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x4c7f0
+openat(AT_FDCWD, /usr/sbin/ldconfig+0xba202, O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig+0x4c7f0
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x4b90c
 newfstatat(AT_FDCWD, any, any, 0) @ /usr/sbin/ldconfig+0x4b90c
 readlinkat(AT_FDCWD, /usr/sbin/ldconfig+0xba5bf, any, 0x1000) @ /usr/sbin/ldconfig+0x5677e

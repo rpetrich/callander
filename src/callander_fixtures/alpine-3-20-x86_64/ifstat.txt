@@ -56,12 +56,12 @@ connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 156, MSG_DONTROUTE|MSG_TRUNC, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 156, MSG_DONTROUTE|MSG_TRUNC, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 40, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 156, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 40, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 156, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)

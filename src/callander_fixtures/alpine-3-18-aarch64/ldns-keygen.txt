@@ -14,16 +14,24 @@ ioctl(any, SIOCGIFNAME, any) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
 ioctl(any, SIOCGIFINDEX, any) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x5186c(fdopen+300)
 ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
+unlinkat(AT_FDCWD, /usr/bin/ldns-keygen+0x2baf, 0) @ ld-musl-aarch64.so.1+0x65cd0(unlink+24)
+unlinkat(AT_FDCWD, /usr/bin/ldns-keygen+0x2bda, 0) @ ld-musl-aarch64.so.1+0x65cd0(unlink+24)
+unlinkat(AT_FDCWD, /usr/bin/ldns-keygen+0x2bf0, 0) @ ld-musl-aarch64.so.1+0x65cd0(unlink+24)
+symlinkat(any, AT_FDCWD, /usr/bin/ldns-keygen+0x2baf) @ ld-musl-aarch64.so.1+0x65ac8(symlink+20)
+symlinkat(any, AT_FDCWD, /usr/bin/ldns-keygen+0x2bda) @ ld-musl-aarch64.so.1+0x65ac8(symlink+20)
+symlinkat(any, AT_FDCWD, /usr/bin/ldns-keygen+0x2bf0) @ ld-musl-aarch64.so.1+0x65ac8(symlink+20)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c06a, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x519a8(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c075, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x519a8(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c2c6, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x519a8(__fopen_rb_ca*+64)
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bdae, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, libcrypto.so.3+0x2d8de5, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(AT_FDCWD, libcrypto.so.3+0x2d8df1, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bdae, O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
@@ -51,8 +59,8 @@ readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20608(__init_libc*+340)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
@@ -62,7 +70,7 @@ newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstata
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
-exit_group(NULL-0x1) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
 futex(any, FUTEX_WAIT, non-NULL, 0, 0, any)
 futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)

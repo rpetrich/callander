@@ -96,9 +96,9 @@ getpid() @ ld-musl-x86_64.so.1+0x627de(do_setxid*+69)
 sendfile(any, any, any, any) @ ld-musl-x86_64.so.1+0x20a50(sendfile+14)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x413ff(socket+32)
 socket(AF_UNIX, SOCK_STREAM, 0) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
-connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5e990
-sendmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+connect(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 clone(0, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
@@ -218,8 +218,8 @@ rt_sigpending(any, 8) @ ld-musl-x86_64.so.1+0x4dd28(sigpending+14)
 rt_sigtimedwait(any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 rt_sigtimedwait(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 sigaltstack(0, any) @ ld-musl-x86_64.so.1+0x4daf1(sigaltstack+35)
-sigaltstack(libpython3.12.so.1.0+0x554da0(_PyRuntime+2656), libpython3.12.so.1.0+0x554db8(_PyRuntime+2680)) @ ld-musl-x86_64.so.1+0x4daf1(sigaltstack+35)
-sigaltstack(libpython3.12.so.1.0+0x554db8(_PyRuntime+2680), 0) @ ld-musl-x86_64.so.1+0x4daf1(sigaltstack+35)
+sigaltstack(libpython3.12.so.1.0+0x557300(_PyRuntime+2656), libpython3.12.so.1.0+0x557318(_PyRuntime+2680)) @ ld-musl-x86_64.so.1+0x4daf1(sigaltstack+35)
+sigaltstack(libpython3.12.so.1.0+0x557318(_PyRuntime+2680), 0) @ ld-musl-x86_64.so.1+0x4daf1(sigaltstack+35)
 mknod(any, any u32, any) @ ld-musl-x86_64.so.1+0x4e505(mknod+11)
 statfs(any, any) @ ld-musl-x86_64.so.1+0x4e5c5(statvfs+42)
 fstatfs(any, any) @ ld-musl-x86_64.so.1+0x4e68c(fstatvfs+41)
@@ -288,6 +288,7 @@ futex(ld-musl-x86_64.so.1+0xa1ec0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 
 futex(ld-musl-x86_64.so.1+0xa1ec0(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0xa1f90(__thread_list_lock*), FUTEX_WAIT, any, 0, ld-musl-x86_64.so.1+0xa2014(tl_lock_waiters*), 0x1-0xffffffff)
 sched_setaffinity(any, any, any) @ ld-musl-x86_64.so.1+0x4ca37(sched_setaffinity+12)
+sched_getaffinity(0, 128, any) @ ld-musl-x86_64.so.1+0x187d1(sysconf+276)
 sched_getaffinity(any, 0, non-NULL) @ ld-musl-x86_64.so.1+0x4ca60(sched_getaffinity+12)
 sched_getaffinity(any, 8, non-NULL) @ ld-musl-x86_64.so.1+0x4ca60(sched_getaffinity+12)
 sched_getaffinity(any, 16, non-NULL) @ ld-musl-x86_64.so.1+0x4ca60(sched_getaffinity+12)

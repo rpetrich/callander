@@ -155,7 +155,7 @@ openat(AT_FDCWD, libc.so.6+0x1a3fec, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x10
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x10451c(fstatat64+12)
 newfstatat(any u32, libc.so.6+0x1a0bd5, any, AT_EMPTY_PATH) @ libc.so.6+0x10451c(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0x10451c(fstatat64+12)
-pselect6(1, any, 0, 15, any, 0) @ libc.so.6+0x1132bc(select+172)
+pselect6(1, any, 0, 0, any, 0) @ libc.so.6+0x1132bc(select+172)
 pselect6(1, any, any, any, any, 0) @ libc.so.6+0x113355(select+325)
 set_robust_list(any, 24) @ libc.so.6+0x8e6c9(start_thread+201)
 set_robust_list(any, 24) @ libc.so.6+0xdd95f(_Fork+95)

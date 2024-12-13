@@ -9,7 +9,7 @@ open(ld-musl-x86_64.so.1+0x9d15b, O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl
 open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d09a, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(ld-musl-x86_64.so.1+0x9d1bc, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(libcrypto.so.3+0x3233d2, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(libcrypto.so.3+0x3243ef, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
@@ -52,8 +52,8 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4d8fc(__libc_siga
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x4dff2(__restore_rt*+7)
-ioctl(any, TCGETS, libcrypto.so.3+0x4449a0) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
-ioctl(any, TCSETS, libcrypto.so.3+0x444960) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
+ioctl(any, TCGETS, libcrypto.so.3+0x4459a0) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
+ioctl(any, TCSETS, libcrypto.so.3+0x445960) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, SIOCGIFNAME, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, SIOCGIFINDEX, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
@@ -210,6 +210,6 @@ utimensat(any, any, 0, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x4e83e(utimen
 utimensat(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x4e860(utimensat+284)
 utimensat(any, any, 0, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x4e860(utimensat+284)
 fallocate(any, 0, 0, 0x20001-0xfffffffffffffffe) @ ld-musl-x86_64.so.1+0x1d126(posix_fallocate+19)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 fchmodat2(any, any, 0-07777, 256) @ ld-musl-x86_64.so.1+0x4e10b(fchmodat+39)

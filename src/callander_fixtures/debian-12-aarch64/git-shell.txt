@@ -52,7 +52,7 @@ read(any, any, any) @ libc.so.6+0xd9a28(__read+104)
 read(any, any, any) @ libc.so.6+0xdeb08(__read_nocancel+8)
 write(any, any, any) @ libc.so.6+0xd9ab4(write+36)
 write(any, any, any) @ libc.so.6+0xd9af8(write+104)
-write(any, any, any) @ libc.so.6+0xdeb88(__write_nocancel+8)
+write(any, any, NULL-0x7fffffffffffffff) @ libc.so.6+0xdeb88(__write_nocancel+8)
 readv(any, any, any) @ libc.so.6+0xdf9cc(readv+44)
 readv(any, any, any) @ libc.so.6+0xdfa0c(readv+108)
 writev(any, any, any) @ ld-linux-aarch64.so.1+0xb61c
@@ -77,7 +77,6 @@ sync_file_range(any, 0, 0, SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE|SYN
 utimensat(AT_FDCWD, any, 0, 0) @ libc.so.6+0xde16c
 exit(0) @ libc.so.6+0x2776c
 exit(0) @ libc.so.6+0x7eccc
-exit(any) @ libc.so.6+0xe7b20
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b804
 exit_group(any) @ libc.so.6+0xb8b08(_Exit+24)
 futex(any, FUTEX_WAIT, any u32, 0, any, any)

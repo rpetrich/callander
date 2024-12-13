@@ -110,10 +110,22 @@ restart_syscall()
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cc05(_Exit+8)
+openat(any, /sbin/losetup+0xa13c, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, /sbin/losetup+0xa428, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, /sbin/losetup+0xa4b7, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /sbin/losetup+0xa5a3, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /sbin/losetup+0xa86b, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /sbin/losetup+0xa87a, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /sbin/losetup+0xa883, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /sbin/losetup+0xa8b6, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, /sbin/losetup+0xa13c, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, /sbin/losetup+0xa428, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, /sbin/losetup+0xa4b7, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /sbin/losetup+0xa5a3, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /sbin/losetup+0xa86b, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /sbin/losetup+0xa87a, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /sbin/losetup+0xa883, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, /sbin/losetup+0xa8b6, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+108)
 newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
 newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)

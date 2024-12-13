@@ -52,20 +52,18 @@ socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x413ff(socke
 socket(AF_UNIX, SOCK_DGRAM, 0) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
 socket(AF_NETLINK, SOCK_RAW, 0) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
 sendto(any, any, 24, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 156, MSG_DONTROUTE|MSG_TRUNC, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 40, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 156, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, 160, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, 280, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, 280, MSG_PEEK|MSG_DONTROUTE|MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, 284, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, 24, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 32, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 156, MSG_DONTROUTE|MSG_TRUNC, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 40, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 156, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendto(any, any, 160, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendto(any, any, 280, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-sendto(any, any, 280, MSG_PEEK|MSG_DONTROUTE|MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendto(any, any, 284, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
@@ -90,6 +88,7 @@ fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x61d96(dup3+109)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x5ff1d(clock_gettime+73)
 getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-x86_64.so.1+0x37feb(getrlimit+68)
+sysinfo(any) @ ld-musl-x86_64.so.1+0x20dcc(sysinfo+9)
 setuid(any) @ ld-musl-x86_64.so.1+0x39150(syscall+86)
 setuid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
 setgid(any) @ ld-musl-x86_64.so.1+0x39150(syscall+86)
@@ -136,6 +135,7 @@ futex(ld-musl-x86_64.so.1+0xa1ec0(vmlock*), FUTEX_WAKE, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0xa1ec0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, ld-musl-x86_64.so.1+0xa1ec4(vmlock*+4), 0x1-0xffffffff)
 futex(ld-musl-x86_64.so.1+0xa1ec0(vmlock*), FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, any, 202, any)
 futex(ld-musl-x86_64.so.1+0xa1f90(__thread_list_lock*), FUTEX_WAIT, any, 0, ld-musl-x86_64.so.1+0xa2014(tl_lock_waiters*), 0x1-0xffffffff)
+sched_getaffinity(0, 128, any) @ ld-musl-x86_64.so.1+0x187d1(sysconf+276)
 getdents64(any, any, 2048) @ ld-musl-x86_64.so.1+0x1c191(readdir+59)
 restart_syscall()
 clock_gettime(CLOCK_REALTIME, any) @ ld-musl-x86_64.so.1+0x5ff01(clock_gettime+45)

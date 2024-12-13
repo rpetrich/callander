@@ -20,8 +20,18 @@ openat(AT_FDCWD, /usr/bin/ipcs+0xd998, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x5
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9bee9, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c31c, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9c332, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, /usr/bin/ipcs+0xd87e, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, /usr/bin/ipcs+0xd896, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, /usr/bin/ipcs+0xd8cf, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, /usr/bin/ipcs+0xd8e7, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, /usr/bin/ipcs+0xd8ff, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, /usr/bin/ipcs+0xd866, O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd87e, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd896, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd8cf, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd8e7, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, /usr/bin/ipcs+0xd8ff, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x61dbc(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x51bb8(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x52ff0(fopen64+176)
@@ -88,7 +98,8 @@ rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x504d4
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-musl-aarch64.so.1+0x6541c(getpid+4)
 msgctl(any, any, any) @ ld-musl-aarch64.so.1+0x232a0(msgctl+20)
-semctl(any, any, any, any) @ ld-musl-aarch64.so.1+0x2338c(semctl+80)
+semctl(any, any, IPC_RMID-SEM_STAT_ANY, any) @ ld-musl-aarch64.so.1+0x2338c(semctl+80)
+semctl(any, any, any, 0) @ ld-musl-aarch64.so.1+0x2338c(semctl+80)
 shmctl(any, any, any) @ ld-musl-aarch64.so.1+0x2344c(shmctl+20)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x45c54(socket+40)
 socket(AF_UNIX, SOCK_STREAM, 0) @ ld-musl-aarch64.so.1+0x45c8c(socket+96)

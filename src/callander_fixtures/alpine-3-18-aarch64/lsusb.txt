@@ -66,10 +66,9 @@ read(any, any, 19) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 read(any, any, 64) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 read(any, any, 256) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 write(any, any, 8) @ ld-musl-aarch64.so.1+0x5dc8c
-write(any, libusb-1.0.so.0+0x14dff, any) @ ld-musl-aarch64.so.1+0x5dc8c
+write(any, libusb-1.0.so.0+0x14dff, NULL-0xf) @ ld-musl-aarch64.so.1+0x5dc8c
 write(any, any, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 write(any, libusb-1.0.so.0+0x14dff, NULL-0xf) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-write(any, libusb-1.0.so.0+0x14dff, 0x8000000000000000-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x51ce8(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51dc0(__stdio_write*+76)
 writev(any, any, 0x2-0x3) @ ld-musl-aarch64.so.1+0x5dc8c

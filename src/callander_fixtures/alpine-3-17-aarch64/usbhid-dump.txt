@@ -43,10 +43,9 @@ read(any, any, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 read(any, any, 19) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 read(any, any, 256) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, any, 8) @ ld-musl-aarch64.so.1+0x5d210
-write(any, libusb-1.0.so.0+0x14c8f, any) @ ld-musl-aarch64.so.1+0x5d210
+write(any, libusb-1.0.so.0+0x14c8f, NULL-0xf) @ ld-musl-aarch64.so.1+0x5d210
 write(any, any, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, libusb-1.0.so.0+0x14c8f, NULL-0xf) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, libusb-1.0.so.0+0x14c8f, 0x8000000000000000-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)

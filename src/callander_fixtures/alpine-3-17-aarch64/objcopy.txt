@@ -111,7 +111,7 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fe68(__libc_sig
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
-getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-aarch64.so.1+0x3ca00(getrlimit+112)
+getrlimit(RLIMIT_NOFILE, any) @ ld-musl-aarch64.so.1+0x3ca00(getrlimit+112)
 setrlimit(any u32, any) @ ld-musl-aarch64.so.1+0x3da7c(do_setrlimit*+24)
 umask(any u32) @ ld-musl-aarch64.so.1+0x50ca4(umask+16)
 gettimeofday(any, 0) @ ld-musl-aarch64.so.1+0x627b4(clock_gettime+104)
@@ -131,6 +131,6 @@ mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e77c(mprotect+56)
 madvise(any, any, MADV_FREE) @ ld-musl-aarch64.so.1+0x3e614(madvise+16)
-prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c9bc(getrlimit+44)
+prlimit64(0, RLIMIT_NOFILE, 0, any) @ ld-musl-aarch64.so.1+0x3c9bc(getrlimit+44)
 prlimit64(0, RLIMIT_NOFILE, any, 0) @ ld-musl-aarch64.so.1+0x3dab0(setrlimit+36)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x243f4(membarrier+36)

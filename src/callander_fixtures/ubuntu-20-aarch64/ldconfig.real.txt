@@ -30,7 +30,7 @@ read(any, any, any) @ /usr/sbin/ldconfig.real:0x42d928
 read(any, any, any) @ /usr/sbin/ldconfig.real:0x42e598
 write(any, any, any) @ /usr/sbin/ldconfig.real:0x42d9b4
 write(any, any, any) @ /usr/sbin/ldconfig.real:0x42d9f8
-write(any, any, any) @ /usr/sbin/ldconfig.real:0x42e5d0
+write(any, any, NULL-0x7fffffffffffffff) @ /usr/sbin/ldconfig.real:0x42e5d0
 writev(STDERR_FILENO, any, any) @ /usr/sbin/ldconfig.real:0x42e730
 writev(STDERR_FILENO, any, any) @ /usr/sbin/ldconfig.real:0x42e774
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real:0x45a3f8
@@ -87,8 +87,10 @@ sysinfo(any) @ /usr/sbin/ldconfig.real:0x4303d4
 socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ /usr/sbin/ldconfig.real:0x460d34
 connect(any, any, 110) @ /usr/sbin/ldconfig.real:0x460ad8
 connect(any, any, any) @ /usr/sbin/ldconfig.real:0x460b1c
-sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real:0x460c80
-sendto(any, any, any, any, 0, 0) @ /usr/sbin/ldconfig.real:0x460cd4
+sendto(any, any, 0xc-0x40c, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real:0x460c80
+sendto(any, any, /usr/sbin/ldconfig.real:0x47cbcd, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig.real:0x460c80
+sendto(any, any, 0xc-0x40c, any, 0, 0) @ /usr/sbin/ldconfig.real:0x460cd4
+sendto(any, any, /usr/sbin/ldconfig.real:0x47cbcd, any, 0, 0) @ /usr/sbin/ldconfig.real:0x460cd4
 recvmsg(any, any, MSG_CMSG_CLOEXEC) @ /usr/sbin/ldconfig.real:0x460ba8
 recvmsg(any, any, any) @ /usr/sbin/ldconfig.real:0x460bec
 brk(any) @ /usr/sbin/ldconfig.real:0x44dea0

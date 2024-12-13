@@ -3,8 +3,8 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 write(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
-open(libcrypto.so.3+0x3233d2, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(libcrypto.so.3+0x3233d2, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(libcrypto.so.3+0x3243ef, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(libcrypto.so.3+0x3243ef, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
@@ -44,8 +44,8 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4d8fc(__libc_siga
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x4dff2(__restore_rt*+7)
-ioctl(any, TCGETS, libcrypto.so.3+0x4449a0) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
-ioctl(any, TCSETS, libcrypto.so.3+0x444960) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
+ioctl(any, TCGETS, libcrypto.so.3+0x4459a0) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
+ioctl(any, TCSETS, libcrypto.so.3+0x445960) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4e968(fdopen+202)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4ef68(__stdout_write*+48)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4edb7(__stdio_read*+77)
@@ -66,10 +66,11 @@ recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 shutdown(any, SHUT_RDWR) @ ld-musl-x86_64.so.1+0x413a7(shutdown+26)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3d3ed(getsockname+21)
+getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3d030(getpeername+21)
 setsockopt(any, SOL_IP, IP_PKTINFO, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IP, IP_MTU_DISCOVER, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, 16) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
-setsockopt(any, SOL_TCP, TCP_ULP, libssl.so.3+0x8bb18, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
+setsockopt(any, SOL_TCP, TCP_ULP, libssl.so.3+0x8bb45, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IPV6, IPV6_MTU_DISCOVER, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IPV6, IPV6_RECVPKTINFO, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IPV6, IPV6_DONTFRAG, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
@@ -121,5 +122,5 @@ newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_6
 newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmmsg(any, any, any u32, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-x86_64.so.1+0x5e990

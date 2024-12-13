@@ -31,8 +31,8 @@ sched_yield() @ ld-musl-x86_64.so.1+0x4892a(sched_yield+6)
 madvise(NULL-0xfffffffffffffffe, any, MADV_FREE) @ ld-musl-x86_64.so.1+0x39038(madvise+9)
 socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x3f39a(socket+27)
 socket(AF_NETLINK, SOCK_RAW, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-sendto(any, any, 40, MSG_OOB|MSG_DONTROUTE, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
+sendto(any, any, 40, 0, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+sendto(any, any, 40, 0, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x583bc

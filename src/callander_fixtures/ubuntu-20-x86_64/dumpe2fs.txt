@@ -198,7 +198,7 @@ openat(any u32, libblkid.so.1+0x432f4, O_RDONLY, any) @ libc.so.6+0x10e161(opena
 openat(any u32, libblkid.so.1+0x432f4, O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x10e161(openat64+209)
 openat(any u32, libblkid.so.1+0x4330a, O_RDONLY, any) @ libc.so.6+0x10e161(openat64+209)
 openat(any u32, libblkid.so.1+0x4330a, O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x10e161(openat64+209)
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC-O_WRONLY|O_CLOEXEC, any) @ libc.so.6+0x11371a(__open_nocancel+74)
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x11371a(__open_nocancel+74)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x11371a(__open_nocancel+74)
 openat(AT_FDCWD, non-NULL, O_RDONLY-O_WRONLY, any) @ libc.so.6+0x11371a(__open_nocancel+74)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0100) @ libc.so.6+0x11371a(__open_nocancel+74)

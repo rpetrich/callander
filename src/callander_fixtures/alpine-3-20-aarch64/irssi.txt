@@ -73,8 +73,8 @@ writev(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
-pselect6(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x607bc
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -155,7 +155,7 @@ setfsgid(any u32) @ ld-musl-aarch64.so.1+0x25050(setfsgid+16)
 setfsgid(any u32) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
 setsid() @ ld-musl-aarch64.so.1+0x692a4(setsid+12)
 uname(any) @ ld-musl-aarch64.so.1+0x3df98(uname+12)
-getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
+getrlimit(RLIMIT_CORE, any) @ ld-musl-aarch64.so.1+0x3c72c(getrlimit+88)
 setrlimit(any u32, any) @ ld-musl-aarch64.so.1+0x3d958(do_setrlimit*+24)
 umask(any u32) @ ld-musl-aarch64.so.1+0x530f8(umask+16)
 prctl(PR_SET_NAME, non-NULL, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)
@@ -220,28 +220,23 @@ brk(any) @ ld-musl-aarch64.so.1+0x29a4c(__malloc_alloc_meta*+584)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x3e718(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x60754
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
-mremap(any, NULL-0xfffffffffffff000, 0x8000000000000000-0xffffffffffffffff, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e628(mremap+48)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487c0(_Fork+48)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x6077c
 mmap(0, NULL-0x7ffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(0, 0x8000000000000000-0xffffffffffffffff, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(any, NULL-0x7ffffffffffffffe, any, MAP_SHARED-MAP_PRIVATE, any, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(any, any, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED, any, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mmap(any, any, any, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
-mmap(any, 0x8000000000000000-0xffffffffffffffff, any, MAP_SHARED-MAP_PRIVATE, any, any) @ ld-musl-aarch64.so.1+0x3e544(mmap+76)
 mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e5e8(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x6b0bc(reloc_all*+268)
 madvise(any, any, MADV_FREE) @ ld-musl-aarch64.so.1+0x3e490(madvise+16)
-recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
-recvmmsg(any, any, 1, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
+recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 wait4(any, any, WNOHANG, 0) @ ld-musl-aarch64.so.1+0x607bc
 wait4(any, any, WNOHANG, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
+prlimit64(0, RLIMIT_CORE, 0, /usr/bin/irssi+0x1191d8) @ ld-musl-aarch64.so.1+0x3c700(getrlimit+44)
 prlimit64(0, RLIMIT_CORE, any, 0) @ ld-musl-aarch64.so.1+0x3d98c(setrlimit+36)
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x607bc
