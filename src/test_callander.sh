@@ -21,7 +21,7 @@ test_program () {
 			# skipping since duplicate binary in /sbin
 			return
 		else
-			"$SCRIPT_DIR/callander" --skip-running --show-permitted --block-exec --ignore-dlopen -- "$prog" 2> "$FIXTURE_PATH/$filename"_new.txt
+			"$SCRIPT_DIR/callander_$arch" --skip-running --show-permitted --block-exec --ignore-dlopen -- "$prog" 2> "$FIXTURE_PATH/$filename"_new.txt
 			if [ "$?" != 0 ]; then
 				echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen -- $prog\" failed"
 			fi
