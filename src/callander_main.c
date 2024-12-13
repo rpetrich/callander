@@ -941,6 +941,9 @@ static void attach_unreachable_breakpoints(struct program_state *analysis, pid_t
 		if ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) {
 			continue;
 		}
+		if (fs_strcmp(binary->path, "[vdso]") == 0) {
+			continue;
+		}
 		if (LIKELY(binary->has_sections)) {
 			size_t count = binary->info.section_entry_count;
 			size_t entry_size = binary->info.section_entry_size;
