@@ -4884,12 +4884,14 @@ static int perform_basic_op(__attribute__((unused)) const char *name, basic_op o
 	enum basic_op_usage usage = op(&left_state, &right_state, left, applied_shift ? REGISTER_INVALID : right, size, additional);
 	if (size == OPERATION_SIZE_DWORD) {
 		fixup_arithmetic_outside_binary_bounds(loader, &left_state, orig_value);
+		fixup_arithmetic_outside_binary_bounds(loader, &left_state, right_state.value);
 	} else {
 		truncate_to_operand_size(&left_state, size);
 	}
 	if (UNLIKELY(additional->used)) {
 		if (size == OPERATION_SIZE_DWORD) {
 			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, orig_value);
+			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, right_state.value);
 		} else {
 			truncate_to_operand_size(&additional->state, size);
 		}
