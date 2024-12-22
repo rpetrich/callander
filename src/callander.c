@@ -11976,7 +11976,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_MOV: {
 				enum ins_operand_size size;
 				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, &size);
-				if (dest == REGISTER_INVALID) {
+				if (dest == REGISTER_INVALID || (dest == REGISTER_SP && decoded.decomposed.operands[0].reg[0] == REG_X29)) {
 					break;
 				}
 				struct register_state source_state;
