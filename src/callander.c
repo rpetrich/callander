@@ -13289,7 +13289,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 	skip_stack_clear:
 		ins = next_ins(ins, &decoded);
 		LOG("instruction", temp_str(copy_address_description(&analysis->loader, ins)));
-		if (!decode_ins(ins, &decoded)) {
+		if (UNLIKELY(!decode_ins(ins, &decoded))) {
 			LOG("invalid instruction, assuming all effects");
 			effects |= DEFAULT_EFFECTS;
 			LOG("completing from invalid", temp_str(copy_address_description(&analysis->loader, self.entry)));
