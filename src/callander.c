@@ -9106,6 +9106,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				if (modrm.reg == 0) {
 					ins_ptr remaining = &decoded.unprefixed[1];
+					x86_mod_rm_t modrm = x86_read_modrm(remaining);
+					if (!decoded.prefixes.has_segment_override && !x86_modrm_is_direct(modrm)) {
+						ins_ptr dummy = remaining;
+						int dest = decode_rm(&dummy, decoded.prefixes, OPERATION_SIZE_DEFAULT).rm;
+						if (dest != REGISTER_MEM && register_is_exactly_known(&self.current_state.registers[dest]) && self.current_state.registers[dest].value == 0) {
+							LOG("exiting because memory write to NULL");
+							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(dest), 0, 0, required_effects);
+							effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
+							goto update_and_return;
+						}
+					}
 					int rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, imm_size_for_prefixes(decoded.prefixes), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM, NULL, NULL);
 					LOG("mov r/m to", name_for_register(rm));
 					struct register_state state;
