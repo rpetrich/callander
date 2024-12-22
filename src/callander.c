@@ -1487,7 +1487,7 @@ static size_t entry_offset_for_registers(struct searched_instruction_entry *tabl
 				if (register_is_subset_of_register(&registers->registers[r], &out_registers->registers[r])) {
 					continue;
 				}
-				if (((widenable_registers & bit) == 0) && (processing_count < (definitely_widenable_registers & bit ? 40 : 60))) {
+				if (((widenable_registers & bit) == 0) && (processing_count < (definitely_widenable_registers & bit ? 30 : 50))) {
 					LOG("not widenable, next", name_for_register(r));
 					goto continue_search;
 				}
