@@ -5291,6 +5291,9 @@ static inline ins_ptr skip_prefix_jumps(struct program_state *analysis, ins_ptr 
 	for (;;) {
 		if (is_landing_pad_ins(decoded)) {
 			ins_ptr next = next_ins(ins, decoded);
+			if (required_effects & EFFECT_AFTER_STARTUP) {
+				push_reachable_region(&analysis->loader, &analysis->reachable, ins, next);
+			}
 			ins = next;
 			if (UNLIKELY(!decode_ins(ins, decoded))) {
 				return NULL;
