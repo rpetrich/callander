@@ -11706,6 +11706,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				dump_registers(&analysis->loader, &self.current_state, dump_mask);
 				clear_register(&source_state);
 				truncate_to_operand_size(&source_state, mem_size);
+				if (is_signed) {
+					sign_extend_from_operand_size(&source_state, mem_size);
+				}
 				truncate_to_operand_size(&source_state, size);
 				self.current_state.registers[dest] = source_state;
 				self.current_state.sources[dest] = 0;
