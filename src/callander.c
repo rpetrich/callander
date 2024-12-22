@@ -9322,13 +9322,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 				}
-				pending_stack_clear = STACK_REGISTERS;
-				if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
-					// we should be able to track dirtied slots, but for now assume golang preserves
-					// the stack that's read immediately after the call
-					LOG("target is stack-preserving function", temp_str(copy_address_description(&analysis->loader, ins)));
-					self.current_state.stack_address_taken = NULL;
-					goto skip_stack_clear;
+				if (more_effects & EFFECT_MODIFIES_STACK) {
+					if (is_stack_preserving_function(&analysis->loader, binary, (ins_ptr)dest)) {
+						// we should be able to track dirtied slots, but for now assume golang preserves
+						// the stack that's read immediately after the call
+						LOG("target is stack-preserving function", temp_str(copy_address_description(&analysis->loader, ins)));
+						self.current_state.stack_address_taken = NULL;
+						goto skip_stack_clear;
+					} else {
+						pending_stack_clear = STACK_REGISTERS;
+					}
 				}
 				break;
 			}
@@ -11668,6 +11671,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				if (register_is_exactly_known(&source_state)) {
 					uintptr_t addr = source_state.value;
+					if (addr == 0) {
+						LOG("exiting because memory read from NULL");
+						vary_effects_by_registers(&analysis->search, &analysis->loader, &self, used_registers, 0, 0, required_effects);
+						effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
+						goto update_and_return;
+					}
 					struct loaded_binary *binary;
 					int prot = protection_for_address(&analysis->loader, (const void *)addr, &binary, NULL);
 					if (prot & PROT_READ) {
@@ -12690,6 +12699,15 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				enum ins_operand_size size;
 				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
+					if (decoded.decomposed.operands[1].operandClass == MEM_REG || decoded.decomposed.operands[1].operandClass == MEM_OFFSET) {
+						dest = register_index_from_register(decoded.decomposed.operands[1].reg[0]);
+						if (dest != REGISTER_INVALID && register_is_exactly_known(&self.current_state.registers[dest]) && self.current_state.registers[dest].value == 0) {
+							LOG("exiting because memory write to NULL");
+							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(dest), 0, 0, required_effects);
+							effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
+							goto update_and_return;
+						}
+					}
 					LOG("str");
 					break;
 				}
