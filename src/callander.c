@@ -4162,7 +4162,7 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 	}
 	if (valid) {
 		struct loaded_binary *binary;
-		if (addr == 0) {
+		if (addr < 4096) {
 			LOG("faults because null address");
 			result.faults = true;
 		}
@@ -11722,7 +11722,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				if (register_is_exactly_known(&source_state)) {
 					uintptr_t addr = source_state.value;
-					if (addr == 0) {
+					if (addr < 4096) {
 						LOG("exiting because memory read from NULL");
 						vary_effects_by_registers(&analysis->search, &analysis->loader, &self, used_registers, 0, 0, required_effects);
 						effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
@@ -12755,7 +12755,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (dest == REGISTER_INVALID) {
 					if (decoded.decomposed.operands[1].operandClass == MEM_REG || decoded.decomposed.operands[1].operandClass == MEM_OFFSET) {
 						dest = register_index_from_register(decoded.decomposed.operands[1].reg[0]);
-						if (dest != REGISTER_INVALID && register_is_exactly_known(&self.current_state.registers[dest]) && self.current_state.registers[dest].value == 0) {
+						if (dest != REGISTER_INVALID && register_is_exactly_known(&self.current_state.registers[dest]) && self.current_state.registers[dest].value < 4096) {
 							LOG("exiting because memory write to NULL");
 							vary_effects_by_registers(&analysis->search, &analysis->loader, &self, mask_for_register(dest), 0, 0, required_effects);
 							effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
