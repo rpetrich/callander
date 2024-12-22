@@ -501,6 +501,9 @@ __attribute__((nonnull(1)))
 static inline void push_stack(struct registers *regs, int push_count)
 {
 	LOG("push stack", push_count);
+	if (push_count == 0) {
+		return;
+	}
 	regs->modified |= STACK_REGISTERS;
 	regs->requires_known_target = (regs->requires_known_target & ~STACK_REGISTERS) | (((regs->requires_known_target & STACK_REGISTERS) << push_count) & ALL_REGISTERS);
 	if (push_count > REGISTER_COUNT - REGISTER_STACK_0) {
@@ -533,6 +536,9 @@ __attribute__((nonnull(1)))
 static inline void pop_stack(struct registers *regs, int pop_count)
 {
 	LOG("pop stack", pop_count);
+	if (pop_count == 0) {
+		return;
+	}
 	regs->modified |= STACK_REGISTERS;
 	regs->requires_known_target = (regs->requires_known_target & ~STACK_REGISTERS) | (pop_count > REGISTER_COUNT ? 0 : (regs->requires_known_target >> pop_count) & ALL_REGISTERS);
 	for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
@@ -3795,15 +3801,16 @@ static inline intptr_t read_memory_signed(const void *addr, enum ins_operand_siz
 
 static inline bool stack_offset_for_imm(int64_t imm, int64_t *out_offset)
 {
-	if (imm & 0x3) {
+	if (imm & 0x7) {
 		return false;
 	}
-	*out_offset = imm >> 2;
+	*out_offset = imm >> 3;
 	return true;
 }
 
 static bool add_to_stack(const struct loader_context *loader, struct registers *registers, int64_t amount, const ins_ptr ins)
 {
+	dump_nonempty_registers(loader, registers, STACK_REGISTERS);
 	clear_register(&registers->registers[REGISTER_SP]);
 	int64_t offset;
 	if (!stack_offset_for_imm(amount, &offset)) {
@@ -3811,11 +3818,12 @@ static bool add_to_stack(const struct loader_context *loader, struct registers *
 		return false;
 	}
 	clear_match_keep_stack(loader, registers, REGISTER_SP, ins);
-	if (amount < 0) {
-		push_stack(registers, -amount);
+	if (offset < 0) {
+		push_stack(registers, -offset);
 	} else if (amount > 0) {
-		pop_stack(registers, amount);
+		pop_stack(registers, offset);
 	}
+	dump_nonempty_registers(loader, registers, STACK_REGISTERS);
 	return true;
 }
 
@@ -3879,14 +3887,17 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 			break;
 		}
 		case MEM_OFFSET: {
-			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP && (operand->immediate & 0x7) == 0) {
-				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
-				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
-					*out_state = regs->registers[reg];
-					if (out_size != NULL) {
-						*out_size = OPERATION_SIZE_DWORD;
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
+				int64_t offset;
+				if (stack_offset_for_imm(operand->immediate, &offset) && offset > 0) {
+					uintptr_t reg = REGISTER_STACK_0 + offset;
+					if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
+						*out_state = regs->registers[reg];
+						if (out_size != NULL) {
+							*out_size = OPERATION_SIZE_DWORD;
+						}
+						return reg;
 					}
-					return reg;
 				}
 			}
 			break;
@@ -3982,13 +3993,16 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 			break;
 		}
 		case MEM_OFFSET: {
-			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP && (operand->immediate & 0x7) == 0) {
-				uintptr_t reg = REGISTER_STACK_0 + (operand->immediate >> 3);
-				if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
-					if (out_size != NULL) {
-						*out_size = OPERATION_SIZE_DWORD;
+			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
+				int64_t offset;
+				if (stack_offset_for_imm(operand->immediate, &offset) && offset > 0) {
+					uintptr_t reg = REGISTER_STACK_0 + offset;
+					if (reg >= REGISTER_STACK_0 && reg < REGISTER_COUNT) {
+						if (out_size != NULL) {
+							*out_size = OPERATION_SIZE_DWORD;
+						}
+						return reg;
 					}
-					return reg;
 				}
 			}
 			break;
@@ -5332,7 +5346,11 @@ __attribute__((always_inline))
 static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, struct loaded_binary *binary, ins_ptr ins, ins_ptr call_target, struct analysis_frame *self)
 {
 	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
+#ifdef __x86_64__
 	int call_push_count = 2;
+#else
+	int call_push_count = 0;
+#endif
 	push_stack(&call_state, call_push_count);
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 	call_state.modified = 0;
@@ -9770,8 +9788,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_ADD: {
 				if (register_index_from_register(decoded.decomposed.operands[0].reg[0]) == AARCH64_REGISTER_SP && register_index_from_register(decoded.decomposed.operands[1].reg[0]) == AARCH64_REGISTER_SP) {
 					if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
-						int64_t imm = (int64_t)decoded.decomposed.operands[2].immediate;
-						add_to_stack(&analysis->loader, &self.current_state, imm, ins);
+						if (decoded.decomposed.operands[1].reg[0] == decoded.decomposed.operands[0].reg[0]) {
+							int64_t imm = (int64_t)decoded.decomposed.operands[2].immediate;
+							add_to_stack(&analysis->loader, &self.current_state, imm, ins);
+						}
 						goto skip_stack_clear;
 					}
 				}
@@ -12657,7 +12677,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case ARM64_STR:
 			case ARM64_STRB:
-			case ARM64_STRH: {
+			case ARM64_STRH:
+			case ARM64_STUR:
+			case ARM64_STURB:
+			case ARM64_STURH: {
 				enum ins_operand_size size;
 				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[1], &self.current_state, ins, &size);
 				if (dest == REGISTER_INVALID) {
@@ -12733,17 +12756,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("stumin*, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				break;
-			case ARM64_STUR:
-				LOG("stur, memory not supported yet");
-				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
-				break;
-			case ARM64_STURB:
-				LOG("sturb, memory not supported yet");
-				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
-				break;
-			case ARM64_STURH:
-				LOG("sturh, memory not supported yet");
-				break;
 			case ARM64_STXR:
 			case ARM64_STXRB:
 			case ARM64_STXRH:
@@ -12788,8 +12800,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_SUB: {
 				if (register_index_from_register(decoded.decomposed.operands[0].reg[0]) == AARCH64_REGISTER_SP && register_index_from_register(decoded.decomposed.operands[1].reg[0]) == AARCH64_REGISTER_SP) {
 					if (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64) {
-						int64_t imm = (int64_t)decoded.decomposed.operands[2].immediate;
-						add_to_stack(&analysis->loader, &self.current_state, -imm, ins);
+						if (decoded.decomposed.operands[1].reg[0] == decoded.decomposed.operands[0].reg[0]) {
+							int64_t imm = (int64_t)decoded.decomposed.operands[2].immediate;
+							add_to_stack(&analysis->loader, &self.current_state, -imm, ins);
+						}
 						goto skip_stack_clear;
 					}
 				}
