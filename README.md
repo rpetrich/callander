@@ -159,6 +159,7 @@ Callander's high-level architecture is a hybrid of patterns found in binary
 analysis tools, debuggers, and simple compilers.
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart 
     AnalyzeProgram --> CoalesceSyscalls
     Launch(Launch\nCallander) --> ResolveProgram(Resolve Program Path) --> LoadProgram(Map Program into Memory) --> LoadLibraries
