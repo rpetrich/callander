@@ -159,28 +159,27 @@ Callander's high-level architecture is a hybrid of patterns found in binary
 analysis tools, debuggers, and simple compilers.
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": false}} }%%
 flowchart 
     AnalyzeProgram --> CoalesceSyscalls
-    Launch(Launch\nCallander) --> ResolveProgram(Resolve Program Path) --> LoadProgram(Map Program into Memory) --> LoadLibraries
+    Launch(Launch<br>Callander) --> ResolveProgram(Resolve Program Path) --> LoadProgram(Map Program into Memory) --> LoadLibraries
     subgraph AnalyzeProgram [Analyze Program]
-        DisassembleInstructions -.-> |Discover Function\nPointer or Call| AnalyzeFunction
+        DisassembleInstructions -.-> |Discover Function<br>Pointer or Call| AnalyzeFunction
         LoadLibraries(Load Dependent Libraries) --> AnalyzeDataSections
         LoadLibraries -.->|Parse DT_NEEDED| LoadLibraries
-        AnalyzeDataSections(Scan Data Sections) -->|Discover\nFunction Pointer| AnalyzeFunction
+        AnalyzeDataSections(Scan Data Sections) -->|Discover<br>Function Pointer| AnalyzeFunction
         LoadLibraries -->|Analyze Initializers| AnalyzeFunction
         AnalyzeFunction(Analyze Function) --> DisassembleInstructions
-        DisassembleInstructions(Disassemble & Simulate\nInstructions) -->|Discover\nsyscall instruction| ExtractArgs(Extract\nSyscall Arguments) --> RecordSyscall(Record Syscall)
+        DisassembleInstructions(Disassemble & Simulate<br>Instructions) -->|Discover<br>syscall instruction| ExtractArgs(Extract<br>Syscall Arguments) --> RecordSyscall(Record Syscall)
     end
     %%subgraph PrepareSeccomp [Prepare Seccomp]
-        CoalesceSyscalls(Coalesce\nSyscall List) --> GenerateSeccompProgram(Generate\nSeccomp Program) --> OptimizeSeccompProgram(Peephole Optimize\nand Split\nSeccomp Program) --> InjectSeccompProgram(Inject\nSeccomp Programs)
+        CoalesceSyscalls(Coalesce<br>Syscall List) --> GenerateSeccompProgram(Generate<br>Seccomp Program) --> OptimizeSeccompProgram(Peephole Optimize<br>and Split<br>Seccomp Program) --> InjectSeccompProgram(Inject<br>Seccomp Programs)
     %%end
     LoadProgram --> ForkChild
     subgraph ChildProcess [Child Process]
-        ForkChild(Fork Child\nProcess) --> Ptrace(Ptrace\nChild Process) --> ExecAndPause(Exec Target Program\nand Pause in\nChild Process) --> SetBreakpoint(Set Breakpoint\non Main Function) --> ResumeChild(Resume and\nWait for Break) --> InjectSeccompProgram
+        ForkChild(Fork Child<br>Process) --> Ptrace(Ptrace<br>Child Process) --> ExecAndPause(Exec Target Program<br>and Pause in<br>Child Process) --> SetBreakpoint(Set Breakpoint<br>on Main Function) --> ResumeChild(Resume and<br>Wait for Break) --> InjectSeccompProgram
     end
     LoadProgram -->|Locate entrypoint| AnalyzeFunction
-    InjectSeccompProgram --> ResumeProgram(Resume the now\nSandboxed\nChild Process)
+    InjectSeccompProgram --> ResumeProgram(Resume the now<br>Sandboxed<br>Child Process)
 ```
 
 ## Building
