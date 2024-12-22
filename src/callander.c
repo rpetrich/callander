@@ -6601,6 +6601,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
+					if (caller->entry == jump_target) {
+						goto update_and_return_preserving_effects;
+					}
 				}
 				goto update_and_return;
 			}
@@ -13274,23 +13277,26 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		}
 	}
 update_and_return:
-	effects &= ~EFFECT_PROCESSING;
-	if ((effects & EFFECT_STICKY_EXITS) == 0) {
-		if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == 0) {
+	if (LIKELY((effects & EFFECT_STICKY_EXITS) == 0)) {
+		if (UNLIKELY((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == 0)) {
 			effects |= EFFECT_RETURNS;
 		}
+	update_and_return_preserving_effects:
+		effects &= ~EFFECT_PROCESSING;
 		LOG("final effects", effects_description(effects));
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified)->next_ins = next_ins(ins, &decoded);
 	} else {
-		effects &= ~EFFECT_RETURNS;
+		effects &= ~(EFFECT_PROCESSING | EFFECT_RETURNS);
 		LOG("final effects", effects_description(effects));
 		LOG("for", temp_str(copy_address_description(&analysis->loader, self.entry)));
 		set_effects(&analysis->search, self.entry, &self.token, effects, self.current_state.modified)->next_ins = next_ins(ins, &decoded);
 		effects &= ~EFFECT_STICKY_EXITS;
 	}
-	if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
-		LOG("exit-only block", temp_str(copy_address_description(&analysis->loader, self.entry)));
+	if (SHOULD_LOG) {
+		if ((effects & (EFFECT_RETURNS | EFFECT_EXITS)) == EFFECT_EXITS) {
+			ERROR("exit-only block", temp_str(copy_address_description(&analysis->loader, self.entry)));
+		}
 	}
 	entry_state->modified |= self.current_state.modified;
 	analysis->current_frame = self.next;
