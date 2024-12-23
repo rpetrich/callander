@@ -889,12 +889,17 @@ static int compare_reachable_regions(const void *left, const void *right, __attr
 
 static void poke_breakpoint_region(pid_t tracee, intptr_t address, size_t size)
 {
+	long original_bytes;
+	intptr_t result;
 	for (ssize_t i = 0; i < (ssize_t)size - INS_BREAKPOINT_LEN; i += INS_BREAKPOINT_LEN) {
-		long original_bytes;
-		intptr_t result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)address + i, &original_bytes);
+#if INS_BREAKPOINT_LEN == 4
+		original_bytes = 0;
+#else
+		result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)address + i, &original_bytes);
 		if (result < 0) {
 			DIE("failed to peek", fs_strerror(result));
 		}
+#endif
 		long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)address + i, (void *)new_bytes);
 		if (result < 0) {
