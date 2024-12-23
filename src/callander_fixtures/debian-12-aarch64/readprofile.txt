@@ -64,10 +64,10 @@ sched_yield() @ libc.so.6+0xd0448(sched_yield+8)
 sched_get_priority_max(1) @ libc.so.6+0xd0488(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd04c8(sched_get_priority_min+8)
 restart_syscall()
-tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2f0
-tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c35c
-tgkill(any, any u32, SIGABRT) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGSETXID) @ libc.so.6+0x7c2f0
+tgkill(any, any, SIGSETXID) @ libc.so.6+0x7c35c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
 rt_sigaction(any, 0, any, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
@@ -103,8 +103,7 @@ brk(any) @ libc.so.6+0xdf848(brk+8)
 munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
 clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xe7af4(clone+52)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe3bc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe3bc8(madvise+8)

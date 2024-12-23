@@ -70,7 +70,7 @@ openat(any, /usr/sbin/agetty+0xde70, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, 
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
 close(any) @ libc.so.6+0xde778(__close_nocancel+8)
-close(any u32) @ libc.so.6+0x1016dc
+close(any) @ libc.so.6+0x1016dc
 close(any) @ libc.so.6+0x101894
 vhangup() @ libc.so.6+0xe0ec8(vhangup+8)
 getdents64(any, any, any) @ libc.so.6+0xb4384(getdents64+20)
@@ -128,8 +128,8 @@ sched_yield() @ libc.so.6+0xd0448(sched_yield+8)
 sched_get_priority_max(1) @ libc.so.6+0xd0488(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd04c8(sched_get_priority_min+8)
 restart_syscall()
-tgkill(any, any u32, SIGABRT) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
 rt_sigaction(SIGHUP-SIGQUIT, any, any, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
@@ -175,8 +175,7 @@ recvmsg(any, any, MSG_CMSG_CLOEXEC) @ libc.so.6+0xe9fec(recvmsg+108)
 brk(any) @ libc.so.6+0xdf848(brk+8)
 munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe3bc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe3bc8(madvise+8)

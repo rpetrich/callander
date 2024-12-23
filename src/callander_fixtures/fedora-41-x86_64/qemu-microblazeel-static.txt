@@ -1,5 +1,126 @@
-callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-microblazeel-static+0x76f7
-/usr/bin/qemu-microblazeel-static+0x76f1-/usr/bin/qemu-microblazeel-static+0x76f5 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x5d128 (lea)
-callander: try blocking a function from the call stack using --block-function or --block-debug-function
+callander: permitted syscalls: read(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f7f9f
+read(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f7fd8
+read(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f86e6
+write(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f8332
+write(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f836b
+write(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f87b9
+close(any u32) @ /usr/bin/qemu-microblazeel-static+0x1f5882
+close(any u32) @ /usr/bin/qemu-microblazeel-static+0x1f58aa
+close(any u32) @ /usr/bin/qemu-microblazeel-static+0x1f83c9
+fstat(any u32, any) @ /usr/bin/qemu-microblazeel-static+0x1f5ff9
+lseek(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f7a29
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f9cba
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f9cba
+mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f9cba
+mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f9d16
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f9d16
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f9d16
+mprotect(any, any, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC) @ /usr/bin/qemu-microblazeel-static+0x1f9d59
+munmap(any, any) @ /usr/bin/qemu-microblazeel-static+0x1f9e89
+brk(any) @ /usr/bin/qemu-microblazeel-static+0x1f8c09
+rt_sigaction(any u32, any, 0, 8) @ /usr/bin/qemu-microblazeel-static+0x19c066
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-microblazeel-static+0x1fd7
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-microblazeel-static+0x1bda1d
+rt_sigprocmask(SIG_BLOCK, /usr/bin/qemu-microblazeel-static+0x275838, any, 8) @ /usr/bin/qemu-microblazeel-static+0x1be8ec
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/bin/qemu-microblazeel-static+0x1be937
+rt_sigprocmask(SIG_SETMASK, any, any, 8) @ /usr/bin/qemu-microblazeel-static+0x1c1be6
+rt_sigreturn(any) @ /usr/bin/qemu-microblazeel-static+0x19bf87
+ioctl(any u32, any u32, any) @ /usr/bin/qemu-microblazeel-static+0x76f7
+ioctl(any, TW_OP_NOP, any) @ /usr/bin/qemu-microblazeel-static+0x76f7
+ioctl(any, SIOCGSTAMP-SIOCGSTAMPNS, any) @ /usr/bin/qemu-microblazeel-static+0x76f7
+ioctl(any u32, TCGETS, any) @ /usr/bin/qemu-microblazeel-static+0x1f895a
+ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-microblazeel-static+0x1f9a7b
+pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f3605
+pread64(any u32, any, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f3643
+pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-microblazeel-static+0x22956c
+writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-microblazeel-static+0x2035b9
+writev(any u32, any, 0) @ /usr/bin/qemu-microblazeel-static+0x2035b9
+access(any, F_OK) @ /usr/bin/qemu-microblazeel-static+0x1f57b9
+mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/bin/qemu-microblazeel-static+0x1fc0af
+madvise(any, any, MADV_DONTNEED) @ /usr/bin/qemu-microblazeel-static+0x1f9bb9
+madvise(any, any, MADV_HUGEPAGE) @ /usr/bin/qemu-microblazeel-static+0x1f9bb9
+getpid() @ /usr/bin/qemu-microblazeel-static+0x1f34f9
+socket(AF_UNIX-AF_INET, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-microblazeel-static+0x1fd329
+socket(AF_INET6, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-microblazeel-static+0x1fd329
+sendto(any u32, any, any, 0, 0, 0) @ /usr/bin/qemu-microblazeel-static+0x1fd16b
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-microblazeel-static+0x1fd1b8
+recvfrom(STDIN_FILENO, any, 1, 0, 0, 0) @ /usr/bin/qemu-microblazeel-static+0x1fcffb
+recvfrom(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-microblazeel-static+0x1fd048
+wait4(0, any, WNOHANG, 0) @ /usr/bin/qemu-microblazeel-static+0x2294d5
+wait4(any u32, any, any u32, any) @ /usr/bin/qemu-microblazeel-static+0x229511
+uname(any) @ /usr/bin/qemu-microblazeel-static+0x1f5619
+fcntl(any u32, F_SETFD, 1) @ /usr/bin/qemu-microblazeel-static+0x1f84d0
+fcntl(any u32, F_GETFL, any) @ /usr/bin/qemu-microblazeel-static+0x1f84d0
+fcntl(any u32, F_GETFL-F_SETFL, any) @ /usr/bin/qemu-microblazeel-static+0x1f8555
+ftruncate(any u32, any) @ /usr/bin/qemu-microblazeel-static+0x1f9039
+getcwd(non-NULL, any) @ /usr/bin/qemu-microblazeel-static+0x1f7159
+mkdir(any, 0700) @ /usr/bin/qemu-microblazeel-static+0x1f7a79
+unlink(any) @ /usr/bin/qemu-microblazeel-static+0x1f81c9
+readlink(any, any, any) @ /usr/bin/qemu-microblazeel-static+0x1f8039
+gettimeofday(any, 0) @ /usr/bin/qemu-microblazeel-static+0x1ed003
+sysinfo(any) @ /usr/bin/qemu-microblazeel-static+0x1fc779
+getuid() @ /usr/bin/qemu-microblazeel-static+0x1f35a9
+getgid() @ /usr/bin/qemu-microblazeel-static+0x1f3479
+geteuid() @ /usr/bin/qemu-microblazeel-static+0x1f3469
+getegid() @ /usr/bin/qemu-microblazeel-static+0x1f3459
+getppid() @ /usr/bin/qemu-microblazeel-static+0x1f3509
+getgroups(0, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x10000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x20000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x40000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x80000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x100000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x200000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x400000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x800000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x1000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x2000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x4000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x8000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x10000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x20000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x40000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+getgroups(0x80000000, any) @ /usr/bin/qemu-microblazeel-static+0x1f3489
+sigaltstack(0, any) @ /usr/bin/qemu-microblazeel-static+0x22964d
+sched_getparam(0, any) @ /usr/bin/qemu-microblazeel-static+0x1f3f69
+sched_setscheduler(0, 0, any) @ /usr/bin/qemu-microblazeel-static+0x1f4059
+sched_getscheduler(any u32) @ /usr/bin/qemu-microblazeel-static+0x1f3f99
+sched_get_priority_max(1) @ /usr/bin/qemu-microblazeel-static+0x1f3fc9
+sched_get_priority_min(1) @ /usr/bin/qemu-microblazeel-static+0x1f3ff9
+prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-microblazeel-static+0x1fc1ec
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-microblazeel-static+0x2618e6) @ /usr/bin/qemu-microblazeel-static+0x1fc31d
+prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-microblazeel-static+0x2618b8) @ /usr/bin/qemu-microblazeel-static+0x1fc31d
+gettid() @ /usr/bin/qemu-microblazeel-static+0x1be995
+gettid() @ /usr/bin/qemu-microblazeel-static+0x1fa1fb
+gettid() @ /usr/bin/qemu-microblazeel-static+0x1fc899
+futex(any, any u8, any u32, 0, any, any)
+futex(any, any u32, any u32, any, 0, -1 as u32)
+sched_setaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-microblazeel-static+0x1c185f
+sched_getaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-microblazeel-static+0x1be4de
+sched_getaffinity(0, 0x1000, any) @ /usr/bin/qemu-microblazeel-static+0x1f9804
+getdents64(any u32, any, any) @ /usr/bin/qemu-microblazeel-static+0x228d05
+restart_syscall()
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/bin/qemu-microblazeel-static+0x1f23f5
+exit_group(NULL-0x1) @ /usr/bin/qemu-microblazeel-static+0x1f2eeb
+exit_group(127) @ /usr/bin/qemu-microblazeel-static+0x1f2eeb
+tgkill(any u32, 0, SIGABRT) @ /usr/bin/qemu-microblazeel-static+0x1be977
+tgkill(any u32, any u32, SIGABRT) @ /usr/bin/qemu-microblazeel-static+0x1be9aa
+waitid(P_PIDFD, any u32, any, WNOHANG|WEXITED, 0) @ /usr/bin/qemu-microblazeel-static+0x1f5658
+waitid(any u32, any u32, any, any u32, 0) @ /usr/bin/qemu-microblazeel-static+0x1f569b
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-microblazeel-static+0x76f7
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-microblazeel-static+0x1f7b91
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-microblazeel-static+0x1f7c03
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-microblazeel-static+0x1f7ca0
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-microblazeel-static+0x1f7d15
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-microblazeel-static+0x1f85f0
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/bin/qemu-microblazeel-static+0x1f85f0
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/bin/qemu-microblazeel-static+0x1f602c
+newfstatat(AT_FDCWD, any, any, 0) @ /usr/bin/qemu-microblazeel-static+0x1f602c
+faccessat(AT_FDCWD, any, F_OK) @ /usr/bin/qemu-microblazeel-static+0x1f5b88
+getrandom(any, 8, GRND_NONBLOCK) @ /usr/bin/qemu-microblazeel-static+0x19d302
+getrandom(any, any, any u32) @ /usr/bin/qemu-microblazeel-static+0x19d33b
+getrandom(/usr/bin/qemu-microblazeel-static+0x37fe60, 8, GRND_NONBLOCK) @ /usr/bin/qemu-microblazeel-static+0x1c3ac7
+memfd_create(/usr/bin/qemu-microblazeel-static+0x257157, 0) @ /usr/bin/qemu-microblazeel-static+0x1fc869
+memfd_create(/usr/bin/qemu-microblazeel-static+0x25a20e, MFD_CLOEXEC) @ /usr/bin/qemu-microblazeel-static+0x1fc869
+memfd_create(/usr/bin/qemu-microblazeel-static+0x25a20e, MFD_CLOEXEC|MFD_ALLOW_SEALING) @ /usr/bin/qemu-microblazeel-static+0x1fc869
+faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ /usr/bin/qemu-microblazeel-static+0x1f5a80

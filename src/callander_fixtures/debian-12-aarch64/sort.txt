@@ -28,7 +28,7 @@ openat(AT_FDCWD, libc.so.6+0x154a48, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
 close(any) @ libc.so.6+0xde778(__close_nocancel+8)
-close(any u32) @ libc.so.6+0x1016dc
+close(any) @ libc.so.6+0x1016dc
 close(any) @ libc.so.6+0x101894
 pipe2(any, 0) @ libc.so.6+0xda3a8(pipe+8)
 pipe2(any, O_CLOEXEC) @ libc.so.6+0xda408(pipe2+8)
@@ -68,20 +68,20 @@ clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0xb36b0(clock_nanosleep+64)
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0xb36f0(clock_nanosleep+128)
-sched_setscheduler(any u32, any u32, any) @ libc.so.6+0x7eb44
+sched_setscheduler(any, any, any) @ libc.so.6+0x7eb44
 sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xd03c8(sched_setscheduler+8)
 sched_getscheduler(0) @ libc.so.6+0x7f774(pthread_create+1908)
 sched_getscheduler(any u32) @ libc.so.6+0xd0408(__sched_getscheduler+8)
 sched_getparam(0, any) @ libc.so.6+0x7f798(pthread_create+1944)
 sched_getparam(any u32, any) @ libc.so.6+0xd0388(sched_getparam+8)
-sched_setaffinity(any u32, any, any) @ libc.so.6+0x7eae0
+sched_setaffinity(any, any, any) @ libc.so.6+0x7eae0
 sched_getaffinity(0, 128, any) @ libc.so.6+0xd0538(sched_getaffinity+24)
 sched_getaffinity(0, 0x1000, any) @ libc.so.6+0xe6928
 sched_yield() @ libc.so.6+0xd0448(sched_yield+8)
 sched_get_priority_max(1) @ libc.so.6+0xd0488(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd04c8(sched_get_priority_min+8)
 restart_syscall()
-tgkill(any, any u32, any) @ libc.so.6+0x80a1c
+tgkill(any, any, any) @ libc.so.6+0x80a1c
 tgkill(any, any, any) @ libc.so.6+0x80a4c
 rt_sigaction(any, any, any, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
 rt_sigaction(any, 0, 0, 8) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
@@ -130,8 +130,8 @@ bind(any u32, any, 16) @ libc.so.6+0xe9bc8(bind+8)
 getsockname(any u32, any, any) @ libc.so.6+0xe9d08(getsockname+8)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0xea248(sendto+56)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0xea2a0(sendto+144)
-recvfrom(any, any, any u32, MSG_DONTWAIT, any, any) @ libc.so.6+0xe9ebc(recvfrom+44)
-recvfrom(any, any, any u32, MSG_DONTWAIT, any, any) @ libc.so.6+0xe9f18(recvfrom+136)
+recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0xe9ebc(recvfrom+44)
+recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0xe9f18(recvfrom+136)
 setsockopt(any, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xea324(setsockopt+20)
 recvmsg(any, any, 0) @ libc.so.6+0xe9fac(recvmsg+44)
 recvmsg(any, any, MSG_ERRQUEUE) @ libc.so.6+0xe9fac(recvmsg+44)
@@ -142,8 +142,7 @@ munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, 0, any) @ libc.so.6+0xb8a74(_Fork+36)
 clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xe7af4(clone+52)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
 fadvise64(any, 0, 0, 2) @ libc.so.6+0xddbcc(posix_fadvise+12)
 mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-aarch64.so.1+0x1b608
 mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)

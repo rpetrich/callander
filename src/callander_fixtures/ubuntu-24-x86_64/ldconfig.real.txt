@@ -1,307 +1,128 @@
-callander: found syscall with unknown number: any u32
-callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.real+0x96f42
-/usr/sbin/ldconfig.real+0x96f0f-/usr/sbin/ldconfig.real+0x96f1e (conditional jump)
-/usr/sbin/ldconfig.real+0x96f04-/usr/sbin/ldconfig.real+0x96f0d (conditional continue)
-/usr/sbin/ldconfig.real+0x96ef8-/usr/sbin/ldconfig.real+0x96f02 (conditional continue)
-/usr/sbin/ldconfig.real+0x96f56-/usr/sbin/ldconfig.real+0x96f6e (conditional jump)
-/usr/sbin/ldconfig.real+0x96ff1-/usr/sbin/ldconfig.real+0x96ff4 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0x96fec-/usr/sbin/ldconfig.real+0x96fef (conditional continue)
-/usr/sbin/ldconfig.real+0x96fd2-/usr/sbin/ldconfig.real+0x96fea (conditional continue)
-/usr/sbin/ldconfig.real+0x96faf-/usr/sbin/ldconfig.real+0x96fbe (conditional jump)
-/usr/sbin/ldconfig.real+0x96fa4-/usr/sbin/ldconfig.real+0x96fad (conditional continue)
-/usr/sbin/ldconfig.real+0x96f95-/usr/sbin/ldconfig.real+0x96fa2 (conditional continue)
-/usr/sbin/ldconfig.real+0x96f70-/usr/sbin/ldconfig.real+0x96f93 (conditional continue)
-/usr/sbin/ldconfig.real+0x96f68-/usr/sbin/ldconfig.real+0x96f6e (conditional continue)
-/usr/sbin/ldconfig.real+0x96f0f-/usr/sbin/ldconfig.real+0x96f1e (conditional continue)
-/usr/sbin/ldconfig.real+0x96f04-/usr/sbin/ldconfig.real+0x96f0d (conditional continue)
-/usr/sbin/ldconfig.real+0x96ef2-/usr/sbin/ldconfig.real+0x96f02 (conditional continue)
-/usr/sbin/ldconfig.real+0x96ec4-/usr/sbin/ldconfig.real+0x96ef0 (conditional continue)
-/usr/sbin/ldconfig.real+0x96ea0-/usr/sbin/ldconfig.real+0x96ebe (conditional continue)
-/usr/sbin/ldconfig.real+0x96e30 (call)
-/usr/sbin/ldconfig.real+0x96e03-/usr/sbin/ldconfig.real+0x96e0a (conditional jump)
-/usr/sbin/ldconfig.real+0x96df7-/usr/sbin/ldconfig.real+0x96e01 (conditional continue)
-/usr/sbin/ldconfig.real+0x96de0-/usr/sbin/ldconfig.real+0x96df5 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0fdc-/usr/sbin/ldconfig.real+0xb0fe3 (call)
-/usr/sbin/ldconfig.real+0xb0fd0-/usr/sbin/ldconfig.real+0xb0fda (conditional continue)
-/usr/sbin/ldconfig.real+0xb0f49-/usr/sbin/ldconfig.real+0xb0fb4 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0f38-/usr/sbin/ldconfig.real+0xb0f47 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0f1b-/usr/sbin/ldconfig.real+0xb0f47 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0f01-/usr/sbin/ldconfig.real+0xb0f15 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0ef0-/usr/sbin/ldconfig.real+0xb0eff (conditional continue)
-/usr/sbin/ldconfig.real+0xb0ee2-/usr/sbin/ldconfig.real+0xb0eee (conditional continue)
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ed0-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0ecd-/usr/sbin/ldconfig.real+0xb0ee0 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0ec4-/usr/sbin/ldconfig.real+0xb0ec7 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0ea7-/usr/sbin/ldconfig.real+0xb0ebe (conditional continue)
-/usr/sbin/ldconfig.real+0xb0e94-/usr/sbin/ldconfig.real+0xb0ea1 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0e8b-/usr/sbin/ldconfig.real+0xb0e8e (conditional continue)
-/usr/sbin/ldconfig.real+0xb0e78-/usr/sbin/ldconfig.real+0xb0e89 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0e6b-/usr/sbin/ldconfig.real+0xb0e89 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0e28-/usr/sbin/ldconfig.real+0xb0e65 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0d50-/usr/sbin/ldconfig.real+0xb0d57 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0d50-/usr/sbin/ldconfig.real+0xb0d57 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0d50-/usr/sbin/ldconfig.real+0xb0d57 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0d50-/usr/sbin/ldconfig.real+0xb0d57 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0d50-/usr/sbin/ldconfig.real+0xb0d57 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0d50-/usr/sbin/ldconfig.real+0xb0d57 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0cf7-/usr/sbin/ldconfig.real+0xb0d44 (jump)
-/usr/sbin/ldconfig.real+0xb0cdb-/usr/sbin/ldconfig.real+0xb0cf1 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0cb8-/usr/sbin/ldconfig.real+0xb0cd9 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0ca1-/usr/sbin/ldconfig.real+0xb0cd9 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c95-/usr/sbin/ldconfig.real+0xb0c9b (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c85-/usr/sbin/ldconfig.real+0xb0c8f (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c6c-/usr/sbin/ldconfig.real+0xb0c83 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5c-/usr/sbin/ldconfig.real+0xb0c6a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c48-/usr/sbin/ldconfig.real+0xb0c5a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5c-/usr/sbin/ldconfig.real+0xb0c6a (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c48-/usr/sbin/ldconfig.real+0xb0c5a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5c-/usr/sbin/ldconfig.real+0xb0c6a (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c48-/usr/sbin/ldconfig.real+0xb0c5a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5c-/usr/sbin/ldconfig.real+0xb0c6a (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c48-/usr/sbin/ldconfig.real+0xb0c5a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5c-/usr/sbin/ldconfig.real+0xb0c6a (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c48-/usr/sbin/ldconfig.real+0xb0c5a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5c-/usr/sbin/ldconfig.real+0xb0c6a (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c48-/usr/sbin/ldconfig.real+0xb0c5a (conditional continue)
-/usr/sbin/ldconfig.real+0xb0c5f-/usr/sbin/ldconfig.real+0xb0c6a (conditional jump)
-/usr/sbin/ldconfig.real+0xb0c3a-/usr/sbin/ldconfig.real+0xb0c41 (jump)
-/usr/sbin/ldconfig.real+0xb0c09-/usr/sbin/ldconfig.real+0xb0c34 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0bc3-/usr/sbin/ldconfig.real+0xb0c03 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0bb0-/usr/sbin/ldconfig.real+0xb0bbd (conditional continue)
-/usr/sbin/ldconfig.real+0xb0b99-/usr/sbin/ldconfig.real+0xb0bae (conditional continue)
-/usr/sbin/ldconfig.real+0xb0b94-/usr/sbin/ldconfig.real+0xb0b97 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0b65-/usr/sbin/ldconfig.real+0xb0b92 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0b59-/usr/sbin/ldconfig.real+0xb0b63 (conditional continue)
-/usr/sbin/ldconfig.real+0xb06ff-/usr/sbin/ldconfig.real+0xb071e (jump)
-/usr/sbin/ldconfig.real+0xb06f6-/usr/sbin/ldconfig.real+0xb06fd (conditional continue)
-/usr/sbin/ldconfig.real+0xb0692-/usr/sbin/ldconfig.real+0xb06de (conditional jump)
-/usr/sbin/ldconfig.real+0xb064d-/usr/sbin/ldconfig.real+0xb068c (conditional continue)
-/usr/sbin/ldconfig.real+0xb0644-/usr/sbin/ldconfig.real+0xb0647 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0973-/usr/sbin/ldconfig.real+0xb0981 (jump)
-/usr/sbin/ldconfig.real+0xb0962-/usr/sbin/ldconfig.real+0xb096d (conditional continue)
-/usr/sbin/ldconfig.real+0xb09e0-/usr/sbin/ldconfig.real+0xb09ea (conditional jump)
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional jump)
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump)
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue)
-/usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue)
-/usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue)
-/usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue)
-/usr/sbin/ldconfig.real+0xb089e-/usr/sbin/ldconfig.real+0xb08c7 (conditional continue)
-/usr/sbin/ldconfig.real+0xb087b-/usr/sbin/ldconfig.real+0xb0898 (conditional continue)
-/usr/sbin/ldconfig.real+0xb086d-/usr/sbin/ldconfig.real+0xb0879 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0858-/usr/sbin/ldconfig.real+0xb086b (conditional continue)
-/usr/sbin/ldconfig.real+0xb0806-/usr/sbin/ldconfig.real+0xb0856 (conditional continue)
-/usr/sbin/ldconfig.real+0xb07fc-/usr/sbin/ldconfig.real+0xb0800 (conditional continue)
-/usr/sbin/ldconfig.real+0xb07e1-/usr/sbin/ldconfig.real+0xb07f6 (conditional continue)
-/usr/sbin/ldconfig.real+0xb07d1-/usr/sbin/ldconfig.real+0xb07db (conditional continue)
-/usr/sbin/ldconfig.real+0xb07b2-/usr/sbin/ldconfig.real+0xb07cb (conditional continue)
-/usr/sbin/ldconfig.real+0xb078b-/usr/sbin/ldconfig.real+0xb07ac (conditional continue)
-/usr/sbin/ldconfig.real+0xb0741-/usr/sbin/ldconfig.real+0xb0785 (conditional continue)
-/usr/sbin/ldconfig.real+0xb0728-/usr/sbin/ldconfig.real+0xb073f (conditional continue)
-/usr/sbin/ldconfig.real+0xb061a-/usr/sbin/ldconfig.real+0xb061f (conditional jump)
-/usr/sbin/ldconfig.real+0xb1010-/usr/sbin/ldconfig.real+0xb1018 (conditional jump)
-/usr/sbin/ldconfig.real+0xb0601-/usr/sbin/ldconfig.real+0xb0611 (conditional jump)
-/usr/sbin/ldconfig.real+0xb06e0-/usr/sbin/ldconfig.real+0xb06e4 (jump)
-/usr/sbin/ldconfig.real+0xb06d8-/usr/sbin/ldconfig.real+0xb06de (conditional continue)
-/usr/sbin/ldconfig.real+0xb0644-/usr/sbin/ldconfig.real+0xb0647 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb0633-/usr/sbin/ldconfig.real+0xb063e (conditional continue)
-/usr/sbin/ldconfig.real+0xb0625-/usr/sbin/ldconfig.real+0xb062d (conditional continue)
-/usr/sbin/ldconfig.real+0xb0617-/usr/sbin/ldconfig.real+0xb061f (conditional continue)
-/usr/sbin/ldconfig.real+0xb05af-/usr/sbin/ldconfig.real+0xb0611 (conditional continue)
-/usr/sbin/ldconfig.real+0xb1374-/usr/sbin/ldconfig.real+0xb138b (jump)
-/usr/sbin/ldconfig.real+0xb04fe-/usr/sbin/ldconfig.real+0xb0534 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb12fa-/usr/sbin/ldconfig.real+0xb1300 (jump)
-/usr/sbin/ldconfig.real+0xb04ed-/usr/sbin/ldconfig.real+0xb04f8 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xb04d8-/usr/sbin/ldconfig.real+0xb04eb (conditional continue)
-/usr/sbin/ldconfig.real+0xb0480-/usr/sbin/ldconfig.real+0xb04d6 (conditional continue)
-/usr/sbin/ldconfig.real+0xa64aa-/usr/sbin/ldconfig.real+0xa64c0 (call)
-/usr/sbin/ldconfig.real+0xa6c6e-/usr/sbin/ldconfig.real+0xa6c76 (jump)
-/usr/sbin/ldconfig.real+0xa64a1-/usr/sbin/ldconfig.real+0xa64a4 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0xa6489-/usr/sbin/ldconfig.real+0xa649b (conditional continue)
-/usr/sbin/ldconfig.real+0xa6479-/usr/sbin/ldconfig.real+0xa6482 (primary result)
-/usr/sbin/ldconfig.real+0xa646c-/usr/sbin/ldconfig.real+0xa6473 (conditional continue)
-/usr/sbin/ldconfig.real+0xa6409-/usr/sbin/ldconfig.real+0xa6466 (conditional continue)
-/usr/sbin/ldconfig.real+0xa63e5-/usr/sbin/ldconfig.real+0xa6407 (conditional continue)
-/usr/sbin/ldconfig.real+0xa63b0-/usr/sbin/ldconfig.real+0xa63df (conditional continue)
-/usr/sbin/ldconfig.real+0x91f10-/usr/sbin/ldconfig.real+0x91f29 (indirect call)
-/usr/sbin/ldconfig.real+0x91e50-/usr/sbin/ldconfig.real+0x91e78 (conditional jump)
-/usr/sbin/ldconfig.real+0xa5d50-/usr/sbin/ldconfig.real+0xa5d8a (call)
-/usr/sbin/ldconfig.real+0x91f10-/usr/sbin/ldconfig.real+0x91f29 (indirect call)
-/usr/sbin/ldconfig.real+0x91e50-/usr/sbin/ldconfig.real+0x91e78 (conditional jump)
-/usr/sbin/ldconfig.real+0xa60f1-/usr/sbin/ldconfig.real+0xa612d (call)
-/usr/sbin/ldconfig.real+0xa60e1-/usr/sbin/ldconfig.real+0xa60eb (conditional continue)
-/usr/sbin/ldconfig.real+0xa60a5-/usr/sbin/ldconfig.real+0xa60db (conditional continue)
-/usr/sbin/ldconfig.real+0xa6080-/usr/sbin/ldconfig.real+0xa609f (conditional continue)
-/usr/sbin/ldconfig.real+0x97290-/usr/sbin/ldconfig.real+0x972c5 (call)
-/usr/sbin/ldconfig.real+0x91f10-/usr/sbin/ldconfig.real+0x91f29 (indirect call)
-/usr/sbin/ldconfig.real+0x91e50-/usr/sbin/ldconfig.real+0x91e78 (conditional jump)
-/usr/sbin/ldconfig.real+0x91f60-/usr/sbin/ldconfig.real+0x91f84 (call)
-/usr/sbin/ldconfig.real+0x976d0-/usr/sbin/ldconfig.real+0x97719 (call)
-/usr/sbin/ldconfig.real+0x6dc04-/usr/sbin/ldconfig.real+0x6dc0c (call)
-/usr/sbin/ldconfig.real+0x6dbfb-/usr/sbin/ldconfig.real+0x6dbfe (conditional continue)
-/usr/sbin/ldconfig.real+0x6dbeb-/usr/sbin/ldconfig.real+0x6dbf5 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x6dbdf-/usr/sbin/ldconfig.real+0x6dbe5 (conditional continue)
-/usr/sbin/ldconfig.real+0x6dba0-/usr/sbin/ldconfig.real+0x6dbd9 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d1f1-/usr/sbin/ldconfig.real+0x6d210 (call)
-/usr/sbin/ldconfig.real+0x6d2a8-/usr/sbin/ldconfig.real+0x6d2ae (jump)
-/usr/sbin/ldconfig.real+0x6d1e0-/usr/sbin/ldconfig.real+0x6d1eb (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0x6d1cb-/usr/sbin/ldconfig.real+0x6d1de (conditional continue)
-/usr/sbin/ldconfig.real+0x6d170-/usr/sbin/ldconfig.real+0x6d1c9 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d71b-/usr/sbin/ldconfig.real+0x6d725 (call)
-/usr/sbin/ldconfig.real+0x6d6c1-/usr/sbin/ldconfig.real+0x6d715 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d6a7-/usr/sbin/ldconfig.real+0x6d6bb (conditional continue)
-/usr/sbin/ldconfig.real+0x6d69b-/usr/sbin/ldconfig.real+0x6d6a1 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d68d-/usr/sbin/ldconfig.real+0x6d695 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d681-/usr/sbin/ldconfig.real+0x6d687 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d677-/usr/sbin/ldconfig.real+0x6d67b (conditional continue)
-/usr/sbin/ldconfig.real+0x6d661-/usr/sbin/ldconfig.real+0x6d675 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d642-/usr/sbin/ldconfig.real+0x6d65f (conditional continue)
-/usr/sbin/ldconfig.real+0x6d630-/usr/sbin/ldconfig.real+0x6d640 (conditional continue)
-/usr/sbin/ldconfig.real+0x6d5de-/usr/sbin/ldconfig.real+0x6d603 (conditional jump)
-/usr/sbin/ldconfig.real+0x6d5bc-/usr/sbin/ldconfig.real+0x6d5dc (conditional continue)
-/usr/sbin/ldconfig.real+0x6d580-/usr/sbin/ldconfig.real+0x6d5b6 (conditional continue)
-/usr/sbin/ldconfig.real+0x639ad-/usr/sbin/ldconfig.real+0x639bc (call)
-/usr/sbin/ldconfig.real+0x63960-/usr/sbin/ldconfig.real+0x639a7 (conditional continue)
-/usr/sbin/ldconfig.real+0x4b240-/usr/sbin/ldconfig.real+0x4b285 (call)
-/usr/sbin/ldconfig.real+0x1d8de-/usr/sbin/ldconfig.real+0x1d8e5 (call)
-/usr/sbin/ldconfig.real+0x1d8c8-/usr/sbin/ldconfig.real+0x1d8dc (conditional continue)
-/usr/sbin/ldconfig.real+0x1d8bb-/usr/sbin/ldconfig.real+0x1d8dc (conditional jump)
-/usr/sbin/ldconfig.real+0x1d892-/usr/sbin/ldconfig.real+0x1d8b9 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d888-/usr/sbin/ldconfig.real+0x1d890 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d815-/usr/sbin/ldconfig.real+0x1d82a (conditional jump)
-/usr/sbin/ldconfig.real+0x1d810-/usr/sbin/ldconfig.real+0x1d813 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d83c-/usr/sbin/ldconfig.real+0x1d840 (conditional jump)
-/usr/sbin/ldconfig.real+0x1d82c-/usr/sbin/ldconfig.real+0x1d839 (primary result)
-/usr/sbin/ldconfig.real+0x1d7e6-/usr/sbin/ldconfig.real+0x1d807 (jump)
-/usr/sbin/ldconfig.real+0x1d7cb-/usr/sbin/ldconfig.real+0x1d7e0 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d79a-/usr/sbin/ldconfig.real+0x1d7c5 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d77e-/usr/sbin/ldconfig.real+0x1d794 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d763-/usr/sbin/ldconfig.real+0x1d778 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d87c-/usr/sbin/ldconfig.real+0x1d87f (jump)
-/usr/sbin/ldconfig.real+0x1d73c-/usr/sbin/ldconfig.real+0x1d746 (lookup table)
-/usr/sbin/ldconfig.real+0x1d738-/usr/sbin/ldconfig.real+0x1d73a (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d735 (primary result)
-/usr/sbin/ldconfig.real+0x1d72d-/usr/sbin/ldconfig.real+0x1d72f (conditional continue)
-/usr/sbin/ldconfig.real+0x1d720-/usr/sbin/ldconfig.real+0x1d72b (conditional continue)
-/usr/sbin/ldconfig.real+0x1d700-/usr/sbin/ldconfig.real+0x1d70a (lookup table)
-/usr/sbin/ldconfig.real+0x1d6f8-/usr/sbin/ldconfig.real+0x1d6fa (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d6f5 (primary result)
-/usr/sbin/ldconfig.real+0x1d6ed-/usr/sbin/ldconfig.real+0x1d6ef (conditional continue)
-/usr/sbin/ldconfig.real+0x1d6dc-/usr/sbin/ldconfig.real+0x1d6e7 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d6b8-/usr/sbin/ldconfig.real+0x1d6c2 (lookup table)
-/usr/sbin/ldconfig.real+0x1d6b0-/usr/sbin/ldconfig.real+0x1d6b2 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d6ad (primary result)
-/usr/sbin/ldconfig.real+0x1d6a5-/usr/sbin/ldconfig.real+0x1d6a7 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d694-/usr/sbin/ldconfig.real+0x1d69f (conditional continue)
-/usr/sbin/ldconfig.real+0x1d648-/usr/sbin/ldconfig.real+0x1d652 (lookup table)
-/usr/sbin/ldconfig.real+0x1d640-/usr/sbin/ldconfig.real+0x1d642 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d63d (primary result)
-/usr/sbin/ldconfig.real+0x1d635-/usr/sbin/ldconfig.real+0x1d637 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d624-/usr/sbin/ldconfig.real+0x1d62f (conditional continue)
-/usr/sbin/ldconfig.real+0x1d5ff-/usr/sbin/ldconfig.real+0x1d609 (lookup table)
-/usr/sbin/ldconfig.real+0x1d5f7-/usr/sbin/ldconfig.real+0x1d5f9 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d5f4 (primary result)
-/usr/sbin/ldconfig.real+0x1d5ec-/usr/sbin/ldconfig.real+0x1d5ee (conditional continue)
-/usr/sbin/ldconfig.real+0x1d5db-/usr/sbin/ldconfig.real+0x1d5e6 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d56a-/usr/sbin/ldconfig.real+0x1d574 (lookup table)
-/usr/sbin/ldconfig.real+0x1d566-/usr/sbin/ldconfig.real+0x1d568 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x1d563 (primary result)
-/usr/sbin/ldconfig.real+0x1d55b-/usr/sbin/ldconfig.real+0x1d55d (conditional continue)
-/usr/sbin/ldconfig.real+0x1d54a-/usr/sbin/ldconfig.real+0x1d555 (conditional continue)
-/usr/sbin/ldconfig.real+0x1d9d0-/usr/sbin/ldconfig.real+0x1d9da (jump)
-/usr/sbin/ldconfig.real+0x1d51a-/usr/sbin/ldconfig.real+0x1d528 (conditional jump (no continue))
-/usr/sbin/ldconfig.real+0x1d4f0-/usr/sbin/ldconfig.real+0x1d518 (conditional continue)
-/usr/sbin/ldconfig.real+0x1bc88-/usr/sbin/ldconfig.real+0x1bcdd (call)
-/usr/sbin/ldconfig.real+0x1bc60-/usr/sbin/ldconfig.real+0x1bc82 (conditional continue)
-/usr/sbin/ldconfig.real+0x648c0-/usr/sbin/ldconfig.real+0x648ef (call)
-/usr/sbin/ldconfig.real+0x64c90-/usr/sbin/ldconfig.real+0x64cc6 (call)
-/usr/sbin/ldconfig.real+0x64c5f-/usr/sbin/ldconfig.real+0x64c8a (conditional continue)
-/usr/sbin/ldconfig.real+0x64c30-/usr/sbin/ldconfig.real+0x64c59 (conditional continue)
-/usr/sbin/ldconfig.real+0x64bc0-/usr/sbin/ldconfig.real+0x64bf7 (conditional jump)
-/usr/sbin/ldconfig.real+0x805ae-/usr/sbin/ldconfig.real+0x80600 (indirect call)
-/usr/sbin/ldconfig.real+0x8059b-/usr/sbin/ldconfig.real+0x805a8 (conditional continue)
-/usr/sbin/ldconfig.real+0x80596-/usr/sbin/ldconfig.real+0x80599 (conditional continue (no jump))
-/usr/sbin/ldconfig.real+0x80591-/usr/sbin/ldconfig.real+0x80594 (conditional continue)
-/usr/sbin/ldconfig.real+0x80577-/usr/sbin/ldconfig.real+0x8058f (conditional continue)
-/usr/sbin/ldconfig.real+0x80573-/usr/sbin/ldconfig.real+0x80575 (conditional continue)
-/usr/sbin/ldconfig.real+0x8056f-/usr/sbin/ldconfig.real+0x80571 (conditional continue)
-/usr/sbin/ldconfig.real+0x80560-/usr/sbin/ldconfig.real+0x8056d (conditional continue)
-/usr/sbin/ldconfig.real+0x80510-/usr/sbin/ldconfig.real+0x80536 (conditional jump)
-/usr/sbin/ldconfig.real+0x806f0-/usr/sbin/ldconfig.real+0x806f8 (conditional jump)
-/usr/sbin/ldconfig.real+0x64f40-/usr/sbin/ldconfig.real+0x64f52 (jump)
-/usr/sbin/ldconfig.real+0x63960-/usr/sbin/ldconfig.real+0x63993 (call)
-/usr/sbin/ldconfig.real+0x4afb3-/usr/sbin/ldconfig.real+0x4afd6 (call)
-/usr/sbin/ldconfig.real+0x4afa9-/usr/sbin/ldconfig.real+0x4afad (conditional continue)
-/usr/sbin/ldconfig.real+0x4af90-/usr/sbin/ldconfig.real+0x4afa7 (conditional continue)
-/usr/sbin/ldconfig.real+0x4af73-/usr/sbin/ldconfig.real+0x4afa7 (conditional jump)
-/usr/sbin/ldconfig.real+0x4af61-/usr/sbin/ldconfig.real+0x4af6d (conditional continue)
-/usr/sbin/ldconfig.real+0x4af4c-/usr/sbin/ldconfig.real+0x4af5f (conditional continue)
-/usr/sbin/ldconfig.real+0x4af2b-/usr/sbin/ldconfig.real+0x4af4a (conditional continue)
-/usr/sbin/ldconfig.real+0x4af10-/usr/sbin/ldconfig.real+0x4af29 (conditional continue)
-/usr/sbin/ldconfig.real+0x4af08-/usr/sbin/ldconfig.real+0x4af29 (conditional jump)
-/usr/sbin/ldconfig.real+0x4aefc-/usr/sbin/ldconfig.real+0x4af02 (conditional continue)
-/usr/sbin/ldconfig.real+0x4aeeb-/usr/sbin/ldconfig.real+0x4aef8 (primary result)
-/usr/sbin/ldconfig.real+0x4aed3-/usr/sbin/ldconfig.real+0x4aee8 (primary result)
-/usr/sbin/ldconfig.real+0x4aec0-/usr/sbin/ldconfig.real+0x4aed0 (primary result)
-/usr/sbin/ldconfig.real+0x4aea5-/usr/sbin/ldconfig.real+0x4aeba (conditional continue)
-/usr/sbin/ldconfig.real+0x4ae60-/usr/sbin/ldconfig.real+0x4ae9f (conditional continue)
-/usr/sbin/ldconfig.real+0x4adb8 (call)
-/usr/sbin/ldconfig.real+0x4ac7b-/usr/sbin/ldconfig.real+0x4ac98 (conditional jump)
-/usr/sbin/ldconfig.real+0x4ac10-/usr/sbin/ldconfig.real+0x4ac75 (conditional continue)
-/usr/sbin/ldconfig.real+0x16b78-/usr/sbin/ldconfig.real+0x16ba7 (call)
-/usr/sbin/ldconfig.real+0x16b6b-/usr/sbin/ldconfig.real+0x16b72 (conditional continue)
-/usr/sbin/ldconfig.real+0xf8420 (.data.rel.ro)
-callander: try blocking a function from the call stack using --block-function or --block-debug-function
+callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig.real+0x4fcbf
+read(any u32, any, any) @ /usr/sbin/ldconfig.real+0x4fcf8
+read(any u32, any, any) @ /usr/sbin/ldconfig.real+0x50126
+write(any u32, any, any) @ /usr/sbin/ldconfig.real+0x4fe12
+write(any u32, any, any) @ /usr/sbin/ldconfig.real+0x4fe4b
+write(any u32, any, any) @ /usr/sbin/ldconfig.real+0x50159
+close(any u32) @ /usr/sbin/ldconfig.real+0x4f0e2
+close(any u32) @ /usr/sbin/ldconfig.real+0x4f10a
+close(any u32) @ /usr/sbin/ldconfig.real+0x4fea9
+fstat(any u32, any) @ /usr/sbin/ldconfig.real+0x4f169
+lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x4fa09
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x511ba
+mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/sbin/ldconfig.real+0x511ba
+mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/sbin/ldconfig.real+0x51216
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x51216
+mprotect(any, any, PROT_READ|PROT_WRITE) @ /usr/sbin/ldconfig.real+0x51259
+munmap(any, any) @ /usr/sbin/ldconfig.real+0x51289
+brk(any) @ /usr/sbin/ldconfig.real+0x501c9
+rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real+0x70328
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x1596
+rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig.real+0xcfec8, any, 8) @ /usr/sbin/ldconfig.real+0x237a2
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x237ee
+rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x70247
+ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0x8b38c
+pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/sbin/ldconfig.real+0x8b32c
+writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0x5c7a7
+mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/sbin/ldconfig.real+0x5260f
+madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x51169
+getpid() @ /usr/sbin/ldconfig.real+0x4bb99
+fsync(any u32) @ /usr/sbin/ldconfig.real+0x509e2
+fsync(any u32) @ /usr/sbin/ldconfig.real+0x50a0a
+fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x50952
+fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x5097a
+chdir(/usr/sbin/ldconfig.real+0xc735b) @ /usr/sbin/ldconfig.real+0x4f079
+rename(any, any) @ /usr/sbin/ldconfig.real+0x15ba9
+mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x4fa59
+unlink(any) @ /usr/sbin/ldconfig.real+0x4fdd9
+symlink(any, any) @ /usr/sbin/ldconfig.real+0x4fda9
+chmod(any, 0644) @ /usr/sbin/ldconfig.real+0x4f0a9
+sched_getparam(0, any) @ /usr/sbin/ldconfig.real+0x8aaf9
+sched_setscheduler(0, 0, any) @ /usr/sbin/ldconfig.real+0x8abb9
+sched_getscheduler(any u32) @ /usr/sbin/ldconfig.real+0x8ab29
+sched_get_priority_max(1) @ /usr/sbin/ldconfig.real+0x8ab59
+sched_get_priority_min(1) @ /usr/sbin/ldconfig.real+0x8ab89
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, 0, /usr/sbin/ldconfig.real+0xc7780) @ /usr/sbin/ldconfig.real+0x5277d
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0xc79ab) @ /usr/sbin/ldconfig.real+0x5277d
+prctl(PR_SET_VMA, 0, any, any, /usr/sbin/ldconfig.real+0xc7996) @ /usr/sbin/ldconfig.real+0x5277d
+chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x50209
+gettid() @ /usr/sbin/ldconfig.real+0x23845
+futex(any, FUTEX_WAIT_BITSET, 0, 0, 0, -1 as u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
+futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
+futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG, 0, 0, 0, -1 as u32)
+futex(non-NULL, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_WAIT, 0x1-0xffffffff, 0, /usr/sbin/ldconfig.real+0xfe120, any u32)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_WAIT, 2, 0, 128, any)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_WAKE, 1, 0, /usr/sbin/ldconfig.real+0xfe100, any)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any u32)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_UNLOCK_PI, 0, 0, /usr/sbin/ldconfig.real+0xfe100, any)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any u32)
+futex(/usr/sbin/ldconfig.real+0xfe100, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, /usr/sbin/ldconfig.real+0xfe100, any)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_WAIT, 0x1-0xffffffff, 0, /usr/sbin/ldconfig.real+0xfe1a0, any u32)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_WAIT, 2, 0, 128, any)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_WAKE, 1, 0, /usr/sbin/ldconfig.real+0xfe180, any)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any u32)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_UNLOCK_PI, 0, 0, /usr/sbin/ldconfig.real+0xfe180, any)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any u32)
+futex(/usr/sbin/ldconfig.real+0xfe180, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, /usr/sbin/ldconfig.real+0xfe180, any)
+futex(/usr/sbin/ldconfig.real+0xff3e0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff3e0, 0)
+futex(/usr/sbin/ldconfig.real+0xff3e0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff3e0, 4)
+futex(/usr/sbin/ldconfig.real+0xff3e8, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff3e0, any u32)
+futex(/usr/sbin/ldconfig.real+0xff3e8, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG, 2, 0, 0, -1 as u32)
+futex(/usr/sbin/ldconfig.real+0xff420, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff420, 0)
+futex(/usr/sbin/ldconfig.real+0xff420, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff420, 4)
+futex(/usr/sbin/ldconfig.real+0xff428, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff420, any u32)
+futex(/usr/sbin/ldconfig.real+0xff428, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG, 2, 0, 0, -1 as u32)
+futex(/usr/sbin/ldconfig.real+0xff4a0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff4a0, 0)
+futex(/usr/sbin/ldconfig.real+0xff4a0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff4a0, 4)
+futex(/usr/sbin/ldconfig.real+0xff4a8, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff4a0, any u32)
+futex(/usr/sbin/ldconfig.real+0xff4a8, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG, 2, 0, 0, -1 as u32)
+futex(/usr/sbin/ldconfig.real+0xff4e0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff4e0, 0)
+futex(/usr/sbin/ldconfig.real+0xff4e0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff4e0, 4)
+futex(/usr/sbin/ldconfig.real+0xff4e8, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0xff4e0, any u32)
+futex(/usr/sbin/ldconfig.real+0xff4e8, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG, 2, 0, 0, -1 as u32)
+futex(/usr/sbin/ldconfig.real+0x1040c4, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 0, any)
+sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig.real+0x50d46
+getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0x862b5
+restart_syscall()
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig.real+0x4b6d5
+clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig.real+0xa9c88
+clock_nanosleep(any u32, 0, any, any) @ /usr/sbin/ldconfig.real+0xa9ced
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xa9d39
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xa9d5b
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xa9dcc
+clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xa9e18
+exit_group(127) @ /usr/sbin/ldconfig.real+0x4bb7b
+tgkill(any u32, 0, SIGABRT) @ /usr/sbin/ldconfig.real+0x2382f
+tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x2385a
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, non-NULL, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x4fad3
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, non-NULL, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x4fb43
+openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, non-NULL, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x50032
+openat(AT_FDCWD, /usr/sbin/ldconfig.real+0xc7d7d, O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig.real+0x50032
+newfstatat(AT_FDCWD, any, any, 0) @ /usr/sbin/ldconfig.real+0x4f19c
+newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real+0x4f19c
+getrandom(/usr/sbin/ldconfig.real+0x103a90, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x25587

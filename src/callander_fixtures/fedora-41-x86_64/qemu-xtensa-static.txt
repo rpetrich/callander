@@ -1,5 +1,126 @@
-callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-xtensa-static+0x73d7
-/usr/bin/qemu-xtensa-static+0x73d1-/usr/bin/qemu-xtensa-static+0x73d5 (conditional continue)
-/usr/bin/qemu-xtensa-static+0x106b88 (lea)
-callander: try blocking a function from the call stack using --block-function or --block-debug-function
+callander: permitted syscalls: read(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29ec9f
+read(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29ecd8
+read(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29f3e6
+write(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29f032
+write(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29f06b
+write(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29f4b9
+close(any u32) @ /usr/bin/qemu-xtensa-static+0x29c582
+close(any u32) @ /usr/bin/qemu-xtensa-static+0x29c5aa
+close(any u32) @ /usr/bin/qemu-xtensa-static+0x29f0c9
+fstat(any u32, any) @ /usr/bin/qemu-xtensa-static+0x29ccf9
+lseek(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x29e729
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x2a093a
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x2a093a
+mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x2a093a
+mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x2a0996
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x2a0996
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x2a0996
+mprotect(any, any, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC) @ /usr/bin/qemu-xtensa-static+0x2a09d9
+munmap(any, any) @ /usr/bin/qemu-xtensa-static+0x2a0b09
+brk(any) @ /usr/bin/qemu-xtensa-static+0x29f879
+rt_sigaction(any u32, any, 0, 8) @ /usr/bin/qemu-xtensa-static+0x242e26
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-xtensa-static+0x202a
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-xtensa-static+0x2647dd
+rt_sigprocmask(SIG_BLOCK, /usr/bin/qemu-xtensa-static+0x334ac0, any, 8) @ /usr/bin/qemu-xtensa-static+0x2656ac
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/bin/qemu-xtensa-static+0x2656f7
+rt_sigprocmask(SIG_SETMASK, any, any, 8) @ /usr/bin/qemu-xtensa-static+0x2689a6
+rt_sigreturn(any) @ /usr/bin/qemu-xtensa-static+0x242d47
+ioctl(any u32, any u32, any) @ /usr/bin/qemu-xtensa-static+0x73d7
+ioctl(any, TW_OP_NOP, any) @ /usr/bin/qemu-xtensa-static+0x73d7
+ioctl(any, SIOCGSTAMP-SIOCGSTAMPNS, any) @ /usr/bin/qemu-xtensa-static+0x73d7
+ioctl(any u32, TCGETS, any) @ /usr/bin/qemu-xtensa-static+0x29f65a
+ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-xtensa-static+0x2a06fb
+pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-xtensa-static+0x29a315
+pread64(any u32, any, any, any) @ /usr/bin/qemu-xtensa-static+0x29a353
+pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-xtensa-static+0x2d01ec
+writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-xtensa-static+0x2aa239
+writev(any u32, any, 0) @ /usr/bin/qemu-xtensa-static+0x2aa239
+access(any, F_OK) @ /usr/bin/qemu-xtensa-static+0x29c4b9
+mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/bin/qemu-xtensa-static+0x2a2d2f
+madvise(any, any, MADV_DONTNEED) @ /usr/bin/qemu-xtensa-static+0x2a0839
+madvise(any, any, MADV_HUGEPAGE) @ /usr/bin/qemu-xtensa-static+0x2a0839
+getpid() @ /usr/bin/qemu-xtensa-static+0x29a209
+socket(AF_UNIX-AF_INET, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-xtensa-static+0x2a3fa9
+socket(AF_INET6, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-xtensa-static+0x2a3fa9
+sendto(any u32, any, any, 0, 0, 0) @ /usr/bin/qemu-xtensa-static+0x2a3deb
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-xtensa-static+0x2a3e38
+recvfrom(STDIN_FILENO, any, 1, 0, 0, 0) @ /usr/bin/qemu-xtensa-static+0x2a3c7b
+recvfrom(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-xtensa-static+0x2a3cc8
+wait4(0, any, WNOHANG, 0) @ /usr/bin/qemu-xtensa-static+0x2d0155
+wait4(any u32, any, any u32, any) @ /usr/bin/qemu-xtensa-static+0x2d0191
+uname(any) @ /usr/bin/qemu-xtensa-static+0x29c319
+fcntl(any u32, F_SETFD, 1) @ /usr/bin/qemu-xtensa-static+0x29f1d0
+fcntl(any u32, F_GETFL, any) @ /usr/bin/qemu-xtensa-static+0x29f1d0
+fcntl(any u32, F_GETFL-F_SETFL, any) @ /usr/bin/qemu-xtensa-static+0x29f255
+ftruncate(any u32, any) @ /usr/bin/qemu-xtensa-static+0x29fca9
+getcwd(non-NULL, any) @ /usr/bin/qemu-xtensa-static+0x29de59
+mkdir(any, 0700) @ /usr/bin/qemu-xtensa-static+0x29e779
+unlink(any) @ /usr/bin/qemu-xtensa-static+0x29eec9
+readlink(any, any, any) @ /usr/bin/qemu-xtensa-static+0x29ed39
+gettimeofday(any, 0) @ /usr/bin/qemu-xtensa-static+0x293d63
+sysinfo(any) @ /usr/bin/qemu-xtensa-static+0x2a33f9
+getuid() @ /usr/bin/qemu-xtensa-static+0x29a2b9
+getgid() @ /usr/bin/qemu-xtensa-static+0x29a189
+geteuid() @ /usr/bin/qemu-xtensa-static+0x29a179
+getegid() @ /usr/bin/qemu-xtensa-static+0x29a169
+getppid() @ /usr/bin/qemu-xtensa-static+0x29a219
+getgroups(0, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x10000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x20000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x40000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x80000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x100000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x200000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x400000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x800000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x1000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x2000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x4000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x8000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x10000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x20000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x40000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+getgroups(0x80000000, any) @ /usr/bin/qemu-xtensa-static+0x29a199
+sigaltstack(0, any) @ /usr/bin/qemu-xtensa-static+0x2d02cd
+sched_getparam(0, any) @ /usr/bin/qemu-xtensa-static+0x29ac69
+sched_setscheduler(0, 0, any) @ /usr/bin/qemu-xtensa-static+0x29ad59
+sched_getscheduler(any u32) @ /usr/bin/qemu-xtensa-static+0x29ac99
+sched_get_priority_max(1) @ /usr/bin/qemu-xtensa-static+0x29acc9
+sched_get_priority_min(1) @ /usr/bin/qemu-xtensa-static+0x29acf9
+prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-xtensa-static+0x2a2e6c
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-xtensa-static+0x314b9a) @ /usr/bin/qemu-xtensa-static+0x2a2f9d
+prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-xtensa-static+0x314b6c) @ /usr/bin/qemu-xtensa-static+0x2a2f9d
+gettid() @ /usr/bin/qemu-xtensa-static+0x265755
+gettid() @ /usr/bin/qemu-xtensa-static+0x2a0e7b
+gettid() @ /usr/bin/qemu-xtensa-static+0x2a3519
+futex(any, any u8, any u32, 0, any, any)
+futex(any, any u32, any u32, any, 0, -1 as u32)
+sched_setaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-xtensa-static+0x26861f
+sched_getaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-xtensa-static+0x26529e
+sched_getaffinity(0, 0x1000, any) @ /usr/bin/qemu-xtensa-static+0x2a0484
+getdents64(any u32, any, any) @ /usr/bin/qemu-xtensa-static+0x2cf985
+restart_syscall()
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/bin/qemu-xtensa-static+0x299135
+exit_group(NULL-0x1) @ /usr/bin/qemu-xtensa-static+0x299c2b
+exit_group(127) @ /usr/bin/qemu-xtensa-static+0x299c2b
+tgkill(any u32, 0, SIGABRT) @ /usr/bin/qemu-xtensa-static+0x265737
+tgkill(any u32, any u32, SIGABRT) @ /usr/bin/qemu-xtensa-static+0x26576a
+waitid(P_PIDFD, any u32, any, WNOHANG|WEXITED, 0) @ /usr/bin/qemu-xtensa-static+0x29c358
+waitid(any u32, any u32, any, any u32, 0) @ /usr/bin/qemu-xtensa-static+0x29c39b
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-xtensa-static+0x73d7
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-xtensa-static+0x29e891
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-xtensa-static+0x29e903
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-xtensa-static+0x29e9a0
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-xtensa-static+0x29ea15
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-xtensa-static+0x29f2f0
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/bin/qemu-xtensa-static+0x29f2f0
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/bin/qemu-xtensa-static+0x29cd2c
+newfstatat(AT_FDCWD, any, any, 0) @ /usr/bin/qemu-xtensa-static+0x29cd2c
+faccessat(AT_FDCWD, any, F_OK) @ /usr/bin/qemu-xtensa-static+0x29c888
+getrandom(any, 8, GRND_NONBLOCK) @ /usr/bin/qemu-xtensa-static+0x2440c2
+getrandom(any, any, any u32) @ /usr/bin/qemu-xtensa-static+0x2440fb
+getrandom(/usr/bin/qemu-xtensa-static+0x6a6620, 8, GRND_NONBLOCK) @ /usr/bin/qemu-xtensa-static+0x26a887
+memfd_create(/usr/bin/qemu-xtensa-static+0x30a4cc, 0) @ /usr/bin/qemu-xtensa-static+0x2a34e9
+memfd_create(/usr/bin/qemu-xtensa-static+0x30d4cd, MFD_CLOEXEC) @ /usr/bin/qemu-xtensa-static+0x2a34e9
+memfd_create(/usr/bin/qemu-xtensa-static+0x30d4cd, MFD_CLOEXEC|MFD_ALLOW_SEALING) @ /usr/bin/qemu-xtensa-static+0x2a34e9
+faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ /usr/bin/qemu-xtensa-static+0x29c780

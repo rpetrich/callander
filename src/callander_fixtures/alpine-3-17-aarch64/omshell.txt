@@ -14,7 +14,7 @@ fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x50f90(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x5257c(fopen64+148)
 ioctl(any, SIOCGIFINDEX, any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x50e34(fdopen+300)
-ioctl(any u32, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
+ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
 unlinkat(AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x54994(remove+24)
 unlinkat(AT_FDCWD, any, AT_REMOVEDIR) @ ld-musl-aarch64.so.1+0x549a8(remove+44)
 unlinkat(AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x65190(unlink+24)
@@ -46,9 +46,9 @@ close(any) @ ld-musl-aarch64.so.1+0x5d210
 close(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 close(any) @ ld-musl-aarch64.so.1+0x612e4(__map_file*+96)
 close(any) @ ld-musl-aarch64.so.1+0x6132c(__map_file*+168)
-getdents64(any u32, any, 2048) @ ld-musl-aarch64.so.1+0x1ff70(readdir64+44)
+getdents64(any, any, 2048) @ ld-musl-aarch64.so.1+0x1ff70(readdir64+44)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x64a28(lseek64+12)
-read(any u32, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
+read(any, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 read(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210
 read(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210
@@ -57,8 +57,8 @@ write(STDERR_FILENO, any, any) @ ld-musl-aarch64.so.1+0x5d210
 write(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, /usr/bin/omshell+0x2515a0, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(STDERR_FILENO, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-readv(any u32, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
-writev(any u32, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
+readv(any, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
+writev(any, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pselect6(any, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
@@ -109,7 +109,7 @@ clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 restart_syscall()
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x4fc9c(raise+44)
-tkill(any u32, SIGSETXID) @ ld-musl-aarch64.so.1+0x5dc34(cancel_handler*+124)
+tkill(any, SIGSETXID) @ ld-musl-aarch64.so.1+0x5dc34(cancel_handler*+124)
 tkill(non-NULL, SIGSETXID) @ ld-musl-aarch64.so.1+0x5f4d0(pthread_kill+68)
 rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-aarch64.so.1+0x20c20(abort+64)
 rt_sigaction(SIGHUP-SIGINT, any, 0, 8) @ ld-musl-aarch64.so.1+0x4fde0(__libc_sigaction*+240)
@@ -138,12 +138,12 @@ accept(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5d210
 connect(any, any, any u32) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 getsockname(any, any, any) @ ld-musl-aarch64.so.1+0x41cf8(getsockname+28)
-sendto(any, any, any u32, MSG_NOSIGNAL, any, 16) @ ld-musl-aarch64.so.1+0x5d210
-sendto(any, any, any u32, MSG_NOSIGNAL, any, 28) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5d210
-sendto(any, any, any u32, MSG_NOSIGNAL, any, 16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-sendto(any, any, any u32, MSG_NOSIGNAL, any, 28) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+sendto(any, any, any, MSG_NOSIGNAL, any, 16) @ ld-musl-aarch64.so.1+0x5d210
+sendto(any, any, any, MSG_NOSIGNAL, any, 28) @ ld-musl-aarch64.so.1+0x5d210
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+sendto(any, any, any, MSG_NOSIGNAL, any, 16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+sendto(any, any, any, MSG_NOSIGNAL, any, 28) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5d210
 recvfrom(any, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 setsockopt(any, SOL_IP, IP_MTU_DISCOVER, any, 4) @ ld-musl-aarch64.so.1+0x45330(setsockopt+32)

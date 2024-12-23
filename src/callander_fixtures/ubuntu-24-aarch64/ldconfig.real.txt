@@ -1,5 +1,4 @@
-callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x31538
-fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ /usr/sbin/ldconfig.real+0x322e0
+callander: permitted syscalls: getcwd(any, any) @ /usr/sbin/ldconfig.real+0x31538
 fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig.real+0x322e0
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig.real+0x322e0
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig.real+0x322e0
@@ -35,7 +34,7 @@ write(any, any, any) @ /usr/sbin/ldconfig.real+0x321dc
 write(any, any, NULL-0x7fffffffffffffff) @ /usr/sbin/ldconfig.real+0x32670
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x34580
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x345c0
-writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0x672c0
+writev(any, any, any) @ /usr/sbin/ldconfig.real+0x672c0
 pread64(any, any, any, any) @ /usr/sbin/ldconfig.real+0x5be40
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x5b80c
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real+0x5b870
@@ -49,7 +48,6 @@ fsync(any) @ /usr/sbin/ldconfig.real+0x32e98
 fsync(any) @ /usr/sbin/ldconfig.real+0x32ec8
 fdatasync(any) @ /usr/sbin/ldconfig.real+0x32dd8
 fdatasync(any) @ /usr/sbin/ldconfig.real+0x32e08
-exit(0) @ /usr/sbin/ldconfig.real+0xf0e4
 exit_group(127) @ /usr/sbin/ldconfig.real+0xf77c
 exit_group(any) @ /usr/sbin/ldconfig.real+0x2ea30
 set_tid_address(any) @ /usr/sbin/ldconfig.real+0x39e74
@@ -81,8 +79,8 @@ sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig.real+0x3349c
 sched_get_priority_max(1) @ /usr/sbin/ldconfig.real+0x5b3c8
 sched_get_priority_min(1) @ /usr/sbin/ldconfig.real+0x5b408
 restart_syscall()
-tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x223cc
-tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig.real+0x223cc
+tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x223cc
+tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x223cc
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x22400
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x22400
 rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real+0x47b38
@@ -98,7 +96,7 @@ prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff3, 0, 0, 0) @ /usr/sbin/ldconfig.real+0x347
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff5, 0, 0, 0) @ /usr/sbin/ldconfig.real+0x34798
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff7, 0, 0, 0) @ /usr/sbin/ldconfig.real+0x34798
 prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0x8cce0) @ /usr/sbin/ldconfig.real+0x34798
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any u32, /usr/sbin/ldconfig.real+0x8ceb8) @ /usr/sbin/ldconfig.real+0x34894
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0x8ceb8) @ /usr/sbin/ldconfig.real+0x34894
 prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0x8d7d8) @ /usr/sbin/ldconfig.real+0x34894
 prctl(PR_SET_VMA, 0, any, any, /usr/sbin/ldconfig.real+0x8d780) @ /usr/sbin/ldconfig.real+0x34894
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
@@ -132,7 +130,6 @@ mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /usr/sbin
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x337c8
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x33708
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x33708
-prlimit64(0, RLIMIT_STACK, 0, any) @ /usr/sbin/ldconfig.real+0x326cc
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x8576c
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x857b0
 getrandom(/usr/sbin/ldconfig.real+0xd68d0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x23d08

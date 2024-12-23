@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any u32
+callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/qemu-hppa-static+0x21a6c4-/usr/bin/qemu-hppa-static+0x21a6d0
 /usr/bin/qemu-hppa-static+0x21a6b4-/usr/bin/qemu-hppa-static+0x21a6c0 (conditional continue)
 /usr/bin/qemu-hppa-static+0x21a6a8-/usr/bin/qemu-hppa-static+0x21a6b0 (conditional continue)

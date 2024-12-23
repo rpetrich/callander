@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any u32
+callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/qemu-microblaze-static+0x211f44-/usr/bin/qemu-microblaze-static+0x211f50
 /usr/bin/qemu-microblaze-static+0x211f34-/usr/bin/qemu-microblaze-static+0x211f40 (conditional continue)
 /usr/bin/qemu-microblaze-static+0x211f28-/usr/bin/qemu-microblaze-static+0x211f30 (conditional continue)

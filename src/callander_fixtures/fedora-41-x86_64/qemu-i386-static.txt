@@ -1,5 +1,126 @@
-callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-i386-static+0x7017
-/usr/bin/qemu-i386-static+0x7011-/usr/bin/qemu-i386-static+0x7015 (conditional continue)
-/usr/bin/qemu-i386-static+0xa8e38 (lea)
-callander: try blocking a function from the call stack using --block-function or --block-debug-function
+callander: permitted syscalls: read(any u32, any, any) @ /usr/bin/qemu-i386-static+0x25684f
+read(any u32, any, any) @ /usr/bin/qemu-i386-static+0x256888
+read(any u32, any, any) @ /usr/bin/qemu-i386-static+0x256f96
+write(any u32, any, any) @ /usr/bin/qemu-i386-static+0x256be2
+write(any u32, any, any) @ /usr/bin/qemu-i386-static+0x256c1b
+write(any u32, any, any) @ /usr/bin/qemu-i386-static+0x257069
+close(any u32) @ /usr/bin/qemu-i386-static+0x254132
+close(any u32) @ /usr/bin/qemu-i386-static+0x25415a
+close(any u32) @ /usr/bin/qemu-i386-static+0x256c79
+fstat(any u32, any) @ /usr/bin/qemu-i386-static+0x2548a9
+lseek(any u32, any, any) @ /usr/bin/qemu-i386-static+0x2562d9
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-i386-static+0x25857a
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/bin/qemu-i386-static+0x25857a
+mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-i386-static+0x25857a
+mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-i386-static+0x2585d6
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-i386-static+0x2585d6
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/bin/qemu-i386-static+0x2585d6
+mprotect(any, any, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC) @ /usr/bin/qemu-i386-static+0x258619
+munmap(any, any) @ /usr/bin/qemu-i386-static+0x258749
+brk(any) @ /usr/bin/qemu-i386-static+0x2574b9
+rt_sigaction(any u32, any, 0, 8) @ /usr/bin/qemu-i386-static+0x1fa5e6
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-i386-static+0x2136
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-i386-static+0x21c25d
+rt_sigprocmask(SIG_BLOCK, /usr/bin/qemu-i386-static+0x2da280, any, 8) @ /usr/bin/qemu-i386-static+0x21d12c
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/bin/qemu-i386-static+0x21d177
+rt_sigprocmask(SIG_SETMASK, any, any, 8) @ /usr/bin/qemu-i386-static+0x220426
+rt_sigreturn(any) @ /usr/bin/qemu-i386-static+0x1fa507
+ioctl(any u32, any u32, any) @ /usr/bin/qemu-i386-static+0x7017
+ioctl(any, TW_OP_NOP, any) @ /usr/bin/qemu-i386-static+0x7017
+ioctl(any, SIOCGSTAMP-SIOCGSTAMPNS, any) @ /usr/bin/qemu-i386-static+0x7017
+ioctl(any u32, TCGETS, any) @ /usr/bin/qemu-i386-static+0x25720a
+ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-i386-static+0x25833b
+pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-i386-static+0x251e45
+pread64(any u32, any, any, any) @ /usr/bin/qemu-i386-static+0x251e83
+pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-i386-static+0x287b6c
+writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-i386-static+0x261e79
+writev(any u32, any, 0) @ /usr/bin/qemu-i386-static+0x261e79
+access(any, F_OK) @ /usr/bin/qemu-i386-static+0x254069
+mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/bin/qemu-i386-static+0x25a96f
+madvise(any, any, MADV_DONTNEED) @ /usr/bin/qemu-i386-static+0x258479
+madvise(any, any, MADV_HUGEPAGE) @ /usr/bin/qemu-i386-static+0x258479
+getpid() @ /usr/bin/qemu-i386-static+0x251d39
+socket(AF_UNIX-AF_INET, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-i386-static+0x25bbe9
+socket(AF_INET6, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-i386-static+0x25bbe9
+sendto(any u32, any, any, 0, 0, 0) @ /usr/bin/qemu-i386-static+0x25ba2b
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-i386-static+0x25ba78
+recvfrom(STDIN_FILENO, any, 1, 0, 0, 0) @ /usr/bin/qemu-i386-static+0x25b8bb
+recvfrom(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-i386-static+0x25b908
+wait4(0, any, WNOHANG, 0) @ /usr/bin/qemu-i386-static+0x287ad5
+wait4(any u32, any, any u32, any) @ /usr/bin/qemu-i386-static+0x287b11
+uname(any) @ /usr/bin/qemu-i386-static+0x253e59
+fcntl(any u32, F_SETFD, 1) @ /usr/bin/qemu-i386-static+0x256d80
+fcntl(any u32, F_GETFL, any) @ /usr/bin/qemu-i386-static+0x256d80
+fcntl(any u32, F_GETFL-F_SETFL, any) @ /usr/bin/qemu-i386-static+0x256e05
+ftruncate(any u32, any) @ /usr/bin/qemu-i386-static+0x2578e9
+getcwd(non-NULL, any) @ /usr/bin/qemu-i386-static+0x255a09
+mkdir(any, 0700) @ /usr/bin/qemu-i386-static+0x256329
+unlink(any) @ /usr/bin/qemu-i386-static+0x256a79
+readlink(any, any, any) @ /usr/bin/qemu-i386-static+0x2568e9
+gettimeofday(any, 0) @ /usr/bin/qemu-i386-static+0x24b843
+sysinfo(any) @ /usr/bin/qemu-i386-static+0x25b039
+getuid() @ /usr/bin/qemu-i386-static+0x251de9
+getgid() @ /usr/bin/qemu-i386-static+0x251cb9
+geteuid() @ /usr/bin/qemu-i386-static+0x251ca9
+getegid() @ /usr/bin/qemu-i386-static+0x251c99
+getppid() @ /usr/bin/qemu-i386-static+0x251d49
+getgroups(0, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x10000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x20000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x40000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x80000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x100000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x200000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x400000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x800000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x1000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x2000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x4000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x8000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x10000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x20000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x40000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+getgroups(0x80000000, any) @ /usr/bin/qemu-i386-static+0x251cc9
+sigaltstack(0, any) @ /usr/bin/qemu-i386-static+0x287c4d
+sched_getparam(0, any) @ /usr/bin/qemu-i386-static+0x2527a9
+sched_setscheduler(0, 0, any) @ /usr/bin/qemu-i386-static+0x252899
+sched_getscheduler(any u32) @ /usr/bin/qemu-i386-static+0x2527d9
+sched_get_priority_max(1) @ /usr/bin/qemu-i386-static+0x252809
+sched_get_priority_min(1) @ /usr/bin/qemu-i386-static+0x252839
+prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-i386-static+0x25aaac
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-i386-static+0x2c3d87) @ /usr/bin/qemu-i386-static+0x25abdd
+prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-i386-static+0x2c3d59) @ /usr/bin/qemu-i386-static+0x25abdd
+gettid() @ /usr/bin/qemu-i386-static+0x21d1d5
+gettid() @ /usr/bin/qemu-i386-static+0x258abb
+gettid() @ /usr/bin/qemu-i386-static+0x25b159
+futex(any, any u8, any u32, 0, any, any)
+futex(any, any u32, any u32, any, 0, -1 as u32)
+sched_getaffinity(0, 0x1000, any) @ /usr/bin/qemu-i386-static+0x2580c4
+getdents64(any u32, any, any) @ /usr/bin/qemu-i386-static+0x287305
+restart_syscall()
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/bin/qemu-i386-static+0x250c35
+exit_group(NULL-0x1) @ /usr/bin/qemu-i386-static+0x25172b
+exit_group(127) @ /usr/bin/qemu-i386-static+0x25172b
+tgkill(any u32, 0, SIGABRT) @ /usr/bin/qemu-i386-static+0x21d1b7
+tgkill(any u32, any u32, SIGABRT) @ /usr/bin/qemu-i386-static+0x21d1ea
+waitid(P_PIDFD, any u32, any, WNOHANG|WEXITED, 0) @ /usr/bin/qemu-i386-static+0x253e98
+waitid(any u32, any u32, any, any u32, 0) @ /usr/bin/qemu-i386-static+0x253edb
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-i386-static+0x7017
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-i386-static+0x256441
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-i386-static+0x2564b3
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-i386-static+0x256550
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-i386-static+0x2565c5
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-i386-static+0x256ea0
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/bin/qemu-i386-static+0x256ea0
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/bin/qemu-i386-static+0x2548dc
+newfstatat(AT_FDCWD, any, any, 0) @ /usr/bin/qemu-i386-static+0x2548dc
+faccessat(AT_FDCWD, any, F_OK) @ /usr/bin/qemu-i386-static+0x254438
+getcpu(any, any, 0) @ /usr/bin/qemu-i386-static+0x253f9d
+getrandom(any, any, 0) @ /usr/bin/qemu-i386-static+0x1fb882
+getrandom(any, 8, GRND_NONBLOCK) @ /usr/bin/qemu-i386-static+0x1fb882
+getrandom(any, any, any u32) @ /usr/bin/qemu-i386-static+0x1fb8bb
+getrandom(/usr/bin/qemu-i386-static+0x42e8c0, 8, GRND_NONBLOCK) @ /usr/bin/qemu-i386-static+0x222307
+memfd_create(/usr/bin/qemu-i386-static+0x2b924c, 0) @ /usr/bin/qemu-i386-static+0x25b129
+memfd_create(/usr/bin/qemu-i386-static+0x2bc2c1, MFD_CLOEXEC) @ /usr/bin/qemu-i386-static+0x25b129
+memfd_create(/usr/bin/qemu-i386-static+0x2bc2c1, MFD_CLOEXEC|MFD_ALLOW_SEALING) @ /usr/bin/qemu-i386-static+0x25b129
+faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ /usr/bin/qemu-i386-static+0x254330

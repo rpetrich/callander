@@ -1,5 +1,126 @@
-callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-hexagon-static+0x6f57
-/usr/bin/qemu-hexagon-static+0x6f51-/usr/bin/qemu-hexagon-static+0x6f55 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x140a48 (lea)
-callander: try blocking a function from the call stack using --block-function or --block-debug-function
+callander: permitted syscalls: read(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x3317af
+read(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x3317e8
+read(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x331ec6
+write(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x331b12
+write(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x331b4b
+write(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x331f99
+close(any u32) @ /usr/bin/qemu-hexagon-static+0x32f112
+close(any u32) @ /usr/bin/qemu-hexagon-static+0x32f13a
+close(any u32) @ /usr/bin/qemu-hexagon-static+0x331ba9
+fstat(any u32, any) @ /usr/bin/qemu-hexagon-static+0x32f889
+lseek(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x331259
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x33339a
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x33339a
+mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x33339a
+mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x3333f6
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x3333f6
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x3333f6
+mprotect(any, any, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC) @ /usr/bin/qemu-hexagon-static+0x333439
+munmap(any, any) @ /usr/bin/qemu-hexagon-static+0x333569
+brk(any) @ /usr/bin/qemu-hexagon-static+0x332359
+rt_sigaction(any u32, any, 0, 8) @ /usr/bin/qemu-hexagon-static+0x2d59e6
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-hexagon-static+0x1eef
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-hexagon-static+0x2f739d
+rt_sigprocmask(SIG_BLOCK, /usr/bin/qemu-hexagon-static+0x3e2568, any, 8) @ /usr/bin/qemu-hexagon-static+0x2f826c
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/bin/qemu-hexagon-static+0x2f82b7
+rt_sigprocmask(SIG_SETMASK, any, any, 8) @ /usr/bin/qemu-hexagon-static+0x2fb566
+rt_sigreturn(any) @ /usr/bin/qemu-hexagon-static+0x2d5907
+ioctl(any u32, any u32, any) @ /usr/bin/qemu-hexagon-static+0x6f57
+ioctl(any, TW_OP_NOP, any) @ /usr/bin/qemu-hexagon-static+0x6f57
+ioctl(any, SIOCGSTAMP-SIOCGSTAMPNS, any) @ /usr/bin/qemu-hexagon-static+0x6f57
+ioctl(any u32, TCGETS, any) @ /usr/bin/qemu-hexagon-static+0x33213a
+ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-hexagon-static+0x33315b
+pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-hexagon-static+0x32cec5
+pread64(any u32, any, any, any) @ /usr/bin/qemu-hexagon-static+0x32cf03
+pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-hexagon-static+0x362b2c
+writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-hexagon-static+0x33cb79
+writev(any u32, any, 0) @ /usr/bin/qemu-hexagon-static+0x33cb79
+access(any, F_OK) @ /usr/bin/qemu-hexagon-static+0x32f079
+mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/bin/qemu-hexagon-static+0x33568f
+madvise(any, any, MADV_DONTNEED) @ /usr/bin/qemu-hexagon-static+0x333299
+madvise(any, any, MADV_HUGEPAGE) @ /usr/bin/qemu-hexagon-static+0x333299
+getpid() @ /usr/bin/qemu-hexagon-static+0x32cdb9
+socket(AF_UNIX-AF_INET, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-hexagon-static+0x336909
+socket(AF_INET6, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-hexagon-static+0x336909
+sendto(any u32, any, any, 0, 0, 0) @ /usr/bin/qemu-hexagon-static+0x33674b
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-hexagon-static+0x336798
+recvfrom(STDIN_FILENO, any, 1, 0, 0, 0) @ /usr/bin/qemu-hexagon-static+0x3365db
+recvfrom(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-hexagon-static+0x336628
+wait4(0, any, WNOHANG, 0) @ /usr/bin/qemu-hexagon-static+0x362a95
+wait4(any u32, any, any u32, any) @ /usr/bin/qemu-hexagon-static+0x362ad1
+uname(any) @ /usr/bin/qemu-hexagon-static+0x32eed9
+fcntl(any u32, F_SETFD, 1) @ /usr/bin/qemu-hexagon-static+0x331cb0
+fcntl(any u32, F_GETFL, any) @ /usr/bin/qemu-hexagon-static+0x331cb0
+fcntl(any u32, F_GETFL-F_SETFL, any) @ /usr/bin/qemu-hexagon-static+0x331d35
+ftruncate(any u32, any) @ /usr/bin/qemu-hexagon-static+0x332789
+getcwd(non-NULL, any) @ /usr/bin/qemu-hexagon-static+0x3309e9
+mkdir(any, 0700) @ /usr/bin/qemu-hexagon-static+0x3312a9
+unlink(any) @ /usr/bin/qemu-hexagon-static+0x3319a9
+readlink(any, any, any) @ /usr/bin/qemu-hexagon-static+0x331849
+gettimeofday(any, 0) @ /usr/bin/qemu-hexagon-static+0x326923
+sysinfo(any) @ /usr/bin/qemu-hexagon-static+0x335d49
+getuid() @ /usr/bin/qemu-hexagon-static+0x32ce69
+getgid() @ /usr/bin/qemu-hexagon-static+0x32cd49
+geteuid() @ /usr/bin/qemu-hexagon-static+0x32cd39
+getegid() @ /usr/bin/qemu-hexagon-static+0x32cd29
+getppid() @ /usr/bin/qemu-hexagon-static+0x32cdc9
+getgroups(0, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x10000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x20000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x40000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x80000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x100000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x200000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x400000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x800000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x1000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x2000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x4000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x8000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x10000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x20000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x40000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+getgroups(0x80000000, any) @ /usr/bin/qemu-hexagon-static+0x32cd59
+sigaltstack(0, any) @ /usr/bin/qemu-hexagon-static+0x362c0d
+sched_getparam(0, any) @ /usr/bin/qemu-hexagon-static+0x32d829
+sched_setscheduler(0, 0, any) @ /usr/bin/qemu-hexagon-static+0x32d919
+sched_getscheduler(any u32) @ /usr/bin/qemu-hexagon-static+0x32d859
+sched_get_priority_max(1) @ /usr/bin/qemu-hexagon-static+0x32d889
+sched_get_priority_min(1) @ /usr/bin/qemu-hexagon-static+0x32d8b9
+prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-hexagon-static+0x3357cc
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-hexagon-static+0x3a7b6b) @ /usr/bin/qemu-hexagon-static+0x3358fd
+prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-hexagon-static+0x3a7b3d) @ /usr/bin/qemu-hexagon-static+0x3358fd
+gettid() @ /usr/bin/qemu-hexagon-static+0x2f8315
+gettid() @ /usr/bin/qemu-hexagon-static+0x3338db
+gettid() @ /usr/bin/qemu-hexagon-static+0x335e69
+futex(any, any u8, any u32, 0, any, any)
+futex(any, any u32, any u32, any, 0, -1 as u32)
+sched_setaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-hexagon-static+0x2fb1df
+sched_getaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-hexagon-static+0x2f7e5e
+sched_getaffinity(0, 0x1000, any) @ /usr/bin/qemu-hexagon-static+0x332ee4
+getdents64(any u32, any, any) @ /usr/bin/qemu-hexagon-static+0x3622c5
+restart_syscall()
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/bin/qemu-hexagon-static+0x32bcf5
+exit_group(NULL-0x1) @ /usr/bin/qemu-hexagon-static+0x32c7eb
+exit_group(127) @ /usr/bin/qemu-hexagon-static+0x32c7eb
+tgkill(any u32, 0, SIGABRT) @ /usr/bin/qemu-hexagon-static+0x2f82f7
+tgkill(any u32, any u32, SIGABRT) @ /usr/bin/qemu-hexagon-static+0x2f832a
+waitid(P_PIDFD, any u32, any, WNOHANG|WEXITED, 0) @ /usr/bin/qemu-hexagon-static+0x32ef18
+waitid(any u32, any u32, any, any u32, 0) @ /usr/bin/qemu-hexagon-static+0x32ef5b
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-hexagon-static+0x6f57
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-hexagon-static+0x3313a1
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-hexagon-static+0x331413
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-hexagon-static+0x3314b0
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-hexagon-static+0x331525
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-hexagon-static+0x331dd0
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/bin/qemu-hexagon-static+0x331dd0
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/bin/qemu-hexagon-static+0x32f8bc
+newfstatat(AT_FDCWD, any, any, 0) @ /usr/bin/qemu-hexagon-static+0x32f8bc
+faccessat(AT_FDCWD, any, F_OK) @ /usr/bin/qemu-hexagon-static+0x32f418
+getrandom(any, 8, GRND_NONBLOCK) @ /usr/bin/qemu-hexagon-static+0x2d6c82
+getrandom(any, any, any u32) @ /usr/bin/qemu-hexagon-static+0x2d6cbb
+getrandom(/usr/bin/qemu-hexagon-static+0x554a00, 8, GRND_NONBLOCK) @ /usr/bin/qemu-hexagon-static+0x2fd447
+memfd_create(/usr/bin/qemu-hexagon-static+0x39d408, 0) @ /usr/bin/qemu-hexagon-static+0x335e39
+memfd_create(/usr/bin/qemu-hexagon-static+0x3a04bd, MFD_CLOEXEC) @ /usr/bin/qemu-hexagon-static+0x335e39
+memfd_create(/usr/bin/qemu-hexagon-static+0x3a04bd, MFD_CLOEXEC|MFD_ALLOW_SEALING) @ /usr/bin/qemu-hexagon-static+0x335e39
+faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ /usr/bin/qemu-hexagon-static+0x32f310

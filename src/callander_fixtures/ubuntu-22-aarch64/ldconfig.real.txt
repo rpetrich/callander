@@ -1,5 +1,4 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x37e64
-fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ /usr/sbin/ldconfig.real+0x385fc
 fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig.real+0x385fc
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig.real+0x385fc
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig.real+0x385fc
@@ -50,7 +49,6 @@ fsync(any) @ /usr/sbin/ldconfig.real+0x38c88
 fsync(any) @ /usr/sbin/ldconfig.real+0x38cb8
 fdatasync(any) @ /usr/sbin/ldconfig.real+0x38d38
 fdatasync(any) @ /usr/sbin/ldconfig.real+0x38d68
-exit(0) @ /usr/sbin/ldconfig.real+0x1034c
 exit_group(any) @ /usr/sbin/ldconfig.real+0x31be8
 set_tid_address(any) @ /usr/sbin/ldconfig.real+0x3eea4
 futex(any, FUTEX_WAIT, any u32, 0, any, any)
@@ -84,8 +82,8 @@ sched_yield() @ /usr/sbin/ldconfig.real+0x37808
 sched_get_priority_max(1) @ /usr/sbin/ldconfig.real+0x5b388
 sched_get_priority_min(1) @ /usr/sbin/ldconfig.real+0x5b3c8
 restart_syscall()
-tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x25ba8
-tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig.real+0x25ba8
+tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x25ba8
+tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x25ba8
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real+0x25bdc
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real+0x25bdc
 rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real+0x4baac
@@ -128,7 +126,6 @@ mmap(any, any, any, any, any, any) @ /usr/sbin/ldconfig.real+0x38dd8
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x38e88
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig.real+0x38ec8
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig.real+0x38ec8
-prlimit64(0, RLIMIT_STACK, 0, any) @ /usr/sbin/ldconfig.real+0x38984
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x85690
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0x856d8
 getrandom(/usr/sbin/ldconfig.real+0xd91b0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x4c60c

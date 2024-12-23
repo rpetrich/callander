@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any u32
+callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/qemu-mips-static+0x298384-/usr/bin/qemu-mips-static+0x298390
 /usr/bin/qemu-mips-static+0x298374-/usr/bin/qemu-mips-static+0x298380 (conditional continue)
 /usr/bin/qemu-mips-static+0x298368-/usr/bin/qemu-mips-static+0x298370 (conditional continue)

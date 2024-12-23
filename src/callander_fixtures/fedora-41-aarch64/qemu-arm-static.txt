@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any u32
+callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/qemu-arm-static+0x2d60c4-/usr/bin/qemu-arm-static+0x2d60d0
 /usr/bin/qemu-arm-static+0x2d60b4-/usr/bin/qemu-arm-static+0x2d60c0 (conditional continue)
 /usr/bin/qemu-arm-static+0x2d60a8-/usr/bin/qemu-arm-static+0x2d60b0 (conditional continue)

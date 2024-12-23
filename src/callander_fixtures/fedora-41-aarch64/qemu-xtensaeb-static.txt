@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any u32
+callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/qemu-xtensaeb-static+0x30ff84-/usr/bin/qemu-xtensaeb-static+0x30ff90
 /usr/bin/qemu-xtensaeb-static+0x30ff74-/usr/bin/qemu-xtensaeb-static+0x30ff80 (conditional continue)
 /usr/bin/qemu-xtensaeb-static+0x30ff68-/usr/bin/qemu-xtensaeb-static+0x30ff70 (conditional continue)

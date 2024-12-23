@@ -1,18 +1,22 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xda504(getcwd+100)
+dup(any u32) @ libc.so.6+0xda2c8(dup+8)
 dup3(any, any, 0) @ libc.so.6+0xda308(__dup2+40)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFL, any) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFD, 0) @ libc.so.6+0xde8c0
 fcntl(any, F_SETFD, NULL-0xfffffffe) @ libc.so.6+0xde8c0
 fcntl(any, F_GETFL, 0) @ libc.so.6+0xde8c0
-fcntl(STDOUT_FILENO-0xfffffffffffffffe, F_GETFL, /usr/bin/mawk+0x1f704) @ libc.so.6+0xde8c0
+fcntl(any, F_GETFL, /usr/bin/mawk+0x1f74c) @ libc.so.6+0xde8c0
+fcntl(STDOUT_FILENO--1, F_GETFL, /usr/bin/mawk+0x1f704) @ libc.so.6+0xde8c0
 ioctl(any, TCGETS, any) @ libc.so.6+0xdef90(tcgetattr+48)
 ioctl(any, TIOCSPGRP, any) @ libc.so.6+0xdf98c(ioctl+12)
 chdir(any) @ libc.so.6+0xda448(chdir+8)
 fchdir(any u32) @ libc.so.6+0xda488(fchdir+8)
-openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xd96fc(__open+108)
+openat(AT_FDCWD, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xd96fc(__open+108)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND, 0666) @ libc.so.6+0xd96fc(__open+108)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd96fc(__open+108)
-openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xd9784(__open+244)
+openat(AT_FDCWD, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xd9784(__open+244)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND, 0666) @ libc.so.6+0xd9784(__open+244)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9784(__open+244)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd98ac(openat+108)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd9938(openat+248)
@@ -21,6 +25,7 @@ openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xde9fc(__open_nocancel+156)
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
 close(any) @ libc.so.6+0xde778(__close_nocancel+8)
+pipe2(any, 0) @ libc.so.6+0xda3a8(pipe+8)
 getdents64(any, any, any) @ libc.so.6+0xb4384(getdents64+20)
 lseek(any, any, any) @ libc.so.6+0xd9b6c(lseek+12)
 read(any, any, any) @ libc.so.6+0xd99e4(__read+36)
@@ -49,6 +54,7 @@ futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_WAIT, any u32, 0, 
 futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, ld-linux-aarch64.so.1+0x40ac0(_rtld_global+2712))
+set_robust_list(any, 24) @ libc.so.6+0xb8a98(_Fork+72)
 clock_gettime(CLOCK_MONOTONIC, any) @ libc.so.6+0xb35b4(__clock_gettime+52)
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ libc.so.6+0xb35b4(__clock_gettime+52)
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
@@ -64,9 +70,9 @@ sched_yield() @ libc.so.6+0xd0448(sched_yield+8)
 sched_get_priority_max(1) @ libc.so.6+0xd0488(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd04c8(sched_get_priority_min+8)
 restart_syscall()
-kill(any u32, SIGKILL) @ libc.so.6+0x49b0c
-tgkill(any, any u32, SIGABRT) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x80a1c
+kill(any, SIGKILL) @ libc.so.6+0x49b0c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
 sigaltstack(0, any) @ libc.so.6+0xf771c
@@ -97,9 +103,9 @@ sysinfo(any) @ libc.so.6+0xe9208(sysinfo+8)
 brk(any) @ libc.so.6+0xdf848(brk+8)
 munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
+clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, 0, any) @ libc.so.6+0xb8a74(_Fork+36)
 clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xe7af4(clone+52)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe3bc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe3bc8(madvise+8)

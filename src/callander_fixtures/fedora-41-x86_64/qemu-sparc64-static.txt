@@ -1,5 +1,126 @@
-callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-sparc64-static+0x80b7
-/usr/bin/qemu-sparc64-static+0x80b1-/usr/bin/qemu-sparc64-static+0x80b5 (conditional continue)
-/usr/bin/qemu-sparc64-static+0x6fd98 (lea)
-callander: try blocking a function from the call stack using --block-function or --block-debug-function
+callander: permitted syscalls: read(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x20a29f
+read(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x20a2d8
+read(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x20a9e6
+write(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x20a632
+write(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x20a66b
+write(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x20aab9
+close(any u32) @ /usr/bin/qemu-sparc64-static+0x207b82
+close(any u32) @ /usr/bin/qemu-sparc64-static+0x207baa
+close(any u32) @ /usr/bin/qemu-sparc64-static+0x20a6c9
+fstat(any u32, any) @ /usr/bin/qemu-sparc64-static+0x2082f9
+lseek(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x209d29
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20bfba
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20bfba
+mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20bfba
+mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20c016
+mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20c016
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20c016
+mprotect(any, any, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC) @ /usr/bin/qemu-sparc64-static+0x20c059
+munmap(any, any) @ /usr/bin/qemu-sparc64-static+0x20c189
+brk(any) @ /usr/bin/qemu-sparc64-static+0x20af09
+rt_sigaction(any u32, any, 0, 8) @ /usr/bin/qemu-sparc64-static+0x1ae3e6
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-sparc64-static+0x1f20
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/bin/qemu-sparc64-static+0x1cfd9d
+rt_sigprocmask(SIG_BLOCK, /usr/bin/qemu-sparc64-static+0x288ff0, any, 8) @ /usr/bin/qemu-sparc64-static+0x1d0c6c
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/bin/qemu-sparc64-static+0x1d0cb7
+rt_sigprocmask(SIG_SETMASK, any, any, 8) @ /usr/bin/qemu-sparc64-static+0x1d3f66
+rt_sigreturn(any) @ /usr/bin/qemu-sparc64-static+0x1ae307
+ioctl(any u32, any u32, any) @ /usr/bin/qemu-sparc64-static+0x80b7
+ioctl(any, TW_OP_NOP, any) @ /usr/bin/qemu-sparc64-static+0x80b7
+ioctl(any, SIOCGSTAMP-SIOCGSTAMPNS, any) @ /usr/bin/qemu-sparc64-static+0x80b7
+ioctl(any u32, TCGETS, any) @ /usr/bin/qemu-sparc64-static+0x20ac5a
+ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-sparc64-static+0x20bd7b
+pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-sparc64-static+0x205905
+pread64(any u32, any, any, any) @ /usr/bin/qemu-sparc64-static+0x205943
+pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-sparc64-static+0x23b86c
+writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-sparc64-static+0x2158b9
+writev(any u32, any, 0) @ /usr/bin/qemu-sparc64-static+0x2158b9
+access(any, F_OK) @ /usr/bin/qemu-sparc64-static+0x207ab9
+mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/bin/qemu-sparc64-static+0x20e3af
+madvise(any, any, MADV_DONTNEED) @ /usr/bin/qemu-sparc64-static+0x20beb9
+madvise(any, any, MADV_HUGEPAGE) @ /usr/bin/qemu-sparc64-static+0x20beb9
+getpid() @ /usr/bin/qemu-sparc64-static+0x2057f9
+socket(AF_UNIX-AF_INET, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-sparc64-static+0x20f629
+socket(AF_INET6, SOCK_DGRAM|SOCK_CLOEXEC, 0) @ /usr/bin/qemu-sparc64-static+0x20f629
+sendto(any u32, any, any, 0, 0, 0) @ /usr/bin/qemu-sparc64-static+0x20f46b
+sendto(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-sparc64-static+0x20f4b8
+recvfrom(STDIN_FILENO, any, 1, 0, 0, 0) @ /usr/bin/qemu-sparc64-static+0x20f2fb
+recvfrom(any u32, any, any, any u32, 0, 0) @ /usr/bin/qemu-sparc64-static+0x20f348
+wait4(0, any, WNOHANG, 0) @ /usr/bin/qemu-sparc64-static+0x23b7d5
+wait4(any u32, any, any u32, any) @ /usr/bin/qemu-sparc64-static+0x23b811
+uname(any) @ /usr/bin/qemu-sparc64-static+0x207919
+fcntl(any u32, F_SETFD, 1) @ /usr/bin/qemu-sparc64-static+0x20a7d0
+fcntl(any u32, F_GETFL, any) @ /usr/bin/qemu-sparc64-static+0x20a7d0
+fcntl(any u32, F_GETFL-F_SETFL, any) @ /usr/bin/qemu-sparc64-static+0x20a855
+ftruncate(any u32, any) @ /usr/bin/qemu-sparc64-static+0x20b339
+getcwd(non-NULL, any) @ /usr/bin/qemu-sparc64-static+0x209459
+mkdir(any, 0700) @ /usr/bin/qemu-sparc64-static+0x209d79
+unlink(any) @ /usr/bin/qemu-sparc64-static+0x20a4c9
+readlink(any, any, any) @ /usr/bin/qemu-sparc64-static+0x20a339
+gettimeofday(any, 0) @ /usr/bin/qemu-sparc64-static+0x1ff323
+sysinfo(any) @ /usr/bin/qemu-sparc64-static+0x20ea79
+getuid() @ /usr/bin/qemu-sparc64-static+0x2058a9
+getgid() @ /usr/bin/qemu-sparc64-static+0x205779
+geteuid() @ /usr/bin/qemu-sparc64-static+0x205769
+getegid() @ /usr/bin/qemu-sparc64-static+0x205759
+getppid() @ /usr/bin/qemu-sparc64-static+0x205809
+getgroups(0, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x10000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x20000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x40000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x80000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x100000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x200000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x400000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x800000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x1000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x2000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x4000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x8000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x10000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x20000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x40000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+getgroups(0x80000000, any) @ /usr/bin/qemu-sparc64-static+0x205789
+sigaltstack(0, any) @ /usr/bin/qemu-sparc64-static+0x23b94d
+sched_getparam(0, any) @ /usr/bin/qemu-sparc64-static+0x206269
+sched_setscheduler(0, 0, any) @ /usr/bin/qemu-sparc64-static+0x206359
+sched_getscheduler(any u32) @ /usr/bin/qemu-sparc64-static+0x206299
+sched_get_priority_max(1) @ /usr/bin/qemu-sparc64-static+0x2062c9
+sched_get_priority_min(1) @ /usr/bin/qemu-sparc64-static+0x2062f9
+prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-sparc64-static+0x20e4ec
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-sparc64-static+0x275b0b) @ /usr/bin/qemu-sparc64-static+0x20e61d
+prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-sparc64-static+0x275add) @ /usr/bin/qemu-sparc64-static+0x20e61d
+gettid() @ /usr/bin/qemu-sparc64-static+0x1d0d15
+gettid() @ /usr/bin/qemu-sparc64-static+0x20c4fb
+gettid() @ /usr/bin/qemu-sparc64-static+0x20eb99
+futex(any, any u8, any u32, 0, any, any)
+futex(any, any u32, any u32, any, 0, -1 as u32)
+sched_setaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-sparc64-static+0x1d3bdf
+sched_getaffinity(any u32, any, non-NULL) @ /usr/bin/qemu-sparc64-static+0x1d085e
+sched_getaffinity(0, 0x1000, any) @ /usr/bin/qemu-sparc64-static+0x20bb04
+getdents64(any u32, any, any) @ /usr/bin/qemu-sparc64-static+0x23b005
+restart_syscall()
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/bin/qemu-sparc64-static+0x2046f5
+exit_group(NULL-0x1) @ /usr/bin/qemu-sparc64-static+0x2051eb
+exit_group(127) @ /usr/bin/qemu-sparc64-static+0x2051eb
+tgkill(any u32, 0, SIGABRT) @ /usr/bin/qemu-sparc64-static+0x1d0cf7
+tgkill(any u32, any u32, SIGABRT) @ /usr/bin/qemu-sparc64-static+0x1d0d2a
+waitid(P_PIDFD, any u32, any, WNOHANG|WEXITED, 0) @ /usr/bin/qemu-sparc64-static+0x207958
+waitid(any u32, any u32, any, any u32, 0) @ /usr/bin/qemu-sparc64-static+0x20799b
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-sparc64-static+0x80b7
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-sparc64-static+0x209e91
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-sparc64-static+0x209f03
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-sparc64-static+0x209fa0
+openat(any u32, any, any u32, any) @ /usr/bin/qemu-sparc64-static+0x20a015
+openat(AT_FDCWD, any, O_RDONLY-O_RDONLY|O_CLOEXEC, any) @ /usr/bin/qemu-sparc64-static+0x20a8f0
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/bin/qemu-sparc64-static+0x20a8f0
+newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/bin/qemu-sparc64-static+0x20832c
+newfstatat(AT_FDCWD, any, any, 0) @ /usr/bin/qemu-sparc64-static+0x20832c
+faccessat(AT_FDCWD, any, F_OK) @ /usr/bin/qemu-sparc64-static+0x207e88
+getrandom(any, 8, GRND_NONBLOCK) @ /usr/bin/qemu-sparc64-static+0x1af682
+getrandom(any, any, any u32) @ /usr/bin/qemu-sparc64-static+0x1af6bb
+getrandom(/usr/bin/qemu-sparc64-static+0x3b4f00, 8, GRND_NONBLOCK) @ /usr/bin/qemu-sparc64-static+0x1d5e47
+memfd_create(/usr/bin/qemu-sparc64-static+0x26b48e, 0) @ /usr/bin/qemu-sparc64-static+0x20eb69
+memfd_create(/usr/bin/qemu-sparc64-static+0x26e453, MFD_CLOEXEC) @ /usr/bin/qemu-sparc64-static+0x20eb69
+memfd_create(/usr/bin/qemu-sparc64-static+0x26e453, MFD_CLOEXEC|MFD_ALLOW_SEALING) @ /usr/bin/qemu-sparc64-static+0x20eb69
+faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ /usr/bin/qemu-sparc64-static+0x207d80

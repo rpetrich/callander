@@ -11,8 +11,8 @@ ioctl(any, TCGETS, any) @ libc.so.6+0xdedc8(tcsetattr+56)
 ioctl(any, TCSETSW, any) @ libc.so.6+0xdee2c(tcsetattr+156)
 ioctl(any, TCGETS, any) @ libc.so.6+0xdee68(tcsetattr+216)
 ioctl(any, TCGETS, any) @ libc.so.6+0xdef90(tcgetattr+48)
-ioctl(any u16, TIOCGWINSZ, any) @ libc.so.6+0xdf98c(ioctl+12)
 ioctl(any, TIOCSPGRP, any) @ libc.so.6+0xdf98c(ioctl+12)
+ioctl(any, TIOCGWINSZ, any) @ libc.so.6+0xdf98c(ioctl+12)
 renameat(AT_FDCWD, any, AT_FDCWD, non-NULL) @ libc.so.6+0x51f34(rename+20)
 faccessat(AT_FDCWD, non-NULL, R_OK) @ libc.so.6+0xd9bb0(access+16)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
@@ -84,9 +84,9 @@ sched_get_priority_max(1) @ libc.so.6+0xd0488(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd04c8(sched_get_priority_min+8)
 restart_syscall()
 kill(any, SIGTSTP) @ libc.so.6+0x3a988(kill+8)
-kill(any u32, SIGKILL) @ libc.so.6+0x49b0c
-tgkill(any, any u32, SIGABRT) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x80a1c
+kill(any, SIGKILL) @ libc.so.6+0x49b0c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
 sigaltstack(0, any) @ libc.so.6+0xf771c
@@ -135,8 +135,7 @@ brk(any) @ libc.so.6+0xdf848(brk+8)
 munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
 clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xe7af4(clone+52)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe3bc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe3bc8(madvise+8)

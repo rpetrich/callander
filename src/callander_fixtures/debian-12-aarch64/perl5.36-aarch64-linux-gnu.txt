@@ -12,7 +12,6 @@ linkat(any u32, any, any u32, any, 0) @ libc.so.6+0xdb308(linkat+8)
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ libc.so.6+0x51f34(rename+20)
 renameat(any, any, any, any) @ libc.so.6+0x51f6c(renameat+12)
 chdir(non-NULL) @ libc.so.6+0xda448(chdir+8)
-fchdir(any) @ libc.so.6+0xda488(fchdir+8)
 fchmod(any u32, any u32) @ libc.so.6+0xd9448(fchmod+8)
 openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ libc.so.6+0xd96fc(__open+108)
 openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ libc.so.6+0xd9784(__open+244)
@@ -98,8 +97,8 @@ sched_get_priority_max(1) @ libc.so.6+0xd0488(__sched_get_priority_max+8)
 sched_get_priority_min(1) @ libc.so.6+0xd04c8(sched_get_priority_min+8)
 restart_syscall()
 kill(any, SIGABRT) @ libc.so.6+0x3a988(kill+8)
-tgkill(any, any u32, SIGABRT) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
 sigaltstack(0, any) @ libc.so.6+0xf771c
@@ -128,8 +127,7 @@ sysinfo(any) @ libc.so.6+0xe9208(sysinfo+8)
 brk(any) @ libc.so.6+0xdf848(brk+8)
 munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
 mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe3bc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe3bc8(madvise+8)

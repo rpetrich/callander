@@ -1,5 +1,4 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig+0x3924c
-fcntl(STDIN_FILENO-STDERR_FILENO, F_GETFD, any) @ /usr/sbin/ldconfig+0x39a54
 fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig+0x39a54
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig+0x39a54
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig+0x39a54
@@ -36,7 +35,7 @@ write(any, any, any) @ /usr/sbin/ldconfig+0x39038
 write(any, any, NULL-0x7fffffffffffffff) @ /usr/sbin/ldconfig+0x39dac
 writev(any, any, any) @ /usr/sbin/ldconfig+0x39f68
 writev(any, any, any) @ /usr/sbin/ldconfig+0x39fac
-writev(any u32, any, any) @ /usr/sbin/ldconfig+0x6d6c0
+writev(any, any, any) @ /usr/sbin/ldconfig+0x6d6c0
 pread64(any, any, any, any) @ /usr/sbin/ldconfig+0x5d8ec
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig+0x860d8
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig+0x86138
@@ -50,7 +49,6 @@ fsync(any) @ /usr/sbin/ldconfig+0x3a150
 fsync(any) @ /usr/sbin/ldconfig+0x3a184
 fdatasync(any) @ /usr/sbin/ldconfig+0x3a220
 fdatasync(any) @ /usr/sbin/ldconfig+0x3a254
-exit(0) @ /usr/sbin/ldconfig+0xfd3c
 exit_group(127) @ /usr/sbin/ldconfig+0x103cc
 exit_group(any) @ /usr/sbin/ldconfig+0x32f4c
 set_tid_address(any) @ /usr/sbin/ldconfig+0x407fc
@@ -78,8 +76,8 @@ sched_yield() @ /usr/sbin/ldconfig+0x38bc8
 sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x5d048
 sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x5d088
 restart_syscall()
-tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x265c0
-tgkill(any, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x265c0
+tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig+0x265c0
+tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig+0x265c0
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig+0x265f4
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig+0x265f4
 rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x4d47c
@@ -122,7 +120,6 @@ mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /usr/sbin
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x3a388
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x3a3c8
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig+0x3a3c8
-prlimit64(0, RLIMIT_STACK, 0, any) @ /usr/sbin/ldconfig+0x39df8
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0x86574
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0x865bc
 getrandom(/usr/sbin/ldconfig+0xe71a0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x4d570

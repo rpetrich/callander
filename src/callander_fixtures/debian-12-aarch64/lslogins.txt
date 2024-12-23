@@ -142,11 +142,11 @@ restart_syscall()
 kill(any u32, SIGKILL) @ libc.so.6+0x3a988(kill+8)
 kill(0x1-0x7fffffff, SIGTERM) @ libc.so.6+0x3a988(kill+8)
 kill(0x1-0x7fffffff, SIGCONT) @ libc.so.6+0x3a988(kill+8)
-tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c2f0
-tgkill(any, any u32, SIGSETXID) @ libc.so.6+0x7c35c
-tgkill(any, any u32, SIGABRT) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGFPE) @ libc.so.6+0x80a1c
-tgkill(any, any u32, SIGTERM) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGSETXID) @ libc.so.6+0x7c2f0
+tgkill(any, any, SIGSETXID) @ libc.so.6+0x7c35c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
+tgkill(any, any, SIGTERM) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGTERM) @ libc.so.6+0x80a4c
