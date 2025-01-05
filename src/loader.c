@@ -13,24 +13,6 @@
 
 #define PAGE_ALIGNMENT_MASK ~((uintptr_t)PAGE_SIZE - 1)
 
-#define DW_EH_PE_omit	0xff
-#define DW_EH_PE_ptr	0x00
-
-#define DW_EH_PE_uleb128	0x01
-#define DW_EH_PE_udata2	0x02
-#define DW_EH_PE_udata4	0x03
-#define DW_EH_PE_udata8	0x04
-#define DW_EH_PE_sleb128	0x09
-#define DW_EH_PE_sdata2	0x0a
-#define DW_EH_PE_sdata4	0x0b
-#define DW_EH_PE_sdata8	0x0c
-#define DW_EH_PE_signed	0x09
-
-#define DW_EH_PE_absptr 0x00
-#define DW_EH_PE_pcrel	0x10
-#define DW_EH_PE_textrel	0x20
-#define DW_EH_PE_datarel	0x30
-
 static int protection_for_pflags(int pflags)
 {
 	int protection = 0;
@@ -46,7 +28,6 @@ static int protection_for_pflags(int pflags)
 	return protection;
 }
 
-// load_binary will load and map the binary in fd into the process' address space
 int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bool force_relocation)
 {
 	const ElfW(Ehdr) header;
@@ -105,12 +86,18 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		ERROR("could not stat binary", fs_strerror(result));
 		return -ENOEXEC;
 	}
-	size_t phsize = header.e_phentsize * header.e_phnum;
-	out_info->header_entry_size = header.e_phentsize;
-	out_info->header_entry_count = header.e_phnum;
+	return load_binary_with_layout(&header, fd, 0, stat.st_size, out_info, load_address, force_relocation);
+}
+
+// load_binary_with_layout will load and map the binary in fd into the process' address space
+int load_binary_with_layout(const ElfW(Ehdr) *header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
+{
+	size_t phsize = header->e_phentsize * header->e_phnum;
+	out_info->header_entry_size = header->e_phentsize;
+	out_info->header_entry_count = header->e_phnum;
 	char *phbuffer = malloc(phsize);
 	out_info->phbuffer = phbuffer;
-	int l = fs_pread_all(fd, phbuffer, phsize, header.e_phoff);
+	int l = fs_pread_all(fd, phbuffer, phsize, offset + header->e_phoff);
 	if (l != (int)phsize) {
 		free(phbuffer);
 		if (l < 0) {
@@ -125,8 +112,8 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	uintptr_t end = 0;
 	uintptr_t off_interpreter = 0;
 	const ElfW(Phdr) *dynamic_ph = NULL;
-	for (int i = 0; i < header.e_phnum; i++) {
-		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header.e_phentsize * i];
+	for (int i = 0; i < header->e_phnum; i++) {
+		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header->e_phentsize * i];
 		switch (ph->p_type) {
 			case PT_LOAD: {
 				if ((uintptr_t)ph->p_vaddr <= start) {
@@ -157,29 +144,28 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	off_start &= PAGE_ALIGNMENT_MASK;
 	start &= PAGE_ALIGNMENT_MASK;
 	size_t total_size = end - start + off_start;
-	uintptr_t desired_address = load_address == 0 || header.e_type != ET_DYN ? start - off_start : load_address;
+	uintptr_t desired_address = load_address == 0 || header->e_type != ET_DYN ? start - off_start : load_address;
 #ifdef MAP_JIT
 	int additional_map_flags = MAP_JIT;
 #else
 	int additional_map_flags = 0;
 #endif
+	if (force_relocation > 1) {
+		additional_map_flags = MAP_FIXED;
+	}
 	void *mapped_address = fs_mmap((void *)desired_address, total_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|additional_map_flags, -1, 0);
 	if (fs_is_map_failed(mapped_address)) {
-		ERROR("could not map binary", fs_strerror((intptr_t)mapped_address));
 		free(phbuffer);
 		return -ENOEXEC;
 	}
-	if ((uintptr_t)mapped_address != desired_address && header.e_type != ET_DYN && load_address == 0 && !force_relocation) {
-		ERROR("desired address is not allowed", desired_address);
-		ERROR("instead got", (uintptr_t)mapped_address);
-		// ERROR("binary is not relocable");
+	if ((uintptr_t)mapped_address != desired_address && header->e_type != ET_DYN && load_address == 0 && !force_relocation) {
 		fs_munmap(mapped_address, end - start + off_start);
 		free(phbuffer);
 		return -ENOEXEC;
 	}
 	uintptr_t map_offset = (uintptr_t)mapped_address - start + off_start;
-	for (int i = 0; i < header.e_phnum; i++) {
-		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header.e_phentsize * i];
+	for (int i = 0; i < header->e_phnum; i++) {
+		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header->e_phentsize * i];
 		if (ph->p_type != PT_LOAD) {
 			continue;
 		}
@@ -190,8 +176,8 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 			size_t offset = ph->p_offset & PAGE_ALIGNMENT_MASK;
 			size_t len = this_max-this_min;
 			size_t map_len = len;
-			if (offset + len > (size_t)stat.st_size) {
-				map_len = (((size_t)stat.st_size - offset) + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
+			if (offset + len > size) {
+				map_len = ((size - offset) + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
 			}
 			void *desired_section_mapping = (void *)(map_offset + this_min);
 			int temporary_prot = ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection;
@@ -226,7 +212,7 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 			size_t pgbrk = (brk+PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
 			memset((void *)brk, 0, (pgbrk-brk) & (PAGE_SIZE-1));
 			if (this_max-this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
-				result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
+				intptr_t result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
 				if (result < 0) {
 					ERROR("failed remapping section with new protection", fs_strerror(result));
 					return -ENOEXEC;
@@ -245,8 +231,8 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	out_info->base = mapped_address;
 	out_info->default_base = (void *)(start - off_start);
 	out_info->size = total_size;
-	out_info->program_header = (void *)((intptr_t)mapped_address + header.e_phoff);
-	out_info->entrypoint = (void *)(header.e_entry - start + (intptr_t)mapped_address);
+	out_info->program_header = (void *)((intptr_t)mapped_address + header->e_phoff);
+	out_info->entrypoint = (void *)(header->e_entry - start + (intptr_t)mapped_address);
 	if (dynamic_ph) {
 		out_info->dynamic = (const ElfW(Dyn) *)((intptr_t)mapped_address + dynamic_ph->p_vaddr - start);
 		out_info->dynamic_size = dynamic_ph->p_memsz / sizeof(ElfW(Dyn));
@@ -261,10 +247,10 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	} else {
 		out_info->interpreter = NULL;
 	}
-	out_info->strtab_section_index = header.e_shstrndx;
-	out_info->section_offset = header.e_shoff;
-	out_info->section_entry_size = header.e_shentsize;
-	out_info->section_entry_count = header.e_shnum;
+	out_info->strtab_section_index = header->e_shstrndx;
+	out_info->section_offset = header->e_shoff;
+	out_info->section_entry_size = header->e_shentsize;
+	out_info->section_entry_count = header->e_shnum;
 	return 0;
 }
 
@@ -575,9 +561,25 @@ static void load_versions(const ElfW(Half) *versym, const ElfW(Verneed) *verneed
 	}
 }
 
+static void calculate_symbol_count_from_rela(void *relbase, size_t relasz, size_t relaent, struct symbol_info *out_symbols)
+{
+	for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
+		const ElfW(Rela) *rel = relbase + rel_off;
+		uint32_t sym = ELF64_R_SYM(rel->r_info);
+		if (UNLIKELY(sym >= out_symbols->symbol_count)) {
+			out_symbols->symbol_count = sym + 1;
+		}
+	}
+}
+
 int parse_dynamic_symbols(const struct binary_info *info, void *mapped_address, struct symbol_info *out_symbols)
 {
 	// Find sections
+	ElfW(Addr) rela = 0;
+	size_t relasz = 0;
+	size_t relaent = 0;
+	ElfW(Addr) jmprel = 0;
+	size_t pltrelsz = 0;
 	ElfW(Addr) symtab = 0;
 	ElfW(Addr) syment = 0;
 	ElfW(Addr) strtab = 0;
@@ -593,6 +595,21 @@ int parse_dynamic_symbols(const struct binary_info *info, void *mapped_address, 
 	size_t dynamic_size = info->dynamic_size;
 	for (size_t i = 0; i < dynamic_size; i++) {
 		switch (dynamic[i].d_tag) {
+			case DT_RELA:
+				rela = dynamic[i].d_un.d_ptr;
+				break;
+			case DT_RELASZ:
+				relasz = dynamic[i].d_un.d_val;
+				break;
+			case DT_RELAENT:
+				relaent = dynamic[i].d_un.d_val;
+				break;
+			case DT_JMPREL:
+				jmprel = dynamic[i].d_un.d_ptr;
+				break;
+			case DT_PLTRELSZ:
+				pltrelsz = dynamic[i].d_un.d_val;
+				break;
 			case DT_SYMTAB:
 				symtab = dynamic[i].d_un.d_ptr;
 				break;
@@ -641,6 +658,13 @@ int parse_dynamic_symbols(const struct binary_info *info, void *mapped_address, 
 	out_symbols->init_functions = (const void **)apply_base_address_heuristic(mapped_address, init_functions);
 	out_symbols->init_function_count = init_function_size / sizeof(void *);
 	load_hash(hash != 0 ? (const ElfW(Word) *)apply_base_address_heuristic(mapped_address, hash) : 0, 0, out_symbols);
+	if (out_symbols->symbol_count <= 1) {
+		// empty GNU hash means symbol count is defined only through its use in rela
+		void *relbase = (void *)apply_base_address_heuristic(mapped_address, rela);
+		calculate_symbol_count_from_rela(relbase, relasz, relaent, out_symbols);
+		relbase = (void *)apply_base_address_heuristic(mapped_address, jmprel);
+		calculate_symbol_count_from_rela(relbase, pltrelsz, relaent, out_symbols);
+	}
 	load_versions(versym != 0 ? (const ElfW(Half) *)apply_base_address_heuristic(mapped_address, versym) : NULL, verneed != 0 ? (const ElfW(Verneed) *)apply_base_address_heuristic(mapped_address, verneed) : NULL, verdef != 0 ? (const ElfW(Verdef) *)apply_base_address_heuristic(mapped_address, verdef) : NULL, out_symbols);
 	return 0;
 }
@@ -1176,7 +1200,7 @@ int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid) {
 	return -EACCES;
 }
 
-static inline uintptr_t read_uleb128(void **cursor)
+uintptr_t read_uleb128(void **cursor)
 {
 	uintptr_t result = 0;
 	int shift = 0;
@@ -1191,7 +1215,7 @@ static inline uintptr_t read_uleb128(void **cursor)
 	}
 }
 
-static inline intptr_t read_sleb128(void **cursor)
+intptr_t read_sleb128(void **cursor)
 {
 	intptr_t result = 0;
 	int shift = 0;
@@ -1210,10 +1234,9 @@ static inline intptr_t read_sleb128(void **cursor)
 	}
 }
 
-__attribute__((always_inline))
-static inline uintptr_t read_offset_and_advance(void **cursor, uintptr_t format)
+uintptr_t read_eh_frame_value(void **cursor, unsigned char encoding)
 {
-	switch (format & 0xf) {
+	switch (encoding & 0xf) {
 		case DW_EH_PE_uleb128:
 			return read_uleb128(cursor);
 		case DW_EH_PE_udata2: {
@@ -1249,45 +1272,46 @@ static inline uintptr_t read_offset_and_advance(void **cursor, uintptr_t format)
 			return result;
 		}
 		default:
-			DIE("unknown format", format & 0xf);
+			DIE("unknown eh_frame encoding", encoding & 0xf);
 			return 0;
 	}
 }
 
-static uintptr_t read_pointer_and_advance(const struct frame_info *frame_info, void **cursor, uintptr_t format)
+uintptr_t read_eh_frame_pointer(const struct frame_info *frame_info, void **cursor, unsigned char encoding)
 {
-	if (format == DW_EH_PE_omit) {
+	if (encoding == DW_EH_PE_omit) {
 		return 0;
 	}
-	if (format == DW_EH_PE_ptr) {
+	if (encoding == DW_EH_PE_ptr) {
 		uintptr_t result = *(const uintptr_t *)*cursor;
 		*cursor += sizeof(uintptr_t);
 		return result;
 	}
-	switch (format & 0xf0) {
+	switch (encoding & 0xf0) {
 		case DW_EH_PE_absptr:
-			return read_offset_and_advance(cursor, format);
+			return read_eh_frame_value(cursor, encoding);
 		case DW_EH_PE_pcrel: {
 			uintptr_t base = (uintptr_t)*cursor;
-			return base + read_offset_and_advance(cursor, format);
+			return base + read_eh_frame_value(cursor, encoding);
 		}
 		case DW_EH_PE_datarel:
-			return frame_info->data_base_address + read_offset_and_advance(cursor, format);
+			return frame_info->data_base_address + read_eh_frame_value(cursor, encoding);
 		case DW_EH_PE_textrel:
-			return frame_info->text_base_address + read_offset_and_advance(cursor, format);
+			return frame_info->text_base_address + read_eh_frame_value(cursor, encoding);
 		default:
-			DIE("unknown format", format & 0xf0);
+			DIE("unknown eh_frame encoding", encoding & 0xf0);
 	}
 }
 
-struct eh_frame_hdr {
-	uint8_t version;
-	uint8_t eh_frame_ptr_enc;
-	uint8_t fde_count_enc;
-	uint8_t table_enc;
-};
+static bool is_supported_eh_frame_hdr(const struct eh_frame_hdr *hdr)
+{
+	return hdr->version == 1
+		&& hdr->eh_frame_ptr_enc == (DW_EH_PE_pcrel | DW_EH_PE_sdata4)
+		&& hdr->fde_count_enc == DW_EH_PE_udata4
+		&& hdr->table_enc == (DW_EH_PE_datarel | DW_EH_PE_sdata4);
+}
 
-int load_frame_info(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info)
+int load_frame_info_from_section(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info)
 {
 	(void)fd;
 	const ElfW(Shdr) *section = find_section(binary, section_info, ".eh_frame");
@@ -1300,10 +1324,7 @@ int load_frame_info(int fd, const struct binary_info *binary, const struct secti
 	bool supported_eh_frame_hdr = false;
 	if (header_section != NULL) {
 		data_base_address = apply_base_address(binary, header_section->sh_addr);
-		const struct eh_frame_hdr *hdr = (const struct eh_frame_hdr *)data_base_address;
-		if (hdr->version == 1 && hdr->eh_frame_ptr_enc == (DW_EH_PE_pcrel | DW_EH_PE_sdata4) && hdr->fde_count_enc == DW_EH_PE_udata4 && hdr->table_enc == (DW_EH_PE_datarel | DW_EH_PE_sdata4)) {
-			supported_eh_frame_hdr = true;
-		}
+		supported_eh_frame_hdr = is_supported_eh_frame_hdr((const struct eh_frame_hdr *)data_base_address);
 	}
 	uintptr_t text_base_address = 0;
 	const ElfW(Shdr) *text_section = find_section(binary, section_info, ".text");
@@ -1312,10 +1333,24 @@ int load_frame_info(int fd, const struct binary_info *binary, const struct secti
 	}
 	*out_info = (struct frame_info) {
 		.data = data,
-		.size = section->sh_size,
 		.data_base_address = data_base_address,
 		.text_base_address = text_base_address,
 		.supported_eh_frame_hdr = supported_eh_frame_hdr,
+	};
+	return 0;
+}
+
+int load_frame_info_from_program_header(const struct binary_info *binary, const struct eh_frame_hdr *header, size_t size, struct frame_info *out_info)
+{
+	if (!is_supported_eh_frame_hdr(header)) {
+		return -ENOENT;
+	}
+	const int32_t *eh_frame_ptr = (const void *)&header->data;
+	*out_info = (struct frame_info) {
+		.data = (void *)eh_frame_ptr + *eh_frame_ptr,
+		.data_base_address = (uintptr_t)header,
+		.text_base_address = 0,
+		.supported_eh_frame_hdr = true,
 	};
 	return 0;
 }
@@ -1348,8 +1383,8 @@ bool find_containing_frame_info(struct frame_info *info, const void *address, st
 		}
 		void *current = (void *)(eh_frame_hdr + table[larger_index-1].fde_offset);
 		current += sizeof(uint32_t) + sizeof(uint32_t);
-		uintptr_t frame_location = read_pointer_and_advance(info, &current, DW_EH_PE_pcrel | DW_EH_PE_sdata4);
-		uintptr_t frame_size = read_offset_and_advance(&current, DW_EH_PE_udata4);
+		uintptr_t frame_location = read_eh_frame_pointer(info, &current, DW_EH_PE_pcrel | DW_EH_PE_sdata4);
+		uintptr_t frame_size = read_eh_frame_value(&current, DW_EH_PE_udata4);
 		if (frame_location <= (uintptr_t)address) {
 			if (frame_location + frame_size > (uintptr_t)address) {
 				*out_frame = (struct frame_details){
@@ -1361,10 +1396,13 @@ bool find_containing_frame_info(struct frame_info *info, const void *address, st
 		}
 		return false;
 	}
-	uintptr_t pointer_format = DW_EH_PE_ptr;
+	unsigned char pointer_format = DW_EH_PE_ptr;
 	void *data = info->data;
-	size_t size = info->size;
-	for (uintptr_t cie_offset = 0; cie_offset < size;) {
+	if (data == NULL) {
+		return false;
+	}
+	uintptr_t cie_offset = 0;
+	for (;;) {
 		void *current = data + cie_offset;
 		// read length
 		uint32_t length = *(const uint32_t *)current;
@@ -1404,8 +1442,8 @@ bool find_containing_frame_info(struct frame_info *info, const void *address, st
 		} else {
 			// FDE
 			// start
-			uintptr_t frame_location = read_pointer_and_advance(info, &current, pointer_format);
-			uintptr_t frame_size = read_offset_and_advance(&current, pointer_format);
+			uintptr_t frame_location = read_eh_frame_pointer(info, &current, pointer_format);
+			uintptr_t frame_size = read_eh_frame_value(&current, pointer_format);
 			if (frame_location <= (uintptr_t)address) {
 				if (frame_location + frame_size > (uintptr_t)address) {
 					*out_frame = (struct frame_details){

@@ -536,7 +536,6 @@ noreturn static void bind_axon(bind_data data)
 	// Jump to the actual program if statically linked or the interpreter if dynamically linked
 	void *pc = info.interpreter != NULL ? interpreter_info.entrypoint : info.entrypoint;
 	JUMP(pc, data.sp, 0, 0, 0);
-	__builtin_unreachable();
 }
 
 static inline bool is_go_binary(int fd, const struct binary_info *info) {

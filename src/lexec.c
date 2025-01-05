@@ -24,7 +24,6 @@ __attribute__((used))
 noreturn void receive_start(const struct receive_start_args *args)
 {
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
-	__builtin_unreachable();
 }
 
 static int translate_at_fd_to_darwin(int fd)

@@ -19,7 +19,10 @@
 
 #define STACK_DESCENDS
 
-#define JUMP(pc, sp, arg0, arg1, arg2) __asm__ __volatile__("mov %1,%%esp ; jmp *%0" : : "r"(pc), "r"(sp), "a"(0), "b"(0), "d"(0) : "memory", "cc")
+#define JUMP(pc, sp, arg0, arg1, arg2) do { \
+	__asm__ __volatile__("mov %1,%%esp ; jmp *%0" : : "r"(pc), "r"(sp), "a"(0), "b"(0), "d"(0) : "memory", "cc"); \
+	__builtin_unreachable(); \
+} while(0)
 
 #define AXON_RESTORE_ASM \
 __asm__( \
@@ -27,17 +30,19 @@ __asm__( \
 FS_HIDDEN_FUNCTION_ASM(__restore) "\n" \
 "	movl $173, %eax\n" \
 );
-#define AXON_IMPULSE_ASM \
+#define AXON_ENTRYPOINT_TRAMPOLINE_ASM(name, dest) \
 __asm__( \
 ".text\n" \
 ".weak _DYNAMIC\n" \
 ".hidden _DYNAMIC\n" \
-FS_HIDDEN_FUNCTION_ASM(impulse) "\n" \
+FS_HIDDEN_FUNCTION_ASM(name) "\n" \
+".cfi_startproc\n" \
 "	mov %esp, %eax\n" \
 "	sub $0x10, %esp\n" \
 "	mov %eax, 0x4(%esp)\n" \
 "	xor %eax, %eax\n" \
-"	jmp release\n" \
+"	jmp "#dest"\n" \
+".cfi_endproc\n" \
 );
 
 #define NAKED_FUNCTION __attribute__((naked))

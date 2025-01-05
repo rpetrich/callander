@@ -2211,8 +2211,6 @@ static int loader_find_executable_in_sysrooted_paths(const struct loader_context
 	return result;
 }
 
-static int load_all_needed_and_relocate(struct program_state *analysis);
-
 static struct loaded_binary *register_dlopen_file(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options)
 {
 	struct loaded_binary *binary = find_loaded_binary(&analysis->loader, path);
@@ -13403,13 +13401,12 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			textual_name = symbol_name(&binary->symbols, symbol);
 			if (symbol->st_value != 0 && symbol->st_shndx != SHN_UNDEF) {
 				value = apply_base_address(&binary->info, symbol->st_value);
-#if defined(__x86_64__)
-			} else if (type != R_X86_64_RELATIVE && type != R_X86_64_IRELATIVE && type != R_X86_64_DTPMOD64 && type != R_X86_64_DTPOFF64 && type != R_X86_64_TPOFF64 && type != R_X86_64_TPOFF32 && type != R_X86_64_TLSDESC) {
+			} else if (ins_relocation_type_requires_symbol(type)) {
 				struct loaded_binary *other_binary = NULL;
 				struct symbol_version_info version = binary->symbols.symbol_versions != NULL ? symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index] & 0x7fff) : (struct symbol_version_info){ 0 };
 				value = (uintptr_t)resolve_loaded_symbol(context, textual_name, version.version_name, NORMAL_SYMBOL, &other_binary, NULL);
 				if (value == 0) {
-					if ((ELF64_ST_BIND(symbol->st_info) == STB_WEAK) || (type == R_X86_64_NONE)) {
+					if ((ELF64_ST_BIND(symbol->st_info) == STB_WEAK) || (type == INS_R_NONE)) {
 						LOG("symbol value is NULL");
 					} else {
 						ERROR("symbol is in another castle", textual_name);
@@ -13434,40 +13431,6 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				if (other_binary) {
 					LOG("to", other_binary->path);
 				}
-#endif
-#if defined(__aarch64__)
-			} else if (type != R_AARCH64_RELATIVE && type != R_AARCH64_IRELATIVE && type != R_AARCH64_TLS_DTPREL && type != R_AARCH64_TLS_DTPMOD && type != R_AARCH64_TLS_TPREL && type != R_AARCH64_TLSDESC) {
-				struct loaded_binary *other_binary = NULL;
-				struct symbol_version_info version = binary->symbols.symbol_versions != NULL ? symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index] & 0x7fff) : (struct symbol_version_info){ 0 };
-				value = (uintptr_t)resolve_loaded_symbol(context, textual_name, version.version_name, NORMAL_SYMBOL, &other_binary, NULL);
-				if (value == 0) {
-					if ((ELF64_ST_BIND(symbol->st_info) == STB_WEAK) || (type == R_AARCH64_NONE)) {
-						LOG("symbol value is NULL");
-					} else {
-						ERROR("symbol is in another castle", textual_name);
-						if (version.version_name != NULL) {
-							ERROR("version", version.version_name);
-							if (version.library_name != NULL) {
-								ERROR("in library", version.library_name);
-							}
-						}
-						ERROR("relocation type", (intptr_t)type);
-						ERROR("symbol index", rel_off / relaent);
-						DIE("from", binary->path);
-					}
-				}
-				LOG("resolving", textual_name);
-				if (version.version_name != NULL) {
-					LOG("version", version.version_name);
-					if (version.library_name != NULL) {
-						LOG("in library", version.library_name);
-					}
-				}
-				LOG("from", binary->path);
-				if (other_binary) {
-					LOG("to", other_binary->path);
-				}
-#endif
 			} else {
 				value = 0;
 			}
@@ -13478,46 +13441,63 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			textual_name = "";
 		}
 		LOG("relocation is for value", value);
-#ifdef __x86_64__
 		switch (type) {
-			case R_X86_64_NONE:
+			case INS_R_NONE:
 				// why does this exist?
 				break;
-			case R_X86_64_64:
+			case INS_R_64:
 				LOG("64 relocation for", textual_name);
 				*(ins_uint64 *)relo_target = value + addend;
 				break;
-			case R_X86_64_PC32:
+#ifdef INS_R_PC32
+			case INS_R_PC32:
 				LOG("pc32 relocation for", textual_name);
 				*(ins_uint32 *)relo_target = value + addend - relo_target;
 				break;
-			case R_X86_64_GOT32:
+#endif
+#ifdef INS_R_GOT32
+			case INS_R_GOT32:
 				LOG("got32 relocation for, not supported", textual_name);
 				// TODO
 				break;
-			case R_X86_64_PLT32:
+#endif
+#ifdef INS_R_PLT32
+			case INS_R_PLT32:
 				LOG("plt32 relocation for, not supported", textual_name);
 				// TODO
 				break;
-			case R_X86_64_COPY:
+#endif
+			case INS_R_COPY:
 				LOG("copy relocation for", textual_name);
 				fs_memcpy((void *)relo_target, (const void *)value, size);
 				break;
-			case R_X86_64_GLOB_DAT:
+			case INS_R_GLOB_DAT:
 				LOG("glob dat relocation for", textual_name);
 				*(ins_uint64 *)relo_target = value;
 				break;
-			case R_X86_64_JUMP_SLOT:
+			case INS_R_JUMP_SLOT:
 				LOG("jump slot relocation for", textual_name);
 				*(ins_uint64 *)relo_target = value;
 				break;
-			case R_X86_64_RELATIVE64:
-			case R_X86_64_RELATIVE: {
+#ifdef INS_R_RELATIVE64
+			case INS_R_RELATIVE64:
+#endif
+			case INS_R_RELATIVE: {
 				uintptr_t result = (uintptr_t)binary->info.base + addend;
 				*(uintptr_t *)relo_target = result;
 				LOG("relative relocation", temp_str(copy_address_description(context, (const void *)result)));
 				break;
 			}
+			case INS_R_TLSDESC:
+				LOG("tlsdesc relocation for, not supported", textual_name);
+				*(ins_uint64 *)relo_target = TLSDESC_ADDR;
+				break;
+			case INS_R_IRELATIVE:
+				LOG("GNU magic to support STT_GNU_IFUNC/__attribute__((ifunc(\"...\"))), not supported", textual_name);
+				// TODO: figure out how to trace these
+				*(ins_uint64 *)relo_target = value;
+				break;
+#ifdef __x86_64__
 			case R_X86_64_GOTPCREL:
 				LOG("gotpcrel relocation for, not supported", textual_name);
 				break;
@@ -13548,10 +13528,6 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			case R_X86_64_SIZE64:
 				LOG("size64 relocation for, not supported", textual_name);
 				break;
-			case R_X86_64_TLSDESC:
-				LOG("tlsdesc relocation for, not supported", textual_name);
-				*(ins_uint64 *)relo_target = TLSDESC_ADDR;
-				break;
 			case R_X86_64_TLSDESC_CALL:
 				LOG("tlsdesc call relocation for, not supported", textual_name);
 				break;
@@ -13573,27 +13549,8 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			case R_X86_64_TPOFF64:
 				LOG("thread pointer offset 64 relocation for, not supported", textual_name);
 				break;
-			case R_X86_64_IRELATIVE:
-				LOG("GNU magic to support STT_GNU_IFUNC/__attribute__((ifunc(\"...\"))), not supported", textual_name);
-				// TODO: figure out how to trace these
-				*(uintptr_t *)relo_target = value;
-				break;
-			default:
-				ERROR("unknown relocation type for", textual_name);
-				ERROR("type is", (intptr_t)type);
-				ERROR("at", (intptr_t)(rel_off / relaent));
-				DIE("from", binary->path);
-				break;
-		}
-#else
+#endif
 #if defined(__aarch64__)
-		switch (type) {
-			case R_AARCH64_NONE:
-				// why does this exist?
-				break;
-			case R_AARCH64_ABS64:
-				LOG("abs64 relocation for, not supported", textual_name);
-				break;
 			case R_AARCH64_ABS32:
 				LOG("abs32 relocation for, not supported", textual_name);
 				break;
@@ -13609,24 +13566,6 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			case R_AARCH64_PREL16:
 				LOG("prel16 relocation for, not supported", textual_name);
 				break;
-			case R_AARCH64_COPY:
-				LOG("copy relocation for", textual_name);
-				fs_memcpy((void *)relo_target, (const void *)value, size);
-				break;
-			case R_AARCH64_GLOB_DAT:
-				LOG("glob dat relocation for", textual_name);
-				*(ins_uint64 *)relo_target = value;
-				break;
-			case R_AARCH64_JUMP_SLOT:
-				LOG("jump slot relocation for", textual_name);
-				*(ins_uint64 *)relo_target = value;
-				break;
-			case R_AARCH64_RELATIVE: {
-				uintptr_t result = (uintptr_t)binary->info.base + addend;
-				*(ins_uint64 *)relo_target = result;
-				LOG("relative relocation", temp_str(copy_address_description(context, (const void *)result)));
-				break;
-			}
 			case R_AARCH64_TLS_DTPREL:
 				LOG("tls dtprel64 relocation for, not supported", textual_name);
 				break;
@@ -13636,15 +13575,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			case R_AARCH64_TLS_TPREL:
 				LOG("tls tprel64 relocation for, not supported", textual_name);
 				break;
-			case R_AARCH64_TLSDESC:
-				LOG("tls tlsdesc relocation for, not supported", textual_name);
-				*(ins_uint64 *)relo_target = TLSDESC_ADDR;
-				break;
-			case R_AARCH64_IRELATIVE:
-				LOG("GNU magic to support STT_GNU_IFUNC/__attribute__((ifunc(\"...\"))), not supported", textual_name);
-				// TODO: figure out how to trace these
-				*(ins_uint64 *)relo_target = value;
-				break;
+#endif
 			default:
 				ERROR("unknown relocation type for", textual_name);
 				ERROR("type is", (intptr_t)type);
@@ -13652,10 +13583,6 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				DIE("from", binary->path);
 				break;
 		}
-#else
-#error "Unknown architecture"
-#endif
-#endif
 	}
 	return 0;
 }
@@ -13849,8 +13776,13 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	new_binary->has_finished_loading = false;
 	if (fd != -1) {
 		new_binary->has_sections = load_section_info(fd, &new_binary->info, &new_binary->sections) == 0;
-		if (new_binary->has_sections) {
-			new_binary->has_frame_info = load_frame_info(fd, &new_binary->info, &new_binary->sections, &new_binary->frame_info) == 0;
+	}
+	const ElfW(Phdr) *phdr = info.program_header;
+	for (size_t i = 0; i < info.header_entry_count; i++, phdr = (const void *)phdr + info.header_entry_size) {
+		switch (phdr->p_type) {
+			case PT_GNU_EH_FRAME:
+				new_binary->has_frame_info = load_frame_info_from_program_header(&new_binary->info, (const void *)apply_base_address(&info, phdr->p_vaddr), phdr->p_filesz, &new_binary->frame_info) == 0;
+				break;
 		}
 	}
 	new_binary->owns_binary_info = existing_base_address == NULL;
@@ -13861,12 +13793,14 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		new_binary->mode = stat.st_mode;
 		new_binary->uid = stat.st_uid;
 		new_binary->gid = stat.st_gid;
+		new_binary->size = stat.st_size;
 	} else {
 		new_binary->device = 0;
 		new_binary->inode = 0;
 		new_binary->mode = 0;
 		new_binary->uid = 0;
 		new_binary->gid = 0;
+		new_binary->size = 0;
 	}
 	new_binary->child_base = 0;
 	new_binary->special_binary_flags = special_binary_flags_for_path(path);
@@ -14135,10 +14069,6 @@ static int load_needed_libraries(struct program_state *analysis, struct loaded_b
 	return 0;
 }
 
-#ifndef SHT_RELR
-#define SHT_RELR 19
-#endif
-
 __attribute__((warn_unused_result))
 static int relocate_loaded_library(struct program_state *analysis, struct loaded_binary *new_binary)
 {
@@ -14146,7 +14076,7 @@ static int relocate_loaded_library(struct program_state *analysis, struct loaded
 		return 0;
 	}
 	new_binary->has_applied_relocation = true;
-#if 0
+#if 1
 	const ElfW(Dyn) *dynamic = new_binary->info.dynamic;
 	size_t dynamic_size = new_binary->info.dynamic_size;
 	if (new_binary->has_symbols) {
@@ -14214,7 +14144,7 @@ static int relocate_loaded_library(struct program_state *analysis, struct loaded
 	return 0;
 }
 
-static int load_all_needed_and_relocate(struct program_state *analysis)
+int load_all_needed_and_relocate(struct program_state *analysis)
 {
 	for (struct loaded_binary *b = analysis->loader.last; b != NULL; b = b->previous) {
 		int result = load_needed_libraries(analysis, b);

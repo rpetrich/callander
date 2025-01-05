@@ -22,7 +22,6 @@ noreturn void receive_start(const struct receive_start_args *args)
 {
 	self_pid = fs_gettid();
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
-	__builtin_unreachable();
 }
 
 __attribute__((used)) __attribute__((visibility("default")))

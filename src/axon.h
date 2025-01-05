@@ -20,7 +20,7 @@
 #define AXON_BOOTSTRAP_ASM \
 AXON_RESTORE_ASM \
 FS_DEFINE_SYSCALL \
-AXON_IMPULSE_ASM
+AXON_ENTRYPOINT_TRAMPOLINE_ASM(impulse, release)
 
 #include <stdnoreturn.h>
 // #include <stdlib.h>

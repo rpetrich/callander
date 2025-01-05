@@ -1288,7 +1288,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (result < 0) {
 			return result;
 		}
-		MAKE_FULL_VERSION_BUF(usr_lib_buf, "/usr/lib/x86_64-linux-gnu/ruby/", ".", ".", "");
+		MAKE_FULL_VERSION_BUF(usr_lib_buf, "/usr/lib/"ARCH_NAME"-linux-gnu/ruby/", ".", ".", "");
 		result = add_dlopen_paths_recursively(analysis, usr_lib_buf, ".so");
 		if (result < 0) {
 			return result;

@@ -59,7 +59,6 @@ noreturn void attempt_cancel(struct thread_storage *thread)
 {
 	struct attempt *attempt = attempt_exit_current(thread);
 	JUMP(attempt->return_address, attempt->stack_pointer, 0, 0, 0);
-	__builtin_unreachable();
 }
 
 // attempt_exit runs all of the cleanups in the current attempt and destroys tls

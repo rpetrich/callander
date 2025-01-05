@@ -222,6 +222,7 @@ struct loaded_binary {
 	mode_t mode;
 	uid_t uid;
 	gid_t gid;
+	size_t size;
 	int debuglink_error;
 	uintptr_t child_base;
 	struct binary_info debuglink_info;
@@ -527,6 +528,9 @@ enum dlopen_options {
 };
 __attribute__((nonnull(1, 2)))
 struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options);
+
+int load_all_needed_and_relocate(struct program_state *analysis);
+
 __attribute__((nonnull(1)))
 void finish_analysis(struct program_state *analysis);
 

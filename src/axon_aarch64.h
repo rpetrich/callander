@@ -48,6 +48,7 @@
 		: \
 		: "r"(pc), "r"(sp), "r"(x0), "r"(x1), "r"(x2) : "memory" \
 	); \
+	__builtin_unreachable(); \
 } while(0)
 
 #define AXON_RESTORE_ASM \
@@ -56,10 +57,11 @@ __asm__( \
 FS_HIDDEN_FUNCTION_ASM(__restore) "\n" \
 "	mov x8, #139\n" \
 );
-#define AXON_IMPULSE_ASM \
+#define AXON_ENTRYPOINT_TRAMPOLINE_ASM(name, dest) \
 __asm__( \
 ".text\n" \
-FS_HIDDEN_FUNCTION_ASM(impulse) "\n" \
+FS_HIDDEN_FUNCTION_ASM(name) "\n" \
+".cfi_startproc\n" \
 "	mov x29, #0\n" \
 "	mov x30, #0\n" \
 "	mov x0, sp\n" \
@@ -68,7 +70,8 @@ FS_HIDDEN_FUNCTION_ASM(impulse) "\n" \
 "	adrp x1, _DYNAMIC\n" \
 "	add x1, x1, #:lo12:_DYNAMIC\n" \
 "	and sp, x0, #-16\n" \
-"	b release\n" \
+"	b "#dest"\n" \
+".cfi_endproc\n" \
 );
 
 #define NAKED_FUNCTION

@@ -18,6 +18,24 @@
 #define ElfW(type) Elf32_##type
 #endif
 
+#define DW_EH_PE_omit	0xff
+#define DW_EH_PE_ptr	0x00
+
+#define DW_EH_PE_uleb128	0x01
+#define DW_EH_PE_udata2	0x02
+#define DW_EH_PE_udata4	0x03
+#define DW_EH_PE_udata8	0x04
+#define DW_EH_PE_sleb128	0x09
+#define DW_EH_PE_sdata2	0x0a
+#define DW_EH_PE_sdata4	0x0b
+#define DW_EH_PE_sdata8	0x0c
+#define DW_EH_PE_signed	0x09
+
+#define DW_EH_PE_absptr 0x00
+#define DW_EH_PE_pcrel	0x10
+#define DW_EH_PE_textrel	0x20
+#define DW_EH_PE_datarel	0x30
+
 enum {
 	EXECUTABLE_STACK_DEFAULT,
 	EXECUTABLE_STACK_REQUIRED,
@@ -48,6 +66,9 @@ struct binary_info {
 // load_binary will load and map the binary in fd into the process' address space
 __attribute__((warn_unused_result))
 extern int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bool force_relocation);
+
+__attribute__((warn_unused_result))
+extern int load_binary_with_layout(const ElfW(Ehdr) *header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation);
 
 // unload_binary will unmap the binary from the process' address space
 extern void unload_binary(struct binary_info *info);
@@ -163,14 +184,22 @@ int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid);
 
 struct frame_info {
 	void *data;
-	size_t size;
 	uintptr_t data_base_address;
 	uintptr_t text_base_address;
 	bool supported_eh_frame_hdr;
 };
 
+struct eh_frame_hdr {
+	uint8_t version;
+	uint8_t eh_frame_ptr_enc;
+	uint8_t fde_count_enc;
+	uint8_t table_enc;
+	char data[];
+};
+
 __attribute__((warn_unused_result))
-int load_frame_info(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info);
+int load_frame_info_from_section(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info);
+int load_frame_info_from_program_header(const struct binary_info *binary, const struct eh_frame_hdr *data, size_t size, struct frame_info *out_info);
 void free_frame_info(struct frame_info *info);
 
 struct frame_details {
@@ -178,5 +207,11 @@ struct frame_details {
 	size_t size;
 };
 bool find_containing_frame_info(struct frame_info *info, const void *address, struct frame_details *out_frame);
+
+uintptr_t read_uleb128(void **cursor);
+intptr_t read_sleb128(void **cursor);
+
+uintptr_t read_eh_frame_value(void **cursor, unsigned char encoding);
+uintptr_t read_eh_frame_pointer(const struct frame_info *frame_info, void **cursor, unsigned char encoding);
 
 #endif

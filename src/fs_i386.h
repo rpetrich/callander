@@ -1,8 +1,10 @@
 #define FS_DEFINE_SYSCALL __asm__( \
 ".text\n" \
 FS_HIDDEN_FUNCTION_ASM(fs_syscall) \
+".cfi_startproc\n" \
 "	int $0x80\n" \
 "	ret\n" \
+".cfi_endproc\n" \
 FS_SIZE_ASM(fs_syscall) \
 );
 

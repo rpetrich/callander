@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <elf.h>
+
 typedef int16_t ins_int16 __attribute__((aligned(1)));
 typedef uint16_t ins_uint16 __attribute__((aligned(1)));
 typedef int32_t ins_int32 __attribute__((aligned(1)));
@@ -564,6 +566,19 @@ static inline long ins_breakpoint_poke_pattern(long original_bytes)
 #define INS_BREAKPOINT_LEN 1
 #define INS_BREAKS_AFTER_BREAKPOINT 1
 
+#define INS_R_NONE R_X86_64_NONE
+#define INS_R_64 R_X86_64_64
+#define INS_R_PC32 R_X86_64_PC32
+#define INS_R_GOT32 R_X86_64_GOT32
+#define INS_R_PLT32 R_X86_64_PLT32
+#define INS_R_COPY R_X86_64_COPY
+#define INS_R_GLOB_DAT R_X86_64_GLOB_DAT
+#define INS_R_JUMP_SLOT R_X86_64_JUMP_SLOT
+#define INS_R_RELATIVE64 R_X86_64_RELATIVE64
+#define INS_R_RELATIVE R_X86_64_RELATIVE
+#define INS_R_TLSDESC R_X86_64_TLSDESC
+#define INS_R_IRELATIVE R_X86_64_IRELATIVE
+
 #else
 #if defined(__aarch64__)
 
@@ -620,9 +635,43 @@ static inline long ins_breakpoint_poke_pattern(long original_bytes)
 #define INS_BREAKPOINT_LEN 4
 #define INS_BREAKS_AFTER_BREAKPOINT 0
 
+#define INS_R_NONE R_AARCH64_NONE
+#define INS_R_64 R_AARCH64_ABS64
+#define INS_R_COPY R_AARCH64_COPY
+#define INS_R_GLOB_DAT R_AARCH64_GLOB_DAT
+#define INS_R_JUMP_SLOT R_AARCH64_JUMP_SLOT
+#define INS_R_RELATIVE R_AARCH64_RELATIVE
+#define INS_R_TLSDESC R_AARCH64_TLSDESC
+#define INS_R_IRELATIVE R_AARCH64_IRELATIVE
+
 #else
 #error "Unsupported architecture"
 #endif
 #endif
+
+static inline bool ins_relocation_type_requires_symbol(Elf64_Word type)
+{
+	switch (type) {
+		case INS_R_NONE:
+		case INS_R_RELATIVE:
+		case INS_R_IRELATIVE:
+		case INS_R_TLSDESC:
+#if defined(__x86_64__)
+		case R_X86_64_DTPMOD64:
+		case R_X86_64_DTPOFF64:
+		case R_X86_64_TPOFF64:
+		case R_X86_64_TPOFF32:
+#endif
+#if defined(__aarch64__)
+		case R_AARCH64_TLS_DTPREL:
+		case R_AARCH64_TLS_DTPMOD:
+		case R_AARCH64_TLS_TPREL:
+#endif
+			return false;
+		default:
+			return true;
+	}
+}
+
 
 #endif
