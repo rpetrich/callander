@@ -289,16 +289,7 @@ static void copy_relas(const struct loaded_binary *binary, ElfW(Rela) **relas, u
 				}
 			}
 		}
-		ssize_t offset = (rel->r_offset >= alternate_range_start) && (rel->r_offset < alternate_range_start + alternate_range_size) ? ({
-				ERROR("using alternate offset for relocation at", (uintptr_t)rel->r_offset);
-				ERROR("offset would have been", (uintptr_t)(rel->r_offset + address_offset));
-				ERROR("new offset is", (uintptr_t)(rel->r_offset + alternate_offset));
-				alternate_offset;
-			}) : ({
-				// ERROR("using regular offset for relocation at", (uintptr_t)rel->r_offset);
-				// ERROR("new offset is", (uintptr_t)(rel->r_offset + address_offset));
-				address_offset;
-			});
+		ssize_t offset = (rel->r_offset >= alternate_range_start) && (rel->r_offset < alternate_range_start + alternate_range_size) ? alternate_offset : address_offset;
 		uintptr_t addend_offset;
 		switch (ELF64_R_TYPE(info)) {
 			case INS_R_RELATIVE:
@@ -694,9 +685,6 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t eh_frame_hdr_start = ALIGN_UP(jmprel_start + jmprel_size, alignof(ElfW(Addr)));
 	size_t eh_frame_start = ALIGN_UP(eh_frame_hdr_start + eh_frame_hdr_size, alignof(ElfW(Addr)));
 	size_t tls_start = tls_size != 0 ? ALIGN_UP(eh_frame_start + eh_frame_size, tls_alignment) : eh_frame_start + eh_frame_size;
-	ERROR("tls_start", (uintptr_t)tls_start);
-	ERROR("size", (uintptr_t)size);
-	ERROR("tls_alignment", (uintptr_t)tls_alignment);
 	size_t preinit_array_start = ALIGN_UP(tls_start + tls_size, PAGE_SIZE);
 	size_t init_array_start = ALIGN_UP(preinit_array_start + preinit_array_size, alignof(ElfW(Addr)));
 	size_t fini_array_start = ALIGN_UP(init_array_start + init_array_size, alignof(ElfW(Addr)));
@@ -998,10 +986,6 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						binary_tls_size = phdr[i].p_memsz;
 						binary_defined_size = phdr[i].p_filesz;
 						tls_offset = ALIGN_UP(tls_offset, phdr[i].p_align);
-						ERROR("binary", binary->loaded_path);
-						ERROR("copying to TLS offset", (uintptr_t)tls_offset);
-						ERROR("byte count", (uintptr_t)phdr[i].p_filesz);
-						ERROR("from file offset", (uintptr_t)(size + offset + phdr[i].p_offset));
 						memcpy(mapping + size + tls_start + tls_offset, mapping + offset + phdr[i].p_offset, phdr[i].p_filesz);
 						break;
 					}
@@ -1067,11 +1051,6 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					}
 				}
 				ssize_t tls_address_offset = address_size + tls_start + tls_offset - binary_tls_address;
-				ERROR("binary", binary->loaded_path);
-				ERROR("binary_tls_address", binary_tls_address);
-				ERROR("binary_tls_size", binary_tls_size);
-				ERROR("tls_address_offset", (uintptr_t)tls_address_offset);
-				ERROR("tls_offset", (uintptr_t)tls_offset);
 				// copy and fixup relas
 				copy_relas(binary, &relas, rela, relasz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
 				// copy and fixup jmprels

@@ -13912,7 +13912,7 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 		return 0;
 	}
 #define DEBUGLINK_ARCH_SEARCH_PATH "/usr/lib/debug/lib/"ARCH_NAME"-linux-gnu"
-#define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/lib:/usr/lib/debug/usr/lib:/lib/debug/usr/lib64:/usr/lib/debug/lib64"
+#define DEBUGLINK_BASE_SEARCH_PATH "/usr/lib/debug/usr/bin:/usr/lib/debug/lib:/usr/lib/debug/usr/lib:/lib/debug/usr/lib64:/usr/lib/debug/lib64"
 #define DEBUGLINK_BUILD_ID_SEARCH_PATH "/usr/lib/debug/.build-id/XX"
 	const char *debuglink_search_paths = DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH;
 	char buf[sizeof(DEBUGLINK_BUILD_ID_SEARCH_PATH":"DEBUGLINK_ARCH_SEARCH_PATH":"DEBUGLINK_BASE_SEARCH_PATH)];
