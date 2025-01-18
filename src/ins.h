@@ -458,7 +458,7 @@ static inline register_mask mask_for_conditional_register(bool conditional, enum
 			uint64_t high;
 		} parts;
 	} temp;
-	if (LIKELY(index <= 64)) {
+	if (LIKELY(index < 64)) {
 		temp.parts.low = (uint64_t)conditional << index;
 		temp.parts.high = 0;
 	} else {

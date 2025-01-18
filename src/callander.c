@@ -505,10 +505,11 @@ static inline void push_stack(struct registers *regs, int push_count)
 		return;
 	}
 	regs->modified |= STACK_REGISTERS;
-	regs->requires_known_target = (regs->requires_known_target & ~STACK_REGISTERS) | (((regs->requires_known_target & STACK_REGISTERS) << push_count) & ALL_REGISTERS);
 	if (push_count > REGISTER_COUNT - REGISTER_STACK_0) {
+		regs->requires_known_target = regs->requires_known_target & ~STACK_REGISTERS;
 		push_count = REGISTER_COUNT - REGISTER_STACK_0;
 	} else {
+		regs->requires_known_target = (regs->requires_known_target & ~STACK_REGISTERS) | (((regs->requires_known_target & STACK_REGISTERS) << push_count) & ALL_REGISTERS);
 		for (int i = REGISTER_COUNT - 1; i >= REGISTER_STACK_0 + push_count; i--) {
 			regs->registers[i] = regs->registers[i-push_count];
 			regs->sources[i] = regs->sources[i-push_count];
@@ -4405,12 +4406,16 @@ static enum basic_op_usage basic_op_shr(BASIC_OP_ARGS)
 		clear_register(dest);
 		return BASIC_OP_USED_BOTH;
 	}
-	if (register_is_exactly_known(source)) {
+	if (register_is_exactly_known(source) && source->value < 64) {
 		dest->value = dest->value >> source->value;
 	} else {
 		dest->value = 0;
 	}
-	dest->max = dest->max >> source->value;
+	if (source->value < 64) {
+		dest->max = dest->max >> source->value;
+	} else {
+		dest->max = 0;
+	}
 	return BASIC_OP_USED_BOTH;
 }
 
