@@ -588,7 +588,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						case DT_RELASZ:
 							rela_size += dynamic[i].d_un.d_val;
 							break;
-						case DT_JMPREL:
+						case DT_PLTRELSZ:
 							jmprel_size += dynamic[i].d_un.d_val;
 							break;
 						case DT_PREINIT_ARRAYSZ:
