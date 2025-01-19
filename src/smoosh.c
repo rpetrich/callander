@@ -1291,6 +1291,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			case DT_RELAENT:
 				dyn->d_un.d_val = sizeof(ElfW(Rela));
 				break;
+			case DT_RELACOUNT:
+				// relative relocations are not necessarily in a single block
+				continue;
 			case DT_JMPREL:
 				dyn->d_un.d_ptr = address_size + jmprel_start;
 				break;
