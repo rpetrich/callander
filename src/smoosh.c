@@ -39,6 +39,13 @@ AXON_BOOTSTRAP_ASM
 FS_DEFINE_SYSCALL
 #endif
 
+#define PRINT_GDB_COMMANDS 1
+
+struct embedded_binary {
+	uint32_t name;
+	uint32_t text_address;
+};
+
 struct bootstrap_offsets {
 	uint32_t base_to_bootstrap_dynamic;
 	uint32_t real_program_header;
@@ -46,6 +53,9 @@ struct bootstrap_offsets {
 	uint32_t main_entrypoint;
 	ElfW(Ehdr) header;
 	bool remap_binary;
+#if PRINT_GDB_COMMANDS
+	struct embedded_binary embedded_binaries[PAGE_SIZE/sizeof(struct embedded_binary)];
+#endif
 };
 
 static struct bootstrap_offsets bootstrap_offsets = { .base_to_bootstrap_dynamic = -1 };
@@ -110,7 +120,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 		}
 		fs_close(fd);
 	}
-#if 1
+#if 0
 	// patch the ELF header
 	int result = fs_mprotect((void *)base, PAGE_SIZE, PROT_READ|PROT_WRITE);
 	if (result < 0) {
@@ -121,6 +131,26 @@ noreturn void bootstrap_interpreter(size_t *sp)
 	if (result < 0) {
 		DIE("failed to remap executable", fs_strerror(result));
 	}
+#endif
+#if PRINT_GDB_COMMANDS
+	// print gdb commands to force it to load symbols
+	char buf[PATH_MAX];
+	fs_memcpy(buf, "add-symbol-file ", sizeof("add-symbol-file ")-1);
+	for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
+		if (bootstrap_offsets.embedded_binaries[i].name == 0) {
+			break;
+		}
+		size_t c = sizeof("add-symbol-file ")-1;
+		const char *name = (const char *)base + bootstrap_offsets.embedded_binaries[i].name;
+		size_t name_len = fs_strlen(name);
+		fs_memcpy(&buf[c], name, name_len);
+		c += name_len;
+		buf[c++] = ' ';
+		c += fs_utoah(base + bootstrap_offsets.embedded_binaries[i].text_address, &buf[c]);
+		buf[c++] = '\n';
+		ERROR_WRITE(buf, c);
+	}
+	ERROR_FLUSH();
 #endif
 	// jump to the embedded ELF interpreter's entrypoint
 	void *interpreter_base = (void *)(base + bootstrap_offsets.interpreter_base);
@@ -642,6 +672,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				hash_size += (binary->symbols.symbol_count - 1) * sizeof(uint32_t);
 				string_size += binary->symbols.strings_size;
 			}
+#if PRINT_GDB_COMMANDS
+			string_size += fs_strlen(binary->loaded_path) + 1;
+#endif
 			tls_size += binary_tls_size;
 			binary_index++;
 		}
@@ -1414,6 +1447,41 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		offsets->header.e_phentsize = sizeof(ElfW(Phdr));
 		offsets->header.e_phnum = real_phcount;
 		offsets->remap_binary = remap_binary;
+#if PRINT_GDB_COMMANDS
+		binary_index = 0;
+		address_offset = 0;
+		for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
+			if (should_include_binary(binary)) {
+				ElfW(Addr) largest_addr = 0;
+				const ElfW(Phdr) *phdr = binary->info.program_header;
+				for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
+					switch (phdr[i].p_type) {
+						case PT_LOAD: {
+							ElfW(Addr) end = phdr[i].p_vaddr + phdr[i].p_memsz;
+							if (end > largest_addr) {
+								largest_addr = end;
+							}
+							break;
+						}
+					}
+				}
+				if (binary->has_sections) {
+					const ElfW(Shdr) *shdr = find_section(&binary->info, &binary->sections, ".text");
+					if (shdr != NULL) {
+						size_t name_len = fs_strlen(binary->loaded_path) + 1;
+						fs_memcpy(&strings[strings_offset], binary->loaded_path, name_len);
+						offsets->embedded_binaries[binary_index] = (struct embedded_binary) {
+							.name = address_size + string_start + strings_offset,
+							.text_address = address_offset + shdr->sh_addr,
+						};
+						strings_offset += name_len;
+					}
+				}
+				binary_index++;
+				address_offset += ALIGN_UP(largest_addr, EXECUTABLE_BASE_ALIGN);
+			}
+		}
+#endif
 		header->e_entry = address_for_binary(&analysis->loader, bootstrap) + offset_for_self_symbol(&bootstrap->info, bootstrap_trampoline);
 	}
 	// cleanup
@@ -1538,7 +1606,12 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		if (fd < 0) {
 			DIE("failed to read self", fs_strerror(fd));
 		}
-		result = load_binary_into_analysis(&analysis, "bootstrap", "/proc/self/exe", fd, NULL, &bootstrap);
+		char buf[PATH_MAX];
+		result = fs_fd_getpath(fd, buf);
+		if (result < 0) {
+			DIE("failed to read self path", fs_strerror(fd));
+		}
+		result = load_binary_into_analysis(&analysis, "bootstrap", buf, fd, NULL, &bootstrap);
 		if (result != 0) {
 			DIE("failed to load self", fs_strerror(result));
 		}
