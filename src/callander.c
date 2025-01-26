@@ -13497,6 +13497,15 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				LOG("tlsdesc relocation for, not supported", textual_name);
 				*(ins_uint64 *)relo_target = TLSDESC_ADDR;
 				break;
+			case INS_R_TLS_DTPREL:
+				LOG("tls dtprel relocation for, not supported", textual_name);
+				break;
+			case INS_R_TLS_DTPMOD:
+				LOG("tls dtpmod relocation for, not supported", textual_name);
+				break;
+			case INS_R_TLS_TPREL:
+				LOG("tls tprel relocation for, not supported", textual_name);
+				break;
 			case INS_R_IRELATIVE:
 				LOG("GNU magic to support STT_GNU_IFUNC/__attribute__((ifunc(\"...\"))), not supported", textual_name);
 				// TODO: figure out how to trace these
@@ -13570,15 +13579,6 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				break;
 			case R_AARCH64_PREL16:
 				LOG("prel16 relocation for, not supported", textual_name);
-				break;
-			case R_AARCH64_TLS_DTPREL:
-				LOG("tls dtprel64 relocation for, not supported", textual_name);
-				break;
-			case R_AARCH64_TLS_DTPMOD:
-				LOG("tls dtpmod64 relocation for, not supported", textual_name);
-				break;
-			case R_AARCH64_TLS_TPREL:
-				LOG("tls tprel64 relocation for, not supported", textual_name);
 				break;
 #endif
 			default:

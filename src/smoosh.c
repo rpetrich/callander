@@ -319,22 +319,22 @@ static void copy_relas(const struct loaded_binary *binary, ElfW(Rela) **relas, u
 		ssize_t offset = (rel->r_offset >= alternate_range_start) && (rel->r_offset < alternate_range_start + alternate_range_size) ? alternate_offset : address_offset;
 		uintptr_t addend_offset;
 		switch (ELF64_R_TYPE(info)) {
+			// case INS_R_COPY:
+			// 	ERROR("COPY relocations are not supported");
+			// 	(*relas)++;
+			// 	continue;
 			case INS_R_RELATIVE:
 			case INS_R_IRELATIVE:
 				addend_offset = address_offset;
 				break;
-			case R_AARCH64_TLSDESC:
+			case INS_R_TLSDESC:
 				addend_offset = tls_offset;
 				break;
-			// see: https://reviews.llvm.org/D65459
-			case 0x405: // R_AARCH64_TLS_TPREL?
-			case R_AARCH64_TLS_TPREL:
+			case INS_R_TLS_DTPREL:
+			case INS_R_TLS_TPREL:
 				// TODO: perform symbol lookup if symbol lookup is specified
 				addend_offset = tls_offset;
 				break;
-			// case 0x404:
-			case R_AARCH64_TLS_DTPMOD:
-				DIE("unsupported symbol type R_AARCH64_TLS_DTPMOD");
 			default:
 				addend_offset = 0;
 				break;
