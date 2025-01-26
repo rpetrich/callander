@@ -232,7 +232,7 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, int fd, size_t offset, siz
 	out_info->default_base = (void *)(start - off_start);
 	out_info->size = total_size;
 	out_info->program_header = (void *)((intptr_t)mapped_address + header->e_phoff);
-	out_info->entrypoint = (void *)(header->e_entry - start + (intptr_t)mapped_address);
+	out_info->entrypoint = header->e_entry == 0 ? 0 : (void *)(header->e_entry - start + (intptr_t)mapped_address);
 	if (dynamic_ph) {
 		out_info->dynamic = (const ElfW(Dyn) *)((intptr_t)mapped_address + dynamic_ph->p_vaddr - start);
 		out_info->dynamic_size = dynamic_ph->p_memsz / sizeof(ElfW(Dyn));
