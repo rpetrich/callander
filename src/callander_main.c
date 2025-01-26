@@ -1289,62 +1289,6 @@ static char **copy_argv_with_prefixes(char **argv, char *arg0, char *arg1)
 	return result;
 }
 
-__attribute__((unused))
-static void test_mprotect(struct sock_fprog prog, uintptr_t base, size_t size, int prot, uint32_t expected_bpf_result)
-{
-	struct seccomp_data data = {
-		.nr = __NR_mprotect,
-		.arch = CURRENT_AUDIT_ARCH,
-		.instruction_pointer = 0,
-		.args = {
-			base,
-			size,
-			prot,
-			0,
-			0,
-			0,
-		},
-	};
-	uint32_t bpf_result;
-	ERROR("test_mprotect base", base);
-	ERROR("test_mprotect size", size);
-	const char *bpf_message = bpf_interpret(prog, (const char *)&data, sizeof(data), false, &bpf_result);
-	if (bpf_message != NULL) {
-		ERROR("test_mprotect returned error", bpf_message);
-		return;
-	}
-	switch (bpf_result) {
-		case SECCOMP_RET_ALLOW:
-			ERROR("test_mprotect determined call would be allowed");
-			break;
-		case SECCOMP_RET_TRAP:
-			ERROR("test_mprotect determined call would be trapped");
-			break;
-		case SECCOMP_RET_KILL_PROCESS:
-			ERROR("test_mprotect determined call would kill process");
-			break;
-		default:
-			ERROR("test_mprotect determined decision code", (uintptr_t)bpf_result);
-			break;
-	}
-	if (bpf_result != expected_bpf_result) {
-		switch (expected_bpf_result) {
-			case SECCOMP_RET_ALLOW:
-				ERROR("test_mprotect expected call would be allowed");
-				break;
-			case SECCOMP_RET_TRAP:
-				ERROR("test_mprotect expected call would be trapped");
-				break;
-			case SECCOMP_RET_KILL_PROCESS:
-				ERROR("test_mprotect expected call would kill process");
-				break;
-			default:
-				ERROR("test_mprotect expected decision code", (uintptr_t)bpf_result);
-				break;
-		}
-	}
-}
-
 static void cleanup_syscalls(struct recorded_syscalls *syscalls)
 {
 	free(syscalls->list);
@@ -2115,17 +2059,6 @@ skip_analysis:
 	} else {
 		struct mapped_region_info regions = copy_sorted_mapped_regions(&analysis.loader);
 		remote_apply_seccomp_filter_or_split(tracee, regs, regs.USER_REG_SP - allocation_size, &analysis.loader, &analysis.syscalls, &regions, 0, ~(uint32_t)0, &prog);
-#if 0
-		test_mprotect(prog, regions.list[0].start-0x2000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
-		test_mprotect(prog, regions.list[0].start-0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
-		test_mprotect(prog, regions.list[0].start, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_TRAP);
-		test_mprotect(prog, regions.list[0].start, regions.list[0].end-regions.list[0].start, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_TRAP);
-		test_mprotect(prog, regions.list[0].end-0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_TRAP);
-		test_mprotect(prog, regions.list[0].end, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
-		test_mprotect(prog, regions.list[0].end+0x1000, 0x1000, PROT_READ|PROT_WRITE|PROT_EXEC, SECCOMP_RET_ALLOW);
-		ERROR_FLUSH();
-		fs_exit(1);
-#endif
 		free(regions.list);
 	}
 	// free if not attaching
