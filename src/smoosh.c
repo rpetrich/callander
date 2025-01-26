@@ -32,12 +32,7 @@
 #include "qsort.h"
 #include "search.h"
 
-
-#ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
-#else
-FS_DEFINE_SYSCALL
-#endif
 
 #define PRINT_GDB_COMMANDS 1
 
