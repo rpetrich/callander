@@ -577,6 +577,9 @@ static inline long ins_breakpoint_poke_pattern(long original_bytes)
 #define INS_R_RELATIVE64 R_X86_64_RELATIVE64
 #define INS_R_RELATIVE R_X86_64_RELATIVE
 #define INS_R_TLSDESC R_X86_64_TLSDESC
+#define INS_R_TLS_DTPREL R_X86_64_DTPOFF64
+#define INS_R_TLS_DTPMOD R_X86_64_DTPMOD64
+#define INS_R_TLS_TPREL R_X86_64_TPOFF64
 #define INS_R_IRELATIVE R_X86_64_IRELATIVE
 
 #else
@@ -642,6 +645,9 @@ static inline long ins_breakpoint_poke_pattern(long original_bytes)
 #define INS_R_JUMP_SLOT R_AARCH64_JUMP_SLOT
 #define INS_R_RELATIVE R_AARCH64_RELATIVE
 #define INS_R_TLSDESC R_AARCH64_TLSDESC
+#define INS_R_TLS_DTPREL R_AARCH64_TLS_DTPREL
+#define INS_R_TLS_DTPMOD R_AARCH64_TLS_DTPMOD
+#define INS_R_TLS_TPREL R_AARCH64_TLS_TPREL
 #define INS_R_IRELATIVE R_AARCH64_IRELATIVE
 
 #else
@@ -654,18 +660,13 @@ static inline bool ins_relocation_type_requires_symbol(Elf64_Word type)
 	switch (type) {
 		case INS_R_NONE:
 		case INS_R_RELATIVE:
-		case INS_R_IRELATIVE:
 		case INS_R_TLSDESC:
+		case INS_R_TLS_DTPREL:
+		case INS_R_TLS_DTPMOD:
+		case INS_R_TLS_TPREL:
+		case INS_R_IRELATIVE:
 #if defined(__x86_64__)
-		case R_X86_64_DTPMOD64:
-		case R_X86_64_DTPOFF64:
-		case R_X86_64_TPOFF64:
 		case R_X86_64_TPOFF32:
-#endif
-#if defined(__aarch64__)
-		case R_AARCH64_TLS_DTPREL:
-		case R_AARCH64_TLS_DTPMOD:
-		case R_AARCH64_TLS_TPREL:
 #endif
 			return false;
 		default:
