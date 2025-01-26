@@ -13551,17 +13551,8 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 			case R_X86_64_TLSLD:
 				LOG("tlsld relocation for, not supported", textual_name);
 				break;
-			case R_X86_64_DTPMOD64:
-				LOG("dynamic thread vector entry relocation for, not supported", textual_name);
-				break;
-			case R_X86_64_DTPOFF64:
-				LOG("dynamic dynamic pointer offset relocation for, not supported", textual_name);
-				break;
 			case R_X86_64_TPOFF32:
 				LOG("thread pointer offset 32 relocation for, not supported", textual_name);
-				break;
-			case R_X86_64_TPOFF64:
-				LOG("thread pointer offset 64 relocation for, not supported", textual_name);
 				break;
 #endif
 #if defined(__aarch64__)
