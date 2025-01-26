@@ -1073,10 +1073,9 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 	}
 }
 
-__attribute__((used))
-noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
+__attribute__((noinline, visibility("hidden")))
+int main(int argc, char* argv[], char* envp[])
 {
-	const char **argv = (void *)(sp+1);
 	const void *thread_ptr;
 	set_thread_pointer(&thread_ptr);
 	bool debug = false;
@@ -1084,14 +1083,9 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 		debug = true;
 		argv++;
 	}
-	const char **current_argv = argv;
-	while (*current_argv != NULL) {
-		++current_argv;
-	}
-	const char **envp = current_argv+1;
 	// Find PATH
 	const char *path = "/bin:/usr/bin";
-	const char **current_envp = envp;
+	char **current_envp = envp;
 	while (*current_envp != NULL) {
 		if (fs_strncmp(*current_envp, "PATH=", 5) == 0) {
 			const char *new_path = &(*current_envp)[5];
@@ -1103,16 +1097,6 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 	}
 	ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1);
 	clock_load(aux);
-	ElfW(auxv_t) *current_aux = aux;
-	while (current_aux->a_type != AT_NULL) {
-		if (current_aux->a_type == AT_PHDR) {
-			uintptr_t base_address = (uintptr_t)current_aux->a_un.a_val & (uintptr_t)PAGE_ALIGNMENT_MASK;
-			struct binary_info self_info;
-			load_existing(&self_info, base_address);
-			relocate_binary(&self_info);
-		}
-		current_aux++;
-	}
 	const char *executable_path = argv[1];
 	if (executable_path == NULL) {
 		DIE("expected a program to run");
@@ -1151,7 +1135,7 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 
 	// remotely execute it
 	struct remote_exec_state remote;
-	result = remote_exec_fd(NULL, fd, executable_path, &argv[1], envp, aux, comm, 0, debug, (struct remote_handlers){ .receive_syscall_addr = thandler.receive_syscall_addr, .receive_clone_addr = thandler.receive_clone_addr }, &remote);
+	result = remote_exec_fd(NULL, fd, executable_path, (const char * const*)&argv[1], (const char * const*)envp, aux, comm, 0, debug, (struct remote_handlers){ .receive_syscall_addr = thandler.receive_syscall_addr, .receive_clone_addr = thandler.receive_clone_addr }, &remote);
 	if (result < 0) {
 		DIE("remote exec failed", fs_strerror(result));
 		fs_exit(-result);
@@ -1163,7 +1147,6 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
 	// cleanup the mess
 	cleanup_remote_exec(&remote);
 	free_thandler(&thandler);
-	fs_exit(result);
 
-	__builtin_unreachable();
+	return result;
 }

@@ -30,32 +30,7 @@
 #include "search.h"
 
 
-#ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
-#else
-#ifdef __x86_64__
-__asm__(
-".text\n"
-".global __restore\n"
-".hidden __restore\n"
-".type __restore,@function\n"
-"__restore:\n"
-"	mov $15, %rax\n"
-); \
-FS_DEFINE_SYSCALL
-#endif
-#ifdef __aarch64__
-__asm__( \
-".text\n" \
-".global __restore\n" \
-".hidden __restore\n" \
-".type __restore,@function\n" \
-"__restore:\n" \
-"	mov x8, #139\n" \
-); \
-FS_DEFINE_SYSCALL
-#endif
-#endif
 
 #ifndef SA_RESTORER
 #define SA_RESTORER	0x04000000
@@ -1414,18 +1389,9 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
-#ifdef STANDALONE
-__attribute__((noinline))
-int main(char *argv[], char *envp[], const ElfW(auxv_t) *aux)
-#else
-extern char **environ;
 __attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc_, char *argv[])
-#endif
+int main(int argc, char* argv[], char* envp[])
 {
-#ifndef STANDALONE
-	char **envp = (char **)environ;
-#endif
 	// Find PATH and LD_PRELOAD
 	int envp_count = 0;
 	const char *path = "/bin:/usr/bin";
@@ -1447,12 +1413,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			envp_count++;
 		}
 	}
-#ifndef STANDALONE
-	analysis.loader.uid = getauxval(AT_EUID);
-	analysis.loader.gid = getauxval(AT_EGID);
-	analysis.loader.vdso = getauxval(AT_SYSINFO_EHDR);
-#else
-	while (aux->a_type != AT_NULL) {
+	for (const ElfW(auxv_t) *aux = (const ElfW(auxv_t) *)(envp + envp_count + 1); aux->a_type != AT_NULL; aux++) {
 		switch (aux->a_type) {
 			case AT_EUID:
 				analysis.loader.uid = aux->a_un.a_val;
@@ -1464,9 +1425,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 				analysis.loader.vdso = aux->a_un.a_val;
 				break;
 		}
-		aux++;
 	}
-#endif
 	int executable_index = 1;
 	bool show_permitted = false;
 	bool show_binaries = false;
@@ -1492,7 +1451,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 				} else {
 					ERROR("--debug-syscall requires an argument");
 				}
-				ERROR_FLUSH();
 				return 1;
 			}
 			bool found = false;
@@ -1517,7 +1475,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			}
 			if (!found) {
 				ERROR("invalid or unknown syscall", syscall_name);
-				ERROR_FLUSH();
 				return 1;
 			}
 			executable_index++;
@@ -1528,7 +1485,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			const char *function_name = argv[executable_index+1];
 			if (function_name == NULL) {
 				ERROR("--block-function requires an argument");
-				ERROR_FLUSH();
 				return 1;
 			}
 			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL, true);
@@ -1540,7 +1496,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			const char *function_name = argv[executable_index+1];
 			if (function_name == NULL) {
 				ERROR("--block-debug-function requires an argument");
-				ERROR_FLUSH();
 				return 1;
 			}
 			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, true);
@@ -1556,7 +1511,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			const char *dlopen_path = argv[executable_index+1];
 			if (dlopen_path == NULL) {
 				ERROR("--dlopen requires an argument");
-				ERROR_FLUSH();
 				return 1;
 			}
 			add_dlopen_path(&analysis, dlopen_path);
@@ -1564,13 +1518,11 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		} else if (fs_strcmp(arg, "--main-function") == 0) {
 			if (analysis.main_function_name != NULL) {
 				ERROR("--main-function can only be specified once");
-				ERROR_FLUSH();
 				return 1;
 			}
 			analysis.main_function_name = argv[executable_index+1];
 			if (analysis.main_function_name == NULL) {
 				ERROR("--main-function requires an argument");
-				ERROR_FLUSH();
 				return 1;
 			}
 			executable_index++;
@@ -1592,7 +1544,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			profile_path = argv[executable_index+1];
 			if (profile_path == NULL) {
 				ERROR("--profile requires an argument");
-				ERROR_FLUSH();
 				return 1;
 			}
 			executable_index++;
@@ -1600,7 +1551,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			profile_path = argv[executable_index+1];
 			if (profile_path == NULL) {
 				ERROR("--read-profile requires an argument");
-				ERROR_FLUSH();
 				return 1;
 			}
 			executable_index++;
@@ -1618,7 +1568,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		} else if (fs_strcmp(arg, "--stay-attached") == 0) {
 			if (attach) {
 				ERROR("--stay-attached overrides previous attachment behavior");
-				ERROR_FLUSH();
 				return 1;
 			}
 			attach = STAY_ATTACHED;
@@ -1633,7 +1582,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		} else if (fs_strcmp(arg, "--skip-running") == 0) {
 			if (skip_running) {
 				ERROR("--skip-running can only be specified once");
-				ERROR_FLUSH();
 				return 1;
 			}
 			skip_running = true;
@@ -1642,7 +1590,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			break;
 		} else {
 			ERROR("unknown command line option", arg);
-			ERROR_FLUSH();
 			return 1;
 		}
 		executable_index++;
@@ -1650,8 +1597,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	const char *executable_path = argv[executable_index];
 
 	if (!executable_path) {
-		ERROR_FLUSH();
-#define USAGE "usage: callander [command]\n"\
+		ERROR_WRITE_LITERAL("usage: callander [command]\n"\
 		"Runs programs in an automatically generated seccomp sandbox\n"\
 		"Copyright (C) 2020-2023 Ryan Petrich\n"\
 		"\n"\
@@ -1667,8 +1613,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 		"  --read-profile PROFILE_PATH  read syscall profile file at specified path, rejecting stale profiles\n"\
 		"  --show-permitted             shows permitted syscalls before launching program\n"\
 		"  --attach-gdb                 attaches gdb to the program at startup\n"\
-		"  --                           stop processing command line arguments\n"
-		fs_write(2, USAGE, sizeof(USAGE)-1);
+		"  --                           stop processing command line arguments\n");
 		return 1;
 	}
 
@@ -1676,7 +1621,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	int fd = open_executable_in_paths(executable_path, path, true, analysis.loader.uid, analysis.loader.gid);
 	if (UNLIKELY(fd < 0)) {
 		ERROR("could not find main executable", executable_path);
-		ERROR_FLUSH();
 		return 1;
 	}
 
@@ -1848,7 +1792,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			if (result < 0) {
 				DIE("failed to exec", fs_strerror(result));
 			}
-			ERROR_FLUSH();
 			return 0;
 		}
 		tracee = result;
@@ -1953,7 +1896,6 @@ skip_analysis:
 			kill_or_die(tracee);
 		}
 		ERROR("not all syscalls could be determined");
-		ERROR_FLUSH();
 		return 1;
 	} else {
 		const struct recorded_syscall *discovered_execve = find_recorded_syscall(&analysis.syscalls, __NR_execve);
@@ -1969,7 +1911,6 @@ skip_analysis:
 			} else {
 				ERROR("program calls execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
 			}
-			ERROR_FLUSH();
 			return 1;
 		}
 	}
@@ -1991,7 +1932,6 @@ skip_analysis:
 		free_loader_context(&analysis.loader);
 		cleanup_syscalls(&analysis.syscalls);
 		free(analysis.known_symbols.blocked_symbols);
-		ERROR_FLUSH();
 		return 0;
 	}
 
@@ -2072,14 +2012,11 @@ skip_analysis:
 		free_loader_context(&analysis.loader);
 		// early exit because the child died during startup
 		if (WIFSIGNALED(status)) {
-			ERROR_FLUSH();
 			return 128 + WTERMSIG(status);
 		}
 		if (WIFEXITED(status)) {
-			ERROR_FLUSH();
 			return WEXITSTATUS(status);
 		}
-		ERROR_FLUSH();
 		return 0;
 	}
 	// send the original main bytes back, restoring the main function back to its original state
@@ -2397,7 +2334,6 @@ skip_analysis:
 				}
 			error_exit:
 				free_loader_context(&analysis.loader);
-				ERROR_FLUSH();
 				return 128 + WSTOPSIG(status);
 			}
 			free_loader_context(&analysis.loader);
@@ -2406,66 +2342,15 @@ skip_analysis:
 			if (attach) {
 				free(prog.filter);
 			}
-			ERROR_FLUSH();
 			return 128 + WTERMSIG(status);
 		}
 		if (WIFEXITED(status)) {
 			if (attach) {
 				free(prog.filter);
 			}
-			ERROR_FLUSH();
 			return WEXITSTATUS(status);
 		}
 	}
-	ERROR_FLUSH();
 	return 0;
 }
 #pragma GCC pop_options
-
-#ifdef STANDALONE
-__attribute__((used))
-noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
-{
-	char **argv = (void *)(sp+1);
-	char **current_argv = argv;
-	while (*current_argv != NULL) {
-		++current_argv;
-	}
-	char **envp = current_argv+1;
-	char **current_envp = envp;
-	bool bench = false;
-	while (*current_envp != NULL) {
-		if (UNLIKELY(fs_strcmp(*current_envp, "CALLANDER_BENCH=1") == 0)) {
-			bench = true;
-		}
-		++current_envp;
-	}
-	ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1);
-	ElfW(auxv_t) *current_aux = aux;
-	while (current_aux->a_type != AT_NULL) {
-		switch (current_aux->a_type) {
-			case AT_PHDR: {
-				uintptr_t base = (uintptr_t)current_aux->a_un.a_val & (uintptr_t)-PAGE_SIZE;
-				struct binary_info self_info;
-				load_existing(&self_info, base);
-				self_info.dynamic = _DYNAMIC;
-				relocate_binary(&self_info);
-				break;
-			}
-		}
-		current_aux++;
-	}
-	if (UNLIKELY(bench)) {
-		int result = 0;
-		for (int i = 0; i < 64; i++) {
-			result = main(argv, envp, aux);
-		}
-		ERROR_FLUSH();
-		fs_exit(result);
-	}
-	int result = main(argv, envp, aux);
-	ERROR_FLUSH();
-	fs_exit(result);
-	__builtin_unreachable();
-}
-#endif

@@ -6,19 +6,7 @@
 
 #include <stdlib.h>
 
-#ifdef STANDALONE
 AXON_BOOTSTRAP_ASM
-#else
-__asm__(
-".text\n"
-".global __restore\n"
-".hidden __restore\n"
-".type __restore,@function\n"
-"__restore:\n"
-"	mov $15, %rax\n"
-); \
-FS_DEFINE_SYSCALL
-#endif
 
 static intptr_t my_openat(int fd, const char *path, int flags, mode_t mode)
 {
@@ -47,13 +35,8 @@ static intptr_t my_sendto(int fd, const char *buf, size_t bufsz, int flags, cons
 
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
-#ifdef STANDALONE
-__attribute__((noinline))
-int main(const char **argv, __attribute__((unused)) const char **envp, __attribute__((unused)) const ElfW(auxv_t) *aux)
-#else
 __attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc, const char **argv)
-#endif
+int main(int argc, char* argv[], char* envp[])
 {
 	struct resolver_config_cache cache = { 0 };
 	for (int i = 1; argv[i] != NULL; i++) {
@@ -129,39 +112,3 @@ int main(__attribute__((unused)) int argc, const char **argv)
 	return 0;
 }
 #pragma GCC pop_options
-
-#ifdef STANDALONE
-__attribute__((used))
-noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
-{
-	const char **argv = (void *)(sp+1);
-	const char **current_argv = argv;
-	while (*current_argv != NULL) {
-		++current_argv;
-	}
-	const char **envp = current_argv+1;
-	const char **current_envp = envp;
-	while (*current_envp != NULL) {
-		++current_envp;
-	}
-	ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1);
-	ElfW(auxv_t) *current_aux = aux;
-	while (current_aux->a_type != AT_NULL) {
-		switch (current_aux->a_type) {
-			case AT_PHDR: {
-				uintptr_t base = (uintptr_t)current_aux->a_un.a_val & (uintptr_t)-PAGE_SIZE;
-				struct binary_info self_info;
-				load_existing(&self_info, base);
-				self_info.dynamic = _DYNAMIC;
-				relocate_binary(&self_info);
-				break;
-			}
-		}
-		current_aux++;
-	}
-	int result = main(argv, envp, aux);
-	ERROR_FLUSH();
-	fs_exit(result);
-	__builtin_unreachable();
-}
-#endif

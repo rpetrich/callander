@@ -17,12 +17,41 @@
 #endif
 #endif
 
-#define AXON_BOOTSTRAP_ASM \
+#include "loader.h"
+
+#include <stdnoreturn.h>
+
+#define AXON_BOOTSTRAP_ASM_NO_RELEASE \
 AXON_RESTORE_ASM \
 FS_DEFINE_SYSCALL \
 AXON_ENTRYPOINT_TRAMPOLINE_ASM(impulse, release)
+#ifdef STANDALONE
+#define AXON_BOOTSTRAP_ASM AXON_BOOTSTRAP_ASM_NO_RELEASE \
+int main(int argc, char* argv[], char* envp[]); \
+__attribute__((used)) \
+noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv) \
+{ \
+	char **argv = (void *)(sp+1); \
+	char **current_argv = argv; \
+	while (*current_argv != NULL) { \
+		++current_argv; \
+	} \
+	char **envp = current_argv+1; \
+	char **current_envp = envp; \
+	while (*current_envp != NULL) { \
+		++current_envp; \
+	} \
+	relocate_main_from_auxv((const ElfW(auxv_t) *)(current_envp + 1)); \
+	int result = main(current_argv - argv, argv, envp); \
+	ERROR_FLUSH(); \
+	fs_exit(result); \
+	__builtin_unreachable(); \
+}
+#else
+AXON_RESTORE_ASM
+FS_DEFINE_SYSCALL
+#endif
 
-#include <stdnoreturn.h>
 // #include <stdlib.h>
 extern void free(void *);
 extern noreturn void abort();

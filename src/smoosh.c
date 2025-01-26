@@ -78,32 +78,29 @@ noreturn void bootstrap_interpreter(size_t *sp)
 	}
 	// patch auxiliary vector
 	uintptr_t base = (uintptr_t)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
-	ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1);
-	ElfW(auxv_t) *current_aux = aux;
-	while (current_aux->a_type != AT_NULL) {
-		switch (current_aux->a_type) {
+	for (ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1); aux->a_type != AT_NULL; aux++) {
+		switch (aux->a_type) {
 			case AT_BASE: {
 				// patch AT_BASE to point to the interpreter
-				current_aux->a_un.a_val = base + bootstrap_offsets.interpreter_base;
+				aux->a_un.a_val = base + bootstrap_offsets.interpreter_base;
 				break;
 			}
 			case AT_ENTRY: {
 				// patch AT_ENTRY to point to the main entrypoint
-				current_aux->a_un.a_val = base + bootstrap_offsets.main_entrypoint;
+				aux->a_un.a_val = base + bootstrap_offsets.main_entrypoint;
 				break;
 			}
 			case AT_PHDR: {
 				// patch AT_PHDR to point to the new program headers
-				current_aux->a_un.a_val = base + bootstrap_offsets.real_program_header;
+				aux->a_un.a_val = base + bootstrap_offsets.real_program_header;
 				break;
 			}
 			case AT_PHNUM: {
 				// patch AT_PHNUM to reflect the new program header count
-				current_aux->a_un.a_val = bootstrap_offsets.header.e_phnum;
+				aux->a_un.a_val = bootstrap_offsets.header.e_phnum;
 				break;
 			}
 		}
-		current_aux++;
 	}
 	// remap the binary using the embedded program header, if required
 	if (bootstrap_offsets.remap_binary) {
@@ -1487,24 +1484,15 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	// cleanup
 	free(section_mappings);
 	free(symbol_ordering);
-	free(eh_frame_sizes);
+	free(offsets);
 	fs_close(copy);
 }
 
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
-#ifdef STANDALONE
-__attribute__((noinline))
-int main(char *argv[], char *envp[], const ElfW(auxv_t) *aux)
-#else
-extern char **environ;
 __attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc_, char *argv[])
-#endif
+int main(int argc, char* argv[], char* envp[])
 {
-#ifndef STANDALONE
-	char **envp = (char **)environ;
-#endif
 	struct program_state analysis = {0};
 	// Find PATH and LD_PRELOAD
 	int envp_count = 0;
@@ -1527,12 +1515,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			envp_count++;
 		}
 	}
-#ifndef STANDALONE
-	analysis.loader.uid = getauxval(AT_EUID);
-	analysis.loader.gid = getauxval(AT_EGID);
-	analysis.loader.vdso = getauxval(AT_SYSINFO_EHDR);
-#else
-	while (aux->a_type != AT_NULL) {
+	for (const ElfW(auxv_t) *aux = (const ElfW(auxv_t) *)(envp + envp_count + 1); aux->a_type != AT_NULL; aux++) {
 		switch (aux->a_type) {
 			case AT_EUID:
 				analysis.loader.uid = aux->a_un.a_val;
@@ -1544,9 +1527,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 				analysis.loader.vdso = aux->a_un.a_val;
 				break;
 		}
-		aux++;
 	}
-#endif
 	int executable_index = 1;
 	while (argv[executable_index] && *argv[executable_index] == '-') {
 		const char *arg = argv[executable_index];
@@ -1555,7 +1536,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 			break;
 		} else {
 			ERROR("unknown command line option", arg);
-			ERROR_FLUSH();
 			return 1;
 		}
 		executable_index++;
@@ -1563,11 +1543,9 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	const char *executable_path = argv[executable_index];
 
 	if (!executable_path) {
-		ERROR_FLUSH();
-#define USAGE "usage: smoosh [binary]\n"\
+		ERROR_WRITE_LITERAL("usage: smoosh [binary]\n"\
 		"Merges a program with its libraries\n"\
-		"Copyright (C) 2020-2025 Ryan Petrich\n"
-		fs_write(2, USAGE, sizeof(USAGE)-1);
+		"Copyright (C) 2020-2025 Ryan Petrich\n");
 		return 1;
 	}
 
@@ -1575,7 +1553,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	int fd = open_executable_in_paths(executable_path, path, true, analysis.loader.uid, analysis.loader.gid);
 	if (UNLIKELY(fd < 0)) {
 		ERROR("could not find main executable", executable_path);
-		ERROR_FLUSH();
 		return 1;
 	}
 
@@ -1623,43 +1600,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	cleanup_searched_instructions(&analysis.search);
 	free_loader_context(&analysis.loader);
 
-	ERROR_FLUSH();
 	return 0;
 }
 #pragma GCC pop_options
-
-#ifdef STANDALONE
-__attribute__((used))
-noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv)
-{
-	char **argv = (void *)(sp+1);
-	char **current_argv = argv;
-	while (*current_argv != NULL) {
-		++current_argv;
-	}
-	char **envp = current_argv+1;
-	char **current_envp = envp;
-	while (*current_envp != NULL) {
-		++current_envp;
-	}
-	ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1);
-	ElfW(auxv_t) *current_aux = aux;
-	while (current_aux->a_type != AT_NULL) {
-		switch (current_aux->a_type) {
-			case AT_PHDR: {
-				uintptr_t base = (uintptr_t)current_aux->a_un.a_val & (uintptr_t)-PAGE_SIZE;
-				struct binary_info self_info;
-				load_existing(&self_info, base);
-				self_info.dynamic = _DYNAMIC;
-				relocate_binary(&self_info);
-				break;
-			}
-		}
-		current_aux++;
-	}
-	int result = main(argv, envp, aux);
-	ERROR_FLUSH();
-	fs_exit(result);
-	__builtin_unreachable();
-}
-#endif

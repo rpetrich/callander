@@ -397,6 +397,26 @@ void relocate_binary(struct binary_info *info)
 	}
 }
 
+void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
+{
+	for (; aux->a_type != AT_NULL; aux++) {
+		if (aux->a_type == AT_PHDR) {
+			const ElfW(Phdr) *phdr = (const ElfW(Phdr) *)aux->a_un.a_val;
+			for (;; phdr++) {
+				if (phdr->p_type == PT_DYNAMIC) {
+					uintptr_t base = (uintptr_t)_DYNAMIC - phdr->p_vaddr;
+					struct binary_info self_info;
+					load_existing(&self_info, base);
+					self_info.dynamic = _DYNAMIC;
+					relocate_binary(&self_info);
+					return;
+				}
+			}
+		}
+	}
+	DIE("missing AT_PHDR");
+}
+
 int apply_postrelocation_readonly(struct binary_info *info)
 {
 	if (info->phbuffer != NULL) {

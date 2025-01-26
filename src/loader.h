@@ -79,6 +79,9 @@ extern void load_existing(struct binary_info *out_info, uintptr_t load_address);
 // relocate_binary will apply relocation fixups to a loaded binary
 extern void relocate_binary(struct binary_info *info);
 
+// relocate_main_from_auxv will apply relocation fixups to the main binary specified in an auxiliary vector
+extern void relocate_main_from_auxv(const ElfW(auxv_t) *aux);
+
 // apply_postrelocation_readonly will make any pages marked readonly after relocation readonly
 extern int apply_postrelocation_readonly(struct binary_info *info);
 
