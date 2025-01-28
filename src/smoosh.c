@@ -36,6 +36,10 @@ AXON_BOOTSTRAP_ASM
 
 #define PRINT_GDB_COMMANDS 1
 
+static bool bundle_interpreter = false;
+static bool remap_binary = false;
+static bool bundle_library = false;
+
 struct embedded_binary {
 	uint32_t name;
 	uint32_t text_address;
@@ -154,14 +158,17 @@ noreturn void bootstrap_interpreter(size_t *sp)
 AXON_ENTRYPOINT_TRAMPOLINE_ASM(bootstrap_trampoline, bootstrap_interpreter);
 void bootstrap_trampoline(void);
 
-static bool bundle_interpreter = true;
-static bool remap_binary = true;
-
 static bool should_include_binary(struct loaded_binary *binary)
 {
 	return (binary->special_binary_flags & BINARY_IS_LOADED_VIA_DLOPEN) == 0
 		&& fs_strcmp(binary->loaded_path, "[vdso]") != 0
-		&& (bundle_interpreter || (binary->special_binary_flags & BINARY_IS_INTERPRETER) == 0);
+		&& (bundle_interpreter || (binary->special_binary_flags & BINARY_IS_INTERPRETER) == 0)
+		&& (!bundle_library || (binary->special_binary_flags & BINARY_IS_LIBC) == 0);
+}
+
+static bool binary_contributes_symbols(struct loaded_binary *binary)
+{
+	return (binary->special_binary_flags & BINARY_IS_INTERPRETER) == 0;
 }
 
 #define ALIGN_UP(value, alignment) (((value) + alignment - 1) & ~(alignment - 1))
@@ -243,9 +250,9 @@ struct symbol_ordering {
 	struct loaded_binary *binary;
 	uint32_t source_index;
 	uint32_t gnu_hash;
+	uint32_t gnu_hash_bucket;
 	uint32_t address_offset;
-	uint32_t strings_offset;
-	uint32_t tls_offset;
+	uint32_t binary_index;
 };
 
 static const ElfW(Sym) *symbol_for_ordering_entry(const struct symbol_ordering *entry)
@@ -270,7 +277,14 @@ static inline int compare_symbol_ordering(const void *left_untyped, const void *
 		return 1;
 	}
 	if (left_class == ORDERING_CLASS_DEFINED) {
-		// if both are defined symbols, sort by gnu hash
+		// if both are defined symbols, sort by gnu hash bucket
+		if (left->gnu_hash_bucket < right->gnu_hash_bucket) {
+			return -1;
+		}
+		if (left->gnu_hash_bucket > right->gnu_hash_bucket) {
+			return 1;
+		}
+		// then by gnu hash
 		if (left->gnu_hash < right->gnu_hash) {
 			return -1;
 		}
@@ -296,7 +310,7 @@ static inline int compare_symbol_ordering(const void *left_untyped, const void *
 	return 0;
 }
 
-static void copy_relas(const struct loaded_binary *binary, ElfW(Rela) **relas, uintptr_t rela, size_t relasz, size_t relaent, ssize_t address_offset, size_t alternate_range_start, size_t alternate_range_size, ssize_t alternate_offset, ssize_t tls_offset, const struct symbol_ordering *symbol_ordering, size_t symbol_count)
+static void copy_relas(struct loader_context *loader, const struct loaded_binary *binary, ElfW(Rela) **relas, uintptr_t rela, size_t relasz, size_t relaent, ssize_t address_offset, size_t alternate_range_start, size_t alternate_range_size, ssize_t alternate_offset, ssize_t tls_offset, const struct symbol_ordering *symbol_ordering, size_t symbol_count)
 {
 	void *relbase = (void *)apply_base_address(&binary->info, rela);
 	for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
@@ -304,8 +318,29 @@ static void copy_relas(const struct loaded_binary *binary, ElfW(Rela) **relas, u
 		uintptr_t info = rel->r_info;
 		Elf64_Word symbol_index = ELF64_R_SYM(info);
 		if (symbol_index != 0) {
+			const struct loaded_binary *symbol_binary = binary;
+			if (binary->has_symbols && binary->symbols.valid_versions != NULL) {
+				struct symbol_version_info symbol_info = symbol_version_for_index(&binary->symbols, binary->symbols.symbol_versions[symbol_index]);
+				if (symbol_info.library_name != NULL) {
+					const ElfW(Sym) *source_sym = (void *)binary->symbols.symbols + binary->symbols.symbol_stride * symbol_index;
+					const char *name = binary->symbols.strings + source_sym->st_name;
+					for (struct loaded_binary *other = loader->main; other != NULL; other = other->previous) {
+						if (fs_strcmp(other->path, symbol_info.library_name) == 0) {
+							if (should_include_binary(other) && binary != other && binary_contributes_symbols(other)) {
+								const ElfW(Sym) *dest_sym = NULL;
+								find_symbol(&other->info, &other->symbols, name, symbol_info.version_name, &dest_sym);
+								if (dest_sym != NULL) {
+									symbol_binary = other;
+									symbol_index = ((uintptr_t)dest_sym - other->symbols.symbols) / other->symbols.symbol_stride;
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
 			for (size_t i = 0; i < symbol_count; i++) {
-				if (symbol_ordering[i].source_index == symbol_index && symbol_ordering[i].binary == binary) {
+				if (symbol_ordering[i].source_index == symbol_index && symbol_ordering[i].binary == symbol_binary) {
 					info = ELF64_R_INFO(i, ELF64_R_TYPE(info));
 					break;
 				}
@@ -508,15 +543,182 @@ static size_t offset_for_self_symbol(const struct binary_info *self, const void 
 		+ ((ElfW(Addr))symbol - (ElfW(Addr))&_DYNAMIC);
 }
 
+static ssize_t index_for_binary_path(struct loader_context *loader, const char *path, struct loaded_binary **out_binary)
+{
+	size_t i = 0;
+	for (struct loaded_binary *binary = loader->main; binary != NULL; binary = binary->previous) {
+		if (should_include_binary(binary)) {
+			if (fs_strcmp(binary->path, path) == 0) {
+				*out_binary = binary;
+				return i;
+			}
+			i++;
+		}
+	}
+	*out_binary = NULL;
+	return -1;
+}
+
+struct binary_offsets {
+	const struct loaded_binary *binary;
+	size_t address_start;
+	size_t file_start;
+	size_t string_start;
+	size_t tls_start;
+	size_t verdef_start;
+	size_t verneed_start;
+	size_t version_id_start;
+	const ElfW(Verdef) *verdef;
+	const ElfW(Verneed) *verneed;
+	struct eh_frame_measurement eh_frame_size;
+};
+
+static void measure_verdefs(const ElfW(Verdef) *verdef, size_t *out_size)
+{
+	for (;;) {
+		if (verdef->vd_version != 1) {
+			DIE("invalid vd_version", (int)verdef->vd_version);
+			*out_size += sizeof(*verdef);
+			break;
+		}
+		if (verdef->vd_next == 0) {
+			if (verdef->vd_flags == 0 && verdef->vd_aux != 0) {
+				*out_size += verdef->vd_aux;
+				const ElfW(Verdaux) *aux = (const void *)verdef + verdef->vd_aux;
+				for (size_t i = 0; i < verdef->vd_cnt; i++) {
+					*out_size += aux->vda_next != 0 ? aux->vda_next : sizeof(*aux);
+					aux = (const void *)aux + aux->vda_next;
+				}
+			} else {
+				*out_size += sizeof(*verdef);
+			}
+			break;
+		}
+		*out_size += verdef->vd_next;
+		verdef = (const void *)verdef + verdef->vd_next;
+	}
+}
+
+static void measure_verneeds(const ElfW(Verneed) *verneed, struct loader_context *loader, const char *strings, size_t *out_count, size_t *out_aux_count, size_t *out_size)
+{
+	if (verneed != NULL) {
+		for (;;) {
+			struct loaded_binary *binary;
+			ssize_t file_index = index_for_binary_path(loader, strings + verneed->vn_file, &binary);
+			if (file_index == -1 || !binary_contributes_symbols(binary)) {
+				(*out_count)++;
+				*out_size += sizeof(*verneed) + verneed->vn_cnt * sizeof(ElfW(Vernaux));
+			}
+			(*out_aux_count) += verneed->vn_cnt;
+			if (verneed->vn_next == 0) {
+				break;
+			}
+			verneed = (const void *)verneed + verneed->vn_next;
+		}
+	}
+}
+
+static void copy_versions(ElfW(Verdef) *verdef, ElfW(Verneed) *verneed, struct loader_context *loader, const struct binary_offsets *offsets, const char *strings)
+{
+	size_t binary_index = 0;
+	size_t vd_next = 0;
+	size_t vn_next = 0;
+	size_t verneed_count = 0;
+	for (struct loaded_binary *binary = loader->main; binary != NULL; binary = binary->previous) {
+		if (should_include_binary(binary) && binary_contributes_symbols(binary)) {
+			// copy verdefs
+			const ElfW(Verdef) *old_verdef = offsets[binary_index].verdef;
+			if (old_verdef != NULL) {
+				for (;;) {
+					verdef->vd_next = vd_next;
+					verdef = (void *)verdef + vd_next;
+					*verdef = (ElfW(Verdef)) {
+						.vd_version = 1,
+						.vd_flags = old_verdef->vd_flags,
+						.vd_ndx = old_verdef->vd_ndx + offsets[binary_index].version_id_start,
+						.vd_cnt = old_verdef->vd_cnt,
+						.vd_hash = old_verdef->vd_hash,
+						.vd_aux = sizeof(*verdef),
+						.vd_next = 0,
+					};
+					ElfW(Verdaux) *aux = (void *)verdef + verdef->vd_aux;
+					const ElfW(Verdaux) *old_aux = (void *)old_verdef + old_verdef->vd_aux;
+					for (int i = 0; i < old_verdef->vd_cnt; i++) {
+						aux[i] = (ElfW(Verdaux)) {
+							.vda_name = offsets[binary_index].string_start + old_aux->vda_name,
+							.vda_next = i == old_verdef->vd_cnt - 1 ? 0 : sizeof(*aux),
+						};
+						old_aux = (void *)old_aux + old_aux->vda_next;
+					}
+					vd_next = sizeof(*verdef) + old_verdef->vd_cnt * sizeof(*aux);
+					if (old_verdef->vd_next == 0) {
+						break;
+					}
+					old_verdef = (const void *)old_verdef + old_verdef->vd_next;
+				}
+			}
+			// copy verneeds
+			const ElfW(Verneed) *old_verneed = offsets[binary_index].verneed;
+			if (old_verneed != NULL) {
+				for (;;) {
+					size_t file = offsets[binary_index].string_start + old_verneed->vn_file;
+					struct loaded_binary *other;
+					ssize_t file_index = index_for_binary_path(loader, strings + file, &other);
+					if (file_index == -1 || !binary_contributes_symbols(other)) {
+						verneed_count++;
+						verneed->vn_next = vn_next;
+						verneed = (void *)verneed + vn_next;
+						*verneed = (ElfW(Verneed)) {
+							.vn_version = 1,
+							.vn_cnt = old_verneed->vn_cnt,
+							.vn_file = file,
+							.vn_aux = sizeof(*verneed),
+							.vn_next = 0,
+						};
+						ElfW(Vernaux) *aux = (void *)verneed + verneed->vn_aux;
+						const ElfW(Vernaux) *old_aux = (void *)old_verneed + old_verneed->vn_aux;
+						for (int i = 0; i < old_verneed->vn_cnt; i++) {
+							aux[i] = (ElfW(Vernaux)) {
+								.vna_hash = old_aux->vna_hash,
+								.vna_flags = old_aux->vna_flags,
+								.vna_other = old_aux->vna_other + offsets[binary_index].version_id_start,
+								.vna_name = offsets[binary_index].string_start + old_aux->vna_name,
+								.vna_next = i == old_verneed->vn_cnt - 1 ? 0 : sizeof(*aux),
+							};
+							old_aux = (void *)old_aux + old_aux->vna_next;
+						}
+						vn_next = sizeof(*verneed) + old_verneed->vn_cnt * sizeof(*aux);
+					}
+					if (old_verneed->vn_next == 0) {
+						break;
+					}
+					old_verneed = (const void *)old_verneed + old_verneed->vn_next;
+				}
+			}
+			binary_index++;
+		}
+	}
+}
+
 static void write_combined_binary(struct program_state *analysis, struct loaded_binary *bootstrap)
 {
 	struct loaded_binary *main = analysis->loader.main;
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
+	if (main->info.entrypoint == NULL) {
+		bundle_library = true;
+	} else {
+		bundle_interpreter = true;
+		remap_binary = true;
+	}
 	// count binaries
 	size_t binary_count = 0;
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
+		if (fs_strcmp(binary->path, "ld-linux-"ARCH_NAME".so.1") == 0) {
+			binary->special_binary_flags |= BINARY_IS_INTERPRETER;
+		}
 		binary_count += should_include_binary(binary);
 	}
+	struct binary_offsets *offsets = malloc(binary_count * sizeof(*offsets));
 	// calculate new sizes
 	size_t size = 0;
 	ElfW(Addr) address_size = 0;
@@ -526,28 +728,43 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t used_section_count = 0;
 	size_t symbol_count = 1;
 	size_t string_size = 0;
-	size_t hash_size = sizeof(uint32_t) * 4 + sizeof(uint64_t) + sizeof(uint32_t);
+#if PRINT_GDB_COMMANDS
+	size_t gdb_string_size = 0;
+#endif
+	size_t hash_size = sizeof(uint32_t) * 4 + sizeof(uint64_t);
 	size_t rela_size = 0;
 	size_t jmprel_size = 0;
 	size_t preinit_array_size = 0;
 	size_t init_array_size = 0;
 	size_t fini_array_size = 0;
-	struct loaded_binary *versioning_binary = NULL;
-	ElfW(Addr) verdef = 0;
-	size_t verdefnum = 0;
-	ElfW(Addr) verneed = 0;
-	size_t verneednum = 0;
 	ssize_t last_set_eh_frame_index = -1;
-	struct eh_frame_measurement *eh_frame_sizes = calloc(binary_count, sizeof(*eh_frame_sizes));
 	size_t eh_frame_count = 0;
 	size_t binary_index = 0;
 	size_t main_binary_section_string_size = main->has_sections ? main->sections.sections[main->info.strtab_section_index].sh_size : 0;
 	size_t shstrtab_size = main_binary_section_string_size;
 	size_t tls_size = 0;
 	size_t tls_alignment = 0;
+	ElfW(Addr) soname = 0;
+	size_t verdef_size = 0;
+	size_t verdef_count = 0;
+	size_t verneed_size = 0;
+	size_t verneed_count = 0;
+	size_t version_ids_used = 0;
 	// calculate sizes of various output data
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 		if (should_include_binary(binary)) {
+			offsets[binary_index] = (struct binary_offsets) {
+				.binary = binary,
+				.address_start = address_size,
+				.file_start = size,
+				.string_start = string_size,
+				.tls_start = tls_size,
+				.verdef_start = verdef_size,
+				.verneed_start = verneed_size,
+				.version_id_start = version_ids_used,
+				.verdef = NULL,
+				.verneed = NULL,
+			};
 			ElfW(Addr) largest_addr = 0;
 			const ElfW(Phdr) *phdr = binary->info.program_header;
 			size_t binary_tls_size = 0;
@@ -561,8 +778,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						break;
 					}
 					case PT_GNU_EH_FRAME: {
-						eh_frame_sizes[binary_index] = measure_eh_frame_section(binary->frame_info.data);
-						eh_frame_count += eh_frame_sizes[binary_index].count;
+						offsets[binary_index].eh_frame_size = measure_eh_frame_section(binary->frame_info.data);
+						eh_frame_count += offsets[binary_index].eh_frame_size.count;
 						last_set_eh_frame_index = binary_index;
 						break;
 					}
@@ -603,7 +820,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				}
 				section = (void *)section + binary->info.section_entry_size;
 			}
-			if (binary != bootstrap && binary != interpreter) {
+			if (binary != bootstrap && binary_contributes_symbols(binary)) {
+				const ElfW(Verdef) *verdef = NULL;
+				const ElfW(Verneed) *verneed = NULL;
 				const ElfW(Dyn) *dynamic = binary->info.dynamic;
 				for (size_t i = 0; i < binary->info.dynamic_size; i++) {
 					switch (dynamic[i].d_tag) {
@@ -628,31 +847,35 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						case DT_FINI:
 							fini_array_size += sizeof(uintptr_t);
 							break;
-						case DT_VERSYM:
-							if (binary->special_binary_flags & BINARY_IS_LIBC) {
-								versioning_binary = binary;
-							}
-							break;
 						case DT_VERDEF:
-							if (binary->special_binary_flags & BINARY_IS_LIBC) {
-								verdef = dynamic[i].d_un.d_ptr;
-							}
+							verdef = (const ElfW(Verdef) *)apply_base_address(&binary->info, dynamic[i].d_un.d_val);
 							break;
 						case DT_VERDEFNUM:
-							if (binary->special_binary_flags & BINARY_IS_LIBC) {
-								verdefnum = dynamic[i].d_un.d_val;
-							}
+							verdef_count += dynamic[i].d_un.d_val;
+							version_ids_used += dynamic[i].d_un.d_val;
 							break;
 						case DT_VERNEED:
-							if (binary->special_binary_flags & BINARY_IS_LIBC) {
-								verneed = dynamic[i].d_un.d_ptr;
-							}
+							verneed = (const ElfW(Verneed) *)apply_base_address(&binary->info, dynamic[i].d_un.d_val);
 							break;
 						case DT_VERNEEDNUM:
-							if (binary->special_binary_flags & BINARY_IS_LIBC) {
-								verneednum = dynamic[i].d_un.d_val;
+							version_ids_used += dynamic[i].d_un.d_val;
+							break;
+						case DT_SONAME:
+							// import soname so that glibc can find itself
+							if (binary->special_binary_flags & (BINARY_IS_LIBC|BINARY_IS_MAIN)) {
+								soname = string_size + dynamic[i].d_un.d_val;
 							}
 							break;
+					}
+				}
+				if (binary_contributes_symbols(binary)) {
+					if (verdef != NULL) {
+						offsets[binary_index].verdef = verdef;
+						measure_verdefs(verdef, &verdef_size);
+					}
+					if (verneed != NULL) {
+						offsets[binary_index].verneed = verneed;
+						measure_verneeds(verneed, &analysis->loader, binary->symbols.strings, &verneed_count, &version_ids_used, &verneed_size);
 					}
 				}
 			}
@@ -665,10 +888,57 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				string_size += binary->symbols.strings_size;
 			}
 #if PRINT_GDB_COMMANDS
-			string_size += fs_strlen(binary->loaded_path) + 1;
+			gdb_string_size += fs_strlen(binary->loaded_path) + 1;
 #endif
 			tls_size += binary_tls_size;
 			binary_index++;
+			version_ids_used++;
+		}
+	}
+	uint32_t gnu_hash_bucket_count = symbol_count / 1;
+	hash_size += sizeof(uint32_t) * gnu_hash_bucket_count;
+#if PRINT_GDB_COMMANDS
+	string_size += gdb_string_size;
+#endif
+	size_t dyn_size = 0;
+	for (const ElfW(Dyn) *dyn = main->info.dynamic; dyn->d_tag != DT_NULL; dyn++) {
+		switch (dyn->d_tag) {
+			case DT_NEEDED: {
+				const char *needed_path = main->symbols.strings + dyn->d_un.d_val;
+				struct loaded_binary *binary = find_loaded_binary(&analysis->loader, needed_path);
+				if (binary != NULL && should_include_binary(binary) && binary_contributes_symbols(binary)) {
+					continue;
+				}
+				break;
+			}
+			case DT_RELACOUNT:
+				// relative relocations are not necessarily in a single block
+				continue;
+			case DT_INIT:
+			case DT_FINI:
+			case DT_SONAME:
+				// these tags are replaced entirely
+				continue;
+			case DT_VERSYM:
+			case DT_VERDEF:
+			case DT_VERDEFNUM:
+			case DT_VERNEED:
+			case DT_VERNEEDNUM:
+				// TODO: support symbol versioning
+				continue;
+		}
+		dyn_size += sizeof(*dyn);
+	}
+	if (soname != 0) {
+		dyn_size += sizeof(ElfW(Dyn));
+	}
+	if (verneed_size | verdef_size) {
+		dyn_size += sizeof(ElfW(Dyn));
+		if (verneed_size != 0) {
+			dyn_size += sizeof(ElfW(Dyn)) * 2;
+		}
+		if (verdef_size != 0) {
+			dyn_size += sizeof(ElfW(Dyn)) * 2;
 		}
 	}
 	if (preinit_array_size | init_array_size | fini_array_size) {
@@ -685,14 +955,14 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		eh_frame_hdr_size = sizeof(struct eh_frame_hdr) + 2 * sizeof(int32_t) + eh_frame_count * sizeof(int32_t) * 2;
 		// calculate the eh_frame size
 		for (ssize_t i = 0; i < last_set_eh_frame_index; i++) {
-			eh_frame_size += eh_frame_sizes[i].unterminated_size;
+			eh_frame_size += offsets[i].eh_frame_size.unterminated_size;
 		}
-		eh_frame_size += eh_frame_sizes[last_set_eh_frame_index].full_size;
+		eh_frame_size += offsets[last_set_eh_frame_index].eh_frame_size.full_size;
 	}
 	rela_size += ((preinit_array_size + init_array_size + fini_array_size) * sizeof(ElfW(Rela))) / sizeof(ElfW(Addr));
 	size_t phsize = phcount * sizeof(ElfW(Phdr));
 	size_t symbol_size = symbol_count * sizeof(ElfW(Sym));
-	size_t versym_size = versioning_binary != NULL ? symbol_count * sizeof(ElfW(Half)) : 0;
+	size_t versym_size = (verneed_size | verdef_size) ? symbol_count * sizeof(ElfW(Half)) : 0;
 	if (eh_frame_size) {
 		used_section_count++;
 	}
@@ -703,14 +973,17 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	// calculate start of various new dynamic tags
 	size_t symbol_start = ALIGN_UP(bootstrap != NULL ? phsize + (real_phcount + 10) * sizeof(ElfW(Phdr)) : phsize * 2, alignof(ElfW(Sym)));
 	size_t versym_start = ALIGN_UP(symbol_start + symbol_size, sizeof(uint16_t));
-	size_t string_start = versym_start + versym_size;
+	size_t verdef_start = ALIGN_UP(versym_start + versym_size, sizeof(ElfW(Verneed)));
+	size_t verneed_start = ALIGN_UP(verdef_start + verdef_size, sizeof(ElfW(Verdef)));
+	size_t string_start = verneed_start + verneed_size;
 	size_t hash_start = ALIGN_UP(string_start + string_size, alignof(uint32_t));
 	size_t rela_start = ALIGN_UP(hash_start + hash_size, alignof(ElfW(Rela)));
 	size_t jmprel_start = ALIGN_UP(rela_start + rela_size, alignof(ElfW(Rela)));
 	size_t eh_frame_hdr_start = ALIGN_UP(jmprel_start + jmprel_size, alignof(ElfW(Addr)));
 	size_t eh_frame_start = ALIGN_UP(eh_frame_hdr_start + eh_frame_hdr_size, alignof(ElfW(Addr)));
 	size_t tls_start = tls_size != 0 ? ALIGN_UP(eh_frame_start + eh_frame_size, tls_alignment) : eh_frame_start + eh_frame_size;
-	size_t preinit_array_start = ALIGN_UP(tls_start + tls_size, PAGE_SIZE);
+	size_t dyn_start = ALIGN_UP(tls_start + tls_size, alignof(ElfW(Dyn)));
+	size_t preinit_array_start = ALIGN_UP(dyn_start + dyn_size, PAGE_SIZE);
 	size_t init_array_start = ALIGN_UP(preinit_array_start + preinit_array_size, alignof(ElfW(Addr)));
 	size_t fini_array_start = ALIGN_UP(init_array_start + init_array_size, alignof(ElfW(Addr)));
 	size_t sections_start = ALIGN_UP(fini_array_start + fini_array_size, PAGE_SIZE);
@@ -754,10 +1027,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t symbol_index = 1;
 	char *strings = mapping + size + string_start;
 	size_t strings_offset = 0;
-	ElfW(Addr) soname = 0;
-	size_t version_string_offset = 0;
-	size_t dynamic_offset = 0;
 	size_t tls_offset = 0;
+	binary_index = 0;
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 		if (should_include_binary(binary)) {
 			// read the original binary
@@ -802,6 +1073,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 								.p_vaddr = address_size,
 								.p_paddr = address_size,
 								.p_memsz = phsize,
+								.p_filesz = phsize,
 								.p_flags = PF_R,
 								.p_align = alignof(ElfW(Phdr)),
 							};
@@ -812,6 +1084,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 									.p_vaddr = address_size + phsize,
 									.p_paddr = address_size + phsize,
 									.p_memsz = real_phcount + sizeof(ElfW(Phdr)),
+									.p_filesz = phsize,
 									.p_flags = PF_R,
 									.p_align = alignof(ElfW(Phdr)),
 								};
@@ -827,10 +1100,29 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 							}
 							break;
 						case PT_DYNAMIC:
-							// read the dynamic offset, so we can overwrite the dynamic headers
-							if (binary == main) {
-								dynamic_offset = old_phdr[i].p_offset;
+							*phdr++ = (ElfW(Phdr)) {
+								.p_type = PT_DYNAMIC,
+								.p_offset = size + dyn_start,
+								.p_vaddr = address_size + dyn_start,
+								.p_paddr = address_size + dyn_start,
+								.p_memsz = dyn_size,
+								.p_filesz = dyn_size,
+								.p_flags = PF_R,
+								.p_align = alignof(ElfW(Dyn)),
+							};
+							if (bootstrap != NULL) {
+								*real_phdr++ = (ElfW(Phdr)) {
+									.p_type = PT_DYNAMIC,
+									.p_offset = size + dyn_start,
+									.p_vaddr = address_size + dyn_start,
+									.p_paddr = address_size + dyn_start,
+									.p_memsz = dyn_size,
+									.p_filesz = dyn_size,
+									.p_flags = PF_R,
+									.p_align = alignof(ElfW(Dyn)),
+								};
 							}
+							break;
 						default:
 							// copy the program header and fixup its offsets/addresses
 							*phdr = old_phdr[i];
@@ -847,34 +1139,20 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					}
 				}
 			}
-			// record versioning strings offset
-			if (binary == versioning_binary) {
-				version_string_offset = strings_offset;
-			}
-			// import soname so that glibc can find itself
-			if (binary->special_binary_flags & (BINARY_IS_LIBC|BINARY_IS_MAIN)) {
-				const ElfW(Dyn) *dynamic = binary->info.dynamic;
-				for (size_t i = 0; i < binary->info.dynamic_size; i++) {
-					switch (dynamic[i].d_tag) {
-						case DT_SONAME:
-							soname = strings_offset + dynamic[i].d_un.d_val;
-							break;
-					}
-				}
-			}
 			// prepare symbols for sorting and copy strings
 			if (binary->has_symbols && binary != bootstrap && binary != interpreter) {
 				// prepare symbols for ordering
 				size_t stride = binary->symbols.symbol_stride;
 				for (size_t i = 1, offset = stride; i < binary->symbols.symbol_count; i++, offset += stride, symbol_index++) {
 					const ElfW(Sym) *orig_sym = (void *)binary->symbols.symbols + offset;
+					uint32_t hash = gnu_hash(&binary->symbols.strings[orig_sym->st_name]);
 					symbol_ordering[symbol_index] = (struct symbol_ordering) {
 						.source_index = i,
 						.binary = binary,
-						.gnu_hash = gnu_hash(&binary->symbols.strings[orig_sym->st_name]),
+						.binary_index = binary_index,
+						.gnu_hash = hash,
+						.gnu_hash_bucket = hash % gnu_hash_bucket_count,
 						.address_offset = address_offset,
-						.strings_offset = strings_offset,
-						.tls_offset = tls_offset,
 					};
 				}
 				// copy the strings
@@ -884,6 +1162,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			offset += ALIGN_UP(binary->size, PAGE_SIZE);
 			address_offset += ALIGN_UP(largest_addr, EXECUTABLE_BASE_ALIGN);
 			tls_offset += binary_tls_size;
+			binary_index++;
 		}
 	}
 	// sort by class and then gnu hash
@@ -896,35 +1175,55 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	// write out gnu hash table
 	uint32_t *gnu_hash = mapping + size + hash_start;
-	gnu_hash[0] = 1; // nbuckets
+	gnu_hash[0] = gnu_hash_bucket_count; // nbuckets
 	gnu_hash[1] = first_defined; // symoffset
 	gnu_hash[2] = 1; // bloom_size
 	gnu_hash[3] = 0; // bloom_shift
 	gnu_hash[4] = gnu_hash[5] = ~(uint32_t)0; // bloom; TODO: fill in bloom filter
-	gnu_hash[6] = first_defined; // bucket; TODO: choose a better number of buckets
-	gnu_hash += 7;
+	uint32_t *gnu_hash_buckets = &gnu_hash[6];
+	gnu_hash += 6 + gnu_hash_bucket_count;
+	uint32_t last_bucket = ~0;
 	for (size_t i = first_defined; i < symbol_count; i++) {
+		uint32_t bucket = symbol_ordering[i].gnu_hash_bucket;
+		if (bucket != last_bucket) {
+			last_bucket = bucket;
+			gnu_hash_buckets[bucket] = i;
+			if (i != first_defined) {
+				// set terminator bit on previous chain
+				// gnu_hash[-1] |= 1;
+			}
+		}
 		*gnu_hash++ = symbol_ordering[i].gnu_hash & ~(uint32_t)1;
 	}
+	// set terminator bit on last chain
 	gnu_hash[-1] |= 1;
 	// write out symbols
 	ElfW(Sym) *symbols = mapping + size + symbol_start;
 	ElfW(Half) *versym = mapping + size + versym_start;
 	for (size_t i = 1; i < symbol_count; i++) {
 		const ElfW(Sym) *orig_sym = symbol_for_ordering_entry(&symbol_ordering[i]);
+		ElfW(Addr) value_addend;
+		if (orig_sym->st_value == 0) {
+			value_addend = 0;
+		} else if (ELF64_ST_TYPE(orig_sym->st_info) == STT_TLS) {
+			value_addend = offsets[symbol_ordering[i].binary_index].tls_start;
+		} else {
+			value_addend = symbol_ordering[i].address_offset;
+		}
 		symbols[i] = (ElfW(Sym)) {
-			.st_name = orig_sym->st_name == 0 ? 0 : orig_sym->st_name + symbol_ordering[i].strings_offset,
+			.st_name = orig_sym->st_name == 0 ? 0 : orig_sym->st_name + offsets[symbol_ordering[i].binary_index].string_start,
 			.st_info = orig_sym->st_info,
 			.st_other = orig_sym->st_other,
 			.st_shndx = orig_sym->st_shndx,
-			.st_value = orig_sym->st_value == 0 ? 0 : orig_sym->st_value + (ELF64_ST_TYPE(orig_sym->st_info) == STT_TLS ? symbol_ordering[i].tls_offset : symbol_ordering[i].address_offset),
+			.st_value = orig_sym->st_value + value_addend,
 			.st_size = orig_sym->st_size,
 		};
-		if (versioning_binary) {
-			if (symbol_ordering[i].binary == versioning_binary) {
-				versym[i] = symbol_ordering[i].binary->symbols.symbol_versions[symbol_ordering[i].source_index];
+		if (verneed_size | verdef_size) {
+			uint32_t source_index = symbol_ordering[i].source_index;
+			if (symbol_ordering[i].source_index > 1) {
+				versym[i] = offsets[symbol_ordering[i].binary_index].version_id_start + symbol_ordering[i].binary->symbols.symbol_versions[source_index];
 			} else {
-				versym[i] = VER_NDX_LOCAL;
+				versym[i] = source_index;
 			}
 		}
 	}
@@ -988,14 +1287,14 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
 				switch (phdr[i].p_type) {
 					case PT_GNU_EH_FRAME: {
-						size_t size = binary_index == last_set_eh_frame_index ? eh_frame_sizes[binary_index].full_size : eh_frame_sizes[binary_index].unterminated_size;
+						size_t size = binary_index == last_set_eh_frame_index ? offsets[binary_index].eh_frame_size.full_size : offsets[binary_index].eh_frame_size.unterminated_size;
 						memcpy(ehframe + ehframe_offset, binary->frame_info.data, size);
 						size_t eh_frame_vaddr = binary->frame_info.data - binary->info.base;
 						size_t pc_offset_diff = eh_frame_vaddr + address_offset - (address_size + eh_frame_start + ehframe_offset);
 						size_t binary_table_pc_offset_diff = eh_frame_vaddr + address_offset - (eh_frame_hdr_start + address_size);
 						size_t binary_table_fde_offset_diff = eh_frame_start + ehframe_offset - eh_frame_hdr_start;
 						patch_eh_frames(ehframe + ehframe_offset, pc_offset_diff, eh_frame_table, binary_table_pc_offset_diff, binary_table_fde_offset_diff);
-						eh_frame_table += eh_frame_sizes[binary_index].count;
+						eh_frame_table += offsets[binary_index].eh_frame_size.count;
 						ehframe_offset += size;
 						break;
 					}
@@ -1017,7 +1316,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				}
 			}
 			// copy relocations, initializers, and finalizers
-			if (binary != bootstrap && binary != interpreter) {
+			if (binary != bootstrap && binary_contributes_symbols(binary)) {
 				const ElfW(Dyn) *dynamic = binary->info.dynamic;
 				uintptr_t rela = 0;
 				size_t relasz = 0;
@@ -1077,9 +1376,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				}
 				ssize_t tls_address_offset = address_size + tls_start + tls_offset - binary_tls_address;
 				// copy and fixup relas
-				copy_relas(binary, &relas, rela, relasz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
+				copy_relas(&analysis->loader, binary, &relas, rela, relasz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
 				// copy and fixup jmprels
-				copy_relas(binary, &jmprels, jmprel, pltrelsz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
+				copy_relas(&analysis->loader, binary, &jmprels, jmprel, pltrelsz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
 				// copy preinit array
 				for (size_t i = 0; i < preinitarraysz; i += sizeof(uintptr_t)) {
 					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(binary, preinitarray + i)) + address_offset;
@@ -1128,6 +1427,13 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					shdrs[shdr_index].sh_link = section_mappings[shdr_read_index + shdrs[shdr_index].sh_link];
 					if (binary == main) {
 						switch (section->sh_type) {
+							case SHT_DYNAMIC:
+								if (fs_strcmp(name, ".dynamic") == 0) {
+									shdrs[shdr_index].sh_offset = size + dyn_start;
+									shdrs[shdr_index].sh_addr = address_size + dyn_start;
+									shdrs[shdr_index].sh_size = dyn_size;
+								}
+								break;
 							case SHT_STRTAB:
 								if (fs_strcmp(name, ".dynstr") == 0) {
 									shdrs[shdr_index].sh_offset = size + string_start;
@@ -1176,6 +1482,22 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 									shdrs[shdr_index].sh_size = versym_size;
 								}
 								break;
+							case SHT_GNU_verdef:
+								if (fs_strcmp(name, ".gnu.version_d") == 0) {
+									shdrs[shdr_index].sh_offset = size + verdef_start;
+									shdrs[shdr_index].sh_addr = address_size + verdef_start;
+									shdrs[shdr_index].sh_size = verdef_size;
+									shdrs[shdr_index].sh_info = verdef_count;
+								}
+								break;
+							case SHT_GNU_verneed:
+								if (fs_strcmp(name, ".gnu.version_r") == 0) {
+									shdrs[shdr_index].sh_offset = size + verneed_start;
+									shdrs[shdr_index].sh_addr = address_size + verneed_start;
+									shdrs[shdr_index].sh_size = verneed_size;
+									shdrs[shdr_index].sh_info = verneed_count;
+								}
+								break;
 						}
 					} else {
 						if (shdrs[shdr_index].sh_type != SHT_NOBITS) {
@@ -1193,6 +1515,17 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			tls_offset += binary_tls_size;
 			binary_index++;
 		}
+	}
+	if (relas != mapping + size + rela_start + rela_size) {
+		ERROR("written rela count", ((uintptr_t)relas - (uintptr_t)(mapping + size + rela_start)) / sizeof(ElfW(Rela)));
+		DIE("does not match expected count", rela_size / sizeof(ElfW(Rela)));
+	}
+	if (jmprels != mapping + size + jmprel_start + jmprel_size) {
+		ERROR("written jmprel count", ((uintptr_t)jmprels - (uintptr_t)(mapping + size + jmprel_start)) / sizeof(ElfW(Rela)));
+		DIE("does not match expected count", jmprel_size / sizeof(ElfW(Rela)));
+	}
+	if (verdef_count != 0) {
+		copy_versions(mapping + size + verdef_start, mapping + size + verneed_start, &analysis->loader, offsets, mapping + size + string_start);
 	}
 	// declare frame headers
 	if (eh_frame_hdr_size) {
@@ -1277,17 +1610,16 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			};
 		}
 	}
-	// patch dynamic entries
-	// TODO: relocate dynamic entries to the end of the address space
-	ElfW(Dyn) *dyn = mapping + dynamic_offset;
-	const ElfW(Dyn) *orig_dyn = dyn;
+	// copy dynamic entries
+	ElfW(Dyn) *dyn = mapping + size + dyn_start;
+	const ElfW(Dyn) *orig_dyn = main->info.dynamic;
 	do {
 		*dyn = *orig_dyn++;
 		switch (dyn->d_tag) {
 			case DT_NEEDED: {
 				const char *needed_path = main->symbols.strings + dyn->d_un.d_val;
 				struct loaded_binary *binary = find_loaded_binary(&analysis->loader, needed_path);
-				if (binary != NULL && should_include_binary(binary) && (binary->special_binary_flags & BINARY_IS_INTERPRETER) == 0) {
+				if (binary != NULL && should_include_binary(binary) && binary_contributes_symbols(binary)) {
 					continue;
 				}
 				break;
@@ -1347,7 +1679,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			case DT_VERDEFNUM:
 			case DT_VERNEED:
 			case DT_VERNEEDNUM:
-				// TODO: support symbol versioning
+				// symbol versioning handled below
 				continue;
 		}
 		dyn++;
@@ -1359,58 +1691,25 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		dyn++;
 	}
 	// patch in versioning information
-	if (versioning_binary != NULL) {
+	if (verneed_size | verdef_size) {
 		dyn->d_tag = DT_VERSYM;
 		dyn->d_un.d_ptr = address_size + versym_start;
 		dyn++;
-		address_offset = address_for_binary(&analysis->loader, versioning_binary);
-		size_t libc_file_offset = file_offset_for_binary(&analysis->loader, versioning_binary);
-		if (verdef != 0 && verdefnum != 0) {
+		if (verdef_size != 0) {
 			dyn->d_tag = DT_VERDEF;
-			dyn->d_un.d_ptr = address_offset + verdef;
+			dyn->d_un.d_ptr = address_size + verdef_start;
 			dyn++;
 			dyn->d_tag = DT_VERDEFNUM;
-			dyn->d_un.d_val = verdefnum;
+			dyn->d_un.d_val = verdef_count;
 			dyn++;
-			ElfW(Verdef) *vd = mapping + libc_file_offset + file_offset_for_binary_address(versioning_binary, verdef);
-			for (;;) {
-				if (vd->vd_version != 1) {
-					break;
-				}
-				ElfW(Verdaux) *aux = (void *)vd + vd->vd_aux;
-				for (size_t i = 0; i < vd->vd_cnt; i++) {
-					aux->vda_name += version_string_offset;
-					aux = (void *)aux + aux->vda_next;
-				}
-				if (vd->vd_next == 0) {
-					break;
-				}
-				vd = (void *)vd + vd->vd_next;
-			}
 		}
-		if (verneed != 0 && verneednum != 0) {
+		if (verneed_size != 0) {
 			dyn->d_tag = DT_VERNEED;
-			dyn->d_un.d_ptr = address_offset + verneed;
+			dyn->d_un.d_ptr = address_size + verneed_start;
 			dyn++;
 			dyn->d_tag = DT_VERNEEDNUM;
-			dyn->d_un.d_val = verneednum;
+			dyn->d_un.d_val = verneed_count;
 			dyn++;
-			ElfW(Verneed) *vn = mapping + libc_file_offset + file_offset_for_binary_address(versioning_binary, verneed);
-			for (;;) {
-				if (vn->vn_version != 1) {
-					break;
-				}
-				vn->vn_file += version_string_offset;
-				ElfW(Vernaux) *aux = (void *)vn + vn->vn_aux;
-				for (size_t i = 0; i < vn->vn_cnt; i++) {
-					aux->vna_name += version_string_offset;
-					aux = (void *)aux + aux->vna_next;
-				}
-				if (vn->vn_next == 0) {
-					break;
-				}
-				vn = (void *)vn + vn->vn_next;
-			}
 		}
 	}
 	dyn->d_tag = DT_NULL;
@@ -1545,7 +1844,7 @@ int main(int argc, char* argv[], char* envp[])
 	}
 
 	// open the main executable
-	int fd = open_executable_in_paths(executable_path, path, true, analysis.loader.uid, analysis.loader.gid);
+	int fd = open_executable_in_paths(executable_path, path, false, analysis.loader.uid, analysis.loader.gid);
 	if (UNLIKELY(fd < 0)) {
 		ERROR("could not find main executable", executable_path);
 		return 1;
