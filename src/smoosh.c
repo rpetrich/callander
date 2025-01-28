@@ -425,6 +425,10 @@ static bool should_include_section(const struct loaded_binary *binary, const Elf
 					return false;
 				}
 				return true;
+			case SHT_GNU_versym:
+			case SHT_GNU_verdef:
+			case SHT_GNU_verneed:
+				return false;
 			default:
 				return true;
 		}
@@ -740,8 +744,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	ssize_t last_set_eh_frame_index = -1;
 	size_t eh_frame_count = 0;
 	size_t binary_index = 0;
-	size_t main_binary_section_string_size = main->has_sections ? main->sections.sections[main->info.strtab_section_index].sh_size : 0;
-	size_t shstrtab_size = main_binary_section_string_size;
+	size_t main_binary_section_string_size = main->has_sections ? main->sections.sections[main->info.strtab_section_index].sh_size : 1;
+	size_t shstrtab_size = main_binary_section_string_size + sizeof(MANDATORY_SECTION_NAMES);
 	size_t tls_size = 0;
 	size_t tls_alignment = 0;
 	ElfW(Addr) soname = 0;
@@ -969,6 +973,15 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	if (eh_frame_hdr_size) {
 		used_section_count++;
 	}
+	if (versym_size) {
+		used_section_count++;
+	}
+	if (verdef_count) {
+		used_section_count++;
+	}
+	if (verneed_count) {
+		used_section_count++;
+	}
 	size_t sections_size = used_section_count * sizeof(ElfW(Shdr));
 	// calculate start of various new dynamic tags
 	size_t symbol_start = ALIGN_UP(bootstrap != NULL ? phsize + (real_phcount + 10) * sizeof(ElfW(Phdr)) : phsize * 2, alignof(ElfW(Sym)));
@@ -1015,8 +1028,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	char *shstrs = mapping + size + shstrtab_start;
 	if (main->has_sections) {
 		memcpy(shstrs, main->sections.strings, main_binary_section_string_size);
-		shstrs += main_binary_section_string_size;
 	}
+	shstrs += main_binary_section_string_size;
+	memcpy(shstrs, MANDATORY_SECTION_NAMES, sizeof(MANDATORY_SECTION_NAMES));
+	shstrs += sizeof(MANDATORY_SECTION_NAMES);
 	// copy the original binaries in, and merge the metadata
 	size_t offset = 0;
 	size_t address_offset = 0;
@@ -1258,8 +1273,6 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t fini_offset = 0;
 	size_t shdr_index = 0;
 	size_t shdr_read_index = 0;
-	size_t eh_frame_str_index = 0;
-	size_t eh_frame_hdr_str_index = 0;
 	int32_t *eh_frame_table = NULL;
 	if (eh_frame_hdr_size) {
 		// write eh_frame
@@ -1276,6 +1289,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	binary_index = 0;
 	tls_offset = 0;
+	size_t dynsym_section = 0;
+	size_t dynstr_section = 0;
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 		if (should_include_binary(binary)) {
 			// copy eh frames, loaded segments, and merge TLS
@@ -1404,15 +1419,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			// copy sections
 			const ElfW(Shdr) *section = binary->sections.sections;
 			for (size_t i = 0; i < binary->info.section_entry_count; i++) {
-				const char *name = &binary->sections.strings[section->sh_name];
-				if (section->sh_type == SHT_PROGBITS && binary == main) {
-					if (fs_strcmp(name, ".eh_frame") == 0) {
-						eh_frame_str_index = section->sh_name;
-					} else if (fs_strcmp(name, ".eh_frame_hdr") == 0) {
-						eh_frame_hdr_str_index = section->sh_name;
-					}
-				}
 				if (should_include_section(binary, section)) {
+					const char *name = &binary->sections.strings[section->sh_name];
 					shdrs[shdr_index] = *section;
 					shdrs[shdr_index].sh_offset += offset;
 					if (section->sh_flags & SHF_ALLOC) {
@@ -1439,6 +1447,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 									shdrs[shdr_index].sh_offset = size + string_start;
 									shdrs[shdr_index].sh_addr = address_size + string_start;
 									shdrs[shdr_index].sh_size = string_size;
+									dynstr_section = shdr_index;
 								}
 								if (fs_strcmp(name, ".shstrtab") == 0 && binary == main) {
 									shdrs[shdr_index].sh_offset = size + shstrtab_start;
@@ -1451,6 +1460,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 									shdrs[shdr_index].sh_addr = address_size + symbol_start;
 									shdrs[shdr_index].sh_size = symbol_size;
 									shdrs[shdr_index].sh_entsize = sizeof(ElfW(Sym));
+									dynsym_section = shdr_index;
 								}
 								break;
 							case SHT_GNU_HASH:
@@ -1530,7 +1540,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	// declare frame headers
 	if (eh_frame_hdr_size) {
 		shdrs[shdr_index++] = (ElfW(Shdr)) {
-			.sh_name = eh_frame_hdr_str_index,
+			.sh_name = main_binary_section_string_size + EH_FRAME_HDR_STR_OFFSET,
 			.sh_type = SHT_PROGBITS,
 			.sh_flags = SHF_ALLOC,
 			.sh_addr = address_size + eh_frame_hdr_start,
@@ -1544,13 +1554,55 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	if (eh_frame_size) {
 		shdrs[shdr_index++] = (ElfW(Shdr)) {
-			.sh_name = eh_frame_str_index,
+			.sh_name = main_binary_section_string_size + EH_FRAME_STR_OFFSET,
 			.sh_type = SHT_PROGBITS,
 			.sh_flags = SHF_ALLOC,
 			.sh_addr = address_size + eh_frame_start,
 			.sh_offset = size + eh_frame_start,
 			.sh_size = eh_frame_size,
 			.sh_link = 0,
+			.sh_info = 0,
+			.sh_addralign = alignof(ElfW(Addr)),
+			.sh_entsize = 0,
+		};
+	}
+	if (versym_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + GNU_VERSION_STR_OFFSET,
+			.sh_type = SHT_GNU_versym,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + versym_start,
+			.sh_offset = size + versym_start,
+			.sh_size = versym_size,
+			.sh_link = dynsym_section,
+			.sh_info = 0,
+			.sh_addralign = alignof(ElfW(Half)),
+			.sh_entsize = sizeof(ElfW(Half)),
+		};
+	}
+	if (verneed_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + GNU_VERSION_R_STR_OFFSET,
+			.sh_type = SHT_GNU_verneed,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + verneed_start,
+			.sh_offset = size + verneed_start,
+			.sh_size = verneed_size,
+			.sh_link = dynstr_section,
+			.sh_info = 0,
+			.sh_addralign = alignof(ElfW(Addr)),
+			.sh_entsize = 0,
+		};
+	}
+	if (verdef_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + GNU_VERSION_D_STR_OFFSET,
+			.sh_type = SHT_GNU_verdef,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + verdef_start,
+			.sh_offset = size + verdef_start,
+			.sh_size = verdef_size,
+			.sh_link = dynstr_section,
 			.sh_info = 0,
 			.sh_addralign = alignof(ElfW(Addr)),
 			.sh_entsize = 0,
