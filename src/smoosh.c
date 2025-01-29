@@ -412,38 +412,7 @@ static bool should_preserve_headers_for_binary(const struct loaded_binary *binar
 
 static bool should_include_section(const struct loaded_binary *binary, const ElfW(Shdr) *section)
 {
-	if (binary->special_binary_flags & BINARY_IS_MAIN) {
-		const char *name = &binary->sections.strings[section->sh_name];
-		switch (section->sh_type) {
-			case SHT_PROGBITS:
-				if (fs_strcmp(name, ".gnu_debuglink") == 0 || fs_strcmp(name, ".gnu_debugaltlink") == 0 || fs_strcmp(name, ".eh_frame_hdr") == 0 || fs_strcmp(name, ".eh_frame") == 0) {
-					return false;
-				}
-				return true;
-			case SHT_NOTE:
-				if (fs_strcmp(name, ".note.gnu.build-id") == 0) {
-					return false;
-				}
-				return true;
-			case SHT_GNU_versym:
-			case SHT_GNU_verdef:
-			case SHT_GNU_verneed:
-				return false;
-			default:
-				return true;
-		}
-	} else {
-		return true;
-		// switch (section->sh_type) {
-		// 	case SHT_PROGBITS:
-		// 		if (section->sh_flags & SHF_ALLOC) {
-		// 			return true;
-		// 		}
-		// 		return false;
-		// 	default:
-		// 		return false;
-		// }
-	}
+	return (section->sh_type != SHT_NULL) || (binary->special_binary_flags & BINARY_IS_MAIN);
 }
 
 struct eh_frame_measurement {
@@ -704,16 +673,49 @@ static void copy_versions(ElfW(Verdef) *verdef, ElfW(Verneed) *verneed, struct l
 	}
 }
 
+#define EH_FRAME_HDR_STR_OFFSET 0
+#define EH_FRAME_HDR_STR ".eh_frame_hdr"
+#define EH_FRAME_STR_OFFSET sizeof(EH_FRAME_HDR_STR)
+#define EH_FRAME_STR ".eh_frame"
+#define GNU_VERSION_R_STR_OFFSET (EH_FRAME_STR_OFFSET+sizeof(EH_FRAME_STR))
+#define GNU_VERSION_R_STR ".gnu.version_r"
+#define GNU_VERSION_D_STR_OFFSET (GNU_VERSION_R_STR_OFFSET+sizeof(GNU_VERSION_R_STR))
+#define GNU_VERSION_D_STR ".gnu.version_d"
+#define GNU_VERSION_STR_OFFSET (GNU_VERSION_D_STR_OFFSET+sizeof(GNU_VERSION_D_STR))
+#define GNU_VERSION_STR ".gnu.version"
+#define GNU_HASH_STR_OFFSET (GNU_VERSION_STR_OFFSET+sizeof(GNU_VERSION_STR))
+#define GNU_HASH_STR ".gnu.hash"
+#define DYNSYM_STR_OFFSET (GNU_HASH_STR_OFFSET+sizeof(GNU_HASH_STR))
+#define DYNSYM_STR ".dynsym"
+#define DYNSTR_STR_OFFSET (DYNSYM_STR_OFFSET+sizeof(DYNSYM_STR))
+#define DYNSTR_STR ".dynstr"
+#define RELA_DYN_STR_OFFSET (DYNSTR_STR_OFFSET+sizeof(DYNSTR_STR))
+#define RELA_DYN_STR ".rela.dyn"
+#define RELA_PLT_STR_OFFSET (RELA_DYN_STR_OFFSET+sizeof(RELA_DYN_STR))
+#define RELA_PLT_STR ".rela.plt"
+#define SHSTRTAB_STR_OFFSET (RELA_PLT_STR_OFFSET+sizeof(RELA_PLT_STR))
+#define SHSTRTAB_STR ".shstrtab"
+#define DYNAMIC_STR_OFFSET (SHSTRTAB_STR_OFFSET+sizeof(SHSTRTAB_STR))
+#define DYNAMIC_STR ".dynamic"
+
+#define MANDATORY_SECTION_NAMES \
+	EH_FRAME_HDR_STR"\0" \
+	EH_FRAME_STR"\0" \
+	GNU_VERSION_R_STR"\0" \
+	GNU_VERSION_D_STR"\0" \
+	GNU_VERSION_STR"\0" \
+	GNU_HASH_STR"\0" \
+	DYNSYM_STR"\0" \
+	DYNSTR_STR"\0" \
+	RELA_DYN_STR"\0" \
+	RELA_PLT_STR"\0" \
+	SHSTRTAB_STR"\0" \
+	DYNAMIC_STR"\0"
+
 static void write_combined_binary(struct program_state *analysis, struct loaded_binary *bootstrap)
 {
 	struct loaded_binary *main = analysis->loader.main;
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
-	if (main->info.entrypoint == NULL) {
-		bundle_library = true;
-	} else {
-		bundle_interpreter = true;
-		remap_binary = true;
-	}
 	// count binaries
 	size_t binary_count = 0;
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
@@ -817,8 +819,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			for (size_t i = 0; i < binary->info.section_entry_count; i++) {
 				if (should_include_section(binary, section)) {
 					used_section_count++;
-					if (binary != main) {
-						const char *name = &binary->sections.strings[section->sh_name];
+					const char *name = &binary->sections.strings[section->sh_name];
+					if (*name == '\0') {
+						shstrtab_size++;
+					} else {
 						shstrtab_size += fs_strlen(name) + 2 + binary_path_len;
 					}
 				}
@@ -967,21 +971,18 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t phsize = phcount * sizeof(ElfW(Phdr));
 	size_t symbol_size = symbol_count * sizeof(ElfW(Sym));
 	size_t versym_size = (verneed_size | verdef_size) ? symbol_count * sizeof(ElfW(Half)) : 0;
-	if (eh_frame_size) {
-		used_section_count++;
-	}
-	if (eh_frame_hdr_size) {
-		used_section_count++;
-	}
-	if (versym_size) {
-		used_section_count++;
-	}
-	if (verdef_count) {
-		used_section_count++;
-	}
-	if (verneed_count) {
-		used_section_count++;
-	}
+	used_section_count += (string_size != 0)
+		+ (symbol_size != 0)
+		+ (dyn_size != 0)
+		+ (hash_size != 0)
+		+ (eh_frame_hdr_size != 0)
+		+ (eh_frame_size != 0)
+		+ (versym_size != 0)
+		+ (verneed_size != 0)
+		+ (verdef_size != 0)
+		+ (rela_size != 0)
+		+ (jmprel_size != 0)
+		+ (shstrtab_size != 0);
 	size_t sections_size = used_section_count * sizeof(ElfW(Shdr));
 	// calculate start of various new dynamic tags
 	size_t symbol_start = ALIGN_UP(bootstrap != NULL ? phsize + (real_phcount + 10) * sizeof(ElfW(Phdr)) : phsize * 2, alignof(ElfW(Sym)));
@@ -1182,9 +1183,15 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	// sort by class and then gnu hash
 	qsort_r_freestanding(&symbol_ordering[1], symbol_count - 1, sizeof(*symbol_ordering), compare_symbol_ordering, NULL);
+	// find the first global and defined symbols
 	size_t first_defined = 1;
+	size_t first_non_local = 0;
 	for (; first_defined < symbol_count; first_defined++) {
-		if (ordering_class_for_sym(symbol_for_ordering_entry(&symbol_ordering[first_defined])) == ORDERING_CLASS_DEFINED) {
+		enum ordering_class class = ordering_class_for_sym(symbol_for_ordering_entry(&symbol_ordering[first_defined]));
+		if (class != ORDERING_CLASS_LOCAL && first_non_local == 0) {
+			first_non_local = first_defined;
+		}
+		if (class == ORDERING_CLASS_DEFINED) {
 			break;
 		}
 	}
@@ -1289,8 +1296,6 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	binary_index = 0;
 	tls_offset = 0;
-	size_t dynsym_section = 0;
-	size_t dynstr_section = 0;
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 		if (should_include_binary(binary)) {
 			// copy eh frames, loaded segments, and merge TLS
@@ -1426,95 +1431,25 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					if (section->sh_flags & SHF_ALLOC) {
 						shdrs[shdr_index].sh_addr += address_offset;
 					}
-					if (binary != main) {
-						shdrs[shdr_index].sh_name = shstrs - (char *)(mapping + size + shstrtab_start);
-						shstrs = fs_strcpy(shstrs, name);
-						*shstrs++ = '.';
-						shstrs = fs_strcpy(shstrs, binary->path) + 1;
+					shdrs[shdr_index].sh_flags &= ~SHF_INFO_LINK;
+					shdrs[shdr_index].sh_name = shstrs - (char *)(mapping + size + shstrtab_start);
+					if (*name == '\0') {
+						shstrs++;
+					} else {
+						shstrs = fs_strcpy(shstrs, binary->path);
+						*shstrs++ = ':';
+						shstrs = fs_strcpy(shstrs, name) + 1;
 					}
 					shdrs[shdr_index].sh_link = section_mappings[shdr_read_index + shdrs[shdr_index].sh_link];
-					if (binary == main) {
-						switch (section->sh_type) {
-							case SHT_DYNAMIC:
-								if (fs_strcmp(name, ".dynamic") == 0) {
-									shdrs[shdr_index].sh_offset = size + dyn_start;
-									shdrs[shdr_index].sh_addr = address_size + dyn_start;
-									shdrs[shdr_index].sh_size = dyn_size;
-								}
-								break;
-							case SHT_STRTAB:
-								if (fs_strcmp(name, ".dynstr") == 0) {
-									shdrs[shdr_index].sh_offset = size + string_start;
-									shdrs[shdr_index].sh_addr = address_size + string_start;
-									shdrs[shdr_index].sh_size = string_size;
-									dynstr_section = shdr_index;
-								}
-								if (fs_strcmp(name, ".shstrtab") == 0 && binary == main) {
-									shdrs[shdr_index].sh_offset = size + shstrtab_start;
-									shdrs[shdr_index].sh_size = shstrtab_size;
-								}
-								break;
-							case SHT_DYNSYM:
-								if (fs_strcmp(name, ".dynsym") == 0) {
-									shdrs[shdr_index].sh_offset = size + symbol_start;
-									shdrs[shdr_index].sh_addr = address_size + symbol_start;
-									shdrs[shdr_index].sh_size = symbol_size;
-									shdrs[shdr_index].sh_entsize = sizeof(ElfW(Sym));
-									dynsym_section = shdr_index;
-								}
-								break;
-							case SHT_GNU_HASH:
-								if (fs_strcmp(name, ".gnu.hash") == 0) {
-									shdrs[shdr_index].sh_offset = size + hash_start;
-									shdrs[shdr_index].sh_addr = address_size + hash_start;
-									shdrs[shdr_index].sh_size = hash_size;
-								}
-								break;
-							case SHT_RELA:
-								if (fs_strcmp(name, ".rela.dyn") == 0) {
-									shdrs[shdr_index].sh_offset = size + rela_start;
-									shdrs[shdr_index].sh_addr = address_size + rela_start;
-									shdrs[shdr_index].sh_size = rela_size;
-									shdrs[shdr_index].sh_entsize = sizeof(ElfW(Rela));
-								}
-								if (fs_strcmp(name, ".rela.plt") == 0) {
-									shdrs[shdr_index].sh_offset = size + jmprel_start;
-									shdrs[shdr_index].sh_addr = address_size + jmprel_start;
-									shdrs[shdr_index].sh_size = jmprel_size;
-									shdrs[shdr_index].sh_entsize = sizeof(ElfW(Rela));
-								}
-								shdrs[shdr_index].sh_info = section_mappings[shdr_read_index + shdrs[shdr_index].sh_info];
-								break;
-							case SHT_GNU_versym:
-								if (fs_strcmp(name, ".gnu.version") == 0) {
-									shdrs[shdr_index].sh_offset = size + versym_start;
-									shdrs[shdr_index].sh_addr = address_size + versym_start;
-									shdrs[shdr_index].sh_size = versym_size;
-								}
-								break;
-							case SHT_GNU_verdef:
-								if (fs_strcmp(name, ".gnu.version_d") == 0) {
-									shdrs[shdr_index].sh_offset = size + verdef_start;
-									shdrs[shdr_index].sh_addr = address_size + verdef_start;
-									shdrs[shdr_index].sh_size = verdef_size;
-									shdrs[shdr_index].sh_info = verdef_count;
-								}
-								break;
-							case SHT_GNU_verneed:
-								if (fs_strcmp(name, ".gnu.version_r") == 0) {
-									shdrs[shdr_index].sh_offset = size + verneed_start;
-									shdrs[shdr_index].sh_addr = address_size + verneed_start;
-									shdrs[shdr_index].sh_size = verneed_size;
-									shdrs[shdr_index].sh_info = verneed_count;
-								}
-								break;
-						}
-					} else {
-						if (shdrs[shdr_index].sh_type != SHT_NOBITS) {
+					switch (shdrs[shdr_index].sh_type) {
+						case SHT_NOBITS:
+						case SHT_NULL:
+							break;
+						default:
 							shdrs[shdr_index].sh_type = SHT_PROGBITS;
-						}
-						shdrs[shdr_index].sh_info = 0;
+							break;
 					}
+					shdrs[shdr_index].sh_info = 0;
 					shdr_index++;
 				}
 				section = (void *)section + binary->info.section_entry_size;
@@ -1537,7 +1472,66 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	if (verdef_count != 0) {
 		copy_versions(mapping + size + verdef_start, mapping + size + verneed_start, &analysis->loader, offsets, mapping + size + string_start);
 	}
-	// declare frame headers
+	// write section headers
+
+	size_t dynstr_section = shdr_index;
+	if (string_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + DYNSTR_STR_OFFSET,
+			.sh_type = SHT_STRTAB,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + string_start,
+			.sh_offset = size + string_start,
+			.sh_size = string_size,
+			.sh_link = 0,
+			.sh_info = 0,
+			.sh_addralign = 1,
+			.sh_entsize = 0,
+		};
+	}
+	size_t dynsym_section = shdr_index;
+	if (symbol_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + DYNSYM_STR_OFFSET,
+			.sh_type = SHT_DYNSYM,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + symbol_start,
+			.sh_offset = size + symbol_start,
+			.sh_size = symbol_size,
+			.sh_link = dynstr_section,
+			.sh_info = first_non_local,
+			.sh_addralign = alignof(ElfW(Sym)),
+			.sh_entsize = sizeof(ElfW(Sym)),
+		};
+	}
+	if (dyn_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + DYNAMIC_STR_OFFSET,
+			.sh_type = SHT_DYNAMIC,
+			.sh_flags = SHF_ALLOC|SHF_WRITE,
+			.sh_addr = address_size + dyn_start,
+			.sh_offset = size + dyn_start,
+			.sh_size = dyn_size,
+			.sh_link = dynstr_section,
+			.sh_info = 0,
+			.sh_addralign = alignof(ElfW(Dyn)),
+			.sh_entsize = sizeof(ElfW(Dyn)),
+		};
+	}
+	if (hash_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + GNU_HASH_STR_OFFSET,
+			.sh_type = SHT_GNU_HASH,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + hash_start,
+			.sh_offset = size + hash_start,
+			.sh_size = eh_frame_hdr_size,
+			.sh_link = dynsym_section,
+			.sh_info = 0,
+			.sh_addralign = alignof(ElfW(Addr)),
+			.sh_entsize = 0,
+		};
+	}
 	if (eh_frame_hdr_size) {
 		shdrs[shdr_index++] = (ElfW(Shdr)) {
 			.sh_name = main_binary_section_string_size + EH_FRAME_HDR_STR_OFFSET,
@@ -1589,7 +1583,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			.sh_offset = size + verneed_start,
 			.sh_size = verneed_size,
 			.sh_link = dynstr_section,
-			.sh_info = 0,
+			.sh_info = verneed_count,
 			.sh_addralign = alignof(ElfW(Addr)),
 			.sh_entsize = 0,
 		};
@@ -1603,8 +1597,51 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			.sh_offset = size + verdef_start,
 			.sh_size = verdef_size,
 			.sh_link = dynstr_section,
-			.sh_info = 0,
+			.sh_info = verdef_count,
 			.sh_addralign = alignof(ElfW(Addr)),
+			.sh_entsize = 0,
+		};
+	}
+	if (rela_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + RELA_DYN_STR_OFFSET,
+			.sh_type = SHT_RELA,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + rela_start,
+			.sh_offset = size + rela_start,
+			.sh_size = rela_size,
+			.sh_link = dynsym_section,
+			.sh_info = 0, // TODO: reference the appropriate section and set SHF_INFO_LINK
+			.sh_addralign = alignof(ElfW(Rela)),
+			.sh_entsize = sizeof(ElfW(Rela)),
+		};
+	}
+	if (jmprel_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + RELA_PLT_STR_OFFSET,
+			.sh_type = SHT_RELA,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + jmprel_start,
+			.sh_offset = size + jmprel_start,
+			.sh_size = jmprel_size,
+			.sh_link = dynsym_section,
+			.sh_info = 0, // TODO: reference the appropriate section and set SHF_INFO_LINK
+			.sh_addralign = alignof(ElfW(Rela)),
+			.sh_entsize = sizeof(ElfW(Rela)),
+		};
+	}
+	size_t shstrtab_index = shdr_index;
+	if (shstrtab_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + SHSTRTAB_STR_OFFSET,
+			.sh_type = SHT_STRTAB,
+			.sh_flags = 0,
+			.sh_addr = 0,
+			.sh_offset = size + shstrtab_start,
+			.sh_size = shstrtab_size,
+			.sh_link = 0,
+			.sh_info = 0,
+			.sh_addralign = alignof(char),
 			.sh_entsize = 0,
 		};
 	}
@@ -1777,7 +1814,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	header->e_shoff = size + sections_start;
 	header->e_shnum = used_section_count;
 	header->e_shentsize = sizeof(ElfW(Shdr));
-	header->e_shstrndx = section_mappings[header->e_shstrndx];
+	header->e_shstrndx = shstrtab_index;
 	if (bootstrap != NULL) {
 		// bake bootstrap offsets into the binary
 		struct bootstrap_offsets *offsets = mapping + file_offset_for_binary(&analysis->loader, bootstrap) + file_offset_for_binary_address(bootstrap, offset_for_self_symbol(&bootstrap->info, &bootstrap_offsets));
@@ -1922,6 +1959,13 @@ int main(int argc, char* argv[], char* envp[])
 	load_all_needed_and_relocate(&analysis);
 
 	struct loaded_binary *bootstrap = NULL;
+
+	if (loaded->info.entrypoint == NULL) {
+		bundle_library = true;
+	} else {
+		bundle_interpreter = true;
+		remap_binary = true;
+	}
 
 	// if bundling interpreter, add self to bootstrap
 	if ((loaded->info.interpreter != NULL && bundle_interpreter) || remap_binary) {
