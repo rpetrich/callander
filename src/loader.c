@@ -1360,7 +1360,7 @@ int load_frame_info_from_section(int fd, const struct binary_info *binary, const
 	return 0;
 }
 
-int load_frame_info_from_program_header(const struct binary_info *binary, const struct eh_frame_hdr *header, size_t size, struct frame_info *out_info)
+int load_frame_info_from_program_header(__attribute__((unused)) const struct binary_info *binary, const struct eh_frame_hdr *header, struct frame_info *out_info)
 {
 	if (!is_supported_eh_frame_hdr(header)) {
 		return -ENOENT;
@@ -1369,6 +1369,7 @@ int load_frame_info_from_program_header(const struct binary_info *binary, const 
 	*out_info = (struct frame_info) {
 		.data = (void *)eh_frame_ptr + *eh_frame_ptr,
 		.data_base_address = (uintptr_t)header,
+		// TODO: determine how to set .text base address from program header
 		.text_base_address = 0,
 		.supported_eh_frame_hdr = true,
 	};

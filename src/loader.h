@@ -135,7 +135,6 @@ extern void free_symbols(struct symbol_info *symbols);
 const char *symbol_name(const struct symbol_info *symbols, const ElfW(Sym) *symbol);
 
 // find_symbol looks up a symbol by name
-__attribute__((warn_unused_result))
 extern void *find_symbol(const struct binary_info *info, const struct symbol_info *symbols, const char *symbol_name, const char *version_name, const ElfW(Sym) **out_symbol);
 // find_next_symbol looks up the next symbol by name
 __attribute__((warn_unused_result))
@@ -202,7 +201,7 @@ struct eh_frame_hdr {
 
 __attribute__((warn_unused_result))
 int load_frame_info_from_section(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info);
-int load_frame_info_from_program_header(const struct binary_info *binary, const struct eh_frame_hdr *data, size_t size, struct frame_info *out_info);
+int load_frame_info_from_program_header(const struct binary_info *binary, const struct eh_frame_hdr *data, struct frame_info *out_info);
 void free_frame_info(struct frame_info *info);
 
 struct frame_details {

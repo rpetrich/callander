@@ -137,8 +137,7 @@ exit(any) @ ld-musl-aarch64.so.1+0x6075c
 exit(any) @ ld-musl-aarch64.so.1+0x60794
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit(0) @ ld-musl-aarch64.so.1+0x623b8(start*+104)
-exit_group(NULL-0x1) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
-exit_group(-1) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
+exit_group(any) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48730(__post_Fork*+44)
 set_tid_address(any) @ ld-musl-aarch64.so.1+0x623ac(start*+92)
 futex(any, FUTEX_WAIT, any, 0, any u32, 0)

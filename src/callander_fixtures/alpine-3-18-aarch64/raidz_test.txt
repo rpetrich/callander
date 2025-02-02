@@ -116,8 +116,7 @@ fsync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
-exit_group(NULL-0x1) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
-exit_group(127) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
+exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48040(_Fork+128)
 set_tid_address(any) @ ld-musl-aarch64.so.1+0x5f40c(start*+64)
 futex(any, FUTEX_WAIT, any, 0, 0, any)

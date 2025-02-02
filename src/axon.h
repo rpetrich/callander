@@ -48,7 +48,8 @@ noreturn void release(size_t *sp, __attribute__((unused)) size_t *dynv) \
 	__builtin_unreachable(); \
 }
 #else
-AXON_RESTORE_ASM
+#define AXON_BOOTSTRAP_ASM \
+AXON_RESTORE_ASM \
 FS_DEFINE_SYSCALL
 #endif
 

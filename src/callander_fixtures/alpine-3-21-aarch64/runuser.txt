@@ -53,16 +53,18 @@ read(any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 write(any, any, any) @ ld-musl-aarch64.so.1+0x60864
 write(any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 readv(any, any, 2) @ ld-musl-aarch64.so.1+0x533c4(__stdio_read*+76)
+readv(any, any, any) @ ld-musl-aarch64.so.1+0x60864
+readv(any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x5351c(__stdio_write*+184)
+writev(any, any, any) @ ld-musl-aarch64.so.1+0x60864
+writev(any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x60864
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pselect6(0, 0, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x60864
 pselect6(0, 0, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x1ff94(__init_libc*+344)
-ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x60864
-ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x60864
-ppoll(any, 1, any, 0, 8) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
-ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x60864
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 signalfd4(-1, any, 8, SFD_CLOEXEC) @ ld-musl-aarch64.so.1+0x24da4(signalfd+24)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x690f4(readlink+40)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52974(fstatat+112)

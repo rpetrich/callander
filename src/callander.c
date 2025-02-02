@@ -13777,7 +13777,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 	for (size_t i = 0; i < info.header_entry_count; i++, phdr = (const void *)phdr + info.header_entry_size) {
 		switch (phdr->p_type) {
 			case PT_GNU_EH_FRAME:
-				new_binary->has_frame_info = load_frame_info_from_program_header(&new_binary->info, (const void *)apply_base_address(&info, phdr->p_vaddr), phdr->p_filesz, &new_binary->frame_info) == 0;
+				new_binary->has_frame_info = load_frame_info_from_program_header(&new_binary->info, (const void *)apply_base_address(&info, phdr->p_vaddr), &new_binary->frame_info) == 0;
 				break;
 		}
 	}

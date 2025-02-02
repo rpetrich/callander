@@ -42,7 +42,7 @@ unlinkat(AT_FDCWD, any, AT_REMOVEDIR) @ ld-musl-aarch64.so.1+0x549a8(remove+44)
 unlinkat(AT_FDCWD, any, 0) @ ld-musl-aarch64.so.1+0x65190(unlink+24)
 statfs(libffi.so.8+0x64ef, any) @ ld-musl-aarch64.so.1+0x50b08(statfs64+52)
 ftruncate(any, any) @ ld-musl-aarch64.so.1+0x646dc(ftruncate64+16)
-faccessat(AT_FDCWD, any, W_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
+faccessat(AT_FDCWD, any, X_OK-W_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 faccessat(AT_FDCWD, non-NULL, R_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 faccessat(any, any, any) @ ld-musl-aarch64.so.1+0x64370(checker*+64)
 faccessat(AT_FDCWD, any, X_OK) @ ld-musl-aarch64.so.1+0x643e8(faccessat+56)
@@ -90,8 +90,10 @@ writev(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 pread64(any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-pselect6(0x1-0x400, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
-pselect6(0x1-0x400, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+pselect6(0x1-0x400, any, 0, any, any, any) @ ld-musl-aarch64.so.1+0x5d210
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5d210
+pselect6(0x1-0x400, any, 0, any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+pselect6(0x1-0x400, any, any, 0, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)

@@ -307,7 +307,7 @@ munlock(0xfffffffffffffff1-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x3e6
 recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 wait4(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x607bc
-wait4(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+wait4(any, any, any u8, any u8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 finit_module(any u32, non-NULL, 0-4|MODULE_INIT_IGNORE_VERMAGIC) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x607bc

@@ -410,9 +410,9 @@ prlimit64(0, 0x800, 0, any) @ ld-musl-aarch64.so.1+0x3c9bc(getrlimit+44)
 prlimit64(0, RLIMIT_CPU-RLIMIT_RTTIME, any, 0) @ ld-musl-aarch64.so.1+0x3dab0(setrlimit+36)
 getrandom(any, any, any) @ ld-musl-aarch64.so.1+0x3dbd0(syscall+172)
 getrandom(any, NULL-0x7fffffffffffffff, 0-GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x5d210
-getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x5d210
+getrandom(any, non-NULL, any u8) @ ld-musl-aarch64.so.1+0x5d210
 getrandom(any, NULL-0x7fffffffffffffff, 0-GRND_NONBLOCK) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+getrandom(any, non-NULL, any u8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 memfd_create(any, any u32) @ ld-musl-aarch64.so.1+0x24540(memfd_create+16)
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x243f4(membarrier+36)
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-aarch64.so.1+0x24528(__membarrier_init*+12)

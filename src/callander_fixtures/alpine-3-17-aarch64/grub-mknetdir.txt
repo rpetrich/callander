@@ -32,10 +32,8 @@ lseek(any, any, any) @ ld-musl-aarch64.so.1+0x64a28(lseek64+12)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 read(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5d210
 read(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5d210
-write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5d210
-write(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+write(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
+write(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readv(any, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)

@@ -20,11 +20,19 @@ close(any) @ ld-musl-aarch64.so.1+0x607bc
 close(any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x68de8(lseek+12)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x53780(__stdio_read*+144)
+write(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
+write(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readv(any, any, 2) @ ld-musl-aarch64.so.1+0x5373c(__stdio_read*+76)
+readv(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
+readv(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x53898(__stdio_write*+188)
+writev(any, any, any) @ ld-musl-aarch64.so.1+0x607bc
+writev(any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 pselect6(2, 0, 0, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
 pselect6(2, 0, 0, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x2050c(__init_libc*+344)
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
+ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readlinkat(AT_FDCWD, any, ld-musl-aarch64.so.1+0xc1f70(buf.0*), 32) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 newfstatat(STDIN_FILENO-STDERR_FILENO, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)
 newfstatat(AT_FDCWD, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+112)

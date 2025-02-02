@@ -175,10 +175,9 @@ preadv(any, any, any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+2
 pwritev(any, any, any, any, any) @ ld-musl-aarch64.so.1+0x60864
 pwritev(any, any, any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 sendfile(any, any, any, any) @ ld-musl-aarch64.so.1+0x24c04(sendfile+12)
-pselect6(any, non-NULL, any u16, any, any, any) @ ld-musl-aarch64.so.1+0x60864
+pselect6(any, non-NULL, 0, any, any, any) @ ld-musl-aarch64.so.1+0x60864
 pselect6(any, /usr/bin/gdb+0xab0ab0, any, any, any, any) @ ld-musl-aarch64.so.1+0x60864
 pselect6(0x1-0x400, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x60864
-pselect6(any u32, non-NULL, any u16, any u16, any u16, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pselect6(any, non-NULL, 0, any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pselect6(any, /usr/bin/gdb+0xab0ab0, any, any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pselect6(0x1-0x400, any, any, any, any, any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
