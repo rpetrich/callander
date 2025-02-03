@@ -6250,8 +6250,9 @@ enum syscall_analysis_result {
 };
 
 __attribute__((noinline))
-static uint8_t analyze_syscall_instruction(struct program_state *analysis, struct analysis_frame *self, const struct analysis_frame *caller, ins_ptr ins, function_effects required_effects, function_effects *effects)
+static uint8_t analyze_syscall_instruction(struct program_state *analysis, struct analysis_frame *self, struct additional_result *additional, const struct analysis_frame *caller, ins_ptr ins, function_effects required_effects, function_effects *effects)
 {
+	additional->used = false;
 	clear_comparison_state(&self->current_state);
 	if (register_is_exactly_known(&self->current_state.registers[REGISTER_SYSCALL_NR])) {
 	syscall_nr_is_known:
@@ -6291,7 +6292,13 @@ static uint8_t analyze_syscall_instruction(struct program_state *analysis, struc
 		}
 		record_syscall(analysis, value, *self, required_effects);
 		// syscalls always populate the result
-		clear_register(&self->current_state.registers[REGISTER_SYSCALL_RESULT]);
+		// errors between -4095 and -1
+		additional->used = true;
+		additional->state.value = -4095;
+		additional->state.max = -1;
+		// success values >= 0
+		self->current_state.registers[REGISTER_SYSCALL_RESULT].value = 0;
+		self->current_state.registers[REGISTER_SYSCALL_RESULT].max = (~(uintptr_t)0) >> 1;
 		self->current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
 		clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_RESULT, ins);
 #ifdef __x86_64__
@@ -6306,12 +6313,20 @@ static uint8_t analyze_syscall_instruction(struct program_state *analysis, struc
 				if (analysis->loader.pid) {
 					set_register(&self->current_state.registers[REGISTER_SYSCALL_RESULT], analysis->loader.pid);
 				}
+				additional->used = false;
 				break;
 			case SYSCALL_RETURNS_NEVER:
 				// exit and exitgroup always exit the thread, rt_sigreturn always perform a non-local jump
 				*effects |= EFFECT_EXITS;
 				LOG("completing from exit or rt_sigreturn syscall", temp_str(copy_address_description(&analysis->loader, self->entry)));
+				additional->used = false;
 				return SYSCALL_ANALYSIS_UPDATE_AND_RETURN;
+			case SYSCALL_RETURNS_ERROR:
+				self->current_state.registers[REGISTER_SYSCALL_RESULT].max = 0;
+				break;
+			case SYSCALL_RETURNS_ALWAYS_VALID:
+				additional->used = false;
+				break;
 		}
 	} else if (caller->description != NULL && fs_strcmp(caller->description, ".data.rel.ro") == 0 && binary_has_flags(analysis->loader.main, BINARY_IS_GOLANG)) {
 		vary_effects_by_registers(&analysis->search, &analysis->loader, self, syscall_argument_abi_used_registers_for_argc[6], syscall_argument_abi_used_registers_for_argc[0], syscall_argument_abi_used_registers_for_argc[0], 0);
@@ -6780,8 +6795,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 						break;
 					}
-					case 0x05: // syscall
-						switch (analyze_syscall_instruction(analysis, &self, caller, ins, required_effects, &effects)) {
+					case 0x05: { // syscall
+						struct additional_result additional;
+						switch (analyze_syscall_instruction(analysis, &self, &additional, caller, ins, required_effects, &effects)) {
 							case SYSCALL_ANALYSIS_CONTINUE:
 								break;
 							case SYSCALL_ANALYSIS_UPDATE_AND_RETURN:
@@ -6790,7 +6806,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
 								goto update_and_return;
 						}
+						CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_SYSCALL_RESULT);
 						break;
+					}
 					case 0x0b: // ud2
 						effects |= EFFECT_EXITS;
 						LOG("completing from ud2", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -12932,8 +12950,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_SUQADD:
 				perform_unknown_op(&analysis->loader, &self.current_state, ins, &decoded);
 				break;
-			case ARM64_SVC:
-				switch (analyze_syscall_instruction(analysis, &self, caller, ins, required_effects, &effects)) {
+			case ARM64_SVC: {
+				struct additional_result additional;
+				switch (analyze_syscall_instruction(analysis, &self, &additional, caller, ins, required_effects, &effects)) {
 					case SYSCALL_ANALYSIS_CONTINUE:
 						break;
 					case SYSCALL_ANALYSIS_UPDATE_AND_RETURN:
@@ -12942,7 +12961,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						effects = (effects | EFFECT_EXITS) & ~EFFECT_RETURNS;
 						goto update_and_return;
 				}
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(REGISTER_SYSCALL_RESULT);
 				break;
+			}
 			case ARM64_SWP:
 			case ARM64_SWPA:
 			case ARM64_SWPAL:
