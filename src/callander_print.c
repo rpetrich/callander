@@ -205,6 +205,9 @@ char *copy_register_state_description(const struct loader_context *context, stru
 		if (reg.value == 0x7fffffff) {
 			return strdup("INT_MAX");
 		}
+		if (reg.value == 0x7fffffffffffffff) {
+			return strdup("LONG_MAX");
+		}
 		if ((uintptr_t)reg.value < 4096) {
 			char *buf = malloc(5);
 			fs_utoa(reg.value, buf);
@@ -217,6 +220,9 @@ char *copy_register_state_description(const struct loader_context *context, stru
 			return strdup("non-NULL");
 		}
 		if (reg.value == 0) {
+			if (reg.max == 0x7fffffffffffffff) {
+				return strdup("0-LONG_MAX");
+			}
 			if (reg.max == 0xffffffff) {
 				return strdup("any u32");
 			}
