@@ -36,7 +36,7 @@ static intptr_t my_sendto(int fd, const char *buf, size_t bufsz, int flags, cons
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
 __attribute__((noinline, visibility("hidden")))
-int main(int argc, char* argv[], char* envp[])
+int main(__attribute__((unused)) int argc, char* argv[], __attribute__((unused)) char* envp[])
 {
 	struct resolver_config_cache cache = { 0 };
 	for (int i = 1; argv[i] != NULL; i++) {

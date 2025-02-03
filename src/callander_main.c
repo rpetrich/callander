@@ -1334,7 +1334,7 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 #pragma GCC push_options
 #pragma GCC optimize ("-fomit-frame-pointer")
 __attribute__((noinline, visibility("hidden")))
-int main(int argc, char* argv[], char* envp[])
+int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 {
 	// Find PATH and LD_PRELOAD
 	int envp_count = 0;

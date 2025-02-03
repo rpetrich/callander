@@ -1074,7 +1074,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 }
 
 __attribute__((noinline, visibility("hidden")))
-int main(int argc, char* argv[], char* envp[])
+int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 {
 	const void *thread_ptr;
 	set_thread_pointer(&thread_ptr);
