@@ -93,14 +93,17 @@ ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, 13) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
 readlinkat(AT_FDCWD, ld-musl-aarch64.so.1+0x9cf7e, any, 512) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
-newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
-newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
+newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
+newfstatat(AT_FDCWD, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
+newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
+newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 capget(any, any) @ ld-musl-aarch64.so.1+0x24144(capget+12)
 capset(any, any) @ ld-musl-aarch64.so.1+0x24128(capset+12)
 capset(any, any) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
-exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48040(_Fork+128)

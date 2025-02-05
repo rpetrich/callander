@@ -83,11 +83,11 @@ wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, WUNTRACED, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 wait4(any, any, WUNTRACED, 0) @ ld-musl-x86_64.so.1+0x5e990
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x20adf(do_setgroups*+81)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x20adf(do_setgroups*+81)
 kill(any, 0x0) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
 kill(any, SIGCONT-SIGSTOP) @ ld-musl-x86_64.so.1+0x4d701(kill+15)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x627ed(do_setxid*+84)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x627ed(do_setxid*+84)
 uname(any) @ ld-musl-x86_64.so.1+0x39680(uname+9)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_SETFD, any u32) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)

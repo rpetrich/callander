@@ -65,7 +65,7 @@ fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 wait4(-1, 0, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(-1, 0, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, SIGSTOP) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x205a0(signalfd+68)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x205b8(signalfd+92)

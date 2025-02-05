@@ -53,7 +53,8 @@ ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x607bc
 ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 readlinkat(AT_FDCWD, any, any, 4095) @ ld-musl-aarch64.so.1+0x690cc(readlink+40)
 timerfd_settime(any, 0-TFD_TIMER_ABSTIME, any, 0) @ ld-musl-aarch64.so.1+0x2540c(timerfd_settime+20)
-exit(any) @ ld-musl-aarch64.so.1+0x6075c
+exit(0) @ ld-musl-aarch64.so.1+0x6075c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(any) @ ld-musl-aarch64.so.1+0x60794
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit(0) @ ld-musl-aarch64.so.1+0x623b8(start*+104)

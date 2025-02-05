@@ -5,7 +5,7 @@ fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFD, any) @ ld-musl-aarch64.so.1+0x50
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x50854(fstatat64+108)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x50db8(fdopen+176)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x5257c(fopen64+148)
-fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFD, any) @ ld-musl-aarch64.so.1+0x64600(fchown+96)
+fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x64600(fchown+96)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x50e34(fdopen+300)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51464(__stdout_write*+56)
 ioctl(STDIN_FILENO, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x6494c(isatty+24)
@@ -48,7 +48,8 @@ fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 fsync(any) @ ld-musl-aarch64.so.1+0x5d210
 fsync(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)

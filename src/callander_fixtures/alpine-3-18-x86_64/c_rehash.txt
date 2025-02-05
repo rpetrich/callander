@@ -56,9 +56,9 @@ access(non-NULL, X_OK|W_OK|R_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
 select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 select(any, any, any, 0, any) @ ld-musl-x86_64.so.1+0x57f61
 shmget(114, 1, 0) @ ld-musl-x86_64.so.1+0x1e220(shmget+26)
-shmget(114, 1, 044) @ ld-musl-x86_64.so.1+0x1e220(shmget+26)
+shmget(114, 1, 0444) @ ld-musl-x86_64.so.1+0x1e220(shmget+26)
 shmget(114, -1, 0) @ ld-musl-x86_64.so.1+0x1e220(shmget+26)
-shmget(114, -1, 044) @ ld-musl-x86_64.so.1+0x1e220(shmget+26)
+shmget(114, -1, 0444) @ ld-musl-x86_64.so.1+0x1e220(shmget+26)
 shmat(any, 0, SHM_NORESERVE) @ ld-musl-x86_64.so.1+0x1e1d2(shmat+11)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 nanosleep(any, any) @ ld-musl-x86_64.so.1+0x57f61

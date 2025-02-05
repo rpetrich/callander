@@ -70,7 +70,7 @@ clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc1859
 clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc187f
 clock_nanosleep(CLOCK_MONOTONIC, 0, any, any) @ /usr/sbin/ldconfig.real+0xc18d2
 exit_group(any u8) @ /usr/sbin/ldconfig.real+0x6c034
-tgkill(any, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x208c7
+tgkill(0-LONG_MAX, any u32, SIGABRT) @ /usr/sbin/ldconfig.real+0x208c7
 openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x73199
 openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x73199
 openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x73199

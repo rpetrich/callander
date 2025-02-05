@@ -1,5 +1,5 @@
 callander: permitted syscalls: dup(any) @ ld-musl-aarch64.so.1+0x68678(dup+16)
-fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x5295c(fstatat+88)
+fcntl(STDIN_FILENO-0x7fffffff, F_GETFD, any) @ ld-musl-aarch64.so.1+0x5295c(fstatat+88)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x53594(__stdout_write*+56)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9ee10, O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x1ffe4(__init_libc*+424)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x60864
@@ -21,11 +21,12 @@ pread64(any, any, 4, 0x8080) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pread64(any, any, 8, 0x8000) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 pread64(any, any, 8, 0x8050) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x1ff94(__init_libc*+344)
-newfstatat(any, ld-musl-aarch64.so.1+0x9f3f0, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52974(fstatat+112)
+newfstatat(STDIN_FILENO-0x7fffffff, ld-musl-aarch64.so.1+0x9f3f0, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52974(fstatat+112)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x529ac(fstatat+168)
-newfstatat(any, ld-musl-aarch64.so.1+0x9f3f0, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x529c8(fstatat+196)
-fstat(any, any) @ ld-musl-aarch64.so.1+0x52940(fstatat+60)
-exit(any) @ ld-musl-aarch64.so.1+0x60804
+newfstatat(0x80000000--1 as u32, ld-musl-aarch64.so.1+0x9f3f0, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x529c8(fstatat+196)
+fstat(STDIN_FILENO-0x7fffffff, any) @ ld-musl-aarch64.so.1+0x52940(fstatat+60)
+exit(0) @ ld-musl-aarch64.so.1+0x60804
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x60804
 exit(0) @ ld-musl-aarch64.so.1+0x623bc(pthread_exit+416)
 exit_group(any) @ ld-musl-aarch64.so.1+0x206d8(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)

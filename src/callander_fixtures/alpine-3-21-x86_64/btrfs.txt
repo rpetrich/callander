@@ -58,7 +58,7 @@ socket(AF_INET, SOCK_DGRAM, 0) @ ld-musl-x86_64.so.1+0x5a2fb(socket+32)
 socket(AF_INET, SOCK_DGRAM, 0) @ ld-musl-x86_64.so.1+0x5a32a(socket+79)
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, ld-musl-x86_64.so.1+0xa4f90(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x68308
 fork() @ ld-musl-x86_64.so.1+0x5b318(_Fork+34)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x6a6b2(do_setxid*+84)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x6a6b2(do_setxid*+84)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_SETPIPE_SZ, 0x24000) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)

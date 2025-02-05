@@ -59,7 +59,7 @@ nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x583bc
 getpid() @ ld-musl-x86_64.so.1+0x5b364(getpid+5)
 getpid() @ ld-musl-x86_64.so.1+0x5b7fb(do_setxid*+54)
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)

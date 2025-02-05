@@ -15,12 +15,10 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ libc.so.6+0x1119fd(m
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x112299(__mprotect+9)
 munmap(any, any) @ libc.so.6+0x1123c9(__munmap+9)
 brk(any) @ libc.so.6+0x10a069(brk+9)
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3ea88(__libc_sigaction+216)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x268b5(abort+149)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1ab4d0(sigall_set), any, 8) @ libc.so.6+0x907e2(__pthread_kill_implementation+82)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x9082e(__pthread_kill_implementation+158)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x95a16(pthread_sigmask+70)
-rt_sigreturn(any) @ libc.so.6+0x3e9a7
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x1097bc(tcgetattr+44)
 ioctl(any u32, TW_OP_NOP, any) @ libc.so.6+0x11146b(ioctl+59)
 ioctl(any u32, IOC_PR_CLEAR, any) @ libc.so.6+0x11146b(ioctl+59)

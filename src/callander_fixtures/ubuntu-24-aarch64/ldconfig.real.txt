@@ -31,7 +31,7 @@ read(any, any, any) @ /usr/sbin/ldconfig.real+0x32620
 write(STDERR_FILENO, /usr/sbin/ldconfig.real+0x8ce48, 45) @ /usr/sbin/ldconfig.real+0xf770
 write(any, any, any) @ /usr/sbin/ldconfig.real+0x32198
 write(any, any, any) @ /usr/sbin/ldconfig.real+0x321dc
-write(any, any, NULL-0x7fffffffffffffff) @ /usr/sbin/ldconfig.real+0x32670
+write(any, any, 0-LONG_MAX) @ /usr/sbin/ldconfig.real+0x32670
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x34580
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x345c0
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x672c0

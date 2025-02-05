@@ -64,6 +64,7 @@ setsockopt(any, SOL_IP-SOL_SOCKET, SO_RCVBUF, any, 4) @ ld-musl-x86_64.so.1+0x5a
 getsockopt(any, SOL_SOCKET, SO_RCVBUF, any, any) @ ld-musl-x86_64.so.1+0x58a84(getsockopt+24)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x68308
 fork() @ ld-musl-x86_64.so.1+0x5b318(_Fork+34)
+exit(any u32) @ ld-musl-x86_64.so.1+0x6831a
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x68345
 kill(any, SIGHUP) @ ld-musl-x86_64.so.1+0x5dcda(kill+15)
@@ -90,10 +91,10 @@ unlink(any) @ ld-musl-x86_64.so.1+0x6a905(unlink+9)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x689aa(clock_gettime+73)
 getuid() @ ld-musl-x86_64.so.1+0x3b2a1(child*+385)
 getgid() @ ld-musl-x86_64.so.1+0x3b288(child*+360)
-setuid(any) @ ld-musl-x86_64.so.1+0x3b2ab(child*+395)
-setuid(any) @ ld-musl-x86_64.so.1+0x6a67d(do_setxid*+31)
-setgid(any) @ ld-musl-x86_64.so.1+0x3b292(child*+370)
-setgid(any) @ ld-musl-x86_64.so.1+0x6a67d(do_setxid*+31)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x3b2ab(child*+395)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x6a67d(do_setxid*+31)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x3b292(child*+370)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x6a67d(do_setxid*+31)
 setpgid(0, any) @ ld-musl-x86_64.so.1+0x3b26e(child*+334)
 setsid() @ ld-musl-x86_64.so.1+0x3b252(child*+306)
 setsid() @ ld-musl-x86_64.so.1+0x6a63f(setsid+9)

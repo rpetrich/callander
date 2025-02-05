@@ -1,5 +1,4 @@
-callander: permitted syscalls: setxattr(any, libacl.so.1+0x58e4, non-NULL, any, 0) @ ld-musl-aarch64.so.1+0x250f4(setxattr+16)
-setxattr(any, libacl.so.1+0x5913, non-NULL, any, 0) @ ld-musl-aarch64.so.1+0x250f4(setxattr+16)
+callander: permitted syscalls: setxattr(any, libacl.so.1+0x5913, non-NULL, any, 0) @ ld-musl-aarch64.so.1+0x250f4(setxattr+16)
 lsetxattr(any, any, any, any, 0) @ ld-musl-aarch64.so.1+0x25114(lsetxattr+16)
 fsetxattr(any, any, any, any, 0) @ ld-musl-aarch64.so.1+0x25138(fsetxattr+20)
 getxattr(any, any, any, any) @ ld-musl-aarch64.so.1+0x25098(getxattr+4)
@@ -35,7 +34,7 @@ fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x5476c(fopen+116)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x5517c(freopen+244)
 fcntl(any, F_SETFL, NULL-0xfffffffffff7ff3f) @ ld-musl-aarch64.so.1+0x5519c(freopen+276)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x686d8(dup2+80)
-fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x68978(fchdir+52)
+fcntl(any, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x68978(fchdir+52)
 fcntl(any, F_GETFD, any u32) @ ld-musl-aarch64.so.1+0x68a00(fchown+68)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x68fb0(pipe2+176)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x68fb8(pipe2+184)
@@ -145,7 +144,8 @@ fsync(any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 fdatasync(any) @ ld-musl-aarch64.so.1+0x60864
 fdatasync(any) @ ld-musl-aarch64.so.1+0x614f8(__syscall_cp_c*+200)
 utimensat(any, any, any, any) @ ld-musl-aarch64.so.1+0x52dc0(utimensat+48)
-exit(any) @ ld-musl-aarch64.so.1+0x60804
+exit(0) @ ld-musl-aarch64.so.1+0x60804
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x60804
 exit(any) @ ld-musl-aarch64.so.1+0x6083c
 exit(0) @ ld-musl-aarch64.so.1+0x623bc(pthread_exit+416)
 exit(0) @ ld-musl-aarch64.so.1+0x62460(start*+104)
@@ -189,9 +189,9 @@ sched_setscheduler(any, any, any) @ ld-musl-aarch64.so.1+0x62700(pthread_create+
 sched_getaffinity(0, 128, any) @ ld-musl-aarch64.so.1+0x1be54(sysconf+432)
 sched_getaffinity(0, 128, any) @ ld-musl-aarch64.so.1+0x50d00(sched_getaffinity+16)
 restart_syscall()
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x24ca8(do_setgroups*+92)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x24ca8(do_setgroups*+92)
 kill(any, any) @ ld-musl-aarch64.so.1+0x51bd0(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x69334(do_setxid*+92)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x69334(do_setxid*+92)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20740(abort+84)
 tkill(any, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x247a4(membarrier+232)
 tkill(any, any) @ ld-musl-aarch64.so.1+0x51d1c(raise+44)
@@ -215,10 +215,10 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x6424c(pthread_si
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51b14
 setpriority(0, 0, any) @ ld-musl-aarch64.so.1+0x3d408(setpriority+24)
 getpriority(0, 0) @ ld-musl-aarch64.so.1+0x3c158(getpriority+20)
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x68740(checker*+24)
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x692f8(do_setxid*+32)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x687a0(checker*+120)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x692f8(do_setxid*+32)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x68740(checker*+24)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x692f8(do_setxid*+32)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x687a0(checker*+120)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x692f8(do_setxid*+32)
 setpgid(0, 0) @ ld-musl-aarch64.so.1+0x69234(setpgid+20)
 getgroups(any, any) @ ld-musl-aarch64.so.1+0x68be4(getgroups+16)
 setgroups(any, any) @ ld-musl-aarch64.so.1+0x24c6c(do_setgroups*+32)
@@ -297,7 +297,7 @@ munmap(any, any) @ ld-musl-aarch64.so.1+0x3e250(munmap+36)
 munmap(any, any) @ ld-musl-aarch64.so.1+0x607fc
 mremap(any, NULL-0xfffffffffffff000, NULL-0x7ffffffffffffffe, MREMAP_MAYMOVE, 0) @ ld-musl-aarch64.so.1+0x3e160(mremap+48)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x482f8(_Fork+48)
-clone(0, any, 512, any, any) @ ld-musl-aarch64.so.1+0x60824
+clone(0, any, any, any, any) @ ld-musl-aarch64.so.1+0x60824
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, any, ld-musl-aarch64.so.1+0xc2e80(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x60824
 mmap(0, NULL-0x7ffffffffffffffe, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e070(mmap+64)
 mmap(0, NULL-0x7ffffffffffffffe, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-musl-aarch64.so.1+0x3e070(mmap+64)

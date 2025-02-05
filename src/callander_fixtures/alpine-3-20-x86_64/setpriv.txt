@@ -56,8 +56,8 @@ connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5b6
 connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5e990
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x20adf(do_setgroups*+81)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x627ed(do_setxid*+84)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x20adf(do_setgroups*+81)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x627ed(do_setxid*+84)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d089(open+127)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41453(socket+116)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x4146c(socket+141)

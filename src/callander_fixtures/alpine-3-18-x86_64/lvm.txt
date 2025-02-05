@@ -84,7 +84,7 @@ wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x1f80a(wait4+15)
 wait4(-1, 0, WNOHANG|WUNTRACED, 0) @ ld-musl-x86_64.so.1+0x1f80a(wait4+15)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x57f61
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b3d7(do_setxid*+69)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x5b3d7(do_setxid*+69)
 uname(any) @ ld-musl-x86_64.so.1+0x37c84(uname+6)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)

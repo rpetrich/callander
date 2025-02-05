@@ -33,6 +33,7 @@ ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-aarch64-static+0x3fbebb
 pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-aarch64-static+0x3f5bd5
 pread64(any u32, any, any, any) @ /usr/bin/qemu-aarch64-static+0x3f5c13
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-aarch64-static+0x42b8ac
+writev(STDERR_FILENO, any, any) @ /usr/bin/qemu-aarch64-static+0x3b7e5f
 writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-aarch64-static+0x4058f9
 writev(any u32, any, 0) @ /usr/bin/qemu-aarch64-static+0x4058f9
 access(any, F_OK) @ /usr/bin/qemu-aarch64-static+0x3f7dd9
@@ -88,6 +89,7 @@ sched_getscheduler(any u32) @ /usr/bin/qemu-aarch64-static+0x3f6559
 sched_get_priority_max(1) @ /usr/bin/qemu-aarch64-static+0x3f6589
 sched_get_priority_min(1) @ /usr/bin/qemu-aarch64-static+0x3f65b9
 prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-aarch64-static+0x3fe54c
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, NULL-0xfffffffffffffffe, /usr/bin/qemu-aarch64-static+0x472471) @ /usr/bin/qemu-aarch64-static+0x3fe67d
 prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-aarch64-static+0x4726f5) @ /usr/bin/qemu-aarch64-static+0x3fe67d
 prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-aarch64-static+0x4726c7) @ /usr/bin/qemu-aarch64-static+0x3fe67d
 gettid() @ /usr/bin/qemu-aarch64-static+0x3c0f15

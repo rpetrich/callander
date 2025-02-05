@@ -94,13 +94,16 @@ ppoll(any, NULL-0x1fffffffffffffff, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, NULL-0x1fffffffffffffff, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
-newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 sync() @ ld-musl-aarch64.so.1+0x64fbc(sync+4)
 fsync(any) @ ld-musl-aarch64.so.1+0x5d210
 fsync(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(any) @ ld-musl-aarch64.so.1+0x5d1e8
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
@@ -138,7 +141,7 @@ sched_setscheduler(any, any, any) @ ld-musl-aarch64.so.1+0x5edf4(pthread_create+
 sched_yield() @ ld-musl-aarch64.so.1+0x4efc0(sched_yield+12)
 restart_syscall()
 kill(any, any) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x64ef8(do_setxid*+76)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x64ef8(do_setxid*+76)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x24500(membarrier+304)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x4fc9c(raise+44)
@@ -211,10 +214,12 @@ getsockopt(any, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0
 getsockopt(any, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, any) @ ld-musl-aarch64.so.1+0x41d24(getsockopt+28)
 getsockopt(any, SOL_IPV6, IPV6_MTU, any, any) @ ld-musl-aarch64.so.1+0x41d24(getsockopt+28)
 shutdown(STDIN_FILENO-0xfffffffffffffffe, SHUT_RDWR) @ ld-musl-aarch64.so.1+0x45368(shutdown+36)
-sendmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5d210
-sendmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-recvmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5d210
-recvmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5d210
+sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5d210
+sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5d210
+recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 brk(0) @ ld-musl-aarch64.so.1+0x2b5b4(__malloc_alloc_meta*+296)
 brk(any) @ ld-musl-aarch64.so.1+0x2b5d4(__malloc_alloc_meta*+328)
 brk(any) @ ld-musl-aarch64.so.1+0x2b644(__malloc_alloc_meta*+440)

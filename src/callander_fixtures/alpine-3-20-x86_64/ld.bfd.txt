@@ -64,6 +64,7 @@ msync(any, any, MS_ASYNC) @ ld-musl-x86_64.so.1+0x5e990
 dup(any) @ ld-musl-x86_64.so.1+0x44256(child*+454)
 dup2(any, any) @ ld-musl-x86_64.so.1+0x4433c(child*+684)
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
+exit(any u32) @ ld-musl-x86_64.so.1+0x5e965
 wait4(any, any, 0, any) @ ld-musl-x86_64.so.1+0x20ec9(wait4+18)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
@@ -97,10 +98,10 @@ getuid() @ ld-musl-x86_64.so.1+0x44204(child*+372)
 getuid() @ ld-musl-x86_64.so.1+0x622f1(getuid+5)
 getgid() @ ld-musl-x86_64.so.1+0x441eb(child*+347)
 getgid() @ ld-musl-x86_64.so.1+0x621c8(getgid+5)
-setuid(any) @ ld-musl-x86_64.so.1+0x4420e(child*+382)
-setuid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
-setgid(any) @ ld-musl-x86_64.so.1+0x441f5(child*+357)
-setgid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x4420e(child*+382)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x441f5(child*+357)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
 setpgid(0, any) @ ld-musl-x86_64.so.1+0x441d6(child*+326)
 setsid() @ ld-musl-x86_64.so.1+0x441ba(child*+298)
 tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x1cc74(abort+97)

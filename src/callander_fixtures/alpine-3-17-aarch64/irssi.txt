@@ -77,7 +77,8 @@ ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, any u32, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
-newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
+newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
+newfstatat(AT_FDCWD, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
 newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
@@ -85,7 +86,8 @@ fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x5d210
 fsync(STDIN_FILENO-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(any) @ ld-musl-aarch64.so.1+0x5d1e8
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
@@ -118,7 +120,7 @@ sched_setscheduler(any, any, any) @ ld-musl-aarch64.so.1+0x5edf4(pthread_create+
 sched_yield() @ ld-musl-aarch64.so.1+0x4efc0(sched_yield+12)
 restart_syscall()
 kill(any, 0x0-0xfffffffffffffffe) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x64ef8(do_setxid*+76)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x64ef8(do_setxid*+76)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x24500(membarrier+304)
 tkill(any, SIGTRAP-SIGABRT) @ ld-musl-aarch64.so.1+0x4fc9c(raise+44)

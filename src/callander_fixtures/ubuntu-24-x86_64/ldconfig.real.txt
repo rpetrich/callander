@@ -16,11 +16,9 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ /usr/sbin/ldconfig.r
 mprotect(any, any, PROT_READ|PROT_WRITE) @ /usr/sbin/ldconfig.real+0x51259
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x51289
 brk(any) @ /usr/sbin/ldconfig.real+0x501c9
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real+0x70328
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x1596
 rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig.real+0xcfec8, any, 8) @ /usr/sbin/ldconfig.real+0x237a2
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x237ee
-rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x70247
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0x8b38c
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/sbin/ldconfig.real+0x8b32c
 writev(any u32, any, any) @ /usr/sbin/ldconfig.real+0x5c7a7

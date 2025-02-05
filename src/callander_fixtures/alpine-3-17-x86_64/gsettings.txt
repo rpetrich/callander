@@ -71,7 +71,7 @@ socket(AF_UNIX, SOCK_DGRAM, 0) @ ld-musl-x86_64.so.1+0x3f3ca(socket+75)
 sendmsg(STDIN_FILENO, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 sendmsg(STDIN_FILENO, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x583bc
 fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_GETFL-F_SETFL, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d33a(open+126)

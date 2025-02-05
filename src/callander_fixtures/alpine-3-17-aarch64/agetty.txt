@@ -9,7 +9,7 @@ fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x50854(fstatat64+108)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x50db8(fdopen+176)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x50f90(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x5257c(fopen64+148)
-fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x64600(fchown+96)
+fcntl(any, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x64600(fchown+96)
 inotify_init1(IN_NONBLOCK|IN_CLOEXEC) @ ld-musl-aarch64.so.1+0x2433c(inotify_init1+16)
 inotify_add_watch(STDIN_FILENO-0x7fffffff, /sbin/agetty+0xc590, IN_MODIFY|IN_ATTRIB) @ ld-musl-aarch64.so.1+0x2436c(inotify_add_watch+20)
 ioctl(STDIN_FILENO, KDGKBMODE, any) @ ld-musl-aarch64.so.1+0x3cb94(ioctl+52)
@@ -64,7 +64,9 @@ close(any) @ ld-musl-aarch64.so.1+0x6132c(__map_file*+168)
 vhangup() @ ld-musl-aarch64.so.1+0x24c2c(vhangup+12)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x64a28(lseek64+12)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
+read(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5d210
 read(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5d210
+read(STDIN_FILENO-0xfffffffffffffffe, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 read(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5d210
 write(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -83,7 +85,8 @@ newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 utimensat(any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x50ce8(utimensat+52)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)

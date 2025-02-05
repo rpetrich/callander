@@ -94,12 +94,15 @@ ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dc8c
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x65808(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512a8(fstatat64+136)
-newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
+newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
+newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 sync() @ ld-musl-aarch64.so.1+0x65afc(sync+4)
 fsync(any) @ ld-musl-aarch64.so.1+0x5dc8c
 fsync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
@@ -138,7 +141,7 @@ sched_setscheduler(any, any, any) @ ld-musl-aarch64.so.1+0x5f8a8(pthread_create+
 sched_yield() @ ld-musl-aarch64.so.1+0x4f9e4(sched_yield+12)
 restart_syscall()
 kill(any, any) @ ld-musl-aarch64.so.1+0x50590(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x65a38(do_setxid*+76)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x65a38(do_setxid*+76)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20d1c(abort+84)
 tkill(any, SIGSYNCCALL) @ ld-musl-aarch64.so.1+0x24604(membarrier+304)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x506d8(raise+44)
@@ -210,9 +213,11 @@ getsockopt(any, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ ld-musl-aarch64.so.1+0
 getsockopt(any, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, any) @ ld-musl-aarch64.so.1+0x41ec0(getsockopt+28)
 getsockopt(any, SOL_IPV6, IPV6_MTU, any, any) @ ld-musl-aarch64.so.1+0x41ec0(getsockopt+28)
 shutdown(STDIN_FILENO-0xfffffffffffffffe, SHUT_RDWR) @ ld-musl-aarch64.so.1+0x45bf4(shutdown+36)
-sendmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5dc8c
+sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c
+sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5dc8c
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x5dc8c
-sendmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 recvmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
@@ -246,8 +251,8 @@ mmap(any, 0x1-0x7ffffffffffffffe, any, MAP_PRIVATE|MAP_FIXED, any, any) @ ld-mus
 mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl-aarch64.so.1+0x3e834(mprotect+56)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ ld-musl-aarch64.so.1+0x3e834(mprotect+56)
 mprotect(any, any, PROT_READ) @ ld-musl-aarch64.so.1+0x66cb8(reloc_all*+364)
-wait4(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x5dc8c
-wait4(any, any, any u16, any u16) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+wait4(0x1-0x7fffffff, any, 0, 0) @ ld-musl-aarch64.so.1+0x5dc8c
+wait4(0x1-0x7fffffff, any, 0, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 getrandom(any, non-NULL, any) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x5dc8c
 getrandom(any, non-NULL, 0) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)

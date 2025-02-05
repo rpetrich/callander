@@ -31,7 +31,7 @@ read(any, any, any) @ /usr/sbin/ldconfig.real+0x37b90
 read(any, any, any) @ /usr/sbin/ldconfig.real+0x388f8
 write(any, any, any) @ /usr/sbin/ldconfig.real+0x37c1c
 write(any, any, any) @ /usr/sbin/ldconfig.real+0x37c60
-write(any, any, NULL-0x7fffffffffffffff) @ /usr/sbin/ldconfig.real+0x38938
+write(any, any, 0-LONG_MAX) @ /usr/sbin/ldconfig.real+0x38938
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x38ad4
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x38b14
 writev(any, any, any) @ /usr/sbin/ldconfig.real+0x6cc48

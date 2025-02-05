@@ -36,7 +36,8 @@ fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 fsync(any) @ ld-musl-aarch64.so.1+0x5dc8c
 fsync(any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 utimensat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x51720(utimensat+52)
-exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)

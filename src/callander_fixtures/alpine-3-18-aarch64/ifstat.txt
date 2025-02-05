@@ -36,7 +36,8 @@ newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarc
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
 capset(any, any) @ ld-musl-aarch64.so.1+0x3dc88(syscall+172)
-exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48040(_Fork+128)

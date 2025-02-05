@@ -38,17 +38,16 @@ openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aar
 openat(any, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_PATH, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_PATH, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x31c09, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/htop+0x33538, any u32, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, /usr/bin/htop+0x33538, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33686, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33790, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33880, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x338c3, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x338cd, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x338d8, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/htop+0x338e5, any u32, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/htop+0x338e6, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, /usr/bin/htop+0x338e5-/usr/bin/htop+0x338e6, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33927, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, /usr/bin/htop+0x339ff, any u32, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, /usr/bin/htop+0x339ff, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33a40, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33d71, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, /usr/bin/htop+0x33d7c, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5d210
@@ -61,17 +60,16 @@ openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aar
 openat(any, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_PATH, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, any, O_RDONLY|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW|O_PATH, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x31c09, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, /usr/bin/htop+0x33538, any u32, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, /usr/bin/htop+0x33538, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33686, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33790, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33880, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x338c3, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x338cd, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x338d8, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, /usr/bin/htop+0x338e5, any u32, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, /usr/bin/htop+0x338e6, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, /usr/bin/htop+0x338e5-/usr/bin/htop+0x338e6, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33927, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, /usr/bin/htop+0x339ff, any u32, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, /usr/bin/htop+0x339ff, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33a40, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33d71, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, /usr/bin/htop+0x33d7c, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -119,7 +117,8 @@ newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarc
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(any) @ ld-musl-aarch64.so.1+0x5d1e8
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit(1) @ ld-musl-aarch64.so.1+0x64358(checker*+40)
@@ -184,10 +183,10 @@ rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ ld-musl-aarch64.so.1+0x605c
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
 setpriority(0, any u32, any) @ ld-musl-aarch64.so.1+0x3da54(setpriority+24)
 getpriority(0, any u32) @ ld-musl-aarch64.so.1+0x3c938(getpriority+20)
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x64348(checker*+24)
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x643a4(checker*+116)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x64348(checker*+24)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x643a4(checker*+116)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
 getpgid(0) @ ld-musl-aarch64.so.1+0x648e8(getpgrp+8)
 uname(any) @ ld-musl-aarch64.so.1+0x3e148(uname+12)
 getrlimit(0x64, any) @ ld-musl-aarch64.so.1+0x3ca00(getrlimit+112)

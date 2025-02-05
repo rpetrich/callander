@@ -41,7 +41,8 @@ newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarc
 newfstatat(any, ld-musl-aarch64.so.1+0x9c3ec, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x512dc(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x51270(fstatat64+80)
-exit(any) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0) @ ld-musl-aarch64.so.1+0x5dc2c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5dc2c
 exit(any) @ ld-musl-aarch64.so.1+0x5dc64
 exit(0) @ ld-musl-aarch64.so.1+0x5f384(pthread_exit+400)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
@@ -86,10 +87,10 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x508a4(__libc_sig
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x610e8(pthread_sigmask+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x610e8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x504d4
-setgid(any) @ ld-musl-aarch64.so.1+0x48a70(child*+476)
-setgid(any) @ ld-musl-aarch64.so.1+0x65a0c(do_setxid*+32)
-setuid(any) @ ld-musl-aarch64.so.1+0x48a88(child*+500)
-setuid(any) @ ld-musl-aarch64.so.1+0x65a0c(do_setxid*+32)
+setgid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x48a70(child*+476)
+setgid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x65a0c(do_setxid*+32)
+setuid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x48a88(child*+500)
+setuid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x65a0c(do_setxid*+32)
 setpgid(0, any) @ ld-musl-aarch64.so.1+0x48a54(child*+448)
 setsid() @ ld-musl-aarch64.so.1+0x48a08(child*+372)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)

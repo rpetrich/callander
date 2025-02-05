@@ -10,7 +10,8 @@ write(STDOUT_FILENO, any, non-NULL) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_
 readv(any, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)

@@ -26,7 +26,8 @@ newfstatat(AT_FDCWD, non-NULL, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52cfc(fstatat+168)
 newfstatat(AT_FDCWD, non-NULL, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 fstat(AT_FDCWD, any) @ ld-musl-aarch64.so.1+0x52c90(fstatat+60)
-exit(any) @ ld-musl-aarch64.so.1+0x6075c
+exit(0) @ ld-musl-aarch64.so.1+0x6075c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)

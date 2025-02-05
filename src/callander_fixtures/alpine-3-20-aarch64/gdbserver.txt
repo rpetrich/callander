@@ -29,10 +29,8 @@ openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f1d0, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, an
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f1e0, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, ld-musl-aarch64.so.1+0x9f268, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(any, any, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, any, O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, any, any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
 close(any) @ ld-musl-aarch64.so.1+0x1ff0c(opendir+72)
 close(any) @ ld-musl-aarch64.so.1+0x4214c(if_indextoname+84)
@@ -73,10 +71,11 @@ newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52cfc(fstatat+168)
 newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
-newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
+newfstatat(0x80000000--1 as u32, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x52c90(fstatat+60)
 personality(any) @ ld-musl-aarch64.so.1+0x24d94(personality+12)
-exit(any) @ ld-musl-aarch64.so.1+0x6075c
+exit(0) @ ld-musl-aarch64.so.1+0x6075c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit_group(NULL-0x1) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 exit_group(127) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)

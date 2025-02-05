@@ -32,7 +32,7 @@ fcntl(any, F_SETFL, any) @ ld-musl-aarch64.so.1+0x532ec(fdopen+376)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x53404(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x54b00(fopen+116)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x68684(dup2+80)
-fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x68924(fchdir+52)
+fcntl(any, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x68924(fchdir+52)
 fcntl(any, F_GETFD, any u32) @ ld-musl-aarch64.so.1+0x689ac(fchown+68)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x68f88(pipe2+180)
 fcntl(any, F_SETFD, 1) @ ld-musl-aarch64.so.1+0x68f90(pipe2+188)
@@ -162,7 +162,7 @@ newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52cfc(fstatat+168)
 newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
-newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
+newfstatat(0x80000000--1 as u32, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x52c90(fstatat+60)
 fsync(any) @ ld-musl-aarch64.so.1+0x607bc
@@ -172,7 +172,8 @@ capset(any, any) @ ld-musl-aarch64.so.1+0x24608(capset+12)
 capset(any, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 personality(NULL-0xfffffffe) @ ld-musl-aarch64.so.1+0x24d94(personality+12)
 personality(0x100000000-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x24d94(personality+12)
-exit(any) @ ld-musl-aarch64.so.1+0x6075c
+exit(0) @ ld-musl-aarch64.so.1+0x6075c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(any) @ ld-musl-aarch64.so.1+0x60794
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit(1) @ ld-musl-aarch64.so.1+0x686fc(checker*+40)
@@ -219,9 +220,9 @@ clock_getres(CLOCK_MONOTONIC, any) @ ld-musl-aarch64.so.1+0x66610(clock_getres+1
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 sched_yield() @ ld-musl-aarch64.so.1+0x51214(sched_yield+12)
 restart_syscall()
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x250dc(do_setgroups*+92)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x250dc(do_setgroups*+92)
 kill(any, any) @ ld-musl-aarch64.so.1+0x51f28(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x69324(do_setxid*+92)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x69324(do_setxid*+92)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20cb8(abort+84)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x52074(raise+44)
 tkill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x52074(raise+44)
@@ -237,12 +238,12 @@ rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x51eec(__restore_
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sigaction*+344)
 rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x686ec(checker*+24)
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x686ec(checker*+24)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
 setgid(any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 setgid(any) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x6874c(checker*+120)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x6874c(checker*+120)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
 setuid(any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 setuid(any) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
 setsid() @ ld-musl-aarch64.so.1+0x692a4(setsid+12)
@@ -304,10 +305,10 @@ sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x607bc
 sendto(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+recvfrom(any, any, any u32, any u8, any u8, any u8) @ ld-musl-aarch64.so.1+0x607bc
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
-recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x607bc
+recvfrom(any, any, any u32, any u8, any u8, any u8) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 recvfrom(any, any, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 setsockopt(any, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, SO_SNDBUF-SO_RCVBUF, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
 setsockopt(any, SOL_SOCKET, SO_PASSCRED, any, 4) @ ld-musl-aarch64.so.1+0x460cc(setsockopt+32)
@@ -339,7 +340,7 @@ keyctl(1, 0, 0, 0, 0) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 clone(any u32, 0, any, any, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 clone(0-0xffffffff000000ff|CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_PTRACE|CLONE_VFORK|CLONE_PARENT|CLONE_THREAD|CLONE_NEWNS|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED|CLONE_UNTRACED|CLONE_CHILD_SETTID|CLONE_NEWCGROUP|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWNET|CLONE_IO, 0, 0, any, any) @ ld-musl-aarch64.so.1+0x3da40(syscall+76)
 clone(SIGCHLD, 0, any, any, any) @ ld-musl-aarch64.so.1+0x487c0(_Fork+48)
-clone(0, any, 256, any, any) @ ld-musl-aarch64.so.1+0x6077c
+clone(0, any, any, any, any) @ ld-musl-aarch64.so.1+0x6077c
 clone(SIGCHLD|CLONE_VM|CLONE_FILES|CLONE_VFORK, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6077c
 clone(SIGCHLD|CLONE_NEWUSER, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6077c
 clone(SIGCHLD|CLONE_NEWPID, any, 0, 0, 0) @ ld-musl-aarch64.so.1+0x6077c

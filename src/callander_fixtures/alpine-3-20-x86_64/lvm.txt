@@ -71,7 +71,7 @@ sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 fork() @ ld-musl-x86_64.so.1+0x43974(_Fork+37)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x627ed(do_setxid*+84)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x627ed(do_setxid*+84)
 uname(any) @ ld-musl-x86_64.so.1+0x39680(uname+9)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)

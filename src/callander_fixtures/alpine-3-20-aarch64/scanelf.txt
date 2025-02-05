@@ -103,9 +103,10 @@ newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52cc4(fstatat+
 newfstatat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x52cfc(fstatat+168)
 newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
-newfstatat(any, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
+newfstatat(0x80000000--1 as u32, ld-musl-aarch64.so.1+0x9f398, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x52d18(fstatat+196)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x52c90(fstatat+60)
-exit(any) @ ld-musl-aarch64.so.1+0x6075c
+exit(0) @ ld-musl-aarch64.so.1+0x6075c
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(any) @ ld-musl-aarch64.so.1+0x60794
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit(1) @ ld-musl-aarch64.so.1+0x686fc(checker*+40)
@@ -147,14 +148,14 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x52220(__libc_sig
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x641a8(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x51e6c
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x686ec(checker*+24)
-setregid(any, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
-setgid(any) @ ld-musl-aarch64.so.1+0x49104(child*+336)
-setgid(any) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x6874c(checker*+120)
-setreuid(any, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
-setuid(any) @ ld-musl-aarch64.so.1+0x4911c(child*+360)
-setuid(any) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x686ec(checker*+24)
+setregid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
+setgid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x49104(child*+336)
+setgid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x6874c(checker*+120)
+setreuid(0-LONG_MAX, -1) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
+setuid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x4911c(child*+360)
+setuid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x692e8(do_setxid*+32)
 setpgid(0, any) @ ld-musl-aarch64.so.1+0x490e4(child*+304)
 setsid() @ ld-musl-aarch64.so.1+0x490c4(child*+272)
 prctl(PR_SET_SECUREBITS, 47, 0, 0, 0) @ ld-musl-aarch64.so.1+0x24df0(prctl+48)

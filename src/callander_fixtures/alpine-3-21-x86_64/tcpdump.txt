@@ -80,7 +80,7 @@ setsockopt(any, SOL_TLS, TLS_TX-TLS_TX_ZEROCOPY_RO, any, any u32) @ ld-musl-x86_
 getsockopt(any, SOL_IP, IP_MTU, any, any) @ ld-musl-x86_64.so.1+0x58a84(getsockopt+24)
 getsockopt(any, SOL_SOCKET, SO_RCVTIMEO_OLD-SO_SNDTIMEO_OLD, any, any) @ ld-musl-x86_64.so.1+0x58a84(getsockopt+24)
 getsockopt(any, SOL_IPV6, IPV6_MTU, any, any) @ ld-musl-x86_64.so.1+0x58a84(getsockopt+24)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x6a6b2(do_setxid*+84)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x6a6b2(do_setxid*+84)
 fcntl(any, F_GETFL, 0) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41e0e(open+127)

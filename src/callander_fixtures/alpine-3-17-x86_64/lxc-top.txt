@@ -123,9 +123,9 @@ fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 exit(any u32) @ ld-musl-x86_64.so.1+0x58391
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x583bc
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x204aa(do_setgroups*+66)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x204aa(do_setgroups*+66)
 kill(any, any) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
-kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-x86_64.so.1+0x5b80a(do_setxid*+69)
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD_CLOEXEC, 2) @ ld-musl-x86_64.so.1+0x1d23a(fcntl+213)
 fcntl(0xffffffff80000000--1, F_DUPFD_CLOEXEC, 2) @ ld-musl-x86_64.so.1+0x1d23a(fcntl+213)
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x1d24a(fcntl+229)

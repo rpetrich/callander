@@ -16,7 +16,6 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ libc.so.6+0x12537d(m
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x125c19(mprotect+9)
 munmap(any, any) @ libc.so.6+0x125d49(munmap+9)
 brk(any) @ libc.so.6+0x11d779(brk+9)
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x45408(__libc_sigaction+216)
 rt_sigaction(SIGALRM, any, 0, 8) @ libc.so.6+0x45408(__libc_sigaction+216)
 rt_sigaction(SIGCHLD, any, any, 8) @ libc.so.6+0x45408(__libc_sigaction+216)
 rt_sigaction(SIGSETXID, any, 0, 8) @ libc.so.6+0x45408(__libc_sigaction+216)

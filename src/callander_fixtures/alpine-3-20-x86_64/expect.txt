@@ -121,6 +121,7 @@ clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, ld-musl-x86_64.so.1+0xa1f90(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x5e953
 fork() @ ld-musl-x86_64.so.1+0x43974(_Fork+37)
 vfork() @ ld-musl-x86_64.so.1+0x44c81
+exit(any u32) @ ld-musl-x86_64.so.1+0x5e965
 wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 uname(any) @ ld-musl-x86_64.so.1+0x39680(uname+9)
@@ -161,10 +162,10 @@ getrlimit(RLIMIT_CPU-0x3fff, any) @ ld-musl-x86_64.so.1+0x37feb(getrlimit+68)
 sysinfo(any) @ ld-musl-x86_64.so.1+0x20dcc(sysinfo+9)
 getuid() @ ld-musl-x86_64.so.1+0x44204(child*+372)
 getgid() @ ld-musl-x86_64.so.1+0x441eb(child*+347)
-setuid(any) @ ld-musl-x86_64.so.1+0x4420e(child*+382)
-setuid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
-setgid(any) @ ld-musl-x86_64.so.1+0x441f5(child*+357)
-setgid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x4420e(child*+382)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x441f5(child*+357)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
 geteuid() @ ld-musl-x86_64.so.1+0x621c0(geteuid+5)
 setpgid(0, any) @ ld-musl-x86_64.so.1+0x441d6(child*+326)
 setsid() @ ld-musl-x86_64.so.1+0x441ba(child*+298)

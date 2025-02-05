@@ -20,7 +20,6 @@ mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-x86-64.so.2+0x2435
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xf0cb9(mprotect+9)
 munmap(any, any) @ libc.so.6+0xf0de9(munmap+9)
 brk(any) @ libc.so.6+0xe8a19(brk+9)
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x19eb6(__libc_sigaction+214)
 rt_sigaction(SIGSETXID, any, 0, 8) @ libc.so.6+0x19eb6(__libc_sigaction+214)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x18f8(abort+149)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x70e1d(pthread_create+1645)

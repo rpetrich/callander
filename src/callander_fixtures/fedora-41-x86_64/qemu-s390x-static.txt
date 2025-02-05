@@ -33,6 +33,7 @@ ioctl(any u32, SIOCGIFINDEX, any) @ /usr/bin/qemu-s390x-static+0x229afb
 pread64(any u32, non-NULL, any, any) @ /usr/bin/qemu-s390x-static+0x223685
 pread64(any u32, any, any, any) @ /usr/bin/qemu-s390x-static+0x2236c3
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/bin/qemu-s390x-static+0x2595ec
+writev(STDERR_FILENO, any, any) @ /usr/bin/qemu-s390x-static+0x1e59df
 writev(STDIN_FILENO, any, any) @ /usr/bin/qemu-s390x-static+0x233639
 writev(any u32, any, 0) @ /usr/bin/qemu-s390x-static+0x233639
 access(any, F_OK) @ /usr/bin/qemu-s390x-static+0x225839
@@ -88,6 +89,7 @@ sched_getscheduler(any u32) @ /usr/bin/qemu-s390x-static+0x224019
 sched_get_priority_max(1) @ /usr/bin/qemu-s390x-static+0x224049
 sched_get_priority_min(1) @ /usr/bin/qemu-s390x-static+0x224079
 prctl(PR_SET_NAME, non-NULL, any, any, any) @ /usr/bin/qemu-s390x-static+0x22c26c
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, NULL-0xfffffffffffffffe, /usr/bin/qemu-s390x-static+0x295330) @ /usr/bin/qemu-s390x-static+0x22c39d
 prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/bin/qemu-s390x-static+0x2955b4) @ /usr/bin/qemu-s390x-static+0x22c39d
 prctl(PR_SET_VMA, 0, any, any, /usr/bin/qemu-s390x-static+0x295586) @ /usr/bin/qemu-s390x-static+0x22c39d
 gettid() @ /usr/bin/qemu-s390x-static+0x1eea95

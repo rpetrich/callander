@@ -16,11 +16,9 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ /usr/sbin/ldconfig+0
 mprotect(any, any, PROT_READ|PROT_WRITE) @ /usr/sbin/ldconfig+0x4d859
 munmap(any, any) @ /usr/sbin/ldconfig+0x4d889
 brk(any) @ /usr/sbin/ldconfig+0x4c989
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x68af6
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x1594
 rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xc21a8, any, 8) @ /usr/sbin/ldconfig+0x205ec
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig+0x20637
-rt_sigreturn(any) @ /usr/sbin/ldconfig+0x68a17
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x8458a
 ioctl(any u32, SIOCGIFINDEX, any) @ /usr/sbin/ldconfig+0xb20ab
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/sbin/ldconfig+0x8452c

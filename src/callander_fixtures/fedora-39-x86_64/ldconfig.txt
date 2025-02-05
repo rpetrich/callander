@@ -15,15 +15,11 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ /usr/sbin/ldconfig+0
 mprotect(any, any, PROT_READ|PROT_WRITE) @ /usr/sbin/ldconfig+0x4d669
 munmap(any, any) @ /usr/sbin/ldconfig+0x4d699
 brk(any) @ /usr/sbin/ldconfig+0x4c7b9
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x60ee8
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x1591
 rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xb9348, any, 8) @ /usr/sbin/ldconfig+0x208de
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig+0x20929
-rt_sigreturn(any) @ /usr/sbin/ldconfig+0x60e07
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x7af1c
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ /usr/sbin/ldconfig+0x7aebc
-writev(STDERR_FILENO, any, 1) @ /usr/sbin/ldconfig+0x4e322
-writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x4e359
 writev(STDIN_FILENO, any, any) @ /usr/sbin/ldconfig+0x8c411
 mremap(any, any, any, MREMAP_MAYMOVE, 0) @ /usr/sbin/ldconfig+0x4e444
 madvise(any, any, MADV_HUGEPAGE) @ /usr/sbin/ldconfig+0x4d579

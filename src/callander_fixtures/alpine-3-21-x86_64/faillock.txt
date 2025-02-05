@@ -47,7 +47,7 @@ sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x68345
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41e0e(open+127)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5a34f(socket+116)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x5a368(socket+141)
-fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x5e663(fchmod+39)
+fcntl(any, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x5e663(fchmod+39)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x5e878(fstatat+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5eeef(fdopen+133)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x604ef(fopen+120)

@@ -100,13 +100,16 @@ ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5d210
 ppoll(any, any, any, 0, 8) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readlinkat(AT_FDCWD, any, any, non-NULL) @ ld-musl-aarch64.so.1+0x64cc8(readlink+44)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
-newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 sync() @ ld-musl-aarch64.so.1+0x64fbc(sync+4)
 fsync(any) @ ld-musl-aarch64.so.1+0x5d210
 fsync(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
@@ -143,7 +146,7 @@ clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
 clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
 restart_syscall()
 kill(any, SIGTSTP) @ ld-musl-aarch64.so.1+0x4fb54(kill+20)
-kill(any, SIGKILL) @ ld-musl-aarch64.so.1+0x64ef8(do_setxid*+76)
+kill(0-LONG_MAX, SIGKILL) @ ld-musl-aarch64.so.1+0x64ef8(do_setxid*+76)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x20c34(abort+84)
 tkill(any, SIGABRT) @ ld-musl-aarch64.so.1+0x4fc9c(raise+44)
 tkill(any, SIGSETXID) @ ld-musl-aarch64.so.1+0x5dc34(cancel_handler*+124)

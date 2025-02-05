@@ -75,6 +75,7 @@ connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5e9
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5e990
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e953
+exit(any u32) @ ld-musl-x86_64.so.1+0x5e965
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x51ba6(pclose+35)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
@@ -111,10 +112,10 @@ getuid() @ ld-musl-x86_64.so.1+0x44204(child*+372)
 getuid() @ ld-musl-x86_64.so.1+0x622f1(getuid+5)
 getgid() @ ld-musl-x86_64.so.1+0x441eb(child*+347)
 getgid() @ ld-musl-x86_64.so.1+0x621c8(getgid+5)
-setuid(any) @ ld-musl-x86_64.so.1+0x4420e(child*+382)
-setuid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
-setgid(any) @ ld-musl-x86_64.so.1+0x441f5(child*+357)
-setgid(any) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x4420e(child*+382)
+setuid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x441f5(child*+357)
+setgid(0-LONG_MAX) @ ld-musl-x86_64.so.1+0x627b8(do_setxid*+31)
 geteuid() @ ld-musl-x86_64.so.1+0x621c0(geteuid+5)
 getegid() @ ld-musl-x86_64.so.1+0x621b8(getegid+5)
 setpgid(0, any) @ ld-musl-x86_64.so.1+0x441d6(child*+326)

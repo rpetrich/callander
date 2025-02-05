@@ -107,7 +107,8 @@ newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x508
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 utimensat(AT_FDCWD, any, any, 0) @ ld-musl-aarch64.so.1+0x50ce8(utimensat+52)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(any) @ ld-musl-aarch64.so.1+0x5d1e8
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
@@ -162,10 +163,10 @@ rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-aarch64.so.1+0x5ea90(pthread_cr
 rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-aarch64.so.1+0x605cc(pthread_sigmask+24)
 rt_sigreturn(any) @ ld-musl-aarch64.so.1+0x4fa98
-setgid(any) @ ld-musl-aarch64.so.1+0x48150(child*+476)
-setgid(any) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
-setuid(any) @ ld-musl-aarch64.so.1+0x48168(child*+500)
-setuid(any) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
+setgid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x48150(child*+476)
+setgid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
+setuid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x48168(child*+500)
+setuid(0-LONG_MAX) @ ld-musl-aarch64.so.1+0x64ecc(do_setxid*+32)
 setpgid(0, any) @ ld-musl-aarch64.so.1+0x48134(child*+448)
 setsid() @ ld-musl-aarch64.so.1+0x480e8(child*+372)
 setsid() @ ld-musl-aarch64.so.1+0x64e88(setsid+12)

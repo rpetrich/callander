@@ -34,24 +34,22 @@ close(any) @ ld-musl-aarch64.so.1+0x6132c(__map_file*+168)
 getdents64(any, any, 2048) @ ld-musl-aarch64.so.1+0x1ff70(readdir64+44)
 lseek(any, any, any) @ ld-musl-aarch64.so.1+0x64a28(lseek64+12)
 read(any, any, any) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
-read(any, any, 1) @ ld-musl-aarch64.so.1+0x5d210
-read(any, any, 512) @ ld-musl-aarch64.so.1+0x5d210
-read(any, /sbin/mkfs.fat+0x20504, any) @ ld-musl-aarch64.so.1+0x5d210
-read(any, any, 1) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-read(any, any, 512) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-read(any, /sbin/mkfs.fat+0x20504, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+read(any, any, NULL-0x4000) @ ld-musl-aarch64.so.1+0x5d210
+read(any, any, NULL-0x4000) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5d210
 write(any, any, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 readv(any, any, 2) @ ld-musl-aarch64.so.1+0x512b0(__stdio_read*+76)
 writev(any, any, any) @ ld-musl-aarch64.so.1+0x51388(__stdio_write*+76)
 ppoll(any, 3, any, 0, 8) @ ld-musl-aarch64.so.1+0x20520(__init_libc*+340)
 newfstatat(any, any, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x50870(fstatat64+136)
-newfstatat(any, any, any, 0-AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, any, any, 0) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
+newfstatat(any, ld-musl-aarch64.so.1+0x9b7d7, any, AT_EMPTY_PATH) @ ld-musl-aarch64.so.1+0x508a4(fstatat64+188)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x50838(fstatat64+80)
 fstat(any, any) @ ld-musl-aarch64.so.1+0x612d0(__map_file*+76)
 fsync(any) @ ld-musl-aarch64.so.1+0x5d210
 fsync(any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-exit(any) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0) @ ld-musl-aarch64.so.1+0x5d1b0
+exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x5d1b0
 exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(NULL-0x2) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
