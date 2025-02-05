@@ -14,7 +14,7 @@
 
 enum {
 #define SYSCALL_DEF(name, ...) LINUX_SYS_ ## name,
-#define SYSCALL_DEF_EMPTY() CONCAT(LINUX_SYS_UNUSED_, __LINE__),
+#define SYSCALL_DEF_EMPTY CONCAT(LINUX_SYS_UNUSED_, __LINE__),
 #include "syscall_defs.h"
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY

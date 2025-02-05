@@ -160,7 +160,7 @@ static inline char *strdup_fixed(const char *str, size_t size)
 
 #define SYSCALL_DEF_(_0, _1, _2, _3, _4, _5, _6, N, ...) N
 #define SYSCALL_DEF(name, attributes, ...) { #name, { SYSCALL_DEF_(0, ##__VA_ARGS__, 6, 5, 4, 3, 2, 1, 0) | ((attributes) & ~SYSCALL_ARGC_MASK), { __VA_ARGS__ } } },
-#define SYSCALL_DEF_EMPTY() {NULL, 6, {}},
+#define SYSCALL_DEF_EMPTY {NULL, 6, {}},
 struct syscall_decl const syscall_list[] = {
 #include "syscall_defs.h"
 };

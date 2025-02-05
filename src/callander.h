@@ -152,7 +152,7 @@ struct syscall_decl {
 };
 
 #define SYSCALL_DEF(...) 1+
-#define SYSCALL_DEF_EMPTY() 1+
+#define SYSCALL_DEF_EMPTY 1+
 enum {
 	SYSCALL_COUNT = 512,
 	SYSCALL_DEFINED_COUNT = 
