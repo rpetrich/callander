@@ -908,8 +908,7 @@ static void enumerate_unreachable_regions_in_binary(struct program_state *analys
 			if (section->sh_addr != 0) {
 				uint64_t flags = section->sh_flags;
 				if ((flags & (SHF_ALLOC|SHF_EXECINSTR)) == (SHF_ALLOC|SHF_EXECINSTR)) {
-					const char *name = &binary->sections.strings[section->sh_name];
-					LOG("poking section", name);
+					LOG("poking section", &binary->sections.strings[section->sh_name]);
 					enumerate_unreachable_regions_in_section(analysis, apply_base_address(&binary->info, section->sh_addr), section->sh_size, callback, callback_data);
 				}
 			}
