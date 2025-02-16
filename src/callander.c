@@ -14404,15 +14404,15 @@ int finish_loading_binary(struct program_state *analysis, struct loaded_binary *
 	// search for vtables that should go unsearched until they're referenced explicitly
 	static const struct { const char *name; size_t size; bool inner_call; } function_pointer_ignore_sources[] = {
 		// glibc
-		{"authdes_pk_create", sizeof(uintptr_t) * 5, false}, // authdes_ops
-		{"authunix_create", sizeof(uintptr_t) * 5, false}, // auth_unix_ops
-		{"svctcp_create", sizeof(uintptr_t) * 5, false}, // svctcp_rendezvous_op
-		{"svcunix_create", sizeof(uintptr_t) * 5, false}, // svcunix_rendezvous_op
-		{"svcudp_bufcreate", sizeof(uintptr_t) * 5, false}, // svcudp_op
-		{"svcunixfd_create", sizeof(uintptr_t) * 5, false}, // svcunix_op
-		{"svcfd_create", sizeof(uintptr_t) * 5, false}, // svctcp_op
-		{"clntudp_create", sizeof(uintptr_t) * 5, false}, // udp_ops
-		{"__libc_clntudp_bufcreate", sizeof(uintptr_t) * 5, false}, // udp_ops
+		{"authdes_pk_create", sizeof(uintptr_t) * 6, false}, // authdes_ops
+		{"authunix_create", sizeof(uintptr_t) * 6, false}, // auth_unix_ops
+		{"svctcp_create", sizeof(uintptr_t) * 6, false}, // svctcp_rendezvous_op
+		{"svcunix_create", sizeof(uintptr_t) * 6, false}, // svcunix_rendezvous_op
+		{"svcudp_bufcreate", sizeof(uintptr_t) * 6, false}, // svcudp_op
+		{"svcunixfd_create", sizeof(uintptr_t) * 6, false}, // svcunix_op
+		{"svcfd_create", sizeof(uintptr_t) * 6, false}, // svctcp_op
+		{"clntudp_create", sizeof(uintptr_t) * 6, false}, // udp_ops
+		{"__libc_clntudp_bufcreate", sizeof(uintptr_t) * 6, false}, // udp_ops
 		{"_authenticate", sizeof(uintptr_t) * 4, false}, // svcauthsw
 		{"clntraw_create", sizeof(uintptr_t) * 6, false}, // client_ops
 		{"_IO_cookie_init", sizeof(uintptr_t) * 22, false}, // _IO_cookie_jumps
