@@ -4159,6 +4159,7 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 			}
 			break;
 	}
+	clear_register(&result.state);
 	if (valid) {
 		struct loaded_binary *binary;
 		if (addr < 4096) {
