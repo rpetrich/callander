@@ -171,6 +171,5 @@ mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xcdc54
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xcdd44(__madvise+4)
 wait4(any, any, 0, 0) @ libc.so.6+0xa3bc0(wait4+48)
 wait4(any, any, any, 0) @ libc.so.6+0xa3c0c(wait4+124)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xc9514(getrlimit+20)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0xd2e24(sendmmsg+52)
 sendmmsg(any, any, any, any) @ libc.so.6+0xd2e68(sendmmsg+120)

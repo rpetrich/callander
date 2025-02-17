@@ -75,4 +75,3 @@ fadvise64(any, NULL-0xfffffffffffffffe, any, 2) @ libc.so.6+0xc8204(posix_fadvis
 fadvise64(any, any, any, 4) @ libc.so.6+0xc8204(posix_fadvise64+12)
 mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xcdc54(__mprotect+4)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xcdd44(__madvise+4)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xc9514(getrlimit+20)

@@ -253,7 +253,6 @@ mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-aarch64.so.1+0x2b3
 mprotect(any, any, any u32) @ libc.so.6+0xfbc08(__mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xfb008(madvise+8)
 madvise(any, any, MADV_HUGEPAGE-MADV_NOHUGEPAGE) @ libc.so.6+0xfb008(madvise+8)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xf6990(getrlimit+32)
 name_to_handle_at(any u32, libudev.so.1+0x43068, non-NULL, any, 0) @ libc.so.6+0x101788(name_to_handle_at+8)
 name_to_handle_at(any u32, libudev.so.1+0x44ff0, non-NULL, any, AT_EMPTY_PATH) @ libc.so.6+0x101788(name_to_handle_at+8)
 name_to_handle_at(AT_FDCWD, libudev.so.1+0x450b8, non-NULL, any, 0) @ libc.so.6+0x101788(name_to_handle_at+8)

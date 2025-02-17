@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/qemu-hexagon-static+0x346ea8-/usr/bin/qemu-hexagon-static+0x346ec4
+/usr/bin/qemu-hexagon-static+0x346e98-/usr/bin/qemu-hexagon-static+0x346ea4 (conditional continue)
+/usr/bin/qemu-hexagon-static+0x346e70-/usr/bin/qemu-hexagon-static+0x346e94 (conditional continue)
+/usr/bin/qemu-hexagon-static+0x346e60-/usr/bin/qemu-hexagon-static+0x346e68 (conditional jump)
+/usr/bin/qemu-hexagon-static+0x3022dc (adrp+add)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

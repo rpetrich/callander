@@ -1,0 +1,4 @@
+callander: found syscall with unknown number: any
+callander: full call stack: ld-linux-x86-64.so.2+0x17c3c(_dl_cet_check*+588)-ld-linux-x86-64.so.2+0x17c45(_dl_cet_check*+597)
+/usr/sbin/e4defrag+0x4497 (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

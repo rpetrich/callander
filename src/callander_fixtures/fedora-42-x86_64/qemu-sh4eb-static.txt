@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any u32
+callander: full call stack: /usr/bin/qemu-sh4eb-static+0x22fbed-/usr/bin/qemu-sh4eb-static+0x22fc02
+/usr/bin/qemu-sh4eb-static+0x22fbdf-/usr/bin/qemu-sh4eb-static+0x22fbe7 (conditional continue)
+/usr/bin/qemu-sh4eb-static+0x22fbc0-/usr/bin/qemu-sh4eb-static+0x22fbd9 (conditional continue)
+/usr/bin/qemu-sh4eb-static+0x22fbb0-/usr/bin/qemu-sh4eb-static+0x22fbb7 (conditional jump)
+/usr/bin/qemu-sh4eb-static+0x1c7629 (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

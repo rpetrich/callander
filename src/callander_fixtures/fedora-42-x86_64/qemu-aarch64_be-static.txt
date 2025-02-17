@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any u32
+callander: full call stack: /usr/bin/qemu-aarch64_be-static+0x44052d-/usr/bin/qemu-aarch64_be-static+0x440542
+/usr/bin/qemu-aarch64_be-static+0x44051f-/usr/bin/qemu-aarch64_be-static+0x440527 (conditional continue)
+/usr/bin/qemu-aarch64_be-static+0x440500-/usr/bin/qemu-aarch64_be-static+0x440519 (conditional continue)
+/usr/bin/qemu-aarch64_be-static+0x4404f0-/usr/bin/qemu-aarch64_be-static+0x4404f7 (conditional jump)
+/usr/bin/qemu-aarch64_be-static+0x3d8169 (lea)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

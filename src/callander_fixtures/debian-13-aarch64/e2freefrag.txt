@@ -1,0 +1,151 @@
+callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xe23b0(getcwd+112)
+dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xdef88(dup+8)
+fcntl(any, any, any) @ libc.so.6+0xdf710(fcntl64+112)
+fcntl(any, any, any) @ libc.so.6+0xdf780(fcntl64+224)
+fcntl(any, F_SETFD, 1) @ libc.so.6+0xe49f4
+fcntl(any, F_GETFL, any) @ libc.so.6+0xe49f4
+fcntl(any, F_DUPFD-F_SETOWN, any) @ libc.so.6+0xe4ac8
+fcntl(any, F_SETSIG-0xffffffffffffffff, any) @ libc.so.6+0xe4ac8
+fcntl(any, F_GETOWN_EX, any) @ libc.so.6+0xe4b0c
+ioctl(any, TCGETS, any) @ libc.so.6+0xe53d8(tcgetattr+56)
+ioctl(any, BLKROGET, any) @ libc.so.6+0xe9b8c(ioctl+12)
+ioctl(any, BLKSSZGET, any) @ libc.so.6+0xe9b8c(ioctl+12)
+ioctl(any, BLKDISCARD, any) @ libc.so.6+0xe9b8c(ioctl+12)
+ioctl(any, BLKDISCARDZEROES, any) @ libc.so.6+0xe9b8c(ioctl+12)
+ioctl(any, LOOP_GET_STATUS64, any) @ libc.so.6+0xe9b8c(ioctl+12)
+ioctl(any, FS_IOC_GETFSMAP, non-NULL) @ libc.so.6+0xe9b8c(ioctl+12)
+unlinkat(AT_FDCWD, libext2fs.so.2+0x4ace0, 0) @ libc.so.6+0xe45f4(unlink+20)
+ftruncate(any, any) @ libc.so.6+0xe76cc(ftruncate64+12)
+fallocate(any, 3, any, any) @ libc.so.6+0xe48d0(fallocate64+48)
+fallocate(any, 16, any, any) @ libc.so.6+0xe48d0(fallocate64+48)
+fallocate(any, any, any, any) @ libc.so.6+0xe4920(fallocate64+128)
+openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xe30e4(__open+100)
+openat(AT_FDCWD, any, any, any) @ libc.so.6+0xe3170(__open+240)
+openat(any, any, O_RDONLY, any) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, any, any) @ libc.so.6+0xe3358(openat+248)
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe4c54(__open_nocancel+84)
+openat(AT_FDCWD, non-NULL, O_RDONLY-O_RDWR|O_CREAT|O_EXCL|O_APPEND|O_CLOEXEC, any) @ libc.so.6+0xe4c54(__open_nocancel+84)
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xe4c54(__open_nocancel+84)
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_CREAT-O_RDWR|O_CREAT|O_EXCL|O_APPEND|O_CLOEXEC, any) @ libc.so.6+0xe4cb0(__open_nocancel+176)
+close(any) @ libc.so.6+0xdecec(close+44)
+close(any) @ libc.so.6+0xded20(close+96)
+close(any) @ libc.so.6+0xe486c(__close_nocancel+12)
+close(any) @ libc.so.6+0xfeb70
+close(any) @ libc.so.6+0xff01c
+getdents64(any, any, any) @ libc.so.6+0xbe5f8(getdents64+24)
+lseek(any, any, any) @ libc.so.6+0xe2ed0(lseek+16)
+read(any, any, any) @ libc.so.6+0xe3bec(__read+44)
+read(any, any, any) @ libc.so.6+0xe3c34(__read+116)
+read(any, any, any) @ libc.so.6+0xe4e0c(__read_nocancel+12)
+write(any, any, any) @ libc.so.6+0xe47ac(write+44)
+write(any, any, any) @ libc.so.6+0xe47f4(write+116)
+write(any, any, 0-LONG_MAX) @ libc.so.6+0xe4f4c(__write_nocancel+12)
+writev(any, any, any) @ ld-linux-aarch64.so.1+0xaf54
+writev(STDERR_FILENO, any, any) @ libc.so.6+0x79f4c
+pread64(any, any, any, any) @ libc.so.6+0xc8aac(__pread64+44)
+pread64(any, any, any, any) @ libc.so.6+0xc8afc(__pread64+124)
+pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xe4dcc(__pread64_nocancel+12)
+pwrite64(any, any, any, any) @ libc.so.6+0xc8bac(__libc_pwrite+44)
+pwrite64(any, any, any, any) @ libc.so.6+0xc8bfc(__libc_pwrite+124)
+ppoll(any, 1, any, 0, 0) @ libc.so.6+0xe3530(__poll+144)
+ppoll(any, any, any, 0, 0) @ libc.so.6+0xe3594(__poll+244)
+newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xdfb30(fstatat64+16)
+newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xdfb30(fstatat64+16)
+fstat(any, any) @ libc.so.6+0xdfaec(fstat+12)
+fsync(any) @ libc.so.6+0xe760c(fsync+44)
+fsync(any) @ libc.so.6+0xe7640(fsync+96)
+exit(0) @ libc.so.6+0x222c4
+exit(0) @ libc.so.6+0x85100
+exit(any) @ libc.so.6+0xee860
+exit(any) @ libc.so.6+0xeead0
+exit_group(any) @ ld-linux-aarch64.so.1+0x1bcb8
+exit_group(any) @ libc.so.6+0xbf1fc(_Exit+28)
+futex(any, FUTEX_WAIT, any u32, 0, any, any)
+futex(any, any u32, 1, 0, any, any)
+futex(any, any u32, INT_MAX, 0, any, any)
+futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
+futex(any, FUTEX_LOCK_PI, 0, 0, 128, 6)
+futex(any, FUTEX_UNLOCK_PI, 0, 0, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
+futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 0, 134)
+futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
+futex(any, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, any, any, 0, -1 as u32)
+futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
+set_robust_list(any, 24) @ libc.so.6+0x84f38
+clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ libc.so.6+0xbd960(__clock_gettime+64)
+clock_gettime(CLOCK_REALTIME_COARSE, any) @ libc.so.6+0xbd960(__clock_gettime+64)
+clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
+clock_getres(any u32, any) @ [vdso]+0x76c(__kernel_clock_getres+100)
+clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0xbdaa4(clock_nanosleep+68)
+clock_nanosleep(CLOCK_REALTIME, any, any, any) @ libc.so.6+0xbdaec(clock_nanosleep+140)
+sched_setscheduler(any, any, any) @ libc.so.6+0x84da0
+sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xd83c8(sched_setscheduler+8)
+sched_getscheduler(0) @ libc.so.6+0x85eb4(pthread_create+2928)
+sched_getscheduler(any u32) @ libc.so.6+0xd8248(__sched_getscheduler+8)
+sched_getparam(0, any) @ libc.so.6+0x85aa0(pthread_create+1884)
+sched_getparam(any u32, any) @ libc.so.6+0xd8208(sched_getparam+8)
+sched_setaffinity(any, any, any) @ libc.so.6+0x84d34
+sched_getaffinity(0, 0x1000, any) @ libc.so.6+0xe8580
+sched_get_priority_max(1) @ libc.so.6+0xd8288(__sched_get_priority_max+8)
+sched_get_priority_min(1) @ libc.so.6+0xd82c8(sched_get_priority_min+8)
+restart_syscall()
+tgkill(any, any, SIGABRT) @ libc.so.6+0x86f4c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x86f4c
+tgkill(any, any, SIGABRT) @ libc.so.6+0x86f7c
+tgkill(any, any, SIGFPE) @ libc.so.6+0x86f7c
+rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x36934(__libc_sigaction+148)
+rt_sigaction(SIGSETXID, any, 0, 8) @ libc.so.6+0x36934(__libc_sigaction+148)
+rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x369d8(__libc_sigaction+312)
+rt_sigaction(SIGSETXID, 0, 0, 8) @ libc.so.6+0x369d8(__libc_sigaction+312)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x219f8(abort+168)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x84f98
+rt_sigprocmask(SIG_BLOCK, any, 0, 8) @ libc.so.6+0x8502c
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x16b6d0, any, 8) @ libc.so.6+0x857a8(pthread_create+1124)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x85800(pthread_create+1212)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x85964(pthread_create+1568)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x85a4c(pthread_create+1800)
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x85c14(pthread_create+2256)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x16b6d0, any, 8) @ libc.so.6+0x86ea8
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x86ef4
+rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8cd0c(pthread_sigmask+76)
+uname(any) @ libc.so.6+0xda388(uname+8)
+prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) @ libc.so.6+0xef508(prctl+8)
+prctl(PR_SET_VMA, 0, any, any, any) @ libc.so.6+0xef74c
+gettimeofday(any, any) @ libc.so.6+0xb2fcc
+gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
+getpid() @ ld-linux-aarch64.so.1+0x1bd08
+getpid() @ libc.so.6+0xc50c8(getpid+8)
+getuid() @ libc.so.6+0xc5208(getuid+8)
+geteuid() @ libc.so.6+0xc4208(geteuid+8)
+getgid() @ libc.so.6+0xc4248(getgid+8)
+getegid() @ libc.so.6+0xc41c8(getegid+8)
+gettid() @ libc.so.6+0x86f60
+socket(AF_INET, any, 17) @ libc.so.6+0xf1b54(socket+20)
+socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, 0) @ libc.so.6+0xf1b54(socket+20)
+bind(any, any, 12) @ libc.so.6+0xf0ed0(bind+16)
+bind(any, any, 16) @ libc.so.6+0xf0ed0(bind+16)
+getsockname(any, any, any) @ libc.so.6+0xf102c(getsockname+12)
+sendto(any, any, any, 0, any, any u32) @ libc.so.6+0xf18d4(sendto+52)
+sendto(any, any, any, any, any, any) @ libc.so.6+0xf192c(sendto+140)
+recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0xf1330(recvfrom+48)
+recvfrom(any, any, any, any, any, any) @ libc.so.6+0xf1394(recvfrom+148)
+setsockopt(any, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xf19b8(setsockopt+24)
+recvmsg(any, any, 0) @ libc.so.6+0xf1530(recvmsg+48)
+recvmsg(any, any, MSG_ERRQUEUE) @ libc.so.6+0xf1530(recvmsg+48)
+recvmsg(any, any, any) @ libc.so.6+0xf1574(recvmsg+116)
+brk(any) @ libc.so.6+0xe5ecc(brk+12)
+munmap(any, any) @ libc.so.6+0xeac08(munmap+8)
+mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xef2c8(mremap+72)
+clone(any u32, non-NULL, any, any, any) @ libc.so.6+0xee834(clone+52)
+mmap(0, any, any, any, any, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+fadvise64(any, any, any, 3) @ libc.so.6+0xe3610(posix_fadvise+16)
+mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-aarch64.so.1+0x1b9c8
+mprotect(any, any, any u32) @ libc.so.6+0xeaa88(mprotect+8)
+madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe9f48(madvise+8)
+madvise(any, any, MADV_HUGEPAGE-MADV_NOHUGEPAGE) @ libc.so.6+0xe9f48(madvise+8)
+prlimit64(0, RLIMIT_FSIZE, 0, any) @ libc.so.6+0xe5838(__getrlimit+24)
+prlimit64(0, RLIMIT_FSIZE, any, 0) @ libc.so.6+0xe5898(setrlimit64+24)
+getrandom(libc.so.6+0x1b6738, 8, GRND_NONBLOCK) @ libc.so.6+0x92cac
+rseq(any, any u32, 0, 0xd428bc00) @ libc.so.6+0x851dc
+clone3(non-NULL, 88) @ libc.so.6+0xeeaa4

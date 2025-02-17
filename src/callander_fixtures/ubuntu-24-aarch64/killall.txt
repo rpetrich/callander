@@ -198,7 +198,6 @@ mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-aarch64.so.1+0x1b5
 mprotect(any, any, any u32) @ libc.so.6+0xe7b08(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe6fc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE-MADV_NOHUGEPAGE) @ libc.so.6+0xe6fc8(madvise+8)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xe2d2c(__getrlimit+28)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0xee768(sendmmsg+56)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0xee7ac(sendmmsg+124)
 getrandom(libc.so.6+0x1b6700(tcache_key*), 8, GRND_NONBLOCK) @ libc.so.6+0x92d88(ptmalloc_init.part.0*+72)

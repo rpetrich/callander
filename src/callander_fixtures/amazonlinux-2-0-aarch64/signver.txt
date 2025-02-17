@@ -217,4 +217,3 @@ mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ ld-linux-
 mmap(any, any, any, any, any, any) @ libc.so.6+0xd7718(mmap+24)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xd77c4(__mprotect+4)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xd78c4(__madvise+4)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xd29d4(getrlimit+20)

@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/qemu-armeb-static+0x2d96a8-/usr/bin/qemu-armeb-static+0x2d96c4
+/usr/bin/qemu-armeb-static+0x2d9698-/usr/bin/qemu-armeb-static+0x2d96a4 (conditional continue)
+/usr/bin/qemu-armeb-static+0x2d9670-/usr/bin/qemu-armeb-static+0x2d9694 (conditional continue)
+/usr/bin/qemu-armeb-static+0x2d9660-/usr/bin/qemu-armeb-static+0x2d9668 (conditional jump)
+/usr/bin/qemu-armeb-static+0x29439c (adrp+add)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

@@ -235,7 +235,7 @@ perf_event_open(any, any u32, 0, -1 as u32, PERF_FLAG_FD_CLOEXEC) @ libc.so.6+0x
 perf_event_open(any, any u32, -1 as u32, -1 as u32, PERF_FLAG_FD_CLOEXEC) @ libc.so.6+0xfd864(syscall+36)
 wait4(0x1-0x7fffffff, any, 0, 0) @ libc.so.6+0xeb8c4(wait4+52)
 wait4(0x1-0x7fffffff, any, 0, 0) @ libc.so.6+0xeb910(wait4+128)
-prlimit64(0, RLIMIT_NOFILE-RLIMIT_MEMLOCK, 0, any) @ libc.so.6+0xf6990(getrlimit+32)
+prlimit64(0, RLIMIT_MEMLOCK, 0, any) @ libc.so.6+0xf6990(getrlimit+32)
 prlimit64(0, RLIMIT_MEMLOCK, any, 0) @ libc.so.6+0xf69f0(setrlimit+32)
 setns(any u32, CLONE_NEWNET) @ libc.so.6+0x1017c8(setns+8)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x102aa0(__sendmmsg+64)

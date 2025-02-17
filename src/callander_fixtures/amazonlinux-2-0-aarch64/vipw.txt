@@ -192,4 +192,3 @@ wait4(NULL-0xfffffffffffffffe, any, WUNTRACED, 0) @ libc.so.6+0xab64c(__waitpid+
 wait4(any, any, 0, 0) @ libc.so.6+0xab64c(__waitpid+44)
 wait4(NULL-0xfffffffffffffffe, any, WUNTRACED, 0) @ libc.so.6+0xab694(__waitpid+116)
 wait4(any, any, 0, 0) @ libc.so.6+0xab694(__waitpid+116)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xd29d4(getrlimit+20)

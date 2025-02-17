@@ -135,7 +135,6 @@ mprotect(any, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-linux-aarch64.so.1+0x1b4
 mprotect(any, any, any u32) @ libc.so.6+0xef008(__mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xee548(madvise+8)
 madvise(any, any, MADV_HUGEPAGE-MADV_NOHUGEPAGE) @ libc.so.6+0xee548(madvise+8)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xea484(getrlimit+20)
 getrandom(libc.so.6+0x1b6748(tcache_key), 8, GRND_NONBLOCK) @ libc.so.6+0x94458(ptmalloc_init.part.0+72)
 rseq(any, 32, 0, 0xd428bc00) @ libc.so.6+0x871d4(start_thread+180)
 clone3(non-NULL, 88) @ libc.so.6+0xf2e64(__GI___clone3+36)

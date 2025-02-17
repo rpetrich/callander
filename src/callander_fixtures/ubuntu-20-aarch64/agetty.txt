@@ -1,5 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xc48b8(getcwd+176)
-dup(STDIN_FILENO) @ libc.so.6+0xc46b4(dup+4)
+dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xc46b4(dup+4)
 dup3(STDIN_FILENO-0xfffffffffffffffe, any, 0) @ libc.so.6+0xc46f0(dup2+40)
 fcntl(STDIN_FILENO-STDOUT_FILENO, F_SETFL, NULL-0xfffff7ff) @ libc.so.6+0xc8a90(__fcntl64_nocancel_adjusted*+48)
 fcntl(any, F_SETFD, 1) @ libc.so.6+0xc8a90(__fcntl64_nocancel_adjusted*+48)
@@ -162,6 +162,5 @@ mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xcdc54
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xcdd44(__madvise+4)
 wait4(any, any, 0, 0) @ libc.so.6+0xa3bc0(wait4+48)
 wait4(any, any, any, 0) @ libc.so.6+0xa3c0c(wait4+124)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xc9514(getrlimit+20)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0xd2e24(sendmmsg+52)
 sendmmsg(any, any, any, any) @ libc.so.6+0xd2e68(sendmmsg+120)

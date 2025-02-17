@@ -296,6 +296,7 @@ setsockopt(STDIN_FILENO, SOL_RAW, IP_RETOPTS, any, 4) @ libc.so.6+0xd28e4(setsoc
 setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_IP-SOL_SOCKET, SO_SNDBUFFORCE-SO_RCVBUFFORCE, any, any u32) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_DONTROUTE-SO_KEEPALIVE, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
+setsockopt(any u32, SOL_SOCKET, SO_PASSCRED, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_SOCKET, SO_BINDTODEVICE, any, 40) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_IPV6, IPV6_RECVERR, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)
 setsockopt(any u32, SOL_PACKET, SO_RCVBUF, any, 4) @ libc.so.6+0xd28e4(setsockopt+4)

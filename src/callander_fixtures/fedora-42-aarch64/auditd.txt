@@ -1,0 +1,5 @@
+callander: found syscall with unknown number: any
+callander: full call stack: libc.so.6+0x96b8c-libc.so.6+0x96ba8
+libc.so.6+0x96b84(__syscall_cancel_arch+4)-libc.so.6+0x96b88 (conditional continue)
+libc.so.6+0x8b7f4(sigcancel_handler+116) (ld)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

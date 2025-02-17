@@ -156,7 +156,6 @@ mprotect(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xcdc54
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xcdd44(__madvise+4)
 wait4(any, any, 0, 0) @ libc.so.6+0xa3bc0(wait4+48)
 wait4(any, any, any, 0) @ libc.so.6+0xa3c0c(wait4+124)
-prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xc9514(getrlimit+20)
 getrandom(libudev.so.1+0x398e8, 16, GRND_NONBLOCK) @ libc.so.6+0x37cb0(getrandom+40)
 getrandom(libudev.so.1+0x39900, 16, GRND_NONBLOCK) @ libc.so.6+0x37cb0(getrandom+40)
 getrandom(libudev.so.1+0x398e8, 16, any) @ libc.so.6+0x37cf8(getrandom+112)

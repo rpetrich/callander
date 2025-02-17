@@ -1,0 +1,7 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/qemu-microblazeel-static+0x213c28-/usr/bin/qemu-microblazeel-static+0x213c44
+/usr/bin/qemu-microblazeel-static+0x213c18-/usr/bin/qemu-microblazeel-static+0x213c24 (conditional continue)
+/usr/bin/qemu-microblazeel-static+0x213bf0-/usr/bin/qemu-microblazeel-static+0x213c14 (conditional continue)
+/usr/bin/qemu-microblazeel-static+0x213be0-/usr/bin/qemu-microblazeel-static+0x213be8 (conditional jump)
+/usr/bin/qemu-microblazeel-static+0x1ce9dc (adrp+add)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function
