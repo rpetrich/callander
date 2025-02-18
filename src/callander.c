@@ -5415,7 +5415,7 @@ enum alternate_type {
 };
 
 __attribute__((always_inline))
-static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self)
+static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self, int flags)
 {
 	bool skip_jump = false;
 	bool skip_continue = false;
@@ -5920,7 +5920,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			}
 			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING, 0);
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
-			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, 0);
+			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, flags);
 			LOG("resuming from conditional continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
 			if (uses_alternate_state == ALTERNATE_CONTINUE) {
 				LOG("taking additional continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
@@ -5929,7 +5929,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				}
 				// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING, 0);
 				self->description = skip_jump ? "additional conditional continue (no jump)" : "additional conditional continue";
-				continue_effects |= analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, 0);
+				continue_effects |= analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, flags);
 				LOG("resuming from additional conditional continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
 			}
 		}
@@ -5946,7 +5946,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			self->current_state.registers[r] = jump_state;
 		}
 		self->description = skip_continue ? "conditional jump (no continue)" : "conditional jump";
-		jump_effects = analyze_instructions(analysis, required_effects, &self->current_state, jump_target, self, 0);
+		jump_effects = analyze_instructions(analysis, required_effects, &self->current_state, jump_target, self, flags);
 		if (uses_alternate_state == ALTERNATE_JUMP) {
 			LOG("completing conditional jump after branch", temp_str(copy_address_description(&analysis->loader, ins)));
 			LOG("taking additional jump", temp_str(copy_address_description(&analysis->loader, jump_target)));
@@ -5954,7 +5954,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				self->current_state.registers[r] = alternate_state;
 			}
 			self->description = skip_continue ? "additional conditional jump (no continue)" : "additional conditional jump";
-			jump_effects |= analyze_instructions(analysis, required_effects, &self->current_state, jump_target, self, 0);
+			jump_effects |= analyze_instructions(analysis, required_effects, &self->current_state, jump_target, self, flags);
 		}
 	}
 	if (continue_first) {
@@ -5969,7 +5969,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			}
 			// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING, 0);
 			self->description = skip_jump ? "conditional continue (no jump)" : "conditional continue";
-			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, 0);
+			continue_effects = analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, flags);
 			LOG("completing conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
 			if (uses_alternate_state == ALTERNATE_CONTINUE) {
 				LOG("taking additional continue", temp_str(copy_address_description(&analysis->loader, continue_target)));
@@ -5978,7 +5978,7 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 				}
 				// set_effects(&analysis->search, self->entry, &self->token, effects | EFFECT_PROCESSING, 0);
 				self->description = skip_jump ? "additional conditional continue (no jump)" : "additional conditional continue";
-				continue_effects |= analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, 0);
+				continue_effects |= analyze_instructions(analysis, required_effects, &self->current_state, continue_target, self, flags);
 				LOG("completing additional conditional jump after continue", temp_str(copy_address_description(&analysis->loader, self->entry)));
 			}
 		}
@@ -6631,7 +6631,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto update_and_return;
 			}
 			case INS_JUMPS_OR_CONTINUES: {
-				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 				goto update_and_return;
 			}
 		}
