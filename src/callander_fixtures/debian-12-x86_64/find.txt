@@ -107,13 +107,11 @@ tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8ae87
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8ae87
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8aeba
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8aeba
-openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
-openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)

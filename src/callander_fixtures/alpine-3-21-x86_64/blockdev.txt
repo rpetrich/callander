@@ -52,6 +52,8 @@ fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41e0e(open+127)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x5e878(fstatat+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5eeef(fdopen+133)
+fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x5efd2(fdopen+360)
+fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x5efe7(fdopen+381)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x604ef(fopen+120)
 readlink(non-NULL, any, 4095) @ ld-musl-x86_64.so.1+0x6a4cb(readlink+32)
 tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x419fe(abort+95)
@@ -60,7 +62,7 @@ tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x65bee(cancel_handler*+93)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x66edb(pthread_kill+62)
 futex(any, FUTEX_WAIT, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT, any, 0, any u32, 202)
-futex(any, any, any, 0, 0, any)
+futex(any, any, any, 0, 0, 0)
 futex(any, FUTEX_WAKE, 1, any, any, 202)
 futex(any, FUTEX_WAKE, 1, any, 202, any)
 futex(any, FUTEX_WAKE, 1, 202, any, 0x40000000)
@@ -89,12 +91,12 @@ restart_syscall()
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x68345
 exit_group(any) @ ld-musl-x86_64.so.1+0x41991(_Exit+8)
-openat(any, /sbin/blockdev+0x409c, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-openat(any, /sbin/blockdev+0x40a9, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-openat(any, /sbin/blockdev+0x40b3, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-openat(any, /sbin/blockdev+0x409c, any u16, any) @ ld-musl-x86_64.so.1+0x68345
-openat(any, /sbin/blockdev+0x40a9, any u16, any) @ ld-musl-x86_64.so.1+0x68345
-openat(any, /sbin/blockdev+0x40b3, any u16, any) @ ld-musl-x86_64.so.1+0x68345
+openat(any, /sbin/blockdev+0x409c-/sbin/blockdev+0x409d, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+openat(any, /sbin/blockdev+0x40a9-/sbin/blockdev+0x40aa, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+openat(any, /sbin/blockdev+0x40b3-/sbin/blockdev+0x40b4, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+openat(any, /sbin/blockdev+0x409c-/sbin/blockdev+0x409d, any u16, any) @ ld-musl-x86_64.so.1+0x68345
+openat(any, /sbin/blockdev+0x40a9-/sbin/blockdev+0x40aa, any u16, any) @ ld-musl-x86_64.so.1+0x68345
+openat(any, /sbin/blockdev+0x40b3-/sbin/blockdev+0x40b4, any u16, any) @ ld-musl-x86_64.so.1+0x68345
 newfstatat(any, ld-musl-x86_64.so.1+0xa0156, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x5e891(fstatat+104)
 newfstatat(any, ld-musl-x86_64.so.1+0xa0156, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x5e912(fstatat+233)
 faccessat(any, /sbin/blockdev+0x4092, F_OK) @ ld-musl-x86_64.so.1+0x69dac(faccessat+44)

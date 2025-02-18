@@ -14,17 +14,7 @@ mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x101921(mm
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x1019a5(mprotect+5)
 munmap(any, any) @ libc.so.6+0x101975(munmap+5)
 brk(any) @ libc.so.6+0xfdbb5(brk+5)
-rt_sigaction(SIGHUP-SIGQUIT, 0, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGHUP-SIGQUIT, any, 0, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGSEGV, any, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGPIPE, 0, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGPIPE, any, 0, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGTERM, 0, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGTERM, any, 0, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGCHLD, any, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGXCPU-SIGXFSZ, 0, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigaction(SIGXCPU-SIGXFSZ, any, 0, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
+rt_sigaction(any u32, any, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x26428(abort+137)
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, 8) @ libc.so.6+0x8adfd
 rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8ae48

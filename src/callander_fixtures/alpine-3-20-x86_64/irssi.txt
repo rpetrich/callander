@@ -4,7 +4,6 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 write(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 open(libcrypto.so.3+0x3243ef, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(libcrypto.so.3+0x3243ef, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
@@ -58,7 +57,7 @@ connect(any, ld-musl-x86_64.so.1+0x9b848(log_addr*), 12) @ ld-musl-x86_64.so.1+0
 sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvfrom(any, non-NULL, any, 0-MSG_PEEK, 0, any u32) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
@@ -86,6 +85,8 @@ fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x41453(socket+116)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x4146c(socket+141)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x4e2c6(fstatat+83)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4e923(fdopen+133)
+fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x4ea0a(fdopen+364)
+fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x4ea1f(fdopen+385)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
 getcwd(any, non-NULL) @ ld-musl-x86_64.so.1+0x6214f(getcwd+36)
 gettimeofday(any, 0) @ ld-musl-x86_64.so.1+0x5ff1d(clock_gettime+73)

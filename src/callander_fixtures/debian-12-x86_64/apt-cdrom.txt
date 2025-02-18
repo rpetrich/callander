@@ -264,10 +264,11 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf8186
 openat(AT_FDCWD, libsystemd.so.0+0xaba6d, O_RDONLY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xf8186(openat+198)
 openat(AT_FDCWD, libsystemd.so.0+0xadbe6, O_RDONLY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xf8186(openat+198)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
-newfstatat(any u32, any, any, 0) @ libc.so.6+0xf77d8(fstatat64+8)
+newfstatat(any u8, any, any, 0) @ libc.so.6+0xf77d8(fstatat64+8)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf77d8(fstatat64+8)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT) @ libc.so.6+0xf77d8(fstatat64+8)
 newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
+newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf77d8(fstatat64+8)
 unlinkat(any u32, any, 0) @ libc.so.6+0xf9ab5(unlinkat+5)
 readlinkat(any u32, any, non-NULL, any) @ libc.so.6+0xf9a58(readlinkat+8)
 faccessat(STDIN_FILENO-0xfffffffe, libapt-pkg.so.6.0+0x1a267c, W_OK) @ libc.so.6+0xf8617(faccessat+295)
@@ -286,7 +287,7 @@ ppoll(any, 0x1-0x2, any, 0, 8) @ libc.so.6+0xfc276(ppoll+70)
 ppoll(any, 0x1-0x2, any, 0, 8) @ libc.so.6+0xfc2d4(ppoll+164)
 set_robust_list(any, 24) @ libc.so.6+0x88fa5
 set_robust_list(any, 24) @ libc.so.6+0xd434b(_Fork+91)
-utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xfc868
+utimensat(AT_FDCWD, 0, any, 0) @ libc.so.6+0xfc868
 signalfd4(any u32, any, 8, SFD_NONBLOCK|SFD_CLOEXEC) @ libc.so.6+0x108d3d(signalfd+13)
 pipe2(any, 0) @ libc.so.6+0xf8a77(pipe+7)
 pipe2(any, O_CLOEXEC) @ libc.so.6+0xf8aa5(pipe2+5)

@@ -76,7 +76,6 @@ access(/sbin/xfs_repair+0x65af5, R_OK) @ ld-musl-x86_64.so.1+0x5a8e2(access+9)
 pipe(any) @ ld-musl-x86_64.so.1+0x5b069(pipe+6)
 mremap(any, any u32, NULL-0xfffffffffffff000, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x382ba(mremap+124)
 dup2(any, STDOUT_FILENO) @ ld-musl-x86_64.so.1+0x5a9df(dup2+15)
-nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x57f61
 getpid() @ ld-musl-x86_64.so.1+0x5af1f(getpid+5)
 getpid() @ ld-musl-x86_64.so.1+0x5b3c8(do_setxid*+54)
@@ -130,13 +129,12 @@ timer_create(CLOCK_REALTIME, 0, any) @ ld-musl-x86_64.so.1+0x5a3bf(timer_create+
 timer_settime(any, 0, any, 0) @ ld-musl-x86_64.so.1+0x5a605(timer_settime+33)
 timer_delete(any) @ ld-musl-x86_64.so.1+0x5a595(timer_delete+54)
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x591b8(clock_gettime+49)
-clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x57f61
 exit_group(any) @ ld-musl-x86_64.so.1+0x1bf8c(_Exit+8)
-openat(any, libblkid.so.1+0x33de7, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-openat(any, libblkid.so.1+0x36e93, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-openat(any, libblkid.so.1+0x33de7, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
-openat(any, libblkid.so.1+0x36e93, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+openat(any, libblkid.so.1+0x33de7-libblkid.so.1+0x33de8, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x36e93-libblkid.so.1+0x36e94, any u16, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+openat(any, libblkid.so.1+0x33de7-libblkid.so.1+0x33de8, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
+openat(any, libblkid.so.1+0x36e93-libblkid.so.1+0x36e94, any u16, any) @ ld-musl-x86_64.so.1+0x57f61
 newfstatat(any, ld-musl-x86_64.so.1+0x94d80, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4983b(fstatat64+104)
 newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+225)

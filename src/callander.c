@@ -5355,13 +5355,13 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 __attribute__((always_inline))
 static inline function_effects analyze_call(struct program_state *analysis, function_effects required_effects, struct loaded_binary *binary, ins_ptr ins, ins_ptr call_target, struct analysis_frame *self)
 {
-	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
 #ifdef __x86_64__
 	int call_push_count = 2;
 #else
 	int call_push_count = 0;
 #endif
-	push_stack(&call_state, call_push_count);
+	push_stack(&self->current_state, call_push_count);
+	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 	call_state.modified = 0;
 	function_effects more_effects = analyze_function(analysis, required_effects & ~EFFECT_ENTRY_POINT, &call_state, call_target, self);
@@ -5374,6 +5374,7 @@ static inline function_effects analyze_call(struct program_state *analysis, func
 	if (is_stack_preserving_function(&analysis->loader, binary, call_target)) {
 		modified &= ~STACK_REGISTERS;
 	}
+	pop_stack(&self->current_state, call_push_count);
 	clear_call_dirtied_registers(&analysis->loader, &self->current_state, binary, ins, modified);
 	return more_effects;
 }

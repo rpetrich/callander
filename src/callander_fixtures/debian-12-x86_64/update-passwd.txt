@@ -57,7 +57,7 @@ fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcece
 fcntl(0x3, F_GETFL, libdebconfclient.so.0+0x2018) @ libc.so.6+0xfcece
 getcwd(non-NULL, any) @ libc.so.6+0xf8c3c(getcwd+124)
 rename(any, any) @ libc.so.6+0x58a85(rename+5)
-link(any, non-NULL) @ libc.so.6+0xf9965(link+5)
+link(non-NULL, non-NULL) @ libc.so.6+0xf9965(link+5)
 unlink(any) @ libc.so.6+0xf9a85(unlink+5)
 chmod(any, any u32) @ libc.so.6+0xf7cc5(chmod+5)
 chown(any, any u32, any u32) @ libc.so.6+0xf9485(chown+5)

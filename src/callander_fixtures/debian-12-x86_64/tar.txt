@@ -172,8 +172,8 @@ openat(AT_FDCWD, /usr/bin/tar+0x6aee0, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|
 openat(any u32, any, any u32, any) @ libc.so.6+0xf80fd(openat+61)
 openat(any u32, any, any u32, any) @ libc.so.6+0xf8186(openat+198)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
-openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(0x100, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xfd004
 mkdirat(any u32, any, 0-0777) @ libc.so.6+0xf7ed5(mkdirat+5)
@@ -190,7 +190,7 @@ fchmodat(any u32, any, any u32) @ libc.so.6+0xf7e1d(fchmodat+221)
 faccessat(any u32, any, F_OK) @ libc.so.6+0xf8617(faccessat+295)
 set_robust_list(any, 24) @ libc.so.6+0xd434b(_Fork+91)
 utimensat(any u32, 0, any, 0) @ libc.so.6+0xfc868
-utimensat(any u32, non-NULL, any, any u32) @ libc.so.6+0xfc89d(utimensat+13)
+utimensat(any u32, non-NULL, non-NULL, any u32) @ libc.so.6+0xfc89d(utimensat+13)
 pipe2(any, 0) @ libc.so.6+0xf8a77(pipe+7)
 renameat2(AT_FDCWD, any, any u32, any, 1) @ libc.so.6+0x58aed(renameat2+13)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)

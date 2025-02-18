@@ -50,8 +50,8 @@ recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ libc.so.6+0x10aa55(recvmsg+85)
 exit(0) @ libc.so.6+0x27274
 fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfce3f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfce3f
+fcntl(STDIN_FILENO-0xfffffffe, F_GETFL, 0) @ libc.so.6+0xfcece
 fcntl(STDIN_FILENO-0xfffffffe, F_SETLK, any) @ libc.so.6+0xfcece
-fcntl(any u32, F_GETFL, 0) @ libc.so.6+0xfcece
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0xfcece
 getcwd(non-NULL, any) @ libc.so.6+0xf8c3c(getcwd+124)
 rename(any, any) @ libc.so.6+0x58a85(rename+5)

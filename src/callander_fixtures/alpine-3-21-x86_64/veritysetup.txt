@@ -93,7 +93,7 @@ accept(any, 0, 0) @ ld-musl-x86_64.so.1+0x68345
 sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x68345
 recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-recvfrom(any, non-NULL, any, 0-MSG_PEEK, 0, any u32) @ ld-musl-x86_64.so.1+0x68345
+recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any u32) @ ld-musl-x86_64.so.1+0x68345
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x68345
 recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
@@ -125,6 +125,8 @@ fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5a34f(socket+116)
 fcntl(any, F_SETFL, 2048) @ ld-musl-x86_64.so.1+0x5a368(socket+141)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x5e878(fstatat+79)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x5eeef(fdopen+133)
+fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x5efd2(fdopen+360)
+fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x5efe7(fdopen+381)
 fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x604ef(fopen+120)
 flock(any, any) @ ld-musl-x86_64.so.1+0x43478(flock+15)
 fsync(any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
@@ -161,7 +163,7 @@ tkill(any, SIGSYNCCALL) @ ld-musl-x86_64.so.1+0x68093(__synccall*+356)
 futex(any, FUTEX_WAIT, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT, any, 0, any u32, 202)
 futex(any, any u32, 0-INT_MAX, any, 202, any u32)
-futex(any, any, any, 0, 0, any)
+futex(any, any, any, 0, 0, 0)
 futex(any, FUTEX_WAKE, 1, any, any, 202)
 futex(any, FUTEX_WAKE, 1, any, 202, any)
 futex(any, FUTEX_WAKE, 1, 202, any, 0x40000000)

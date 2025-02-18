@@ -92,7 +92,7 @@ sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x68345
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x68345
-recvfrom(any, non-NULL, any, 0-MSG_PEEK, 0, any u32) @ ld-musl-x86_64.so.1+0x68345
+recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any u32) @ ld-musl-x86_64.so.1+0x68345
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
@@ -188,7 +188,7 @@ futex(any, FUTEX_WAIT, any, 0, any u32, 202)
 futex(any, any u32, 0-INT_MAX, any, 202, any u32)
 futex(any, any u32, 1, any, 202, any)
 futex(any, any u32, INT_MAX, any, 202, any)
-futex(any, any, any, 0, 0, any)
+futex(any, any, any, 0, 0, 0)
 futex(any, FUTEX_WAKE, 1, any, any, 202)
 futex(any, FUTEX_WAKE, 1, 202, any, 0x40000000)
 futex(any, FUTEX_WAKE, 1, 202, 0xfffffffffffff001-0xffffffffffffffff, any)

@@ -302,7 +302,7 @@ ppoll(any, 0x1-0x2, any, 0, 8) @ libc.so.6+0xfc276(ppoll+70)
 ppoll(any, 0x1-0x2, any, 0, 8) @ libc.so.6+0xfc2d4(ppoll+164)
 set_robust_list(any, 24) @ libc.so.6+0x88fa5
 set_robust_list(any, 24) @ libc.so.6+0xd434b(_Fork+91)
-utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xfc868
+utimensat(AT_FDCWD, 0, any, 0) @ libc.so.6+0xfc868
 signalfd4(any u32, any, 8, SFD_NONBLOCK|SFD_CLOEXEC) @ libc.so.6+0x108d3d(signalfd+13)
 pipe2(any, 0) @ libc.so.6+0xf8a77(pipe+7)
 pipe2(any, O_CLOEXEC) @ libc.so.6+0xf8aa5(pipe2+5)

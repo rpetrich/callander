@@ -68,13 +68,16 @@ tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x1cf1c(abort+101)
 tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x4936a(raise+43)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x5552b(cancel_handler*+103)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x56b68(pthread_kill+65)
+futex(any, FUTEX_WAIT, any, 0, 0, 0x1-0xffffffff)
 futex(any, FUTEX_WAIT, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT, any, 0, any u32, 202)
-futex(any, FUTEX_WAIT, any, any, 0, any)
+futex(any, FUTEX_WAIT, any, any, 0, 0)
 futex(any, any u32, 1, any, 202, any)
-futex(any, any, any, 0, 0, any)
+futex(any, any, any, 0, 0, 0)
 futex(any, FUTEX_REQUEUE, 0, 1, ld-musl-x86_64.so.1+0x99884(init_fini_lock*+4), 202)
+futex(any, FUTEX_LOCK_PI, 0, 0, 0, any u32)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0, 0x1-0xffffffff)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 202)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-x86_64.so.1+0x99884(init_fini_lock*+4), 202)
@@ -97,31 +100,31 @@ clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x59619(clock_gettime+49)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x583bc
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cea9(_Exit+8)
-openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x1283a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x1284a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12859, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12863, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12870, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x1287b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-openat(any, /sbin/zramctl+0x12029, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12071, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x120f5, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12104, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12761, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12773, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x1282b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x1283a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x1284a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12859, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12863, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x12870, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
-openat(any, /sbin/zramctl+0x1287b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12029-/sbin/zramctl+0x1202a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12071-/sbin/zramctl+0x12072, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x120f5-/sbin/zramctl+0x120f6, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12104-/sbin/zramctl+0x12105, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12761-/sbin/zramctl+0x12762, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12773-/sbin/zramctl+0x12774, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1282b-/sbin/zramctl+0x1282c, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1283a-/sbin/zramctl+0x1283b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1284a-/sbin/zramctl+0x1284b, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12859-/sbin/zramctl+0x1285a, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12863-/sbin/zramctl+0x12864, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12870-/sbin/zramctl+0x12871, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x1287b-/sbin/zramctl+0x1287c, any u16, any) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+openat(any, /sbin/zramctl+0x12029-/sbin/zramctl+0x1202a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12071-/sbin/zramctl+0x12072, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x120f5-/sbin/zramctl+0x120f6, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12104-/sbin/zramctl+0x12105, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12761-/sbin/zramctl+0x12762, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12773-/sbin/zramctl+0x12774, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1282b-/sbin/zramctl+0x1282c, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1283a-/sbin/zramctl+0x1283b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1284a-/sbin/zramctl+0x1284b, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12859-/sbin/zramctl+0x1285a, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12863-/sbin/zramctl+0x12864, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x12870-/sbin/zramctl+0x12871, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
+openat(any, /sbin/zramctl+0x1287b-/sbin/zramctl+0x1287c, any u16, any) @ ld-musl-x86_64.so.1+0x583bc
 set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x55fbe(pthread_exit+397)
 set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x56ede(__pthread_mutex_trylock_owner*+182)
