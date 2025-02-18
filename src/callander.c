@@ -8281,8 +8281,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x67: // address size override prefix
 				break;
-			case 0x68: // push imm
+			case 0x68: { // push imm
+				uint64_t imm = read_imm(decoded.prefixes, &decoded.unprefixed[1]);
+				LOG("push", imm);
+				if (flags & TRACE_USES_FRAME_POINTER) {
+					LOG("skipping push because this function is using the frame pointer");
+					break;
+				}
+				push_stack(&self.current_state, 2);
+				set_register(&self.current_state.registers[REGISTER_STACK_0], imm);
 				break;
+			}
 			case 0x69: { // imul r, r/m, imm
 				clear_comparison_state(&self.current_state);
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
@@ -8293,8 +8302,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				clear_match(&analysis->loader, &self.current_state, reg, ins);
 				break;
 			}
-			case 0x6a: // push imm8
+			case 0x6a: { // push imm8
+				uint8_t imm = *(const uint8_t *)&decoded.unprefixed[1];
+				LOG("push", (uintptr_t)imm);
+				if (flags & TRACE_USES_FRAME_POINTER) {
+					LOG("skipping push because this function is using the frame pointer");
+					break;
+				}
+				push_stack(&self.current_state, 2);
+				set_register(&self.current_state.registers[REGISTER_STACK_0], imm);
 				break;
+			}
 			case 0x6b: { // imul r, r/m, imm8
 				clear_comparison_state(&self.current_state);
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
