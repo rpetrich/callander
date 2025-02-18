@@ -142,7 +142,7 @@ static struct loaded_binary *parse_and_load_library_line(struct program_state *a
 	// parse path part
 	size_t name_end = len;
 	size_t path_start = len;
-	int special_binary_flags = 0;
+	binary_flags special_binary_flags = 0;
 	for (size_t i = 0; i < len; i++) {
 		if (buf[i] == '*' && buf[i + 1] == ' ') {
 			special_binary_flags = BINARY_IS_LOADED_VIA_DLOPEN;

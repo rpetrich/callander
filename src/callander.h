@@ -184,6 +184,7 @@ enum {
 	BINARY_IS_LIBKRB5 = 1 << 18,
 	BINARY_IS_LIBSASL2 = 1 << 19,
 };
+typedef uint32_t binary_flags;
 
 enum {
 	OVERRIDE_ACCESS_SLOT_COUNT = 3,
@@ -219,7 +220,7 @@ struct loaded_binary {
 	struct loaded_binary *next;
 	struct loaded_binary *previous;
 	int id;
-	int special_binary_flags;
+	binary_flags special_binary_flags;
 	dev_t device;
 	ino_t inode;
 	mode_t mode;
@@ -541,8 +542,10 @@ void log_basic_blocks(const struct program_state *analysis, function_effects req
 
 void populate_reachable_regions(struct program_state *analysis);
 
+typedef int trace_flags;
+
 __attribute__((nonnull(1, 3, 4, 5)))
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags);
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, trace_flags flags);
 
 __attribute__((always_inline))
 __attribute__((nonnull(1, 3, 4, 5)))

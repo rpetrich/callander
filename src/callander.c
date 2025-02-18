@@ -467,7 +467,7 @@ static inline void clear_stack(struct registers *regs, __attribute__((unused)) i
 }
 
 __attribute__((always_inline))
-static inline bool binary_has_flags(const struct loaded_binary *binary, int flags)
+static inline bool binary_has_flags(const struct loaded_binary *binary, binary_flags flags)
 {
 	return (binary != NULL) && ((binary->special_binary_flags & flags) == flags);
 }
@@ -3669,7 +3669,7 @@ static inline struct register_state_and_source address_for_indirect(struct x86_i
 	return result;
 }
 
-struct decoded_rm decode_rm(const uint8_t **ins_modrm, struct x86_ins_prefixes prefixes, uint8_t imm_size) {
+struct decoded_rm decode_rm(const uint8_t **ins_modrm, struct x86_ins_prefixes prefixes, uint8_t imm_size, bool uses_frame_pointer) {
 	x86_mod_rm_t modrm = x86_read_modrm(*ins_modrm);
 	*ins_modrm += sizeof(x86_mod_rm_t);
 	struct decoded_rm result = (struct decoded_rm){ 0 };
@@ -3682,6 +3682,15 @@ struct decoded_rm decode_rm(const uint8_t **ins_modrm, struct x86_ins_prefixes p
 	} else {
 		switch ((result.rm = x86_read_rm(modrm, prefixes))) {
 			case REGISTER_SP:
+				if (uses_frame_pointer) {
+					result.rm = REGISTER_STACK_4;
+					result.base = 0;
+					result.index = 0;
+					result.scale = 0;
+					result.addr = 0;
+					break;
+				}
+				// fallthrough
 			case REGISTER_R12: {
 				// decode SIB
 				x86_sib_t sib = x86_read_sib(*ins_modrm);
@@ -3703,6 +3712,15 @@ struct decoded_rm decode_rm(const uint8_t **ins_modrm, struct x86_ins_prefixes p
 					result.addr = (uintptr_t)*ins_modrm + sizeof(int32_t) + *(const ins_int32 *)*ins_modrm + imm_size;
 					result.rm = REGISTER_MEM;
 					*ins_modrm += sizeof(int32_t);
+					break;
+				}
+				// frame pointer offset
+				if (result.rm == REGISTER_RBP && uses_frame_pointer) {
+					result.base = REGISTER_SP;
+					result.index = REGISTER_SP;
+					result.scale = 0;
+					result.addr = 0;
+					result.rm = REGISTER_STACK_0;
 					break;
 				}
 				// fallthrough
@@ -3780,6 +3798,14 @@ static inline void add_registers(struct register_state *dest, const struct regis
 		clear_register(dest);
 	}
 }
+
+enum {
+	TRACE_USES_FRAME_POINTER = 1,
+#ifdef __aarch64__
+	TRACE_MEMORY_LOAD_RECURSION_STEP = 2,
+	TRACE_MEMORY_LOAD_RECURSION_LIMIT = 6,
+#endif
+};
 
 #ifdef __aarch64__
 
@@ -4053,10 +4079,16 @@ enum {
 	OPERATION_SIZE_DEFAULT = 0,
 };
 
-enum {
+enum read_rm_flags {
 	READ_RM_REPLACE_MEM = 0,
-	READ_RM_KEEP_MEM = 1,
+	READ_RM_KEEP_MEM = 2,
+	READ_RM_USES_FRAME_POINTER = 1,
 };
+
+static inline enum read_rm_flags read_rm_flags_from_trace_flags(trace_flags flags)
+{
+	return (flags & TRACE_USES_FRAME_POINTER) ? READ_RM_USES_FRAME_POINTER : 0;
+}
 
 struct rm_result {
 	struct register_state state;
@@ -4086,7 +4118,7 @@ static inline void truncate_to_operation_size(struct register_state *value, int 
 	}
 }
 
-static inline struct rm_result read_rm_ref(const struct loader_context *loader, struct x86_ins_prefixes prefixes, ins_ptr *ins_modrm, size_t imm_size, struct registers *regs, int operation_size, int flags)
+static inline struct rm_result read_rm_ref(const struct loader_context *loader, struct x86_ins_prefixes prefixes, ins_ptr *ins_modrm, size_t imm_size, struct registers *regs, int operation_size, enum read_rm_flags flags)
 {
 	struct rm_result result = {
 		.reg = REGISTER_INVALID,
@@ -4108,7 +4140,7 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 		result.sources = regs->sources[result.reg];
 		goto return_result;
 	}
-	struct decoded_rm decoded = decode_rm(ins_modrm, prefixes, imm_size);
+	struct decoded_rm decoded = decode_rm(ins_modrm, prefixes, imm_size, (flags & READ_RM_USES_FRAME_POINTER) == READ_RM_USES_FRAME_POINTER);
 	if (decoded.rm == REGISTER_STACK_0 && decoded.base == REGISTER_SP && decoded.index == REGISTER_SP) {
 		switch (decoded.addr) {
 #define PER_STACK_REGISTER_IMPL(offset) case offset: \
@@ -4525,10 +4557,10 @@ struct basic_op_result {
 };
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_rm_r_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	LOG("basic operand", name_for_register(reg));
@@ -4563,10 +4595,10 @@ static struct basic_op_result perform_basic_op_rm_r_8(__attribute__((unused)) co
 }
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_rm_r(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	LOG("basic operand", name_for_register(reg));
@@ -4594,10 +4626,10 @@ static struct basic_op_result perform_basic_op_rm_r(__attribute__((unused)) cons
 }
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_r_rm_8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(reg));
 	LOG("basic operand", name_for_register(rm.reg));
@@ -4631,10 +4663,10 @@ static struct basic_op_result perform_basic_op_r_rm_8(__attribute__((unused)) co
 }
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_r_rm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
 	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, 0, regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(reg));
 	LOG("basic operand", name_for_register(rm.reg));
@@ -4662,9 +4694,9 @@ static struct basic_op_result perform_basic_op_r_rm(__attribute__((unused)) cons
 }
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_rm8_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(uint8_t), regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(uint8_t), regs, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	dump_registers(loader, regs, mask_for_register(rm.reg));
@@ -4725,9 +4757,9 @@ static void perform_basic_op_al_imm8(__attribute__((unused)) const char *name, b
 }
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, imm_size_for_prefixes(prefixes), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, imm_size_for_prefixes(prefixes), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	dump_registers(loader, regs, mask_for_register(rm.reg));
@@ -4779,9 +4811,9 @@ static void perform_basic_op_imm(__attribute__((unused)) const char *name, basic
 }
 
 __attribute__((warn_unused_result))
-static struct basic_op_result perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, struct additional_result *additional)
+static struct basic_op_result perform_basic_op_rm_imm8(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
 {
-	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(int8_t), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, sizeof(int8_t), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	dump_registers(loader, regs, mask_for_register(rm.reg));
@@ -5415,7 +5447,7 @@ enum alternate_type {
 };
 
 __attribute__((always_inline))
-static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self, int flags)
+static inline function_effects analyze_conditional_branch(struct program_state *analysis, function_effects required_effects, __attribute__((unused)) ins_ptr ins, struct decoded_ins *decoded, ins_ptr jump_target, ins_ptr continue_target, struct analysis_frame *self, trace_flags flags)
 {
 	bool skip_jump = false;
 	bool skip_continue = false;
@@ -6483,7 +6515,7 @@ static void analyze_memory_read(struct program_state *analysis, struct analysis_
 #define ANALYZE_PRIMARY_RESULT() do { \
 	ins = next_ins(ins, &decoded); \
 	self.description = "primary result"; \
-	effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS); \
+	effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, trace_flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS); \
 } while(0)
 
 #define CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg) do { \
@@ -6494,15 +6526,7 @@ static void analyze_memory_read(struct program_state *analysis, struct analysis_
 	} \
 } while(0)
 
-enum {
-	TRACE_USES_FRAME_POINTER = 1,
-#ifdef __aarch64__
-	TRACE_MEMORY_LOAD_RECURSION_STEP = 2,
-	TRACE_MEMORY_LOAD_RECURSION_LIMIT = 6,
-#endif
-};
-
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags)
+function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, trace_flags trace_flags)
 {
 	struct decoded_ins decoded;
 	ins = skip_prefix_jumps(analysis, ins, &decoded, required_effects);
@@ -6630,7 +6654,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					if (ins == self.entry || (ins == &self.entry[4] && is_landing_pad_ins_decode(self.entry))) {
 						set_effects(&analysis->search, self.entry, &self.token, EFFECT_NONE, 0);
 					}
-					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+					effects |= analyze_instructions(analysis, required_effects, &self.current_state, jump_target, &self, trace_flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 					LOG("completing from jump", temp_str(copy_address_description(&analysis->loader, self.entry)));
 					if (caller->entry == jump_target) {
 						goto update_and_return_preserving_effects;
@@ -6639,7 +6663,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto update_and_return;
 			}
 			case INS_JUMPS_OR_CONTINUES: {
-				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+				effects |= analyze_conditional_branch(analysis, required_effects, ins, &decoded, jump_target, next_ins(ins, &decoded), &self, trace_flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 				goto update_and_return;
 			}
 		}
@@ -6661,28 +6685,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		switch (*decoded.unprefixed) {
 			case 0x00: { // add r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x01: { // add r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x02: { // add r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x03: { // add r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
@@ -6709,28 +6733,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x08: { // or r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x09: { // or r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x0a: { // or r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x0b: { // or r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
@@ -6760,7 +6784,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case 0: // sldt r/m16
 							case 1: { // str r/m16
 								ins_ptr remaining = &decoded.unprefixed[2];
-								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM);
+								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 								CHECK_RM_FAULT(rm);
 								struct register_state state;
 								clear_register(&state);
@@ -6827,7 +6851,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					case 0x11: { // movups xmm/m, xmm
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg >= REGISTER_MEM) {
 							LOG("movups to mem", name_for_register(rm.reg));
@@ -6910,7 +6934,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									clear_match(&analysis->loader, &self.current_state, reg, ins);
 								} else { // movbe r/m, r
 									ins_ptr remaining = &decoded.unprefixed[3];
-									struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+									struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 									CHECK_RM_FAULT(rm);
 									clear_register(&self.current_state.registers[rm.reg]);
 									self.current_state.sources[rm.reg] = 0;
@@ -6924,7 +6948,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						switch (decoded.unprefixed[2]) {
 							case 0x14: { // pextrb r/m8, xmm2, imm8
 								ins_ptr remaining = &decoded.unprefixed[3];
-								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM);
+								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 								CHECK_RM_FAULT(rm);
 								if (rm.reg != REGISTER_INVALID) {
 									bool is_legacy = register_is_legacy_8bit_high(decoded.prefixes, &rm.reg);
@@ -6941,7 +6965,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 							case 0x16: { // pextrd/q r/m, xmm2, imm8
 								ins_ptr remaining = &decoded.unprefixed[3];
-								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 								CHECK_RM_FAULT(rm);
 								if (rm.reg != REGISTER_INVALID) {
 									clear_register(&self.current_state.registers[rm.reg]);
@@ -6953,7 +6977,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							}
 							case 0x17: { // extractps r/m32, xmm1, imm8
 								ins_ptr remaining = &decoded.unprefixed[3];
-								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_WORD, READ_RM_KEEP_MEM);
+								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_WORD, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 								CHECK_RM_FAULT(rm);
 								if (rm.reg != REGISTER_INVALID) {
 									clear_register(&self.current_state.registers[rm.reg]);
@@ -7009,7 +7033,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int dest = x86_read_reg(modrm, decoded.prefixes);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						LOG("from", name_for_register(rm.reg));
 						LOG("to", name_for_register(dest));
@@ -7054,7 +7078,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									x86_mod_rm_t lookahead_modrm = x86_read_modrm(&lookahead_decoded.unprefixed[2]);
 									if (reg == x86_read_reg(lookahead_modrm, lookahead_decoded.prefixes)) {
 										ins_ptr lookahead_temp = lookahead;
-										struct rm_result lookahead_rm = read_rm_ref(&analysis->loader, lookahead_decoded.prefixes, &lookahead_temp, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM);
+										struct rm_result lookahead_rm = read_rm_ref(&analysis->loader, lookahead_decoded.prefixes, &lookahead_temp, 0, &self.current_state, OPERATION_SIZE_DWORD, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 										CHECK_RM_FAULT(lookahead_rm);
 										LOG("found xorps+movps, zeroing idiom to register", name_for_register(lookahead_rm.reg));
 										set_register(&self.current_state.registers[lookahead_rm.reg], 0);
@@ -7077,7 +7101,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 					case 0x7e: { // movd/q r/m, mm
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7126,7 +7150,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0x9f: {
 						LOG("found setcc", temp_str(copy_address_description(&analysis->loader, ins)));
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						LOG("to", name_for_register(rm.reg));
 						switch (calculate_possible_conditions(&analysis->loader, x86_get_conditional_type(&decoded.unprefixed[1]), &self.current_state)) {
@@ -7188,7 +7212,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xa4: { // shld r/m, r, imm8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7201,7 +7225,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xa5: { // shld r/m, r, cl
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7224,7 +7248,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xab: { // bts r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7237,7 +7261,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xac: { // shrd r/m, r, imm8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7250,7 +7274,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xad: { // shrd r/m, r, cl
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7277,7 +7301,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						self.current_state.sources[REGISTER_RAX] = 0;
 						clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm.reg)) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7301,7 +7325,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						self.current_state.sources[REGISTER_RAX] = 0;
 						clear_match(&analysis->loader, &self.current_state, REGISTER_RAX, ins);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						truncate_to_size_prefixes(&self.current_state.registers[rm.reg], decoded.prefixes);
 						self.current_state.sources[rm.reg] = 0;
@@ -7325,7 +7349,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xb3: { // btr r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						clear_register(&self.current_state.registers[rm.reg]);
 						truncate_to_size_prefixes(&self.current_state.registers[rm.reg], decoded.prefixes);
@@ -7360,7 +7384,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("to", name_for_register(dest));
 						ins_ptr remaining = &decoded.unprefixed[2];
 						int source_size = decoded.unprefixed[1] == 0xb6 ? OPERATION_SIZE_BYTE : OPERATION_SIZE_HALF;
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, source_size, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, source_size, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						LOG("from", name_for_register(rm.reg));
 						uintptr_t mask = source_size == OPERATION_SIZE_BYTE ? 0xff : 0xffff;
@@ -7454,7 +7478,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							case 7: { // btc r/m, imm8
 								clear_comparison_state(&self.current_state);
 								ins_ptr remaining = &decoded.unprefixed[2];
-								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+								struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 								CHECK_RM_FAULT(rm);
 								if (rm.reg != REGISTER_INVALID) {
 									clear_register(&self.current_state.registers[rm.reg]);
@@ -7470,7 +7494,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xbb: { // btc r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg != REGISTER_INVALID) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -7514,7 +7538,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int reg = x86_read_reg(modrm, decoded.prefixes);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						LOG("movsx r to", name_for_register(reg));
 						LOG("from r/m8", name_for_register(rm.reg));
@@ -7533,7 +7557,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						int reg = x86_read_reg(modrm, decoded.prefixes);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						LOG("movsx r to", name_for_register(reg));
 						LOG("from r/m", name_for_register(rm.reg));
@@ -7551,7 +7575,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xc0: { // xadd r/m8, r8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						clear_register(&self.current_state.registers[rm.reg]);
@@ -7572,7 +7596,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0xc1: { // xadd r/m, r
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[2];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[2]);
 						clear_register(&self.current_state.registers[rm.reg]);
@@ -7654,28 +7678,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x10: { // adc r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x11: { // adc r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x12: { // adc r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x13: { // adc r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
@@ -7702,28 +7726,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x18: { // sbb r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x19: { // sbb r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x1a: { // sbb r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x1b: { // sbb r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
@@ -7750,28 +7774,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x20: { // and r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x21: { // and r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x22: { // and r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x23: { // and r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
@@ -7798,7 +7822,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x28: { // sub r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, rm, 0xff);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
@@ -7806,7 +7830,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0x29: { // sub r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
@@ -7814,7 +7838,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0x2a: { // sub r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, reg, 0xff);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
@@ -7822,7 +7846,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0x2b: { // sub r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				// sub is equivalent to a comparison with 0, since it refers to the value after the subtraction
 				set_compare_from_operation(&self.current_state, reg, mask_for_size_prefixes(decoded.prefixes));
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
@@ -7852,28 +7876,28 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x30: { // xor r/m8, r8
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				break;
 			}
 			case 0x31: { // xor r/m, r
 				struct additional_result additional;
-				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_r("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(rm);
 				goto skip_stack_clear;
 			}
 			case 0x32: { // xor r8, r/m8
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				goto skip_stack_clear;
 			}
 			case 0x33: { // xor r, r/m
 				struct additional_result additional;
-				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
 				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				goto skip_stack_clear;
@@ -7903,7 +7927,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct register_state comparator = self.current_state.registers[reg];
 				truncate_to_size_prefixes(&comparator, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
@@ -7922,7 +7946,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct register_state comparator = self.current_state.registers[reg];
 				truncate_to_size_prefixes(&comparator, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 				set_comparison_state(&analysis->loader, &self.current_state, (struct register_comparison){
@@ -7938,7 +7962,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x3a: { // cmp r8, r/m8
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				if (register_is_legacy_8bit_high(decoded.prefixes, &rm.reg)) {
 					clear_comparison_state(&self.current_state);
@@ -7963,7 +7987,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x3b: { // cmp r, r/m
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				truncate_to_size_prefixes(&rm.state, decoded.prefixes);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
@@ -8057,7 +8081,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x57: {
 				int reg = x86_read_opcode_register_index(*decoded.unprefixed, 0x50, decoded.prefixes);
 				LOG("push", name_for_register(reg));
-				if (flags & TRACE_USES_FRAME_POINTER) {
+				if (trace_flags & TRACE_USES_FRAME_POINTER) {
 					LOG("skipping push because this function is using the frame pointer");
 					break;
 				}
@@ -8222,7 +8246,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											}
 										}
 										set_register(&copy.registers[reg], relative);
-										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, trace_flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
 										next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
@@ -8249,7 +8273,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					}
 				}
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				truncate_to_32bit(&rm.state);
 				if (register_is_exactly_known(&rm.state)) {
@@ -8284,7 +8308,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x68: { // push imm
 				uint64_t imm = read_imm(decoded.prefixes, &decoded.unprefixed[1]);
 				LOG("push", imm);
-				if (flags & TRACE_USES_FRAME_POINTER) {
+				if (trace_flags & TRACE_USES_FRAME_POINTER) {
 					LOG("skipping push because this function is using the frame pointer");
 					break;
 				}
@@ -8305,7 +8329,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x6a: { // push imm8
 				uint8_t imm = *(const uint8_t *)&decoded.unprefixed[1];
 				LOG("push", (uintptr_t)imm);
-				if (flags & TRACE_USES_FRAME_POINTER) {
+				if (trace_flags & TRACE_USES_FRAME_POINTER) {
 					LOG("skipping push because this function is using the frame pointer");
 					break;
 				}
@@ -8369,36 +8393,36 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int rm;
 				switch (modrm.reg) {
 					case 0: // add r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 1: // or r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 2: // adc r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 3: // sbb r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 4: // and r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 5: // sub r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						set_compare_from_operation(&self.current_state, rm, 0xff);
 						break;
 					case 6: // xor r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 7: { // cmp r/m, imm8
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(uint8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+						struct rm_result rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(uint8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm_res);
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm_res.reg)) {
 							clear_comparison_state(&self.current_state);
@@ -8428,32 +8452,32 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int rm;
 				switch (modrm.reg) {
 					case 0: // add r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 1: // or r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 2: // adc r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 3: // sbb r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 4: { // and r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					}
 					case 5: // sub r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
 						break;
 					case 6: // xor r/m, imm
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 7: { // cmp r/m, imm
@@ -8462,10 +8486,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						struct register_state comparator;
 						struct rm_result rm_res;
 						if (decoded.prefixes.has_operand_size_override) {
-							rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int16_t), &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM);
+							rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int16_t), &self.current_state, OPERATION_SIZE_HALF, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 							comparator.value = comparator.max = (uintptr_t)*(const ins_uint16 *)remaining & mask;
 						} else {
-							rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int32_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+							rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int32_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 							comparator.value = comparator.max = (decoded.prefixes.has_w ? (uintptr_t)*(const ins_int32 *)remaining : (uintptr_t)*(const ins_uint32 *)remaining) & mask;
 						}
 						CHECK_RM_FAULT(rm_res);
@@ -8498,7 +8522,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
 							if ((imm & 0x3) == 0) {
-								if (flags & TRACE_USES_FRAME_POINTER) {
+								if (trace_flags & TRACE_USES_FRAME_POINTER) {
 									LOG("skipping stack increment because this function is using the frame pointer");
 									rm = REGISTER_INVALID;
 									break;
@@ -8523,24 +8547,24 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								break;
 							}
 						}
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("add", basic_op_add, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					}
 					case 1: // or r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("or", basic_op_or, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 2: // adc r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("adc", basic_op_adc, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 3: // sbb r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 4: // and r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 5: { // sub r/m, imm8
@@ -8548,7 +8572,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
 							if ((imm & 0x3) == 0) {
-								if (flags & TRACE_USES_FRAME_POINTER) {
+								if (trace_flags & TRACE_USES_FRAME_POINTER) {
 									LOG("skipping stack decrement because this function is using the frame pointer");
 									rm = REGISTER_INVALID;
 									break;
@@ -8573,17 +8597,17 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								break;
 							}
 						}
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
 						break;
 					}
 					case 6: // xor r/m, imm8
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("xor", basic_op_xor, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
 					case 7: { // cmp r/m, imm8
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm_res = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm_res);
 						uintptr_t mask = mask_for_size_prefixes(decoded.prefixes);
 						struct register_state comparator;
@@ -8659,7 +8683,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				}
 				truncate_to_8bit(&dest);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				bool rm_is_legacy = register_is_legacy_8bit_high(decoded.prefixes, &rm.reg);
 				if (rm_is_legacy) {
@@ -8688,7 +8712,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				struct register_state dest = self.current_state.registers[reg];
 				truncate_to_size_prefixes(&dest, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				truncate_to_size_prefixes(&rm.state, decoded.prefixes);
 				self.current_state.registers[reg] = rm.state;
@@ -8703,7 +8727,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x88: { // mov r/m8, r8
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				LOG("mov r/m8 to", name_for_register(rm.reg));
@@ -8735,14 +8759,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x89: { // mov r/m, r
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				LOG("mov r/m to", name_for_register(rm.reg));
 				LOG("from r", name_for_register(reg));
 				if (reg == REGISTER_SP) {
 					if (rm.reg == REGISTER_RBP) {
-						flags |= TRACE_USES_FRAME_POINTER;
+						trace_flags |= TRACE_USES_FRAME_POINTER;
 						LOG("function is using the frame pointer");
 					} else {
 						record_stack_address_taken(&analysis->loader, ins, &self.current_state);
@@ -8771,7 +8795,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				LOG("mov r8 to", name_for_register(reg));
 				LOG("from r/m8", name_for_register(rm.reg));
@@ -8809,7 +8833,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int reg = x86_read_reg(modrm, decoded.prefixes);
 				LOG("mov r to", name_for_register(reg));
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				LOG("from r/m", name_for_register(rm.reg));
 				if (SHOULD_LOG) {
@@ -8837,7 +8861,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			}
 			case 0x8c: { // mov r/m, Sreg
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				clear_register(&self.current_state.registers[rm.reg]);
 				truncate_to_size_prefixes(&self.current_state.registers[rm.reg], decoded.prefixes);
@@ -8946,7 +8970,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			case 0x8f: { // pop r/m
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				struct register_state empty;
 				clear_register(&empty);
@@ -9147,16 +9171,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int rm;
 				switch (modrm.reg) {
 					case 4:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 					case 5:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 					case 7:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("sar", basic_op_sar, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("sar", basic_op_sar, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 					default:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm8_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 				}
 				clear_comparison_state(&self.current_state);
@@ -9170,16 +9194,16 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				switch (modrm.reg) {
 					case 4:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("shl", basic_op_shl, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 					case 5:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("shr", basic_op_shr, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 					case 7:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("sar", basic_op_sar, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("sar", basic_op_sar, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 					default:
-						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], &additional));
+						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm8("rotate/shift family", basic_op_unknown, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						break;
 				}
 				clear_comparison_state(&self.current_state);
@@ -9198,7 +9222,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				if (modrm.reg == 0) {
 					ins_ptr remaining = &decoded.unprefixed[1];
-					struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+					struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, sizeof(int8_t), &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 					CHECK_RM_FAULT(rm);
 					LOG("mov r/m8 to", name_for_register(rm.reg));
 					struct register_state state;
@@ -9217,7 +9241,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
 				if (modrm.reg == 0) {
 					ins_ptr remaining = &decoded.unprefixed[1];
-					struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, imm_size_for_prefixes(decoded.prefixes), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+					struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, imm_size_for_prefixes(decoded.prefixes), &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 					CHECK_RM_FAULT(rm);
 					LOG("mov r/m to", name_for_register(rm.reg));
 					struct register_state state;
@@ -9284,7 +9308,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd0: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, 1
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				if (rm.reg != REGISTER_INVALID) {
 					if (register_is_legacy_8bit_high(decoded.prefixes, &rm.reg)) {
@@ -9301,7 +9325,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd1: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, 1
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				if (rm.reg != REGISTER_INVALID) {
 					clear_register(&self.current_state.registers[rm.reg]);
@@ -9314,7 +9338,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd2: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m8, cl
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				if (rm.reg != REGISTER_INVALID) {
 					if (register_is_legacy_8bit_high(decoded.prefixes, &rm.reg)) {
@@ -9331,7 +9355,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0xd3: { // rol/ror/rcl/rcr/shl/sal/shr/sar r/m, cl
 				clear_comparison_state(&self.current_state);
 				ins_ptr remaining = &decoded.unprefixed[1];
-				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM);
+				struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_KEEP_MEM | read_rm_flags_from_trace_flags(trace_flags));
 				CHECK_RM_FAULT(rm);
 				if (rm.reg != REGISTER_INVALID) {
 					clear_register(&self.current_state.registers[rm.reg]);
@@ -9617,7 +9641,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0: { // inc r/m8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_BYTE, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						struct register_state state = self.current_state.registers[rm.reg];
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm.reg)) {
@@ -9634,7 +9658,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 1: { // dec r/m8
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (register_is_legacy_8bit_high(decoded.prefixes, &rm.reg)) {
 							clear_register(&self.current_state.registers[rm.reg]);
@@ -9660,7 +9684,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 0: { // inc r/m
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						struct register_state state = self.current_state.registers[rm.reg];
 						truncate_to_size_prefixes(&state, decoded.prefixes);
@@ -9673,7 +9697,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					case 1: { // dec r/m
 						clear_comparison_state(&self.current_state);
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						struct register_state state = self.current_state.registers[rm.reg];
 						truncate_to_size_prefixes(&state, decoded.prefixes);
@@ -9858,7 +9882,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						goto update_and_return;
 					case 6: { // push
 						ins_ptr remaining = &decoded.unprefixed[1];
-						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM);
+						struct rm_result rm = read_rm_ref(&analysis->loader, decoded.prefixes, &remaining, 0, &self.current_state, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
 						CHECK_RM_FAULT(rm);
 						if (rm.reg >= REGISTER_STACK_0) {
 							if (rm.reg >= REGISTER_COUNT-2) {
@@ -10454,7 +10478,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						}
 					}
 					self.description = get_operation(&decoded.decomposed);
-					effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
+					effects |= analyze_instructions(analysis, required_effects, &self.current_state, new_ins, &self, trace_flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS | EFFECT_PROCESSING);
 					LOG("completing from br", temp_str(copy_address_description(&analysis->loader, self.entry)));
 				}
 				goto update_and_return;
@@ -11673,11 +11697,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							clear_match(&analysis->loader, &self.current_state, reg, ins);
 							self.current_state.sources[reg] = 0;
 						}
-						if (flags < TRACE_MEMORY_LOAD_RECURSION_LIMIT && base_addr != 0) {
+						if (trace_flags < TRACE_MEMORY_LOAD_RECURSION_LIMIT && base_addr != 0) {
 							ins_ptr lookahead = next_ins(ins, &decoded);
 							struct decoded_ins lookahead_decoded;
 							if (decode_ins(lookahead, &lookahead_decoded) && lookahead_decoded.decomposed.operation == decoded.decomposed.operation) {
-								flags |= TRACE_MEMORY_LOAD_RECURSION_LIMIT;
+								trace_flags |= TRACE_MEMORY_LOAD_RECURSION_LIMIT;
 								goto cancel_lookup_table;
 							}
 							dump_registers(&analysis->loader, &self.current_state, dump_mask);
@@ -11759,7 +11783,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											LOG("discovered non-executable address, cancelling lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
 											goto cancel_lookup_table;
 										}
-										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, flags + TRACE_MEMORY_LOAD_RECURSION_STEP) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, trace_flags + TRACE_MEMORY_LOAD_RECURSION_STEP) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
 										next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
@@ -13379,7 +13403,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		}
 #else
 		DIE("unsupported architecture");
-		(void)flags;
+		(void)trace_flags;
 		goto skip_stack_clear;
 #endif
 #endif
@@ -13443,7 +13467,7 @@ update_and_return:
 	return effects;
 use_alternate_result:
 	self.description = "alternate result";
-	effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+	effects |= analyze_instructions(analysis, required_effects, &self.current_state, ins, &self, trace_flags) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 	goto update_and_return;
 }
 
