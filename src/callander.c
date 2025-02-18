@@ -6494,6 +6494,14 @@ static void analyze_memory_read(struct program_state *analysis, struct analysis_
 	} \
 } while(0)
 
+enum {
+	TRACE_USES_FRAME_POINTER = 1,
+#ifdef __aarch64__
+	TRACE_MEMORY_LOAD_RECURSION_STEP = 2,
+	TRACE_MEMORY_LOAD_RECURSION_LIMIT = 6,
+#endif
+};
+
 function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, int flags)
 {
 	struct decoded_ins decoded;
@@ -8049,6 +8057,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case 0x57: {
 				int reg = x86_read_opcode_register_index(*decoded.unprefixed, 0x50, decoded.prefixes);
 				LOG("push", name_for_register(reg));
+				if (flags & TRACE_USES_FRAME_POINTER) {
+					LOG("skipping push because this function is using the frame pointer");
+					break;
+				}
 				if (decoded.prefixes.has_operand_size_override) {
 					clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				} else {
@@ -8468,6 +8480,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
 							if ((imm & 0x3) == 0) {
+								if (flags & TRACE_USES_FRAME_POINTER) {
+									LOG("skipping stack increment because this function is using the frame pointer");
+									rm = REGISTER_INVALID;
+									break;
+								}
 								if (imm <= 0) {
 									push_stack(&self.current_state, -(imm >> 2));
 								} else {
@@ -8513,6 +8530,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							// handle stack operations
 							int8_t imm = *(const int8_t *)&decoded.unprefixed[2];
 							if ((imm & 0x3) == 0) {
+								if (flags & TRACE_USES_FRAME_POINTER) {
+									LOG("skipping stack decrement because this function is using the frame pointer");
+									rm = REGISTER_INVALID;
+									break;
+								}
 								if (imm <= 0) {
 									pop_stack(&self.current_state, -(imm >> 2));
 								} else {
@@ -8701,7 +8723,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				LOG("mov r/m to", name_for_register(rm.reg));
 				LOG("from r", name_for_register(reg));
 				if (reg == REGISTER_SP) {
-					record_stack_address_taken(&analysis->loader, ins, &self.current_state);
+					if (rm.reg == REGISTER_RBP) {
+						flags |= TRACE_USES_FRAME_POINTER;
+						LOG("function is using the frame pointer");
+					} else {
+						record_stack_address_taken(&analysis->loader, ins, &self.current_state);
+					}
 				}
 				struct register_state source = self.current_state.registers[reg];
 				if (register_is_exactly_known(&source) && source.value > mask_for_size_prefixes(decoded.prefixes) && binary_for_address(&analysis->loader, (const void *)source.value) != NULL) {
@@ -11628,15 +11655,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							clear_match(&analysis->loader, &self.current_state, reg, ins);
 							self.current_state.sources[reg] = 0;
 						}
-						if (flags < 6 && base_addr != 0) {
+						if (flags < TRACE_MEMORY_LOAD_RECURSION_LIMIT && base_addr != 0) {
 							ins_ptr lookahead = next_ins(ins, &decoded);
 							struct decoded_ins lookahead_decoded;
 							if (decode_ins(lookahead, &lookahead_decoded) && lookahead_decoded.decomposed.operation == decoded.decomposed.operation) {
-								// lookahead = next_ins(lookahead, &lookahead_decoded);
-								// if (decode_ins(lookahead, &lookahead_decoded) && lookahead_decoded.decomposed.operation == decoded.decomposed.operation) {
-									flags |= 6;
-									goto cancel_lookup_table;
-								// }
+								flags |= TRACE_MEMORY_LOAD_RECURSION_LIMIT;
+								goto cancel_lookup_table;
 							}
 							dump_registers(&analysis->loader, &self.current_state, dump_mask);
 							LOG("looking up protection for base", temp_str(copy_address_description(&analysis->loader, (const void *)base_addr)));
@@ -11717,7 +11741,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											LOG("discovered non-executable address, cancelling lookup table", temp_str(copy_address_description(&analysis->loader, self.entry)));
 											goto cancel_lookup_table;
 										}
-										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, flags + 2) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
+										effects |= analyze_instructions(analysis, required_effects, &copy, continue_target, &self, flags + TRACE_MEMORY_LOAD_RECURSION_STEP) & ~(EFFECT_AFTER_STARTUP | EFFECT_PROCESSING | EFFECT_ENTER_CALLS);
 										LOG("next table case for", temp_str(copy_address_description(&analysis->loader, self.address)));
 										// re-enforce max range from other lea instructions that may have loaded addresses in the meantime
 										next_base_address = search_find_next_address(&analysis->search.loaded_addresses, base_addr);
