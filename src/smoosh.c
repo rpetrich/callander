@@ -240,7 +240,7 @@ static inline enum ordering_class ordering_class_for_sym(const ElfW(Sym) *sym)
 	if (ELF64_ST_BIND(sym->st_info) == STB_LOCAL) {
 		return ORDERING_CLASS_LOCAL;
 	}
-	if (sym->st_shndx == 0) {
+	if (sym->st_shndx == SHT_NULL) {
 		return ORDERING_CLASS_UNDEFINED;
 	}
 	return ORDERING_CLASS_DEFINED;
@@ -1243,7 +1243,26 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		if (verneed_size | verdef_size) {
 			uint32_t source_index = symbol_ordering[i].source_index;
 			if (symbol_ordering[i].source_index > 1) {
-				versym[i] = offsets[symbol_ordering[i].binary_index].version_id_start + symbol_ordering[i].binary->symbols.symbol_versions[source_index];
+				const ElfW(Half) version_id = symbol_ordering[i].binary->symbols.symbol_versions[source_index];
+				const struct symbol_version_info *input_version = &symbol_ordering[i].binary->symbols.valid_versions[version_id & ~0x8000];
+				struct loaded_binary *other = NULL;
+				ssize_t other_index = -1;
+				if (input_version->library_name != NULL) {
+					other_index = index_for_binary_path(&analysis->loader, input_version->library_name, &other);
+				}
+				if (other_index != -1 && binary_contributes_symbols(other)) {
+					for (ssize_t j = 0; j < other->symbols.valid_version_count; j++) {
+						const struct symbol_version_info *other_version = &other->symbols.valid_versions[j];
+						if (other_version->library_name == NULL && other_version->version_name != NULL && fs_strcmp(input_version->version_name, other_version->version_name) == 0) {
+							versym[i] = offsets[other_index].version_id_start + j;
+							goto found;
+						}
+					}
+					DIE("could not find replacement version definition for version needed", input_version->version_name);
+					found:;
+				} else {
+					versym[i] = offsets[symbol_ordering[i].binary_index].version_id_start + version_id;
+				}
 			} else {
 				versym[i] = source_index;
 			}
