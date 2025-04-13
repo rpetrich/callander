@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "callander.h"
 #include "callander_print.h"
 #include "ins.h"
@@ -34,8 +35,6 @@
 
 AXON_BOOTSTRAP_ASM
 
-#define PRINT_GDB_COMMANDS 1
-
 static bool bundle_interpreter = false;
 static bool remap_binary = false;
 static bool bundle_library = false;
@@ -43,6 +42,8 @@ static bool bundle_library = false;
 struct embedded_binary {
 	uint32_t name;
 	uint32_t text_address;
+	uint32_t offset;
+	uint32_t size;
 };
 
 struct bootstrap_offsets {
@@ -51,18 +52,40 @@ struct bootstrap_offsets {
 	uint32_t interpreter_base;
 	uint32_t main_entrypoint;
 	ElfW(Ehdr) header;
+	ElfW(Ehdr) old_header;
 	bool remap_binary;
-#if PRINT_GDB_COMMANDS
 	struct embedded_binary embedded_binaries[PAGE_SIZE/sizeof(struct embedded_binary)];
-#endif
 };
 
 static struct bootstrap_offsets bootstrap_offsets = { .base_to_bootstrap_dynamic = -1 };
+
+static int openat_creating_paths(int fd, const char *path, int flags, mode_t mode)
+{
+	intptr_t result = fs_openat(fd, path, flags | O_CREAT, mode);
+	if (result != -ENOENT) {
+		return result;
+	}
+	char *copy = strdup(path);
+	for (int i = 1; copy[i] != '\0'; i++) {
+		if (copy[i] == '/') {
+			copy[i] = '\0';
+			result = fs_mkdirat(fd, copy, 0755);
+			if (result != 0 && result != -EEXIST) {
+				free(copy);
+				return result;
+			}
+			copy[i] = '/';
+		}
+	}
+	free(copy);
+	return fs_openat(fd, path, flags | O_CREAT, mode);
+}
 
 __attribute__((visibility("hidden")))
 __attribute__((used))
 noreturn void bootstrap_interpreter(size_t *sp)
 {
+	uintptr_t base = (uintptr_t)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
 	// find environment
 	char **argv = (void *)(sp+1);
 	char **current_argv = argv;
@@ -73,10 +96,90 @@ noreturn void bootstrap_interpreter(size_t *sp)
 	char **envp = current_argv+1;
 	char **current_envp = envp;
 	while (*current_envp != NULL) {
+		if (fs_strncmp(*current_envp, "SMOOSH_DEBUG=", sizeof("SMOOSH_DEBUG=")-1) == 0) {
+			const char *debug = *current_envp + sizeof("SMOOSH_DEBUG=")-1;
+			if (fs_strcmp(debug, "gdb") == 0) {
+				// print gdb commands to force it to load symbols
+				char buf[PATH_MAX];
+				fs_memcpy(buf, "add-symbol-file ", sizeof("add-symbol-file ")-1);
+				for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
+					const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
+					if (binary->name == 0) {
+						break;
+					}
+					size_t c = sizeof("add-symbol-file ")-1;
+					const char *name = (const char *)base + binary->name;
+					size_t name_len = fs_strlen(name);
+					fs_memcpy(&buf[c], name, name_len);
+					c += name_len;
+					buf[c++] = ' ';
+					c += fs_utoah(base + binary->text_address, &buf[c]);
+					buf[c++] = '\n';
+					ERROR_WRITE(buf, c);
+				}
+				ERROR_FLUSH();
+			} else if (fs_strcmp(debug, "extract") == 0) {
+				int self_fd = fs_open("/proc/self/exe", O_RDONLY, 0);
+				if (self_fd < 0) {
+					DIE("unable to open self", fs_strerror(self_fd));
+				}
+				intptr_t result = fs_mkdir("extracted", 0755);
+				if (result < 0) {
+					if (result == -EEXIST) {
+						DIE("./extracted already exists");
+					}
+					DIE("unable to create ./extracted", fs_strerror(result));
+				}
+				intptr_t dirfd = fs_open("extracted", O_PATH, 0);
+				if (dirfd < 0) {
+					DIE("unable to open ./extracted", fs_strerror(result));
+				}
+				for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
+					const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
+					if (binary->name == 0) {
+						break;
+					}
+					char *buf = malloc(binary->size);
+					intptr_t result = fs_lseek(self_fd, binary->offset, SEEK_SET);
+					if (result < 0) {
+						DIE("couldn't seek self", fs_strerror(result));
+					}
+					result = fs_read_all(self_fd, buf, binary->size);
+					if (result < binary->size) {
+						DIE("couldn't read from self", fs_strerror(result));
+					}
+					const char *binary_path = (const char *)base + bootstrap_offsets.embedded_binaries[i].name;
+					int fd = openat_creating_paths(dirfd, binary_path + 1, O_RDWR, 0755);
+					if (fd < 0) {
+						ERROR_NOPREFIX("error opening", binary_path + 1);
+						DIE("returned", fs_strerror(fd));
+					}
+					result = fs_write_all(fd, buf, binary->size);
+					if (result < binary->size) {
+						DIE("error writing", binary_path + 1);
+						DIE("returned", fs_strerror(fd));
+					}
+					if (binary->offset == 0) {
+						result = fs_pwrite(fd, (const char *)&bootstrap_offsets.old_header, sizeof(bootstrap_offsets.old_header), 0);
+						if (result < sizeof(bootstrap_offsets.old_header)) {
+							DIE("error writing", binary_path + 1);
+							DIE("returned", fs_strerror(fd));
+						}
+					}
+					fs_close(fd);
+				}
+				fs_close(dirfd);
+				fs_close(self_fd);
+				fs_exit(0);
+			} else {
+				ERROR_NOPREFIX("smoosh: unknown SMOOSH_DEBUG option", debug);
+				ERROR_FLUSH();
+				fs_exit(0);
+			}
+		}
 		++current_envp;
 	}
 	// patch auxiliary vector
-	uintptr_t base = (uintptr_t)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
 	for (ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1); aux->a_type != AT_NULL; aux++) {
 		switch (aux->a_type) {
 			case AT_BASE: {
@@ -127,26 +230,6 @@ noreturn void bootstrap_interpreter(size_t *sp)
 	if (result < 0) {
 		DIE("failed to remap executable", fs_strerror(result));
 	}
-#endif
-#if PRINT_GDB_COMMANDS
-	// print gdb commands to force it to load symbols
-	char buf[PATH_MAX];
-	fs_memcpy(buf, "add-symbol-file ", sizeof("add-symbol-file ")-1);
-	for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
-		if (bootstrap_offsets.embedded_binaries[i].name == 0) {
-			break;
-		}
-		size_t c = sizeof("add-symbol-file ")-1;
-		const char *name = (const char *)base + bootstrap_offsets.embedded_binaries[i].name;
-		size_t name_len = fs_strlen(name);
-		fs_memcpy(&buf[c], name, name_len);
-		c += name_len;
-		buf[c++] = ' ';
-		c += fs_utoah(base + bootstrap_offsets.embedded_binaries[i].text_address, &buf[c]);
-		buf[c++] = '\n';
-		ERROR_WRITE(buf, c);
-	}
-	ERROR_FLUSH();
 #endif
 	// jump to the embedded ELF interpreter's entrypoint
 	void *interpreter_base = (void *)(base + bootstrap_offsets.interpreter_base);
@@ -813,9 +896,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t used_section_count = 0;
 	size_t symbol_count = 1;
 	size_t string_size = 0;
-#if PRINT_GDB_COMMANDS
 	size_t gdb_string_size = 0;
-#endif
 	size_t hash_size = sizeof(uint32_t) * 4 + sizeof(uint64_t);
 	size_t rela_size = 0;
 	size_t relr_size = 0;
@@ -993,9 +1074,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				hash_size += (binary->symbols.symbol_count - 1) * sizeof(uint32_t);
 				string_size += binary->symbols.strings_size;
 			}
-#if PRINT_GDB_COMMANDS
 			gdb_string_size += fs_strlen(binary->loaded_path) + 1;
-#endif
 			tls_size += binary_tls_size;
 			binary_index++;
 			version_ids_used++;
@@ -1003,9 +1082,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	uint32_t gnu_hash_bucket_count = symbol_count / 1;
 	hash_size += sizeof(uint32_t) * gnu_hash_bucket_count;
-#if PRINT_GDB_COMMANDS
 	string_size += gdb_string_size;
-#endif
 	size_t dyn_size = 0;
 	for (const ElfW(Dyn) *dyn = main->info.dynamic; dyn->d_tag != DT_NULL; dyn++) {
 		switch (dyn->d_tag) {
@@ -1972,6 +2049,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	dyn->d_tag = DT_NULL;
 	dyn->d_un.d_val = 0;
 	// commit changes to the ELF header
+	ElfW(Ehdr) old_header = *header;
 #if 0
 	header->e_phoff = size + phsize;
 	header->e_phnum = real_phcount;
@@ -1994,9 +2072,11 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		offsets->header.e_phoff = size + phsize;
 		offsets->header.e_phentsize = sizeof(ElfW(Phdr));
 		offsets->header.e_phnum = real_phcount;
+		offsets->old_header = old_header;
 		offsets->remap_binary = remap_binary;
-#if PRINT_GDB_COMMANDS
+		// write out embedded binary data
 		binary_index = 0;
+		offset = 0;
 		address_offset = 0;
 		for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 			if (should_include_binary(binary)) {
@@ -2013,23 +2093,27 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						}
 					}
 				}
+				size_t text_address = 0;
 				if (binary->has_sections) {
 					const ElfW(Shdr) *shdr = find_section(&binary->info, &binary->sections, ".text");
 					if (shdr != NULL) {
-						size_t name_len = fs_strlen(binary->loaded_path) + 1;
-						fs_memcpy(&strings[strings_offset], binary->loaded_path, name_len);
-						offsets->embedded_binaries[binary_index] = (struct embedded_binary) {
-							.name = address_size + string_start + strings_offset,
-							.text_address = address_offset + shdr->sh_addr,
-						};
-						strings_offset += name_len;
+						text_address = shdr->sh_addr;
 					}
 				}
+				size_t name_len = fs_strlen(binary->loaded_path) + 1;
+				fs_memcpy(&strings[strings_offset], binary->loaded_path, name_len);
+				offsets->embedded_binaries[binary_index] = (struct embedded_binary) {
+					.name = address_size + string_start + strings_offset,
+					.text_address = address_offset + text_address,
+					.offset = offset,
+					.size = binary->size,
+				};
+				strings_offset += name_len;
 				binary_index++;
+				offset += ALIGN_UP(binary->size, PAGE_SIZE);
 				address_offset += ALIGN_UP(largest_addr, EXECUTABLE_BASE_ALIGN);
 			}
 		}
-#endif
 		header->e_entry = address_for_binary(&analysis->loader, bootstrap) + offset_for_self_symbol(&bootstrap->info, bootstrap_trampoline);
 	}
 	// cleanup
