@@ -1254,9 +1254,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t extra_dynamic_size = fini_array_start + fini_array_size;
 	size_t total_size = size + shstrtab_start + shstrtab_size;
 	// open a file for the combined binary
-	const char *path = main->path;
-	const char *slash = fs_strrchr(path, '/');
-	int copy = fs_open(slash != NULL ? slash + 1 : path, O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, 0755);
+	const char *name = parse_name(main->path);
+	int copy = fs_open(name, O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, 0755);
 	if (copy < 0) {
 		DIE("failed open");
 	}
@@ -2170,6 +2169,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				}
 				size_t name_len = fs_strlen(binary->loaded_path) + 1;
 				fs_memcpy(&strings[strings_offset], binary->loaded_path, name_len);
+				bool is_entry = (binary->special_binary_flags & BINARY_IS_MAIN) == BINARY_IS_MAIN;
 				offsets->embedded_binaries[binary_index] = (struct embedded_binary) {
 					.name = address_size + string_start + strings_offset,
 					.address = address_offset,
@@ -2177,12 +2177,26 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					.offset = offset,
 					.size = binary->size,
 					.contributes_symbols = binary_contributes_symbols(binary),
-					.is_entry = (binary->special_binary_flags & BINARY_IS_MAIN) == BINARY_IS_MAIN,
+					.is_entry = is_entry,
 				};
 				strings_offset += name_len;
 				binary_index++;
 				offset += ALIGN_UP(binary->size, PAGE_SIZE);
 				address_offset += ALIGN_UP(largest_addr, EXECUTABLE_BASE_ALIGN);
+				if (is_entry && binary != main) {
+					const char *secondary_name = parse_name(binary->loaded_path);
+					intptr_t result = fs_linkat(AT_FDCWD, name, AT_FDCWD, secondary_name, 0);
+					if (result == -EEXIST) {
+						result = fs_unlink(secondary_name);
+						if (result != 0) {
+							DIE("failed unlinking secondary", fs_strerror(result));
+						}
+						result = fs_linkat(AT_FDCWD, name, AT_FDCWD, secondary_name, 0);
+					}
+					if (result != 0) {
+						DIE("failed linking secondary", fs_strerror(result));
+					}
+				}
 			}
 		}
 		header->e_entry = address_for_binary(&analysis->loader, bootstrap) + offset_for_self_symbol(&bootstrap->info, bootstrap_trampoline);
