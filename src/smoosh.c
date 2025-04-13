@@ -190,7 +190,7 @@ static size_t file_offset_for_binary(struct loader_context *loader, const struct
 }
 
 __attribute__((unused))
-static size_t file_offset_for_binary_address(struct loaded_binary *binary, intptr_t address)
+static size_t file_offset_for_binary_address(const struct loaded_binary *binary, intptr_t address)
 {
 	const ElfW(Phdr) *phdr = binary->info.program_header;
 	for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
@@ -310,7 +310,18 @@ static inline int compare_symbol_ordering(const void *left_untyped, const void *
 	return 0;
 }
 
-static void copy_relas(struct loader_context *loader, const struct loaded_binary *binary, ElfW(Rela) **relas, uintptr_t rela, size_t relasz, size_t relaent, ssize_t address_offset, size_t alternate_range_start, size_t alternate_range_size, ssize_t alternate_offset, ssize_t tls_offset, const struct symbol_ordering *symbol_ordering, size_t symbol_count)
+struct alternate_relocation_range {
+	size_t range_start;
+	size_t range_size;
+	ssize_t offset;
+};
+
+static inline bool is_alternate_relocation(struct alternate_relocation_range alternate, size_t offset)
+{
+	return (offset >= alternate.range_start) && (offset < alternate.range_start + alternate.range_size);
+}
+
+static void copy_relas(struct loader_context *loader, const struct loaded_binary *binary, ElfW(Rela) **relas, uintptr_t rela, size_t relasz, size_t relaent, ssize_t address_offset, struct alternate_relocation_range alternate, ssize_t tls_offset, const struct symbol_ordering *symbol_ordering, size_t symbol_count)
 {
 	void *relbase = (void *)apply_base_address(&binary->info, rela);
 	for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
@@ -346,13 +357,16 @@ static void copy_relas(struct loader_context *loader, const struct loaded_binary
 				}
 			}
 		}
-		ssize_t offset = (rel->r_offset >= alternate_range_start) && (rel->r_offset < alternate_range_start + alternate_range_size) ? alternate_offset : address_offset;
+		ssize_t offset = is_alternate_relocation(alternate, rel->r_offset) ? alternate.offset : address_offset;
 		uintptr_t addend_offset;
 		switch (ELF64_R_TYPE(info)) {
 			// case INS_R_COPY:
 			// 	ERROR("COPY relocations are not supported");
 			// 	(*relas)++;
 			// 	continue;
+#ifdef INS_R_RELATIVE64
+			case INS_R_RELATIVE64:
+#endif
 			case INS_R_RELATIVE:
 			case INS_R_IRELATIVE:
 				addend_offset = address_offset;
@@ -375,6 +389,68 @@ static void copy_relas(struct loader_context *loader, const struct loaded_binary
 			.r_addend = rel->r_addend + addend_offset,
 		};
 	}
+}
+
+static void copy_relrs(struct loader_context *loader, const struct loaded_binary *binary, ElfW(Relr) **relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, size_t alternate_defined_size, void *base, ElfW(Rela) **relas)
+{
+	ElfW(Relr) *r = binary->info.base + relr;
+	size_t where = 0;
+	for (int i = 0; i < relrsz / sizeof(*r); i++) {
+		ElfW(Relr) rv = r[i];
+		if (rv & 1) {
+			*(*relrs)++ = rv;
+			for (int i = 0; (rv >>= 1) != 0; i++) {
+				if (rv & 1) {
+					size_t where_i = where + i * sizeof(ElfW(Addr));
+					ElfW(Addr) *out = base + file_offset_for_binary_address(binary, where_i);
+					if (is_alternate_relocation(alternate, where_i)) {
+						*(*relas)++ = (ElfW(Rela)) {
+							.r_offset = where_i + alternate.offset,
+							.r_info = ELF64_R_INFO(0, ELF64_R_TYPE(INS_R_RELATIVE)),
+							.r_addend = *out + address_offset,
+						};
+					}
+					*out += address_offset;
+				}
+			}
+			where += (CHAR_BIT * sizeof(ElfW(Relr)) - 1) * sizeof(ElfW(Addr));
+		} else {
+			*(*relrs)++ = rv + address_offset;
+			where = rv;
+			ElfW(Addr) *out = base + file_offset_for_binary_address(binary, where);
+			if (is_alternate_relocation(alternate, where)) {
+				*(*relas)++ = (ElfW(Rela)) {
+					.r_offset = where + alternate.offset,
+					.r_info = ELF64_R_INFO(0, ELF64_R_TYPE(INS_R_RELATIVE)),
+					.r_addend = *out + address_offset,
+				};
+			}
+			*out += address_offset;
+			where += sizeof(ElfW(Addr));
+		}
+	}
+}
+
+static size_t measure_relr(const ElfW(Relr) *r, size_t relrsz, struct alternate_relocation_range alternate)
+{
+	size_t rela_count = 0;
+	size_t where = 0;
+	for (int i = 0; i < relrsz / sizeof(*r); i++) {
+		ElfW(Relr) rv = r[i];
+		if (rv & 1) {
+			for (int i = 0; (rv >>= 1) != 0; i++) {
+				if (rv & 1) {
+					rela_count += is_alternate_relocation(alternate, where + i * sizeof(ElfW(Addr)));
+				}
+			}
+			where += (CHAR_BIT * sizeof(ElfW(Relr)) - 1) * sizeof(ElfW(Addr));
+		} else {
+			where = rv;
+			rela_count += is_alternate_relocation(alternate, where);
+			where += sizeof(ElfW(Addr));
+		}
+	}
+	return rela_count;
 }
 
 static void add_init_function(ElfW(Addr) *init_array, size_t *init_array_position, ElfW(Rela) **relas, ElfW(Addr) init_array_start, ElfW(Addr) init)
@@ -739,6 +815,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 #endif
 	size_t hash_size = sizeof(uint32_t) * 4 + sizeof(uint64_t);
 	size_t rela_size = 0;
+	size_t relr_size = 0;
 	size_t jmprel_size = 0;
 	size_t preinit_array_size = 0;
 	size_t init_array_size = 0;
@@ -773,7 +850,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			};
 			ElfW(Addr) largest_addr = 0;
 			const ElfW(Phdr) *phdr = binary->info.program_header;
+			ElfW(Addr) binary_tls_address = 0;
 			size_t binary_tls_size = 0;
+			size_t binary_tls_defined_size = 0;
 			for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
 				switch (phdr[i].p_type) {
 					case PT_LOAD: {
@@ -794,7 +873,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 							tls_alignment = phdr[i].p_align;
 						}
 						tls_size = ALIGN_UP(tls_size, phdr[i].p_align);
+						binary_tls_address = phdr[i].p_vaddr;
 						binary_tls_size = phdr[i].p_memsz;
+						binary_tls_defined_size = phdr[i].p_filesz;
 						break;
 					}
 				}
@@ -832,6 +913,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				const ElfW(Verdef) *verdef = NULL;
 				const ElfW(Verneed) *verneed = NULL;
 				const ElfW(Dyn) *dynamic = binary->info.dynamic;
+				const ElfW(Relr) *relr = NULL;
+				size_t relrsz = 0;
 				for (size_t i = 0; i < binary->info.dynamic_size; i++) {
 					switch (dynamic[i].d_tag) {
 						case DT_RELASZ:
@@ -839,6 +922,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 							break;
 						case DT_PLTRELSZ:
 							jmprel_size += dynamic[i].d_un.d_val;
+							break;
+						case DT_RELRSZ:
+							relrsz = dynamic[i].d_un.d_val;
+							relr_size += relrsz;
 							break;
 						case DT_PREINIT_ARRAYSZ:
 							preinit_array_size += dynamic[i].d_un.d_val;
@@ -874,17 +961,25 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 								soname = string_size + dynamic[i].d_un.d_val;
 							}
 							break;
+						case DT_RELR:
+							relr = (void *)apply_base_address(&binary->info, dynamic[i].d_un.d_val);
+							break;
 					}
 				}
-				if (binary_contributes_symbols(binary)) {
-					if (verdef != NULL) {
-						offsets[binary_index].verdef = verdef;
-						measure_verdefs(verdef, &verdef_size);
-					}
-					if (verneed != NULL) {
-						offsets[binary_index].verneed = verneed;
-						measure_verneeds(verneed, &analysis->loader, binary->symbols.strings, &verneed_count, &version_ids_used, &verneed_size);
-					}
+				if (verdef != NULL) {
+					offsets[binary_index].verdef = verdef;
+					measure_verdefs(verdef, &verdef_size);
+				}
+				if (verneed != NULL) {
+					offsets[binary_index].verneed = verneed;
+					measure_verneeds(verneed, &analysis->loader, binary->symbols.strings, &verneed_count, &version_ids_used, &verneed_size);
+				}
+				if (relr != NULL && binary_tls_size) {
+					struct alternate_relocation_range tls_range = {
+						.range_start = binary_tls_address,
+						.range_size = binary_tls_defined_size,
+					};
+					rela_size += measure_relr(relr, relrsz, tls_range) * sizeof(ElfW(Rela));
 				}
 			}
 			size += ALIGN_UP(binary->size, PAGE_SIZE);
@@ -949,6 +1044,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			dyn_size += sizeof(ElfW(Dyn)) * 2;
 		}
 	}
+	if (relr_size) {
+		dyn_size += sizeof(ElfW(Dyn)) * 3;
+	}
+	dyn_size++;
 	if (preinit_array_size | init_array_size | fini_array_size) {
 		// allocate space for an additional r+w segment
 		phcount++;
@@ -993,7 +1092,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	size_t hash_start = ALIGN_UP(string_start + string_size, alignof(uint32_t));
 	size_t rela_start = ALIGN_UP(hash_start + hash_size, alignof(ElfW(Rela)));
 	size_t jmprel_start = ALIGN_UP(rela_start + rela_size, alignof(ElfW(Rela)));
-	size_t eh_frame_hdr_start = ALIGN_UP(jmprel_start + jmprel_size, alignof(ElfW(Addr)));
+	size_t relr_start = ALIGN_UP(jmprel_start + jmprel_size, alignof(uint64_t));
+	size_t eh_frame_hdr_start = ALIGN_UP(relr_start + relr_size, alignof(ElfW(Addr)));
 	size_t eh_frame_start = ALIGN_UP(eh_frame_hdr_start + eh_frame_hdr_size, alignof(ElfW(Addr)));
 	size_t tls_start = tls_size != 0 ? ALIGN_UP(eh_frame_start + eh_frame_size, tls_alignment) : eh_frame_start + eh_frame_size;
 	size_t dyn_start = ALIGN_UP(tls_start + tls_size, alignof(ElfW(Dyn)));
@@ -1286,6 +1386,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	ElfW(Ehdr) *header = mapping;
 	ElfW(Rela) *relas = mapping + size + rela_start;
 	ElfW(Rela) *jmprels = mapping + size + jmprel_start;
+	uint64_t *relrs = mapping + size + relr_start;
 	ElfW(Addr) *preinit_array = mapping + size + preinit_array_start;
 	ElfW(Addr) *init_array = mapping + size + init_array_start;
 	ElfW(Addr) *fini_array = mapping + size + fini_array_start;
@@ -1321,7 +1422,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			ElfW(Addr) largest_addr = 0;
 			ElfW(Addr) binary_tls_address = 0;
 			size_t binary_tls_size = 0;
-			size_t binary_defined_size = 0;
+			size_t binary_tls_defined_size = 0;
 			const ElfW(Phdr) *phdr = binary->info.program_header;
 			for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
 				switch (phdr[i].p_type) {
@@ -1347,7 +1448,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					case PT_TLS: {
 						binary_tls_address = phdr[i].p_vaddr;
 						binary_tls_size = phdr[i].p_memsz;
-						binary_defined_size = phdr[i].p_filesz;
+						binary_tls_defined_size = phdr[i].p_filesz;
 						tls_offset = ALIGN_UP(tls_offset, phdr[i].p_align);
 						memcpy(mapping + size + tls_start + tls_offset, mapping + offset + phdr[i].p_offset, phdr[i].p_filesz);
 						break;
@@ -1360,6 +1461,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				uintptr_t rela = 0;
 				size_t relasz = 0;
 				size_t relaent = 0;
+				uintptr_t relr = 0;
+				size_t relrsz = 0;
 				uintptr_t jmprel = 0;
 				uintptr_t pltrelsz = 0;
 				uintptr_t preinitarray = 0;
@@ -1411,13 +1514,23 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						case DT_FINI_ARRAYSZ:
 							finiarraysz = dynamic[i].d_un.d_val;
 							break;
+						case DT_RELR:
+							relr = dynamic[i].d_un.d_ptr;
+							break;
+						case DT_RELRSZ:
+							relrsz = dynamic[i].d_un.d_val;
+							break;
 					}
 				}
-				ssize_t tls_address_offset = address_size + tls_start + tls_offset - binary_tls_address;
+				struct alternate_relocation_range tls_range = {
+					.range_start = binary_tls_address,
+					.range_size = binary_tls_defined_size,
+					.offset = address_size + tls_start + tls_offset - binary_tls_address,
+				};
 				// copy and fixup relas
-				copy_relas(&analysis->loader, binary, &relas, rela, relasz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
+				copy_relas(&analysis->loader, binary, &relas, rela, relasz, relaent, address_offset, tls_range, tls_offset, symbol_ordering, symbol_count);
 				// copy and fixup jmprels
-				copy_relas(&analysis->loader, binary, &jmprels, jmprel, pltrelsz, relaent, address_offset, binary_tls_address, binary_defined_size, tls_address_offset, tls_offset, symbol_ordering, symbol_count);
+				copy_relas(&analysis->loader, binary, &jmprels, jmprel, pltrelsz, relaent, address_offset, tls_range, tls_offset, symbol_ordering, symbol_count);
 				// copy preinit array
 				for (size_t i = 0; i < preinitarraysz; i += sizeof(uintptr_t)) {
 					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(binary, preinitarray + i)) + address_offset;
@@ -1439,6 +1552,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(binary, finiarray + i)) + address_offset;
 					add_init_function(fini_array, &fini_offset, &relas, address_size + fini_array_start, addr);
 				}
+				// copy relr
+				copy_relrs(&analysis->loader, binary, &relrs, relr, relrsz, address_offset, tls_range, binary_tls_defined_size, mapping + offset, &relas);
 			}
 			// copy sections
 			const ElfW(Shdr) *section = binary->sections.sections;
@@ -1780,6 +1895,9 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			case DT_INIT:
 			case DT_FINI:
 			case DT_SONAME:
+			case DT_RELR:
+			case DT_RELRSZ:
+			case DT_RELRENT:
 				// these tags are replaced entirely
 				continue;
 			case DT_VERSYM:
@@ -1819,6 +1937,19 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			dyn->d_un.d_val = verneed_count;
 			dyn++;
 		}
+	}
+	// add relr
+	if (relr_size) {
+		// ERROR("adding RELR", relr_size);
+		dyn->d_tag = DT_RELR;
+		dyn->d_un.d_ptr = address_size + relr_start;
+		dyn++;
+		dyn->d_tag = DT_RELRSZ;
+		dyn->d_un.d_ptr = relr_size;
+		dyn++;
+		dyn->d_tag = DT_RELRENT;
+		dyn->d_un.d_ptr = sizeof(ElfW(Relr));
+		dyn++;
 	}
 	dyn->d_tag = DT_NULL;
 	dyn->d_un.d_val = 0;
