@@ -41,9 +41,11 @@ static bool bundle_library = false;
 
 struct embedded_binary {
 	uint32_t name;
-	uint32_t text_address;
+	uint32_t address;
+	uint32_t text_offset;
 	uint32_t offset;
 	uint32_t size;
+	bool contributes_symbols;
 };
 
 struct bootstrap_offsets {
@@ -81,11 +83,35 @@ static int openat_creating_paths(int fd, const char *path, int flags, mode_t mod
 	return fs_openat(fd, path, flags | O_CREAT, mode);
 }
 
+struct alternate_relocation_range {
+	size_t range_start;
+	size_t range_size;
+	ssize_t offset;
+};
+
+static void copy_relrs(const struct binary_info *binary, ElfW(Relr) **relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, size_t alternate_defined_size, void *base, ElfW(Rela) **relas);
+static size_t file_offset_for_binary_address(const struct binary_info *info, intptr_t address);
+
 __attribute__((visibility("hidden")))
 __attribute__((used))
 noreturn void bootstrap_interpreter(size_t *sp)
 {
 	uintptr_t base = (uintptr_t)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
+	// remap the binary using the embedded program header, if required
+	if (bootstrap_offsets.remap_binary) {
+		int fd = fs_open("/proc/self/exe", O_RDONLY, 0);
+		if (fd < 0) {
+			DIE("unable to open self", fs_strerror(fd));
+		}
+		struct binary_info info;
+		bootstrap_offsets.header.e_phnum -= 3;
+		int result = load_binary_with_layout(&bootstrap_offsets.header, fd, 0, -1, &info, base, 2);
+		bootstrap_offsets.header.e_phnum += 3;
+		if (result < 0) {
+			DIE("unable to load", fs_strerror(result));
+		}
+		fs_close(fd);
+	}
 	// find environment
 	char **argv = (void *)(sp+1);
 	char **current_argv = argv;
@@ -113,7 +139,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					fs_memcpy(&buf[c], name, name_len);
 					c += name_len;
 					buf[c++] = ' ';
-					c += fs_utoah(base + binary->text_address, &buf[c]);
+					c += fs_utoah(base + binary->address + binary->text_offset, &buf[c]);
 					buf[c++] = '\n';
 					ERROR_WRITE(buf, c);
 				}
@@ -139,6 +165,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					if (binary->name == 0) {
 						break;
 					}
+					// read subbinary
 					char *buf = malloc(binary->size);
 					intptr_t result = fs_lseek(self_fd, binary->offset, SEEK_SET);
 					if (result < 0) {
@@ -148,6 +175,32 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					if (result < binary->size) {
 						DIE("couldn't read from self", fs_strerror(result));
 					}
+					// revert relr patching
+					if (binary->contributes_symbols) {
+						struct binary_info info;
+						load_existing(&info, base + binary->address);
+						ERROR_FLUSH();
+						size_t relr = 0;
+						size_t relrsz = 0;
+						const ElfW(Dyn) *dynamic = info.dynamic;
+						for (size_t i = 0; i < info.dynamic_size; i++) {
+							switch (dynamic[i].d_tag) {
+								case DT_RELR:
+									relr = file_offset_for_binary_address(&info, dynamic[i].d_un.d_ptr);
+									break;
+								case DT_RELRSZ:
+									relrsz = dynamic[i].d_un.d_val;
+									break;
+							}
+						}
+						if (relr) {
+							void *temp = malloc(relrsz);
+							ElfW(Relr) *relrs = temp;
+							copy_relrs(&info, &relrs, relr, relrsz, -(ssize_t)binary->address, (struct alternate_relocation_range){0}, 0, buf, NULL);
+							free(temp);
+						}
+					}
+					// write subbinary out
 					const char *binary_path = (const char *)base + bootstrap_offsets.embedded_binaries[i].name;
 					int fd = openat_creating_paths(dirfd, binary_path + 1, O_RDWR, 0755);
 					if (fd < 0) {
@@ -166,6 +219,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 							DIE("returned", fs_strerror(fd));
 						}
 					}
+					free(buf);
 					fs_close(fd);
 				}
 				fs_close(dirfd);
@@ -203,21 +257,6 @@ noreturn void bootstrap_interpreter(size_t *sp)
 				break;
 			}
 		}
-	}
-	// remap the binary using the embedded program header, if required
-	if (bootstrap_offsets.remap_binary) {
-		int fd = fs_open("/proc/self/exe", O_RDONLY, 0);
-		if (fd < 0) {
-			DIE("unable to open self", fs_strerror(fd));
-		}
-		struct binary_info info;
-		bootstrap_offsets.header.e_phnum -= 3;
-		int result = load_binary_with_layout(&bootstrap_offsets.header, fd, 0, -1, &info, base, 2);
-		bootstrap_offsets.header.e_phnum += 3;
-		if (result < 0) {
-			DIE("unable to load", fs_strerror(result));
-		}
-		fs_close(fd);
 	}
 #if 0
 	// patch the ELF header
@@ -273,10 +312,10 @@ static size_t file_offset_for_binary(struct loader_context *loader, const struct
 }
 
 __attribute__((unused))
-static size_t file_offset_for_binary_address(const struct loaded_binary *binary, intptr_t address)
+static size_t file_offset_for_binary_address(const struct binary_info *info, intptr_t address)
 {
-	const ElfW(Phdr) *phdr = binary->info.program_header;
-	for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
+	const ElfW(Phdr) *phdr = info->program_header;
+	for (ElfW(Word) i = 0; i < info->header_entry_count; i++) {
 		if (phdr[i].p_type == PT_LOAD) {
 			ElfW(Addr) end = phdr[i].p_vaddr + phdr[i].p_memsz;
 			if (address >= phdr[i].p_vaddr && address < end) {
@@ -393,12 +432,6 @@ static inline int compare_symbol_ordering(const void *left_untyped, const void *
 	return 0;
 }
 
-struct alternate_relocation_range {
-	size_t range_start;
-	size_t range_size;
-	ssize_t offset;
-};
-
 static inline bool is_alternate_relocation(struct alternate_relocation_range alternate, size_t offset)
 {
 	return (offset >= alternate.range_start) && (offset < alternate.range_start + alternate.range_size);
@@ -474,9 +507,9 @@ static void copy_relas(struct loader_context *loader, const struct loaded_binary
 	}
 }
 
-static void copy_relrs(struct loader_context *loader, const struct loaded_binary *binary, ElfW(Relr) **relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, size_t alternate_defined_size, void *base, ElfW(Rela) **relas)
+static void copy_relrs(const struct binary_info *binary, ElfW(Relr) **relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, size_t alternate_defined_size, void *base, ElfW(Rela) **relas)
 {
-	ElfW(Relr) *r = binary->info.base + relr;
+	const ElfW(Relr) *r = binary->base + relr;
 	size_t where = 0;
 	for (int i = 0; i < relrsz / sizeof(*r); i++) {
 		ElfW(Relr) rv = r[i];
@@ -1614,7 +1647,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				copy_relas(&analysis->loader, binary, &jmprels, jmprel, pltrelsz, relaent, address_offset, tls_range, tls_offset, symbol_ordering, symbol_count);
 				// copy preinit array
 				for (size_t i = 0; i < preinitarraysz; i += sizeof(uintptr_t)) {
-					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(binary, preinitarray + i)) + address_offset;
+					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(&binary->info, preinitarray + i)) + address_offset;
 					add_init_function(preinit_array, &preinit_offset, &relas, address_size + preinit_array_start, addr);
 				}
 				// copy init array
@@ -1622,7 +1655,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					add_init_function(init_array, &init_offset, &relas, address_size + init_array_start, init + address_offset);
 				}
 				for (size_t i = 0; i < initarraysz; i += sizeof(uintptr_t)) {
-					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(binary, initarray + i)) + address_offset;
+					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(&binary->info, initarray + i)) + address_offset;
 					add_init_function(init_array, &init_offset, &relas, address_size + init_array_start, addr);
 				}
 				// copy fini array
@@ -1630,11 +1663,11 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					add_init_function(fini_array, &fini_offset, &relas, address_size + fini_array_start, fini + address_offset);
 				}
 				for (size_t i = 0; i < finiarraysz; i += sizeof(uintptr_t)) {
-					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(binary, finiarray + i)) + address_offset;
+					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(&binary->info, finiarray + i)) + address_offset;
 					add_init_function(fini_array, &fini_offset, &relas, address_size + fini_array_start, addr);
 				}
 				// copy relr
-				copy_relrs(&analysis->loader, binary, &relrs, relr, relrsz, address_offset, tls_range, binary_tls_defined_size, mapping + offset, &relas);
+				copy_relrs(&binary->info, &relrs, relr, relrsz, address_offset, tls_range, binary_tls_defined_size, mapping + offset, &relas);
 			}
 			// copy sections
 			const ElfW(Shdr) *section = binary->sections.sections;
@@ -2063,7 +2096,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	header->e_shstrndx = shstrtab_index;
 	if (bootstrap != NULL) {
 		// bake bootstrap offsets into the binary
-		struct bootstrap_offsets *offsets = mapping + file_offset_for_binary(&analysis->loader, bootstrap) + file_offset_for_binary_address(bootstrap, offset_for_self_symbol(&bootstrap->info, &bootstrap_offsets));
+		struct bootstrap_offsets *offsets = mapping + file_offset_for_binary(&analysis->loader, bootstrap) + file_offset_for_binary_address(&bootstrap->info, offset_for_self_symbol(&bootstrap->info, &bootstrap_offsets));
 		offsets->base_to_bootstrap_dynamic = address_for_binary(&analysis->loader, bootstrap) + offset_for_self_symbol(&bootstrap->info, &_DYNAMIC);
 		offsets->interpreter_base = address_for_binary(&analysis->loader, interpreter);
 		offsets->main_entrypoint = (uintptr_t)main->info.entrypoint - (uintptr_t)main->info.base;
