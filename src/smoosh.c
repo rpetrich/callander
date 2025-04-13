@@ -773,6 +773,8 @@ static void copy_versions(ElfW(Verdef) *verdef, ElfW(Verneed) *verneed, struct l
 #define SHSTRTAB_STR ".shstrtab"
 #define DYNAMIC_STR_OFFSET (SHSTRTAB_STR_OFFSET+sizeof(SHSTRTAB_STR))
 #define DYNAMIC_STR ".dynamic"
+#define TDATA_STR_OFFSET (DYNAMIC_STR_OFFSET+sizeof(DYNAMIC_STR))
+#define TDATA_STR ".tdata"
 
 #define MANDATORY_SECTION_NAMES \
 	EH_FRAME_HDR_STR"\0" \
@@ -786,7 +788,8 @@ static void copy_versions(ElfW(Verdef) *verdef, ElfW(Verneed) *verneed, struct l
 	RELA_DYN_STR"\0" \
 	RELA_PLT_STR"\0" \
 	SHSTRTAB_STR"\0" \
-	DYNAMIC_STR"\0"
+	DYNAMIC_STR"\0" \
+	TDATA_STR
 
 static void write_combined_binary(struct program_state *analysis, struct loaded_binary *bootstrap)
 {
@@ -1081,6 +1084,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		+ (verdef_size != 0)
 		+ (rela_size != 0)
 		+ (jmprel_size != 0)
+		+ (tls_size != 0)
 		+ (shstrtab_size != 0);
 	size_t sections_size = used_section_count * sizeof(ElfW(Shdr));
 	// calculate start of various new dynamic tags
@@ -1762,6 +1766,20 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			.sh_info = 0, // TODO: reference the appropriate section and set SHF_INFO_LINK
 			.sh_addralign = alignof(ElfW(Rela)),
 			.sh_entsize = sizeof(ElfW(Rela)),
+		};
+	}
+	if (tls_size) {
+		shdrs[shdr_index++] = (ElfW(Shdr)) {
+			.sh_name = main_binary_section_string_size + TDATA_STR_OFFSET,
+			.sh_type = SHT_PROGBITS,
+			.sh_flags = SHF_ALLOC,
+			.sh_addr = address_size + tls_start,
+			.sh_offset = size + tls_start,
+			.sh_size = tls_size,
+			.sh_link = 0,
+			.sh_info = 0,
+			.sh_addralign = tls_alignment,
+			.sh_entsize = 1,
 		};
 	}
 	size_t shstrtab_index = shdr_index;
