@@ -86,34 +86,39 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		ERROR("could not stat binary", fs_strerror(result));
 		return -ENOEXEC;
 	}
-	return load_binary_with_layout(&header, fd, 0, stat.st_size, out_info, load_address, force_relocation);
-}
-
-// load_binary_with_layout will load and map the binary in fd into the process' address space
-int load_binary_with_layout(const ElfW(Ehdr) *header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
-{
-	size_t phsize = header->e_phentsize * header->e_phnum;
-	out_info->header_entry_size = header->e_phentsize;
-	out_info->header_entry_count = header->e_phnum;
-	char *phbuffer = malloc(phsize);
-	out_info->phbuffer = phbuffer;
-	int l = fs_pread_all(fd, phbuffer, phsize, offset + header->e_phoff);
+	size_t phsize = header.e_phentsize * header.e_phnum;
+	void *phbuffer = malloc(phsize);
+	int l = fs_pread_all(fd, phbuffer, phsize, header.e_phoff);
 	if (l != (int)phsize) {
 		free(phbuffer);
 		if (l < 0) {
 			ERROR("unable to read phbuffer", fs_strerror(l));
 		} else {
 			ERROR("read of phbuffer was the wrong size", l);
+			ERROR("expected", (int)phsize);
 		}
 		return -ENOEXEC;
 	}
+	result = load_binary_with_layout(&header, phbuffer, fd, 0, stat.st_size, out_info, load_address, force_relocation);
+	if (result < 0) {
+		free(phbuffer);
+	}
+	return result;
+}
+
+// load_binary_with_layout will load and map the binary in fd into the process' address space
+int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
+{
+	out_info->header_entry_size = header->e_phentsize;
+	out_info->header_entry_count = header->e_phnum;
+	out_info->phbuffer = (void *)program_header;
 	uintptr_t start = UINTPTR_MAX;
 	uintptr_t off_start = 0;
 	uintptr_t end = 0;
 	uintptr_t off_interpreter = 0;
 	const ElfW(Phdr) *dynamic_ph = NULL;
 	for (int i = 0; i < header->e_phnum; i++) {
-		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header->e_phentsize * i];
+		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)((void *)program_header + header->e_phentsize * i);
 		switch (ph->p_type) {
 			case PT_LOAD: {
 				if ((uintptr_t)ph->p_vaddr <= start) {
@@ -155,17 +160,15 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, int fd, size_t offset, siz
 	}
 	void *mapped_address = fs_mmap((void *)desired_address, total_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|additional_map_flags, -1, 0);
 	if (fs_is_map_failed(mapped_address)) {
-		free(phbuffer);
 		return -ENOEXEC;
 	}
 	if ((uintptr_t)mapped_address != desired_address && header->e_type != ET_DYN && load_address == 0 && !force_relocation) {
 		fs_munmap(mapped_address, end - start + off_start);
-		free(phbuffer);
 		return -ENOEXEC;
 	}
 	uintptr_t map_offset = (uintptr_t)mapped_address - start + off_start;
 	for (int i = 0; i < header->e_phnum; i++) {
-		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[header->e_phentsize * i];
+		const ElfW(Phdr) *ph = (const ElfW(Phdr) *)((void *)program_header + header->e_phentsize * i);
 		if (ph->p_type != PT_LOAD) {
 			continue;
 		}

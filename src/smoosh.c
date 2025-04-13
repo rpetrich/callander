@@ -35,8 +35,8 @@
 
 AXON_BOOTSTRAP_ASM
 
-static bool bundle_interpreter = false;
-static bool remap_binary = false;
+static bool bundle_interpreter = true;
+static bool remap_binary = true;
 static bool bundle_library = false;
 
 struct embedded_binary {
@@ -46,6 +46,7 @@ struct embedded_binary {
 	uint32_t offset;
 	uint32_t size;
 	bool contributes_symbols;
+	bool is_entry;
 };
 
 struct bootstrap_offsets {
@@ -92,23 +93,32 @@ struct alternate_relocation_range {
 static void copy_relrs(const struct binary_info *binary, ElfW(Relr) **relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, size_t alternate_defined_size, void *base, ElfW(Rela) **relas);
 static size_t file_offset_for_binary_address(const struct binary_info *info, intptr_t address);
 
+static const char *parse_name(const char *path)
+{
+	const char *end = fs_strrchr(path, '/');
+	return end ? end + 1 : path;
+}
+
 __attribute__((visibility("hidden")))
 __attribute__((used))
 noreturn void bootstrap_interpreter(size_t *sp)
 {
-	uintptr_t base = (uintptr_t)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
+	void *base = (void *)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
 	// remap the binary using the embedded program header, if required
 	if (bootstrap_offsets.remap_binary) {
-		int fd = fs_open("/proc/self/exe", O_RDONLY, 0);
+		int fd = fs_open("/proc/self/exe", O_RDONLY | O_CLOEXEC, 0);
 		if (fd < 0) {
 			DIE("unable to open self", fs_strerror(fd));
 		}
 		struct binary_info info;
 		bootstrap_offsets.header.e_phnum -= 3;
-		int result = load_binary_with_layout(&bootstrap_offsets.header, fd, 0, -1, &info, base, 2);
+		int result = load_binary_with_layout(&bootstrap_offsets.header, base + bootstrap_offsets.real_program_header, fd, 0, -1, &info, (uintptr_t)base, 2);
 		bootstrap_offsets.header.e_phnum += 3;
 		if (result < 0) {
 			DIE("unable to load", fs_strerror(result));
+		}
+		if (info.phbuffer) {
+			free(info.phbuffer);
 		}
 		fs_close(fd);
 	}
@@ -139,13 +149,13 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					fs_memcpy(&buf[c], name, name_len);
 					c += name_len;
 					buf[c++] = ' ';
-					c += fs_utoah(base + binary->address + binary->text_offset, &buf[c]);
+					c += fs_utoah((uintptr_t)base + binary->address + binary->text_offset, &buf[c]);
 					buf[c++] = '\n';
 					ERROR_WRITE(buf, c);
 				}
 				ERROR_FLUSH();
 			} else if (fs_strcmp(debug, "extract") == 0) {
-				int self_fd = fs_open("/proc/self/exe", O_RDONLY, 0);
+				int self_fd = fs_open("/proc/self/exe", O_RDONLY | O_CLOEXEC, 0);
 				if (self_fd < 0) {
 					DIE("unable to open self", fs_strerror(self_fd));
 				}
@@ -156,7 +166,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					}
 					DIE("unable to create ./extracted", fs_strerror(result));
 				}
-				intptr_t dirfd = fs_open("extracted", O_PATH, 0);
+				intptr_t dirfd = fs_open("extracted", O_PATH | O_CLOEXEC, 0);
 				if (dirfd < 0) {
 					DIE("unable to open ./extracted", fs_strerror(result));
 				}
@@ -178,7 +188,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					// revert relr patching
 					if (binary->contributes_symbols) {
 						struct binary_info info;
-						load_existing(&info, base + binary->address);
+						load_existing(&info, (uintptr_t)base + binary->address);
 						ERROR_FLUSH();
 						size_t relr = 0;
 						size_t relrsz = 0;
@@ -202,7 +212,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 					}
 					// write subbinary out
 					const char *binary_path = (const char *)base + bootstrap_offsets.embedded_binaries[i].name;
-					int fd = openat_creating_paths(dirfd, binary_path + 1, O_RDWR, 0755);
+					int fd = openat_creating_paths(dirfd, binary_path + 1, O_RDWR | O_CLOEXEC, 0755);
 					if (fd < 0) {
 						ERROR_NOPREFIX("error opening", binary_path + 1);
 						DIE("returned", fs_strerror(fd));
@@ -233,22 +243,47 @@ noreturn void bootstrap_interpreter(size_t *sp)
 		}
 		++current_envp;
 	}
+	// select the correct embedded binary
+	int selected = 0;
+	const char *argv0 = argv[0];
+	if (argv0) {
+		const char *search_name = parse_name(argv0);
+		for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
+			const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
+			if (binary->name == 0) {
+				break;
+			}
+			if (binary->is_entry) {
+				const char *name = parse_name((const char *)base + binary->name);
+				if (fs_strcmp(search_name, name) == 0) {
+					selected = i;
+					break;
+				}
+			}
+		}
+	}
 	// patch auxiliary vector
 	for (ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1); aux->a_type != AT_NULL; aux++) {
 		switch (aux->a_type) {
 			case AT_BASE: {
 				// patch AT_BASE to point to the interpreter
-				aux->a_un.a_val = base + bootstrap_offsets.interpreter_base;
+				aux->a_un.a_val = (uintptr_t)base + bootstrap_offsets.interpreter_base;
 				break;
 			}
 			case AT_ENTRY: {
 				// patch AT_ENTRY to point to the main entrypoint
-				aux->a_un.a_val = base + bootstrap_offsets.main_entrypoint;
+				if (selected != 0) {
+					const struct embedded_binary *chosen = &bootstrap_offsets.embedded_binaries[selected];
+					const ElfW(Ehdr) *header = base + chosen->address;
+					aux->a_un.a_val = (uintptr_t)base + chosen->address + header->e_entry;
+				} else {
+					aux->a_un.a_val = (uintptr_t)base + bootstrap_offsets.main_entrypoint;
+				}
 				break;
 			}
 			case AT_PHDR: {
 				// patch AT_PHDR to point to the new program headers
-				aux->a_un.a_val = base + bootstrap_offsets.real_program_header;
+				aux->a_un.a_val = (uintptr_t)base + bootstrap_offsets.real_program_header;
 				break;
 			}
 			case AT_PHNUM: {
@@ -1221,7 +1256,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	// open a file for the combined binary
 	const char *path = main->path;
 	const char *slash = fs_strrchr(path, '/');
-	int copy = fs_open(slash != NULL ? slash + 1 : path, O_RDWR|O_CREAT|O_TRUNC, 0755);
+	int copy = fs_open(slash != NULL ? slash + 1 : path, O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, 0755);
 	if (copy < 0) {
 		DIE("failed open");
 	}
@@ -1262,7 +1297,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 		if (should_include_binary(binary)) {
 			// read the original binary
-			int original = fs_open(binary->loaded_path, O_RDONLY, 0);
+			int original = fs_open(binary->loaded_path, O_RDONLY|O_CLOEXEC, 0);
 			if (original < 0) {
 				DIE("failed reading original binary", binary->loaded_path);
 			}
@@ -2126,20 +2161,23 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 						}
 					}
 				}
-				size_t text_address = 0;
+				size_t text_offset = 0;
 				if (binary->has_sections) {
 					const ElfW(Shdr) *shdr = find_section(&binary->info, &binary->sections, ".text");
 					if (shdr != NULL) {
-						text_address = shdr->sh_addr;
+						text_offset = shdr->sh_addr;
 					}
 				}
 				size_t name_len = fs_strlen(binary->loaded_path) + 1;
 				fs_memcpy(&strings[strings_offset], binary->loaded_path, name_len);
 				offsets->embedded_binaries[binary_index] = (struct embedded_binary) {
 					.name = address_size + string_start + strings_offset,
-					.text_address = address_offset + text_address,
+					.address = address_offset,
+					.text_offset = text_offset,
 					.offset = offset,
 					.size = binary->size,
+					.contributes_symbols = binary_contributes_symbols(binary),
+					.is_entry = (binary->special_binary_flags & BINARY_IS_MAIN) == BINARY_IS_MAIN,
 				};
 				strings_offset += name_len;
 				binary_index++;
@@ -2199,7 +2237,11 @@ int main(int argc, char* argv[], char* envp[])
 	int executable_index = 1;
 	while (argv[executable_index] && *argv[executable_index] == '-') {
 		const char *arg = argv[executable_index];
-		if (fs_strcmp(arg, "--") == 0) {
+		if (fs_strcmp(arg, "--library") == 0) {
+			bundle_library = true;
+			bundle_interpreter = false;
+			remap_binary = false;
+		} else if (fs_strcmp(arg, "--") == 0) {
 			executable_index++;
 			break;
 		} else {
@@ -2217,44 +2259,42 @@ int main(int argc, char* argv[], char* envp[])
 		return 1;
 	}
 
-	// open the main executable
-	char path_buf[PATH_MAX];
-	const char *loaded_executable_path = NULL;
-	int fd = find_executable_in_paths(executable_path, path, false, analysis.loader.uid, analysis.loader.gid, path_buf, &loaded_executable_path);
-	if (UNLIKELY(fd < 0)) {
-		ERROR("could not find main executable", executable_path);
-		return 1;
-	}
-
 	init_searched_instructions(&analysis.search);
 
-	// load the main executable
-	struct loaded_binary *loaded;
-	intptr_t result = load_binary_into_analysis(&analysis, executable_path, loaded_executable_path, fd, NULL, &loaded);
-	if (result != 0) {
-		DIE("failed to load main binary", fs_strerror(result));
-	}
-	fs_close(fd);
+	// open the main executable
+	char path_buf[PATH_MAX];
+	do {
+		const char *loaded_executable_path = NULL;
+		int fd = find_executable_in_paths(executable_path, path, false, analysis.loader.uid, analysis.loader.gid, path_buf, &loaded_executable_path);
+		if (UNLIKELY(fd < 0)) {
+			ERROR("could not find main executable", executable_path);
+			return 1;
+		}
+
+		// load the main executable
+		struct loaded_binary *loaded;
+		intptr_t result = load_binary_into_analysis(&analysis, executable_path, loaded_executable_path, fd, NULL, &loaded);
+		if (result != 0) {
+			DIE("failed to load main binary", fs_strerror(result));
+		}
+		loaded->special_binary_flags |= BINARY_IS_MAIN;
+		fs_close(fd);
+
+		executable_path = argv[executable_index++];
+	} while(executable_path);
 
 	load_all_needed_and_relocate(&analysis);
 
 	struct loaded_binary *bootstrap = NULL;
 
-	if (loaded->info.entrypoint == NULL) {
-		bundle_library = true;
-	} else {
-		bundle_interpreter = true;
-		remap_binary = true;
-	}
-
 	// if bundling interpreter, add self to bootstrap
-	if ((loaded->info.interpreter != NULL && bundle_interpreter) || remap_binary) {
-		fd = fs_open("/proc/self/exe", O_RDONLY, 0);
+	if (bundle_interpreter) {
+		int fd = fs_open("/proc/self/exe", O_RDONLY|O_CLOEXEC, 0);
 		if (fd < 0) {
 			DIE("failed to read self", fs_strerror(fd));
 		}
 		char buf[PATH_MAX];
-		result = fs_fd_getpath(fd, buf);
+		intptr_t result = fs_fd_getpath(fd, buf);
 		if (result < 0) {
 			DIE("failed to read self path", fs_strerror(fd));
 		}
@@ -2269,6 +2309,8 @@ int main(int argc, char* argv[], char* envp[])
 
 	cleanup_searched_instructions(&analysis.search);
 	free_loader_context(&analysis.loader);
+
+	ERROR_FLUSH();
 
 	return 0;
 }

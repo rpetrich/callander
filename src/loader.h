@@ -68,7 +68,7 @@ __attribute__((warn_unused_result))
 extern int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bool force_relocation);
 
 __attribute__((warn_unused_result))
-extern int load_binary_with_layout(const ElfW(Ehdr) *header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation);
+extern int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation);
 
 // unload_binary will unmap the binary from the process' address space
 extern void unload_binary(struct binary_info *info);
