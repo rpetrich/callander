@@ -11,8 +11,7 @@
 int open_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid)
 {
 	char buf[PATH_MAX];
-	const char *out_path;
-	return find_executable_in_paths(name, paths, require_executable, uid, gid, buf, &out_path);
+	return find_executable_in_paths(name, paths, require_executable, uid, gid, buf, NULL);
 }
 
 // find_executable_in_paths looks for an executable file matching name in paths 

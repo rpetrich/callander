@@ -2101,24 +2101,19 @@ int main(int argc, char* argv[], char* envp[])
 	}
 
 	// open the main executable
-	int fd = open_executable_in_paths(executable_path, path, false, analysis.loader.uid, analysis.loader.gid);
+	char path_buf[PATH_MAX];
+	const char *loaded_executable_path = NULL;
+	int fd = find_executable_in_paths(executable_path, path, false, analysis.loader.uid, analysis.loader.gid, path_buf, &loaded_executable_path);
 	if (UNLIKELY(fd < 0)) {
 		ERROR("could not find main executable", executable_path);
 		return 1;
-	}
-
-	// find path so we can open it later
-	char path_buf[PATH_MAX];
-	intptr_t result = fs_fd_getpath(fd, path_buf);
-	if (result < 0) {
-		DIE("failed to read path", fs_strerror(result));
 	}
 
 	init_searched_instructions(&analysis.search);
 
 	// load the main executable
 	struct loaded_binary *loaded;
-	result = load_binary_into_analysis(&analysis, executable_path, executable_path, fd, NULL, &loaded);
+	intptr_t result = load_binary_into_analysis(&analysis, executable_path, loaded_executable_path, fd, NULL, &loaded);
 	if (result != 0) {
 		DIE("failed to load main binary", fs_strerror(result));
 	}
