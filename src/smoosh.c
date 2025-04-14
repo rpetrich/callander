@@ -1681,24 +1681,24 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				copy_relas(&analysis->loader, binary, &jmprels, jmprel, pltrelsz, relaent, address_offset, tls_range, tls_offset, symbol_ordering, symbol_count);
 				// copy preinit array
 				for (size_t i = 0; i < preinitarraysz; i += sizeof(uintptr_t)) {
-					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(&binary->info, preinitarray + i)) + address_offset;
-					add_init_function(preinit_array, &preinit_offset, &relas, address_size + preinit_array_start, addr);
+					ElfW(Addr) addr = *(const ElfW(Addr) *)(binary->info.base + preinitarray + i) - (ElfW(Addr))binary->info.base;
+					add_init_function(preinit_array, &preinit_offset, &relas, address_size + preinit_array_start, addr + address_offset);
 				}
 				// copy init array
 				if (init) {
 					add_init_function(init_array, &init_offset, &relas, address_size + init_array_start, init + address_offset);
 				}
 				for (size_t i = 0; i < initarraysz; i += sizeof(uintptr_t)) {
-					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(&binary->info, initarray + i)) + address_offset;
-					add_init_function(init_array, &init_offset, &relas, address_size + init_array_start, addr);
+					ElfW(Addr) addr = *(const ElfW(Addr) *)(binary->info.base + initarray + i) - (ElfW(Addr))binary->info.base;
+					add_init_function(init_array, &init_offset, &relas, address_size + init_array_start, addr + address_offset);
 				}
 				// copy fini array
 				if (fini) {
 					add_init_function(fini_array, &fini_offset, &relas, address_size + fini_array_start, fini + address_offset);
 				}
 				for (size_t i = 0; i < finiarraysz; i += sizeof(uintptr_t)) {
-					ElfW(Addr) addr = *(const ElfW(Addr) *)(mapping + offset + file_offset_for_binary_address(&binary->info, finiarray + i)) + address_offset;
-					add_init_function(fini_array, &fini_offset, &relas, address_size + fini_array_start, addr);
+					ElfW(Addr) addr = *(const ElfW(Addr) *)(binary->info.base + finiarray + i) - (ElfW(Addr))binary->info.base;
+					add_init_function(fini_array, &fini_offset, &relas, address_size + fini_array_start, addr + address_offset);
 				}
 				// copy relr
 				copy_relrs(&binary->info, &relrs, relr, relrsz, address_offset, tls_range, binary_tls_defined_size, mapping + offset, &relas);
