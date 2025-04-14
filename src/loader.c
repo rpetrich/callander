@@ -186,9 +186,9 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_
 			int temporary_prot = ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection;
 			if (map_len != 0) {
 #ifdef __APPLE__
-				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE|MAP_FIXED, fd, file_offset);
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE|MAP_FIXED, fd, file_offset + offset);
 #else
-				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE|MAP_FIXED, fd, offset);
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE|MAP_FIXED, fd, file_offset + offset);
 #endif
 				if (fs_is_map_failed(section_mapping)) {
 					ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
