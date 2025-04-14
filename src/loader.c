@@ -107,7 +107,7 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 }
 
 // load_binary_with_layout will load and map the binary in fd into the process' address space
-int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
+int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t file_offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
 {
 	out_info->header_entry_size = header->e_phentsize;
 	out_info->header_entry_count = header->e_phnum;
@@ -186,7 +186,7 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_
 			int temporary_prot = ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection;
 			if (map_len != 0) {
 #ifdef __APPLE__
-				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE|MAP_FIXED, fd, offset);
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE|MAP_FIXED, fd, file_offset);
 #else
 				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE|MAP_FIXED, fd, offset);
 #endif
