@@ -244,21 +244,22 @@ noreturn void bootstrap_interpreter(size_t *sp)
 		++current_envp;
 	}
 	// select the correct embedded binary
-	int selected = 0;
+	ElfW(Addr) entry = bootstrap_offsets.main_entrypoint;
 	const char *argv0 = argv[0];
 	if (argv0) {
 		const char *search_name = parse_name(argv0);
-		for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
+		for (size_t i = 1; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
 			const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
-			if (binary->name == 0) {
-				break;
-			}
 			if (binary->is_entry) {
 				const char *name = parse_name((const char *)base + binary->name);
 				if (fs_strcmp(search_name, name) == 0) {
-					selected = i;
+					const ElfW(Addr) address = bootstrap_offsets.embedded_binaries[i].address;
+					const ElfW(Ehdr) *header = base + address;
+					entry = (uintptr_t)base + address + header->e_entry;
 					break;
 				}
+			} else if (binary->name == 0) {
+				break;
 			}
 		}
 	}
@@ -272,13 +273,7 @@ noreturn void bootstrap_interpreter(size_t *sp)
 			}
 			case AT_ENTRY: {
 				// patch AT_ENTRY to point to the main entrypoint
-				if (selected != 0) {
-					const struct embedded_binary *chosen = &bootstrap_offsets.embedded_binaries[selected];
-					const ElfW(Ehdr) *header = base + chosen->address;
-					aux->a_un.a_val = (uintptr_t)base + chosen->address + header->e_entry;
-				} else {
-					aux->a_un.a_val = (uintptr_t)base + bootstrap_offsets.main_entrypoint;
-				}
+				aux->a_un.a_val = (uintptr_t)base + entry;
 				break;
 			}
 			case AT_PHDR: {
