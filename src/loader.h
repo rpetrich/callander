@@ -68,13 +68,16 @@ __attribute__((warn_unused_result))
 extern int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bool force_relocation);
 
 __attribute__((warn_unused_result))
-extern int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation);
+extern int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t file_offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation);
 
 // unload_binary will unmap the binary from the process' address space
 extern void unload_binary(struct binary_info *info);
 
 // load_existing will attempt to load info about an already loaded binary
 extern void load_existing(struct binary_info *out_info, uintptr_t load_address);
+
+extern int load_main_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info);
+extern int load_interpreter_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info);
 
 // relocate_binary will apply relocation fixups to a loaded binary
 extern void relocate_binary(struct binary_info *info);

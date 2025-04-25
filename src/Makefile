@@ -157,6 +157,7 @@ LIBCALLBOX_OBJECTS := $(COMMON_OBJECTS) $(ARCH_OBJECTS) $(PATCH_OBJECTS) \
 CALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_seccomp.o callander_main.o
 LIBCALLANDER_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) callander_seccomp.o libcallander.o
 LEXEC_OBJECTS := ${COMMON_OBJECTS} $(COMMON_CALLANDER_OBJECTS) $(PATCH_OBJECTS) lexec.o remote_exec.o tls.o attempt.o stack.o
+LD_REL_OBJECTS := loader.o ld_rel.o defaultlibs.o malloc.o
 SMOOSH_OBJECTS := $(COMMON_OBJECTS) $(COMMON_CALLANDER_OBJECTS) smoosh.o
 
 ifeq ($(TARGETOS),linux)
@@ -316,6 +317,16 @@ callander: callander_$(TARGETMACHINE)
 	rm -rf "$@" "$@.debug"
 	ln callander_$(TARGETMACHINE) "$@.debug" || cp -a callander_$(NATIVEMACHINE) "$@.debug"
 	ln callander_$(TARGETMACHINE) "$@" || cp -a callander_$(NATIVEMACHINE) "$@"
+
+ld-rel.so: $(foreach obj,$(LD_REL_OBJECTS),$(objdir)/$(obj))
+ifeq ($(STANDALONE),1)
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--exclude-libs,ALL -Wl,--build-id=none -nostdlib -shared -nostartfiles -ffreestanding -fPIC $(CFLAGS) -Wl,-e,impulse -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,--no-dynamic-linker -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
+else
+	$(CC) $(LDFLAGS) $(DEBUG_FLAGS) -Wl,--build-id=none -fPIE $(CFLAGS) -Wl,--hash-style=both -Wl,-z,defs -Wl,-z,now -Wl,--build-id=none -Wl,-Bsymbolic -Wl,-zcommon-page-size=0x1000 -Wl,-zmax-page-size=0x1000 -Wl,-z,noseparate-code -Wl,-z,norelro -Wl,-z,nodelete -Wl,-z,nodump -Wl,-z,combreloc $^ -o "$@"
+endif
+	$(OBJCOPY) --only-keep-debug "$@" "$@.debug"
+	$(STRIP) -s -R .comment -D "$@"
+	$(OBJCOPY) --add-gnu-debuglink="$@.debug" "$@"
 
 smoosh: $(foreach obj,$(SMOOSH_OBJECTS),$(objdir)/$(obj))
 ifeq ($(STANDALONE),1)

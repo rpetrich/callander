@@ -392,15 +392,17 @@ void relocate_binary(struct binary_info *info)
 	// apply rela
 	uintptr_t base = (uintptr_t)info->base;
 	uintptr_t rel_base = apply_base_address(info, rela);
-	for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
-		const ElfW(Rel) *rel = (const ElfW(Rel) *)(rel_base + rel_off);
-		if (rel->r_info == ELF_REL_RELATIVE) {
-			*(uintptr_t *)(base + rel->r_offset) += base;
+	if (relaent != 0) {
+		for (uintptr_t rel_off = 0; rel_off < relasz; rel_off += relaent) {
+			const ElfW(Rel) *rel = (const ElfW(Rel) *)(rel_base + rel_off);
+			if (rel->r_info == ELF_REL_RELATIVE) {
+				*(uintptr_t *)(base + rel->r_offset) += base;
+			}
 		}
 	}
 }
 
-void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
+int load_main_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info)
 {
 	for (; aux->a_type != AT_NULL; aux++) {
 		if (aux->a_type == AT_PHDR) {
@@ -408,16 +410,34 @@ void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
 			for (;; phdr++) {
 				if (phdr->p_type == PT_DYNAMIC) {
 					uintptr_t base = (uintptr_t)_DYNAMIC - phdr->p_vaddr;
-					struct binary_info self_info;
-					load_existing(&self_info, base);
-					self_info.dynamic = _DYNAMIC;
-					relocate_binary(&self_info);
-					return;
+					load_existing(out_info, base);
+					out_info->dynamic = _DYNAMIC;
+					return 0;
 				}
 			}
 		}
 	}
-	DIE("missing AT_PHDR");
+	return -ENOEXEC;
+}
+
+void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
+{
+	struct binary_info self_info;
+	if (load_main_from_auxv(aux, &self_info) != 0) {
+		fs_exit(1);
+	}
+}
+
+int load_interpreter_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info)
+{
+	for (; aux->a_type != AT_NULL; aux++) {
+		switch (aux->a_type) {
+			case AT_BASE:
+				load_existing(out_info, aux->a_un.a_val);
+				return 0;
+		}
+	}
+	return -ENOEXEC;
 }
 
 int apply_postrelocation_readonly(struct binary_info *info)
