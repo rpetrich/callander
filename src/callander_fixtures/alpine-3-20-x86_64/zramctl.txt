@@ -4,8 +4,8 @@ read(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x5e990
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 write(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(/sbin/zramctl+0x7536, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(/sbin/zramctl+0x7543, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open("/proc/mounts", O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open("/etc/mtab", O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
@@ -29,16 +29,16 @@ munmap(any, any) @ ld-musl-x86_64.so.1+0x5e924
 brk(any) @ ld-musl-x86_64.so.1+0x250b7(__malloc_alloc_meta*+368)
 brk(0) @ ld-musl-x86_64.so.1+0x251b0(__malloc_alloc_meta*+617)
 brk(any) @ ld-musl-x86_64.so.1+0x251d5(__malloc_alloc_meta*+654)
-rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-x86_64.so.1+0x1cc5d(abort+74)
-rt_sigaction(SIGSETXID, 0, 0, 8) @ ld-musl-x86_64.so.1+0x4d93b(__libc_sigaction*+190)
-rt_sigaction(SIGSETXID, non-NULL, 0, 8) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x1cc8e(abort+123)
-rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b860(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x4d6a2(__block_all_sigs*+23)
-rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b858(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x4d6bc(__block_app_sigs*+23)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4d6d4(__restore_sigs*+21)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4d8fc(__libc_sigaction*+127)
-rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1cc5d(abort+74)
+rt_sigaction(SIGSETXID, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d93b(__libc_sigaction*+190)
+rt_sigaction(SIGSETXID, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1cc8e(abort+123)
+rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b860(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6a2(__block_all_sigs*+23)
+rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b858(app_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6bc(__block_app_sigs*+23)
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6d4(__restore_sigs*+21)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d8fc(__libc_sigaction*+127)
+rt_sigprocmask(SIG_BLOCK, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x4dff2(__restore_rt*+7)
 ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4e968(fdopen+202)
@@ -46,8 +46,8 @@ ioctl(any, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x4ef68(__stdout_write*+48)
 ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x6230a(isatty+22)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4edb7(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4ef01(__stdio_write*+196)
-access(/sbin/zramctl+0x74af, F_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
-access(/sbin/zramctl+0x7536, R_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
+access("/sys/class/zram-control/", F_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
+access("/proc/mounts", R_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x61cf4(dup+12)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
@@ -55,13 +55,11 @@ nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x5e990
 getpid() @ ld-musl-x86_64.so.1+0x622c6(getpid+5)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e
-fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d089(open+127)
+fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1d089(open+127)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x4e2c6(fstatat+83)
-fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4e923(fdopen+133)
-fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x4ea0a(fdopen+364)
-fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x4ea1f(fdopen+385)
-fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
-unlink(/sbin/zramctl+0x7489) @ ld-musl-x86_64.so.1+0x62a4e(unlink+9)
+fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x4e923(fdopen+133)
+fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
+unlink("/.ismount-test-file") @ ld-musl-x86_64.so.1+0x62a4e(unlink+9)
 readlink(non-NULL, any, 4095) @ ld-musl-x86_64.so.1+0x62606(readlink+32)
 getuid() @ ld-musl-x86_64.so.1+0x622f1(getuid+5)
 getgid() @ ld-musl-x86_64.so.1+0x621c8(getgid+5)
@@ -106,35 +104,35 @@ restart_syscall()
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cc05(_Exit+8)
-openat(any, /sbin/zramctl+0x74a6-/sbin/zramctl+0x74a7, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x74c8-/sbin/zramctl+0x74c9, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x74e0-/sbin/zramctl+0x74e1, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x750a-/sbin/zramctl+0x750b, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x754d-/sbin/zramctl+0x754e, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7bbf-/sbin/zramctl+0x7bc0, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7bd1-/sbin/zramctl+0x7bd2, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7c83-/sbin/zramctl+0x7c84, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7c92-/sbin/zramctl+0x7c93, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7ca2-/sbin/zramctl+0x7ca3, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7cb1-/sbin/zramctl+0x7cb2, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7cbb-/sbin/zramctl+0x7cbc, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7cc8-/sbin/zramctl+0x7cc9, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x7cd3-/sbin/zramctl+0x7cd4, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/zramctl+0x74a6-/sbin/zramctl+0x74a7, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x74c8-/sbin/zramctl+0x74c9, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x74e0-/sbin/zramctl+0x74e1, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x750a-/sbin/zramctl+0x750b, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x754d-/sbin/zramctl+0x754e, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7bbf-/sbin/zramctl+0x7bc0, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7bd1-/sbin/zramctl+0x7bd2, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7c83-/sbin/zramctl+0x7c84, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7c92-/sbin/zramctl+0x7c93, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7ca2-/sbin/zramctl+0x7ca3, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7cb1-/sbin/zramctl+0x7cb2, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7cbb-/sbin/zramctl+0x7cbc, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7cc8-/sbin/zramctl+0x7cc9, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/zramctl+0x7cd3-/sbin/zramctl+0x7cd4, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+108)
-newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
-set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
-set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)
+openat(any, "disksize", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "hot_add", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "mm_stat", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "comp_algorithm", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "max_comp_streams", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "reset", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "hot_remove", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "orig_data_size", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "compr_data_size", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "mem_used_total", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "mem_limit", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "mem_used_max", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "zero_pages", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "num_migrated", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "disksize", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "hot_add", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "mm_stat", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "comp_algorithm", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "max_comp_streams", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "reset", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "hot_remove", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "orig_data_size", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "compr_data_size", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "mem_used_total", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "mem_limit", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "mem_used_max", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "zero_pages", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "num_migrated", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+108)
+newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
+set_robust_list(0, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
+set_robust_list(any, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)

@@ -18,15 +18,15 @@ mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x101921(mm
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x1019a5(mprotect+5)
 munmap(any, any) @ libc.so.6+0x101975(munmap+5)
 brk(any) @ libc.so.6+0xfdbb5(brk+5)
-rt_sigaction(any, any, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x26428(abort+137)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, 8) @ libc.so.6+0x8adfd
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8ae48
-rt_sigprocmask(SIG_BLOCK, any, any, 8) @ libc.so.6+0x8fda2(pthread_sigmask+66)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8fda2(pthread_sigmask+66)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, 8) @ libc.so.6+0xf6b6b
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0xf6bf8
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0xf6ea1
+rt_sigaction(any, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x3c11d(__libc_sigaction+189)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x26428(abort+137)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x8adfd
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8ae48
+rt_sigprocmask(SIG_BLOCK, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x8fda2(pthread_sigmask+66)
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8fda2(pthread_sigmask+66)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, sizeof(kernel_sigset_t)) @ libc.so.6+0xf6b6b
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0xf6bf8
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0xf6ea1
 rt_sigreturn(any) @ libc.so.6+0x3c057
 ioctl(any u32, TCGETS, any) @ libc.so.6+0xfd28b(tcsetattr+43)
 ioctl(STDIN_FILENO-0xfffffffe, TCSETSF, any) @ libc.so.6+0xfd309(tcsetattr+169)
@@ -129,7 +129,7 @@ fcntl(any u32, F_SETLKW, any) @ libc.so.6+0xf877e(fcntl64+110)
 fcntl(any u32, F_OFD_SETLKW, any) @ libc.so.6+0xf877e(fcntl64+110)
 fcntl(any u32, F_SETLKW, any) @ libc.so.6+0xf87c5(fcntl64+181)
 fcntl(any u32, F_OFD_SETLKW, any) @ libc.so.6+0xf87c5(fcntl64+181)
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfce3f
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xfce3f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfce3f
 fcntl(any u32, F_SETLKW, any) @ libc.so.6+0xfce3f
 fcntl(STDIN_FILENO-STDOUT_FILENO, F_DUPFD_CLOEXEC, 0) @ libc.so.6+0xfcece
@@ -200,7 +200,7 @@ prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) @ libc.so.6+0x1093cb(prctl+75)
 sync() @ libc.so.6+0xfec15(sync+5)
 gettid() @ libc.so.6+0x8aea5
 gettid() @ libc.so.6+0x10a215(gettid+5)
-getxattr(any, libselinux.so.1+0x22c3c, any, 20) @ libc.so.6+0x1046c8(getxattr+8)
+getxattr(any, "security.sehash", any, 20) @ libc.so.6+0x1046c8(getxattr+8)
 time(any) @ libc.so.6+0xc4015
 futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any)
@@ -232,21 +232,21 @@ tgkill(any u32, any u32, SIGSEGV) @ libc.so.6+0x8ae87
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8aeba
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8aeba
 tgkill(any u32, any u32, SIGSEGV) @ libc.so.6+0x8aeba
-add_key(any, libkrb5.so.3+0x865d8, any, 8, any u32) @ libc.so.6+0x101797(syscall+23)
-add_key(libkrb5.so.3+0x865c0, any, 0, 0, any u32) @ libc.so.6+0x101797(syscall+23)
-add_key(libkrb5.so.3+0x865ee, any, any, any, any u32) @ libc.so.6+0x101797(syscall+23)
-add_key(libkrb5.so.3+0x8661e, any, any, any, any u32) @ libc.so.6+0x101797(syscall+23)
-keyctl(0, 0xfffffffb, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(0, 0xfffffffd, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(6, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(7, 0x1-0xffffffff, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(0x8-0x9, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(10, NULL-0xfffffffe, any, any, 0xfffffffe) @ libc.so.6+0x101797(syscall+23)
-keyctl(10, any u32, any, any, 0) @ libc.so.6+0x101797(syscall+23)
-keyctl(11, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(15, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
-keyctl(22, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
-openat(AT_FDCWD, any, O_RDONLY-62|O_CREAT|O_EXCL, any) @ libc.so.6+0xf7f7f(__open+79)
+add_key(any, "__krb5_time_offsets__", any, 8, any u32) @ libc.so.6+0x101797(syscall+23)
+add_key("keyring", any, 0, 0, any u32) @ libc.so.6+0x101797(syscall+23)
+add_key("user", any, any, any, any u32) @ libc.so.6+0x101797(syscall+23)
+add_key("big_key", any, any, any, any u32) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_GET_KEYRING_ID, 0xfffffffb, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_GET_KEYRING_ID, 0xfffffffd, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_DESCRIBE, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_CLEAR, 0x1-0xffffffff, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_LINK-KEYCTL_UNLINK, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_SEARCH, NULL-0xfffffffe, any, any, 0xfffffffe) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_SEARCH, any u32, any, any, 0) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_READ, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_SET_TIMEOUT, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
+keyctl(KEYCTL_GET_PERSISTENT, any u32, any, any, any) @ libc.so.6+0x101797(syscall+23)
+openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0100) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0600) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
@@ -256,8 +256,8 @@ openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_CLOEXEC, 0600) @ libc.so.6+0xf7f7f
 openat(AT_FDCWD, any, O_RDWR|O_APPEND|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0100) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0600) @ libc.so.6+0xf7f7f(__open+79)
-openat(AT_FDCWD, libc.so.6+0x197b08, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
-openat(AT_FDCWD, any, O_RDONLY-62|O_CREAT|O_EXCL, any) @ libc.so.6+0xf7ffe(__open+206)
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
+openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL, any) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0100) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_NOFOLLOW, 0600) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
@@ -267,20 +267,20 @@ openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_CLOEXEC, 0600) @ libc.so.6+0xf7ffe
 openat(AT_FDCWD, any, O_RDWR|O_APPEND|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0100) @ libc.so.6+0xf7ffe(__open+206)
 openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0600) @ libc.so.6+0xf7ffe(__open+206)
-openat(AT_FDCWD, libc.so.6+0x197b08, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
-openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf80fd(openat+61)
-openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf8186(openat+198)
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0xf80fd(openat+61)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0xf8186(openat+198)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf77d8(fstatat64+8)
-newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
+newfstatat(any u32, "", any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf77d8(fstatat64+8)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xf8617(faccessat+295)
 pselect6(0x1-0x400, any, any, 0, any, 0) @ libc.so.6+0xfe8c2(select+178)
 pselect6(0x1-0x400, any, any, 0, any, 0) @ libc.so.6+0xfe95a(select+330)
 ppoll(any, 1, 0, 0, 0) @ libc.so.6+0x3d1d6
-ppoll(any, 1, any, 0, 8) @ libc.so.6+0xfc276(ppoll+70)
-ppoll(any, 1, any, 0, 8) @ libc.so.6+0xfc2d4(ppoll+164)
-set_robust_list(any, 24) @ libc.so.6+0xd434b(_Fork+91)
+ppoll(any, 1, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0xfc276(ppoll+70)
+ppoll(any, 1, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0xfc2d4(ppoll+164)
+set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xd434b(_Fork+91)
 pipe2(any, 0) @ libc.so.6+0xf8a77(pipe+7)
 pipe2(any, O_CLOEXEC) @ libc.so.6+0xf8aa5(pipe2+5)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0xfd75e(__getrlimit+14)
@@ -291,7 +291,7 @@ getrandom(any, any, 0) @ libc.so.6+0x3f048(getentropy+40)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3f1cd(getrandom+77)
 getrandom(any, non-NULL, 0) @ libc.so.6+0x101797(syscall+23)
-clone3(non-NULL, 88) @ libc.so.6+0x109847
+clone3(non-NULL, sizeof(struct clone_args)) @ libc.so.6+0x109847
 close_range(any u32, -1 as u32, 0) @ libc.so.6+0xf6e4f
 close_range(0x3-0x4, INT_MAX, 0) @ libc.so.6+0xfcbc5(close_range+5)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0xf851c(faccessat+44)

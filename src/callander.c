@@ -3102,7 +3102,10 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 				}
 			}
 		}
+	}
+	if (new_binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
 		update_known_function(analysis, new_binary, "cancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
+		update_known_function(analysis, new_binary, "sigcancel_handler", INTERNAL_COMMON_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_MAIN)) {
 		ins_ptr fopen = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "fopen", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);

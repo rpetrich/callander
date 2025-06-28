@@ -16,11 +16,11 @@ mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x101921(mm
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x1019a5(mprotect+5)
 munmap(any, any) @ libc.so.6+0x101975(munmap+5)
 brk(any) @ libc.so.6+0xfdbb5(brk+5)
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x26428(abort+137)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, 8) @ libc.so.6+0x8adfd
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8ae48
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8fda2(pthread_sigmask+66)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3c11d(__libc_sigaction+189)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x26428(abort+137)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x8adfd
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8ae48
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8fda2(pthread_sigmask+66)
 rt_sigreturn(any) @ libc.so.6+0x3c057
 ioctl(any u32, TCGETS, any) @ libc.so.6+0xfd434(tcgetattr+36)
 ioctl(any u32, SIOCGIFCONF, any) @ libc.so.6+0xfdcd9(ioctl+57)
@@ -59,18 +59,18 @@ bind(any u32, any, 12) @ libc.so.6+0x10a6f5(bind+5)
 getsockname(any u32, any, any) @ libc.so.6+0x10a7f5(getsockname+5)
 exit(0) @ libc.so.6+0x27274
 uname(any) @ libc.so.6+0xd3ac5(uname+5)
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfce3f
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xfce3f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfce3f
 fcntl(STDIN_FILENO-0xfffffffe, F_GETFL, libc.so.6+0x19606d) @ libc.so.6+0xfcece
 fcntl(STDIN_FILENO-0xfffffffe, F_SETFL, any u16) @ libc.so.6+0xfcece
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfcece
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xfcece
 fcntl(any u32, F_GETFL, 0) @ libc.so.6+0xfcece
 fsync(any u32) @ libc.so.6+0xfeb8e(fsync+14)
 fsync(any u32) @ libc.so.6+0xfebb8(fsync+56)
 getcwd(non-NULL, any) @ libc.so.6+0xf8c3c(getcwd+124)
 chdir(non-NULL) @ libc.so.6+0xf8b65(chdir+5)
 readlink(any, non-NULL, 31) @ libc.so.6+0xf9a25(readlink+5)
-readlink(libaudit.so.1+0x1cd3b, any, 0x1000) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 0x1000) @ libc.so.6+0xf9a25(readlink+5)
 sysinfo(any) @ libc.so.6+0x10a035(sysinfo+5)
 getuid() @ libc.so.6+0xd54c5(getuid+5)
 getgid() @ libc.so.6+0xd54e5(getgid+5)
@@ -88,7 +88,7 @@ sched_get_priority_min(1) @ libc.so.6+0xedff5(sched_get_priority_min+5)
 prctl(PR_CAPBSET_READ, any u32, any, any, any) @ libc.so.6+0x1093cb(prctl+75)
 prctl(PR_GET_SECUREBITS, 0, 0, 0, 0) @ libc.so.6+0x1093cb(prctl+75)
 prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) @ libc.so.6+0x1093cb(prctl+75)
-prctl(PR_CAP_AMBIENT, 1, any u32, 0, 0) @ libc.so.6+0x1093cb(prctl+75)
+prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, any u32, 0, 0) @ libc.so.6+0x1093cb(prctl+75)
 chroot(non-NULL) @ libc.so.6+0xfeb55(chroot+5)
 gettid() @ libc.so.6+0x8aea5
 gettid() @ libc.so.6+0x101797(syscall+23)
@@ -129,19 +129,19 @@ tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8ae87
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x8aeba
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x8aeba
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
-openat(AT_FDCWD, libc.so.6+0x197b08, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
-openat(AT_FDCWD, libcap-ng.so.0+0x503e, O_RDONLY, any) @ libc.so.6+0xf7f7f(__open+79)
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7f7f(__open+79)
+openat(AT_FDCWD, "/proc/sys/kernel/cap_last_cap", O_RDONLY, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
-openat(AT_FDCWD, libc.so.6+0x197b08, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
-openat(AT_FDCWD, libcap-ng.so.0+0x503e, O_RDONLY, any) @ libc.so.6+0xf7ffe(__open+206)
-openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf80fd(openat+61)
-openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf8186(openat+198)
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xf7ffe(__open+206)
+openat(AT_FDCWD, "/proc/sys/kernel/cap_last_cap", O_RDONLY, any) @ libc.so.6+0xf7ffe(__open+206)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0xf80fd(openat+61)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0xf8186(openat+198)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
-openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf77d8(fstatat64+8)
-newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
+newfstatat(any u32, "", any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf77d8(fstatat64+8)
 getrandom(libc.so.6+0x1d9478, 8, GRND_NONBLOCK) @ libc.so.6+0x3f18e(getrandom+14)
 getrandom(libc.so.6+0x1d9478, 8, GRND_NONBLOCK) @ libc.so.6+0x3f1cd(getrandom+77)

@@ -14,18 +14,18 @@ mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x51d81
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x51e05
 munmap(any, any) @ /usr/sbin/ldconfig+0x51dd5
 brk(any) @ /usr/sbin/ldconfig+0x51a35
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x65f5d
-rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig+0x65f5d
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x1338
-rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xb88a8, any, 8) @ /usr/sbin/ldconfig+0x20caa
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig+0x20cf7
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x65f5d
+rt_sigaction(SIGALRM, any, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x65f5d
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x1338
+rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xb88a8, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x20caa
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x20cf7
 rt_sigreturn(any) @ /usr/sbin/ldconfig+0x65e97
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig+0x7fd74
 pread64(any u32, any, any, any) @ /usr/sbin/ldconfig+0x7fd28
 writev(STDERR_FILENO, any, any u32) @ /usr/sbin/ldconfig+0x51b0e
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x51b4b
 writev(any u32, any, any) @ /usr/sbin/ldconfig+0x90d75
-access(/usr/sbin/ldconfig+0xbaf9c, F_OK) @ /usr/sbin/ldconfig+0x7f755
+access("/var/run/utmpx", F_OK) @ /usr/sbin/ldconfig+0x7f755
 sched_yield() @ /usr/sbin/ldconfig+0x50a05
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x5350e
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x51e35
@@ -39,7 +39,7 @@ sendto(any u32, any, 0xc-0x40c, MSG_NOSIGNAL, 0, 0) @ /usr/sbin/ldconfig+0x9c937
 sendto(any u32, any, any, any u32, 0, 0) @ /usr/sbin/ldconfig+0x9c982
 recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ /usr/sbin/ldconfig+0x9c883
 recvmsg(any u32, any, any u32) @ /usr/sbin/ldconfig+0x9c8c5
-fcntl(any u32, F_SETFD, 1) @ /usr/sbin/ldconfig+0x5175f
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ /usr/sbin/ldconfig+0x5175f
 fcntl(any u32, F_GETFL, any) @ /usr/sbin/ldconfig+0x5175f
 fcntl(any u32, F_SETLKW, any) @ /usr/sbin/ldconfig+0x5175f
 fsync(any u32) @ /usr/sbin/ldconfig+0x51c5e
@@ -47,13 +47,13 @@ fsync(any u32) @ /usr/sbin/ldconfig+0x51c88
 fdatasync(any u32) @ /usr/sbin/ldconfig+0x51cee
 fdatasync(any u32) @ /usr/sbin/ldconfig+0x51d18
 getcwd(non-NULL, any) @ /usr/sbin/ldconfig+0x50f6c
-chdir(/usr/sbin/ldconfig+0xb5298) @ /usr/sbin/ldconfig+0x50ec5
+chdir("/") @ /usr/sbin/ldconfig+0x50ec5
 rename(any, any) @ /usr/sbin/ldconfig+0x12cf5
 mkdir(any, 0700) @ /usr/sbin/ldconfig+0x50b65
 unlink(any) @ /usr/sbin/ldconfig+0x516c5
 symlink(any, any) @ /usr/sbin/ldconfig+0x51665
 readlink(any, non-NULL, 511) @ /usr/sbin/ldconfig+0x51695
-readlink(/usr/sbin/ldconfig+0xce738, any, 0x1000) @ /usr/sbin/ldconfig+0x90b24
+readlink("/proc/self/exe", any, 0x1000) @ /usr/sbin/ldconfig+0x90b24
 chmod(any, 0644) @ /usr/sbin/ldconfig+0x50b35
 sysinfo(any) @ /usr/sbin/ldconfig+0x53595
 sched_getparam(any u32, any) @ /usr/sbin/ldconfig+0x7f505
@@ -93,10 +93,10 @@ tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x20d69
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x50bdf
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x50c5e
 openat(AT_FDCWD, any, any u32, any) @ /usr/sbin/ldconfig+0x5188f
-openat(any u32, /usr/sbin/ldconfig+0xbab10, O_RDONLY, any) @ /usr/sbin/ldconfig+0x7f66d
+openat(any u32, "..", O_RDONLY, any) @ /usr/sbin/ldconfig+0x7f66d
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig+0x7f6f6
 newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x50b08
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x50b08
-newfstatat(any u32, /usr/sbin/ldconfig+0xca821, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x50b08
+newfstatat(any u32, "", any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x50b08
 getrandom(/usr/sbin/ldconfig+0xf5590, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x660ae
 getrandom(any, any, any u32) @ /usr/sbin/ldconfig+0x660ed

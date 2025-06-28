@@ -1,5 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real:0x42dc08
-fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig.real:0x42e308
+fcntl(any, F_SETFD, FD_CLOEXEC) @ /usr/sbin/ldconfig.real:0x42e308
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig.real:0x42e308
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig.real:0x42e308
 ioctl(any, TCGETS, any) @ /usr/sbin/ldconfig.real:0x44de00
@@ -7,10 +7,10 @@ mkdirat(AT_FDCWD, any, 0700) @ /usr/sbin/ldconfig.real:0x42d750
 unlinkat(AT_FDCWD, any, 0) @ /usr/sbin/ldconfig.real:0x42e270
 symlinkat(any, AT_FDCWD, any) @ /usr/sbin/ldconfig.real:0x42e1ec
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ /usr/sbin/ldconfig.real:0x40e83c
-faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b5f8, F_OK) @ /usr/sbin/ldconfig.real:0x43464c
-faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b538, F_OK) @ /usr/sbin/ldconfig.real:0x44d628
-faccessat(AT_FDCWD, /usr/sbin/ldconfig.real:0x46b548, F_OK) @ /usr/sbin/ldconfig.real:0x44d628
-chdir(/usr/sbin/ldconfig.real:0x46bf38) @ /usr/sbin/ldconfig.real:0x42db44
+faccessat(AT_FDCWD, "/etc/suid-debug", F_OK) @ /usr/sbin/ldconfig.real:0x43464c
+faccessat(AT_FDCWD, "/var/run/utmpx", F_OK) @ /usr/sbin/ldconfig.real:0x44d628
+faccessat(AT_FDCWD, "/var/log/wtmpx", F_OK) @ /usr/sbin/ldconfig.real:0x44d628
+chdir("/") @ /usr/sbin/ldconfig.real:0x42db44
 chroot(non-NULL) @ /usr/sbin/ldconfig.real:0x42e884
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig.real:0x42d710
 openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real:0x42d7e0
@@ -38,7 +38,7 @@ ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig.real:0x46092c
 ppoll(any, any, any, 0, 0) @ /usr/sbin/ldconfig.real:0x460988
 readlinkat(AT_FDCWD, any, any, 4095) @ /usr/sbin/ldconfig.real:0x42e230
 readlinkat(AT_FDCWD, any, non-NULL, 511) @ /usr/sbin/ldconfig.real:0x42e230
-readlinkat(AT_FDCWD, /usr/sbin/ldconfig.real:0x47dde0, any, 0x1000) @ /usr/sbin/ldconfig.real:0x45c060
+readlinkat(AT_FDCWD, "/proc/self/exe", any, 0x1000) @ /usr/sbin/ldconfig.real:0x45c060
 newfstatat(AT_FDCWD, any, any, 0) @ /usr/sbin/ldconfig.real:0x42d600
 newfstatat(AT_FDCWD, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real:0x42d6b8
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real:0x44d5cc
@@ -64,13 +64,13 @@ sched_yield() @ /usr/sbin/ldconfig.real:0x42d574
 restart_syscall()
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig.real:0x40d030
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig.real:0x40d030
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real:0x43f064
-rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig.real:0x43f064
-rt_sigaction(SIGALRM, 0, any, 8) @ /usr/sbin/ldconfig.real:0x43f120
-rt_sigprocmask(SIG_BLOCK, any, any, 8) @ /usr/sbin/ldconfig.real:0x40d004
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d054
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d0e0
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real:0x40d164
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x43f064
+rt_sigaction(SIGALRM, any, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x43f064
+rt_sigaction(SIGALRM, 0, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x43f120
+rt_sigprocmask(SIG_BLOCK, any, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x40d004
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x40d054
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x40d0e0
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real:0x40d164
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ /usr/sbin/ldconfig.real:0x40d00c
 getpid() @ /usr/sbin/ldconfig.real:0x45f9d4

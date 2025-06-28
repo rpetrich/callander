@@ -1,5 +1,5 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ /usr/sbin/ldconfig+0x3924c
-fcntl(any, F_SETFD, 1) @ /usr/sbin/ldconfig+0x39a54
+fcntl(any, F_SETFD, FD_CLOEXEC) @ /usr/sbin/ldconfig+0x39a54
 fcntl(any, F_GETFL, any) @ /usr/sbin/ldconfig+0x39a54
 fcntl(any, F_SETLKW, any) @ /usr/sbin/ldconfig+0x39a54
 ioctl(any, TCGETS, any) @ /usr/sbin/ldconfig+0x5d958
@@ -9,10 +9,10 @@ mkdirat(AT_FDCWD, any, 0700) @ /usr/sbin/ldconfig+0x38d64
 unlinkat(AT_FDCWD, any, 0) @ /usr/sbin/ldconfig+0x39994
 symlinkat(any, AT_FDCWD, any) @ /usr/sbin/ldconfig+0x39900
 renameat(AT_FDCWD, any, AT_FDCWD, any) @ /usr/sbin/ldconfig+0x185d8
-faccessat(AT_FDCWD, /usr/sbin/ldconfig+0x91d40, F_OK) @ /usr/sbin/ldconfig+0x415d8
-faccessat(AT_FDCWD, /usr/sbin/ldconfig+0x91a70, F_OK) @ /usr/sbin/ldconfig+0x5d264
-faccessat(AT_FDCWD, /usr/sbin/ldconfig+0x91a80, F_OK) @ /usr/sbin/ldconfig+0x5d264
-chdir(/usr/sbin/ldconfig+0x92490) @ /usr/sbin/ldconfig+0x391c8
+faccessat(AT_FDCWD, "/etc/suid-debug", F_OK) @ /usr/sbin/ldconfig+0x415d8
+faccessat(AT_FDCWD, "/var/log/wtmpx", F_OK) @ /usr/sbin/ldconfig+0x5d264
+faccessat(AT_FDCWD, "/var/run/utmpx", F_OK) @ /usr/sbin/ldconfig+0x5d264
+chdir("/") @ /usr/sbin/ldconfig+0x391c8
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x3a108
 fchmodat(AT_FDCWD, any, 0644) @ /usr/sbin/ldconfig+0x38d24
 openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x38e00
@@ -41,10 +41,10 @@ ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig+0x860d8
 ppoll(any, 1, any, 0, 0) @ /usr/sbin/ldconfig+0x86138
 readlinkat(AT_FDCWD, any, any, 4095) @ /usr/sbin/ldconfig+0x3994c
 readlinkat(AT_FDCWD, any, non-NULL, 511) @ /usr/sbin/ldconfig+0x3994c
-readlinkat(AT_FDCWD, /usr/sbin/ldconfig+0xa4b78, any, 0x1000) @ /usr/sbin/ldconfig+0x6d408
+readlinkat(AT_FDCWD, "/proc/self/exe", any, 0x1000) @ /usr/sbin/ldconfig+0x6d408
 newfstatat(any, any, any, 0) @ /usr/sbin/ldconfig+0x38ce0
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x38ce0
-newfstatat(any, /usr/sbin/ldconfig+0xa8a30, any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x38ce0
+newfstatat(any, "", any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x38ce0
 fsync(any) @ /usr/sbin/ldconfig+0x3a150
 fsync(any) @ /usr/sbin/ldconfig+0x3a184
 fdatasync(any) @ /usr/sbin/ldconfig+0x3a220
@@ -61,7 +61,7 @@ futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
-set_robust_list(any, 24) @ /usr/sbin/ldconfig+0x40840
+set_robust_list(any, sizeof(struct robust_list_head)) @ /usr/sbin/ldconfig+0x40840
 setitimer(ITIMER_REAL, any, any) @ /usr/sbin/ldconfig+0x7396c
 clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x32a70
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
@@ -80,14 +80,14 @@ tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig+0x265c0
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig+0x265c0
 tgkill(any, any, SIGABRT) @ /usr/sbin/ldconfig+0x265f4
 tgkill(any, any, SIGFPE) @ /usr/sbin/ldconfig+0x265f4
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig+0x4d47c
-rt_sigaction(SIGALRM, any, any, 8) @ /usr/sbin/ldconfig+0x4d47c
-rt_sigaction(SIGABRT, 0, 0, 8) @ /usr/sbin/ldconfig+0x4d510
-rt_sigaction(SIGALRM, 0, 0, 8) @ /usr/sbin/ldconfig+0x4d510
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig+0x92c4
-rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0x8fb20, any, 8) @ /usr/sbin/ldconfig+0x26520
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig+0x26570
-rt_sigprocmask(any, any, any, 8) @ /usr/sbin/ldconfig+0x2715c
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x4d47c
+rt_sigaction(SIGALRM, any, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x4d47c
+rt_sigaction(SIGABRT, 0, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x4d510
+rt_sigaction(SIGALRM, 0, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x4d510
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x92c4
+rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0x8fb20, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x26520
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x26570
+rt_sigprocmask(any, any, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x2715c
 uname(any) @ /usr/sbin/ldconfig+0x8a288
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff3, 0, 0, 0) @ /usr/sbin/ldconfig+0x3be9c
 prctl(PR_SET_TAGGED_ADDR_CTRL, 0x7fff5, 0, 0, 0) @ /usr/sbin/ldconfig+0x3be9c
@@ -124,4 +124,4 @@ sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0x86574
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0x865bc
 getrandom(/usr/sbin/ldconfig+0xe71a0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x4d570
 getrandom(/usr/sbin/ldconfig+0xe71a0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x4d5b8
-rseq(any, 32, 0, 0xd428bc00) @ /usr/sbin/ldconfig+0x40874
+rseq(any, 32, 0, RSEQ_SIG) @ /usr/sbin/ldconfig+0x40874

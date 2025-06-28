@@ -16,12 +16,12 @@ mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x101921(mm
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x1019a5(mprotect+5)
 munmap(any, any) @ libc.so.6+0x101975(munmap+5)
 brk(any) @ libc.so.6+0xfdbb5(brk+5)
-rt_sigaction(any, any, any, 8) @ libc.so.6+0x3c11d(__libc_sigaction+189)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x26428(abort+137)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, 8) @ libc.so.6+0x8adfd
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8ae48
-rt_sigprocmask(SIG_BLOCK, any, /usr/bin/gpgv+0x75fa0, 8) @ libc.so.6+0x8fda2(pthread_sigmask+66)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x8fda2(pthread_sigmask+66)
+rt_sigaction(any, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x3c11d(__libc_sigaction+189)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x26428(abort+137)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1a0168, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x8adfd
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8ae48
+rt_sigprocmask(SIG_BLOCK, any, /usr/bin/gpgv+0x75fa0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8fda2(pthread_sigmask+66)
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8fda2(pthread_sigmask+66)
 rt_sigreturn(any) @ libc.so.6+0x3c057
 ioctl(any u32, TCGETS, any) @ libc.so.6+0xfd28b(tcsetattr+43)
 ioctl(any u32, TCSETSF, any) @ libc.so.6+0xfd309(tcsetattr+169)
@@ -48,32 +48,32 @@ sendto(any u32, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x10ab12(__send+98)
 recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ libc.so.6+0x10aa13(recvmsg+19)
 recvmsg(any u32, any, MSG_CMSG_CLOEXEC) @ libc.so.6+0x10aa55(recvmsg+85)
 exit(0) @ libc.so.6+0x27274
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0xfce3f
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xfce3f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfce3f
-fcntl(STDIN_FILENO-0xfffffffe, F_GETFL, 0) @ libc.so.6+0xfcece
 fcntl(STDIN_FILENO-0xfffffffe, F_SETLK, any) @ libc.so.6+0xfcece
+fcntl(any u32, F_GETFL, 0) @ libc.so.6+0xfcece
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0xfcece
 getcwd(non-NULL, any) @ libc.so.6+0xf8c3c(getcwd+124)
 rename(any, any) @ libc.so.6+0x58a85(rename+5)
 mkdir(any, any u32) @ libc.so.6+0xf7ea5(mkdir+5)
 rmdir(any) @ libc.so.6+0xf9ae5(rmdir+5)
 unlink(any) @ libc.so.6+0xf9a85(unlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 255) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 511) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 767) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 1023) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 1279) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 1535) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 1791) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 2047) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 2303) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 2559) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 2815) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 3071) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 3327) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 3583) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 3839) @ libc.so.6+0xf9a25(readlink+5)
-readlink(/usr/bin/gpgv+0x628bd, any, 4095) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 255) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 511) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 767) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 1023) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 1279) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 1535) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 1791) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 2047) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 2303) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 2559) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 2815) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 3071) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 3327) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 3583) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 3839) @ libc.so.6+0xf9a25(readlink+5)
+readlink("/proc/self/exe", any, 4095) @ libc.so.6+0xf9a25(readlink+5)
 umask(any u32) @ libc.so.6+0xf7cb5(umask+5)
 gettimeofday(any, any) @ libc.so.6+0xc411a
 getrusage(0, any) @ libc.so.6+0xfd7d5(getrusage+5)
@@ -122,14 +122,14 @@ tgkill(any u32, any u32, any u32) @ libc.so.6+0x8ae87
 tgkill(any u32, any u32, any u32) @ libc.so.6+0x8aeba
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xf7f7f(__open+79)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xf7ffe(__open+206)
-openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf80fd(openat+61)
-openat(any u32, libc.so.6+0x1979e7, O_RDONLY, any) @ libc.so.6+0xf8186(openat+198)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0xf80fd(openat+61)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0xf8186(openat+198)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
-openat(AT_FDCWD, libc.so.6+0x198ed6, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xfcf6f(__open_nocancel+63)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xf77d8(fstatat64+8)
-newfstatat(any u32, libc.so.6+0x195dd5, any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
+newfstatat(any u32, "", any, AT_EMPTY_PATH) @ libc.so.6+0xf77d8(fstatat64+8)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xf77d8(fstatat64+8)
 pselect6(0, 0, 0, 0, any, 0) @ libc.so.6+0xfe8c2(select+178)
 pselect6(0, 0, 0, 0, any, 0) @ libc.so.6+0xfe95a(select+330)

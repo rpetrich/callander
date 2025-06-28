@@ -18,12 +18,12 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ libc.so.6+0x10c8dd(m
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x10d0c5(mprotect+5)
 munmap(any, any) @ libc.so.6+0x10d1f5(munmap+5)
 brk(any) @ libc.so.6+0x1051e5(brk+5)
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
-rt_sigaction(SIGALRM, any, any, 8) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x284a6(abort+137)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1b27b0, any, 8) @ libc.so.6+0x93d0b
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x93d54
-rt_sigprocmask(SIG_UNBLOCK-SIG_SETMASK, any, any, 8) @ libc.so.6+0x98e42(pthread_sigmask+66)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
+rt_sigaction(SIGALRM, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x284a6(abort+137)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1b27b0, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x93d0b
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x93d54
+rt_sigprocmask(SIG_UNBLOCK-SIG_SETMASK, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x98e42(pthread_sigmask+66)
 rt_sigreturn(any) @ libc.so.6+0x3fda7
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x1049c2(tcgetattr+34)
 ioctl(any u32, FIONREAD, any) @ libc.so.6+0x10c379(ioctl+57)
@@ -80,10 +80,10 @@ kill(any u32, 0x0) @ libc.so.6+0x3ffb5(kill+5)
 uname(any) @ libc.so.6+0xf9875(uname+5)
 fcntl(any u32, F_SETLKW, any) @ libc.so.6+0xff31e(fcntl64+110)
 fcntl(any u32, F_SETLKW, any) @ libc.so.6+0xff365(fcntl64+181)
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0x10427f
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0x10427f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0x10427f
 fcntl(STDIN_FILENO-0xfffffffe, F_GETFL, libc.so.6+0x1a7ea5) @ libc.so.6+0x10430e
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0x10430e
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0x10430e
 fcntl(any u32, F_GETFL, /usr/sbin/chgpasswd+0xbc94) @ libc.so.6+0x10430e
 fcntl(any u32, F_GETFL, /usr/sbin/chgpasswd+0xbeed) @ libc.so.6+0x10430e
 fcntl(any u32, F_SETFL, any u16) @ libc.so.6+0x10430e
@@ -92,7 +92,7 @@ fsync(any u32) @ libc.so.6+0x106628(fsync+56)
 fdatasync(STDIN_FILENO-0xfffffffe) @ libc.so.6+0x10617e(fdatasync+14)
 fdatasync(STDIN_FILENO-0xfffffffe) @ libc.so.6+0x1061a8(fdatasync+56)
 getcwd(non-NULL, any) @ libc.so.6+0x10208a(getcwd+122)
-chdir(/usr/sbin/chgpasswd+0xbf12) @ libc.so.6+0xfe995(chdir+5)
+chdir("/") @ libc.so.6+0xfe995(chdir+5)
 rename(any, non-NULL) @ libc.so.6+0x5ebc5(rename+5)
 link(any, any) @ libc.so.6+0x102975(link+5)
 unlink(any) @ libc.so.6+0x103f75(unlink+5)
@@ -135,16 +135,16 @@ sched_get_priority_min(1) @ libc.so.6+0xf79d5(sched_get_priority_min+5)
 prctl(PR_CAPBSET_READ, any u32, any, any, any) @ libc.so.6+0x1110f8(prctl+8)
 prctl(PR_GET_SECUREBITS, 0, 0, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
 prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
-prctl(PR_CAP_AMBIENT, 1, any u32, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, libc.so.6+0x1a7c7b) @ libc.so.6+0x1112b7
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, libc.so.6+0x1a8d09) @ libc.so.6+0x1112b7
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, libc.so.6+0x1a9060) @ libc.so.6+0x1112b7
-prctl(PR_SET_VMA, 0, any, any, libc.so.6+0x1a9014) @ libc.so.6+0x1112b7
+prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, any u32, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: assert") @ libc.so.6+0x1112b7
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: fatal") @ libc.so.6+0x1112b7
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: malloc") @ libc.so.6+0x1112b7
+prctl(PR_SET_VMA, 0, any, any, " glibc: malloc arena") @ libc.so.6+0x1112b7
 chroot(non-NULL) @ libc.so.6+0x105245(chroot+5)
 gettid() @ libc.so.6+0x93db5
 gettid() @ libc.so.6+0x10e6f7(syscall+23)
 gettid() @ libc.so.6+0x111e45(gettid+5)
-getxattr(any, libselinux.so.1+0x253e9, any, 20) @ libc.so.6+0x107f38(getxattr+8)
+getxattr(any, "security.sehash", any, 20) @ libc.so.6+0x107f38(getxattr+8)
 futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any)
 futex(any, any u8, 1, 0, any, 2)
@@ -191,35 +191,35 @@ openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0100) @ libc.so.6+0x102c7a(__ope
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0600) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf120, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf120, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf5e0, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf5e0, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, libc.so.6+0x1aade9, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, libc.so.6+0x1abc48, O_WRONLY|O_CREAT|O_CLOEXEC, 0100) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, libc.so.6+0x1abc48, O_WRONLY|O_CREAT|O_CLOEXEC, 0600) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/etc/group", O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/etc/gshadow", O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/etc/gshadow", O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/etc/.pwd.lock", O_WRONLY|O_CREAT|O_CLOEXEC, 0100) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/etc/.pwd.lock", O_WRONLY|O_CREAT|O_CLOEXEC, 0600) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, O_RDONLY-O_RDWR, any) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0100) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0600) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf120, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf120, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf5e0, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/sbin/chgpasswd+0xf5e0, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, libc.so.6+0x1aade9, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, libc.so.6+0x1abc48, O_WRONLY|O_CREAT|O_CLOEXEC, 0100) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, libc.so.6+0x1abc48, O_WRONLY|O_CREAT|O_CLOEXEC, 0600) @ libc.so.6+0x102cf6(__open+198)
-openat(any u32, libc.so.6+0x1a9837, O_RDONLY, any) @ libc.so.6+0x102dea(openat+58)
-openat(any u32, libc.so.6+0x1a9837, O_RDONLY, any) @ libc.so.6+0x102e76(openat+198)
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/etc/group", O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/etc/gshadow", O_RDONLY|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/etc/gshadow", O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/etc/.pwd.lock", O_WRONLY|O_CREAT|O_CLOEXEC, 0100) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/etc/.pwd.lock", O_WRONLY|O_CREAT|O_CLOEXEC, 0600) @ libc.so.6+0x102cf6(__open+198)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0x102dea(openat+58)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0x102e76(openat+198)
 openat(AT_FDCWD, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0x10442a(__open_nocancel+58)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x10442a(__open_nocancel+58)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x10442a(__open_nocancel+58)
-openat(AT_FDCWD, libc.so.6+0x1aaec8, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x10442a(__open_nocancel+58)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x10442a(__open_nocancel+58)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xff668(fstatat64+8)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xff668(fstatat64+8)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xfef67(faccessat+295)
-set_robust_list(any, 24) @ libc.so.6+0xdc28b(_Fork+91)
+set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xdc28b(_Fork+91)
 utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0x104048
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x112a01(sendmmsg+17)
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x112a44(sendmmsg+84)

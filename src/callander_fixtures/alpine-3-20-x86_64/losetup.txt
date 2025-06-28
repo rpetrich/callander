@@ -25,16 +25,16 @@ munmap(any, any) @ ld-musl-x86_64.so.1+0x5e924
 brk(any) @ ld-musl-x86_64.so.1+0x250b7(__malloc_alloc_meta*+368)
 brk(0) @ ld-musl-x86_64.so.1+0x251b0(__malloc_alloc_meta*+617)
 brk(any) @ ld-musl-x86_64.so.1+0x251d5(__malloc_alloc_meta*+654)
-rt_sigaction(SIGABRT, any, 0, 8) @ ld-musl-x86_64.so.1+0x1cc5d(abort+74)
-rt_sigaction(SIGSETXID, 0, 0, 8) @ ld-musl-x86_64.so.1+0x4d93b(__libc_sigaction*+190)
-rt_sigaction(SIGSETXID, non-NULL, 0, 8) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x1cc8e(abort+123)
-rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b860(all_mask*), any, 8) @ ld-musl-x86_64.so.1+0x4d6a2(__block_all_sigs*+23)
-rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b858(app_mask*), any, 8) @ ld-musl-x86_64.so.1+0x4d6bc(__block_app_sigs*+23)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4d6d4(__restore_sigs*+21)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ ld-musl-x86_64.so.1+0x4d8fc(__libc_sigaction*+127)
-rt_sigprocmask(SIG_BLOCK, any, any, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1cc5d(abort+74)
+rt_sigaction(SIGSETXID, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d93b(__libc_sigaction*+190)
+rt_sigaction(SIGSETXID, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1cc8e(abort+123)
+rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b860(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6a2(__block_all_sigs*+23)
+rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b858(app_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6bc(__block_app_sigs*+23)
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6d4(__restore_sigs*+21)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d8fc(__libc_sigaction*+127)
+rt_sigprocmask(SIG_BLOCK, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5ddfd(pthread_sigmask+29)
 rt_sigreturn(any) @ ld-musl-x86_64.so.1+0x4dff2(__restore_rt*+7)
 ioctl(any, BLKGETSIZE, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
 ioctl(any, BLKSSZGET, any) @ ld-musl-x86_64.so.1+0x38163(ioctl+48)
@@ -54,7 +54,7 @@ ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ ld-musl-x86_64.so.1+0x6230a(isatty+22)
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x4edb7(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x4ef01(__stdio_write*+196)
 access(any, F_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
-access(/sbin/losetup+0xa51f, W_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
+access("/dev/loop-control", W_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x61cf4(dup+12)
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
@@ -63,12 +63,10 @@ getpid() @ ld-musl-x86_64.so.1+0x622c6(getpid+5)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e
 uname(any) @ ld-musl-x86_64.so.1+0x39680(uname+9)
-fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x1d089(open+127)
+fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1d089(open+127)
 fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x4e2c6(fstatat+83)
-fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4e923(fdopen+133)
-fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x4ea0a(fdopen+364)
-fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x4ea1f(fdopen+385)
-fcntl(any, F_SETFD, 1) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
+fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x4e923(fdopen+133)
+fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
 getcwd(any, 0x1000-0x1001) @ ld-musl-x86_64.so.1+0x6214f(getcwd+36)
 readlink(any, any, non-NULL) @ ld-musl-x86_64.so.1+0x62606(readlink+32)
 getuid() @ ld-musl-x86_64.so.1+0x622f1(getuid+5)
@@ -114,24 +112,24 @@ restart_syscall()
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 clock_nanosleep(CLOCK_REALTIME, 0, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cc05(_Exit+8)
-openat(any, /sbin/losetup+0xa13c-/sbin/losetup+0xa13d, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa428-/sbin/losetup+0xa429, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa4b7-/sbin/losetup+0xa4b8, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa5a3-/sbin/losetup+0xa5a4, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa86b-/sbin/losetup+0xa86c, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa87a-/sbin/losetup+0xa87b, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa883-/sbin/losetup+0xa884, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa8b6-/sbin/losetup+0xa8b7, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-openat(any, /sbin/losetup+0xa13c-/sbin/losetup+0xa13d, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa428-/sbin/losetup+0xa429, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa4b7-/sbin/losetup+0xa4b8, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa5a3-/sbin/losetup+0xa5a4, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa86b-/sbin/losetup+0xa86c, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa87a-/sbin/losetup+0xa87b, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa883-/sbin/losetup+0xa884, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-openat(any, /sbin/losetup+0xa8b6-/sbin/losetup+0xa8b7, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
-newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+108)
+openat(any, "ro", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "loop/offset", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "loop/backing_file", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "loop/sizelimit", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "loop/autoclear", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "loop/dio", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "loop/partscan", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "queue/logical_block_size", any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+openat(any, "ro", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "loop/offset", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "loop/backing_file", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "loop/sizelimit", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "loop/autoclear", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "loop/dio", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "loop/partscan", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+openat(any, "queue/logical_block_size", any u16, any) @ ld-musl-x86_64.so.1+0x5e990
+newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+108)
 newfstatat(any, any, any, 0) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
-newfstatat(any, ld-musl-x86_64.so.1+0x9d23a, any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
-set_robust_list(0, 24) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
-set_robust_list(any, 24) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)
+newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
+set_robust_list(0, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
+set_robust_list(any, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)

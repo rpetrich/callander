@@ -16,10 +16,10 @@ mmap(0, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig.real+0x52426
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x52469
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x52499
 brk(any) @ /usr/sbin/ldconfig.real+0x513b9
-rt_sigaction(SIGABRT, any, 0, 8) @ /usr/sbin/ldconfig.real+0x72596
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x1599
-rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig.real+0xd5e88, any, 8) @ /usr/sbin/ldconfig.real+0x246b0
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ /usr/sbin/ldconfig.real+0x246fc
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real+0x72596
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real+0x1599
+rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig.real+0xd5e88, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real+0x246b0
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig.real+0x246fc
 rt_sigreturn(any) @ /usr/sbin/ldconfig.real+0x724b7
 ioctl(any u32, TCGETS, any) @ /usr/sbin/ldconfig.real+0x8f6ca
 ioctl(any u32, FIONREAD, any) @ /usr/sbin/ldconfig.real+0xc506b
@@ -46,14 +46,14 @@ getpeername(any u32, any, any) @ /usr/sbin/ldconfig.real+0xc50b9
 setsockopt(any u32, SOL_IP, IP_RECVERR, any, 4) @ /usr/sbin/ldconfig.real+0xc92cc
 setsockopt(any u32, SOL_IPV6, IPV6_RECVERR, any, 4) @ /usr/sbin/ldconfig.real+0xc92cc
 uname(any) @ /usr/sbin/ldconfig.real+0xc9da9
-fcntl(any u32, F_SETFD, 1) @ /usr/sbin/ldconfig.real+0x51100
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ /usr/sbin/ldconfig.real+0x51100
 fcntl(any u32, F_GETFL, any) @ /usr/sbin/ldconfig.real+0x51100
 fsync(any u32) @ /usr/sbin/ldconfig.real+0x51bd2
 fsync(any u32) @ /usr/sbin/ldconfig.real+0x51bfa
 fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x51b42
 fdatasync(any u32) @ /usr/sbin/ldconfig.real+0x51b6a
 getcwd(non-NULL, any) @ /usr/sbin/ldconfig.real+0x50409
-chdir(/usr/sbin/ldconfig.real+0xcd35b) @ /usr/sbin/ldconfig.real+0x50229
+chdir("/") @ /usr/sbin/ldconfig.real+0x50229
 rename(any, any) @ /usr/sbin/ldconfig.real+0x15d49
 mkdir(any, 0700) @ /usr/sbin/ldconfig.real+0x50c49
 unlink(any) @ /usr/sbin/ldconfig.real+0x50fc9
@@ -64,10 +64,10 @@ sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig.real+0x8eee9
 sched_getscheduler(any u32) @ /usr/sbin/ldconfig.real+0x8ee59
 sched_get_priority_max(1) @ /usr/sbin/ldconfig.real+0x8ee89
 sched_get_priority_min(1) @ /usr/sbin/ldconfig.real+0x8eeb9
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0xcd6d6) @ /usr/sbin/ldconfig.real+0x5390c
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0xcd76c) @ /usr/sbin/ldconfig.real+0x539ad
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, /usr/sbin/ldconfig.real+0xcd982) @ /usr/sbin/ldconfig.real+0x539ad
-prctl(PR_SET_VMA, 0, any, any, /usr/sbin/ldconfig.real+0xcd991) @ /usr/sbin/ldconfig.real+0x539ad
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: fatal") @ /usr/sbin/ldconfig.real+0x5390c
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: assert") @ /usr/sbin/ldconfig.real+0x539ad
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: malloc") @ /usr/sbin/ldconfig.real+0x539ad
+prctl(PR_SET_VMA, 0, any, any, " glibc: malloc arena") @ /usr/sbin/ldconfig.real+0x539ad
 arch_prctl(0x5002, 1) @ /usr/sbin/ldconfig.real+0x60ebc
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x513f9
 gettid() @ /usr/sbin/ldconfig.real+0x24755
@@ -110,7 +110,7 @@ openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x50d33
 openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x50d33
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, any u32) @ /usr/sbin/ldconfig.real+0x50d33
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x50d33
-openat(any u32, /usr/sbin/ldconfig.real+0xcdd10, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x50dd0
+openat(any u32, "..", O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x50dd0
 openat(any u32, any, any u32, any) @ /usr/sbin/ldconfig.real+0x50e45
 openat(AT_FDCWD, any, O_RDONLY, any) @ /usr/sbin/ldconfig.real+0x51220
 openat(AT_FDCWD, any, O_RDWR, any) @ /usr/sbin/ldconfig.real+0x51220
@@ -118,10 +118,10 @@ openat(AT_FDCWD, any, O_RDONLY|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x51220
 openat(AT_FDCWD, any, O_RDWR|O_EXCL, any) @ /usr/sbin/ldconfig.real+0x51220
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x51220
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbin/ldconfig.real+0x51220
-openat(AT_FDCWD, /usr/sbin/ldconfig.real+0xcdd69, O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig.real+0x51220
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ /usr/sbin/ldconfig.real+0x51220
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig.real+0x5034c
 newfstatat(AT_FDCWD, any, any, 0) @ /usr/sbin/ldconfig.real+0x5034c
-readlinkat(AT_FDCWD, /usr/sbin/ldconfig.real+0xce15e, any, 0x1000) @ /usr/sbin/ldconfig.real+0x5db5e
+readlinkat(AT_FDCWD, "/proc/self/exe", any, 0x1000) @ /usr/sbin/ldconfig.real+0x5db5e
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig.real+0xc51b5
 sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig.real+0xc51f0
 getrandom(/usr/sbin/ldconfig.real+0x109a90, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig.real+0x26567

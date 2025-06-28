@@ -1,19 +1,19 @@
 callander: permitted syscalls: getcwd(non-NULL, any) @ libc.so.6+0xda504(getcwd+100)
 dup(any u32) @ libc.so.6+0xda2c8(dup+8)
-fcntl(any, F_SETFD, 1) @ libc.so.6+0xde7fc
+fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFL, any) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFL, /usr/sbin/ctrlaltdel+0x7454) @ libc.so.6+0xde8c0
 ioctl(any, TCGETS, any) @ libc.so.6+0xdef90(tcgetattr+48)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd96fc(__open+108)
-openat(AT_FDCWD, /usr/sbin/ctrlaltdel+0x7170, O_RDONLY, any) @ libc.so.6+0xd96fc(__open+108)
+openat(AT_FDCWD, "/proc/sys/kernel/ctrl-alt-del", O_RDONLY, any) @ libc.so.6+0xd96fc(__open+108)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd9784(__open+244)
-openat(AT_FDCWD, /usr/sbin/ctrlaltdel+0x7170, O_RDONLY, any) @ libc.so.6+0xd9784(__open+244)
+openat(AT_FDCWD, "/proc/sys/kernel/ctrl-alt-del", O_RDONLY, any) @ libc.so.6+0xd9784(__open+244)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd98ac(openat+108)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd9938(openat+248)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
-openat(AT_FDCWD, libc.so.6+0x154a48, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
 close(any) @ libc.so.6+0xde778(__close_nocancel+8)
@@ -29,7 +29,7 @@ writev(any, any, any) @ ld-linux-aarch64.so.1+0xb61c
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a5c
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdeb48(__pread64_nocancel+8)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd8f3c(fstatat64+12)
-newfstatat(any, libc.so.6+0x153d10, any, AT_EMPTY_PATH) @ libc.so.6+0xd8f3c(fstatat64+12)
+newfstatat(any, "", any, AT_EMPTY_PATH) @ libc.so.6+0xd8f3c(fstatat64+12)
 exit(0) @ libc.so.6+0x2776c
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b804
 exit_group(any) @ libc.so.6+0xb8b08(_Exit+24)
@@ -60,12 +60,12 @@ tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
-rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2742c(abort+160)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, 8) @ libc.so.6+0x80980
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x809cc
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x862c4(pthread_sigmask+68)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a854(__libc_sigaction+132)
+rt_sigaction(SIGABRT, 0, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x2742c(abort+160)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x80980
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x809cc
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x862c4(pthread_sigmask+68)
 reboot(0xfffffffffee1dead, 0x28121969, 0) @ libc.so.6+0xe0b78(reboot+24)
 reboot(0xfffffffffee1dead, 0x28121969, 0xffffffff89abcdef) @ libc.so.6+0xe0b78(reboot+24)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)

@@ -1,15 +1,15 @@
-callander: permitted syscalls: getxattr(any, libselinux.so.1+0x22f90, 0, 0) @ libc.so.6+0xe6e48(getxattr+8)
-getxattr(any, libselinux.so.1+0x22f90, non-NULL, any) @ libc.so.6+0xe6e48(getxattr+8)
-getxattr(any, libselinux.so.1+0x23328, any, 20) @ libc.so.6+0xe6e48(getxattr+8)
+callander: permitted syscalls: getxattr(any, "security.selinux", 0, 0) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "security.selinux", non-NULL, any) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "security.sehash", any, 20) @ libc.so.6+0xe6e48(getxattr+8)
 getcwd(non-NULL, any) @ libc.so.6+0xda504(getcwd+100)
 dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xda2c8(dup+8)
-fcntl(any, F_SETFD, 1) @ libc.so.6+0xde7fc
+fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFL, any) @ libc.so.6+0xde7fc
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, libc.so.6+0x14f7ac) @ libc.so.6+0xde8c0
-fcntl(any, F_SETFD, 1) @ libc.so.6+0xde8c0
+fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xde8c0
 ioctl(any, TCGETS, any) @ libc.so.6+0xdef90(tcgetattr+48)
 mknodat(AT_FDCWD, any, 0-010777, 0) @ libc.so.6+0xd9200(mknodat+32)
-faccessat(AT_FDCWD, libselinux.so.1+0x24960, F_OK) @ libc.so.6+0xd9bb0(access+16)
+faccessat(AT_FDCWD, "/var/run/setrans/.setrans-unix", F_OK) @ libc.so.6+0xd9bb0(access+16)
 fchmodat(AT_FDCWD, any, 0-0777) @ libc.so.6+0xd93e0(chmod+16)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd96fc(__open+108)
 openat(AT_FDCWD, any, O_RDWR|O_CLOEXEC, any) @ libc.so.6+0xd96fc(__open+108)
@@ -20,7 +20,7 @@ openat(any, any, O_RDONLY, any) @ libc.so.6+0xd9938(openat+248)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
-openat(AT_FDCWD, libc.so.6+0x154a48, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xdea70
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
@@ -42,7 +42,7 @@ writev(STDERR_FILENO, any, any) @ libc.so.6+0x74a5c
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xdeb48(__pread64_nocancel+8)
 readlinkat(AT_FDCWD, any, any, any) @ libc.so.6+0xdb3b8(readlink+24)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd8f3c(fstatat64+12)
-newfstatat(any, libc.so.6+0x153d10, any, AT_EMPTY_PATH) @ libc.so.6+0xd8f3c(fstatat64+12)
+newfstatat(any, "", any, AT_EMPTY_PATH) @ libc.so.6+0xd8f3c(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xd8f3c(fstatat64+12)
 exit(0) @ libc.so.6+0x2776c
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b804
@@ -73,12 +73,12 @@ tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
-rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2742c(abort+160)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, 8) @ libc.so.6+0x80980
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x809cc
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x862c4(pthread_sigmask+68)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a854(__libc_sigaction+132)
+rt_sigaction(SIGABRT, 0, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x2742c(abort+160)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x80980
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x809cc
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x862c4(pthread_sigmask+68)
 umask(any) @ libc.so.6+0xd93c8(umask+8)
 gettimeofday(non-NULL, any) @ [vdso]+0x658(__kernel_gettimeofday+256)
 getpid() @ ld-linux-aarch64.so.1+0x1b888

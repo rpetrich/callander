@@ -1,4 +1,4 @@
 callander: found syscall with unknown number: any
-callander: full call stack: libc.so.6+0xca7a4(select+236)-libc.so.6+0xca7b0(select+248)
+callander: full call stack: libc.so.6+0xc47a4(pipe2+4)
 libgcrypt.so.20+0x6d3cc (adrp+add)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

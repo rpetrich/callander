@@ -1,21 +1,21 @@
-callander: permitted syscalls: setxattr(any, libselinux.so.1+0x22f90, any, any, 0) @ libc.so.6+0xe7008(setxattr+8)
-setxattr(any, libacl.so.1+0x5d98, non-NULL, any, 0) @ libc.so.6+0xe7008(setxattr+8)
-setxattr(any, libacl.so.1+0x5dd8, non-NULL, any, 0) @ libc.so.6+0xe7008(setxattr+8)
+callander: permitted syscalls: setxattr(any, "security.selinux", any, any, 0) @ libc.so.6+0xe7008(setxattr+8)
+setxattr(any, "system.posix_acl_default", non-NULL, any, 0) @ libc.so.6+0xe7008(setxattr+8)
+setxattr(any, "system.posix_acl_access", non-NULL, any, 0) @ libc.so.6+0xe7008(setxattr+8)
 lsetxattr(any, any, any, any, 0) @ libc.so.6+0xe6f88(lsetxattr+8)
 fsetxattr(any u32, any, any, any, 0) @ libc.so.6+0xe6e08(fsetxattr+8)
-getxattr(any, libselinux.so.1+0x22f90, 0, 0) @ libc.so.6+0xe6e48(getxattr+8)
-getxattr(any, libselinux.so.1+0x22f90, non-NULL, any) @ libc.so.6+0xe6e48(getxattr+8)
-getxattr(any, libselinux.so.1+0x23328, any, 20) @ libc.so.6+0xe6e48(getxattr+8)
-getxattr(any, libacl.so.1+0x5d98, any, 0-INT_MAX) @ libc.so.6+0xe6e48(getxattr+8)
-getxattr(any, libacl.so.1+0x5dd8, any, 0-INT_MAX) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "security.selinux", 0, 0) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "security.selinux", non-NULL, any) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "security.sehash", any, 20) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "system.posix_acl_default", any, 0-INT_MAX) @ libc.so.6+0xe6e48(getxattr+8)
+getxattr(any, "system.posix_acl_access", any, 0-INT_MAX) @ libc.so.6+0xe6e48(getxattr+8)
 lgetxattr(any, any, any, any) @ libc.so.6+0xe6ec8(lgetxattr+8)
 fgetxattr(any u32, any, any, any) @ libc.so.6+0xe6d48(fgetxattr+8)
 llistxattr(any, any, any) @ libc.so.6+0xe6f08(llistxattr+8)
 flistxattr(any u32, any, any) @ libc.so.6+0xe6d88(flistxattr+8)
-removexattr(any, libacl.so.1+0x5d98) @ libc.so.6+0xe6fc8(removexattr+8)
+removexattr(any, "system.posix_acl_default") @ libc.so.6+0xe6fc8(removexattr+8)
 getcwd(non-NULL, any) @ libc.so.6+0xda504(getcwd+100)
 dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0xda2c8(dup+8)
-fcntl(any, F_SETFD, 1) @ libc.so.6+0xde7fc
+fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFL, any) @ libc.so.6+0xde7fc
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, any) @ libc.so.6+0xde8c0
 fcntl(any, F_DUPFD, 3) @ libc.so.6+0xde8c0
@@ -36,7 +36,7 @@ fstatfs(any, any) @ libc.so.6+0xd9288(fstatfs+8)
 ftruncate(any, any) @ libc.so.6+0xe2078(ftruncate64+8)
 fallocate(any, 3, any, any) @ libc.so.6+0xde6bc(fallocate64+44)
 fallocate(any, 3, any, any) @ libc.so.6+0xde704(fallocate64+116)
-faccessat(AT_FDCWD, libselinux.so.1+0x24960, F_OK) @ libc.so.6+0xd9bb0(access+16)
+faccessat(AT_FDCWD, "/var/run/setrans/.setrans-unix", F_OK) @ libc.so.6+0xd9bb0(access+16)
 faccessat(any, any, W_OK) @ libc.so.6+0xd9e60(faccessat+304)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
 fchdir(any u32) @ libc.so.6+0xda488(fchdir+8)
@@ -51,7 +51,7 @@ openat(any, any, any, any) @ libc.so.6+0xd9938(openat+248)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
-openat(AT_FDCWD, libc.so.6+0x154a48, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(any, any, O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xdea70
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
@@ -107,12 +107,12 @@ tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
-rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2742c(abort+160)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, 8) @ libc.so.6+0x80980
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x809cc
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x862c4(pthread_sigmask+68)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a854(__libc_sigaction+132)
+rt_sigaction(SIGABRT, 0, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x2742c(abort+160)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x80980
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x809cc
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x862c4(pthread_sigmask+68)
 getgroups(0, any) @ libc.so.6+0xb9d88(getgroups+8)
 getgroups(0x10000, any) @ libc.so.6+0xb9d88(getgroups+8)
 getgroups(0x20000, any) @ libc.so.6+0xb9d88(getgroups+8)

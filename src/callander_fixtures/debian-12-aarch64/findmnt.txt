@@ -1,14 +1,14 @@
-callander: permitted syscalls: getxattr(any, libselinux.so.1+0x23328, any, 20) @ libc.so.6+0xe6e48(getxattr+8)
+callander: permitted syscalls: getxattr(any, "security.sehash", any, 20) @ libc.so.6+0xe6e48(getxattr+8)
 getcwd(non-NULL, any) @ libc.so.6+0xda504(getcwd+100)
 dup(any u32) @ libc.so.6+0xda2c8(dup+8)
 dup3(STDIN_FILENO, STDOUT_FILENO, 0) @ libc.so.6+0xda308(__dup2+40)
 dup3(STDERR_FILENO--1, STDOUT_FILENO, 0) @ libc.so.6+0xda308(__dup2+40)
-fcntl(any, F_SETFD, 1) @ libc.so.6+0xde7fc
+fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFL, any) @ libc.so.6+0xde7fc
 fcntl(any, F_GETFD, any) @ libc.so.6+0xde8c0
 fcntl(any, F_SETFD, any u32) @ libc.so.6+0xde8c0
 fcntl(any, F_GETFL, any) @ libc.so.6+0xde8c0
-fcntl(any, F_SETFL, NULL-0xfffffffe) @ libc.so.6+0xde8c0
+fcntl(any, F_SETFL, 0-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ libc.so.6+0xde8c0
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ libc.so.6+0xde8c0
 inotify_init1(IN_NONBLOCK|IN_CLOEXEC) @ libc.so.6+0xe8e48(inotify_init1+8)
 inotify_add_watch(any u32, any, IN_CLOSE_NOWRITE) @ libc.so.6+0xe8e08(inotify_add_watch+8)
@@ -32,7 +32,7 @@ ioctl(any, BLKREPORTZONE, non-NULL) @ libc.so.6+0xdf98c(ioctl+12)
 ioctl(any, BTRFS_IOC_TREE_SEARCH, any) @ libc.so.6+0xdf98c(ioctl+12)
 ioctl(STDOUT_FILENO, TIOCGWINSZ, any) @ libc.so.6+0xdf98c(ioctl+12)
 mkdirat(AT_FDCWD, any, 0700) @ libc.so.6+0xd9600(mkdir+16)
-mkdirat(AT_FDCWD, libblkid.so.1+0x43560, 0755) @ libc.so.6+0xd9600(mkdir+16)
+mkdirat(AT_FDCWD, "/run/blkid", 0755) @ libc.so.6+0xd9600(mkdir+16)
 unlinkat(AT_FDCWD, any, 0) @ libc.so.6+0xdb430(unlink+16)
 linkat(AT_FDCWD, non-NULL, AT_FDCWD, non-NULL, 0) @ libc.so.6+0xdb2a8(link+24)
 renameat(AT_FDCWD, any, AT_FDCWD, non-NULL) @ libc.so.6+0x51f34(rename+20)
@@ -40,19 +40,19 @@ statfs(any, any) @ libc.so.6+0xd9254(statfs+4)
 fstatfs(any, any) @ libc.so.6+0xd9288(fstatfs+8)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xd9bb0(access+16)
 faccessat(AT_FDCWD, non-NULL, W_OK) @ libc.so.6+0xd9bb0(access+16)
-faccessat(AT_FDCWD, /usr/bin/findmnt+0xf808, R_OK) @ libc.so.6+0xd9bb0(access+16)
+faccessat(AT_FDCWD, "/proc/self/mountinfo", R_OK) @ libc.so.6+0xd9bb0(access+16)
 faccessat(any, any, R_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libblkid.so.1+0x43d19, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libblkid.so.1+0x45c19, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libblkid.so.1+0x45c31, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libblkid.so.1+0x45c49, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libblkid.so.1+0x45c61, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libblkid.so.1+0x45c81, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
-faccessat(any, libudev.so.1+0x20398, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "partition", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "alignment_offset", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "queue/minimum_io_size", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "queue/optimal_io_size", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "queue/physical_block_size", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "queue/dax", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
+faccessat(any, "uevent", F_OK) @ libc.so.6+0xd9e60(faccessat+304)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xd9e60(faccessat+304)
 fchmod(any u32, 0644) @ libc.so.6+0xd9448(fchmod+8)
-openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ libc.so.6+0xd96fc(__open+108)
-openat(AT_FDCWD, any, O_RDONLY-0xffffffffff80003e|O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ libc.so.6+0xd9784(__open+244)
+openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ libc.so.6+0xd96fc(__open+108)
+openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ libc.so.6+0xd9784(__open+244)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0xd98ac(openat+108)
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xd98ac(openat+108)
 openat(any, non-NULL, O_RDONLY|O_LARGEFILE|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xd98ac(openat+108)
@@ -64,9 +64,9 @@ openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0xd9938
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC-O_WRONLY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
-openat(AT_FDCWD, libc.so.6+0x154a48, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0xde9a8(__open_nocancel+72)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC-O_WRONLY|O_CLOEXEC, any) @ libc.so.6+0xde9fc(__open_nocancel+156)
-openat(any, libmount.so.1+0x56700, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xdea70
+openat(any, ".", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xdea70
 close(any) @ libc.so.6+0xda204(close+36)
 close(any) @ libc.so.6+0xda234(close+84)
 close(any) @ libc.so.6+0xde778(__close_nocancel+8)
@@ -94,7 +94,7 @@ readlinkat(AT_FDCWD, any, any, any) @ libc.so.6+0xdb3b8(readlink+24)
 readlinkat(any u32, non-NULL, non-NULL, any) @ libc.so.6+0xdb408(readlinkat+8)
 newfstatat(any, any, any, 0) @ libc.so.6+0xd8f3c(fstatat64+12)
 newfstatat(any, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xd8f3c(fstatat64+12)
-newfstatat(any, libc.so.6+0x153d10, any, AT_EMPTY_PATH) @ libc.so.6+0xd8f3c(fstatat64+12)
+newfstatat(any, "", any, AT_EMPTY_PATH) @ libc.so.6+0xd8f3c(fstatat64+12)
 newfstatat(AT_FDCWD, non-NULL, any, AT_NO_AUTOMOUNT) @ libc.so.6+0xd8f3c(fstatat64+12)
 exit(0) @ libc.so.6+0x2776c
 exit_group(any) @ ld-linux-aarch64.so.1+0x1b804
@@ -108,7 +108,7 @@ futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
-set_robust_list(any, 24) @ libc.so.6+0xb8a98(_Fork+72)
+set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xb8a98(_Fork+72)
 clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ libc.so.6+0xb35b4(__clock_gettime+52)
 clock_gettime(CLOCK_REALTIME_COARSE, any) @ libc.so.6+0xb35b4(__clock_gettime+52)
 clock_gettime(any u32, any) @ [vdso]+0x37c(__kernel_clock_gettime+188)
@@ -129,12 +129,12 @@ tgkill(any, any, SIGABRT) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a1c
 tgkill(any, any, SIGABRT) @ libc.so.6+0x80a4c
 tgkill(any, any, SIGFPE) @ libc.so.6+0x80a4c
-rt_sigaction(SIGABRT, any, 0, 8) @ libc.so.6+0x3a854(__libc_sigaction+132)
-rt_sigaction(SIGABRT, 0, 0, 8) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x2742c(abort+160)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, 8) @ libc.so.6+0x80980
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x809cc
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x862c4(pthread_sigmask+68)
+rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a854(__libc_sigaction+132)
+rt_sigaction(SIGABRT, 0, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x3a8e8(__libc_sigaction+280)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x2742c(abort+160)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1578c0, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x80980
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x809cc
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x862c4(pthread_sigmask+68)
 setgid(any u32) @ libc.so.6+0x7c440
 setgid(any u32) @ libc.so.6+0xb9e70(setgid+48)
 setuid(any u32) @ libc.so.6+0x7c440
@@ -192,11 +192,11 @@ getrandom(any, any, GRND_INSECURE) @ libc.so.6+0x3da74(getrandom+36)
 getrandom(any, any, GRND_NONBLOCK) @ libc.so.6+0x3dab8(getrandom+104)
 getrandom(any, any, GRND_INSECURE) @ libc.so.6+0x3dab8(getrandom+104)
 faccessat2(any, any, R_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libblkid.so.1+0x43d19, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libblkid.so.1+0x45c19, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libblkid.so.1+0x45c31, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libblkid.so.1+0x45c49, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libblkid.so.1+0x45c61, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libblkid.so.1+0x45c81, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
-faccessat2(any, libudev.so.1+0x20398, F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "partition", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "alignment_offset", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "queue/minimum_io_size", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "queue/optimal_io_size", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "queue/physical_block_size", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "queue/dax", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
+faccessat2(any, "uevent", F_OK, 0) @ libc.so.6+0xd9d78(faccessat+72)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0xd9d78(faccessat+72)

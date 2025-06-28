@@ -18,12 +18,12 @@ mmap(0, any, PROT_READ|PROT_WRITE, any u32, -1 as u32, 0) @ libc.so.6+0x10c8dd(m
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x10d0c5(mprotect+5)
 munmap(any, any) @ libc.so.6+0x10d1f5(munmap+5)
 brk(any) @ libc.so.6+0x1051e5(brk+5)
-rt_sigaction(0x0-SIGFPE, any, any, 8) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
-rt_sigaction(SIGUSR1-0x7f, any, any, 8) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
-rt_sigprocmask(SIG_UNBLOCK, any, 0, 8) @ libc.so.6+0x284a6(abort+137)
-rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1b27b0, any, 8) @ libc.so.6+0x93d0b
-rt_sigprocmask(SIG_SETMASK, any, 0, 8) @ libc.so.6+0x93d54
-rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, 8) @ libc.so.6+0x98e42(pthread_sigmask+66)
+rt_sigaction(0x0-SIGFPE, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
+rt_sigaction(SIGUSR1-0x7f, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x3fe6b(__libc_sigaction+187)
+rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x284a6(abort+137)
+rt_sigprocmask(SIG_BLOCK, libc.so.6+0x1b27b0, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x93d0b
+rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x93d54
+rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x98e42(pthread_sigmask+66)
 rt_sigreturn(any) @ libc.so.6+0x3fda7
 ioctl(any u32, TCGETS, any) @ libc.so.6+0x1049c2(tcgetattr+34)
 ioctl(any u32, FIONREAD, any) @ libc.so.6+0x10c379(ioctl+57)
@@ -67,7 +67,7 @@ wait4(any u32, any, 0, 0) @ libc.so.6+0xf9911(wait4+17)
 wait4(any u32, any, 0, 0) @ libc.so.6+0xf9955(wait4+85)
 kill(any u32, 0x0-0x7f) @ libc.so.6+0x3ffb5(kill+5)
 uname(any) @ libc.so.6+0xf9875(uname+5)
-fcntl(any u32, F_SETFD, 1) @ libc.so.6+0x10427f
+fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0x10427f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0x10427f
 getcwd(non-NULL, any) @ libc.so.6+0x10208a(getcwd+122)
 chdir(non-NULL) @ libc.so.6+0xfe995(chdir+5)
@@ -87,17 +87,17 @@ sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xf7a95(sched_setscheduler
 sched_getscheduler(any u32) @ libc.so.6+0xf7975(__sched_getscheduler+5)
 sched_get_priority_max(1) @ libc.so.6+0xf79a5(__sched_get_priority_max+5)
 sched_get_priority_min(1) @ libc.so.6+0xf79d5(sched_get_priority_min+5)
-prctl(PR_SET_PDEATHSIG, 0x1-0xffffffff, any, any, any) @ libc.so.6+0x1110f8(prctl+8)
+prctl(PR_SET_PDEATHSIG, SIGHUP-0xffffffff, any, any, any) @ libc.so.6+0x1110f8(prctl+8)
 prctl(PR_CAPBSET_READ, any u32, 0, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
-prctl(PR_CAP_AMBIENT, 2, any, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, libc.so.6+0x1a7c7b) @ libc.so.6+0x1112b7
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, libc.so.6+0x1a8d09) @ libc.so.6+0x1112b7
-prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, libc.so.6+0x1a9060) @ libc.so.6+0x1112b7
-prctl(PR_SET_VMA, 0, any, any, libc.so.6+0x1a9014) @ libc.so.6+0x1112b7
+prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, any, 0, 0) @ libc.so.6+0x1110f8(prctl+8)
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: assert") @ libc.so.6+0x1112b7
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: fatal") @ libc.so.6+0x1112b7
+prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: malloc") @ libc.so.6+0x1112b7
+prctl(PR_SET_VMA, 0, any, any, " glibc: malloc arena") @ libc.so.6+0x1112b7
 chroot(any) @ libc.so.6+0x105245(chroot+5)
 mount(any, any, 0, non-NULL, 0) @ libc.so.6+0x1119f8(mount+8)
-mount(/usr/bin/unshare+0x10246, non-NULL, /usr/bin/unshare+0x10246, 14, 0) @ libc.so.6+0x1119f8(mount+8)
-mount(/usr/bin/unshare+0x10526, any, /usr/bin/unshare+0x10526, 14, 0) @ libc.so.6+0x1119f8(mount+8)
+mount("binfmt_misc", non-NULL, "binfmt_misc", 14, 0) @ libc.so.6+0x1119f8(mount+8)
+mount("proc", any, "proc", 14, 0) @ libc.so.6+0x1119f8(mount+8)
 gettid() @ libc.so.6+0x93db5
 futex(any, any u8, 1, 0, any, 2)
 futex(any, any u8, 1, 0, any, 75)
@@ -141,26 +141,26 @@ openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_PATH, any) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/bin/unshare+0x100d1, O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/bin/unshare+0x101dc, O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/bin/unshare+0x102a9, O_RDONLY-O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
-openat(AT_FDCWD, /usr/bin/unshare+0x102c8, O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/proc/self/timens_offsets", O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/proc/self/setgroups", O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/proc/self/uid_map", O_RDONLY-O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
+openat(AT_FDCWD, "/proc/self/gid_map", O_WRONLY, any) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, any, O_WRONLY|O_NOCTTY|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_PATH, any) @ libc.so.6+0x102cf6(__open+198)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/bin/unshare+0x100d1, O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/bin/unshare+0x101dc, O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/bin/unshare+0x102a9, O_RDONLY-O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
-openat(AT_FDCWD, /usr/bin/unshare+0x102c8, O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
-openat(any u32, /usr/bin/unshare+0x10219, O_WRONLY, any) @ libc.so.6+0x102dea(openat+58)
-openat(any u32, libc.so.6+0x1a9837, O_RDONLY, any) @ libc.so.6+0x102dea(openat+58)
-openat(any u32, /usr/bin/unshare+0x10219, O_WRONLY, any) @ libc.so.6+0x102e76(openat+198)
-openat(any u32, libc.so.6+0x1a9837, O_RDONLY, any) @ libc.so.6+0x102e76(openat+198)
+openat(AT_FDCWD, "/proc/self/timens_offsets", O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/proc/self/setgroups", O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/proc/self/uid_map", O_RDONLY-O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
+openat(AT_FDCWD, "/proc/self/gid_map", O_WRONLY, any) @ libc.so.6+0x102cf6(__open+198)
+openat(any u32, "register", O_WRONLY, any) @ libc.so.6+0x102dea(openat+58)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0x102dea(openat+58)
+openat(any u32, "register", O_WRONLY, any) @ libc.so.6+0x102e76(openat+198)
+openat(any u32, "..", O_RDONLY, any) @ libc.so.6+0x102e76(openat+198)
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0x10442a(__open_nocancel+58)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x10442a(__open_nocancel+58)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x10442a(__open_nocancel+58)
-openat(AT_FDCWD, libc.so.6+0x1aaec8, O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x10442a(__open_nocancel+58)
+openat(AT_FDCWD, "/sys/kernel/mm/hugepages", O_RDONLY|O_DIRECTORY, any) @ libc.so.6+0x10442a(__open_nocancel+58)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xff668(fstatat64+8)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xff668(fstatat64+8)
 unshare(0) @ libc.so.6+0x111c95(unshare+5)
@@ -172,7 +172,7 @@ unshare(CLONE_NEWTIME|CLONE_NEWNS|CLONE_NEWIPC|CLONE_NEWUSER) @ libc.so.6+0x111c
 unshare(CLONE_NEWTIME|CLONE_NEWNS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWNET) @ libc.so.6+0x111c95(unshare+5)
 unshare(CLONE_NEWTIME|CLONE_NEWNS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWNET) @ libc.so.6+0x111c95(unshare+5)
 unshare(CLONE_NEWTIME|CLONE_NEWNS|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_NEWNET) @ libc.so.6+0x111c95(unshare+5)
-set_robust_list(any, 24) @ libc.so.6+0xdc28b(_Fork+91)
+set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xdc28b(_Fork+91)
 eventfd2(0, 0) @ libc.so.6+0x110c35(eventfd+5)
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x112a01(sendmmsg+17)
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x112a44(sendmmsg+84)
