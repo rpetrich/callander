@@ -586,11 +586,8 @@ static void load_versions(const ElfW(Half) *versym, const ElfW(Verneed) *verneed
 			if (verdef->vd_flags == 0) {
 				size_t index = verdef->vd_ndx;
 				const ElfW(Verdaux) *aux = (const ElfW(Verdaux) *)((intptr_t)verdef + verdef->vd_aux);
-				for (size_t i = 0; i < verdef->vd_cnt; i++) {
-					const char *name = &out_symbols->strings[aux->vda_name];
-					add_version(index, name, NULL, out_symbols);
-					aux = (const ElfW(Verdaux) *)((intptr_t)aux + aux->vda_next);
-				}
+				const char *name = &out_symbols->strings[aux->vda_name];
+				add_version(index, name, NULL, out_symbols);
 			}
 			if (verdef->vd_next == 0) {
 				break;
