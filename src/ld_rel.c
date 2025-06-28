@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include "axon.h"
 
+#include "ld_rel.h"
+
 // proof of concept $ORIGIN-support for ELF interpreters via chainloading
 // run ld-relify.sh on your binary
 
@@ -75,24 +77,8 @@ noreturn void release(size_t *sp)
 		abort();
 	}
 	// apply the $ORIGIN tag
-	const char *path = &strtab[runpath];
 	char buf[PATH_MAX];
-	if (fs_strncmp(path, "$ORIGIN/", sizeof("$ORIGIN/")-1) == 0) {
-		const char *suffix = &path[sizeof("$ORIGIN/")-1];
-		const char *execfn_str = (const char *)execfn->a_un.a_val;
-		size_t execfn_len = fs_strlen(execfn_str);
-		while (fs_strncmp(suffix, "../", 3) == 0) {
-			suffix += 3;
-			while (execfn_str[--execfn_len] != '/' && execfn_len > 0) {
-			}
-			if (execfn_len == 0) {
-				break;
-			}
-		}
-		fs_memcpy(buf, execfn_str, execfn_len + 1);
-		fs_memcpy(&buf[execfn_len+1], suffix, fs_strlen(suffix)+1);
-		path = buf;
-	}
+	const char *path = apply_origin((const char *)execfn->a_un.a_val, &strtab[runpath], buf);
 	// chainload the real interpreter
 	int real_interpreter = fs_openat(AT_FDCWD, path, O_RDONLY | O_CLOEXEC, 0);
 	if (real_interpreter < 0) {

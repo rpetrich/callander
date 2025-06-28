@@ -32,12 +32,15 @@
 #include "mapped.h"
 #include "qsort.h"
 #include "search.h"
+#include "ld_rel.h"
+#include "debugger.h"
 
 AXON_BOOTSTRAP_ASM
 
 static bool bundle_interpreter = true;
 static bool remap_binary = true;
 static bool bundle_library = false;
+static bool only_main = true;
 
 struct embedded_binary {
 	uint32_t name;
@@ -50,17 +53,19 @@ struct embedded_binary {
 };
 
 struct bootstrap_offsets {
-	uint32_t base_to_bootstrap_dynamic;
+	uint32_t base_to_bootstrap;
+	uint32_t bootstrap_dynamic_offset;
 	uint32_t real_program_header;
 	uint32_t interpreter_base;
 	uint32_t main_entrypoint;
 	ElfW(Ehdr) header;
 	ElfW(Ehdr) old_header;
 	bool remap_binary;
+	char interpreter_path[PATH_MAX];
 	struct embedded_binary embedded_binaries[PAGE_SIZE/sizeof(struct embedded_binary)];
 };
 
-static struct bootstrap_offsets bootstrap_offsets = { .base_to_bootstrap_dynamic = -1 };
+static struct bootstrap_offsets bootstrap_offsets = { .base_to_bootstrap = -1 };
 
 static int openat_creating_paths(int fd, const char *path, int flags, mode_t mode)
 {
@@ -103,7 +108,13 @@ __attribute__((visibility("hidden")))
 __attribute__((used))
 noreturn void bootstrap_interpreter(size_t *sp)
 {
-	void *base = (void *)&_DYNAMIC - bootstrap_offsets.base_to_bootstrap_dynamic;
+	// relocate self
+	{
+		struct binary_info bootstrap;
+		load_existing(&bootstrap, (uintptr_t)&_DYNAMIC - bootstrap_offsets.bootstrap_dynamic_offset);
+		relocate_binary(&bootstrap);
+	}
+	void *base = (void *)&_DYNAMIC - (bootstrap_offsets.base_to_bootstrap + bootstrap_offsets.bootstrap_dynamic_offset);
 	// remap the binary using the embedded program header, if required
 	if (bootstrap_offsets.remap_binary) {
 		int fd = fs_open("/proc/self/exe", O_RDONLY | O_CLOEXEC, 0);
@@ -243,31 +254,41 @@ noreturn void bootstrap_interpreter(size_t *sp)
 		}
 		++current_envp;
 	}
-	// select the correct embedded binary
+	bool relative_interpreter = bootstrap_offsets.interpreter_path[0] != '\0';
 	ElfW(Addr) entry = bootstrap_offsets.main_entrypoint;
-	const char *argv0 = argv[0];
-	if (argv0) {
-		const char *search_name = parse_name(argv0);
-		for (size_t i = 1; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
-			const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
-			if (binary->is_entry) {
-				const char *name = parse_name((const char *)base + binary->name);
-				if (fs_strcmp(search_name, name) == 0) {
-					const ElfW(Addr) address = bootstrap_offsets.embedded_binaries[i].address;
-					const ElfW(Ehdr) *header = base + address;
-					entry = (uintptr_t)base + address + header->e_entry;
+	// select the correct embedded binary
+	if (!relative_interpreter) {
+		const char *argv0 = argv[0];
+		if (argv0) {
+			const char *search_name = parse_name(argv0);
+			for (size_t i = 1; i < sizeof(bootstrap_offsets.embedded_binaries)/sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
+				const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
+				if (binary->is_entry) {
+					const char *name = parse_name((const char *)base + binary->name);
+					if (fs_strcmp(search_name, name) == 0) {
+						const ElfW(Addr) address = bootstrap_offsets.embedded_binaries[i].address;
+						const ElfW(Ehdr) *header = base + address;
+						entry = (uintptr_t)base + address + header->e_entry;
+						break;
+					}
+				} else if (binary->name == 0) {
 					break;
 				}
-			} else if (binary->name == 0) {
-				break;
 			}
 		}
 	}
 	// patch auxiliary vector
+	ElfW(auxv_t) *execfn = NULL;
+	ElfW(auxv_t) *at_base = NULL;
 	for (ElfW(auxv_t) *aux = (ElfW(auxv_t) *)(current_envp + 1); aux->a_type != AT_NULL; aux++) {
 		switch (aux->a_type) {
+			case AT_EXECFN: {
+				execfn = aux;
+				break;
+			}
 			case AT_BASE: {
 				// patch AT_BASE to point to the interpreter
+				at_base = aux;
 				aux->a_un.a_val = (uintptr_t)base + bootstrap_offsets.interpreter_base;
 				break;
 			}
@@ -287,6 +308,26 @@ noreturn void bootstrap_interpreter(size_t *sp)
 				break;
 			}
 		}
+	}
+	if (relative_interpreter) {
+		char buf[PATH_MAX];
+		const char *path = apply_origin((const char *)execfn->a_un.a_val, bootstrap_offsets.interpreter_path, buf);
+		int fd = fs_open(path, O_RDONLY|O_CLOEXEC, 0);
+		if (fd < 0) {
+			DIE("error opening interpreter", fs_strerror(fd));
+		}
+		struct binary_info info;
+		int result = load_binary(fd, &info, 0, false);
+		if (result < 0) {
+			DIE("error loading interpreter", fs_strerror(result));
+		}
+		fs_close(fd);
+		if (info.phbuffer) {
+			free(info.phbuffer);
+		}
+		at_base->a_un.a_val = (ElfW(Addr))info.base;
+		debug_init(&_r_debug, &_dl_debug_state);
+		JUMP(info.entrypoint, sp, 0, 0, 0);
 	}
 #if 0
 	// patch the ELF header
@@ -921,6 +962,10 @@ static void copy_versions(ElfW(Verdef) *verdef, ElfW(Verneed) *verneed, struct l
 #define DYNAMIC_STR ".dynamic"
 #define TDATA_STR_OFFSET (DYNAMIC_STR_OFFSET+sizeof(DYNAMIC_STR))
 #define TDATA_STR ".tdata"
+#define DL_DEBUG_STATE_OFFSET (TDATA_STR_OFFSET+sizeof(TDATA_STR))
+#define DL_DEBUG_STATE "_dl_debug_state"
+#define R_DEBUG_OFFSET (TDATA_STR_OFFSET+sizeof(TDATA_STR))
+#define R_DEBUG "_r_debug"
 
 #define MANDATORY_SECTION_NAMES \
 	EH_FRAME_HDR_STR"\0" \
@@ -935,7 +980,9 @@ static void copy_versions(ElfW(Verdef) *verdef, ElfW(Verneed) *verneed, struct l
 	RELA_PLT_STR"\0" \
 	SHSTRTAB_STR"\0" \
 	DYNAMIC_STR"\0" \
-	TDATA_STR
+	TDATA_STR"\0" \
+	DL_DEBUG_STATE"\0" \
+	R_DEBUG
 
 static void write_combined_binary(struct program_state *analysis, struct loaded_binary *bootstrap)
 {
@@ -1113,11 +1160,11 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 							break;
 					}
 				}
-				if (verdef != NULL) {
+				if (verdef != NULL && !only_main) {
 					offsets[binary_index].verdef = verdef;
 					measure_verdefs(verdef, &verdef_size);
 				}
-				if (verneed != NULL) {
+				if (verneed != NULL && !only_main) {
 					offsets[binary_index].verneed = verneed;
 					measure_verneeds(verneed, &analysis->loader, binary->symbols.strings, &verneed_count, &version_ids_used, &verneed_size);
 				}
@@ -1170,8 +1217,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			case DT_VERDEFNUM:
 			case DT_VERNEED:
 			case DT_VERNEEDNUM:
-				// TODO: support symbol versioning
-				continue;
+				if (!only_main) {
+					continue;
+				}
+				break;
 		}
 		dyn_size += sizeof(*dyn);
 	}
@@ -1468,16 +1517,17 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	for (size_t i = 1; i < symbol_count; i++) {
 		const ElfW(Sym) *orig_sym = symbol_for_ordering_entry(&symbol_ordering[i]);
 		ElfW(Addr) value_addend;
+		int binary_index = symbol_ordering[i].binary_index;
 		if (orig_sym->st_value == 0) {
 			value_addend = 0;
 		} else if (ELF64_ST_TYPE(orig_sym->st_info) == STT_TLS) {
-			value_addend = offsets[symbol_ordering[i].binary_index].tls_start;
+			value_addend = offsets[binary_index].tls_start;
 		} else {
 			value_addend = symbol_ordering[i].address_offset;
 		}
 		symbols[i] = (ElfW(Sym)) {
-			.st_name = orig_sym->st_name == 0 ? 0 : orig_sym->st_name + offsets[symbol_ordering[i].binary_index].string_start,
-			.st_info = orig_sym->st_info,
+			.st_name = orig_sym->st_name == 0 ? 0 : orig_sym->st_name + offsets[binary_index].string_start,
+			.st_info = /*(binary_index != 0 && ELF64_ST_BIND(orig_sym->st_info) == STB_GLOBAL ? ELF32_ST_INFO(STB_LOCAL, ELF64_ST_TYPE(orig_sym->st_info)) :*/ orig_sym->st_info,
 			.st_other = orig_sym->st_other,
 			.st_shndx = orig_sym->st_shndx,
 			.st_value = orig_sym->st_value + value_addend,
@@ -1837,7 +1887,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			.sh_entsize = 0,
 		};
 	}
-	if (versym_size) {
+	if (versym_size && !only_main) {
 		shdrs[shdr_index++] = (ElfW(Shdr)) {
 			.sh_name = main_binary_section_string_size + GNU_VERSION_STR_OFFSET,
 			.sh_type = SHT_GNU_versym,
@@ -1851,7 +1901,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			.sh_entsize = sizeof(ElfW(Half)),
 		};
 	}
-	if (verneed_size) {
+	if (verneed_size && !only_main) {
 		shdrs[shdr_index++] = (ElfW(Shdr)) {
 			.sh_name = main_binary_section_string_size + GNU_VERSION_R_STR_OFFSET,
 			.sh_type = SHT_GNU_verneed,
@@ -1865,7 +1915,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			.sh_entsize = 0,
 		};
 	}
-	if (verdef_size) {
+	if (verdef_size && !only_main) {
 		shdrs[shdr_index++] = (ElfW(Shdr)) {
 			.sh_name = main_binary_section_string_size + GNU_VERSION_D_STR_OFFSET,
 			.sh_type = SHT_GNU_verdef,
@@ -2063,7 +2113,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			case DT_VERNEED:
 			case DT_VERNEEDNUM:
 				// symbol versioning handled below
-				continue;
+				if (!only_main) {
+					continue;
+				}
+				break;
 		}
 		dyn++;
 	} while(orig_dyn->d_tag != DT_NULL);
@@ -2126,8 +2179,15 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	if (bootstrap != NULL) {
 		// bake bootstrap offsets into the binary
 		struct bootstrap_offsets *offsets = mapping + file_offset_for_binary(&analysis->loader, bootstrap) + file_offset_for_binary_address(&bootstrap->info, offset_for_self_symbol(&bootstrap->info, &bootstrap_offsets));
-		offsets->base_to_bootstrap_dynamic = address_for_binary(&analysis->loader, bootstrap) + offset_for_self_symbol(&bootstrap->info, &_DYNAMIC);
-		offsets->interpreter_base = address_for_binary(&analysis->loader, interpreter);
+		offsets->base_to_bootstrap = address_for_binary(&analysis->loader, bootstrap);
+		offsets->bootstrap_dynamic_offset = offset_for_self_symbol(&bootstrap->info, &_DYNAMIC);
+		if (only_main) {
+			const char *interpreter_name = parse_name(main->info.interpreter);
+			memcpy(offsets->interpreter_path, "$ORIGIN/../", sizeof("$ORIGIN/../")-1);
+			memcpy(&offsets->interpreter_path[sizeof("$ORIGIN/../")-1], interpreter_name, fs_strlen(interpreter_name) + 1);
+		} else {
+			offsets->interpreter_base = address_for_binary(&analysis->loader, interpreter);
+		}
 		offsets->main_entrypoint = (uintptr_t)main->info.entrypoint - (uintptr_t)main->info.base;
 		offsets->real_program_header = address_size + phsize;
 		offsets->header = *header;
@@ -2250,6 +2310,9 @@ int main(int argc, char* argv[], char* envp[])
 			bundle_library = true;
 			bundle_interpreter = false;
 			remap_binary = false;
+		} else if (fs_strcmp(arg, "--only-main") == 0) {
+			only_main = true;
+			remap_binary = false;
 		} else if (fs_strcmp(arg, "--") == 0) {
 			executable_index++;
 			break;
@@ -2292,7 +2355,9 @@ int main(int argc, char* argv[], char* envp[])
 		executable_path = argv[executable_index++];
 	} while(executable_path);
 
-	load_all_needed_and_relocate(&analysis);
+	if (!only_main) {
+		load_all_needed_and_relocate(&analysis);
+	}
 
 	struct loaded_binary *bootstrap = NULL;
 
