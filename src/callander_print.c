@@ -9,6 +9,7 @@
 #include <linux/fs.h>
 #include <linux/fsmap.h>
 #include <linux/kd.h>
+#include <linux/keyctl.h>
 #include <linux/memfd.h>
 #include <linux/module.h>
 #include <linux/nsfs.h>
@@ -68,6 +69,7 @@
 #include <linux/pr.h>
 #include <linux/rtc.h>
 #include <linux/random.h>
+#include <sys/rseq.h>
 #include <linux/seccomp.h>
 #include <linux/sed-opal.h>
 #include <linux/spi/spidev.h>
@@ -120,6 +122,8 @@ typedef __u32 compat_ulong_t;
 #include <sys/msg.h>
 #include <sys/resource.h>
 #ifdef __linux__
+#include <sys/personality.h>
+#include <sys/syscall.h>
 #include <sys/prctl.h>
 #include <sys/ptrace.h>
 #endif
@@ -152,10 +156,14 @@ static inline char *strdup_fixed(const char *str, size_t size)
 	return buf;
 }
 
-#define SYSCALL_ARG_IS_RELATED(relation, related_arg) ((relation) | (SYSCALL_ARG_RELATED_ARGUMENT_BASE << (related_arg)))
+#define SYSCALL_ARG_IS_RELATED(relation, related_arg) ((relation) | (SYSCALL_ARG_RELATED_ARGUMENT_BASE * (related_arg)))
 #define SYSCALL_ARG_IS_SIZE_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_SIZE, related_arg_index)
 #define SYSCALL_ARG_IS_COUNT_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_COUNT, related_arg_index)
 #define SYSCALL_ARG_IS_MODEFLAGS_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_MODEFLAGS, related_arg_index)
+#define SYSCALL_ARG_IS_SOCKET_OPTION_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_SOCKET_OPTION, related_arg_index)
+#define SYSCALL_ARG_IS_PRCTL_ARG_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_PRCTL_ARG, related_arg_index)
+#define SYSCALL_ARG_IS_FCNTL_ARG_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_FCNTL_ARG, related_arg_index)
+#define SYSCALL_ARG_IS_PTRACE_ARG_OF(related_arg_index) SYSCALL_ARG_IS_RELATED(SYSCALL_ARG_IS_PTRACE_ARG, related_arg_index)
 #define SYSCALL_ARG_IS_PRESERVED(underlying) (SYSCALL_ARG_IS_PRESERVED | (underlying))
 
 #define SYSCALL_DEF_(_0, _1, _2, _3, _4, _5, _6, N, ...) N
@@ -803,11 +811,13 @@ struct ib_uverbs_ioctl_hdr {
 #define FUNCTIONFS_DMABUF_ATTACH	_IOW('g', 131, int)
 #define FUNCTIONFS_DMABUF_DETACH	_IOW('g', 132, int)
 #define FUNCTIONFS_DMABUF_TRANSFER	_IOW('g', 133, struct usb_ffs_dmabuf_transfer_req)
+#ifndef USB_FFS_DMABUF_TRANSFER_MASK
 struct usb_ffs_dmabuf_transfer_req {
 	int fd;
 	__u32 flags;
 	__u64 length;
 } __attribute__((packed));
+#endif
 
 #ifndef FS_IOC_GETFSUUID
 struct fsuuid2 {
@@ -3840,6 +3850,24 @@ static struct enum_option fcntls[] = {
 	DESCRIBE_ENUM(F_SET_FILE_RW_HINT),
 };
 
+static const char *fd_flags[64] = {
+	DESCRIBE_FLAG(FD_CLOEXEC),
+};
+
+static struct enum_option lease_args[] = {
+	DESCRIBE_ENUM(F_RDLCK),
+	DESCRIBE_ENUM(F_WRLCK),
+	DESCRIBE_ENUM(F_UNLCK),
+};
+
+static const char *seal_flags[64] = {
+	DESCRIBE_FLAG(F_SEAL_SEAL),
+	DESCRIBE_FLAG(F_SEAL_SHRINK),
+	DESCRIBE_FLAG(F_SEAL_GROW),
+	DESCRIBE_FLAG(F_SEAL_WRITE),
+	DESCRIBE_FLAG(F_SEAL_FUTURE_WRITE),
+};
+
 static struct enum_option rlimits[] = {
 	DESCRIBE_ENUM(RLIMIT_AS),
 	DESCRIBE_ENUM(RLIMIT_CORE),
@@ -4510,6 +4538,37 @@ static struct enum_option bpf_commands[] = {
 	DESCRIBE_ENUM(BPF_MAP_DELETE_ELEM),
 	DESCRIBE_ENUM(BPF_MAP_GET_NEXT_KEY),
 	DESCRIBE_ENUM(BPF_PROG_LOAD),
+	DESCRIBE_ENUM(BPF_OBJ_PIN),
+	DESCRIBE_ENUM(BPF_OBJ_GET),
+	DESCRIBE_ENUM(BPF_PROG_ATTACH),
+	DESCRIBE_ENUM(BPF_PROG_DETACH),
+	DESCRIBE_ENUM(BPF_PROG_TEST_RUN),
+	DESCRIBE_ENUM(BPF_PROG_GET_NEXT_ID),
+	DESCRIBE_ENUM(BPF_MAP_GET_NEXT_ID),
+	DESCRIBE_ENUM(BPF_PROG_GET_FD_BY_ID),
+	DESCRIBE_ENUM(BPF_MAP_GET_FD_BY_ID),
+	DESCRIBE_ENUM(BPF_OBJ_GET_INFO_BY_FD),
+	DESCRIBE_ENUM(BPF_PROG_QUERY),
+	DESCRIBE_ENUM(BPF_RAW_TRACEPOINT_OPEN),
+	DESCRIBE_ENUM(BPF_BTF_LOAD),
+	DESCRIBE_ENUM(BPF_BTF_GET_FD_BY_ID),
+	DESCRIBE_ENUM(BPF_TASK_FD_QUERY),
+	DESCRIBE_ENUM(BPF_MAP_LOOKUP_AND_DELETE_ELEM),
+	DESCRIBE_ENUM(BPF_MAP_FREEZE),
+	DESCRIBE_ENUM(BPF_BTF_GET_NEXT_ID),
+	DESCRIBE_ENUM(BPF_MAP_LOOKUP_BATCH),
+	DESCRIBE_ENUM(BPF_MAP_LOOKUP_AND_DELETE_BATCH),
+	DESCRIBE_ENUM(BPF_MAP_UPDATE_BATCH),
+	DESCRIBE_ENUM(BPF_MAP_DELETE_BATCH),
+	DESCRIBE_ENUM(BPF_LINK_CREATE),
+	DESCRIBE_ENUM(BPF_LINK_UPDATE),
+	DESCRIBE_ENUM(BPF_LINK_GET_FD_BY_ID),
+	DESCRIBE_ENUM(BPF_LINK_GET_NEXT_ID),
+	DESCRIBE_ENUM(BPF_ENABLE_STATS),
+	DESCRIBE_ENUM(BPF_ITER_CREATE),
+	DESCRIBE_ENUM(BPF_LINK_DETACH),
+	DESCRIBE_ENUM(BPF_PROG_BIND_MAP),
+	DESCRIBE_ENUM(BPF_TOKEN_CREATE),
 };
 
 static struct enum_option membarrier_commands[] = {
@@ -4587,6 +4646,31 @@ static struct enum_option prctls[] = {
 	DESCRIBE_ENUM(PR_SVE_GET_VL),
 #endif
 	DESCRIBE_ENUM(PR_SET_VMA),
+};
+
+static struct enum_option set_mm_ops[] = {
+	DESCRIBE_ENUM(PR_SET_MM_START_CODE),
+	DESCRIBE_ENUM(PR_SET_MM_END_CODE),
+	DESCRIBE_ENUM(PR_SET_MM_START_DATA),
+	DESCRIBE_ENUM(PR_SET_MM_END_DATA),
+	DESCRIBE_ENUM(PR_SET_MM_START_STACK),
+	DESCRIBE_ENUM(PR_SET_MM_START_BRK),
+	DESCRIBE_ENUM(PR_SET_MM_BRK),
+	DESCRIBE_ENUM(PR_SET_MM_ARG_START),
+	DESCRIBE_ENUM(PR_SET_MM_ARG_END),
+	DESCRIBE_ENUM(PR_SET_MM_ENV_START),
+	DESCRIBE_ENUM(PR_SET_MM_ENV_END),
+	DESCRIBE_ENUM(PR_SET_MM_AUXV),
+	DESCRIBE_ENUM(PR_SET_MM_EXE_FILE),
+	DESCRIBE_ENUM(PR_SET_MM_MAP),
+	DESCRIBE_ENUM(PR_SET_MM_MAP_SIZE),
+};
+
+static struct enum_option cap_ambient_ops[] = {
+	DESCRIBE_ENUM(PR_CAP_AMBIENT_RAISE),
+	DESCRIBE_ENUM(PR_CAP_AMBIENT_LOWER),
+	DESCRIBE_ENUM(PR_CAP_AMBIENT_IS_SET),
+	DESCRIBE_ENUM(PR_CAP_AMBIENT_CLEAR_ALL),
 };
 
 static struct enum_option flock_operations[] = {
@@ -4691,12 +4775,85 @@ static struct enum_option ptrace_requests[] = {
 	DESCRIBE_ENUM(PTRACE_GET_SYSCALL_INFO),
 #ifdef __aarch64__
 	DESCRIBE_ENUM(PTRACE_PEEKMTETAGS),
-#endif
-#ifdef __aarch64__
 	DESCRIBE_ENUM(PTRACE_POKEMTETAGS),
 #define COMPAT_PTRACE_SET_SYSCALL 23
 	DESCRIBE_ENUM(COMPAT_PTRACE_SET_SYSCALL),
 #endif
+};
+
+static struct enum_option keyctl_ops[] = {
+	DESCRIBE_ENUM(KEYCTL_GET_KEYRING_ID),
+	DESCRIBE_ENUM(KEYCTL_JOIN_SESSION_KEYRING),
+	DESCRIBE_ENUM(KEYCTL_UPDATE),
+	DESCRIBE_ENUM(KEYCTL_REVOKE),
+	DESCRIBE_ENUM(KEYCTL_CHOWN),
+	DESCRIBE_ENUM(KEYCTL_SETPERM),
+	DESCRIBE_ENUM(KEYCTL_DESCRIBE),
+	DESCRIBE_ENUM(KEYCTL_CLEAR),
+	DESCRIBE_ENUM(KEYCTL_LINK),
+	DESCRIBE_ENUM(KEYCTL_UNLINK),
+	DESCRIBE_ENUM(KEYCTL_SEARCH),
+	DESCRIBE_ENUM(KEYCTL_READ),
+	DESCRIBE_ENUM(KEYCTL_INSTANTIATE),
+	DESCRIBE_ENUM(KEYCTL_INSTANTIATE_IOV),
+	DESCRIBE_ENUM(KEYCTL_NEGATE),
+	DESCRIBE_ENUM(KEYCTL_REJECT),
+	DESCRIBE_ENUM(KEYCTL_SET_REQKEY_KEYRING),
+	DESCRIBE_ENUM(KEYCTL_SET_TIMEOUT),
+	DESCRIBE_ENUM(KEYCTL_ASSUME_AUTHORITY),
+	DESCRIBE_ENUM(KEYCTL_GET_SECURITY),
+	DESCRIBE_ENUM(KEYCTL_SESSION_TO_PARENT),
+	DESCRIBE_ENUM(KEYCTL_INVALIDATE),
+	DESCRIBE_ENUM(KEYCTL_GET_PERSISTENT),
+	DESCRIBE_ENUM(KEYCTL_DH_COMPUTE),
+	DESCRIBE_ENUM(KEYCTL_RESTRICT_KEYRING),
+};
+
+static struct enum_option personas[] = {
+	{ .description = "PER_SVR4", .value = PER_SVR4 & PER_MASK },
+	{ .description = "PER_SVR3", .value = PER_SVR3 & PER_MASK },
+	{ .description = "PER_OSR5", .value = PER_OSR5 & PER_MASK },
+	{ .description = "PER_WYSEV386", .value = PER_WYSEV386 & PER_MASK },
+	{ .description = "PER_ISCR4", .value = PER_ISCR4 & PER_MASK },
+	{ .description = "PER_BSD", .value = PER_BSD & PER_MASK },
+	{ .description = "PER_XENIX", .value = PER_XENIX & PER_MASK },
+	{ .description = "PER_LINUX32", .value = PER_LINUX32 & PER_MASK },
+	{ .description = "PER_IRIX32", .value = PER_IRIX32 & PER_MASK },
+	{ .description = "PER_IRIXN32", .value = PER_IRIXN32 & PER_MASK },
+	{ .description = "PER_IRIX64", .value = PER_IRIX64 & PER_MASK },
+	{ .description = "PER_RISCOS", .value = PER_RISCOS & PER_MASK },
+	{ .description = "PER_SOLARIS", .value = PER_SOLARIS & PER_MASK },
+	{ .description = "PER_UW7", .value = PER_UW7 & PER_MASK },
+	{ .description = "PER_OSF4", .value = PER_OSF4 & PER_MASK },
+	{ .description = "PER_HPUX", .value = PER_HPUX & PER_MASK },
+};
+
+#ifndef SYSLOG_ACTION_CLOSE
+#define SYSLOG_ACTION_CLOSE 0
+#define SYSLOG_ACTION_OPEN 1
+#define SYSLOG_ACTION_READ 2
+#define SYSLOG_ACTION_READ_ALL 3
+#define SYSLOG_ACTION_READ_CLEAR 4
+#define SYSLOG_ACTION_CLEAR 5
+#define SYSLOG_ACTION_CONSOLE_OFF 6
+#define SYSLOG_ACTION_CONSOLE_ON 7
+#define SYSLOG_ACTION_CONSOLE_LEVEL 8
+#define SYSLOG_ACTION_SIZE_UNREAD 9
+#define SYSLOG_ACTION_SIZE_BUFFER 10
+#endif
+
+static struct enum_option syslog_actions[] = {
+	DESCRIBE_ENUM(SYSLOG_ACTION_CLOSE),
+	DESCRIBE_ENUM(SYSLOG_ACTION_OPEN),
+	DESCRIBE_ENUM(SYSLOG_ACTION_READ),
+	DESCRIBE_ENUM(SYSLOG_ACTION_READ_ALL),
+	DESCRIBE_ENUM(SYSLOG_ACTION_READ_CLEAR),
+	DESCRIBE_ENUM(SYSLOG_ACTION_CLEAR),
+	DESCRIBE_ENUM(SYSLOG_ACTION_CONSOLE_OFF),
+	DESCRIBE_ENUM(SYSLOG_ACTION_CONSOLE_ON),
+	DESCRIBE_ENUM(SYSLOG_ACTION_CONSOLE_LEVEL),
+	DESCRIBE_ENUM(SYSLOG_ACTION_SIZE_UNREAD),
+	DESCRIBE_ENUM(SYSLOG_ACTION_SIZE_BUFFER),
 };
 
 static const char *clone_flags[64] = {
@@ -4852,6 +5009,8 @@ static const char *memfd_flags[64] = {
 	DESCRIBE_FLAG(MFD_CLOEXEC),
 	DESCRIBE_FLAG(MFD_ALLOW_SEALING),
 	DESCRIBE_FLAG(MFD_HUGETLB),
+	DESCRIBE_FLAG(MFD_NOEXEC_SEAL),
+	DESCRIBE_FLAG(MFD_EXEC),
 	// DESCRIBE_FLAG(MFD_HUGE_2MB),
 	// DESCRIBE_FLAG(MFD_HUGE_1GB),
 };
@@ -4946,6 +5105,33 @@ static const char *statx_mask[64] = {
 	DESCRIBE_FLAG(STATX_DIOALIGN),
 };
 
+static const char *persona_flags[64] = {
+	DESCRIBE_FLAG(ADDR_COMPAT_LAYOUT),
+	DESCRIBE_FLAG(ADDR_NO_RANDOMIZE),
+	DESCRIBE_FLAG(ADDR_LIMIT_32BIT),
+	DESCRIBE_FLAG(ADDR_LIMIT_3GB),
+	DESCRIBE_FLAG(FDPIC_FUNCPTRS),
+	DESCRIBE_FLAG(MMAP_PAGE_ZERO),
+	DESCRIBE_FLAG(READ_IMPLIES_EXEC),
+	DESCRIBE_FLAG(SHORT_INODE),
+	DESCRIBE_FLAG(STICKY_TIMEOUTS),
+	DESCRIBE_FLAG(UNAME26),
+	DESCRIBE_FLAG(WHOLE_SECONDS),
+};
+
+static const char *ptrace_option_flags[64] = {
+	DESCRIBE_FLAG(PTRACE_O_EXITKILL),
+	DESCRIBE_FLAG(PTRACE_O_TRACECLONE),
+	DESCRIBE_FLAG(PTRACE_O_TRACEEXEC),
+	DESCRIBE_FLAG(PTRACE_O_TRACEEXIT),
+	DESCRIBE_FLAG(PTRACE_O_TRACEFORK),
+	DESCRIBE_FLAG(PTRACE_O_TRACESYSGOOD),
+	DESCRIBE_FLAG(PTRACE_O_TRACEVFORK),
+	DESCRIBE_FLAG(PTRACE_O_TRACEVFORKDONE),
+	DESCRIBE_FLAG(PTRACE_O_TRACESECCOMP),
+	DESCRIBE_FLAG(PTRACE_O_SUSPEND_SECCOMP),
+};
+
 #endif
 
 __attribute__((nonnull(1)))
@@ -4971,6 +5157,7 @@ enum {
 	DESCRIBE_PRINT_ZERO_ENUMS = 0x1,
 	DESCRIBE_AS_FILE_MODE = 0x2,
 	DESCRIBE_AS_IOCTL = 0x4,
+	DESCRIBE_IGNORE_UNKNOWN_FLAGS = 0x8,
 };
 
 typedef uint8_t description_format_options;
@@ -5080,6 +5267,9 @@ static char *copy_enum_flags_value_description(const struct loader_context *cont
 				break;
 			}
 		}
+		if (description_options & DESCRIBE_IGNORE_UNKNOWN_FLAGS) {
+			remaining = 0;
+		}
 		if (suffix == NULL && (length == 0 || remaining != 0)) {
 			suffix = num_buf;
 			suffix_len = (description_options & DESCRIBE_AS_FILE_MODE) ? format_octal(remaining, num_buf) : (remaining < 4096 ? fs_utoa(remaining, num_buf) : fs_utoah(remaining, num_buf));
@@ -5139,10 +5329,121 @@ static char *copy_enum_flags_description(const struct loader_context *context, s
 	return buf;
 }
 
-static char *copy_argument_description(const struct loader_context *context, struct register_state state, uint8_t argument_type)
+static char *copy_escaped(const char *input) {
+	size_t size = 3;
+	for (const char *buf = input; *buf != '\0'; buf++) {
+		switch (*buf) {
+			case '\a':
+			case '\b':
+			case '\f':
+			case '\n':
+			case '\r':
+			case '\t':
+			case '\v':
+			case '\\':
+			case '"':
+				size += 2;
+				break;
+			case ' '...'!':
+			case '#'...'[':
+			case ']'...'~':
+				size++;
+				break;
+			default:
+				size += 4;
+				break;
+		}
+	}
+	char *buf = malloc(size);
+	int i = 0;
+	buf[i++] = '"';
+	for (; *input != '\0'; input++) {
+		switch (*input) {
+			case '\a':
+				buf[i++] = '\\';
+				buf[i++] = 'a';
+				break;
+			case '\b':
+				buf[i++] = '\\';
+				buf[i++] = 'b';
+				break;
+			case '\f':
+				buf[i++] = '\\';
+				buf[i++] = 'f';
+				break;
+			case '\n':
+				buf[i++] = '\\';
+				buf[i++] = 'n';
+				break;
+			case '\r':
+				buf[i++] = '\\';
+				buf[i++] = 'r';
+				break;
+			case '\t':
+				buf[i++] = '\\';
+				buf[i++] = 't';
+				break;
+			case '\v':
+				buf[i++] = '\\';
+				buf[i++] = 'v';
+				break;
+			case '\\':
+				buf[i++] = '\\';
+				buf[i++] = '\\';
+				break;
+			case '"':
+				buf[i++] = '\\';
+				buf[i++] = '"';
+				break;
+			case ' '...'!':
+			case '#'...'[':
+			case ']'...'~':
+				buf[i++] = *input;
+				break;
+			default:
+				buf[i++] = '\\';
+				buf[i++] = 'x';
+				buf[i++] = "0123456789abcdef"[(unsigned char)*input >> 4];
+				buf[i++] = "0123456789abcdef"[(unsigned char)*input & 0xf];
+				break;
+		}
+	}
+	buf[i++] = '"';
+	buf[i++] = '\0';
+	return buf;
+}
+
+static char *copy_argument_description(const struct loader_context *context, struct register_state state, uint8_t argument_type, struct register_state related_state, uint8_t related_argument_type)
 {
 	switch (argument_type) {
 #ifdef __linux__
+		case SYSCALL_ARG_IS_SIZE:
+			if (state.value == state.max) {
+				switch (related_argument_type) {
+					case SYSCALL_ARG_IS_SIGSET:
+					case SYSCALL_ARG_IS_SIGNUM:
+						if (state.value == 8) {
+							return strdup("sizeof(kernel_sigset_t)");
+						}
+						break;
+					case SYSCALL_ARG_IS_ROBUST_LIST:
+						if (state.value == 24) {
+							return strdup("sizeof(struct robust_list_head)");
+						}
+						break;
+					case SYSCALL_ARG_IS_CLONE_ARGS:
+						if (state.value == 88) {
+							return strdup("sizeof(struct clone_args)");
+						}
+						break;
+					case SYSCALL_ARG_IS_BPF_ATTR:
+						if (state.value == 144) {
+							return strdup("sizeof(union bpf_attr)");
+						}
+						break;
+				}
+			}
+			return copy_register_state_description(context, state);
 		case SYSCALL_ARG_IS_FD:
 			return copy_enum_flags_description(context, state, file_descriptors, sizeof(file_descriptors), NULL, false);
 		case SYSCALL_ARG_IS_PROT:
@@ -5152,7 +5453,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_REMAP_FLAGS:
 			return copy_enum_flags_description(context, state, NULL, 0, remap_flags, false);
 		case SYSCALL_ARG_IS_OPEN_FLAGS:
-			return copy_enum_flags_description(context, state, opens, sizeof(opens), open_flags, DESCRIBE_PRINT_ZERO_ENUMS);
+			return copy_enum_flags_description(context, state, opens, sizeof(opens), open_flags, DESCRIBE_PRINT_ZERO_ENUMS|DESCRIBE_IGNORE_UNKNOWN_FLAGS);
 		case SYSCALL_ARG_IS_SIGNUM:
 			return copy_enum_flags_description(context, state, signums, sizeof(signums), NULL, false);
 		case SYSCALL_ARG_IS_IOCTL:
@@ -5174,6 +5475,26 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_SOCKET_LEVEL:
 			return copy_enum_flags_description(context, state, socket_levels, sizeof(socket_levels), NULL, false);
 		case SYSCALL_ARG_IS_SOCKET_OPTION:
+			if (related_argument_type == SYSCALL_ARG_IS_SOCKET_LEVEL && related_state.value == related_state.max) {
+				switch (related_state.value) {
+					case SOL_IP:
+						return copy_enum_flags_description(context, state, socket_options_ip, sizeof(socket_options_ip), NULL, false);
+					case SOL_IPV6:
+						return copy_enum_flags_description(context, state, socket_options_ipv6, sizeof(socket_options_ipv6), NULL, false);
+					case SOL_TCP:
+						return copy_enum_flags_description(context, state, socket_options_tcp, sizeof(socket_options_tcp), NULL, false);
+					case SOL_TLS:
+						return copy_enum_flags_description(context, state, socket_options_tls, sizeof(socket_options_tls), NULL, false);
+					case SOL_ALG:
+						return copy_enum_flags_description(context, state, socket_options_alg, sizeof(socket_options_alg), NULL, false);
+					case SOL_NETLINK:
+						return copy_enum_flags_description(context, state, socket_options_netlink, sizeof(socket_options_netlink), NULL, false);
+					case SOL_ICMPV6:
+						return copy_enum_flags_description(context, state, socket_options_icmpv6, sizeof(socket_options_icmpv6), NULL, false);
+					case SOL_RAW:
+						return copy_enum_flags_description(context, state, socket_options_ip, sizeof(socket_options_ip), NULL, false);
+				}
+			}
 			return copy_enum_flags_description(context, state, socket_options, sizeof(socket_options), NULL, false);
 		case SYSCALL_ARG_IS_ACCESS_MODE:
 			return copy_enum_flags_description(context, state, access_modes, sizeof(access_modes), access_mode_flags, false);
@@ -5218,7 +5539,7 @@ static char *copy_argument_description(const struct loader_context *context, str
 		case SYSCALL_ARG_IS_WAITIDTYPE:
 			return copy_enum_flags_description(context, state, wait_idtypes, sizeof(wait_idtypes), NULL, false);
 		case SYSCALL_ARG_IS_INOTIFY_EVENT_MASK:
-			return copy_enum_flags_description(context, state, NULL, 0, inotify_event_flags, false);
+			return copy_enum_flags_description(context, state, NULL, 0, inotify_event_flags, DESCRIBE_IGNORE_UNKNOWN_FLAGS);
 		case SYSCALL_ARG_IS_INOTIFY_INIT_FLAGS:
 			return copy_enum_flags_description(context, state, NULL, 0, inotify_init_flags, false);
 		case SYSCALL_ARG_IS_SECCOMP_OPERATION:
@@ -5271,27 +5592,77 @@ static char *copy_argument_description(const struct loader_context *context, str
 			} else {
 				return copy_register_state_description(context, state);
 			}
-		case SYSCALL_ARG_IS_SOCKET_OPTION_IP:
-			return copy_enum_flags_description(context, state, socket_options_ip, sizeof(socket_options_ip), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_IPV6:
-			return copy_enum_flags_description(context, state, socket_options_ipv6, sizeof(socket_options_ipv6), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_TCP:
-			return copy_enum_flags_description(context, state, socket_options_tcp, sizeof(socket_options_tcp), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_TLS:
-			return copy_enum_flags_description(context, state, socket_options_tls, sizeof(socket_options_tls), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_ALG:
-			return copy_enum_flags_description(context, state, socket_options_alg, sizeof(socket_options_alg), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_NETLINK:
-			return copy_enum_flags_description(context, state, socket_options_netlink, sizeof(socket_options_netlink), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_ICMPV6:
-			return copy_enum_flags_description(context, state, socket_options_icmpv6, sizeof(socket_options_icmpv6), NULL, false);
-		case SYSCALL_ARG_IS_SOCKET_OPTION_RAW:
-			return copy_enum_flags_description(context, state, socket_options_ip, sizeof(socket_options_ip), NULL, false);
+		case SYSCALL_ARG_IS_FCNTL_ARG:
+			if (related_state.value == related_state.max) {
+				switch(related_state.value) {
+					case F_SETFD:
+						return copy_enum_flags_description(context, state, NULL, 0, fd_flags, false);
+					case F_SETFL:
+						return copy_enum_flags_description(context, state, NULL, 0, open_flags, DESCRIBE_IGNORE_UNKNOWN_FLAGS);
+					case F_SETSIG:
+						return copy_enum_flags_description(context, state, signums, sizeof(signums), NULL, false);
+					case F_SETLEASE:
+						return copy_enum_flags_description(context, state, lease_args, sizeof(lease_args), NULL, false);
+					case F_ADD_SEALS:
+						return copy_enum_flags_description(context, state, NULL, 0, seal_flags, false);
+				}
+			}
+			return copy_register_state_description(context, state);
+		case SYSCALL_ARG_IS_PRCTL_ARG:
+			if (related_state.value == related_state.max) {
+				switch(related_state.value) {
+					case PR_SET_NAME:
+						if (state.value == state.max) {
+							struct loaded_binary *binary = binary_for_address(context, (const void *)state.value);
+							if (binary != NULL) {
+								return copy_escaped((const char *)state.value);
+							}
+						}
+						break;
+					case PR_SET_PDEATHSIG:
+						return copy_enum_flags_description(context, state, signums, sizeof(signums), NULL, false);
+					case PR_SET_SECCOMP:
+						return copy_enum_flags_description(context, state, seccomp_operations, sizeof(seccomp_operations), NULL, false);
+					case PR_SET_MM:
+						return copy_enum_flags_description(context, state, set_mm_ops, sizeof(set_mm_ops), NULL, false);
+					case PR_CAP_AMBIENT:
+						return copy_enum_flags_description(context, state, cap_ambient_ops, sizeof(cap_ambient_ops), NULL, false);
+				}
+			}
+			return copy_register_state_description(context, state);
+		case SYSCALL_ARG_IS_KEYCTL_OP:
+			return copy_enum_flags_description(context, state, keyctl_ops, sizeof(keyctl_ops), NULL, false);
+		case SYSCALL_ARG_IS_RSEQ_SIG:
+			if (state.value == state.max && state.value == RSEQ_SIG) {
+				return strdup("RSEQ_SIG");
+			}
+			return copy_register_state_description(context, state);
+		case SYSCALL_ARG_IS_PERSONALITY:
+			return copy_enum_flags_description(context, state, personas, sizeof(personas), persona_flags, false);
+		case SYSCALL_ARG_IS_PTRACE_ARG:
+			if (related_state.value == related_state.max) {
+				switch(related_state.value) {
+					case PTRACE_SETOPTIONS:
+						return copy_enum_flags_description(context, state, NULL, 0, ptrace_option_flags, false);
+				}
+			}
+			return copy_register_state_description(context, state);
+		case SYSCALL_ARG_IS_SYSLOG_ACTION:
+			return copy_enum_flags_description(context, state, syslog_actions, sizeof(syslog_actions), NULL, false);
 #endif
 		case SYSCALL_ARG_IS_MODE:
 		case SYSCALL_ARG_IS_MODEFLAGS:
 			return copy_enum_flags_description(context, state, NULL, 0, NULL, DESCRIBE_AS_FILE_MODE);
 		case SYSCALL_ARG_IS_SOCKET_PROTOCOL:
+			return copy_register_state_description(context, state);
+		case SYSCALL_ARG_IS_STRING:
+			if (state.value == state.max) {
+				struct loaded_binary *binary = binary_for_address(context, (const void *)state.value);
+				if (binary != NULL) {
+					return copy_escaped((const char *)state.value);
+				}
+			}
+			return copy_register_state_description(context, state);
 		default:
 			return copy_register_state_description(context, state);
 	}
@@ -5307,7 +5678,6 @@ char *copy_call_description(const struct loader_context *context, const char *na
 	size_t len = name_len + 3; // name + '(' + ... + ')' + '\0'
 	char *args[9];
 	size_t arg_len[9];
-	uint8_t socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION;
 	for (int i = 0; i < argc; i++) {
 		if (i != 0) {
 			len += 2; // ", "
@@ -5315,38 +5685,10 @@ char *copy_call_description(const struct loader_context *context, const char *na
 		int reg = register_indexes[i];
 		if (include_symbol) {
 			uint8_t argument_type = info.arguments[i] & SYSCALL_ARG_TYPE_MASK;
-			if (argument_type == SYSCALL_ARG_IS_SOCKET_LEVEL && register_is_exactly_known(&registers->registers[reg])) {
-				switch (registers->registers[reg].value) {
-					case SOL_SOCKET:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION;
-						break;
-					case SOL_IP:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_IP;
-						break;
-					case SOL_IPV6:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_IPV6;
-						break;
-					case SOL_TCP:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_TCP;
-						break;
-					case SOL_TLS:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_TLS;
-						break;
-					case SOL_ALG:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_ALG;
-						break;
-					case SOL_NETLINK:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_NETLINK;
-						break;
-					case SOL_ICMPV6:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_ICMPV6;
-						break;
-					case SOL_RAW:
-						socket_option_type = SYSCALL_ARG_IS_SOCKET_OPTION_RAW;
-						break;
-				}
-			}
-			args[i] = copy_argument_description(context, registers->registers[reg], argument_type == SYSCALL_ARG_IS_SOCKET_OPTION ? socket_option_type : argument_type);
+			int related_arg = info.arguments[i] / SYSCALL_ARG_RELATED_ARGUMENT_BASE;
+			int related_reg = register_indexes[related_arg];
+			uint8_t related_arg_type = info.arguments[related_arg] & SYSCALL_ARG_TYPE_MASK;
+			args[i] = copy_argument_description(context, registers->registers[reg], argument_type, registers->registers[related_reg], related_arg_type);
 		} else {
 			args[i] = copy_register_state_description_simple(context, registers->registers[reg]);
 		}
