@@ -273,6 +273,7 @@ struct loader_context {
 	ins_ptr setxid_sighandler_syscall_entry;
 	ins_ptr do_setxid;
 	ins_ptr enable_async_cancel;
+	ins_ptr nss_module_load;
 	struct loaded_binary_stub *sorted_binaries;
 	int binary_count;
 	const char *sysroot;

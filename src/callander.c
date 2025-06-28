@@ -2313,6 +2313,8 @@ static void load_openssl_modules(struct program_state *analysis, const struct an
 	register_dlopen(analysis, "/usr/lib64/openssl/engines", caller, DLOPEN_OPTION_ANALYZE | DLOPEN_OPTION_RECURSE_INTO_FOLDERS | DLOPEN_OPTION_IGNORE_ENOENT);
 }
 
+static void load_nss_libraries(struct program_state *analysis, const struct analysis_frame *caller);
+
 static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
 {
 	if (effects == EFFECT_NONE) {
@@ -2339,6 +2341,16 @@ static void handle_dlopen(struct program_state *analysis, ins_ptr ins, __attribu
 		if (binary_has_flags(binary, BINARY_IS_LIBCRYPTO)) {
 			load_openssl_modules(analysis, caller);
 			return;
+		}
+		ins_ptr nss_module_load = analysis->loader.nss_module_load;
+		if (binary_has_flags(binary, BINARY_IS_LIBC) && nss_module_load != NULL) {
+			for (const struct analysis_frame *c = caller; c != NULL; c = c->next) {
+				if (c->entry == nss_module_load) {
+					LOG("encountered dlopen from nss_module_load");
+					load_nss_libraries(analysis, caller);
+					return;
+				}
+			}
 		}
 		// check if we're searching for gconv and if so attach handle_gconv_find_shlib as callback
 		if (analysis->loader.searching_gconv_dlopen || analysis->loader.searching_libcrypto_dlopen) {
@@ -2964,18 +2976,23 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			analysis->loader.searching_gconv_dlopen = false;
 		}
 		// update_known_function(analysis, new_binary, &known_symbols->gconv_find_shlib, "__gconv_find_shlib", NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, EFFECT_RETURNS | EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
-		// load nss libraries if an nss function is used
-		ins_ptr nss_lookup_function = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup_function", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-		if (nss_lookup_function) {
-			find_and_add_callback(analysis, nss_lookup_function, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
-		}
-		ins_ptr nss_lookup = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-		if (nss_lookup) {
-			find_and_add_callback(analysis, nss_lookup, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
-		}
-		ins_ptr nss_next2 = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_next2", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
-		if (nss_next2) {
-			find_and_add_callback(analysis, nss_next2, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
+		ins_ptr module_load = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "module_load", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (module_load) {
+			analysis->loader.nss_module_load = module_load;
+		} else {
+			// load nss libraries if an nss function is used
+			ins_ptr nss_lookup_function = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup_function", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+			if (nss_lookup_function) {
+				find_and_add_callback(analysis, nss_lookup_function, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
+			}
+			ins_ptr nss_lookup = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_lookup", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+			if (nss_lookup) {
+				find_and_add_callback(analysis, nss_lookup, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
+			}
+			ins_ptr nss_next2 = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nss_next2", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+			if (nss_next2) {
+				find_and_add_callback(analysis, nss_next2, 0, 0, 0, EFFECT_NONE, handle_nss_usage, NULL);
+			}
 		}
 		// block executable stacks
 		ins_ptr __mprotect = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__mprotect", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
