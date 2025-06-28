@@ -2,7 +2,7 @@
 #include "../freestanding.h"
 
 #include "../axon.h"
-AXON_BOOTSTRAP_ASM
+AXON_BOOTSTRAP_ASM_NO_RELEASE
 
 #include <stdnoreturn.h>
 
