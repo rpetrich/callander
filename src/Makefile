@@ -63,7 +63,10 @@ endif
 # CFLAGS += -fstack-usage
 # LDFLAGS += -fstack-usage
 
-CFLAGS += -fno-omit-frame-pointer -fno-asynchronous-unwind-tables -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wdouble-promotion -Wundef -fcf-protection=none
+CFLAGS += -fno-omit-frame-pointer -Werror -Wall -Wextra -Wno-missing-braces -Wuninitialized -Wunused-parameter -Wtype-limits -Wsign-compare -Wimplicit-fallthrough -Wdouble-promotion -Wundef -fcf-protection=none
+ifeq ($(STANDALONE),1)
+	CFLAGS += -fno-asynchronous-unwind-tables
+endif
 ifeq ($(shell $(CC) --version | grep -o 'Free Software Foundation'),Free Software Foundation)
 	# cannot use floating point registers in trap handlers!
 	# CFLAGS += -mgeneral-regs-only
