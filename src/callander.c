@@ -2574,19 +2574,10 @@ static void load_nss_libraries(struct program_state *analysis, const struct anal
 	free(buf);
 }
 
-static void handle_nss_usage(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, struct effect_token *token, __attribute__((unused)) void *data)
+static void handle_nss_usage(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused))  struct effect_token *token, __attribute__((unused)) void *data)
 {
 	LOG("encountered nss call", temp_str(copy_call_trace_description(&analysis->loader, caller)));
 	load_nss_libraries(analysis, caller);
-	struct analysis_frame self = {
-		.description = NULL,
-		.next = caller,
-		.entry = ins,
-		.entry_state = state,
-		.token = *token,
-	};
-	set_effects(&analysis->search, ins, token, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTER_CALLS, 0);
-	*token = self.token;
 }
 
 static void *find_any_symbol_by_address(const struct loader_context *loader, struct loaded_binary *binary, const void *addr, int symbol_types, const struct symbol_info **out_used_symbols, const ElfW(Sym) **out_symbol);
