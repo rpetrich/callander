@@ -506,6 +506,7 @@ struct evms_stripe_info
 	uint32_t width;  /* the number of stripe members or RAID data disks */
 };
 
+#ifndef RAID_VERSION
 #define RAID_VERSION _IOR(MD_MAJOR, 0x10, mdu_version_t)
 #define GET_ARRAY_INFO _IOR(MD_MAJOR, 0x11, mdu_array_info_t)
 #define GET_DISK_INFO _IOR(MD_MAJOR, 0x12, mdu_disk_info_t)
@@ -528,6 +529,7 @@ struct evms_stripe_info
 #define STOP_ARRAY_RO _IO(MD_MAJOR, 0x33)
 #define RESTART_ARRAY_RW _IO(MD_MAJOR, 0x34)
 #define CLUSTERED_DISK_NACK _IO(MD_MAJOR, 0x35)
+#endif
 
 #define RAW_SETBIND _IO(0xac, 0)
 #define RAW_GETBIND _IO(0xac, 1)

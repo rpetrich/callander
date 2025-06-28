@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "fd_table.h"
 
 #include "exec.h"
