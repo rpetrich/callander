@@ -954,6 +954,8 @@ struct local_breakpoint_data {
 	void *address;
 };
 
+#if 0
+
 static void poke_local_breakpoint_region(const ElfW(Shdr) *section, intptr_t address, size_t size, void *data)
 {
 	const struct local_breakpoint_data *bpd = data;
@@ -963,6 +965,8 @@ static void poke_local_breakpoint_region(const ElfW(Shdr) *section, intptr_t add
 		*(long *)(base + i) = new_bytes;
 	}
 }
+
+#endif
 
 static void attach_unreachable_breakpoints(struct program_state *analysis)
 {
@@ -980,6 +984,42 @@ static void attach_unreachable_breakpoints(struct program_state *analysis)
 		LOG("poking", binary->path);
 		enumerate_unreachable_regions_in_binary(analysis, binary, poke_breakpoint_region, &analysis->loader);
 	}
+#if 0
+	int copy = fs_open("./main", O_RDWR|O_CREAT|O_TRUNC, 0755);
+	if (copy < 0) {
+		DIE("failed open");
+	}
+	struct fs_stat stat;
+	int original = fs_open(analysis->loader.main->loaded_path, O_RDONLY, 0);
+	intptr_t result = fs_fstat(original, &stat);
+	if (result < 0) {
+		DIE("failed fstat");
+	}
+	size_t size = stat.st_size;
+	result = fs_ftruncate(copy, size);
+	if (result < 0) {
+		result = fs_lseek(copy, size - 1, SEEK_SET);
+		if (result < 0) {
+			DIE("failed lseek");
+		}
+		char zero = 0;
+		fs_write(copy, &zero, 1);
+	}
+	void *mapping = fs_mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FILE, copy, 0);
+	if (fs_is_map_failed(mapping)) {
+		DIE("failed mmap");
+	}
+	if (fs_read_all(original, mapping, size) < 0) {
+		DIE("failed read");
+	}
+	fs_close(original);
+	struct local_breakpoint_data data = {
+		.analysis = analysis,
+		.address = mapping,
+	};
+	enumerate_unreachable_regions_in_binary(analysis, analysis->loader.main, poke_local_breakpoint_region, &data);
+	fs_close(copy);
+#endif
 }
 
 static void add_dlopen_path(struct program_state *analysis, const char *path)
