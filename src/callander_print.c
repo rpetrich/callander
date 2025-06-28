@@ -4531,6 +4531,12 @@ static struct enum_option seccomp_operations[] = {
 	DESCRIBE_ENUM(SECCOMP_GET_ACTION_AVAIL),
 };
 
+// hack to support old version of ubuntu in GitHub Actions
+enum {
+	BPF_TOKEN_CREATE_ = BPF_PROG_BIND_MAP + 1,
+};
+#define BPF_TOKEN_CREATE BPF_TOKEN_CREATE_
+
 static struct enum_option bpf_commands[] = {
 	DESCRIBE_ENUM(BPF_MAP_CREATE),
 	DESCRIBE_ENUM(BPF_MAP_LOOKUP_ELEM),
