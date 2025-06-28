@@ -91,56 +91,72 @@ static inline bool register_is_partially_known(const struct register_state *reg)
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void truncate_to_8bit(struct register_state *reg) {
+static inline bool truncate_to_8bit(struct register_state *reg) {
 	if ((reg->max >> 8) == (reg->value >> 8)) {
+		if ((reg->max >> 8) == 0) {
+			return false;
+		}
 		reg->value &= 0xff;
 		reg->max &= 0xff;
 		if (reg->value <= reg->max) {
-			return;
+			return true;
 		}
 	}
 	reg->value = 0;
 	reg->max = 0xff;
+	return true;
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void truncate_to_16bit(struct register_state *reg) {
+static inline bool truncate_to_16bit(struct register_state *reg) {
 	if ((reg->max >> 16) == (reg->value >> 16)) {
+		if ((reg->max >> 16) == 0) {
+			return false;
+		}
 		reg->value &= 0xffff;
 		reg->max &= 0xffff;
 		if (reg->value <= reg->max) {
-			return;
+			return true;
 		}
 	}
 	reg->value = 0;
 	reg->max = 0xffff;
+	return true;
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void truncate_to_32bit(struct register_state *reg) {
+static inline bool truncate_to_32bit(struct register_state *reg) {
 	if ((reg->max >> 32) == (reg->value >> 32)) {
+		if ((reg->max >> 32) == 0) {
+			return false;
+		}
 		reg->value &= 0xffffffff;
 		reg->max &= 0xffffffff;
 		if (reg->value <= reg->max) {
-			return;
+			return true;
 		}
 	}
 	reg->value = 0;
 	reg->max = 0xffffffff;
+	return true;
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void truncate_to_operand_size(struct register_state *reg, enum ins_operand_size operand_size) {
+static inline bool truncate_to_operand_size(struct register_state *reg, enum ins_operand_size operand_size) {
 	uintptr_t mask = mask_for_operand_size(operand_size);
 	if ((reg->max & ~mask) == (reg->value & ~mask)) {
+		if ((reg->max & ~mask) == 0) {
+			return false;
+		}
 		reg->value &= mask;
 		reg->max &= mask;
 		if (reg->value <= reg->max) {
-			return;
+			return true;
 		}
 	}
 	reg->value = 0;
 	reg->max = mask;
+	return true;
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline))

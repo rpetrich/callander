@@ -261,6 +261,7 @@ struct loader_context {
 	bool searching_setxid:1;
 	bool searching_setxid_sighandler:1;
 	bool searching_do_setxid:1;
+	bool searching_enable_async_cancel:1;
 	ins_ptr gconv_dlopen;
 	ins_ptr libcrypto_dlopen;
 	ins_ptr setxid_syscall;
@@ -268,6 +269,7 @@ struct loader_context {
 	ins_ptr setxid_sighandler_syscall;
 	ins_ptr setxid_sighandler_syscall_entry;
 	ins_ptr do_setxid;
+	ins_ptr enable_async_cancel;
 	struct loaded_binary_stub *sorted_binaries;
 	int binary_count;
 	const char *sysroot;
@@ -293,6 +295,9 @@ __attribute__((nonnull(1, 1)))
 void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) **out_symbol);
 __attribute__((nonnull(1, 2, 3)))
 void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) **out_symbol);
+
+__attribute__((nonnull(1)))
+struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
 __attribute__((nonnull(1)))
 uintptr_t translate_analysis_address_to_child(struct loader_context *loader, ins_ptr addr);

@@ -52,10 +52,12 @@ bool should_log;
 #define ABORT_AT_NON_EXECUTABLE_ADDRESS 0
 
 __attribute__((nonnull(1))) __attribute__((always_inline))
-static inline void canonicalize_register(struct register_state *reg) {
+static inline bool canonicalize_register(struct register_state *reg) {
 	if (reg->value > reg->max) {
 		clear_register(reg);
+		return true;
 	}
+	return false;
 }
 
 __attribute__((nonnull(1))) __attribute__((always_inline)) __attribute__((unused))
@@ -1953,14 +1955,14 @@ static inline enum ins_operand_size operand_size_from_prefixes(struct x86_ins_pr
 }
 
 __attribute__((nonnull(1)))
-static inline void truncate_to_size_prefixes(struct register_state *reg, struct x86_ins_prefixes prefixes)
+static inline bool truncate_to_size_prefixes(struct register_state *reg, struct x86_ins_prefixes prefixes)
 {
 	if (prefixes.has_w) {
-		canonicalize_register(reg);
+		return canonicalize_register(reg);
 	} else if (prefixes.has_operand_size_override) {
-		truncate_to_16bit(reg);
+		return truncate_to_16bit(reg);
 	} else {
-		truncate_to_32bit(reg);
+		return truncate_to_32bit(reg);
 	}
 }
 
@@ -2137,9 +2139,6 @@ static void handle_musl_setxid(struct program_state *analysis, __attribute__((un
 		record_syscall(analysis, wrapper->nr, self, effects);
 	}
 }
-
-__attribute__((nonnull(1)))
-static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
 __attribute__((nonnull(1, 2, 3)))
 void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller)
@@ -3141,6 +3140,13 @@ static void update_known_symbols(struct program_state *analysis, struct loaded_b
 			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, nptl_setxid, &new_caller);
 			analysis->loader.searching_setxid = false;
 		}
+		ins_ptr pause = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "pause", NULL, INTERNAL_COMMON_SYMBOL, NULL);
+		if (pause != NULL) {
+			new_caller.description = "pause";
+			analysis->loader.searching_enable_async_cancel = true;
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, pause, &new_caller);
+			analysis->loader.searching_enable_async_cancel = false;
+		}
 		// assume new libraries won't be loaded after startup
 		update_known_function(analysis, new_binary, "__make_stacks_executable", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_RETURNS | EFFECT_ENTRY_POINT | EFFECT_ENTER_CALLS);
 	}
@@ -3195,9 +3201,6 @@ struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, c
 	known_symbols->blocked_symbol_count = count;
 	return &symbols[i];
 }
-
-__attribute__((nonnull(1)))
-static struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
 __attribute__((nonnull(1, 2)))
 char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data)
@@ -4501,13 +4504,19 @@ static enum basic_op_usage basic_op_mul(BASIC_OP_ARGS)
 			dest->value = dest->max = dest->value * source->value;
 			return BASIC_OP_USED_BOTH;
 		}
+		if (__builtin_mul_overflow(dest->value, source->value, &dest->value) || __builtin_mul_overflow(dest->max, source->max, &dest->max)) {
+			clear_register(dest);
+		}
+		return BASIC_OP_USED_BOTH;
 	} else if (register_is_exactly_known(source)) {
-		switch (source->value) {
-			case 0:
-				set_register(dest, 0);
-				return BASIC_OP_USED_RIGHT;
-			case 1:
-				return BASIC_OP_USED_BOTH;
+		if (source->value == 0) {
+			set_register(dest, 0);
+			return BASIC_OP_USED_RIGHT;
+		} else {
+			if (__builtin_mul_overflow(dest->value, source->value, &dest->value) || __builtin_mul_overflow(dest->max, source->max, &dest->max)) {
+				clear_register(dest);
+			}
+			return BASIC_OP_USED_BOTH;
 		}
 	}
 	clear_register(dest);
@@ -4763,12 +4772,17 @@ static struct basic_op_result perform_basic_op_rm_imm(__attribute__((unused)) co
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	dump_registers(loader, regs, mask_for_register(rm.reg));
-	truncate_to_size_prefixes(&rm.state, prefixes);
+	bool truncated = truncate_to_size_prefixes(&rm.state, prefixes);
 	struct register_state src;
 	set_register(&src, read_imm(prefixes, ins_modrm));
 	LOG("basic immediate", src.value);
 	additional->used = false;
+	struct loaded_binary *binary = register_is_exactly_known(&rm.state) && !truncated ? binary_for_address(loader, (ins_ptr)rm.state.value) : NULL;
 	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, operand_size_from_prefixes(prefixes), additional);
+	if (binary != NULL && binary_for_address(loader, (ins_ptr)rm.state.value) != binary) {
+		additional->used = false;
+		clear_register(&rm.state);
+	}
 	truncate_to_size_prefixes(&rm.state, prefixes);
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
@@ -4781,6 +4795,38 @@ static struct basic_op_result perform_basic_op_rm_imm(__attribute__((unused)) co
 	clear_match(loader, regs, rm.reg, ins_modrm);
 	return (struct basic_op_result) {
 		.reg = rm.reg,
+		.faults = rm.faults,
+		.fault_sources = rm.faults ? rm.sources : 0,
+	};
+}
+
+__attribute__((warn_unused_result))
+static struct basic_op_result perform_basic_op_r_rm_imm(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, struct x86_ins_prefixes prefixes, ins_ptr ins_modrm, trace_flags trace_flags, struct additional_result *additional)
+{
+	int reg = x86_read_reg(x86_read_modrm(ins_modrm), prefixes);
+	struct rm_result rm = read_rm_ref(loader, prefixes, &ins_modrm, imm_size_for_prefixes(prefixes), regs, OPERATION_SIZE_DEFAULT, READ_RM_REPLACE_MEM | read_rm_flags_from_trace_flags(trace_flags));
+	LOG("basic operation", name);
+	LOG("basic dest", name_for_register(reg));
+	LOG("basic source", name_for_register(rm.reg));
+	dump_registers(loader, regs, mask_for_register(rm.reg));
+	truncate_to_size_prefixes(&rm.state, prefixes);
+	struct register_state src;
+	set_register(&src, read_imm(prefixes, ins_modrm));
+	LOG("basic immediate", src.value);
+	additional->used = false;
+	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, operand_size_from_prefixes(prefixes), additional);
+	truncate_to_size_prefixes(&rm.state, prefixes);
+	if (UNLIKELY(additional->used)) {
+		truncate_to_size_prefixes(&additional->state, prefixes);
+		merge_and_log_additional_result(loader, &rm.state, additional, reg);
+	} else {
+		LOG("result", temp_str(copy_register_state_description(loader, rm.state)));
+	}
+	regs->registers[reg] = rm.state;
+	update_sources_for_basic_op_usage(regs, reg, rm.reg, register_is_partially_known_size_prefixes(&rm.state, prefixes) ? usage : BASIC_OP_USED_NEITHER);
+	clear_match(loader, regs, reg, ins_modrm);
+	return (struct basic_op_result) {
+		.reg = reg,
 		.faults = rm.faults,
 		.fault_sources = rm.faults ? rm.sources : 0,
 	};
@@ -5934,6 +5980,8 @@ static inline function_effects analyze_conditional_branch(struct program_state *
 			self->description = "conditional jump predicate";
 			vary_effects_by_registers(&analysis->search, &analysis->loader, self, target_registers | compare_state.sources, 0, 0, required_effects);
 		}
+	} else {
+		LOG("comparison state is not valid");
 	}
 	function_effects jump_effects;
 	function_effects continue_effects = EFFECT_NONE;
@@ -6186,35 +6234,16 @@ static bool is_stack_preserving_function(struct loader_context *loader, struct l
 		}
 	}
 	if (binary_has_flags(binary, BINARY_IS_LIBC | BINARY_IS_PTHREAD)) {
+		if (addr == loader->enable_async_cancel) {
+			LOG("found enable_async_cancel stack preserving function");
+			return true;
+		}
 		const char *name = find_any_symbol_name_by_address(loader, binary, addr, NORMAL_SYMBOL | LINKER_SYMBOL);
 		if (name != NULL) {
 			if (fs_strcmp(name, "read_int") == 0 || fs_strcmp(name, "__printf_buffer_write") == 0 || fs_strcmp(name, "__pthread_enable_asynccancel") == 0 || fs_strcmp(name, "__libc_enable_asynccancel") == 0) {
 				return true;
 			}
 		}
-#ifdef __x86_64__
-		// check for __pthread_enable_asynccancel
-		struct decoded_ins ins;
-		if (!decode_ins(addr, &ins)) {
-			return false;
-		}
-		if (is_landing_pad_ins(&ins)) {
-			addr = next_ins(addr, &ins);
-			if (!decode_ins(addr, &ins)) {
-				return false;
-			}
-		}
-		// check for mov eax, [fs:CANCELHANDLING]
-		if (addr[0] == 0x64 && addr[1] == 0x8b && addr[2] == 0x04 && addr[3] == 0x25 && addr[4] == 0x08 && addr[5] == 0x03 && addr[6] == 0x00 && addr[7] == 0x00) {
-			LOG("found pthread stack preserving function", temp_str(copy_address_description(loader, addr)));
-			return true;
-		}
-		// check for mov rcx, [fs:CANCELHANDLING]
-		if (addr[0] == 0x64 && addr[1] == 0x48 && addr[2] == 0x8b /*&& addr[3] == 0x0c*/ && addr[4] == 0x25 && addr[5] == 0x10 && addr[6] == 0x00 && addr[7] == 0x00 && addr[8] == 0x00) {
-			LOG("found pthread stack preserving function", temp_str(copy_address_description(loader, addr)));
-			return true;
-		}
-#endif
 		return false;
 	}
 	return false;
@@ -6510,6 +6539,21 @@ static void analyze_memory_read(struct program_state *analysis, struct analysis_
 			}
 		}
 	}
+}
+
+static bool check_for_searched_function(struct loader_context *loader, ins_ptr address)
+{
+	if (loader->searching_do_setxid && loader->do_setxid == NULL) {
+		LOG("found do_setxid", temp_str(copy_address_description(loader, address)));
+		loader->do_setxid = address;
+		return true;
+	}
+	if (loader->searching_enable_async_cancel && loader->enable_async_cancel == NULL) {
+		LOG("found enable_async_cancel", temp_str(copy_address_description(loader, address)));
+		loader->enable_async_cancel = address;
+		return true;
+	}
+	return false;
 }
 
 #define ANALYZE_PRIMARY_RESULT() do { \
@@ -8317,13 +8361,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 			case 0x69: { // imul r, r/m, imm
+				struct additional_result additional;
+				int reg = CHECK_BASIC_OP_FAULT(perform_basic_op_r_rm_imm("imul", basic_op_mul, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 				clear_comparison_state(&self.current_state);
-				x86_mod_rm_t modrm = x86_read_modrm(&decoded.unprefixed[1]);
-				int reg = x86_read_reg(modrm, decoded.prefixes);
-				LOG("imul dest", name_for_register(reg));
-				clear_register(&self.current_state.registers[reg]);
-				self.current_state.sources[reg] = 0;
-				clear_match(&analysis->loader, &self.current_state, reg, ins);
+				CHECK_AND_SPLIT_ON_ADDITIONAL_STATE(reg);
 				break;
 			}
 			case 0x6a: { // push imm8
@@ -8467,11 +8508,10 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("sbb", basic_op_sbb, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
-					case 4: { // and r/m, imm
+					case 4: // and r/m, imm
 						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("and", basic_op_and, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						clear_comparison_state(&self.current_state);
 						break;
-					}
 					case 5: // sub r/m, imm
 						rm = CHECK_BASIC_OP_FAULT(perform_basic_op_rm_imm("sub", basic_op_sub, &analysis->loader, &self.current_state, decoded.prefixes, &decoded.unprefixed[1], trace_flags, &additional));
 						set_compare_from_operation(&self.current_state, rm, mask_for_size_prefixes(decoded.prefixes));
@@ -8947,9 +8987,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								} else {
 									LOG("rip-relative lea is to executable address, assuming it could be called after startup");
 									if (effects & EFFECT_ENTER_CALLS) {
-										if (analysis->loader.searching_do_setxid && analysis->loader.do_setxid == NULL) {
-											analysis->loader.do_setxid = address;
-										} else {
+										if (!check_for_searched_function(&analysis->loader, address)) {
 											queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "lea");
 										}
 									}
@@ -9442,6 +9480,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else {
 					self.description = "call";
+					check_for_searched_function(&analysis->loader, (ins_ptr)dest);
 					more_effects = analyze_call(analysis, required_effects, binary, ins, (ins_ptr)dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					LOG("resuming", temp_str(copy_address_description(&analysis->loader, self.entry)));
@@ -9962,9 +10001,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						LOG("formed executable address, assuming it could be called after startup");
 						if (effects & EFFECT_ENTER_CALLS) {
 							if (!in_plt_section(binary, ins) && (decoded.decomposed.operands[2].operandClass == IMM32 || decoded.decomposed.operands[2].operandClass == IMM64)) {
-								if (analysis->loader.searching_do_setxid && analysis->loader.do_setxid == NULL) {
-									analysis->loader.do_setxid = address;
-								} else {
+								if (!check_for_searched_function(&analysis->loader, address)) {
 									queue_instruction(&analysis->search.queue, address, ((binary->special_binary_flags & (BINARY_IS_INTERPRETER | BINARY_IS_LIBC)) == BINARY_IS_INTERPRETER) ? required_effects : ((required_effects & ~EFFECT_ENTRY_POINT) | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS), &empty_registers, self.address, "adrp+add");
 								}
 							} else {
@@ -10293,6 +10330,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					analysis->skipped_call = (ins_ptr)dest;
 					clear_call_dirtied_registers(&analysis->loader, &self.current_state, binary, ins, ALL_REGISTERS);
 				} else {
+					// TODO: see if this works in general
+					check_for_searched_function(&analysis->loader, dest);
 					self.description = "bl";
 					more_effects = analyze_call(analysis, required_effects, binary, ins, dest, &self);
 					effects |= more_effects & ~(EFFECT_RETURNS | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);

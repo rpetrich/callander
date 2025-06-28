@@ -426,6 +426,7 @@ void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
 	if (load_main_from_auxv(aux, &self_info) != 0) {
 		fs_exit(1);
 	}
+	relocate_binary(&self_info);
 }
 
 int load_interpreter_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info)
