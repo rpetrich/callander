@@ -8,8 +8,8 @@
 
 #include "defaultlibs.h"
 
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 
 #include <errno.h>
 #include <stdatomic.h>
@@ -19,8 +19,7 @@
 
 struct fs_mutex malloc_lock;
 
-__attribute__((used, visibility("hidden")))
-int memcmp(const void *s1, const void *s2, size_t n)
+__attribute__((used, visibility("hidden"))) int memcmp(const void *s1, const void *s2, size_t n)
 {
 	const unsigned char *str1 = (const unsigned char *)s1;
 	const unsigned char *str2 = (const unsigned char *)s2;
@@ -33,8 +32,7 @@ int memcmp(const void *s1, const void *s2, size_t n)
 	return 0;
 }
 
-__attribute__((used, visibility("hidden")))
-void *memset(void *s, int c, size_t n)
+__attribute__((used, visibility("hidden"))) void *memset(void *s, int c, size_t n)
 {
 	char *buf = s;
 #if 0
@@ -68,8 +66,7 @@ void *memset(void *s, int c, size_t n)
 	return s;
 }
 
-__attribute__((used, visibility("hidden")))
-void *__memset_chk(void *dest, int c, size_t len, size_t destlen)
+__attribute__((used, visibility("hidden"))) void *__memset_chk(void *dest, int c, size_t len, size_t destlen)
 {
 	if (UNLIKELY(len > destlen)) {
 		abort();
@@ -77,14 +74,12 @@ void *__memset_chk(void *dest, int c, size_t len, size_t destlen)
 	return memset(dest, c, len);
 }
 
-__attribute__((__nothrow__, used))
-void *memcpy(void *__restrict destination, const void *__restrict source, size_t num)
+__attribute__((__nothrow__, used)) void *memcpy(void *__restrict destination, const void *__restrict source, size_t num)
 {
 	return fs_memcpy(destination, source, num);
 }
 
-__attribute__((used, visibility("hidden")))
-void *__memcpy_chk(void *__restrict destination, const void *__restrict source, size_t num, size_t destlen)
+__attribute__((used, visibility("hidden"))) void *__memcpy_chk(void *__restrict destination, const void *__restrict source, size_t num, size_t destlen)
 {
 	if (UNLIKELY(num > destlen)) {
 		abort();
@@ -92,28 +87,24 @@ void *__memcpy_chk(void *__restrict destination, const void *__restrict source, 
 	return memcpy(destination, source, num);
 }
 
-__attribute__((used, visibility("hidden")))
-void *memmove(void *destination, const void *source, size_t num)
+__attribute__((used, visibility("hidden"))) void *memmove(void *destination, const void *source, size_t num)
 {
 	return fs_memmove(destination, source, num);
 }
 
-__attribute__((used, visibility("hidden")))
-size_t strlen(const char *str)
+__attribute__((used, visibility("hidden"))) size_t strlen(const char *str)
 {
 	return fs_strlen(str);
 }
 
-__attribute__((used, visibility("hidden")))
-char *strdup(const char *str)
+__attribute__((used, visibility("hidden"))) char *strdup(const char *str)
 {
 	size_t size = fs_strlen(str) + 1;
 	char *result = malloc(size);
 	return fs_memcpy(result, str, size);
 }
 
-__attribute__((used, visibility("hidden")))
-char *strcpy(char *destination, const char *source)
+__attribute__((used, visibility("hidden"))) char *strcpy(char *destination, const char *source)
 {
 	char *result = destination;
 	while ((*destination++ = *source++)) {
@@ -121,38 +112,34 @@ char *strcpy(char *destination, const char *source)
 	return result;
 }
 
-__attribute__((used, visibility("hidden")))
-char *__strcpy_chk(char *destination, const char *source, size_t destlen)
+__attribute__((used, visibility("hidden"))) char *__strcpy_chk(char *destination, const char *source, size_t destlen)
 {
 	char *result = destination;
 	while ((*destination++ = *source++)) {
-		if (UNLIKELY(destination == &result[destlen-1])) {
+		if (UNLIKELY(destination == &result[destlen - 1])) {
 			abort();
 		}
 	}
 	return result;
 }
 
-__attribute__((used, visibility("hidden")))
-char *strcat(char *destination, const char *source)
+__attribute__((used, visibility("hidden"))) char *strcat(char *destination, const char *source)
 {
 	size_t destlen = fs_strlen(destination);
 	size_t srclen = fs_strlen(source);
-	memcpy(&destination[destlen], source, srclen+1);
+	memcpy(&destination[destlen], source, srclen + 1);
 	return destination;
 }
 
-__attribute__((used, visibility("hidden")))
-void *memchr(const void *str, int c, size_t n)
+__attribute__((used, visibility("hidden"))) void *memchr(const void *str, int c, size_t n)
 {
 	return (void *)fs_memchr(str, c, n);
 }
 
-__attribute__((used, visibility("hidden")))
-void abort(void)
+__attribute__((used, visibility("hidden"))) void abort(void)
 {
 	ERROR_FLUSH();
-	struct fs_sigset_t set = { 0 };
+	struct fs_sigset_t set = {0};
 	fs_sigaddset(&set, SIGABRT);
 	intptr_t result = fs_rt_sigprocmask(SIG_UNBLOCK, &set, NULL, sizeof(struct fs_sigset_t));
 	if (result != 0) {
@@ -165,20 +152,19 @@ void abort(void)
 	__builtin_unreachable();
 }
 
-__attribute__((used, visibility("hidden")))
-void __assert_fail(__attribute__((unused)) const char *expr, __attribute__((unused)) const char *file, __attribute__((unused)) unsigned int line, __attribute__((unused)) const char *function)
+__attribute__((used, visibility("hidden"))) void __assert_fail(__attribute__((unused)) const char *expr, __attribute__((unused)) const char *file, __attribute__((unused)) unsigned int line, __attribute__((unused)) const char *function)
 {
 	struct iovec vec[8];
 	vec[0].iov_base = "axon: assertion failed at ";
-	vec[0].iov_len = sizeof("axon: assertion failed at ")-1;
+	vec[0].iov_len = sizeof("axon: assertion failed at ") - 1;
 	vec[1].iov_base = (void *)expr;
 	vec[1].iov_len = strlen(expr);
 	vec[2].iov_base = " in ";
-	vec[2].iov_len = sizeof(" in ")-1;
+	vec[2].iov_len = sizeof(" in ") - 1;
 	vec[3].iov_base = (void *)function;
 	vec[3].iov_len = strlen(function);
 	vec[4].iov_base = " (";
-	vec[4].iov_len = sizeof(" (")-1;
+	vec[4].iov_len = sizeof(" (") - 1;
 	vec[5].iov_base = (void *)file;
 	vec[5].iov_len = strlen(file);
 	vec[6].iov_base = (void *)file;
@@ -186,8 +172,8 @@ void __assert_fail(__attribute__((unused)) const char *expr, __attribute__((unus
 	char buf[33];
 	buf[0] = ':';
 	int size = fs_itoa(line, &buf[1]);
-	buf[size+1] = ')';
-	buf[size+2] = '\n';
+	buf[size + 1] = ')';
+	buf[size + 2] = '\n';
 	vec[7].iov_base = buf;
 	vec[7].iov_len = size + 3;
 	ERROR_WRITEV(vec, 8);
@@ -198,7 +184,8 @@ void __assert_fail(__attribute__((unused)) const char *expr, __attribute__((unus
 #ifdef STACK_PROTECTOR
 __attribute__((used))
 #endif
-void __stack_chk_fail(void)
+void
+__stack_chk_fail(void)
 {
 	abort();
 	__builtin_unreachable();
@@ -229,9 +216,8 @@ void sched_yield(void)
 	fs_sched_yield();
 }
 
-void* dlmalloc(size_t);
-__attribute__((used, visibility("hidden")))
-void *malloc(size_t size)
+void *dlmalloc(size_t);
+__attribute__((used, visibility("hidden"))) void *malloc(size_t size)
 {
 	fs_mutex_lock(&malloc_lock);
 	void *result = dlmalloc(size);
@@ -239,9 +225,8 @@ void *malloc(size_t size)
 	return result;
 }
 
-void* dlcalloc(size_t, size_t);
-__attribute__((used, visibility("hidden")))
-void *calloc(size_t count, size_t size)
+void *dlcalloc(size_t, size_t);
+__attribute__((used, visibility("hidden"))) void *calloc(size_t count, size_t size)
 {
 	fs_mutex_lock(&malloc_lock);
 	void *result = dlcalloc(count, size);
@@ -249,9 +234,8 @@ void *calloc(size_t count, size_t size)
 	return result;
 }
 
-void  dlfree(void*);
-__attribute__((used, visibility("hidden")))
-void free(void *ptr)
+void dlfree(void *);
+__attribute__((used, visibility("hidden"))) void free(void *ptr)
 {
 	if (ptr) {
 		fs_mutex_lock(&malloc_lock);
@@ -260,7 +244,7 @@ void free(void *ptr)
 	}
 }
 
-size_t dlmalloc_usable_size(void*);
+size_t dlmalloc_usable_size(void *);
 size_t malloc_size(const void *ptr)
 {
 	if (ptr == NULL) {
@@ -278,9 +262,8 @@ size_t malloc_good_size(size_t size)
 	return size;
 }
 
-void* dlrealloc(void*, size_t);
-__attribute__((used, visibility("hidden")))
-void *realloc(void *ptr, size_t size)
+void *dlrealloc(void *, size_t);
+__attribute__((used, visibility("hidden"))) void *realloc(void *ptr, size_t size)
 {
 	fs_mutex_lock(&malloc_lock);
 	void *result = dlrealloc(ptr, size);
@@ -288,7 +271,7 @@ void *realloc(void *ptr, size_t size)
 	return result;
 }
 
-int dlposix_memalign(void**, size_t, size_t);
+int dlposix_memalign(void **, size_t, size_t);
 int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
 	fs_mutex_lock(&malloc_lock);
@@ -298,8 +281,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 }
 
 void *dlmemalign(size_t, size_t);
-__attribute__((used, visibility("hidden")))
-void *aligned_alloc(size_t alignment, size_t size)
+__attribute__((used, visibility("hidden"))) void *aligned_alloc(size_t alignment, size_t size)
 {
 	fs_mutex_lock(&malloc_lock);
 	void *result = dlmemalign(alignment, size);
@@ -349,12 +331,12 @@ void error_flush(void)
 		intptr_t result = fs_write_all(2, error_buffer, existing_offset);
 		if (result != (intptr_t)existing_offset) {
 			if (result < 0) {
-				(void)fs_write(2, "failed to write errors: ", sizeof("failed to write errors: ")-1);
+				(void)fs_write(2, "failed to write errors: ", sizeof("failed to write errors: ") - 1);
 				const char *errorstr = fs_strerror(result);
 				fs_write(2, errorstr, fs_strlen(errorstr));
 				(void)fs_write(2, "\n", 1);
 			} else {
-				(void)fs_write(2, "failed to write errors\n", sizeof("failed to write errors\n")-1);
+				(void)fs_write(2, "failed to write errors\n", sizeof("failed to write errors\n") - 1);
 			}
 			abort();
 			__builtin_unreachable();
@@ -362,58 +344,52 @@ void error_flush(void)
 	}
 }
 
-__attribute__((used))
-__uint128_t __ashlti3(__uint128_t a, int b)
+__attribute__((used)) __uint128_t __ashlti3(__uint128_t a, int b)
 {
-    const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
+	const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
 	union {
 		__uint128_t all;
-		struct {
+		struct
+		{
 			uint64_t low;
 			uint64_t high;
 		} s;
 	} input, result;
-    input.all = a;
-    if (b & bits_in_dword)  /* bits_in_dword <= b < bits_in_tword */
-    {
-        result.s.low = 0;
-        result.s.high = input.s.low << (b - bits_in_dword);
-    }
-    else  /* 0 <= b < bits_in_dword */
-    {
-        if (b == 0)
-            return a;
-        result.s.low  = input.s.low << b;
-        result.s.high = (input.s.high << b) | (input.s.low >> (bits_in_dword - b));
-    }
-    return result.all;
+	input.all = a;
+	if (b & bits_in_dword) /* bits_in_dword <= b < bits_in_tword */ {
+		result.s.low = 0;
+		result.s.high = input.s.low << (b - bits_in_dword);
+	} else /* 0 <= b < bits_in_dword */ {
+		if (b == 0)
+			return a;
+		result.s.low = input.s.low << b;
+		result.s.high = (input.s.high << b) | (input.s.low >> (bits_in_dword - b));
+	}
+	return result.all;
 }
 
-__attribute__((used))
-__uint128_t __lshrti3(__uint128_t a, int b)
+__attribute__((used)) __uint128_t __lshrti3(__uint128_t a, int b)
 {
-    const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
+	const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
 	union {
 		__uint128_t all;
-		struct {
+		struct
+		{
 			uint64_t low;
 			uint64_t high;
 		} s;
 	} input, result;
-    input.all = a;
-    if (b & bits_in_dword)  /* bits_in_dword <= b < bits_in_tword */
-    {
-        result.s.high = 0;
-        result.s.low = input.s.high >> (b - bits_in_dword);
-    }
-    else  /* 0 <= b < bits_in_dword */
-    {
-        if (b == 0)
-            return a;
-        result.s.high  = input.s.high >> b;
-        result.s.low = (input.s.high << (bits_in_dword - b)) | (input.s.low >> b);
-    }
-    return result.all;
+	input.all = a;
+	if (b & bits_in_dword) /* bits_in_dword <= b < bits_in_tword */ {
+		result.s.high = 0;
+		result.s.low = input.s.high >> (b - bits_in_dword);
+	} else /* 0 <= b < bits_in_dword */ {
+		if (b == 0)
+			return a;
+		result.s.high = input.s.high >> b;
+		result.s.low = (input.s.high << (bits_in_dword - b)) | (input.s.low >> b);
+	}
+	return result.all;
 }
 
 #endif

@@ -6,9 +6,9 @@
 #include "freestanding.h"
 #include "mapped.h"
 
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
-#include <errno.h>
 
 uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address)
 {
@@ -40,7 +40,8 @@ bool membarrier_is_supported;
 
 bool patch_syscalls;
 
-struct patch_state_shard {
+struct patch_state_shard
+{
 	// carefully laid out to take exactly one cache line
 	struct fs_mutex lock;
 	uint8_t next_invalid;

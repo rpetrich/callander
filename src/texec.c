@@ -11,11 +11,11 @@ AXON_BOOTSTRAP_ASM
 #include "callander_print.h"
 #include "exec.h"
 #include "fd_table.h"
+#include "handler.h"
 #include "linux.h"
 #include "loader.h"
 #include "proxy.h"
 #include "proxy_target.h"
-#include "handler.h"
 #include "remote_exec.h"
 #include "search.h"
 #include "time.h"
@@ -31,7 +31,7 @@ static void set_thread_pointer(const void **thread_pointer)
 
 static inline size_t ceil_to_page(size_t size)
 {
-	return (size + (PAGE_SIZE-1)) & ~(PAGE_SIZE-1);
+	return (size + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
 }
 
 void remote_munmap(intptr_t addr, size_t length)
@@ -93,8 +93,7 @@ int remote_mprotect(intptr_t addr, size_t length, int prot)
 	}
 }
 
-__attribute__((warn_unused_result))
-intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, off_t offset)
+__attribute__((warn_unused_result)) intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
 	// pass through anonymous memory mapping calls
 	if ((flags & MAP_ANONYMOUS) || (fd == -1)) {
@@ -149,8 +148,8 @@ intptr_t remote_mmap(intptr_t addr, size_t length, int prot, int flags, int fd, 
 	if (result < 0) {
 		return result;
 	}
-	size_t padded_length = (length + (PAGE_SIZE-1)) & PAGE_ALIGNMENT_MASK;
-	void *buf = fs_mmap(NULL, padded_length, PROT_READ, MAP_PRIVATE|MAP_FILE, fd, offset);
+	size_t padded_length = (length + (PAGE_SIZE - 1)) & PAGE_ALIGNMENT_MASK;
+	void *buf = fs_mmap(NULL, padded_length, PROT_READ, MAP_PRIVATE | MAP_FILE, fd, offset);
 	if (fs_is_map_failed(buf)) {
 		remote_munmap(addr, length);
 		return (intptr_t)buf;
@@ -276,7 +275,7 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 			}
 		}
 	}
-	end += PAGE_SIZE-1;
+	end += PAGE_SIZE - 1;
 	end &= PAGE_ALIGNMENT_MASK;
 	off_start &= PAGE_ALIGNMENT_MASK;
 	start &= PAGE_ALIGNMENT_MASK;
@@ -299,7 +298,7 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 			continue;
 		}
 		uintptr_t this_min = ph->p_vaddr & PAGE_ALIGNMENT_MASK;
-		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
+		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
 		int protection = 0;
 		if (ph->p_flags & PF_R) {
 			protection |= PROT_READ;
@@ -310,25 +309,25 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 		if (ph->p_flags & PF_X) {
 			protection |= PROT_EXEC;
 		}
-		if (this_max-this_min) {
-			intptr_t section_mapping = remote_mmap(map_offset + this_min, this_max-this_min, protection, MAP_PRIVATE|MAP_FIXED, fd, ph->p_offset & PAGE_ALIGNMENT_MASK);
+		if (this_max - this_min) {
+			intptr_t section_mapping = remote_mmap(map_offset + this_min, this_max - this_min, protection, MAP_PRIVATE | MAP_FIXED, fd, ph->p_offset & PAGE_ALIGNMENT_MASK);
 			if (fs_is_map_failed((void *)section_mapping)) {
 				ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
 				return -ENOEXEC;
 			}
 		}
 		if (ph->p_memsz > ph->p_filesz) {
-			size_t brk = (size_t)map_offset+ph->p_vaddr+ph->p_filesz;
-			size_t pgbrk = (brk+PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
-			size_t zero_count = (pgbrk-brk) & (PAGE_SIZE-1);
+			size_t brk = (size_t)map_offset + ph->p_vaddr + ph->p_filesz;
+			size_t pgbrk = (brk + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
+			size_t zero_count = (pgbrk - brk) & (PAGE_SIZE - 1);
 			char zeros[PAGE_SIZE];
 			memset(zeros, '\0', zero_count);
 			intptr_t result = proxy_poke(brk, zero_count, &zeros);
 			if (result < 0) {
 				DIE("failed to write zeros", fs_strerror(result));
 			}
-			if (pgbrk-(size_t)map_offset < this_max) {
-				intptr_t tail_mapping = remote_mmap(pgbrk, (size_t)map_offset+this_max-pgbrk, protection, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+			if (pgbrk - (size_t)map_offset < this_max) {
+				intptr_t tail_mapping = remote_mmap(pgbrk, (size_t)map_offset + this_max - pgbrk, protection, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
 				if (fs_is_map_failed((void *)tail_mapping)) {
 					ERROR("failed creating .bss-like PT_LOAD", fs_strerror((intptr_t)tail_mapping));
 					return -ENOEXEC;
@@ -396,7 +395,7 @@ static void transfer_fd_table(uintptr_t fd_table_addr)
 	}
 	// open and write current working directory
 	if (local_table[CWD_FD] & HAS_LOCAL_FD) {
-		int local_fd = fs_open(".", O_PATH|O_DIRECTORY, 0);
+		int local_fd = fs_open(".", O_PATH | O_DIRECTORY, 0);
 		if (local_fd < 0) {
 			DIE("failed opening current working directory", fs_strerror(local_fd));
 		}
@@ -519,12 +518,14 @@ static bool syscall_is_allowed_from_target(int syscall)
 
 static char heap[TEXEC_HEAP_SIZE];
 
-struct worker_thread_info {
+struct worker_thread_info
+{
 	int thread_id;
 	struct worker_thread_info *next;
 };
 
-struct process_syscalls_data {
+struct process_syscalls_data
+{
 	struct thandler_info *info;
 	struct remote_exec_state *remote;
 	intptr_t status_code;
@@ -547,8 +548,8 @@ static void *process_syscalls_thread(struct process_syscalls_data *data)
 
 static void add_gdb_attach_prefix(char **buf, pid_t pid)
 {
-	fs_memcpy(*buf, "sudo gdb --pid=", sizeof("sudo gdb --pid=")-1);
-	*buf += sizeof("sudo gdb --pid=")-1;
+	fs_memcpy(*buf, "sudo gdb --pid=", sizeof("sudo gdb --pid=") - 1);
+	*buf += sizeof("sudo gdb --pid=") - 1;
 	*buf += fs_itoa(pid, *buf);
 }
 
@@ -556,8 +557,8 @@ static void add_symbol_file_arg(char **buf, const char *path, struct section_inf
 {
 	const ElfW(Shdr) *text_section = find_section(local_info, sections, ".text");
 	if (text_section != NULL) {
-		fs_memcpy(*buf, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ")-1);
-		*buf += sizeof(" --eval-command=\"add-symbol-file ")-1;
+		fs_memcpy(*buf, " --eval-command=\"add-symbol-file ", sizeof(" --eval-command=\"add-symbol-file ") - 1);
+		*buf += sizeof(" --eval-command=\"add-symbol-file ") - 1;
 		size_t path_len = fs_strlen(path);
 		fs_memcpy(*buf, path, path_len);
 		*buf += path_len;
@@ -565,7 +566,7 @@ static void add_symbol_file_arg(char **buf, const char *path, struct section_inf
 		(*buf)++;
 		*buf += fs_utoah((uintptr_t)remote_info->base + text_section->sh_addr, *buf);
 		fs_memcpy(*buf, "\"", sizeof("\""));
-		*buf += sizeof("\"")-1;
+		*buf += sizeof("\"") - 1;
 	}
 }
 
@@ -577,7 +578,8 @@ static bool wait_for_user_continue(void)
 	return fs_read(0, &buf[0], 1) == 1;
 }
 
-struct thandler_info {
+struct thandler_info
+{
 	int fd;
 	struct binary_info local_info;
 	struct binary_info remote_info;
@@ -603,11 +605,11 @@ static int init_thandler(struct thandler_info *thandler)
 	if (count < 0) {
 		return count;
 	}
-	while (thandler->path[count-1] != '/') {
+	while (thandler->path[count - 1] != '/') {
 		count--;
 	}
 	fs_memcpy(&thandler->path[count], "thandler", sizeof("thandler"));
-	intptr_t fd = fs_open(thandler->path, O_RDONLY|O_CLOEXEC, 0);
+	intptr_t fd = fs_open(thandler->path, O_RDONLY | O_CLOEXEC, 0);
 	if (fd < 0) {
 		return fd;
 	}
@@ -652,7 +654,7 @@ static int init_thandler(struct thandler_info *thandler)
 				relasz = dynamic[i].d_un.d_val;
 				break;
 			case DT_RELAENT:
-				relaent = dynamic[i].d_un.d_val;			
+				relaent = dynamic[i].d_un.d_val;
 				break;
 		}
 	}
@@ -681,7 +683,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 	data.tid_ptr = remote->stack_end - sizeof(pid_t);
 	uint32_t stream_id = proxy_generate_stream_id();
 	data.stream_id = stream_id;
-	struct proxy_target_state new_proxy_state = { 0 };
+	struct proxy_target_state new_proxy_state = {0};
 	new_proxy_state.stream_id = stream_id;
 	new_proxy_state.heap = (uintptr_t)&heap;
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
@@ -738,7 +740,13 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		ERROR("spawning remote thread");
 		ERROR_FLUSH();
 	}
-	intptr_t clone_result = PROXY_LINUX_CALL(LINUX_SYS_clone | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID), proxy_value(/*dynv_base - 0x100*/0), proxy_value(data.tid_ptr), proxy_value(data.tid_ptr), proxy_value(remote->sp), proxy_value(thandler->receive_start_addr));
+	intptr_t clone_result = PROXY_LINUX_CALL(LINUX_SYS_clone | PROXY_NO_WORKER,
+	                                         proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_SETTID | CLONE_CHILD_CLEARTID),
+	                                         proxy_value(/*dynv_base - 0x100*/ 0),
+	                                         proxy_value(data.tid_ptr),
+	                                         proxy_value(data.tid_ptr),
+	                                         proxy_value(remote->sp),
+	                                         proxy_value(thandler->receive_start_addr));
 	if (clone_result < 0) {
 		ERROR("failed to clone", fs_strerror(clone_result));
 		return clone_result;
@@ -757,7 +765,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		ERROR_FLUSH();
 	}
 	// wait for workers
-	for (struct worker_thread_info *worker = data.threads; worker != NULL; ) {
+	for (struct worker_thread_info *worker = data.threads; worker != NULL;) {
 		for (;;) {
 			int thread_id = worker->thread_id;
 			if (thread_id == 0) {
@@ -866,7 +874,12 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 				info->thread_id = 0;
 				info->next = data->threads;
 				data->threads = info;
-				result = fs_clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_CLEARTID | CLONE_PARENT_SETTID, stack + PROXY_WORKER_STACK_SIZE, &info->thread_id, &info->thread_id, data, process_syscalls_thread);
+				result = fs_clone(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_CHILD_CLEARTID | CLONE_PARENT_SETTID,
+				                  stack + PROXY_WORKER_STACK_SIZE,
+				                  &info->thread_id,
+				                  &info->thread_id,
+				                  data,
+				                  process_syscalls_thread);
 				if (result < 0) {
 					fs_munmap(stack, PROXY_WORKER_STACK_SIZE);
 					ERROR("unable to start a worker thread", fs_strerror(result));
@@ -917,8 +930,8 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 							const ElfW(Shdr) *text_section = find_section(&binary->info, &binary->sections, ".text");
 							if (text_section != NULL) {
 								char *cur = buf;
-								fs_memcpy(cur, "add-symbol-file ", sizeof("add-symbol-file ")-1);
-								cur += sizeof("add-symbol-file ")-1;
+								fs_memcpy(cur, "add-symbol-file ", sizeof("add-symbol-file ") - 1);
+								cur += sizeof("add-symbol-file ") - 1;
 								size_t loaded_path_len = fs_strlen(binary->loaded_path);
 								fs_memcpy(cur, binary->loaded_path, loaded_path_len);
 								cur += loaded_path_len;
@@ -959,20 +972,20 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 						bool is_out = message.template.is_out & (1 << i);
 						if (is_in) {
 							if (is_out) {
-								fs_memcpy(&description_buf[offset], "<in-out>", sizeof("<in-out>")-1);
-								offset += sizeof("<in-out>")-1;
+								fs_memcpy(&description_buf[offset], "<in-out>", sizeof("<in-out>") - 1);
+								offset += sizeof("<in-out>") - 1;
 							} else {
-								fs_memcpy(&description_buf[offset], "<in>", sizeof("<in>")-1);
-								offset += sizeof("<in>")-1;
+								fs_memcpy(&description_buf[offset], "<in>", sizeof("<in>") - 1);
+								offset += sizeof("<in>") - 1;
 							}
 						} else {
 							if (is_out) {
-								fs_memcpy(&description_buf[offset], "<out>", sizeof("<out>")-1);
-								offset += sizeof("<out>")-1;
+								fs_memcpy(&description_buf[offset], "<out>", sizeof("<out>") - 1);
+								offset += sizeof("<out>") - 1;
 							} else {
 								if (message.values[i] == (uintptr_t)AT_FDCWD) {
-									fs_memcpy(&description_buf[offset], "AT_FDCWD", sizeof("AT_FDCWD")-1);
-									offset += sizeof("AT_FDCWD")-1;
+									fs_memcpy(&description_buf[offset], "AT_FDCWD", sizeof("AT_FDCWD") - 1);
+									offset += sizeof("AT_FDCWD") - 1;
 								} else {
 									offset += fs_utoah(message.values[i], &description_buf[offset]);
 								}
@@ -1060,10 +1073,10 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 			return_args[2] = proxy_value(result);
 			size_t i = 0;
 			for (; i < io_count; i++) {
-				if (i+3 >= PROXY_ARGUMENT_COUNT) {
+				if (i + 3 >= PROXY_ARGUMENT_COUNT) {
 					DIE("too many output arguments");
 				}
-				return_args[i+3] = proxy_in(vec[i].iov_base, vec[i].iov_len);
+				return_args[i + 3] = proxy_in(vec[i].iov_base, vec[i].iov_len);
 			}
 			for (i += 3; i < PROXY_ARGUMENT_COUNT; i++) {
 				return_args[i] = proxy_value(0);
@@ -1073,8 +1086,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 	}
 }
 
-__attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
+__attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused)) int argc, char *argv[], char *envp[])
 {
 	const void *thread_ptr;
 	set_thread_pointer(&thread_ptr);
@@ -1135,7 +1147,17 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 
 	// remotely execute it
 	struct remote_exec_state remote;
-	result = remote_exec_fd(NULL, fd, executable_path, (const char * const*)&argv[1], (const char * const*)envp, aux, comm, 0, debug, (struct remote_handlers){ .receive_syscall_addr = thandler.receive_syscall_addr, .receive_clone_addr = thandler.receive_clone_addr }, &remote);
+	result = remote_exec_fd(NULL,
+	                        fd,
+	                        executable_path,
+	                        (const char *const *)&argv[1],
+	                        (const char *const *)envp,
+	                        aux,
+	                        comm,
+	                        0,
+	                        debug,
+	                        (struct remote_handlers){.receive_syscall_addr = thandler.receive_syscall_addr, .receive_clone_addr = thandler.receive_clone_addr},
+	                        &remote);
 	if (result < 0) {
 		DIE("remote exec failed", fs_strerror(result));
 		fs_exit(-result);

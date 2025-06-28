@@ -1,13 +1,13 @@
 #ifndef SOCKETS_H
 #define SOCKETS_H
 
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 #include "paths.h"
 
 #include <limits.h>
-#include <string.h>
 #include <netinet/in.h>
+#include <string.h>
 #include <sys/un.h>
 
 union copied_sockaddr {

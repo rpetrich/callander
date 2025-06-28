@@ -2,96 +2,92 @@
 #include "patch.h"
 
 #include "attempt.h"
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 #include "handler.h"
 #include "mapped.h"
 #include "stack.h"
 
-#include <string.h>
 #include <errno.h>
+#include <string.h>
 
 __asm__(
-".text\n"
-FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_start) "\n"
-"	stp x9, x10, [sp, #-0x90]!\n"
-"	stp x11, x12, [sp, #-0x10]!\n"
-"	stp x13, x14, [sp, #-0x10]!\n"
-"	stp x15, lr, [sp, #-0x10]!\n"
-"	mrs x9, nzcv\n"
-"	stp x7, x9, [sp, #-0x10]!\n"
-"	ldr x7, 0x54\n"
-"	stp x8, x6, [sp, #-0x10]!\n"
-"	stp x4, x5, [sp, #-0x10]!\n"
-"	stp x2, x3, [sp, #-0x10]!\n"
-"	stp x0, x1, [sp, #-0x10]!\n"
-"	ldr x1, 0x38\n"
-"	mov x0, sp\n"
-"	blr x7\n"
-"	ldp x0, x1, [sp], #0x10\n"
-"	ldp x2, x3, [sp], #0x10\n"
-"	ldp x4, x5, [sp], #0x10\n"
-"	ldp x8, x6, [sp], #0x10\n"
-"	ldp x7, x9, [sp], #0x10\n"
-"	msr nzcv, x9\n"
-"	ldp x15, lr, [sp], #0x10\n"
-"	ldp x13, x14, [sp], #0x10\n"
-"	ldp x11, x12, [sp], #0x10\n"
-"	ldp x9, x10, [sp], #0x90\n"
-"	b "FS_NAME_ASM(trampoline_call_handler_end)"\n"
-".quad 0\n"
-".quad 0\n"
-FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_address) "\n"
-FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_end) "\n"
-);
+	".text\n" FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_start)
+		"\n"
+		"	stp x9, x10, [sp, #-0x90]!\n"
+		"	stp x11, x12, [sp, #-0x10]!\n"
+		"	stp x13, x14, [sp, #-0x10]!\n"
+		"	stp x15, lr, [sp, #-0x10]!\n"
+		"	mrs x9, nzcv\n"
+		"	stp x7, x9, [sp, #-0x10]!\n"
+		"	ldr x7, 0x54\n"
+		"	stp x8, x6, [sp, #-0x10]!\n"
+		"	stp x4, x5, [sp, #-0x10]!\n"
+		"	stp x2, x3, [sp, #-0x10]!\n"
+		"	stp x0, x1, [sp, #-0x10]!\n"
+		"	ldr x1, 0x38\n"
+		"	mov x0, sp\n"
+		"	blr x7\n"
+		"	ldp x0, x1, [sp], #0x10\n"
+		"	ldp x2, x3, [sp], #0x10\n"
+		"	ldp x4, x5, [sp], #0x10\n"
+		"	ldp x8, x6, [sp], #0x10\n"
+		"	ldp x7, x9, [sp], #0x10\n"
+		"	msr nzcv, x9\n"
+		"	ldp x15, lr, [sp], #0x10\n"
+		"	ldp x13, x14, [sp], #0x10\n"
+		"	ldp x11, x12, [sp], #0x10\n"
+		"	ldp x9, x10, [sp], #0x90\n"
+		"	b " FS_NAME_ASM(trampoline_call_handler_end)
+			"\n"
+			".quad 0\n"
+			".quad 0\n" FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_address) "\n" FS_HIDDEN_FUNCTION_ASM(trampoline_call_handler_end) "\n");
 
 __asm__(
-".text\n"
-FS_HIDDEN_FUNCTION_ASM(breakpoint_call_handler_start) "\n"
-"	stp x30, xzr, [sp, #-0x10]!\n"
-"	stp x28, x29, [sp, #-0x10]!\n"
-"	stp x26, x27, [sp, #-0x10]!\n"
-"	stp x24, x25, [sp, #-0x10]!\n"
-"	stp x22, x23, [sp, #-0x10]!\n"
-"	stp x20, x21, [sp, #-0x10]!\n"
-"	stp x18, x19, [sp, #-0x10]!\n"
-"	stp x16, x17, [sp, #-0x10]!\n"
-"	stp x14, x15, [sp, #-0x10]!\n"
-"	stp x12, x13, [sp, #-0x10]!\n"
-"	stp x10, x11, [sp, #-0x10]!\n"
-"	stp x8, x9, [sp, #-0x10]!\n"
-"	stp x6, x7, [sp, #-0x10]!\n"
-"	ldr x7, 0x70\n"
-"	stp x4, x5, [sp, #-0x10]!\n"
-"	stp x2, x3, [sp, #-0x10]!\n"
-"	stp x0, x1, [sp, #-0x10]!\n"
-"	ldr x1, 0x58\n"
-"	mov x0, sp\n"
-"	mrs x9, nzcv\n"
-"	blr x7\n"
-"	msr nzcv, x9\n"
-"	ldp x0, x1, [sp], #0x10\n"
-"	ldp x2, x3, [sp], #0x10\n"
-"	ldp x4, x5, [sp], #0x10\n"
-"	ldp x6, x7, [sp], #0x10\n"
-"	ldp x8, x9, [sp], #0x10\n"
-"	ldp x10, x11, [sp], #0x10\n"
-"	ldp x12, x13, [sp], #0x10\n"
-"	ldp x14, x15, [sp], #0x10\n"
-"	ldp x16, x17, [sp], #0x10\n"
-"	ldp x18, x19, [sp], #0x10\n"
-"	ldp x20, x21, [sp], #0x10\n"
-"	ldp x22, x23, [sp], #0x10\n"
-"	ldp x24, x25, [sp], #0x10\n"
-"	ldp x26, x27, [sp], #0x10\n"
-"	ldp x28, x29, [sp], #0x10\n"
-"	ldr x30, [sp], #0x10\n"
-"	b "FS_NAME_ASM(breakpoint_call_handler_end)"\n"
-".quad 0\n"
-".quad 0\n"
-FS_HIDDEN_FUNCTION_ASM(breakpoint_call_handler_address) "\n"
-FS_HIDDEN_FUNCTION_ASM(breakpoint_call_handler_end) "\n"
-);
+	".text\n" FS_HIDDEN_FUNCTION_ASM(breakpoint_call_handler_start)
+		"\n"
+		"	stp x30, xzr, [sp, #-0x10]!\n"
+		"	stp x28, x29, [sp, #-0x10]!\n"
+		"	stp x26, x27, [sp, #-0x10]!\n"
+		"	stp x24, x25, [sp, #-0x10]!\n"
+		"	stp x22, x23, [sp, #-0x10]!\n"
+		"	stp x20, x21, [sp, #-0x10]!\n"
+		"	stp x18, x19, [sp, #-0x10]!\n"
+		"	stp x16, x17, [sp, #-0x10]!\n"
+		"	stp x14, x15, [sp, #-0x10]!\n"
+		"	stp x12, x13, [sp, #-0x10]!\n"
+		"	stp x10, x11, [sp, #-0x10]!\n"
+		"	stp x8, x9, [sp, #-0x10]!\n"
+		"	stp x6, x7, [sp, #-0x10]!\n"
+		"	ldr x7, 0x70\n"
+		"	stp x4, x5, [sp, #-0x10]!\n"
+		"	stp x2, x3, [sp, #-0x10]!\n"
+		"	stp x0, x1, [sp, #-0x10]!\n"
+		"	ldr x1, 0x58\n"
+		"	mov x0, sp\n"
+		"	mrs x9, nzcv\n"
+		"	blr x7\n"
+		"	msr nzcv, x9\n"
+		"	ldp x0, x1, [sp], #0x10\n"
+		"	ldp x2, x3, [sp], #0x10\n"
+		"	ldp x4, x5, [sp], #0x10\n"
+		"	ldp x6, x7, [sp], #0x10\n"
+		"	ldp x8, x9, [sp], #0x10\n"
+		"	ldp x10, x11, [sp], #0x10\n"
+		"	ldp x12, x13, [sp], #0x10\n"
+		"	ldp x14, x15, [sp], #0x10\n"
+		"	ldp x16, x17, [sp], #0x10\n"
+		"	ldp x18, x19, [sp], #0x10\n"
+		"	ldp x20, x21, [sp], #0x10\n"
+		"	ldp x22, x23, [sp], #0x10\n"
+		"	ldp x24, x25, [sp], #0x10\n"
+		"	ldp x26, x27, [sp], #0x10\n"
+		"	ldp x28, x29, [sp], #0x10\n"
+		"	ldr x30, [sp], #0x10\n"
+		"	b " FS_NAME_ASM(breakpoint_call_handler_end)
+			"\n"
+			".quad 0\n"
+			".quad 0\n" FS_HIDDEN_FUNCTION_ASM(breakpoint_call_handler_address) "\n" FS_HIDDEN_FUNCTION_ASM(breakpoint_call_handler_end) "\n");
 
 #define INS_SVC_0 0xd4000001
 #define INS_B_PC_REL 0x14000000
@@ -107,7 +103,8 @@ static void trampoline_body(struct thread_storage *thread, intptr_t data[7])
 }
 
 // receive_trampoline is called by trampolines to handle the intercepted syscall
-static void receive_trampoline(intptr_t data[7]) {
+static void receive_trampoline(intptr_t data[7])
+{
 	struct thread_storage *thread = get_thread_storage();
 	attempt_with_sufficient_stack(thread, (attempt_body)&trampoline_body, data);
 	if (data[0] == -ENOSYS) {
@@ -122,8 +119,7 @@ static bool is_valid_pc_relative_offset(intptr_t offset)
 }
 
 // destination_of_pc_relative_addr returns the destination address of a pc-relative offset
-__attribute__((unused))
-static inline intptr_t destination_of_pc_relative_addr(const uint32_t *addr)
+__attribute__((unused)) static inline intptr_t destination_of_pc_relative_addr(const uint32_t *addr)
 {
 	uint32_t mask = (1u << 26) - 1;
 	int32_t relative = (*addr ^ mask) - mask;
@@ -136,8 +132,7 @@ static inline bool is_syscall_instruction(const uint32_t *addr)
 	return *addr == INS_SVC_0;
 }
 
-__attribute__((warn_unused_result))
-static enum patch_status patch_common(struct thread_storage *thread, ins_ptr instruction, struct patch_template template, void *handler, bool skip, int self_fd);
+__attribute__((warn_unused_result)) static enum patch_status patch_common(struct thread_storage *thread, ins_ptr instruction, struct patch_template template, void *handler, bool skip, int self_fd);
 
 // patch_body attempts to patch a syscall instruction already having taken the shard's lock
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
@@ -186,11 +181,13 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 	uintptr_t stub_address;
 	struct attempt_cleanup_state lock_cleanup;
 	attempt_lock_and_push_mutex(thread, &lock_cleanup, &region_lock);
-	if (current_region && trampoline_region_has_space((uint8_t *)current_region, (uintptr_t)template.end - (uintptr_t)template.start + sizeof(uintptr_t)) && is_valid_pc_relative_offset((intptr_t)current_region - ((uintptr_t)instruction + sizeof(uint32_t)))) {
+	if (current_region && trampoline_region_has_space((uint8_t *)current_region, (uintptr_t)template.end - (uintptr_t)template.start + sizeof(uintptr_t)) &&
+	    is_valid_pc_relative_offset((intptr_t)current_region - ((uintptr_t)instruction + sizeof(uint32_t))))
+	{
 		// Have at least LARGEST_TRAMPOLINE bytes left in the trampoline page and the trampoline's address is compatible with a PC-relative jump
 		stub_address = (uintptr_t)current_region;
 	} else {
-		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE, self_fd, PAGE_SIZE);
+		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE, self_fd, PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 			PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
@@ -208,10 +205,9 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 				PATCH_LOG("Failed to patch: invalid pc-relative offset");
 				fs_munmap((void *)new_mapping, TRAMPOLINE_REGION_SIZE);
 				return PATCH_STATUS_FAILED;
-
 			}
 #ifdef SYS_mremap
-			void *new_attempt = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
+			void *new_attempt = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, (void *)stub_address);
 			if (UNLIKELY(fs_is_map_failed(new_attempt))) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 				PATCH_LOG("Failed to patch: mremap failed", -(intptr_t)new_mapping);
@@ -221,7 +217,7 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 			new_mapping = new_attempt;
 #else
 			fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
-			new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_FIXED|MAP_PRIVATE, self_fd, PAGE_SIZE);
+			new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_FIXED | MAP_PRIVATE, self_fd, PAGE_SIZE);
 			if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 				PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);

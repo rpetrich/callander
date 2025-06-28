@@ -5,18 +5,15 @@
 
 #include <link.h>
 
-__attribute__((visibility("default")))
-extern struct r_debug _r_debug;
+__attribute__((visibility("default"))) extern struct r_debug _r_debug;
 
 // _dl_debug_state is a function that is called whenever the link map changes.
 // Debuggers know this function by name and will set a breakpoint on it to
 // detect when the link map changes
-__attribute__((visibility("default")))
-void _dl_debug_state(void);
+__attribute__((visibility("default"))) void _dl_debug_state(void);
 
 // debug_field_for_self returns the address of the DT_DEBUG field
-__attribute__((warn_unused_result))
-uintptr_t *debug_field_for_self(const struct binary_info *self_info);
+__attribute__((warn_unused_result)) uintptr_t *debug_field_for_self(const struct binary_info *self_info);
 
 // debug_init initializes debugger support
 void debug_init(struct r_debug *main_debug, void (*update_callback)(void));
@@ -35,6 +32,6 @@ void debug_intercept_system_loader(int fd, const struct binary_info *info);
 // debug_find_library finds the library containing a specific address. May
 // spuriously return a library when the specified address is not within a
 // shared object
-bool debug_find_library(const void *addr, const ElfW(Ehdr) **out_base_address, const char **out_path);
+bool debug_find_library(const void *addr, const ElfW(Ehdr) * *out_base_address, const char **out_path);
 
 #endif

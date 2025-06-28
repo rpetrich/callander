@@ -2,8 +2,8 @@
 
 #include <linux/limits.h>
 
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 
 static void install_at_lib_path(const char *path)
 {
@@ -19,12 +19,12 @@ static void install_at_lib_path(const char *path)
 		if (count <= 0) {
 			break;
 		}
-		for (int offset = 0; offset < count; ) {
+		for (int offset = 0; offset < count;) {
 			const struct fs_dirent *ent = (const struct fs_dirent *)&buf[offset];
 			const char *name = ent->d_name;
 			if (fs_strncmp(name, "ld-", 3) == 0) {
 				size_t len = fs_strlen(name);
-				if (len > 5 && fs_strncmp(&name[len-5], ".so.", 4) == 0) {
+				if (len > 5 && fs_strncmp(&name[len - 5], ".so.", 4) == 0) {
 					char new_path[PATH_MAX];
 					fs_memcpy(new_path, name, len);
 					fs_memcpy(&new_path[len], ".axon", sizeof(".axon"));
@@ -40,7 +40,7 @@ static void install_at_lib_path(const char *path)
 			}
 			offset += ent->d_reclen;
 		}
-    }
+	}
 	fs_close(dirfd);
 }
 

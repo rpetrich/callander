@@ -7,8 +7,8 @@
 #include <fcntl.h>
 #include <netinet/ip.h>
 #include <poll.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>

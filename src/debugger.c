@@ -1,13 +1,14 @@
 #include "debugger.h"
 
 #include "attempt.h"
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 #include "libraries.h"
 #include "patch.h"
 #include "tls.h"
 
-struct debug {
+struct debug
+{
 	int version;
 	struct link_map *map;
 	void (*update)();
@@ -19,18 +20,16 @@ static struct link_map maps[4];
 static size_t next_map;
 static struct fs_mutex link_lock;
 
-__attribute__((visibility("default")))
-struct r_debug _r_debug;
+__attribute__((visibility("default"))) struct r_debug _r_debug;
 static struct r_debug *debug;
 
-__attribute__((visibility("default")))
-__attribute__((noinline))
-void _dl_debug_state(void)
+__attribute__((visibility("default"))) __attribute__((noinline)) void _dl_debug_state(void)
 {
 	__asm__ __volatile__("" : : : "memory");
 }
 
-static void add_link_map(void *base, const char *name, const void *dynamic) {
+static void add_link_map(void *base, const char *name, const void *dynamic)
+{
 	debug->r_state = RT_ADD;
 	((void (*)(void))debug->r_brk)();
 	maps[next_map].l_addr = (ElfW(Addr))base;
@@ -41,8 +40,8 @@ static void add_link_map(void *base, const char *name, const void *dynamic) {
 		field = &debug->r_map;
 		maps[next_map].l_prev = NULL;
 	} else {
-		field = &maps[next_map-1].l_next;
-		maps[next_map].l_prev = &maps[next_map-1];
+		field = &maps[next_map - 1].l_next;
+		maps[next_map].l_prev = &maps[next_map - 1];
 	}
 	if (*field) {
 		(*field)->l_prev = &maps[next_map];
@@ -126,7 +125,7 @@ void debug_intercept_system_loader(int fd, const struct binary_info *info)
 	}
 }
 
-bool debug_find_library(const void *addr, const ElfW(Ehdr) **out_base_address, const char **out_path)
+bool debug_find_library(const void *addr, const ElfW(Ehdr) * *out_base_address, const char **out_path)
 {
 	if (!debug) {
 		return false;

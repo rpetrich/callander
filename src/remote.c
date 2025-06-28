@@ -8,8 +8,8 @@
 #include "windows.h"
 
 #include <dirent.h>
-#include <string.h>
 #include <sched.h>
+#include <string.h>
 
 intptr_t remote_mkdirat(int dirfd, const char *path, mode_t mode)
 {
@@ -269,7 +269,6 @@ intptr_t remote_sendmsg(struct thread_storage *thread, int fd, const struct msgh
 	return result;
 }
 
-
 void remote_close(int fd)
 {
 	PROXY_LINUX_CALL(LINUX_SYS_close | PROXY_NO_RESPONSE, proxy_value(fd));
@@ -503,8 +502,7 @@ intptr_t remote_ppoll(struct pollfd *fds, nfds_t nfds, struct timespec *timeout)
 	return PROXY_LINUX_CALL(LINUX_SYS_ppoll, proxy_inout(fds, sizeof(struct pollfd) * nfds), proxy_value(nfds), timeout != NULL ? proxy_inout(timeout, sizeof(struct timespec)) : proxy_value(0), proxy_value(0), proxy_value(0));
 }
 
-__attribute__((noinline))
-intptr_t invalid_remote_operation(void)
+__attribute__((noinline)) intptr_t invalid_remote_operation(void)
 {
 	return -EINVAL;
 }

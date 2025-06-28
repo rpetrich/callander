@@ -18,25 +18,25 @@
 #endif
 #include <sys/user.h>
 
-#include "bpf_debug.h"
-#include "exec.h"
-#include "ins.h"
-#include "dlmalloc.h"
-#include "freestanding.h"
 #include "axon.h"
+#include "bpf_debug.h"
+#include "dlmalloc.h"
+#include "exec.h"
+#include "freestanding.h"
+#include "ins.h"
 #include "loader.h"
 #include "mapped.h"
 #include "qsort.h"
 #include "search.h"
 
-
 AXON_BOOTSTRAP_ASM
 
 #ifndef SA_RESTORER
-#define SA_RESTORER	0x04000000
+#define SA_RESTORER 0x04000000
 #endif
 
-enum attach_behavior {
+enum attach_behavior
+{
 	DETACH_AT_START,
 	STAY_ATTACHED,
 	ATTACH_GDB,
@@ -52,7 +52,7 @@ static void write_profile(const struct loader_context *loader, const struct reco
 		DIE("error opening profile", fs_strerror(fd));
 	}
 	// headers
-	intptr_t result = fs_write_all(fd, PROFILE_HEADER_LINE"\n\n", sizeof(PROFILE_HEADER_LINE"\n\n")-1);
+	intptr_t result = fs_write_all(fd, PROFILE_HEADER_LINE "\n\n", sizeof(PROFILE_HEADER_LINE "\n\n") - 1);
 	if (result < 0) {
 		goto error_write;
 	}
@@ -94,7 +94,8 @@ error_write:
 	DIE("error writing profile", fs_strerror(result));
 }
 
-struct line_buf {
+struct line_buf
+{
 	char buf[4096];
 	size_t consumed;
 	size_t remaining;
@@ -220,7 +221,7 @@ static bool read_hex_numeric_offset(const struct loader_context *loader, char *b
 {
 	size_t num_pos = 0;
 	for (size_t i = 0; i < len; i++) {
-		if (buf[i] == '+' && buf[i+1] == '0' && buf[i+2] == 'x') {
+		if (buf[i] == '+' && buf[i + 1] == '0' && buf[i + 2] == 'x') {
 			num_pos = i + 1;
 			break;
 		}
@@ -262,8 +263,7 @@ static bool parse_and_load_syscall_line(struct program_state *analysis, char *bu
 		}
 	}
 	return false;
-found_paren:
-	;
+found_paren:;
 	// find syscall number
 	uintptr_t nr = 0;
 	for (; nr < sizeof(syscall_list) / sizeof(syscall_list[0]); nr++) {
@@ -276,8 +276,7 @@ found_paren:
 	if (fs_scanu(buf, &nr) != &buf[name_len]) {
 		return false;
 	}
-found_number:
-	;
+found_number:;
 	struct recorded_syscalls *syscalls = &analysis->syscalls;
 	int index = syscalls->count++;
 	if (syscalls->list == NULL) {
@@ -356,7 +355,7 @@ static bool read_profile(struct program_state *analysis, const char *path)
 	lines.remaining = 0;
 	// validate header
 	ssize_t char_count = read_line(fd, &lines);
-	if (char_count != sizeof(PROFILE_HEADER_LINE)-1 || fs_strncmp(&lines.buf[0], PROFILE_HEADER_LINE, sizeof(PROFILE_HEADER_LINE)-1) != 0) {
+	if (char_count != sizeof(PROFILE_HEADER_LINE) - 1 || fs_strncmp(&lines.buf[0], PROFILE_HEADER_LINE, sizeof(PROFILE_HEADER_LINE) - 1) != 0) {
 		goto finish_profile;
 	}
 	// validate empty line
@@ -423,8 +422,7 @@ static void log_used_binaries(const struct loader_context *loader)
 	ERROR("loaded binaries", temp_str(copy_used_binaries(loader)));
 }
 
-__attribute__((used)) __attribute__((visibility("hidden")))
-void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
+__attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
 {
 	// load the main executable path
 	struct loaded_binary *loaded;
@@ -443,7 +441,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	const char *ld_preload = analysis->ld_preload;
 	if (ld_preload) {
 		int cur = 0;
-		for (int i = 0; ; i++) {
+		for (int i = 0;; i++) {
 			if (ld_preload[i] == ':' || ld_preload[i] == ' ' || ld_preload[i] == '\0') {
 				char *preload_path = malloc(i - cur + 1);
 				fs_memcpy(preload_path, &ld_preload[cur], i - cur);
@@ -460,7 +458,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 				if (ld_preload[i] == '\0') {
 					break;
 				}
-				cur = i+1;
+				cur = i + 1;
 			}
 		}
 	}
@@ -495,7 +493,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		}
 		if (vdso->has_symbols) {
 			LOG("analyzing symbols for", vdso->path);
-			struct analysis_frame vdso_caller = { .address = vdso->info.base, .description = "vdso", .next = NULL, .current_state = empty_registers, .entry = vdso->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			struct analysis_frame vdso_caller = {.address = vdso->info.base, .description = "vdso", .next = NULL, .current_state = empty_registers, .entry = vdso->info.base, .entry_state = &empty_registers, .token = {0}};
 			analyze_function_symbols(analysis, vdso, &vdso->symbols, &vdso_caller);
 		} else {
 			DIE("expected vDSO to have symbols");
@@ -511,10 +509,10 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 			DIE("could not resolve main function", analysis->main_function_name);
 		}
 		analysis->main = (uintptr_t)main;
-		struct analysis_frame new_caller = { .address = loaded->info.base, .description = "main", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = {.address = loaded->info.base, .description = "main", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
 		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, main, &new_caller);
 	} else {
-		struct analysis_frame new_caller = { .address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = {.address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
 		analyze_function(analysis, EFFECT_ENTRY_POINT | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, loaded->info.entrypoint, &new_caller);
 		if (analysis->main == (uintptr_t)loaded->info.entrypoint) {
 			// reanalyze, since we didn't find a main
@@ -530,7 +528,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
 		// LOG("assuming interpreter can run after startup");
-		struct analysis_frame new_caller = { .address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame new_caller = {.address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
 		analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, interpreter->info.entrypoint, &new_caller);
 	} else {
 		LOG("no interpreter for this binary");
@@ -554,14 +552,14 @@ static intptr_t waitpid_uninterrupted(pid_t pid, int *status, int options)
 	intptr_t result;
 	do {
 		result = FS_SYSCALL(__NR_wait4, pid, (intptr_t)status, options, 0);
-	} while(result == -EINTR);
+	} while (result == -EINTR);
 	return result;
 }
 
 static int populate_child_addresses(pid_t pid, struct loader_context *loader, bool allow_unexpected)
 {
 	char procbuf[64];
-	fs_memcpy(procbuf, "/proc/", sizeof("/proc/")-1);
+	fs_memcpy(procbuf, "/proc/", sizeof("/proc/") - 1);
 	int offset = fs_itoa(pid, &procbuf[sizeof("/proc/") - 1]);
 	fs_memcpy(&procbuf[sizeof("/proc/") - 1 + offset], "/maps", sizeof("/maps"));
 	int fd = fs_open(procbuf, O_RDONLY | O_CLOEXEC, 0);
@@ -603,8 +601,7 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader, bo
 				DIE("found unexpected binary in running process", &mapping.path[0]);
 			}
 		}
-	next_mapping:
-		;
+	next_mapping:;
 	}
 	fs_close(fd);
 	return result;
@@ -664,15 +661,15 @@ static struct mapped_region_info copy_sorted_mapped_regions(const struct loader_
 	qsort_r_freestanding(regions, count, sizeof(struct mapped_region), compare_regions, NULL);
 	// merge overlapping addresses
 	for (int i = count - 1; i > 0; i--) {
-		if (regions[i].start <= regions[i-1].end) {
-			regions[i-1].end = regions[i].end;
+		if (regions[i].start <= regions[i - 1].end) {
+			regions[i - 1].end = regions[i].end;
 			count--;
 			for (int j = i; j < count; j++) {
-				regions[j] = regions[j+1];
+				regions[j] = regions[j + 1];
 			}
 		}
 	}
-	return (struct mapped_region_info) {
+	return (struct mapped_region_info){
 		.list = regions,
 		.count = count,
 	};
@@ -690,8 +687,7 @@ static void wait_for_ptrace_event(enum __ptrace_request request, pid_t pid)
 	waitpid_uninterrupted(pid, &status, 0);
 }
 
-__attribute__((warn_unused_result))
-static intptr_t ptrace_getregs(pid_t pid, struct user_regs_struct *regs)
+__attribute__((warn_unused_result)) static intptr_t ptrace_getregs(pid_t pid, struct user_regs_struct *regs)
 {
 #ifdef PTRACE_GETREGS
 	return fs_ptrace(PTRACE_GETREGS, pid, 0, &regs);
@@ -704,8 +700,7 @@ static intptr_t ptrace_getregs(pid_t pid, struct user_regs_struct *regs)
 #endif
 }
 
-__attribute__((warn_unused_result))
-static intptr_t ptrace_setregs(pid_t pid, const struct user_regs_struct *regs)
+__attribute__((warn_unused_result)) static intptr_t ptrace_setregs(pid_t pid, const struct user_regs_struct *regs)
 {
 #ifdef PTRACE_SETREGS
 	return fs_ptrace(PTRACE_SETREGS, pid, 0, &regs);
@@ -772,8 +767,8 @@ static char *remote_read_string(pid_t pid, uintptr_t address)
 	}
 	for (size_t i = 0; i < remaining_in_page; i++) {
 		if (buf[i] == '\0') {
-			char *str = malloc(i+1);
-			memcpy(str, buf, i+1);
+			char *str = malloc(i + 1);
+			memcpy(str, buf, i + 1);
 			return str;
 		}
 	}
@@ -783,8 +778,8 @@ static char *remote_read_string(pid_t pid, uintptr_t address)
 	}
 	for (size_t i = remaining_in_page; i < remaining_in_page + PAGE_SIZE; i++) {
 		if (buf[i] == '\0') {
-			char *str = malloc(i+1);
-			memcpy(str, buf, i+1);
+			char *str = malloc(i + 1);
+			memcpy(str, buf, i + 1);
 			return str;
 		}
 	}
@@ -811,7 +806,8 @@ static void remote_apply_seccomp_filter(int tracee, struct user_regs_struct regs
 	}
 }
 
-static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_struct regs, intptr_t remote_address, struct loader_context *loader, struct recorded_syscalls *syscalls, const struct mapped_region_info *regions, uint32_t syscall_range_low, uint32_t syscall_range_high, struct sock_fprog *out_prog)
+static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_struct regs, intptr_t remote_address, struct loader_context *loader, struct recorded_syscalls *syscalls, const struct mapped_region_info *regions,
+                                                 uint32_t syscall_range_low, uint32_t syscall_range_high, struct sock_fprog *out_prog)
 {
 	struct sock_fprog prog = generate_seccomp_program(loader, syscalls, regions, syscall_range_low, syscall_range_high);
 	if (prog.len <= BPF_MAXINSNS) {
@@ -832,13 +828,13 @@ static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_st
 		DIE("syscall has too many call sites to generate a seccomp program", name_for_syscall(syscall_range_low));
 	}
 	// split, so half the syscalls are in one program and half in another
-	uint32_t mid = syscall_range_low + ((syscall_range_high == ~(uint32_t)0 ? syscalls->list[syscalls->count-1].nr : syscall_range_high) - syscall_range_low) / 2;
+	uint32_t mid = syscall_range_low + ((syscall_range_high == ~(uint32_t)0 ? syscalls->list[syscalls->count - 1].nr : syscall_range_high) - syscall_range_low) / 2;
 	// apply both programs, being sure to load the program containing __NR_seccomp later since it will block additional program loads
 	if (__NR_seccomp > mid) {
 		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, syscall_range_low, mid, NULL);
-		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, mid+1, syscall_range_high, NULL);
+		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, mid + 1, syscall_range_high, NULL);
 	} else {
-		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, mid+1, syscall_range_high, NULL);
+		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, mid + 1, syscall_range_high, NULL);
 		remote_apply_seccomp_filter_or_split(tracee, regs, remote_address, loader, syscalls, regions, syscall_range_low, mid, NULL);
 	}
 }
@@ -862,7 +858,7 @@ static int compare_reachable_regions(const void *left, const void *right, __attr
 	return 0;
 }
 
-typedef void (*poke_unreachable_callback)(const ElfW(Shdr) *section, intptr_t address, size_t size, void *data);
+typedef void (*poke_unreachable_callback)(const ElfW(Shdr) * section, intptr_t address, size_t size, void *data);
 
 static inline bool bsearch_address_callback(int index, void *items, void *needle)
 {
@@ -870,7 +866,7 @@ static inline bool bsearch_address_callback(int index, void *items, void *needle
 	return (uintptr_t)regions[index].entry >= (uintptr_t)needle;
 }
 
-static void enumerate_unreachable_regions_in_section(struct program_state *analysis, const ElfW(Shdr) *section, uintptr_t address, size_t size, poke_unreachable_callback callback, void *callback_data)
+static void enumerate_unreachable_regions_in_section(struct program_state *analysis, const ElfW(Shdr) * section, uintptr_t address, size_t size, poke_unreachable_callback callback, void *callback_data)
 {
 	uintptr_t end = address + size;
 	size_t total = 0;
@@ -907,7 +903,7 @@ static void enumerate_unreachable_regions_in_binary(struct program_state *analys
 			const ElfW(Shdr) *section = (const ElfW(Shdr) *)(sections + i * entry_size);
 			if (section->sh_addr != 0) {
 				uint64_t flags = section->sh_flags;
-				if ((flags & (SHF_ALLOC|SHF_EXECINSTR)) == (SHF_ALLOC|SHF_EXECINSTR)) {
+				if ((flags & (SHF_ALLOC | SHF_EXECINSTR)) == (SHF_ALLOC | SHF_EXECINSTR)) {
 					LOG("poking section", &binary->sections.strings[section->sh_name]);
 					enumerate_unreachable_regions_in_section(analysis, section, apply_base_address(&binary->info, section->sh_addr), section->sh_size, callback, callback_data);
 				}
@@ -924,7 +920,7 @@ static void enumerate_unreachable_regions_in_binary(struct program_state *analys
 	}
 }
 
-static void poke_breakpoint_region(const ElfW(Shdr) *section, intptr_t address, size_t size, void *data)
+static void poke_breakpoint_region(const ElfW(Shdr) * section, intptr_t address, size_t size, void *data)
 {
 	(void)section;
 	struct loader_context *loader = data;
@@ -949,7 +945,8 @@ static void poke_breakpoint_region(const ElfW(Shdr) *section, intptr_t address, 
 	}
 }
 
-struct local_breakpoint_data {
+struct local_breakpoint_data
+{
 	struct program_state *analysis;
 	void *address;
 };
@@ -1035,8 +1032,8 @@ static char *copy_path_with_subpath(const char *path, size_t path_len, const cha
 	char *result = malloc(path_len + 1 + subpath_len + 1);
 	fs_memcpy(result, path, path_len);
 	result[path_len] = '/';
-	fs_memcpy(&result[path_len+1], subpath, subpath_len);
-	result[path_len+1+subpath_len] = '\0';
+	fs_memcpy(&result[path_len + 1], subpath, subpath_len);
+	result[path_len + 1 + subpath_len] = '\0';
 	return result;
 }
 
@@ -1059,8 +1056,8 @@ static int add_dlopen_paths_recursively(struct program_state *analysis, const ch
 			}
 			break;
 		}
-		for (const char *current_required_suffix = required_suffixes; ;) {
-			for (int offset = 0; offset < count; ) {
+		for (const char *current_required_suffix = required_suffixes;;) {
+			for (int offset = 0; offset < count;) {
 				const struct fs_dirent *ent = (const struct fs_dirent *)&buf[offset];
 				const char *name = ent->d_name;
 				const char *needle = current_required_suffix;
@@ -1082,7 +1079,7 @@ static int add_dlopen_paths_recursively(struct program_state *analysis, const ch
 					char *child_path = copy_path_with_subpath(path, prefix_len, name, fs_strlen(name));
 					int result = add_dlopen_paths_recursively(analysis, child_path, required_suffixes);
 					free(child_path);
-					if (result < 0){
+					if (result < 0) {
 						fs_close(fd);
 						return result;
 					}
@@ -1123,7 +1120,7 @@ static int query_program_version(const char *program_path, char *const envp[], c
 				args[0] = program_path;
 				args[1] = "--version";
 				args[2] = NULL;
-				result = fs_execve(program_path, (char * const*)args, envp);
+				result = fs_execve(program_path, (char *const *)args, envp);
 			}
 		}
 		fs_exit(-result);
@@ -1133,7 +1130,7 @@ static int query_program_version(const char *program_path, char *const envp[], c
 	size_t size = PAGE_SIZE;
 	size_t offset = 0;
 	for (;;) {
-		result = fs_read(pipes[0], &buf[offset], size-offset);
+		result = fs_read(pipes[0], &buf[offset], size - offset);
 		if (result <= 0) {
 			if (result == -EINTR) {
 				continue;
@@ -1202,56 +1199,56 @@ static bool parse_version_components(char *version_output, const char **out_majo
 	return true;
 }
 
-#define MAKE_VERSION_BUF(name, prefix, separator, suffix) \
+#define MAKE_VERSION_BUF(name, prefix, separator, suffix)       \
 	char name[sizeof(prefix "xxxxx" separator "xxxxx" suffix)]; \
-	do { \
-		size_t major_len = fs_strlen(version_major); \
-		size_t minor_len = fs_strlen(version_minor); \
-		if (major_len + minor_len > 10) { \
-			DIE("invalid version"); \
-		} \
-		char *buf = name; \
-		fs_memcpy(buf, prefix, sizeof(prefix)-1); \
-		buf += sizeof(prefix)-1; \
-		fs_memcpy(buf, version_major, major_len); \
-		buf += major_len; \
-		fs_memcpy(buf, separator, sizeof(separator)-1); \
-		buf += sizeof(separator)-1; \
-		fs_memcpy(buf, version_minor, minor_len); \
-		buf += minor_len; \
-		fs_memcpy(buf, suffix, sizeof(suffix)); \
-	} while(0)
+	do {                                                        \
+		size_t major_len = fs_strlen(version_major);            \
+		size_t minor_len = fs_strlen(version_minor);            \
+		if (major_len + minor_len > 10) {                       \
+			DIE("invalid version");                             \
+		}                                                       \
+		char *buf = name;                                       \
+		fs_memcpy(buf, prefix, sizeof(prefix) - 1);             \
+		buf += sizeof(prefix) - 1;                              \
+		fs_memcpy(buf, version_major, major_len);               \
+		buf += major_len;                                       \
+		fs_memcpy(buf, separator, sizeof(separator) - 1);       \
+		buf += sizeof(separator) - 1;                           \
+		fs_memcpy(buf, version_minor, minor_len);               \
+		buf += minor_len;                                       \
+		fs_memcpy(buf, suffix, sizeof(suffix));                 \
+	} while (0)
 
-#define MAKE_FULL_VERSION_BUF(name, prefix, separator, separator2, suffix) \
+#define MAKE_FULL_VERSION_BUF(name, prefix, separator, separator2, suffix)         \
 	char name[sizeof(prefix "xxxxx" separator "xxxxx" separator2 "xxxxx" suffix)]; \
-	do { \
-		size_t major_len = fs_strlen(version_major); \
-		size_t minor_len = fs_strlen(version_minor); \
-		size_t patch_len = fs_strlen(version_patch); \
-		if (major_len + minor_len + patch_len > 15) { \
-			DIE("invalid version"); \
-		} \
-		char *buf = name; \
-		fs_memcpy(buf, prefix, sizeof(prefix)-1); \
-		buf += sizeof(prefix)-1; \
-		fs_memcpy(buf, version_major, major_len); \
-		buf += major_len; \
-		fs_memcpy(buf, separator, sizeof(separator)-1); \
-		buf += sizeof(separator)-1; \
-		fs_memcpy(buf, version_minor, minor_len); \
-		buf += minor_len; \
-		fs_memcpy(buf, separator, sizeof(separator2)-1); \
-		buf += sizeof(separator2)-1; \
-		fs_memcpy(buf, version_patch, patch_len); \
-		buf += patch_len; \
-		fs_memcpy(buf, suffix, sizeof(suffix)); \
-	} while(0)
+	do {                                                                           \
+		size_t major_len = fs_strlen(version_major);                               \
+		size_t minor_len = fs_strlen(version_minor);                               \
+		size_t patch_len = fs_strlen(version_patch);                               \
+		if (major_len + minor_len + patch_len > 15) {                              \
+			DIE("invalid version");                                                \
+		}                                                                          \
+		char *buf = name;                                                          \
+		fs_memcpy(buf, prefix, sizeof(prefix) - 1);                                \
+		buf += sizeof(prefix) - 1;                                                 \
+		fs_memcpy(buf, version_major, major_len);                                  \
+		buf += major_len;                                                          \
+		fs_memcpy(buf, separator, sizeof(separator) - 1);                          \
+		buf += sizeof(separator) - 1;                                              \
+		fs_memcpy(buf, version_minor, minor_len);                                  \
+		buf += minor_len;                                                          \
+		fs_memcpy(buf, separator, sizeof(separator2) - 1);                         \
+		buf += sizeof(separator2) - 1;                                             \
+		fs_memcpy(buf, version_patch, patch_len);                                  \
+		buf += patch_len;                                                          \
+		fs_memcpy(buf, suffix, sizeof(suffix));                                    \
+	} while (0)
 
 static int apply_program_special_cases(struct program_state *analysis, const char *program_path, char *const envp[])
 {
 	const char *slash = fs_strrchr(program_path, '/');
 	const char *program_name = *slash != '\0' ? &slash[1] : program_path;
-	if (fs_strncmp(program_name, "python", sizeof("python")-1) == 0) {
+	if (fs_strncmp(program_name, "python", sizeof("python") - 1) == 0) {
 		// found a python!
 		analysis->loader.ignore_dlopen = true;
 		char *version_string;
@@ -1260,7 +1257,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (result < 0) {
 			DIE("failed reading python version", fs_strerror(result));
 		}
-		version_string[version_string_size-1] = '\0';
+		version_string[version_string_size - 1] = '\0';
 		const char *version_major;
 		const char *version_minor;
 		const char *version_patch;
@@ -1271,7 +1268,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		MAKE_VERSION_BUF(dynload64_buf, "/usr/lib64/python", ".", "/lib-dynload");
 		MAKE_VERSION_BUF(site_packages_buf, "/usr/lib/python", ".", "/site-packages");
 		MAKE_VERSION_BUF(site_packages64_buf, "/usr/lib64/python", ".", "/site-packages");
-		MAKE_VERSION_BUF(suffix_buf, ".cpython-", "", "-"ARCH_NAME"-linux-gnu.so:.abi3.so");
+		MAKE_VERSION_BUF(suffix_buf, ".cpython-", "", "-" ARCH_NAME "-linux-gnu.so:.abi3.so");
 		free(version_string);
 		result = add_dlopen_paths_recursively(analysis, dynload_buf, suffix_buf);
 		if (result < 0) {
@@ -1293,7 +1290,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (result < 0) {
 			return result;
 		}
-	} else if (fs_strncmp(program_name, "ruby", sizeof("ruby")-1) == 0) {
+	} else if (fs_strncmp(program_name, "ruby", sizeof("ruby") - 1) == 0) {
 		analysis->loader.ignore_dlopen = true;
 		char *version_string;
 		size_t version_string_size;
@@ -1301,7 +1298,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (result < 0) {
 			DIE("failed reading ruby version", fs_strerror(result));
 		}
-		version_string[version_string_size-1] = '\0';
+		version_string[version_string_size - 1] = '\0';
 		const char *version_major;
 		const char *version_minor;
 		const char *version_patch;
@@ -1318,12 +1315,12 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		if (result < 0) {
 			return result;
 		}
-		MAKE_FULL_VERSION_BUF(usr_lib_buf, "/usr/lib/"ARCH_NAME"-linux-gnu/ruby/", ".", ".", "");
+		MAKE_FULL_VERSION_BUF(usr_lib_buf, "/usr/lib/" ARCH_NAME "-linux-gnu/ruby/", ".", ".", "");
 		result = add_dlopen_paths_recursively(analysis, usr_lib_buf, ".so");
 		if (result < 0) {
 			return result;
 		}
-	} else if (fs_strncmp(program_name, "perl", sizeof("perl")-1) == 0) {
+	} else if (fs_strncmp(program_name, "perl", sizeof("perl") - 1) == 0) {
 		add_blocked_symbol(&analysis->known_symbols, "Perl_pp_syscall", NORMAL_SYMBOL | LINKER_SYMBOL, false);
 	}
 	return 0;
@@ -1339,7 +1336,7 @@ static char **copy_argv_with_prefixes(char **argv, char *arg0, char *arg1)
 		result[1] = arg1;
 	}
 	for (size_t i = 0; i <= existing_argc; i++) {
-		result[starting_offset+i] = argv[i];
+		result[starting_offset + i] = argv[i];
 	}
 	return result;
 }
@@ -1378,7 +1375,7 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 		.handler = SIG_DFL,
 		.flags = SA_RESTORER,
 		.restorer = (void *)&__restore,
-		.mask = { 0 },
+		.mask = {0},
 	};
 	int sa_result = fs_sigaction(SIGSEGV, &sa, NULL);
 	if (sa_result < 0) {
@@ -1387,24 +1384,23 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 }
 
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
-__attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
+#pragma GCC optimize("-fomit-frame-pointer")
+__attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused)) int argc, char *argv[], char *envp[])
 {
 	// Find PATH and LD_PRELOAD
 	int envp_count = 0;
 	const char *path = "/bin:/usr/bin";
 	for (char **s = envp; *s != NULL; s++) {
-		if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) == 0) {
-			analysis.ld_preload = *s + sizeof("LD_PRELOAD=")-1;
+		if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=") - 1) == 0) {
+			analysis.ld_preload = *s + sizeof("LD_PRELOAD=") - 1;
 		} else {
-			if (fs_strncmp(*s, "PATH=", sizeof("PATH=")-1) == 0) {
-				const char *new_path = &(*s)[sizeof("PATH=")-1];
+			if (fs_strncmp(*s, "PATH=", sizeof("PATH=") - 1) == 0) {
+				const char *new_path = &(*s)[sizeof("PATH=") - 1];
 				if (*new_path != '\0') {
 					path = new_path;
 				}
-			} else if (fs_strncmp(*s, "LD_PROFILE=", sizeof("LD_PROFILE=")-1) == 0) {
-				const char *new_path = &(*s)[sizeof("LD_PROFILE=")-1];
+			} else if (fs_strncmp(*s, "LD_PROFILE=", sizeof("LD_PROFILE=") - 1) == 0) {
+				const char *new_path = &(*s)[sizeof("LD_PROFILE=") - 1];
 				if (*new_path != '\0') {
 					analysis.ld_profile = new_path;
 				}
@@ -1441,7 +1437,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 		bool is_permit = fs_strcmp(arg, "--permit-syscall") == 0;
 		bool is_block = fs_strcmp(arg, "--block-syscall") == 0;
 		if (is_permit || is_block || fs_strcmp(arg, "--debug-syscall") == 0) {
-			const char *syscall_name = argv[executable_index+1];
+			const char *syscall_name = argv[executable_index + 1];
 			if (syscall_name == NULL) {
 				if (is_permit) {
 					ERROR("--permit-syscall requires an argument");
@@ -1456,13 +1452,18 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 			for (size_t i = 0; i < sizeof(syscall_list) / sizeof(syscall_list[0]); i++) {
 				if (syscall_list[i].name && fs_strcmp(syscall_list[i].name, syscall_name) == 0) {
 					if (is_permit) {
-						record_syscall(&analysis, i, (struct analysis_frame){
-							.address = NULL, .description = "permit", .next = NULL,
-							.current_state = empty_registers,
-							.entry = NULL,
-							.entry_state = &empty_registers,
-							.token = { 0 },
-						}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+						record_syscall(&analysis,
+						               i,
+						               (struct analysis_frame){
+										   .address = NULL,
+										   .description = "permit",
+										   .next = NULL,
+										   .current_state = empty_registers,
+										   .entry = NULL,
+										   .entry_state = &empty_registers,
+										   .token = {0},
+									   },
+						               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 					} else if (is_block) {
 						analysis.syscalls.config[i] |= SYSCALL_CONFIG_BLOCK;
 					} else {
@@ -1481,7 +1482,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 			analysis.syscalls.config[__NR_execve] |= SYSCALL_CONFIG_BLOCK;
 			analysis.syscalls.config[__NR_execveat] |= SYSCALL_CONFIG_BLOCK;
 		} else if (fs_strcmp(arg, "--block-function") == 0) {
-			const char *function_name = argv[executable_index+1];
+			const char *function_name = argv[executable_index + 1];
 			if (function_name == NULL) {
 				ERROR("--block-function requires an argument");
 				return 1;
@@ -1492,7 +1493,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 				attach = STAY_ATTACHED;
 			}
 		} else if (fs_strcmp(arg, "--block-debug-function") == 0) {
-			const char *function_name = argv[executable_index+1];
+			const char *function_name = argv[executable_index + 1];
 			if (function_name == NULL) {
 				ERROR("--block-debug-function requires an argument");
 				return 1;
@@ -1507,7 +1508,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 		} else if (fs_strcmp(arg, "--ignore-dlopen") == 0) {
 			analysis.loader.ignore_dlopen = true;
 		} else if (fs_strcmp(arg, "--dlopen") == 0) {
-			const char *dlopen_path = argv[executable_index+1];
+			const char *dlopen_path = argv[executable_index + 1];
 			if (dlopen_path == NULL) {
 				ERROR("--dlopen requires an argument");
 				return 1;
@@ -1519,7 +1520,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 				ERROR("--main-function can only be specified once");
 				return 1;
 			}
-			analysis.main_function_name = argv[executable_index+1];
+			analysis.main_function_name = argv[executable_index + 1];
 			if (analysis.main_function_name == NULL) {
 				ERROR("--main-function requires an argument");
 				return 1;
@@ -1540,14 +1541,14 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 		} else if (fs_strcmp(arg, "--trap-unreachable-code") == 0) {
 			trap_unreachable_code = true;
 		} else if (fs_strcmp(arg, "--profile") == 0) {
-			profile_path = argv[executable_index+1];
+			profile_path = argv[executable_index + 1];
 			if (profile_path == NULL) {
 				ERROR("--profile requires an argument");
 				return 1;
 			}
 			executable_index++;
 		} else if (fs_strcmp(arg, "--read-profile") == 0) {
-			profile_path = argv[executable_index+1];
+			profile_path = argv[executable_index + 1];
 			if (profile_path == NULL) {
 				ERROR("--read-profile requires an argument");
 				return 1;
@@ -1576,7 +1577,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 #endif
 		} else if (fs_strcmp(arg, "--version") == 0) {
 #define VERSION "callander 0.1\n"
-			fs_write(1, VERSION, sizeof(VERSION)-1);
+			fs_write(1, VERSION, sizeof(VERSION) - 1);
 			return 0;
 		} else if (fs_strcmp(arg, "--skip-running") == 0) {
 			if (skip_running) {
@@ -1596,23 +1597,24 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 	const char *executable_path = argv[executable_index];
 
 	if (!executable_path) {
-		ERROR_WRITE_LITERAL("usage: callander [command]\n"\
-		"Runs programs in an automatically generated seccomp sandbox\n"\
-		"Copyright (C) 2020-2023 Ryan Petrich\n"\
-		"\n"\
-		"  --block-exec                 blocks calls to execute new programs\n"\
-		"  --permit-syscall NAME        permits a specific system call by NAME (may be specified multiple times)\n"\
-		"  --block-syscall NAME         blocks a specific system call by NAME (may be specified multiple times)\n"\
-		"  --block-function NAME        blocks a specific function by symbol NAME (may be specified multiple times)\n"\
-		"  --block-debug-function NAME  blocks a specific function by debug symbol NAME (may be specified multiple times)\n"\
-		"  --main-function NAME         wait until the specified function is called before applying sandbox\n"\
-		"  --dlopen LIBRARY_PATH        load a specific library at startup, assuming it will be dynamically dlopened after startup\n"\
-		"  --ignore-dlopen              ignore calls to dlopen, assuming libraries will already be preloaded\n"\
-		"  --profile PROFILE_PATH       read and write syscall profile file at specified path\n"\
-		"  --read-profile PROFILE_PATH  read syscall profile file at specified path, rejecting stale profiles\n"\
-		"  --show-permitted             shows permitted syscalls before launching program\n"\
-		"  --attach-gdb                 attaches gdb to the program at startup\n"\
-		"  --                           stop processing command line arguments\n");
+		ERROR_WRITE_LITERAL(
+			"usage: callander [command]\n"
+			"Runs programs in an automatically generated seccomp sandbox\n"
+			"Copyright (C) 2020-2023 Ryan Petrich\n"
+			"\n"
+			"  --block-exec                 blocks calls to execute new programs\n"
+			"  --permit-syscall NAME        permits a specific system call by NAME (may be specified multiple times)\n"
+			"  --block-syscall NAME         blocks a specific system call by NAME (may be specified multiple times)\n"
+			"  --block-function NAME        blocks a specific function by symbol NAME (may be specified multiple times)\n"
+			"  --block-debug-function NAME  blocks a specific function by debug symbol NAME (may be specified multiple times)\n"
+			"  --main-function NAME         wait until the specified function is called before applying sandbox\n"
+			"  --dlopen LIBRARY_PATH        load a specific library at startup, assuming it will be dynamically dlopened after startup\n"
+			"  --ignore-dlopen              ignore calls to dlopen, assuming libraries will already be preloaded\n"
+			"  --profile PROFILE_PATH       read and write syscall profile file at specified path\n"
+			"  --read-profile PROFILE_PATH  read syscall profile file at specified path, rejecting stale profiles\n"
+			"  --show-permitted             shows permitted syscalls before launching program\n"
+			"  --attach-gdb                 attaches gdb to the program at startup\n"
+			"  --                           stop processing command line arguments\n");
 		return 1;
 	}
 
@@ -1636,8 +1638,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 	// parse #! lines
 	char *loaded_executable_path = NULL;
 	do {
-	next_interpreter:
-		;
+	next_interpreter:;
 		char header[BINPRM_BUF_SIZE + 1];
 		size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
 		if (header_size <= 0) {
@@ -1746,7 +1747,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 			char **new_envp = malloc((envp_count + 3) * sizeof(*envp));
 			char **d = new_envp;
 			for (char **s = envp; *s != NULL; s++) {
-				if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1) != 0 && fs_strncmp(*s, "LD_BIND_NOW=1", sizeof("LD_BIND_NOW=")-1) != 0) {
+				if (fs_strncmp(*s, "LD_PRELOAD=", sizeof("LD_PRELOAD=") - 1) != 0 && fs_strncmp(*s, "LD_BIND_NOW=1", sizeof("LD_BIND_NOW=") - 1) != 0) {
 					*d++ = *s;
 				}
 			}
@@ -1807,7 +1808,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 
 	bool has_read_profile = false;
 	if (profile_path != NULL) {
-		struct program_state profile_analysis = { 0 };
+		struct program_state profile_analysis = {0};
 		profile_analysis.loader.vdso = analysis.loader.vdso;
 		if (read_profile(&profile_analysis, profile_path)) {
 			analysis.loader = profile_analysis.loader;
@@ -1822,7 +1823,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 	}
 
 	// allocate a signal stack
-	void *signal_stack = fs_mmap(NULL, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+	void *signal_stack = fs_mmap(NULL, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(signal_stack)) {
 		DIE("failed to allocate signal stack", fs_strerror((intptr_t)signal_stack));
 	}
@@ -1844,9 +1845,9 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 	// look for segfaults
 	struct fs_sigaction action = {
 		.handler = (void *)&segfault_handler,
-		.flags = SA_RESTORER|SA_SIGINFO|SA_NODEFER|SA_ONSTACK,
+		.flags = SA_RESTORER | SA_SIGINFO | SA_NODEFER | SA_ONSTACK,
 		.restorer = (void *)&__restore,
-		.mask = { ~0l },
+		.mask = {~0l},
 	};
 	fs_sigdelset(&action.mask, SIGSEGV);
 	result = fs_sigaction(SIGSEGV, &action, NULL);
@@ -1855,7 +1856,7 @@ int main(__attribute__((unused)) int argc, char* argv[], char* envp[])
 	}
 
 	// allocate a temporary stack
-	stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+	stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
 		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
 	}
@@ -1940,8 +1941,8 @@ skip_analysis:
 		for (const struct loaded_binary *binary = analysis.loader.last; binary != NULL; binary = binary->previous) {
 			if (binary->special_binary_flags & BINARY_IS_LOADED_VIA_DLOPEN) {
 				if (ld_preload_buf == new_ld_preload) {
-					fs_memcpy(ld_preload_buf, "LD_PRELOAD=", sizeof("LD_PRELOAD=")-1);
-					ld_preload_buf += sizeof("LD_PRELOAD=")-1;
+					fs_memcpy(ld_preload_buf, "LD_PRELOAD=", sizeof("LD_PRELOAD=") - 1);
+					ld_preload_buf += sizeof("LD_PRELOAD=") - 1;
 				} else {
 					*ld_preload_buf++ = ':';
 				}
@@ -2178,7 +2179,7 @@ skip_analysis:
 				args[5] = NULL;
 			}
 		}
-		result = fs_execve(exec_path, (void *)args, (char * const *)envp);
+		result = fs_execve(exec_path, (void *)args, (char *const *)envp);
 		if (result < 0) {
 			DIE("failed to exec attaching program", fs_strerror(result));
 		}
@@ -2239,14 +2240,15 @@ skip_analysis:
 							.nr = nr,
 							.arch = CURRENT_AUDIT_ARCH,
 							.instruction_pointer = (uintptr_t)siginfo.si_call_addr,
-							.args = {
-								regs.USER_REG_ARG1,
-								regs.USER_REG_ARG2,
-								regs.USER_REG_ARG3,
-								regs.USER_REG_ARG4,
-								regs.USER_REG_ARG5,
-								regs.USER_REG_ARG6,
-							},
+							.args =
+								{
+									regs.USER_REG_ARG1,
+									regs.USER_REG_ARG2,
+									regs.USER_REG_ARG3,
+									regs.USER_REG_ARG4,
+									regs.USER_REG_ARG5,
+									regs.USER_REG_ARG6,
+								},
 						};
 						uint32_t bpf_result;
 						const char *bpf_error = bpf_interpret(prog, (const char *)&data, sizeof(data), SHOULD_LOG, &bpf_result);

@@ -4,24 +4,24 @@
 #ifdef ENABLE_TRACER
 
 #define NDEBUG
-#include <assert.h>
 #include "attempt.h"
+#include "axon.h"
 #include "exec.h"
 #include "freestanding.h"
-#include "axon.h"
 #include "time.h"
+#include <assert.h>
 
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <sys/socket.h>
 #include <sys/prctl.h>
+#include <sys/socket.h>
 #include <sys/un.h>
 
 #define BUF_SIZE 126994
 #define EMITTED_SIZE 126894
 
-#define WRITE_LITERAL(fd, lit) fs_write(fd, lit, sizeof(lit)-1)
+#define WRITE_LITERAL(fd, lit) fs_write(fd, lit, sizeof(lit) - 1)
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

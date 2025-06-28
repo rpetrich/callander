@@ -11,7 +11,8 @@
 #include <netdb.h>
 #include <string.h>
 
-struct library_info {
+struct library_info
+{
 	struct library_info *next;
 	unsigned long name_hash;
 	struct binary_info binary;
@@ -35,18 +36,22 @@ static struct library_info *inferior_errno_location_library;
 
 static int remote_getaddrinfo(const char *node, const char *service, __attribute__((unused)) const struct addrinfo *hints, struct addrinfo **res)
 {
-	int result = getaddrinfo_custom(node, service, hints, (struct resolver_funcs){
-		.malloc = inferior_malloc,
-		.free = inferior_free,
-		.openat = remote_openat,
-		.read = remote_read,
-		.close = remote_close,
-		.socket = remote_socket,
-		.recvfrom = remote_recvfrom,
-		.sendto = remote_sendto,
-		.config_cache = get_resolver_config_cache(),
-		.errno_location = inferior_errno_location(),
-	}, res);
+	int result = getaddrinfo_custom(node,
+	                                service,
+	                                hints,
+	                                (struct resolver_funcs){
+										.malloc = inferior_malloc,
+										.free = inferior_free,
+										.openat = remote_openat,
+										.read = remote_read,
+										.close = remote_close,
+										.socket = remote_socket,
+										.recvfrom = remote_recvfrom,
+										.sendto = remote_sendto,
+										.config_cache = get_resolver_config_cache(),
+										.errno_location = inferior_errno_location(),
+									},
+	                                res);
 	if (result == 0) {
 		for (struct addrinfo *addr = *res; addr != NULL; addr = addr->ai_next) {
 			switch (addr->ai_addr->sa_family) {
@@ -86,17 +91,18 @@ static int remote_getaddrinfo(const char *node, const char *service, __attribute
 	return result;
 }
 
-static intptr_t new_getaddrinfo(__attribute__((unused)) uintptr_t *arguments, __attribute__((unused)) intptr_t original) {
+static intptr_t new_getaddrinfo(__attribute__((unused)) uintptr_t *arguments, __attribute__((unused)) intptr_t original)
+{
 	const char *node = (const char *)arguments[0];
 	const char *service = (const char *)arguments[1];
 	const struct addrinfo *hints = (const struct addrinfo *)arguments[2];
 	struct addrinfo **res = (struct addrinfo **)arguments[3];
 	size_t node_len = fs_strlen(node);
-	if (node_len > 7 && fs_strcmp(&node[node_len-7], ".target") == 0) {
+	if (node_len > 7 && fs_strcmp(&node[node_len - 7], ".target") == 0) {
 		// Remap a target address
-		char buf[node_len-6];
-		memcpy(buf, node, node_len-6);
-		buf[node_len-7] = '\0';
+		char buf[node_len - 6];
+		memcpy(buf, node, node_len - 6);
+		buf[node_len - 7] = '\0';
 		return remote_getaddrinfo(buf, service, hints, res);
 	}
 	int (*orig_getaddrinfo)(const char *, const char *, const struct addrinfo *, struct addrinfo **res) = (void *)original;
@@ -158,12 +164,13 @@ static void library_unloaded(__attribute__((unused)) struct library_info *librar
 }
 
 #define LIBRARY_HASHTABLE_SIZE 16
-#define LIBRARY_HASHTABLE_MASK (LIBRARY_HASHTABLE_SIZE-1)
+#define LIBRARY_HASHTABLE_MASK (LIBRARY_HASHTABLE_SIZE - 1)
 
 static struct library_info *libraries[LIBRARY_HASHTABLE_SIZE];
 static char active_use_state;
 
-static struct library_info *find_library(const char *name) {
+static struct library_info *find_library(const char *name)
+{
 	unsigned long hash = elf_hash((const unsigned char *)name);
 	struct library_info *library = libraries[hash & LIBRARY_HASHTABLE_MASK];
 	while (library != NULL) {

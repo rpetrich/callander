@@ -17,22 +17,19 @@ pid_t get_self_pid(void)
 	return self_pid;
 }
 
-__attribute__((used)) __attribute__((visibility("default"))) NAKED_FUNCTION
-noreturn void receive_start(const struct receive_start_args *args)
+__attribute__((used)) __attribute__((visibility("default"))) NAKED_FUNCTION noreturn void receive_start(const struct receive_start_args *args)
 {
 	self_pid = fs_gettid();
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
 }
 
-__attribute__((used)) __attribute__((visibility("default")))
-void receive_clone(intptr_t data[7])
+__attribute__((used)) __attribute__((visibility("default"))) void receive_clone(intptr_t data[7])
 {
 	(void)data;
 	PROXY_CALL(__NR_clone | PROXY_NO_RESPONSE);
 }
 
-__attribute__((used)) __attribute__((visibility("default")))
-void receive_syscall(intptr_t data[7])
+__attribute__((used)) __attribute__((visibility("default"))) void receive_syscall(intptr_t data[7])
 {
 	struct thread_storage *thread = get_thread_storage();
 #ifdef __aarch64__
@@ -43,7 +40,8 @@ void receive_syscall(intptr_t data[7])
 }
 
 #ifdef PROXY_SUPPORT_ALL_PLATFORMS
-enum target_platform proxy_get_target_platform(void) {
+enum target_platform proxy_get_target_platform(void)
+{
 #ifdef __linux__
 	return TARGET_PLATFORM_LINUX;
 #else

@@ -1,7 +1,7 @@
 #include "fd_table.h"
 
-#include "freestanding.h"
 #include "exec.h"
+#include "freestanding.h"
 #include "proxy.h"
 #include "vfs.h"
 
@@ -9,16 +9,16 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
-#define remote_close(fd) do { \
-	const struct vfs_file_ops *ops = vfs_file_ops_for_remote(); \
-	ops->close((struct vfs_resolved_file){ \
-		.handle = fd, \
-		.ops = ops, \
-	}); \
-} while(0)
+#define remote_close(fd)                                            \
+	do {                                                            \
+		const struct vfs_file_ops *ops = vfs_file_ops_for_remote(); \
+		ops->close((struct vfs_resolved_file){                      \
+			.handle = fd,                                           \
+			.ops = ops,                                             \
+		});                                                         \
+	} while (0)
 
-__attribute__((visibility("default")))
-int fd_table[MAX_TABLE_SIZE];
+__attribute__((visibility("default"))) int fd_table[MAX_TABLE_SIZE];
 static struct fs_mutex table_lock;
 
 void clear_fd_table_for_exit(int status)
@@ -53,8 +53,7 @@ static inline int install_underlying_fd(int underlying_fd, int underlying_type, 
 	return result;
 }
 
-__attribute__((warn_unused_result))
-int install_local_fd(int local_fd, int flags)
+__attribute__((warn_unused_result)) int install_local_fd(int local_fd, int flags)
 {
 	if (local_fd < 0) {
 		return local_fd;
@@ -66,8 +65,7 @@ int install_local_fd(int local_fd, int flags)
 	return result;
 }
 
-__attribute__((warn_unused_result))
-int install_remote_fd(int remote_fd, int flags)
+__attribute__((warn_unused_result)) int install_remote_fd(int remote_fd, int flags)
 {
 	if (remote_fd < 0) {
 		return remote_fd;
@@ -79,7 +77,8 @@ int install_remote_fd(int remote_fd, int flags)
 	return result;
 }
 
-static int become_underlying_fd(int fd, int underlying_fd, int type, bool require_existing) {
+static int become_underlying_fd(int fd, int underlying_fd, int type, bool require_existing)
+{
 	if (underlying_fd < 0) {
 		return underlying_fd;
 	}
@@ -111,7 +110,8 @@ static int become_underlying_fd(int fd, int underlying_fd, int type, bool requir
 	return 0;
 }
 
-int become_remote_fd(int fd, int remote_fd) {
+int become_remote_fd(int fd, int remote_fd)
+{
 	int result = become_underlying_fd(fd, remote_fd, HAS_REMOTE_FD, true);
 	if (result < 0) {
 		remote_close(remote_fd);
@@ -128,8 +128,7 @@ int become_local_fd(int fd, int local_fd)
 	return result;
 }
 
-__attribute__((warn_unused_result))
-bool lookup_real_fd(int fd, intptr_t *out_real_fd)
+__attribute__((warn_unused_result)) bool lookup_real_fd(int fd, intptr_t *out_real_fd)
 {
 	if (fd < MAX_TABLE_SIZE && fd >= 0) {
 		fs_mutex_lock(&table_lock);
@@ -167,8 +166,7 @@ int perform_close(int fd)
 	return -EBADF;
 }
 
-__attribute__((warn_unused_result))
-int perform_dup(int oldfd, int flags)
+__attribute__((warn_unused_result)) int perform_dup(int oldfd, int flags)
 {
 	intptr_t underlying_fd;
 	bool is_remote = lookup_real_fd(oldfd, &underlying_fd);
@@ -190,8 +188,7 @@ int perform_dup(int oldfd, int flags)
 	return install_underlying_fd(underlying_fd, is_remote ? HAS_REMOTE_FD : HAS_LOCAL_FD, flags);
 }
 
-__attribute__((warn_unused_result))
-int perform_dup3(int oldfd, int newfd, int flags)
+__attribute__((warn_unused_result)) int perform_dup3(int oldfd, int newfd, int flags)
 {
 	// check if oldfd is valid
 	if (oldfd < MAX_TABLE_SIZE && oldfd >= 0 && newfd < MAX_TABLE_SIZE && newfd >= 0) {
@@ -247,8 +244,7 @@ int perform_set_fd_flags(int fd, int flags)
 	return -EBADF;
 }
 
-__attribute__((warn_unused_result))
-int perform_get_fd_flags(int fd)
+__attribute__((warn_unused_result)) int perform_get_fd_flags(int fd)
 {
 	if (fd < MAX_TABLE_SIZE && fd >= 0) {
 		fs_mutex_lock(&table_lock);
@@ -261,10 +257,9 @@ int perform_get_fd_flags(int fd)
 	return -EBADF;
 }
 
-__attribute__((warn_unused_result))
-int chdir_become_local_path(const char *path)
+__attribute__((warn_unused_result)) int chdir_become_local_path(const char *path)
 {
-	int local_fd = fs_open(path, O_PATH|O_DIRECTORY, 0);
+	int local_fd = fs_open(path, O_PATH | O_DIRECTORY, 0);
 	if (local_fd < 0) {
 		return local_fd;
 	}
@@ -275,8 +270,7 @@ int chdir_become_local_path(const char *path)
 	return result;
 }
 
-__attribute__((warn_unused_result))
-int chdir_become_local_fd(int local_fd)
+__attribute__((warn_unused_result)) int chdir_become_local_fd(int local_fd)
 {
 	int new_local_fd = fs_dup(local_fd);
 	if (new_local_fd < 0) {

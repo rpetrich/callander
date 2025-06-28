@@ -11,40 +11,42 @@ intptr_t translate_darwin_result(intptr_t result);
 #define DARWIN_SYSCALL_BASE (2 << 24)
 
 // from https://opensource.apple.com/source/xnu/xnu-7195.81.3/bsd/kern/syscalls.master.auto.html
-#define DARWIN_SYS_read       (DARWIN_SYSCALL_BASE | 3)
-#define DARWIN_SYS_write      (DARWIN_SYSCALL_BASE | 4)
-#define DARWIN_SYS_close      (DARWIN_SYSCALL_BASE | 6)
-#define DARWIN_SYS_getpid     (DARWIN_SYSCALL_BASE | 20)
-#define DARWIN_SYS_recvfrom   (DARWIN_SYSCALL_BASE | 29)
-#define DARWIN_SYS_fcntl      (DARWIN_SYSCALL_BASE | 92)
-#define DARWIN_SYS_fsync      (DARWIN_SYSCALL_BASE | 95)
-#define DARWIN_SYS_socket     (DARWIN_SYSCALL_BASE | 97)
-#define DARWIN_SYS_flock      (DARWIN_SYSCALL_BASE | 131)
-#define DARWIN_SYS_sendto     (DARWIN_SYSCALL_BASE | 133)
-#define DARWIN_SYS_pread      (DARWIN_SYSCALL_BASE | 153)
-#define DARWIN_SYS_pwrite     (DARWIN_SYSCALL_BASE | 154)
-#define DARWIN_SYS_fdatasync  (DARWIN_SYSCALL_BASE | 187)
-#define DARWIN_SYS_lseek      (DARWIN_SYSCALL_BASE | 199)
-#define DARWIN_SYS_truncate   (DARWIN_SYSCALL_BASE | 200)
-#define DARWIN_SYS_ftruncate  (DARWIN_SYSCALL_BASE | 201)
-#define DARWIN_SYS_poll       (DARWIN_SYSCALL_BASE | 230)
-#define DARWIN_SYS_fstat64    (DARWIN_SYSCALL_BASE | 339)
+#define DARWIN_SYS_read (DARWIN_SYSCALL_BASE | 3)
+#define DARWIN_SYS_write (DARWIN_SYSCALL_BASE | 4)
+#define DARWIN_SYS_close (DARWIN_SYSCALL_BASE | 6)
+#define DARWIN_SYS_getpid (DARWIN_SYSCALL_BASE | 20)
+#define DARWIN_SYS_recvfrom (DARWIN_SYSCALL_BASE | 29)
+#define DARWIN_SYS_fcntl (DARWIN_SYSCALL_BASE | 92)
+#define DARWIN_SYS_fsync (DARWIN_SYSCALL_BASE | 95)
+#define DARWIN_SYS_socket (DARWIN_SYSCALL_BASE | 97)
+#define DARWIN_SYS_flock (DARWIN_SYSCALL_BASE | 131)
+#define DARWIN_SYS_sendto (DARWIN_SYSCALL_BASE | 133)
+#define DARWIN_SYS_pread (DARWIN_SYSCALL_BASE | 153)
+#define DARWIN_SYS_pwrite (DARWIN_SYSCALL_BASE | 154)
+#define DARWIN_SYS_fdatasync (DARWIN_SYSCALL_BASE | 187)
+#define DARWIN_SYS_lseek (DARWIN_SYSCALL_BASE | 199)
+#define DARWIN_SYS_truncate (DARWIN_SYSCALL_BASE | 200)
+#define DARWIN_SYS_ftruncate (DARWIN_SYSCALL_BASE | 201)
+#define DARWIN_SYS_poll (DARWIN_SYSCALL_BASE | 230)
+#define DARWIN_SYS_fstat64 (DARWIN_SYSCALL_BASE | 339)
 #define DARWIN_SYS_getdirentries64 (DARWIN_SYSCALL_BASE | 344)
-#define DARWIN_SYS_openat     (DARWIN_SYSCALL_BASE | 463)
-#define DARWIN_SYS_faccessat  (DARWIN_SYSCALL_BASE | 466)
-#define DARWIN_SYS_fstatat64  (DARWIN_SYSCALL_BASE | 470)
+#define DARWIN_SYS_openat (DARWIN_SYSCALL_BASE | 463)
+#define DARWIN_SYS_faccessat (DARWIN_SYSCALL_BASE | 466)
+#define DARWIN_SYS_fstatat64 (DARWIN_SYSCALL_BASE | 470)
 #define DARWIN_SYS_readlinkat (DARWIN_SYSCALL_BASE | 473)
 
 #define DARWIN_AT_FDCWD -2
 
 #define DARWIN_F_GETPATH 50
 
-struct darwin_timespec {
+struct darwin_timespec
+{
 	int64_t tv_sec;
 	long tv_nsec;
 };
 
-struct darwin_stat {
+struct darwin_stat
+{
 	int32_t st_dev;
 	uint16_t st_mode;
 	uint16_t st_nlink;
@@ -65,7 +67,8 @@ struct darwin_stat {
 	int64_t st_qspare[2];
 };
 
-struct darwin_dirent {
+struct darwin_dirent
+{
 	int64_t d_ino;
 	uint64_t d_seekoff;
 	uint16_t d_reclen;

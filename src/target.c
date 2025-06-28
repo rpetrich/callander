@@ -11,24 +11,24 @@
 #include "axon.h"
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sched.h>
 #include <stdnoreturn.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <errno.h>
 
 #endif
 
-#include "target.h"
 #include "proxy.h"
+#include "target.h"
 
 #pragma GCC diagnostic ignored "-Wunused-result"
 
 #if 0
 
-#define WRITE_LITERAL(fd, lit) fs_write(fd, lit, sizeof(lit)-1)
+#define WRITE_LITERAL(fd, lit) fs_write(fd, lit, sizeof(lit) - 1)
 
 static inline void print_with_int(const char *message, size_t message_len, int value) {
 	fs_write(2, message, message_len);
@@ -38,7 +38,7 @@ static inline void print_with_int(const char *message, size_t message_len, int v
 	fs_write(2, buf, len + 1);
 }
 
-#define PRINT_WITH_INT(message, value) print_with_int(message ": ", sizeof(message)+1, value)
+#define PRINT_WITH_INT(message, value) print_with_int(message ": ", sizeof(message) + 1, value)
 
 noreturn static void exit_from_errno(const char *message, size_t message_len, int result) {
 	print_with_int(message, message_len, -result);
@@ -46,12 +46,16 @@ noreturn static void exit_from_errno(const char *message, size_t message_len, in
 	__builtin_unreachable();
 }
 
-#define EXIT_FROM_ERRNO(message, err) exit_from_errno(message ": ", sizeof(message)+1, err)
+#define EXIT_FROM_ERRNO(message, err) exit_from_errno(message ": ", sizeof(message) + 1, err)
 #else
-#define EXIT_FROM_ERRNO(message, err) do { fs_exit(1); } while(0)
+#define EXIT_FROM_ERRNO(message, err) \
+	do {                              \
+		fs_exit(1);                   \
+	} while (0)
 #endif
 
-typedef struct {
+typedef struct
+{
 	int argc;
 	const char *argv[];
 } aux_t;
@@ -61,8 +65,7 @@ noreturn static void process_data(void);
 static target_state state;
 
 #ifdef __linux__
-__attribute__((used)) __attribute__((aligned(4)))
-noreturn void release(__attribute__((unused)) uint32_t expected_addr, __attribute__((unused)) uint32_t expected_port)
+__attribute__((used)) __attribute__((aligned(4))) noreturn void release(__attribute__((unused)) uint32_t expected_addr, __attribute__((unused)) uint32_t expected_port)
 #else
 int main(void)
 #endif
@@ -94,7 +97,7 @@ int main(void)
 		EXIT_FROM_ERRNO("Failed to open socket", fd);
 	}
 
-	struct sockaddr_in addr = { 0 };
+	struct sockaddr_in addr = {0};
 	// addr.sin_len = sizeof(addr);
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = fs_htonl((127 << 24) | 1);
@@ -111,10 +114,10 @@ int main(void)
 		EXIT_FROM_ERRNO("Failed to disable nagle on socket", result);
 	}
 #endif
-	state.read_mutex = (struct fs_mutex){ 0 };
-	state.write_mutex = (struct fs_mutex){ 0 };
+	state.read_mutex = (struct fs_mutex){0};
+	state.write_mutex = (struct fs_mutex){0};
 
-	hello_message hello = { 0 };
+	hello_message hello = {0};
 	hello.target_platform = TARGET_PLATFORM_CURRENT;
 	hello.process_data = process_data;
 	state.sockfd = fd;
@@ -159,7 +162,7 @@ noreturn static void process_data(void)
 				EXIT_FROM_ERRNO("Failed to read from socket", result);
 			}
 			bytes_read += result;
-		} while(bytes_read != sizeof(request));
+		} while (bytes_read != sizeof(request));
 		// interpret request
 		response_message response;
 		struct iovec vec[7];
@@ -290,7 +293,7 @@ noreturn static void process_data(void)
 			fs_mutex_lock(&state.write_mutex);
 			for (;;) {
 #ifdef SYS_writev
-				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count-io_start);
+				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count - io_start);
 #else
 				intptr_t result = fs_send(sockfd_local, vec[io_start].iov_base, vec[io_start].iov_len, 0);
 #endif
@@ -312,7 +315,7 @@ noreturn static void process_data(void)
 				vec[io_start].iov_base += result;
 				vec[io_start].iov_len -= result;
 			}
-	unlock:
+		unlock:
 			fs_mutex_unlock(&state.write_mutex);
 		}
 	}

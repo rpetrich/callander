@@ -1,12 +1,12 @@
 #define _GNU_SOURCE
 #include "handler.h"
 
+#include "axon.h"
 #include "coverage.h"
 #include "defaultlibs.h"
 #include "exec.h"
 #include "fd_table.h"
 #include "fork.h"
-#include "axon.h"
 #include "intercept.h"
 #include "loader.h"
 #include "paths.h"
@@ -14,8 +14,8 @@
 #include "remote.h"
 #include "sockets.h"
 #include "target.h"
-#include "tracer.h"
 #include "tls.h"
+#include "tracer.h"
 #include "vfs.h"
 
 #include "callander_print.h"
@@ -50,9 +50,9 @@
 #endif
 
 #ifndef NS_GET_USERNS
-#define NSIO    0xb7
-#define NS_GET_USERNS   _IO(NSIO, 0x1)
-#define NS_GET_PARENT   _IO(NSIO, 0x2)
+#define NSIO 0xb7
+#define NS_GET_USERNS _IO(NSIO, 0x1)
+#define NS_GET_PARENT _IO(NSIO, 0x2)
 #endif
 
 #ifdef ENABLE_TRACER
@@ -67,7 +67,8 @@ static void working_dir_changed(struct thread_storage *thread)
 	}
 }
 
-static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_sockaddr *data, size_t size) {
+static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_sockaddr *data, size_t size)
+{
 	switch ((out->sa_family = data->addr.sa_family)) {
 		case AF_INET: {
 			out->sin_port = data->in.sin_port;
@@ -87,7 +88,7 @@ static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_socka
 			return true;
 		}
 		case AF_UNIX: {
-			memcpy(&out->sun_path, &data->un.sun_path, size-(sizeof(sa_family_t)));
+			memcpy(&out->sun_path, &data->un.sun_path, size - (sizeof(sa_family_t)));
 			return true;
 		}
 		default: {
@@ -112,14 +113,12 @@ static void unmap_and_exit_thread(void *arg1, void *arg2)
 typedef unsigned int tcflag_t;
 typedef unsigned char cc_t;
 
-__attribute__((noinline))
-static intptr_t invalid_local_remote_mixed_operation(void)
+__attribute__((noinline)) static intptr_t invalid_local_remote_mixed_operation(void)
 {
 	return -EINVAL;
 }
 
-__attribute__((noinline))
-static intptr_t invalid_local_operation(void)
+__attribute__((noinline)) static intptr_t invalid_local_operation(void)
 {
 	return -EINVAL;
 }
@@ -153,7 +152,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 #ifdef __NR_creat
 		case LINUX_SYS_creat: {
 			struct vfs_resolved_file file;
-			return vfs_install_file(vfs_call(openat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), O_CREAT|O_WRONLY|O_TRUNC, arg2, &file), &file, 0);
+			return vfs_install_file(vfs_call(openat, vfs_resolve_path(AT_FDCWD, (const char *)arg1), O_CREAT | O_WRONLY | O_TRUNC, arg2, &file), &file, 0);
 		}
 #endif
 #ifdef __NR_open
@@ -228,7 +227,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			attempt_push_free(thread, &state, polls);
 			for (nfds_t i = 0; i < nfds; i++) {
 				polls[i].file = vfs_resolve_file(fds[i].fd);
-				if (i != 0 && polls[i].file.ops != polls[i-1].file.ops) {
+				if (i != 0 && polls[i].file.ops != polls[i - 1].file.ops) {
 					// cannot poll on both local and remote file descriptors
 					attempt_pop_free(&state);
 					return invalid_local_remote_mixed_operation();
@@ -336,9 +335,9 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			int nfds = 0;
 			for (int i = 0; i < n; i++) {
 				if ((readfds != NULL && FD_ISSET(i, readfds)) || (writefds != NULL && FD_ISSET(i, writefds)) || (exceptfds != NULL && FD_ISSET(i, exceptfds))) {
-				intptr_t real_fd;
-				bool is_remote = lookup_real_fd(i, &real_fd);
-				real_fds[nfds].fd = real_fd;
+					intptr_t real_fd;
+					bool is_remote = lookup_real_fd(i, &real_fd);
+					real_fds[nfds].fd = real_fd;
 					if (is_remote) {
 						if (has_local) {
 							// cannot poll on both local and remote file descriptors
@@ -357,8 +356,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 					if (real_fds[nfds].fd != i) {
 						fds_all_match = false;
 					}
-					real_fds[nfds].events = ((readfds != NULL && FD_ISSET(i, readfds)) ? (POLLIN | POLLPRI) : 0)
-					                      | ((writefds != NULL && FD_ISSET(i, writefds)) ? (POLLOUT | POLLWRBAND) : 0);
+					real_fds[nfds].events = ((readfds != NULL && FD_ISSET(i, readfds)) ? (POLLIN | POLLPRI) : 0) | ((writefds != NULL && FD_ISSET(i, writefds)) ? (POLLOUT | POLLWRBAND) : 0);
 					// TODO: what about exceptfds?
 					nfds++;
 				}
@@ -378,10 +376,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const void *sigset = NULL;
 			size_t sigsetsize = 0;
 			if (syscall == LINUX_SYS_pselect6 && arg6 != 0) {
-				struct {
+				struct
+				{
 					const void *ss;
 					size_t ss_len;
-				}* sigsetdata = (void *)arg6;
+				} *sigsetdata = (void *)arg6;
 				sigset = sigsetdata->ss;
 				sigsetsize = sigsetdata->ss_len;
 			}
@@ -1169,7 +1168,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			struct vfs_resolved_path resolved = vfs_resolve_path(AT_FDCWD, (const char *)arg1);
 			if (vfs_is_remote_path(&resolved)) {
 				struct vfs_resolved_file file;
-				intptr_t result = vfs_install_file(vfs_call(openat, resolved, O_PATH|O_DIRECTORY, 0, &file), &file, 0);
+				intptr_t result = vfs_install_file(vfs_call(openat, resolved, O_PATH | O_DIRECTORY, 0, &file), &file, 0);
 				if (result < 0) {
 					return result;
 				}
@@ -1631,7 +1630,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			break;
 		}
 		case LINUX_SYS_tgkill: {
-			if (arg1 ==  get_self_pid() && arg2 == fs_gettid()) {
+			if (arg1 == get_self_pid() && arg2 == fs_gettid()) {
 				handle_raise(arg2, arg3);
 			}
 			break;

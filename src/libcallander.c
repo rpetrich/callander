@@ -2,8 +2,8 @@
 
 #include "callander.h"
 
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 #include "mapped.h"
 
 #include <linux/seccomp.h>
@@ -11,8 +11,7 @@
 
 FS_DEFINE_SYSCALL
 
-__attribute__((used)) __attribute__((visibility("hidden")))
-void callander_perform_analysis(struct program_state *analysis, callander_main_function main, void *data)
+__attribute__((used)) __attribute__((visibility("hidden"))) void callander_perform_analysis(struct program_state *analysis, callander_main_function main, void *data)
 {
 	int fd = fs_open("/proc/self/maps", O_RDONLY | O_CLOEXEC, 0);
 	if (fd < 0) {
@@ -57,18 +56,21 @@ void callander_perform_analysis(struct program_state *analysis, callander_main_f
 	fs_close(fd);
 
 	// analyze the program
-	record_syscall(analysis, SYS_clock_gettime, (struct analysis_frame){
-		.next = NULL,
-		.address = NULL,
-		.description = "vDSO",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_clock_gettime,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = NULL,
+					   .description = "vDSO",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
 	// analyze the main function
-	struct analysis_frame new_caller = { .address = NULL, .description = "main", .next = NULL, .current_state = empty_registers, .entry = NULL, .entry_state = &empty_registers, .token = { 0 } };
+	struct analysis_frame new_caller = {.address = NULL, .description = "main", .next = NULL, .current_state = empty_registers, .entry = NULL, .entry_state = &empty_registers, .token = {0}};
 	set_register(&new_caller.current_state.registers[sysv_argument_abi_register_indexes[0]], (uintptr_t)data);
 	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &new_caller.current_state, (ins_ptr)main, &new_caller);
 
@@ -87,11 +89,10 @@ extern bool should_log;
 #endif
 
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
-__attribute__((visibility("default")))
-void callander_run(callander_main_function main, void *data)
+#pragma GCC optimize("-fomit-frame-pointer")
+__attribute__((visibility("default"))) void callander_run(callander_main_function main, void *data)
 {
-	struct program_state analysis = { 0 };
+	struct program_state analysis = {0};
 	init_searched_instructions(&analysis.search);
 
 	// revoke permissions
@@ -100,7 +101,7 @@ void callander_run(callander_main_function main, void *data)
 		DIE("failed to set no new privileges", fs_strerror(result));
 	}
 	// allocate a temporary stack
-	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
 		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
 	}

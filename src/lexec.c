@@ -8,8 +8,8 @@
 #include "thandler.h"
 
 #include <mach/mach.h>
-#include <mach/vm_map.h>
 #include <mach/mach_vm.h>
+#include <mach/vm_map.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/attr.h>
@@ -20,8 +20,7 @@ FS_DEFINE_SYSCALL
 
 extern char **environ;
 
-__attribute__((used))
-noreturn void receive_start(const struct receive_start_args *args)
+__attribute__((used)) noreturn void receive_start(const struct receive_start_args *args)
 {
 	JUMP(args->pc, args->sp, args->arg1, args->arg2, args->arg3);
 }
@@ -206,7 +205,8 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			struct attrlist attr = {0};
 			attr.bitmapcount = ATTR_BIT_MAP_COUNT;
 			attr.commonattr = ATTR_CMN_FULLPATH;
-			struct {
+			struct
+			{
 				uint32_t length;
 				attrreference_t name;
 				char buf[PATH_MAX];
@@ -260,8 +260,8 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			size_t size = data[1];
 			if (resolved_prot & PROT_EXEC) {
 				if ((flags & LINUX_MAP_ANONYMOUS) == 0) {
-					size_t rounded_size = (size + (PAGE_SIZE-1)) & ~(uint64_t)(PAGE_SIZE-1);
-					void *result = fs_mmap(address, rounded_size, PROT_READ|PROT_EXEC, (resolved_flags & MAP_FIXED) | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+					size_t rounded_size = (size + (PAGE_SIZE - 1)) & ~(uint64_t)(PAGE_SIZE - 1);
+					void *result = fs_mmap(address, rounded_size, PROT_READ | PROT_EXEC, (resolved_flags & MAP_FIXED) | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 					if ((intptr_t)result >= 0) {
 						mach_vm_address_t writable_addr = 0;
 						vm_prot_t cur, max;
@@ -529,7 +529,17 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	}
 
 	// execute it via the "remote_exec" facilities
-	result = remote_exec_fd(sysroot_buf, fd, executable_path, (const char *const *)&argv[1], (const char *const *)envp, NULL, comm, 0, debug, (struct remote_handlers){ .receive_syscall_addr = (intptr_t)&receive_syscall, .receive_clone_addr = (intptr_t)&receive_syscall }, &remote);
+	result = remote_exec_fd(sysroot_buf,
+	                        fd,
+	                        executable_path,
+	                        (const char *const *)&argv[1],
+	                        (const char *const *)envp,
+	                        NULL,
+	                        comm,
+	                        0,
+	                        debug,
+	                        (struct remote_handlers){.receive_syscall_addr = (intptr_t)&receive_syscall, .receive_clone_addr = (intptr_t)&receive_syscall},
+	                        &remote);
 	if (result < 0) {
 		DIE("remote exec failed", fs_strerror(result));
 	}
@@ -545,7 +555,6 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 
 	return 0;
 }
-
 
 uid_t startup_euid;
 gid_t startup_egid;
@@ -577,13 +586,12 @@ int remote_mprotect(intptr_t addr, size_t length, int prot)
 	return fs_mprotect((void *)addr, length, prot);
 }
 
-__attribute__((noinline))
-intptr_t remote_mmap_stack(size_t size, int prot)
+__attribute__((noinline)) intptr_t remote_mmap_stack(size_t size, int prot)
 {
 	if (prot & PROT_EXEC) {
 		DIE("exectable stacks are not allowed");
 	}
-	return (intptr_t)fs_mmap(NULL, size, prot, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	return (intptr_t)fs_mmap(NULL, size, prot, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 }
 
 int remote_load_binary(int fd, struct binary_info *out_info)

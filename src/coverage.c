@@ -30,14 +30,15 @@ int *__errno_location(void)
 	return &get_thread_storage()->coverage.err;
 }
 
-#define SET_ERRNO(expr) ({ \
-	__typeof__(expr) temporary_set_errno = expr; \
-	if (temporary_set_errno < 0) { \
-		*__errno_location() = -temporary_set_errno; \
-		temporary_set_errno = -1; \
-	} \
-	temporary_set_errno; \
-})
+#define SET_ERRNO(expr)                                 \
+	({                                                  \
+		__typeof__(expr) temporary_set_errno = expr;    \
+		if (temporary_set_errno < 0) {                  \
+			*__errno_location() = -temporary_set_errno; \
+			temporary_set_errno = -1;                   \
+		}                                               \
+		temporary_set_errno;                            \
+	})
 
 int open(const char *path, int flags, mode_t mode)
 {
@@ -110,9 +111,9 @@ static int decode_flags_from_mode(const char *mode)
 		case 'r':
 			return has_plus ? O_RDWR : O_RDONLY;
 		case 'w':
-			return has_plus ? O_RDWR|O_TRUNC|O_CREAT : O_WRONLY|O_TRUNC|O_CREAT;
+			return has_plus ? O_RDWR | O_TRUNC | O_CREAT : O_WRONLY | O_TRUNC | O_CREAT;
 		case 'a':
-			return has_plus ? O_RDWR|O_APPEND|O_CREAT : O_WRONLY|O_APPEND;
+			return has_plus ? O_RDWR | O_APPEND | O_CREAT : O_WRONLY | O_APPEND;
 		default:
 			return -1;
 	}
@@ -177,12 +178,12 @@ int fseek(FILE *stream, long int offset, int origin)
 	return SET_ERRNO(fs_lseek(*stream, offset, origin));
 }
 
-long int ftell(FILE * stream)
+long int ftell(FILE *stream)
 {
 	return SET_ERRNO(fs_lseek(*stream, 0, SEEK_CUR));
 }
 
-void setbuf(__attribute__((unused)) FILE * stream, __attribute__((unused)) char * buffer)
+void setbuf(__attribute__((unused)) FILE *stream, __attribute__((unused)) char *buffer)
 {
 }
 

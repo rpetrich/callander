@@ -35,92 +35,91 @@
 
 #define STACK_DESCENDS
 
-#define JUMP(pc, sp, arg0, arg1, arg2) do { \
-	register intptr_t x0 asm("x0"); \
-	x0 = arg0; \
-	register intptr_t x1 asm("x1"); \
-	x1 = arg1; \
-	register intptr_t x2 asm("x2"); \
-	x2 = arg2; \
-	__asm__ __volatile__( \
-		"mov sp, %1\n" \
-		"br %0" \
-		: \
-		: "r"(pc), "r"(sp), "r"(x0), "r"(x1), "r"(x2) : "memory" \
-	); \
-	__builtin_unreachable(); \
-} while(0)
+#define JUMP(pc, sp, arg0, arg1, arg2)                    \
+	do {                                                  \
+		register intptr_t x0 asm("x0");                   \
+		x0 = arg0;                                        \
+		register intptr_t x1 asm("x1");                   \
+		x1 = arg1;                                        \
+		register intptr_t x2 asm("x2");                   \
+		x2 = arg2;                                        \
+		__asm__ __volatile__(                             \
+			"mov sp, %1\n"                                \
+			"br %0"                                       \
+			:                                             \
+			: "r"(pc), "r"(sp), "r"(x0), "r"(x1), "r"(x2) \
+			: "memory");                                  \
+		__builtin_unreachable();                          \
+	} while (0)
 
-#define AXON_RESTORE_ASM \
-__asm__( \
-".text\n" \
-FS_HIDDEN_FUNCTION_ASM(__restore) "\n" \
-"	mov x8, #139\n" \
-);
+#define AXON_RESTORE_ASM                            \
+	__asm__(                                        \
+		".text\n" FS_HIDDEN_FUNCTION_ASM(__restore) \
+			"\n"                                    \
+			"	mov x8, #139\n");
 #define AXON_ENTRYPOINT_TRAMPOLINE_ASM(name, dest) \
-__asm__( \
-".text\n" \
-FS_HIDDEN_FUNCTION_ASM(name) "\n" \
-".cfi_startproc\n" \
-"	mov x29, #0\n" \
-"	mov x30, #0\n" \
-"	mov x0, sp\n" \
-".weak _DYNAMIC\n" \
-".hidden _DYNAMIC\n" \
-"	adrp x1, _DYNAMIC\n" \
-"	add x1, x1, #:lo12:_DYNAMIC\n" \
-"	and sp, x0, #-16\n" \
-"	b "#dest"\n" \
-".cfi_endproc\n" \
-);
+	__asm__(".text\n" FS_HIDDEN_FUNCTION_ASM(      \
+		name) "\n"                                 \
+	          ".cfi_startproc\n"                   \
+	          "	mov x29, #0\n"                     \
+	          "	mov x30, #0\n"                     \
+	          "	mov x0, sp\n"                      \
+	          ".weak _DYNAMIC\n"                   \
+	          ".hidden _DYNAMIC\n"                 \
+	          "	adrp x1, _DYNAMIC\n"               \
+	          "	add x1, x1, #:lo12:_DYNAMIC\n"     \
+	          "	and sp, x0, #-16\n"                \
+	          "	b " #dest                          \
+	          "\n"                                 \
+	          ".cfi_endproc\n");
 
 #define NAKED_FUNCTION
 
-__attribute__((warn_unused_result))
-static inline const void *read_thread_register(void)
+__attribute__((warn_unused_result)) static inline const void *read_thread_register(void)
 {
 	void *result;
-	__asm__("mrs %0,tpidr_el0":"=r"(result));
+	__asm__("mrs %0,tpidr_el0" : "=r"(result));
 	return result;
 }
 
 static inline void set_thread_register(const void *value)
 {
-	__asm__("msr tpidr_el0,%0"::"r"(value));
+	__asm__("msr tpidr_el0,%0" ::"r"(value));
 }
 
-#define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2) do { \
-	register __typeof__(arg1) x0 asm("x0"); \
-	x0 = arg1; \
-	register __typeof__(arg2) x1 asm("x1"); \
-	x1 = arg2; \
-	__asm__ __volatile__( \
-		"mov x2, sp\n" \
-		"bl "FS_NAME_ASM(func) \
-		: "=r"(x0), "=r"(x1) \
-		: "r"(x0), "r"(x1) \
-		: "cc", "memory", "x30", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29" \
-	); \
-} while(0)
+#define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2)                                                                                                                                                                           \
+	do {                                                                                                                                                                                                                          \
+		register __typeof__(arg1) x0 asm("x0");                                                                                                                                                                                   \
+		x0 = arg1;                                                                                                                                                                                                                \
+		register __typeof__(arg2) x1 asm("x1");                                                                                                                                                                                   \
+		x1 = arg2;                                                                                                                                                                                                                \
+		__asm__ __volatile__(                                                                                                                                                                                                     \
+			"mov x2, sp\n"                                                                                                                                                                                                        \
+			"bl " FS_NAME_ASM(func)                                                                                                                                                                                               \
+			: "=r"(x0), "=r"(x1)                                                                                                                                                                                                  \
+			: "r"(x0), "r"(x1)                                                                                                                                                                                                    \
+			: "cc", "memory", "x30", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29"); \
+	} while (0)
 
-#define CALL_ON_ALTERNATE_STACK_WITH_ARG(func, arg1, arg2, arg3, stack) do { \
-	register __typeof__(arg1) reg1 asm("x0"); \
-	reg1 = arg1; \
-	register __typeof__(arg2) reg2 asm("x1"); \
-	reg2 = arg2; \
-	register __typeof__(arg3) reg3 asm("x2"); \
-	reg3 = arg3; \
-	register __typeof__(stack) reg_stack asm("x3"); \
-	reg_stack = stack; \
-	__asm__ __volatile__( \
-		"mov x19, sp\n" \
-		".cfi_def_cfa_register x19\n" \
-		"mov sp, x3\n" \
-		"bl "FS_NAME_ASM(func)"\n" \
-		"mov sp, x19\n" \
-		".cfi_def_cfa_register sp" \
-		: "=r"(reg1) \
-		: "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg_stack) \
-		: "cc", "memory", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x30" \
-	); \
-} while(0)
+#define CALL_ON_ALTERNATE_STACK_WITH_ARG(func, arg1, arg2, arg3, stack)                                                                         \
+	do {                                                                                                                                        \
+		register __typeof__(arg1) reg1 asm("x0");                                                                                               \
+		reg1 = arg1;                                                                                                                            \
+		register __typeof__(arg2) reg2 asm("x1");                                                                                               \
+		reg2 = arg2;                                                                                                                            \
+		register __typeof__(arg3) reg3 asm("x2");                                                                                               \
+		reg3 = arg3;                                                                                                                            \
+		register __typeof__(stack) reg_stack asm("x3");                                                                                         \
+		reg_stack = stack;                                                                                                                      \
+		__asm__ __volatile__(                                                                                                                   \
+			"mov x19, sp\n"                                                                                                                     \
+			".cfi_def_cfa_register x19\n"                                                                                                       \
+			"mov sp, x3\n"                                                                                                                      \
+			"bl " FS_NAME_ASM(func)                                                                                                             \
+				"\n"                                                                                                                            \
+				"mov sp, x19\n"                                                                                                                 \
+				".cfi_def_cfa_register sp"                                                                                                      \
+			: "=r"(reg1)                                                                                                                        \
+			: "r"(reg1), "r"(reg2), "r"(reg3), "r"(reg_stack)                                                                                   \
+			: "cc", "memory", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x30"); \
+	} while (0)

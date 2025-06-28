@@ -1,23 +1,25 @@
 #define _GNU_SOURCE
 #include "attempt.h"
 
+#include <errno.h>
+#include <signal.h>
 #include <stdatomic.h>
 #include <stdnoreturn.h>
-#include <signal.h>
-#include <errno.h>
 
 #include "axon.h"
 #include "tls.h"
 
 // cleanup data contains a cleanup function and the data argument to call it with
-struct cleanup_data {
+struct cleanup_data
+{
 	attempt_cleanup_body callback;
 	void *data;
 };
 
 // attempt contains the state necessary to make a non-local return and cleanup
 // any partially-used resources
-struct attempt {
+struct attempt
+{
 	uintptr_t return_address;
 	uintptr_t stack_pointer;
 	struct attempt *previous;
@@ -25,8 +27,7 @@ struct attempt {
 	struct thread_storage *thread;
 };
 
-__attribute__((warn_unused_result))
-static struct attempt *attempt_exit_current(struct thread_storage *thread)
+__attribute__((warn_unused_result)) static struct attempt *attempt_exit_current(struct thread_storage *thread)
 {
 	struct attempt *attempt = thread->attempt;
 	if (attempt) {
@@ -62,8 +63,7 @@ noreturn void attempt_cancel(struct thread_storage *thread)
 }
 
 // attempt_exit runs all of the cleanups in the current attempt and destroys tls
-__attribute__((noinline))
-void attempt_exit(struct thread_storage *thread)
+__attribute__((noinline)) void attempt_exit(struct thread_storage *thread)
 {
 	struct attempt *attempt = thread->attempt;
 	thread->attempt = NULL;
@@ -79,8 +79,7 @@ void attempt_exit(struct thread_storage *thread)
 
 // attempt_internal is called from the attempt assembly stub. it sets up the
 // thread state and calls the body
-__attribute__((used, noinline))
-static void attempt_internal(attempt_body body, void *data, uintptr_t sp)
+__attribute__((used, noinline)) static void attempt_internal(attempt_body body, void *data, uintptr_t sp)
 {
 	struct attempt *attempt = data;
 	attempt->return_address = (uintptr_t)__builtin_extract_return_addr(__builtin_return_address(0));
@@ -95,12 +94,11 @@ static void attempt_internal(attempt_body body, void *data, uintptr_t sp)
 
 #ifndef __clang__
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
+#pragma GCC optimize("-fomit-frame-pointer")
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdangling-pointer"
 #endif
-__attribute__((used))
-void attempt(struct thread_storage *thread, attempt_body body, void *data)
+__attribute__((used)) void attempt(struct thread_storage *thread, attempt_body body, void *data)
 {
 	struct attempt attempt = {
 		.cleanup = NULL,

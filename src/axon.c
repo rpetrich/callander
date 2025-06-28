@@ -14,9 +14,9 @@
 #include "proxy.h"
 #include "search.h"
 #include "seccomp.h"
-#include "tracer.h"
 #include "time.h"
 #include "tls.h"
+#include "tracer.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -30,7 +30,8 @@
 
 AXON_BOOTSTRAP_ASM_NO_RELEASE
 
-typedef struct {
+typedef struct
+{
 	uintptr_t interpreter_base;
 	uintptr_t base_address;
 	uintptr_t old_base_address;
@@ -43,8 +44,8 @@ typedef struct {
 	const char *exec_path;
 	struct r_debug *debug;
 	void (*debug_update)(void);
-	bool patch_syscalls: 1;
-	bool intercept: 1;
+	bool patch_syscalls : 1;
+	bool intercept : 1;
 } bind_data;
 
 static void bind_axon(const bind_data data);
@@ -54,8 +55,7 @@ static inline bool is_go_binary(int fd, const struct binary_info *info);
 // it's responsible for attaching the axon bootstraper into the fixed FD
 // if missing or remapping the main binary to the fixed address if necessary
 // before jumping to the bind stage
-__attribute__((used))
-noreturn void release(size_t *sp)
+__attribute__((used)) noreturn void release(size_t *sp)
 {
 	bind_data data = {
 		.interpreter_base = 0,
@@ -73,14 +73,14 @@ noreturn void release(size_t *sp)
 		.intercept = true,
 	};
 	// Skip over arguments
-	char **argv = (void *)(sp+1);
+	char **argv = (void *)(sp + 1);
 	char *arg0 = *argv;
 	char *arg1 = argv[1];
 	while (*argv != NULL) {
 		++argv;
 	}
 	// Copy environment, skipping AXON_* variables
-	char **envp = argv+1;
+	char **envp = argv + 1;
 	char **envp_copy = envp;
 	while (*envp != NULL) {
 		if (fs_strncmp(*envp, AXON_ADDR, sizeof("AXON_") - 1) == 0) {
@@ -109,7 +109,7 @@ noreturn void release(size_t *sp)
 			} else if (fs_strncmp(*envp, "AXON_PATCH_SYSCALLS=false", sizeof("AXON_PATCH_SYSCALLS=false")) == 0) {
 				data.patch_syscalls = false;
 				*envp_copy++ = *envp;
-			} else if (fs_strncmp(*envp, "AXON_INTERCEPT=false", sizeof("AXON_INTERCEPT=false")-1) == 0) {
+			} else if (fs_strncmp(*envp, "AXON_INTERCEPT=false", sizeof("AXON_INTERCEPT=false") - 1) == 0) {
 				data.intercept = false;
 			}
 		} else {
@@ -155,7 +155,7 @@ noreturn void release(size_t *sp)
 			fs_exit(0);
 		}
 #ifdef ENABLE_TRACER
-		install_tracer(&data.traces, argv+1);
+		install_tracer(&data.traces, argv + 1);
 #endif
 		// Prefer /proc/self/exe, if it exists
 		int self_fd;
@@ -199,7 +199,7 @@ noreturn void release(size_t *sp)
 	}
 #ifdef STACK_PROTECTOR
 	// Setup fs temporarily so that stack protection can work
-	void **thread_data = fs_mmap(NULL, PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+	void **thread_data = fs_mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	*thread_data = thread_data;
 	set_thread_register(thread_data);
 #endif
@@ -231,8 +231,7 @@ noreturn void release(size_t *sp)
 // axon, fixing up the auxiliary vector, mapping the target program and/or
 // interpreter and jumping to the program/interpreter. If the seccomp filter
 // hasn't been set yet it's responsible for attaching it
-__attribute__((noinline))
-noreturn static void bind_axon(bind_data data)
+__attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 {
 	struct binary_info self_info;
 	load_existing(&self_info, data.base_address);
@@ -288,12 +287,12 @@ noreturn static void bind_axon(bind_data data)
 	// }
 
 	// Start pseudo-interpreter
-	const char **argv = (void *)(data.sp+1);
+	const char **argv = (void *)(data.sp + 1);
 	const char **current_argv = argv;
 	while (*current_argv != NULL) {
 		++current_argv;
 	}
-	const char **envp = current_argv+1;
+	const char **envp = current_argv + 1;
 	// Search useful environment variables
 	const char *path = "/bin:/usr/bin";
 	const char **current_envp = envp;
@@ -304,8 +303,8 @@ noreturn static void bind_axon(bind_data data)
 			if (*new_path != '\0') {
 				path = new_path;
 			}
-		} else if (fs_strncmp(*current_envp, "PROXY_FD=", sizeof("PROXY_FD=")-1) == 0) {
-			const char *proxy_fd_str = &(*current_envp)[sizeof("PROXY_FD=")-1];
+		} else if (fs_strncmp(*current_envp, "PROXY_FD=", sizeof("PROXY_FD=") - 1) == 0) {
+			const char *proxy_fd_str = &(*current_envp)[sizeof("PROXY_FD=") - 1];
 			if (*fs_scans(proxy_fd_str, &proxy_fd) != '\0') {
 				DIE("unexpected PROXY_FD", proxy_fd_str);
 			}
@@ -347,7 +346,7 @@ noreturn static void bind_axon(bind_data data)
 
 	// Setup seccomp and reexec if missing
 #ifdef ENABLE_TRACER
-	char filename[PATH_MAX+1];
+	char filename[PATH_MAX + 1];
 #endif
 	if (data.comm == NULL) {
 		// Setup a seccomp policy so that syscalls will fault to userspace
@@ -386,7 +385,7 @@ noreturn static void bind_axon(bind_data data)
 			if (count < 0) {
 				DIE("unable to read exec path", fs_strerror(count));
 			}
-			result = fs_execve(buf, (char * const *)(argv + (data.interpreter_base == 0)), (char * const *)envp);
+			result = fs_execve(buf, (char *const *)(argv + (data.interpreter_base == 0)), (char *const *)envp);
 		}
 		if (UNLIKELY(result < 0)) {
 			DIE("unable to exec", fs_strerror(result));
@@ -400,7 +399,7 @@ noreturn static void bind_axon(bind_data data)
 	}
 
 	// Map the main binary
-	struct binary_info info = { 0 };
+	struct binary_info info = {0};
 	result = load_binary(MAIN_FD, &info, 0, false);
 	if (UNLIKELY(result != 0)) {
 		DIE("unable to load main binary", fs_strerror(result));
@@ -481,7 +480,7 @@ noreturn static void bind_axon(bind_data data)
 #endif
 
 	// Map the interpreter if need be
-	struct binary_info interpreter_info = { 0 };
+	struct binary_info interpreter_info = {0};
 	if (info.interpreter) {
 		// search for our ELF interpreter override, but fallback to normal
 		// interpreter
@@ -527,7 +526,8 @@ noreturn static void bind_axon(bind_data data)
 	data.debug_update();
 	// Make stack executable/non-executable as required
 	if (info.executable_stack != EXECUTABLE_STACK_DEFAULT) {
-		int mprotect_result = fs_mprotect((void *)((intptr_t)data.sp & -PAGE_SIZE), PAGE_SIZE, info.executable_stack == EXECUTABLE_STACK_REQUIRED ? (PROT_READ | PROT_WRITE | PROT_EXEC | PROT_GROWSDOWN) : (PROT_READ | PROT_WRITE | PROT_GROWSDOWN));
+		int mprotect_result =
+			fs_mprotect((void *)((intptr_t)data.sp & -PAGE_SIZE), PAGE_SIZE, info.executable_stack == EXECUTABLE_STACK_REQUIRED ? (PROT_READ | PROT_WRITE | PROT_EXEC | PROT_GROWSDOWN) : (PROT_READ | PROT_WRITE | PROT_GROWSDOWN));
 		if (mprotect_result < 0) {
 			DIE("unable to update stack execute permission");
 		}
@@ -539,7 +539,8 @@ noreturn static void bind_axon(bind_data data)
 	__builtin_unreachable();
 }
 
-static inline bool is_go_binary(int fd, const struct binary_info *info) {
+static inline bool is_go_binary(int fd, const struct binary_info *info)
+{
 	struct section_info section;
 	int err = load_section_info(fd, info, &section);
 	if (err != 0) {

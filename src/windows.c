@@ -206,7 +206,7 @@ static mode_t mode_for_file_attributes(WINDOWS_DWORD fileAttributes)
 
 struct fs_stat translate_windows_by_handle_file_information(WINDOWS_BY_HANDLE_FILE_INFORMATION info)
 {
-	struct fs_stat result = { 0 };
+	struct fs_stat result = {0};
 	result.st_dev = info.dwVolumeSerialNumber;
 	result.st_ino = ((uint64_t)info.nFileIndexHigh << 32) | info.nFileIndexLow;
 	result.st_mode = mode_for_file_attributes(info.dwFileAttributes);

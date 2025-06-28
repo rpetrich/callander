@@ -8,16 +8,15 @@
 
 AXON_BOOTSTRAP_ASM_NO_RELEASE
 
-__attribute__((used))
-noreturn void release(size_t *sp)
+__attribute__((used)) noreturn void release(size_t *sp)
 {
 	// Skip over arguments
-	char **argv = (void *)(sp+1);
+	char **argv = (void *)(sp + 1);
 	while (*argv != NULL) {
 		++argv;
 	}
 	// skip over environment variables
-	char **envp = argv+1;
+	char **envp = argv + 1;
 	while (*envp != NULL) {
 		++envp;
 	}

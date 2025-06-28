@@ -96,11 +96,11 @@ static int dns_resolver_address(struct resolver_funcs funcs, struct sockaddr_in 
 					break;
 				}
 				const char *next_line = newline == NULL ? &buf[cursor] : newline;
-				if (next_line - line_start > (ssize_t)sizeof("nameserver ")-1 && fs_memcmp(line_start, "nameserver ", sizeof("nameserver ")-1) == 0) {
+				if (next_line - line_start > (ssize_t)sizeof("nameserver ") - 1 && fs_memcmp(line_start, "nameserver ", sizeof("nameserver ") - 1) == 0) {
 					char nameserver_buf[256];
-					size_t addr_size = next_line - line_start - (sizeof("nameserver ")-1);
-					if (addr_size < sizeof(nameserver_buf)-1) {
-						memcpy(&nameserver_buf, line_start + sizeof("nameserver ")-1, addr_size);
+					size_t addr_size = next_line - line_start - (sizeof("nameserver ") - 1);
+					if (addr_size < sizeof(nameserver_buf) - 1) {
+						memcpy(&nameserver_buf, line_start + sizeof("nameserver ") - 1, addr_size);
 						nameserver_buf[addr_size] = '\0';
 						struct in_addr addr;
 						if (inet_aton_simple(nameserver_buf, &addr) == 0) {
@@ -133,8 +133,8 @@ static int dns_resolver_address(struct resolver_funcs funcs, struct sockaddr_in 
 	*out_addr = (struct sockaddr_in){
 		.sin_family = AF_INET,
 		.sin_port = hton_16(53),
-		.sin_addr = (struct in_addr){ result },
-		.sin_zero = { 0 },
+		.sin_addr = (struct in_addr){result},
+		.sin_zero = {0},
 	};
 	return 0;
 }
@@ -146,50 +146,47 @@ static int dns_resolver_address(struct resolver_funcs funcs, struct sockaddr_in 
 #define OPCODE_IQUERY 1
 #define OPCODE_STATUS 2
 
-#define T_A 1 //Ipv4 address
-#define T_NS 2 //Nameserver
+#define T_A 1 // Ipv4 address
+#define T_NS 2 // Nameserver
 #define T_CNAME 5 // canonical name
 #define T_SOA 6 /* start of authority zone */
 #define T_PTR 12 /* domain name pointer */
-#define T_MX 15 //Mail server
+#define T_MX 15 // Mail server
 
-__attribute__((packed))
-__attribute__((aligned(1)))
-struct dns_header {
-    unsigned short id; // identification number
- 
-    unsigned char rd:1; // recursion desired
-    unsigned char tc:1; // truncated message
-    unsigned char aa:1; // authoritive answer
-    unsigned char opcode:4; // purpose of message
-    unsigned char qr:1; // query/response flag
- 
-    unsigned char rcode:4; // response code
-    unsigned char cd:1; // checking disabled
-    unsigned char ad:1; // authenticated data
-    unsigned char z:1; // its z! reserved
-    unsigned char ra:1; // recursion available
- 
-    unsigned short q_count; // number of question entries
-    unsigned short ans_count; // number of answer entries
-    unsigned short auth_count; // number of authority entries
-    unsigned short add_count; // number of resource entries
+__attribute__((packed)) __attribute__((aligned(1))) struct dns_header
+{
+	unsigned short id; // identification number
+
+	unsigned char rd : 1; // recursion desired
+	unsigned char tc : 1; // truncated message
+	unsigned char aa : 1; // authoritive answer
+	unsigned char opcode : 4; // purpose of message
+	unsigned char qr : 1; // query/response flag
+
+	unsigned char rcode : 4; // response code
+	unsigned char cd : 1; // checking disabled
+	unsigned char ad : 1; // authenticated data
+	unsigned char z : 1; // its z! reserved
+	unsigned char ra : 1; // recursion available
+
+	unsigned short q_count; // number of question entries
+	unsigned short ans_count; // number of answer entries
+	unsigned short auth_count; // number of authority entries
+	unsigned short add_count; // number of resource entries
 };
 
-__attribute__((packed))
-__attribute__((aligned(1)))
-struct dns_query {
-    unsigned short qtype;
-    unsigned short qclass;
+__attribute__((packed)) __attribute__((aligned(1))) struct dns_query
+{
+	unsigned short qtype;
+	unsigned short qclass;
 };
 
-__attribute__((packed))
-__attribute__((aligned(1)))
-struct dns_record {
-    unsigned short type;
-    unsigned short _class;
-    unsigned int ttl;
-    unsigned short data_len;
+__attribute__((packed)) __attribute__((aligned(1))) struct dns_record
+{
+	unsigned short type;
+	unsigned short _class;
+	unsigned int ttl;
+	unsigned short data_len;
 };
 
 static int populate_addrinfo(struct sockaddr *addr, struct resolver_funcs funcs, struct addrinfo **res)
@@ -243,13 +240,13 @@ static int encode_qname(const char *name, char *out_buf, size_t size, int *out_b
 	for (int i = 0;;) {
 		if (name[i] == '.') {
 			out_buf[cur] = i - cur;
-			cur = i+1;
+			cur = i + 1;
 		} else if (name[i] == '\0') {
 			out_buf[cur] = i - cur;
-			cur = i+1;
+			cur = i + 1;
 			break;
 		} else {
-			out_buf[i+1] = name[i];
+			out_buf[i + 1] = name[i];
 		}
 		i++;
 		if (i == (int)size - 1) {
@@ -283,7 +280,7 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 		return EAI_SERVICE;
 	}
 	if (fs_strcmp(node, "localhost") == 0) {
-		return populate_addrinfo((struct sockaddr *)make_sockaddr_in((struct in_addr) { 127 | (1 << 24) }, parsed_service, funcs), funcs, res);
+		return populate_addrinfo((struct sockaddr *)make_sockaddr_in((struct in_addr){127 | (1 << 24)}, parsed_service, funcs), funcs, res);
 	}
 	if (fs_strcmp(node, "ip6-localhost") == 0 || fs_strcmp(node, "ip6-loopback") == 0) {
 		struct in6_addr addr;
@@ -316,11 +313,12 @@ int getaddrinfo_custom(const char *node, const char *service, __attribute__((unu
 		*funcs.errno_location = -fd;
 		return EAI_SYSTEM;
 	}
-	struct {
+	struct
+	{
 		struct dns_header header;
-		char data[65536-sizeof(struct dns_header)];
+		char data[65536 - sizeof(struct dns_header)];
 	} request;
-	request.header = (struct dns_header){ 0 };
+	request.header = (struct dns_header){0};
 	request.header.id = 2048;
 	request.header.rd = 1;
 	request.header.q_count = hton_16(1);

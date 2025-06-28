@@ -4,12 +4,10 @@
 #include "freestanding.h"
 
 // intercept_signals will interrupt the SIGSYS and SIGBUS signals and call the appropriate handler
-__attribute__((warn_unused_result))
-int intercept_signals(void);
+__attribute__((warn_unused_result)) int intercept_signals(void);
 
 // handle_sigaction handles an incoming sigaction syscall from the program
-__attribute__((warn_unused_result))
-int handle_sigaction(int signal, const struct fs_sigaction *act, struct fs_sigaction *oldact, size_t size);
+__attribute__((warn_unused_result)) int handle_sigaction(int signal, const struct fs_sigaction *act, struct fs_sigaction *oldact, size_t size);
 
 // handle_raise handles an incoming signal raise for the current thread
 void handle_raise(int tid, int sig);

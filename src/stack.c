@@ -3,8 +3,8 @@
 #include "stack.h"
 
 #include "attempt.h"
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 #include "mapped.h"
 #include "tls.h"
 
@@ -62,9 +62,9 @@ static inline void *get_allocated_stack(struct stack_data *stack_data)
 	if (UNLIKELY(stack == NULL)) {
 		// map a new stack and guard
 #ifdef MAP_STACK
-		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 #else
-		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif
 		if (fs_is_map_failed(stack)) {
 			DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
@@ -88,15 +88,14 @@ static inline void *get_allocated_stack(struct stack_data *stack_data)
 	return stack;
 }
 
-__attribute__((used))
-void call_on_alternate_stack_body(void *data1, void *data2, alt_callback callback)
+__attribute__((used)) void call_on_alternate_stack_body(void *data1, void *data2, alt_callback callback)
 {
 	callback(data1, data2);
 }
 
 #ifndef __clang__
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
+#pragma GCC optimize("-fomit-frame-pointer")
 #endif
 void call_on_alternate_stack(struct thread_storage *thread, alt_callback callback, void *data1, void *data2)
 {
@@ -193,7 +192,7 @@ void stack_data_clear(struct stack_data *stack)
 	// inherit the dead stack
 	stack->running = false;
 #ifdef WATCH_ALTSTACKS
-	stack->altstack = (stack_t) { 0 };
+	stack->altstack = (stack_t){0};
 #endif
 }
 

@@ -3,23 +3,25 @@
 #include <errno.h>
 
 #include "attempt.h"
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 
 #define USE_MINCORE 1
 
 #if USE_MINCORE
 #else
-struct mapped_args {
+struct mapped_args
+{
 	const void *address;
 	size_t length;
 	bool result;
 };
-static void region_is_mapped_body(__attribute__((unused)) struct thread_storage *thread, struct mapped_args *args) {
+static void region_is_mapped_body(__attribute__((unused)) struct thread_storage *thread, struct mapped_args *args)
+{
 	intptr_t low = (intptr_t)args->address & -PAGE_SIZE;
 	intptr_t high = ((intptr_t)args->address + args->length + (PAGE_SIZE - 1)) & -PAGE_SIZE;
 	for (; low != high; low += PAGE_SIZE) {
-		*(const volatile uint8_t*)low;
+		*(const volatile uint8_t *)low;
 	}
 	args->result = true;
 }
@@ -44,8 +46,7 @@ bool region_is_mapped(__attribute__((unused)) struct thread_storage *thread, con
 #endif
 }
 
-__attribute__((warn_unused_result))
-static bool read_mapping(char *buf, struct mapping *out_mapping)
+__attribute__((warn_unused_result)) static bool read_mapping(char *buf, struct mapping *out_mapping)
 {
 	uintptr_t start;
 	const char *dash_character = fs_scanu(buf, &start);
@@ -160,10 +161,9 @@ void init_maps_file_state(struct maps_file_state *out_maps_file)
 	out_maps_file->count = 0;
 }
 
-__attribute__((warn_unused_result))
-int read_next_mapping_from_file(int fd, struct maps_file_state *f, struct mapping *out_mapping)
+__attribute__((warn_unused_result)) int read_next_mapping_from_file(int fd, struct maps_file_state *f, struct mapping *out_mapping)
 {
-	struct mapping zero = { 0 };
+	struct mapping zero = {0};
 	*out_mapping = zero;
 	char *newline;
 	for (;;) {

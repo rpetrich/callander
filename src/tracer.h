@@ -22,7 +22,8 @@
 
 // enabled_traces is a bitfield containing the enabled trace types
 extern uint32_t enabled_traces;
-enum trace_types {
+enum trace_types
+{
 	TRACE_TYPE_EXEC = 1 << 0,
 	TRACE_TYPE_OPEN_FOR_MODIFY = 1 << 1,
 	TRACE_TYPE_OPEN_READ_ONLY = 1 << 2,
@@ -56,10 +57,12 @@ enum trace_types {
 	TRACE_TYPE_CONNECT_UNIX = 1 << 30,
 };
 
-struct trace_sockaddr {
+struct trace_sockaddr
+{
 	int sa_family;
 	union {
-		struct {
+		struct
+		{
 			uint16_t sin_port;
 			union {
 				uint32_t sin_addr;
@@ -67,15 +70,16 @@ struct trace_sockaddr {
 			};
 			uint16_t sin6_port;
 			union {
-				struct {
+				struct
+				{
 					uint64_t high;
 					uint64_t low;
 				} sin6_addr;
 				uint8_t sin6_addr_array[16];
 			};
-		};	
+		};
 		char sun_path[108];
-	};	
+	};
 };
 
 // send_exec_event reports an exec

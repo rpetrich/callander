@@ -6,14 +6,14 @@
 #include "axon.h"
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sched.h>
-#include <stdnoreturn.h>
 #include <stdint.h>
+#include <stdnoreturn.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <errno.h>
 
 #pragma GCC diagnostic ignored "-Wunused-result"
 
@@ -24,8 +24,7 @@ union sockaddr_buf {
 };
 
 #ifdef __linux__
-__attribute__((used))
-noreturn void release(uint32_t expected_addr, uint32_t expected_port)
+__attribute__((used)) noreturn void release(uint32_t expected_addr, uint32_t expected_port)
 #else
 int main(void)
 #endif
@@ -45,7 +44,7 @@ int main(void)
 	(void)fs_fcntl(fd, F_SETFD, 0);
 #else
 	int fd = fs_socket(AF_INET, SOCK_STREAM, 0);
-	struct sockaddr_in addr = { 0 };
+	struct sockaddr_in addr = {0};
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = fs_htonl((127 << 24) | 1);
 	addr.sin_port = fs_htons(8484);

@@ -4,7 +4,8 @@
 #include <signal.h>
 #include <stdbool.h>
 
-struct stack_data {
+struct stack_data
+{
 #ifdef WATCH_ALTSTACKS
 	stack_t altstack;
 #endif

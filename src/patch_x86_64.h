@@ -22,12 +22,10 @@ typedef char *(*patch_address_formatter)(const uint8_t *, void *);
 
 bool patch_find_basic_block(const uint8_t *entry, const uint8_t *instruction, struct instruction_range *out_block);
 
-__attribute__((warn_unused_result))
-__attribute__((nonnull(2, 5, 7)))
-bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result);
+__attribute__((warn_unused_result)) __attribute__((nonnull(2, 5, 7))) bool find_patch_target(struct instruction_range basic_block, const uint8_t *target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter,
+                                                                                             void *formatter_data, struct instruction_range *out_result);
 
-__attribute__((warn_unused_result))
-size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data);
+__attribute__((warn_unused_result)) size_t migrate_instructions(uint8_t *dest, const uint8_t *src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data);
 
 #define PCREL_JUMP_SIZE 5
 

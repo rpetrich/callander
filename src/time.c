@@ -2,19 +2,17 @@
 
 #include "time.h"
 
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 
 static int (*current_gettime)(clockid_t clk_id, struct timespec *tp);
 
-__attribute__((visibility("hidden")))
-int clock_gettime(clockid_t clk_id, struct timespec *tp)
+__attribute__((visibility("hidden"))) int clock_gettime(clockid_t clk_id, struct timespec *tp)
 {
 	return current_gettime(clk_id, tp);
 }
 
-__attribute__((visibility("hidden")))
-void clock_load(ElfW(auxv_t) *auxv)
+__attribute__((visibility("hidden"))) void clock_load(ElfW(auxv_t) * auxv)
 {
 	if (auxv != NULL) {
 		struct binary_info info;

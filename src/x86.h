@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ins.h"
 #include "axon.h"
+#include "ins.h"
 #include "x86_64_length_disassembler.h"
 
 // x86_is_syscall_instruction checks if the instruction at address is a syscall
@@ -15,30 +15,30 @@ bool x86_is_syscall_instruction(const uint8_t *addr);
 // x86_is_nop_instruction checks if the instruction at address is a nop
 bool x86_is_nop_instruction(const uint8_t *addr);
 
-struct x86_ins_prefixes {
-	bool has_lock:1;
-	bool has_repne:1;
-	bool has_rep:1;
-	bool has_w:1;
-	bool has_r:1;
-	bool has_x:1;
-	bool has_b:1;
-	bool has_any_rex:1;
-	bool has_segment_override:1;
-	bool has_notrack:1;
-	bool has_operand_size_override:1;
-	bool has_address_size_override:1;
+struct x86_ins_prefixes
+{
+	bool has_lock : 1;
+	bool has_repne : 1;
+	bool has_rep : 1;
+	bool has_w : 1;
+	bool has_r : 1;
+	bool has_x : 1;
+	bool has_b : 1;
+	bool has_any_rex : 1;
+	bool has_segment_override : 1;
+	bool has_notrack : 1;
+	bool has_operand_size_override : 1;
+	bool has_address_size_override : 1;
 	// bool has_taken_hint:1;
 	// bool has_not_taken_hint:1;
 	// bool has_three_byte_vex:1;
-	bool has_vex:1;
+	bool has_vex : 1;
 	// bool has_xop:1;
 };
 
-__attribute__((always_inline))
-__attribute__((nonnull(1)))
-static inline struct x86_ins_prefixes x86_decode_ins_prefixes(const uint8_t **ins) {
-	struct x86_ins_prefixes result = { 0 };
+__attribute__((always_inline)) __attribute__((nonnull(1))) static inline struct x86_ins_prefixes x86_decode_ins_prefixes(const uint8_t **ins)
+{
+	struct x86_ins_prefixes result = {0};
 	if (**ins == 0x3e) {
 		// notrack prefix for CET. not used
 		result.has_notrack = true;
@@ -119,20 +119,20 @@ static inline struct x86_ins_prefixes x86_decode_ins_prefixes(const uint8_t **in
 	return result;
 }
 
-struct x86_instruction {
+struct x86_instruction
+{
 	const uint8_t *unprefixed;
 	int length;
 	struct x86_ins_prefixes prefixes;
 };
 
-__attribute__((always_inline))
-static inline bool x86_decode_instruction(const uint8_t *addr, struct x86_instruction *out_ins)
+__attribute__((always_inline)) static inline bool x86_decode_instruction(const uint8_t *addr, struct x86_instruction *out_ins)
 {
 	int length = InstructionSize_x86_64(addr, 0xf);
 	out_ins->length = length;
 	out_ins->unprefixed = addr;
 	if (length == INSTRUCTION_INVALID) {
-		out_ins->prefixes = (struct x86_ins_prefixes){ 0 };
+		out_ins->prefixes = (struct x86_ins_prefixes){0};
 		return false;
 	}
 	out_ins->prefixes = x86_decode_ins_prefixes(&out_ins->unprefixed);
@@ -165,11 +165,10 @@ static inline bool x86_is_return_instruction(const struct x86_instruction *ins)
 
 // x86_decode_jump_instruction determines if an instruction jumps, and
 // fills the jump target
-__attribute__((warn_unused_result))
-__attribute__((nonnull(1, 2)))
-enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump);
+__attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump);
 
-enum x86_conditional_type {
+enum x86_conditional_type
+{
 	X86_CONDITIONAL_TYPE_OVERFLOW = 0x0,
 	X86_CONDITIONAL_TYPE_NOT_OVERFLOW = 0x1,
 	X86_CONDITIONAL_TYPE_BELOW = 0x2,
@@ -193,13 +192,15 @@ static inline int x86_get_conditional_type(const uint8_t *ins)
 	return ins[*ins == 0x0f] & 0xf;
 }
 
-typedef struct {
-    uint8_t rm : 3;
-    uint8_t reg : 3;
-    uint8_t mod : 2;
+typedef struct
+{
+	uint8_t rm : 3;
+	uint8_t reg : 3;
+	uint8_t mod : 2;
 } x86_mod_rm_t;
 
-static inline x86_mod_rm_t x86_read_modrm(const uint8_t *byte) {
+static inline x86_mod_rm_t x86_read_modrm(const uint8_t *byte)
+{
 	union {
 		uint8_t byte;
 		x86_mod_rm_t modrm;
@@ -208,30 +209,35 @@ static inline x86_mod_rm_t x86_read_modrm(const uint8_t *byte) {
 	return pun.modrm;
 }
 
-enum {
+enum
+{
 	SYSCALL_INSTRUCTION_SIZE = 2,
 };
 
-static inline int x86_read_reg(x86_mod_rm_t modrm, struct x86_ins_prefixes rex) {
+static inline int x86_read_reg(x86_mod_rm_t modrm, struct x86_ins_prefixes rex)
+{
 	return modrm.reg + (rex.has_r << 3);
 }
 
-static inline int x86_read_rm(x86_mod_rm_t modrm, struct x86_ins_prefixes rex) {
+static inline int x86_read_rm(x86_mod_rm_t modrm, struct x86_ins_prefixes rex)
+{
 	return modrm.rm + (rex.has_b << 3);
 }
 
-__attribute__((always_inline))
-static inline bool x86_modrm_is_direct(x86_mod_rm_t modrm) {
+__attribute__((always_inline)) static inline bool x86_modrm_is_direct(x86_mod_rm_t modrm)
+{
 	return modrm.mod == 3;
 }
 
-typedef struct {
-    uint8_t base : 3;
-    uint8_t index : 3;
-    uint8_t scale : 2;
+typedef struct
+{
+	uint8_t base : 3;
+	uint8_t index : 3;
+	uint8_t scale : 2;
 } x86_sib_t;
 
-static inline x86_sib_t x86_read_sib(const uint8_t *byte) {
+static inline x86_sib_t x86_read_sib(const uint8_t *byte)
+{
 	union {
 		uint8_t byte;
 		x86_sib_t sib;
@@ -240,11 +246,13 @@ static inline x86_sib_t x86_read_sib(const uint8_t *byte) {
 	return pun.sib;
 }
 
-static inline int x86_read_base(x86_sib_t sib, struct x86_ins_prefixes rex) {
+static inline int x86_read_base(x86_sib_t sib, struct x86_ins_prefixes rex)
+{
 	return sib.base + (rex.has_b << 3);
 }
 
-static inline int x86_read_index(x86_sib_t sib, struct x86_ins_prefixes rex) {
+static inline int x86_read_index(x86_sib_t sib, struct x86_ins_prefixes rex)
+{
 	return sib.index + (rex.has_x << 3);
 }
 

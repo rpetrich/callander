@@ -3,8 +3,8 @@
 #include "fork.h"
 
 #include "axon.h"
-#include "exec.h"
 #include "defaultlibs.h"
+#include "exec.h"
 #include "fd_table.h"
 #include "freestanding.h"
 #include "tracer.h"
@@ -43,7 +43,7 @@ pid_t wrapped_vfork(struct thread_storage *thread)
 	// equivalent of vfork, but without the memory sharing
 	serialize_fd_table_for_fork();
 #if 1
-	intptr_t result = FS_SYSCALL(__NR_clone, SIGCHLD|CLONE_VFORK, 0, 0, 0, 0, 0);
+	intptr_t result = FS_SYSCALL(__NR_clone, SIGCHLD | CLONE_VFORK, 0, 0, 0, 0, 0);
 #else
 	intptr_t result = fs_fork();
 #endif

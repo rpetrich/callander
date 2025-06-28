@@ -25,8 +25,7 @@ void set_tid_address(const void *tid_address)
 	}
 }
 
-__attribute__((warn_unused_result))
-bool is_axon(const struct fs_stat *stat)
+__attribute__((warn_unused_result)) bool is_axon(const struct fs_stat *stat)
 {
 	(void)stat;
 	return false;
@@ -42,4 +41,3 @@ int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filenam
 	(void)flags;
 	return -ENOSYS;
 }
-

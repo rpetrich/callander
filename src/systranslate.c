@@ -1,10 +1,10 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "freestanding.h"
 
@@ -12,12 +12,13 @@
 
 FS_DEFINE_SYSCALL
 
-#define SYSCALL_DEF(name, ...) 1+
-#define SYSCALL_DEF_EMPTY 1+
-enum {
-	SYSCALL_DEFINED_COUNT = 
+#define SYSCALL_DEF(name, ...) 1 +
+#define SYSCALL_DEF_EMPTY 1 +
+enum
+{
+	SYSCALL_DEFINED_COUNT =
 #include "syscall_defs.h"
-	0,
+		0,
 };
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY
@@ -30,8 +31,8 @@ const char *syscall_list[] = {
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY
 
-
-int main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[])
+{
 	char buf[4096 * 10 + 1];
 	int read_cursor = 0;
 	int scan_cursor = 0;

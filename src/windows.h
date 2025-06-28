@@ -67,110 +67,118 @@ typedef uint8_t WINDOWS_BOOLEAN;
 
 typedef void *WINDOWS_HANDLE;
 
-typedef struct WINDOWS__FILETIME {
+typedef struct WINDOWS__FILETIME
+{
 	WINDOWS_DWORD dwLowDateTime;
 	WINDOWS_DWORD dwHighDateTime;
 } WINDOWS_FILETIME;
 
-typedef struct WINDOWS__BY_HANDLE_FILE_INFORMATION {
-	WINDOWS_DWORD    dwFileAttributes;
+typedef struct WINDOWS__BY_HANDLE_FILE_INFORMATION
+{
+	WINDOWS_DWORD dwFileAttributes;
 	WINDOWS_FILETIME ftCreationTime;
 	WINDOWS_FILETIME ftLastAccessTime;
 	WINDOWS_FILETIME ftLastWriteTime;
-	WINDOWS_DWORD    dwVolumeSerialNumber;
-	WINDOWS_DWORD    nFileSizeHigh;
-	WINDOWS_DWORD    nFileSizeLow;
-	WINDOWS_DWORD    nNumberOfLinks;
-	WINDOWS_DWORD    nFileIndexHigh;
-	WINDOWS_DWORD    nFileIndexLow;
+	WINDOWS_DWORD dwVolumeSerialNumber;
+	WINDOWS_DWORD nFileSizeHigh;
+	WINDOWS_DWORD nFileSizeLow;
+	WINDOWS_DWORD nNumberOfLinks;
+	WINDOWS_DWORD nFileIndexHigh;
+	WINDOWS_DWORD nFileIndexLow;
 } WINDOWS_BY_HANDLE_FILE_INFORMATION;
 
-typedef struct WINDOWS__SECURITY_ATTRIBUTES {
-  WINDOWS_DWORD  nLength;
-  void *lpSecurityDescriptor;
-  WINDOWS_BOOL   bInheritHandle;
+typedef struct WINDOWS__SECURITY_ATTRIBUTES
+{
+	WINDOWS_DWORD nLength;
+	void *lpSecurityDescriptor;
+	WINDOWS_BOOL bInheritHandle;
 } WINDOWS_SECURITY_ATTRIBUTES;
 
-typedef struct WINDOWS__CREATEFILE2_EXTENDED_PARAMETERS {
-	WINDOWS_DWORD                 dwSize;
-	WINDOWS_DWORD                 dwFileAttributes;
-	WINDOWS_DWORD                 dwFileFlags;
-	WINDOWS_DWORD                 dwSecurityQosFlags;
-	WINDOWS_SECURITY_ATTRIBUTES*  lpSecurityAttributes;
-	WINDOWS_HANDLE                hTemplateFile;
+typedef struct WINDOWS__CREATEFILE2_EXTENDED_PARAMETERS
+{
+	WINDOWS_DWORD dwSize;
+	WINDOWS_DWORD dwFileAttributes;
+	WINDOWS_DWORD dwFileFlags;
+	WINDOWS_DWORD dwSecurityQosFlags;
+	WINDOWS_SECURITY_ATTRIBUTES *lpSecurityAttributes;
+	WINDOWS_HANDLE hTemplateFile;
 } WINDOWS_CREATEFILE2_EXTENDED_PARAMETERS;
 
-typedef struct WINDOWS__WIN32_FIND_DATAW {
-	WINDOWS_DWORD    dwFileAttributes;
+typedef struct WINDOWS__WIN32_FIND_DATAW
+{
+	WINDOWS_DWORD dwFileAttributes;
 	WINDOWS_FILETIME ftCreationTime;
 	WINDOWS_FILETIME ftLastAccessTime;
 	WINDOWS_FILETIME ftLastWriteTime;
-	WINDOWS_DWORD    nFileSizeHigh;
-	WINDOWS_DWORD    nFileSizeLow;
-	WINDOWS_DWORD    dwReserved0;
-	WINDOWS_DWORD    dwReserved1;
-	uint16_t    cFileName[WINDOWS_MAX_PATH];
-	uint16_t    cAlternateFileName[14];
-	WINDOWS_DWORD    dwFileType; // Obsolete. Do not use.
-	WINDOWS_DWORD    dwCreatorType; // Obsolete. Do not use
-	uint16_t     wFinderFlags; // Obsolete. Do not use
+	WINDOWS_DWORD nFileSizeHigh;
+	WINDOWS_DWORD nFileSizeLow;
+	WINDOWS_DWORD dwReserved0;
+	WINDOWS_DWORD dwReserved1;
+	uint16_t cFileName[WINDOWS_MAX_PATH];
+	uint16_t cAlternateFileName[14];
+	WINDOWS_DWORD dwFileType; // Obsolete. Do not use.
+	WINDOWS_DWORD dwCreatorType; // Obsolete. Do not use
+	uint16_t wFinderFlags; // Obsolete. Do not use
 } WINDOWS_WIN32_FIND_DATAW;
 
-typedef struct WINDOWS_FILE_RENAME_INFO {
-  union {
-    WINDOWS_BOOLEAN ReplaceIfExists;
-    WINDOWS_DWORD   Flags;
-  } DUMMYUNIONNAME;
-  WINDOWS_BOOLEAN ReplaceIfExists;
-  WINDOWS_HANDLE  RootDirectory;
-  WINDOWS_DWORD   FileNameLength;
-  uint16_t   FileName[1];
+typedef struct WINDOWS_FILE_RENAME_INFO
+{
+	union {
+		WINDOWS_BOOLEAN ReplaceIfExists;
+		WINDOWS_DWORD Flags;
+	} DUMMYUNIONNAME;
+	WINDOWS_BOOLEAN ReplaceIfExists;
+	WINDOWS_HANDLE RootDirectory;
+	WINDOWS_DWORD FileNameLength;
+	uint16_t FileName[1];
 } WINDOWS_FILE_RENAME_INFO;
 
-typedef enum WINDOWS__FILE_INFO_BY_HANDLE_CLASS {
-  WINDOWS_FileBasicInfo,
-  WINDOWS_FileStandardInfo,
-  WINDOWS_FileNameInfo,
-  WINDOWS_FileRenameInfo,
-  WINDOWS_FileDispositionInfo,
-  WINDOWS_FileAllocationInfo,
-  WINDOWS_FileEndOfFileInfo,
-  WINDOWS_FileStreamInfo,
-  WINDOWS_FileCompressionInfo,
-  WINDOWS_FileAttributeTagInfo,
-  WINDOWS_FileIdBothDirectoryInfo,
-  WINDOWS_FileIdBothDirectoryRestartInfo,
-  WINDOWS_FileIoPriorityHintInfo,
-  WINDOWS_FileRemoteProtocolInfo,
-  WINDOWS_FileFullDirectoryInfo,
-  WINDOWS_FileFullDirectoryRestartInfo,
-  WINDOWS_FileStorageInfo,
-  WINDOWS_FileAlignmentInfo,
-  WINDOWS_FileIdInfo,
-  WINDOWS_FileIdExtdDirectoryInfo,
-  WINDOWS_FileIdExtdDirectoryRestartInfo,
-  WINDOWS_FileDispositionInfoEx,
-  WINDOWS_FileRenameInfoEx,
-  WINDOWS_FileCaseSensitiveInfo,
-  WINDOWS_FileNormalizedNameInfo,
-  WINDOWS_MaximumFileInfoByHandleClass
+typedef enum WINDOWS__FILE_INFO_BY_HANDLE_CLASS
+{
+	WINDOWS_FileBasicInfo,
+	WINDOWS_FileStandardInfo,
+	WINDOWS_FileNameInfo,
+	WINDOWS_FileRenameInfo,
+	WINDOWS_FileDispositionInfo,
+	WINDOWS_FileAllocationInfo,
+	WINDOWS_FileEndOfFileInfo,
+	WINDOWS_FileStreamInfo,
+	WINDOWS_FileCompressionInfo,
+	WINDOWS_FileAttributeTagInfo,
+	WINDOWS_FileIdBothDirectoryInfo,
+	WINDOWS_FileIdBothDirectoryRestartInfo,
+	WINDOWS_FileIoPriorityHintInfo,
+	WINDOWS_FileRemoteProtocolInfo,
+	WINDOWS_FileFullDirectoryInfo,
+	WINDOWS_FileFullDirectoryRestartInfo,
+	WINDOWS_FileStorageInfo,
+	WINDOWS_FileAlignmentInfo,
+	WINDOWS_FileIdInfo,
+	WINDOWS_FileIdExtdDirectoryInfo,
+	WINDOWS_FileIdExtdDirectoryRestartInfo,
+	WINDOWS_FileDispositionInfoEx,
+	WINDOWS_FileRenameInfoEx,
+	WINDOWS_FileCaseSensitiveInfo,
+	WINDOWS_FileNormalizedNameInfo,
+	WINDOWS_MaximumFileInfoByHandleClass
 } WINDOWS_FILE_INFO_BY_HANDLE_CLASS;
 
 intptr_t translate_windows_error(intptr_t result);
 intptr_t translate_winsock_error(intptr_t result);
 
-#define PROXY_WINDOWS_CALL(kind, module, name, ...) ({ \
-	static intptr_t name; \
-	ERROR("windows call to " #name); \
-	intptr_t windows_result = PROXY_CALL(kind, get_windows_function(&name, #module, #name), ##__VA_ARGS__); \
-	if (windows_result < 0) { \
-		ERROR("error is", -(intptr_t)windows_result); \
-	} else { \
-		ERROR("result is", (uintptr_t)windows_result); \
-	} \
-	ERROR_FLUSH(); \
-	windows_result; \
-})
+#define PROXY_WINDOWS_CALL(kind, module, name, ...)                                                             \
+	({                                                                                                          \
+		static intptr_t name;                                                                                   \
+		ERROR("windows call to " #name);                                                                        \
+		intptr_t windows_result = PROXY_CALL(kind, get_windows_function(&name, #module, #name), ##__VA_ARGS__); \
+		if (windows_result < 0) {                                                                               \
+			ERROR("error is", -(intptr_t)windows_result);                                                       \
+		} else {                                                                                                \
+			ERROR("result is", (uintptr_t)windows_result);                                                      \
+		}                                                                                                       \
+		ERROR_FLUSH();                                                                                          \
+		windows_result;                                                                                         \
+	})
 
 #define PROXY_WIN32_CALL(module, name, ...) PROXY_WINDOWS_CALL(TARGET_NR_WIN32_CALL, module, name, ##__VA_ARGS__)
 #define PROXY_WIN32_BOOL_CALL(module, name, ...) PROXY_WINDOWS_CALL(TARGET_NR_WIN32_BOOL_CALL, module, name, ##__VA_ARGS__)
@@ -231,8 +239,7 @@ static inline const char *translate_windows_path(const char *path, char out_path
 	return out_path;
 }
 
-__attribute__((always_inline))
-static inline intptr_t translate_windows_result(intptr_t result)
+__attribute__((always_inline)) static inline intptr_t translate_windows_result(intptr_t result)
 {
 	if (UNLIKELY(result < 0)) {
 		return translate_windows_error(-result);
@@ -240,8 +247,7 @@ static inline intptr_t translate_windows_result(intptr_t result)
 	return result;
 }
 
-__attribute__((always_inline))
-static inline intptr_t translate_winsock_result(intptr_t result)
+__attribute__((always_inline)) static inline intptr_t translate_winsock_result(intptr_t result)
 {
 	if (UNLIKELY(result < 0)) {
 		return translate_winsock_error(-result);
@@ -277,17 +283,17 @@ static inline WINDOWS_DWORD translate_open_flags_to_windows_desired_access(int f
 
 static inline WINDOWS_DWORD translate_prot_to_windows_protect(int prot)
 {
-	switch (prot & (PROT_READ|PROT_WRITE|PROT_EXEC)) {
+	switch (prot & (PROT_READ | PROT_WRITE | PROT_EXEC)) {
 		case PROT_NONE:
 			return WINDOWS_PAGE_NOACCESS;
 		case PROT_READ:
 			return WINDOWS_PAGE_READONLY;
 		case PROT_WRITE:
-		case PROT_READ|PROT_WRITE:
+		case PROT_READ | PROT_WRITE:
 			return WINDOWS_PAGE_READWRITE;
 		case PROT_EXEC:
 			return WINDOWS_PAGE_EXECUTE;
-		case PROT_EXEC|PROT_READ:
+		case PROT_EXEC | PROT_READ:
 			return WINDOWS_PAGE_EXECUTE_READ;
 		default:
 			return WINDOWS_PAGE_EXECUTE_READWRITE;

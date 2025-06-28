@@ -40,7 +40,7 @@ intptr_t vfs_mmap_via_pread(struct thread_storage *thread, struct vfs_resolved_f
 				return prot_result;
 			}
 		}
-		if (prot == (PROT_READ|PROT_EXEC) && (flags & MAP_DENYWRITE)) {
+		if (prot == (PROT_READ | PROT_EXEC) && (flags & MAP_DENYWRITE)) {
 			discovered_remote_library_mapping(file, (uintptr_t)addr - off);
 		}
 	}

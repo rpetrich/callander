@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "ins.h"
 #include "axon.h"
+#include "ins.h"
 
 #define context context_
 #include "arch-arm64/disassembler/decode.h"
@@ -13,24 +13,26 @@
 #include "arch-arm64/disassembler/regs.h"
 #undef context
 
-enum {
+enum
+{
 	SYSCALL_INSTRUCTION_SIZE = 4,
 };
 
-struct aarch64_instruction {
+struct aarch64_instruction
+{
 	Instruction decomposed;
 };
 
 static inline enum aarch64_register_index register_index_from_register(enum Register reg)
 {
 	switch (reg) {
-		case REG_W0...REG_W29:
+		case REG_W0 ... REG_W29:
 			return (enum aarch64_register_index)(reg - REG_W0);
-		case REG_X0...REG_X29:
+		case REG_X0 ... REG_X29:
 			return (enum aarch64_register_index)(reg - REG_X0);
-		case REG_B0...REG_B29:
+		case REG_B0 ... REG_B29:
 			return (enum aarch64_register_index)(reg - REG_B0);
-		case REG_H0...REG_H29:
+		case REG_H0 ... REG_H29:
 			return (enum aarch64_register_index)(reg - REG_H0);
 		case REG_WSP:
 		case REG_SP:
@@ -127,14 +129,12 @@ static bool apply_operand_shift(struct register_state *reg, const struct Instruc
 	}
 }
 
-__attribute__((always_inline))
-static inline bool aarch64_decode_instruction(const uint32_t *ins, struct aarch64_instruction *out_decoded)
+__attribute__((always_inline)) static inline bool aarch64_decode_instruction(const uint32_t *ins, struct aarch64_instruction *out_decoded)
 {
 	return aarch64_decompose(*ins, &out_decoded->decomposed, (uintptr_t)ins) == 0;
 }
 
-__attribute__((always_inline))
-static inline bool aarch64_is_conditional_branch(const struct aarch64_instruction *decoded)
+__attribute__((always_inline)) static inline bool aarch64_is_conditional_branch(const struct aarch64_instruction *decoded)
 {
 	switch (decoded->decomposed.operation) {
 		case ARM64_B_EQ:
@@ -161,8 +161,7 @@ static inline bool aarch64_is_conditional_branch(const struct aarch64_instructio
 	}
 }
 
-__attribute__((always_inline))
-static inline bool aarch64_is_return_instruction(const struct aarch64_instruction *decoded)
+__attribute__((always_inline)) static inline bool aarch64_is_return_instruction(const struct aarch64_instruction *decoded)
 {
 	switch (decoded->decomposed.operation) {
 		case ARM64_ERET:
@@ -177,8 +176,7 @@ static inline bool aarch64_is_return_instruction(const struct aarch64_instructio
 	}
 }
 
-__attribute__((always_inline))
-static inline bool aarch64_is_bti_instruction(const struct aarch64_instruction *decoded)
+__attribute__((always_inline)) static inline bool aarch64_is_bti_instruction(const struct aarch64_instruction *decoded)
 {
 	switch (decoded->decomposed.operation) {
 		case ARM64_BTI:
@@ -189,8 +187,8 @@ static inline bool aarch64_is_bti_instruction(const struct aarch64_instruction *
 }
 
 __attribute__((warn_unused_result))
-__attribute__((nonnull(1, 2)))
-static inline enum ins_jump_behavior aarch64_decode_jump_instruction(const struct aarch64_instruction *ins, const uint32_t **out_jump)
+__attribute__((nonnull(1, 2))) static inline enum ins_jump_behavior
+aarch64_decode_jump_instruction(const struct aarch64_instruction *ins, const uint32_t **out_jump)
 {
 	switch (ins->decomposed.operation) {
 		case ARM64_B_EQ:
@@ -227,7 +225,8 @@ static inline enum ins_jump_behavior aarch64_decode_jump_instruction(const struc
 	}
 }
 
-enum aarch64_conditional_type {
+enum aarch64_conditional_type
+{
 	AARCH64_CONDITIONAL_TYPE_EQ = COND_EQ,
 	AARCH64_CONDITIONAL_TYPE_NE = COND_NE,
 	AARCH64_CONDITIONAL_TYPE_CS = COND_CS,
@@ -281,7 +280,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
-				.value = { 0, 0 },
+				.value = {0, 0},
 				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
@@ -293,7 +292,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
-				.value = { 0, 0 },
+				.value = {0, 0},
 				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
@@ -305,7 +304,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
-				.value = { ins->decomposed.operands[1].immediate, ins->decomposed.operands[1].immediate },
+				.value = {ins->decomposed.operands[1].immediate, ins->decomposed.operands[1].immediate},
 				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
@@ -317,7 +316,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 			enum aarch64_register_index reg = register_index_from_operand(&ins->decomposed.operands[0]);
 			*out_compare_state = (struct register_comparison){
 				.target_register = reg,
-				.value = { ins->decomposed.operands[1].immediate, ins->decomposed.operands[1].immediate },
+				.value = {ins->decomposed.operands[1].immediate, ins->decomposed.operands[1].immediate},
 				.mask = mask_for_operand_size(get_register_size(ins->decomposed.operands[0].reg[0])),
 				.mem_rm = out_compare_state->mem_rm,
 				.sources = 0,
@@ -330,14 +329,15 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 	}
 }
 
-#define UNSUPPORTED_INSTRUCTION() do { \
-	char *buf = malloc(4096); \
-	if (aarch64_disassemble(&decoded.decomposed, buf, 4096) != DISASM_SUCCESS) { \
-		self.description = operation_to_str(decoded.decomposed.operation); \
-	} else { \
-		self.description = buf; \
-	} \
-	DIE("unsupported instruction", temp_str(copy_call_trace_description(&analysis->loader, &self))); \
-} while(0)
+#define UNSUPPORTED_INSTRUCTION()                                                                        \
+	do {                                                                                                 \
+		char *buf = malloc(4096);                                                                        \
+		if (aarch64_disassemble(&decoded.decomposed, buf, 4096) != DISASM_SUCCESS) {                     \
+			self.description = operation_to_str(decoded.decomposed.operation);                           \
+		} else {                                                                                         \
+			self.description = buf;                                                                      \
+		}                                                                                                \
+		DIE("unsupported instruction", temp_str(copy_call_trace_description(&analysis->loader, &self))); \
+	} while (0)
 
 #endif

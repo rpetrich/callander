@@ -317,7 +317,8 @@ int translate_seek_whence_to_darwin(int whence)
 	}
 }
 
-static uint32_t translate_darwin_mode_ifmt(uint16_t mode) {
+static uint32_t translate_darwin_mode_ifmt(uint16_t mode)
+{
 	switch (mode & S_IFMT) {
 		case 0010000:
 			return S_IFIFO;
@@ -344,7 +345,7 @@ static uint32_t translate_darwin_mode_ifmt(uint16_t mode) {
 
 struct fs_stat translate_darwin_stat(struct darwin_stat stat)
 {
-	struct fs_stat result = { 0 };
+	struct fs_stat result = {0};
 	result.st_dev = stat.st_dev;
 	result.st_ino = stat.st_ino;
 	result.st_mode = (stat.st_mode & ~S_IFMT) | translate_darwin_mode_ifmt(stat.st_mode);
@@ -437,7 +438,8 @@ void translate_darwin_statx(struct linux_statx *out_statx, struct darwin_stat st
 #endif
 }
 
-int translate_at_flags_to_darwin(int flags) {
+int translate_at_flags_to_darwin(int flags)
+{
 	int result = 0;
 	if (flags & AT_EACCESS) {
 		flags &= AT_SYMLINK_NOFOLLOW;

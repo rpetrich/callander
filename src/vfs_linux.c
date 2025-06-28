@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
-#include "vfs.h"
 #include "proxy.h"
+#include "vfs.h"
 
 extern const struct vfs_path_ops linux_path_ops;
 
@@ -149,7 +149,7 @@ static intptr_t linux_file_socket(__attribute__((unused)) struct thread_storage 
 {
 	intptr_t result = PROXY_CALL(LINUX_SYS_socket | PROXY_NO_WORKER, proxy_value(domain), proxy_value(type), proxy_value(protocol));
 	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file) {
+		*out_file = (struct vfs_resolved_file){
 			.ops = &linux_path_ops.dirfd_ops,
 			.handle = result,
 		};
@@ -167,13 +167,13 @@ static intptr_t linux_file_close(struct vfs_resolved_file file)
 static intptr_t linux_file_read(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz)
 {
 	trim_size(&bufsz);
-	return PROXY_CALL(LINUX_SYS_read, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz));	
+	return PROXY_CALL(LINUX_SYS_read, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz));
 }
 
 static intptr_t linux_file_write(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *buf, size_t bufsz)
 {
 	trim_size(&bufsz);
-	return PROXY_CALL(LINUX_SYS_write, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz));	
+	return PROXY_CALL(LINUX_SYS_write, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz));
 }
 
 static intptr_t linux_file_recvfrom(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen)
@@ -400,7 +400,7 @@ static intptr_t linux_file_readlink_fd(__attribute__((unused)) struct thread_sto
 	memcpy(dev_path, DEV_FD, sizeof(DEV_FD) - 1);
 	fs_utoa(file.handle, &dev_path[sizeof(DEV_FD) - 1]);
 	trim_size(&size);
-	return vfs_call(readlinkat, ((struct vfs_resolved_path){ .ops = &linux_path_ops, .info = { .handle = AT_FDCWD, .path = dev_path } }), buf, size);
+	return vfs_call(readlinkat, ((struct vfs_resolved_path){.ops = &linux_path_ops, .info = {.handle = AT_FDCWD, .path = dev_path}}), buf, size);
 }
 
 static intptr_t linux_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
@@ -613,7 +613,8 @@ static intptr_t linux_file_ppoll(__attribute__((unused)) struct thread_storage *
 		linux_fds[i].events = files[i].events;
 		linux_fds[i].revents = files[i].revents;
 	}
-	intptr_t result = PROXY_CALL(LINUX_SYS_ppoll, proxy_inout(linux_fds, sizeof(struct pollfd) * nfiles), proxy_value(nfiles), timeout != NULL ? proxy_inout(timeout, sizeof(struct timespec)) : proxy_value(0), proxy_value(0), proxy_value(0));
+	intptr_t result =
+		PROXY_CALL(LINUX_SYS_ppoll, proxy_inout(linux_fds, sizeof(struct pollfd) * nfiles), proxy_value(nfiles), timeout != NULL ? proxy_inout(timeout, sizeof(struct timespec)) : proxy_value(0), proxy_value(0), proxy_value(0));
 	if (result > 0) {
 		for (nfds_t i = 0; i < nfiles; i++) {
 			files[i].revents = linux_fds[i].revents;
@@ -624,59 +625,60 @@ static intptr_t linux_file_ppoll(__attribute__((unused)) struct thread_storage *
 }
 
 const struct vfs_path_ops linux_path_ops = {
-	.dirfd_ops = {
-		.socket = linux_file_socket,
-		.close = linux_file_close,
-		.read = linux_file_read,
-		.write = linux_file_write,
-		.recvfrom = linux_file_recvfrom,
-		.sendto = linux_file_sendto,
-		.lseek = linux_file_lseek,
-		.fadvise64 = linux_file_fadvise64,
-		.readahead = linux_file_readahead,
-		.pread = linux_file_pread,
-		.pwrite = linux_file_pwrite,
-		.flock = linux_file_flock,
-		.fsync = linux_file_fsync,
-		.fdatasync = linux_file_fdatasync,
-		.syncfs = linux_file_syncfs,
-		.sync_file_range = linux_file_sync_file_range,
-		.ftruncate = linux_file_ftruncate,
-		.fallocate = linux_file_fallocate,
-		.recvmsg = linux_file_recvmsg,
-		.sendmsg = linux_file_sendmsg,
-		.fcntl_basic = linux_file_fcntl_basic,
-		.fcntl_lock = linux_file_fcntl_lock,
-		.fcntl_int = linux_file_fcntl_int,
-		.fchmod = linux_file_fchmod,
-		.fchown = linux_file_fchown,
-		.fstat = linux_file_fstat,
-		.fstatfs = linux_file_fstatfs,
-		.readlink_fd = linux_file_readlink_fd,
-		.getdents = linux_file_getdents,
-		.getdents64 = linux_file_getdents64,
-		.fgetxattr = linux_file_fgetxattr,
-		.fsetxattr = linux_file_fsetxattr,
-		.fremovexattr = linux_file_fremovexattr,
-		.flistxattr = linux_file_flistxattr,
-		.connect = linux_file_connect,
-		.bind = linux_file_bind,
-		.listen = linux_file_listen,
-		.accept4 = linux_file_accept4,
-		.getsockopt = linux_file_getsockopt,
-		.setsockopt = linux_file_setsockopt,
-		.getsockname = linux_file_getsockname,
-		.getpeername = linux_file_getpeername,
-		.shutdown = linux_file_shutdown,
-		.sendfile = linux_file_sendfile,
-		.splice = linux_file_splice,
-		.tee = linux_file_tee,
-		.copy_file_range = linux_file_copy_file_range,
-		.ioctl = linux_file_ioctl,
-		.ioctl_open_file = linux_file_ioctl_open_file,
-		.ppoll = linux_file_ppoll,
-		.mmap = vfs_mmap_via_pread,
-	},
+	.dirfd_ops =
+		{
+			.socket = linux_file_socket,
+			.close = linux_file_close,
+			.read = linux_file_read,
+			.write = linux_file_write,
+			.recvfrom = linux_file_recvfrom,
+			.sendto = linux_file_sendto,
+			.lseek = linux_file_lseek,
+			.fadvise64 = linux_file_fadvise64,
+			.readahead = linux_file_readahead,
+			.pread = linux_file_pread,
+			.pwrite = linux_file_pwrite,
+			.flock = linux_file_flock,
+			.fsync = linux_file_fsync,
+			.fdatasync = linux_file_fdatasync,
+			.syncfs = linux_file_syncfs,
+			.sync_file_range = linux_file_sync_file_range,
+			.ftruncate = linux_file_ftruncate,
+			.fallocate = linux_file_fallocate,
+			.recvmsg = linux_file_recvmsg,
+			.sendmsg = linux_file_sendmsg,
+			.fcntl_basic = linux_file_fcntl_basic,
+			.fcntl_lock = linux_file_fcntl_lock,
+			.fcntl_int = linux_file_fcntl_int,
+			.fchmod = linux_file_fchmod,
+			.fchown = linux_file_fchown,
+			.fstat = linux_file_fstat,
+			.fstatfs = linux_file_fstatfs,
+			.readlink_fd = linux_file_readlink_fd,
+			.getdents = linux_file_getdents,
+			.getdents64 = linux_file_getdents64,
+			.fgetxattr = linux_file_fgetxattr,
+			.fsetxattr = linux_file_fsetxattr,
+			.fremovexattr = linux_file_fremovexattr,
+			.flistxattr = linux_file_flistxattr,
+			.connect = linux_file_connect,
+			.bind = linux_file_bind,
+			.listen = linux_file_listen,
+			.accept4 = linux_file_accept4,
+			.getsockopt = linux_file_getsockopt,
+			.setsockopt = linux_file_setsockopt,
+			.getsockname = linux_file_getsockname,
+			.getpeername = linux_file_getpeername,
+			.shutdown = linux_file_shutdown,
+			.sendfile = linux_file_sendfile,
+			.splice = linux_file_splice,
+			.tee = linux_file_tee,
+			.copy_file_range = linux_file_copy_file_range,
+			.ioctl = linux_file_ioctl,
+			.ioctl_open_file = linux_file_ioctl_open_file,
+			.ppoll = linux_file_ppoll,
+			.mmap = vfs_mmap_via_pread,
+		},
 	.mkdirat = linux_path_mkdirat,
 	.mknodat = linux_path_mknodat,
 	.openat = linux_path_openat,

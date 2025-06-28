@@ -7,12 +7,12 @@
 #include <stdbool.h>
 
 #include "attempt.h"
-#include "exec.h"
 #include "axon.h"
+#include "exec.h"
 #include "handler.h"
-#include "tls.h"
 #include "patch.h"
 #include "stack.h"
+#include "tls.h"
 
 #ifndef SYS_SECCOMP
 #define SYS_SECCOMP 1
@@ -24,7 +24,8 @@
 
 void __restore();
 
-struct intercept_action {
+struct intercept_action
+{
 	struct fs_sigaction *inferior;
 	void (*handler)(int);
 };
@@ -71,7 +72,7 @@ static struct intercept_action action_for_signal(int nr)
 			};
 #endif
 		default:
-			return (struct intercept_action){ 0 };
+			return (struct intercept_action){0};
 	}
 }
 
@@ -86,7 +87,7 @@ static void default_handler(__attribute__((unused)) int nr, __attribute__((unuse
 		.handler = SIG_DFL,
 		.flags = SA_RESTORER,
 		.restorer = (void *)&__restore,
-		.mask = { 0 },
+		.mask = {0},
 	};
 	int sa_result = fs_sigaction(nr, &sa, NULL);
 	if (sa_result < 0) {
@@ -138,7 +139,8 @@ static signal_handler get_next_handler(struct thread_storage *tls, int nr)
 	return empty_handler;
 }
 
-struct syscall_main_data {
+struct syscall_main_data
+{
 	intptr_t syscall;
 	ucontext_t *ctx;
 	intptr_t result;
@@ -220,13 +222,14 @@ static void sigill_handler(int nr, siginfo_t *info, void *void_context)
 #endif
 
 // intercept_sigsys will interrupt the SIGSYS system call and call the appropriate handler
-int intercept_signals(void) {
+int intercept_signals(void)
+{
 	// Set a handler to handle SIGSYS signals
 	struct fs_sigaction sa = {
 		.handler = (void *)&sigsys_handler,
-		.flags = SA_RESTORER|SA_SIGINFO|SA_NODEFER,
+		.flags = SA_RESTORER | SA_SIGINFO | SA_NODEFER,
 		.restorer = (void *)&__restore,
-		.mask = { ~0l },
+		.mask = {~0l},
 	};
 	// Block all signals except for signals used internally
 	fs_sigdelset(&sa.mask, SIGSEGV);
@@ -260,7 +263,7 @@ int intercept_signals(void) {
 #endif
 
 	// Unblock SIGSYS, SIGSEGV and SIGILL
-	struct fs_sigset_t set = { 0 };
+	struct fs_sigset_t set = {0};
 	fs_sigaddset(&set, SIGSYS);
 	fs_sigaddset(&set, SIGSEGV);
 	fs_sigaddset(&set, SIGTRAP);
@@ -289,9 +292,9 @@ int handle_sigaction(int signal, const struct fs_sigaction *act, struct fs_sigac
 		if ((signal_block.inferior->flags & SA_ONSTACK) != new_onstack) {
 			struct fs_sigaction sa = {
 				.handler = signal_block.handler,
-				.flags = SA_RESTORER|SA_SIGINFO|new_onstack,
+				.flags = SA_RESTORER | SA_SIGINFO | new_onstack,
 				.restorer = (void *)&__restore,
-				.mask = { 0 },
+				.mask = {0},
 			};
 			int result = fs_sigaction(signal, &sa, NULL);
 			if (result != 0) {

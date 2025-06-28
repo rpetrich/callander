@@ -1,7 +1,7 @@
 #ifdef __x86_64__
 
-#include "ins.h"
 #include "x86.h"
+#include "ins.h"
 
 #include "patch.h"
 
@@ -24,14 +24,12 @@
 #define INS_CONDITIONAL_JMP_32_IMM_1_START 0x80
 #define INS_CONDITIONAL_JMP_32_IMM_1_END 0x8f
 
-__attribute__((used))
-bool x86_is_syscall_instruction(const uint8_t *addr)
+__attribute__((used)) bool x86_is_syscall_instruction(const uint8_t *addr)
 {
 	return addr[0] == INS_SYSCALL_0 && addr[1] == INS_SYSCALL_1;
 }
 
-__attribute__((used))
-bool x86_is_nop_instruction(const uint8_t *addr)
+__attribute__((used)) bool x86_is_nop_instruction(const uint8_t *addr)
 {
 	if (addr[0] == INS_NOP) {
 		// 1-byte nop
@@ -80,10 +78,7 @@ bool x86_is_nop_instruction(const uint8_t *addr)
 	return false;
 }
 
-__attribute__((warn_unused_result))
-__attribute__((nonnull(1, 2)))
-__attribute__((used))
-enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump)
+__attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) __attribute__((used)) enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction *ins, const uint8_t **out_jump)
 {
 	if (UNLIKELY(ins->prefixes.has_vex)) {
 		return INS_JUMPS_NEVER;
@@ -110,7 +105,7 @@ enum ins_jump_behavior x86_decode_jump_instruction(const struct x86_instruction 
 		case 0xe1: // loope
 		case 0xe2: // loop
 		case 0xe3: // jcxz
-			*out_jump = unprefixed + 2 + *(const int8_t*)&unprefixed[1];
+			*out_jump = unprefixed + 2 + *(const int8_t *)&unprefixed[1];
 			return INS_JUMPS_OR_CONTINUES;
 		case INS_CONDITIONAL_JMP_8_IMM_START ... INS_CONDITIONAL_JMP_8_IMM_END:
 			PATCH_LOG("conditional jmp", (uintptr_t)unprefixed);

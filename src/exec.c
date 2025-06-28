@@ -4,9 +4,9 @@
 
 #include "attempt.h"
 #include "axon.h"
-#include "handler.h"
 #include "fd_table.h"
 #include "freestanding.h"
+#include "handler.h"
 #include "loader.h"
 #include "paths.h"
 #include "seccomp.h"
@@ -50,16 +50,13 @@ void set_tid_address(const void *tid_address)
 	(void)tid_address;
 }
 
-__attribute__((warn_unused_result))
-bool is_axon(const struct fs_stat *stat)
+__attribute__((warn_unused_result)) bool is_axon(const struct fs_stat *stat)
 {
 	return stat->st_dev == axon_stat.st_dev && stat->st_ino == axon_stat.st_ino;
 }
 
-__attribute__((warn_unused_result))
-static int exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth, size_t header_size, char header[header_size]);
-__attribute__((warn_unused_result))
-static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const char *comm, const char *exec_path);
+__attribute__((warn_unused_result)) static int exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth, size_t header_size, char header[header_size]);
+__attribute__((warn_unused_result)) static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const char *comm, const char *exec_path);
 
 // exec_fd executes an open file via the axon bootstrap, handling native-arch ELF and #! programs only
 int exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth)
@@ -111,7 +108,7 @@ extern const ElfW(Addr) _GLOBAL_OFFSET_TABLE_[] __attribute__((visibility("hidde
 static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp, const char *comm, const char *exec_path)
 {
 	// Add the AXON_ADDR and AXON_COMM environment variables
-	int envc = count_args((char * const*)envp);
+	int envc = count_args((char *const *)envp);
 	struct thread_storage *thread = get_thread_storage();
 	const char **new_envp = malloc(sizeof(const char *) * (envc + 5));
 	struct attempt_cleanup_state new_envp_cleanup;
@@ -122,7 +119,7 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 	attempt_push_free(thread, &exec_path_buf_cleanup, exec_path_buf);
 	memcpy(exec_path_buf, AXON_EXEC, sizeof(AXON_EXEC));
 	if (exec_path_len != 0) {
-		memcpy(&exec_path_buf[sizeof(AXON_EXEC)-1], exec_path, exec_path_len + 1);
+		memcpy(&exec_path_buf[sizeof(AXON_EXEC) - 1], exec_path, exec_path_len + 1);
 	}
 	char addr_buf[64];
 	memcpy(addr_buf, AXON_ADDR, sizeof(AXON_ADDR) - 1);
@@ -161,10 +158,7 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 #endif
 	new_envp[j++] = exec_path_buf;
 	for (int i = 0; i < envc; i++) {
-		if (fs_strncmp(envp[i], AXON_ADDR, sizeof(AXON_ADDR) - 1) == 0 ||
-			fs_strncmp(envp[i], AXON_COMM, sizeof(AXON_COMM) - 1) == 0 ||
-			fs_strncmp(envp[i], AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0)
-		{
+		if (fs_strncmp(envp[i], AXON_ADDR, sizeof(AXON_ADDR) - 1) == 0 || fs_strncmp(envp[i], AXON_COMM, sizeof(AXON_COMM) - 1) == 0 || fs_strncmp(envp[i], AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0) {
 			fs_close(fd);
 			attempt_pop_free(&exec_path_buf_cleanup);
 			attempt_pop_free(&new_envp_cleanup);
@@ -185,7 +179,7 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 		goto cleanup;
 	}
 	serialize_fd_table_for_exec();
-	result = fs_execveat(SELF_FD, empty_string, (char *const*)argv, (char *const*)new_envp, AT_EMPTY_PATH);
+	result = fs_execveat(SELF_FD, empty_string, (char *const *)argv, (char *const *)new_envp, AT_EMPTY_PATH);
 cleanup:
 	attempt_pop_free(&exec_path_buf_cleanup);
 	attempt_pop_free(&new_envp_cleanup);
@@ -214,7 +208,7 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 	for (;; arg1++) {
 		if (*arg1 == ' ' || *arg1 == '\0') {
 			*arg1++ = '\0';
-			for (char *terminator = arg1; ; ++terminator) {
+			for (char *terminator = arg1;; ++terminator) {
 				if (*terminator == '\0' || *terminator == '\n') {
 					*terminator = '\0';
 					break;
@@ -239,7 +233,7 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 		named_path = path_buf;
 	}
 	// Recreate arguments to pass to the interpreter script
-	size_t argc = count_args((char * const*)argv);
+	size_t argc = count_args((char *const *)argv);
 	const char *new_argv[argc + 3];
 	const char **dest_argv = new_argv;
 	*dest_argv++ = arg0;
@@ -268,8 +262,7 @@ static int exec_fd_script(int fd, const char *named_path, const char *const *arg
 }
 
 // wrapped_execveat handles exec syscalls
-__attribute__((warn_unused_result))
-int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filename, const char *const *argv, const char *const *envp, int flags)
+__attribute__((warn_unused_result)) int wrapped_execveat(struct thread_storage *thread, int dfd, const char *filename, const char *const *argv, const char *const *envp, int flags)
 {
 	// open file to exec
 	int fd;
@@ -331,4 +324,3 @@ error:
 #endif
 	return result;
 }
-

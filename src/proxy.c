@@ -4,9 +4,9 @@
 #include "axon.h"
 #include "darwin.h"
 #include "freestanding.h"
-#include "shared_mutex.h"
-#include "resolver.h"
 #include "remote.h"
+#include "resolver.h"
+#include "shared_mutex.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -16,7 +16,8 @@
 
 #define REUSED_PAGE_COUNT 1024
 
-typedef struct {
+typedef struct
+{
 	struct shared_mutex write_lock __attribute__((aligned(64)));
 	uint32_t current_id;
 	struct shared_mutex read_lock __attribute__((aligned(64)));
@@ -131,7 +132,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	}
 	// prepare request
 	request_message request;
-	struct iovec iov[PROXY_ARGUMENT_COUNT+1];
+	struct iovec iov[PROXY_ARGUMENT_COUNT + 1];
 	iov[0].iov_base = &request;
 	iov[0].iov_len = sizeof(request);
 	int arg_vec_count = proxy_fill_request_message(&request, &iov[1], syscall, args);
@@ -225,7 +226,7 @@ uint32_t proxy_generate_stream_id(void)
 		setup_shared();
 	}
 	shared_mutex_lock(&shared->write_lock);
-	uint32_t result = shared->current_id++;	
+	uint32_t result = shared->current_id++;
 	shared_mutex_unlock(&shared->write_lock);
 	return result;
 }
@@ -279,8 +280,7 @@ hello_message *proxy_get_hello_message(void)
 	return &shared->hello;
 }
 
-__attribute__((warn_unused_result))
-intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
+__attribute__((warn_unused_result)) intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
 	if (UNLIKELY(size == 0)) {
 		return 0;
@@ -292,7 +292,7 @@ ssize_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 {
 	char *buffer = out_buffer;
 	do {
-		intptr_t rounded_up = (addr + PAGE_SIZE) & ~(PAGE_SIZE-1);
+		intptr_t rounded_up = (addr + PAGE_SIZE) & ~(PAGE_SIZE - 1);
 		size_t readable_size = rounded_up - addr;
 		if (readable_size > buffer_size) {
 			readable_size = buffer_size;
@@ -313,8 +313,7 @@ ssize_t proxy_peek_string(intptr_t addr, size_t buffer_size, void *out_buffer)
 	return buffer - (char *)out_buffer;
 }
 
-__attribute__((warn_unused_result))
-intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
+__attribute__((warn_unused_result)) intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
 {
 	if (UNLIKELY(size == 0)) {
 		return 0;
@@ -324,7 +323,7 @@ intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
 
 static inline int page_count(size_t size)
 {
-	return (size + (PAGE_SIZE-1)) / PAGE_SIZE;
+	return (size + (PAGE_SIZE - 1)) / PAGE_SIZE;
 }
 
 static intptr_t page_alloc(int page_count)
@@ -415,7 +414,7 @@ void install_proxy(int fd)
 		}
 
 		struct sockaddr_in addr;
-		addr.sin_family = AF_INET; 
+		addr.sin_family = AF_INET;
 		addr.sin_addr.s_addr = fs_htonl(0);
 		addr.sin_port = fs_htons(8484);
 		result = fs_bind(sockfd, &addr, sizeof(addr));
@@ -461,7 +460,7 @@ void install_proxy(int fd)
 	}
 
 	result = fs_ftruncate(memfd, (sizeof(shared_page) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-    if (result == -1) {
+	if (result == -1) {
 		DIE("unable to ftruncate", fs_strerror(result));
 	}
 
@@ -504,12 +503,24 @@ void proxy_spawn_worker(void)
 		case TARGET_PLATFORM_LINUX: {
 			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
 			if (worker_func_addr != 0) {
-				intptr_t stack_addr = PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER, proxy_value(0), proxy_value(PROXY_WORKER_STACK_SIZE), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN), proxy_value(-1), proxy_value(0));
+				intptr_t stack_addr = PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER,
+				                                 proxy_value(0),
+				                                 proxy_value(PROXY_WORKER_STACK_SIZE),
+				                                 proxy_value(PROT_READ | PROT_WRITE),
+				                                 proxy_value(MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN),
+				                                 proxy_value(-1),
+				                                 proxy_value(0));
 				if (fs_is_map_failed((void *)stack_addr)) {
 					DIE("unable to map a worker stack", fs_strerror(stack_addr));
 					return;
 				}
-				PROXY_CALL(LINUX_SYS_clone | TARGET_NO_RESPONSE | PROXY_NO_WORKER, proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS), proxy_value(stack_addr + PROXY_WORKER_STACK_SIZE), proxy_value(0), proxy_value(0), proxy_value(0), proxy_value(worker_func_addr));
+				PROXY_CALL(LINUX_SYS_clone | TARGET_NO_RESPONSE | PROXY_NO_WORKER,
+				           proxy_value(CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SYSVSEM | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS),
+				           proxy_value(stack_addr + PROXY_WORKER_STACK_SIZE),
+				           proxy_value(0),
+				           proxy_value(0),
+				           proxy_value(0),
+				           proxy_value(worker_func_addr));
 			}
 			break;
 		}

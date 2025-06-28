@@ -1,5 +1,5 @@
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 
 #include <limits.h>
 #include <linux/limits.h>
@@ -14,17 +14,13 @@
 #define BIN_AXON "/bin/axon"
 #define SLASH_AXON "/axon"
 
-__attribute__((weak))
-const char *gnu_get_libc_version(void);
+__attribute__((weak)) const char *gnu_get_libc_version(void);
 
-__attribute__((weak))
-extern char **environ;
+__attribute__((weak)) extern char **environ;
 
-__attribute__((weak))
-extern unsigned long getauxval(unsigned long type);
+__attribute__((weak)) extern unsigned long getauxval(unsigned long type);
 
-__attribute__((warn_unused_result))
-static bool axon_path_from_preload(const char *preload, char buf[PATH_MAX])
+__attribute__((warn_unused_result)) static bool axon_path_from_preload(const char *preload, char buf[PATH_MAX])
 {
 	do {
 		const char *next = fs_strpbrk(preload, ": ");
@@ -34,15 +30,15 @@ static bool axon_path_from_preload(const char *preload, char buf[PATH_MAX])
 			return true;
 		}
 		preload = next;
-	} while(*preload);
+	} while (*preload);
 	return false;
 }
 
 // preload_main is setup as a static initializer
 // it will reexec the program under axon when run from a ld.so's LD_PRELOAD
 // or, in the future, setup uprobes
-__attribute__((constructor))
-void preload_main(int argc, char **argv, char **env) {
+__attribute__((constructor)) void preload_main(int argc, char **argv, char **env)
+{
 	// Re-execs the program through axon
 	if (&gnu_get_libc_version == NULL) {
 		// Don't have glibc, have to use environ and heuristics to find argc/argv
@@ -67,7 +63,7 @@ void preload_main(int argc, char **argv, char **env) {
 	}
 	// Find axon path
 	const char *axon_path;
-	char buf[PAGE_SIZE+1];
+	char buf[PAGE_SIZE + 1];
 	if (ld_preload && axon_path_from_preload(ld_preload, buf)) {
 		axon_path = buf;
 	} else {
@@ -88,7 +84,7 @@ void preload_main(int argc, char **argv, char **env) {
 						break;
 					}
 					preload = next;
-				} while(*preload);
+				} while (*preload);
 			}
 		}
 		// Fallback to /bin/axon, where it's expected to be installed in container
@@ -119,13 +115,13 @@ void preload_main(int argc, char **argv, char **env) {
 		argc = arg_search[0];
 		argv = (char **)&arg_search[1];
 	}
-	char* newargv[argc + 2];
+	char *newargv[argc + 2];
 	newargv[0] = (char *)axon_path;
 	newargv[1] = execfn;
 	for (int i = 1; i < argc; i++) {
 		newargv[i + 1] = argv[i];
 	}
-	newargv[argc+1] = NULL;
+	newargv[argc + 1] = NULL;
 	int exec_result = fs_execve(axon_path, newargv, env);
 	DIE("unable to reexec axon", -exec_result);
 }

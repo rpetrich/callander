@@ -14,7 +14,7 @@ int open_executable_in_paths(const char *name, const char *paths, bool require_e
 	return find_executable_in_paths(name, paths, require_executable, uid, gid, buf, NULL);
 }
 
-// find_executable_in_paths looks for an executable file matching name in paths 
+// find_executable_in_paths looks for an executable file matching name in paths
 int find_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid, char buf[PATH_MAX], const char **out_path)
 {
 	// Check for absolute or relative path
@@ -101,4 +101,3 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 		path = &next_path[1];
 	}
 }
-

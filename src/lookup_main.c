@@ -34,26 +34,29 @@ static intptr_t my_sendto(int fd, const char *buf, size_t bufsz, int flags, cons
 }
 
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
-__attribute__((noinline, visibility("hidden")))
-int main(__attribute__((unused)) int argc, char* argv[], __attribute__((unused)) char* envp[])
+#pragma GCC optimize("-fomit-frame-pointer")
+__attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused)) int argc, char *argv[], __attribute__((unused)) char *envp[])
 {
-	struct resolver_config_cache cache = { 0 };
+	struct resolver_config_cache cache = {0};
 	for (int i = 1; argv[i] != NULL; i++) {
 		struct addrinfo *results = NULL;
 		int local_errno = 0;
-		int result = getaddrinfo_custom(argv[i], "http", NULL, (struct resolver_funcs){
-			.malloc = malloc,
-			.free = free,
-			.openat = my_openat,
-			.read = fs_read,
-			.close = my_close,
-			.socket = my_socket,
-			.recvfrom = my_recvfrom,
-			.sendto = my_sendto,
-			.config_cache = &cache,
-			.errno_location = &local_errno,
-		}, &results);
+		int result = getaddrinfo_custom(argv[i],
+		                                "http",
+		                                NULL,
+		                                (struct resolver_funcs){
+											.malloc = malloc,
+											.free = free,
+											.openat = my_openat,
+											.read = fs_read,
+											.close = my_close,
+											.socket = my_socket,
+											.recvfrom = my_recvfrom,
+											.sendto = my_sendto,
+											.config_cache = &cache,
+											.errno_location = &local_errno,
+										},
+		                                &results);
 		switch (result) {
 			case 0: {
 				while (results != NULL) {
@@ -83,7 +86,7 @@ int main(__attribute__((unused)) int argc, char* argv[], __attribute__((unused))
 								if (j != 0) {
 									buffer[offset++] = ':';
 								}
-								offset += fs_utoah_noprefix(((uintptr_t)addr->sin6_addr.s6_addr[j*2] << 8) | addr->sin6_addr.s6_addr[j*2+1], &buffer[offset]);
+								offset += fs_utoah_noprefix(((uintptr_t)addr->sin6_addr.s6_addr[j * 2] << 8) | addr->sin6_addr.s6_addr[j * 2 + 1], &buffer[offset]);
 							}
 							ERROR("result", &buffer[0]);
 							break;

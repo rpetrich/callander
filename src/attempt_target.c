@@ -1,21 +1,21 @@
 #define _GNU_SOURCE
 #include "attempt.h"
 
+#include <errno.h>
+#include <signal.h>
 #include <stdatomic.h>
 #include <stdnoreturn.h>
-#include <signal.h>
-#include <errno.h>
 
 #include "axon.h"
 #include "tls.h"
 
-struct attempt {
+struct attempt
+{
 	struct attempt_cleanup_state *cleanup;
 };
 
 // attempt_exit runs all of the cleanups in the current attempt and destroys tls
-__attribute__((noinline))
-void attempt_exit(struct thread_storage *thread)
+__attribute__((noinline)) void attempt_exit(struct thread_storage *thread)
 {
 	struct attempt *attempt = thread->attempt;
 	if (attempt != NULL) {

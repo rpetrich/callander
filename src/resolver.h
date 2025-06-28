@@ -5,11 +5,13 @@
 #include <stdint.h>
 #include <sys/socket.h>
 
-struct resolver_config_cache {
+struct resolver_config_cache
+{
 	uint32_t address;
 };
 
-struct resolver_funcs {
+struct resolver_funcs
+{
 	void *(*malloc)(size_t);
 	void (*free)(void *);
 	intptr_t (*openat)(int dirfd, const char *path, int flags, mode_t mode);

@@ -2,146 +2,143 @@
 #include "patch_x86_64.h"
 
 #include "attempt.h"
+#include "axon.h"
 #include "debugger.h"
 #include "freestanding.h"
-#include "axon.h"
 #include "handler.h"
+#include "ins.h"
 #include "mapped.h"
 #include "stack.h"
-#include "ins.h"
 #include "x86.h"
 #include "x86_64_length_disassembler.h"
 
+#include <errno.h>
 #include <stdatomic.h>
 #include <string.h>
-#include <errno.h>
 
 #define INS_JMP_32_IMM 0xe9
 
 __asm__(
-".text\n"
-".global trampoline_call_handler_start\n"
-".hidden trampoline_call_handler_start\n"
-".type trampoline_call_handler_start,@function\n" \
-"trampoline_call_handler_start:\n"
-"	mov %rax, %r11\n"
-"	lahf\n"
-"   seto %al\n"
-"   sub $128, %rsp\n"
-"	push %rax\n"
-"	push %r9\n"
-"	push %r8\n"
-"	push %r10\n"
-"	push %rdx\n"
-"	push %rsi\n"
-"	push %rdi\n"
-"	push %r11\n"
-"	mov %rsp, %rdi\n"
-"   movabs $0x6666666666666666, %rcx\n"
-".global trampoline_call_handler_address\n"
-".hidden trampoline_call_handler_address\n"
-".type trampoline_call_handler_address,@function\n" \
-"trampoline_call_handler_address:"
-"	call *%rcx\n"
-"	pop %rcx\n"
-"	pop %rdi\n"
-"	pop %rsi\n"
-"	pop %rdx\n"
-"	pop %r10\n"
-"	pop %r8\n"
-"	pop %r9\n"
-"	pop %rax\n"
-"	add $128, %rsp\n"
-"	add $0xff, %al\n"
-"	sahf\n"
-"	mov %rcx, %rax\n"
-".global trampoline_call_handler_end\n"
-".hidden trampoline_call_handler_end\n"
-".type trampoline_call_handler_end,@function\n" \
-"trampoline_call_handler_end:"
-);
+	".text\n"
+	".global trampoline_call_handler_start\n"
+	".hidden trampoline_call_handler_start\n"
+	".type trampoline_call_handler_start,@function\n"
+	"trampoline_call_handler_start:\n"
+	"	mov %rax, %r11\n"
+	"	lahf\n"
+	"   seto %al\n"
+	"   sub $128, %rsp\n"
+	"	push %rax\n"
+	"	push %r9\n"
+	"	push %r8\n"
+	"	push %r10\n"
+	"	push %rdx\n"
+	"	push %rsi\n"
+	"	push %rdi\n"
+	"	push %r11\n"
+	"	mov %rsp, %rdi\n"
+	"   movabs $0x6666666666666666, %rcx\n"
+	".global trampoline_call_handler_address\n"
+	".hidden trampoline_call_handler_address\n"
+	".type trampoline_call_handler_address,@function\n"
+	"trampoline_call_handler_address:"
+	"	call *%rcx\n"
+	"	pop %rcx\n"
+	"	pop %rdi\n"
+	"	pop %rsi\n"
+	"	pop %rdx\n"
+	"	pop %r10\n"
+	"	pop %r8\n"
+	"	pop %r9\n"
+	"	pop %rax\n"
+	"	add $128, %rsp\n"
+	"	add $0xff, %al\n"
+	"	sahf\n"
+	"	mov %rcx, %rax\n"
+	".global trampoline_call_handler_end\n"
+	".hidden trampoline_call_handler_end\n"
+	".type trampoline_call_handler_end,@function\n"
+	"trampoline_call_handler_end:");
 
 void trampoline_call_handler_start();
 void trampoline_call_handler_address();
 void trampoline_call_handler_end();
 
 __asm__(
-".text\n"
-".global breakpoint_call_handler_start\n"
-".hidden breakpoint_call_handler_start\n"
-".type breakpoint_call_handler_start,@function\n" \
-"breakpoint_call_handler_start:\n"
-"	lea -0x80(%rsp), %rsp\n"
-"	push %rax\n"
-"	lahf\n"
-"   seto %al\n"
-"	push %rax\n"
-"	push %r11\n"
-"	push %r10\n"
-"	push %r9\n"
-"	push %r8\n"
-"	push %rcx\n"
-"	push %rdx\n"
-"	push %rsi\n"
-"	push %rdi\n"
-"	mov %rsp, %rdi\n"
-"   movabs $0x6666666666666666, %rcx\n"
-".global breakpoint_call_handler_address\n"
-".hidden breakpoint_call_handler_address\n"
-".type breakpoint_call_handler_address,@function\n" \
-"breakpoint_call_handler_address:"
-"	call *%rcx\n"
-"	pop %rdi\n"
-"	pop %rsi\n"
-"	pop %rdx\n"
-"	pop %rcx\n"
-"	pop %r8\n"
-"	pop %r9\n"
-"	pop %r10\n"
-"	pop %r11\n"
-"	pop %rax\n"
-"	add $0xff, %al\n"
-"	sahf\n"
-"	pop %rax\n"
-"	lea 0x80(%rsp), %rsp\n"
-".global breakpoint_call_handler_end\n"
-".hidden breakpoint_call_handler_end\n"
-".type breakpoint_call_handler_end,@function\n" \
-"breakpoint_call_handler_end:"
-);
+	".text\n"
+	".global breakpoint_call_handler_start\n"
+	".hidden breakpoint_call_handler_start\n"
+	".type breakpoint_call_handler_start,@function\n"
+	"breakpoint_call_handler_start:\n"
+	"	lea -0x80(%rsp), %rsp\n"
+	"	push %rax\n"
+	"	lahf\n"
+	"   seto %al\n"
+	"	push %rax\n"
+	"	push %r11\n"
+	"	push %r10\n"
+	"	push %r9\n"
+	"	push %r8\n"
+	"	push %rcx\n"
+	"	push %rdx\n"
+	"	push %rsi\n"
+	"	push %rdi\n"
+	"	mov %rsp, %rdi\n"
+	"   movabs $0x6666666666666666, %rcx\n"
+	".global breakpoint_call_handler_address\n"
+	".hidden breakpoint_call_handler_address\n"
+	".type breakpoint_call_handler_address,@function\n"
+	"breakpoint_call_handler_address:"
+	"	call *%rcx\n"
+	"	pop %rdi\n"
+	"	pop %rsi\n"
+	"	pop %rdx\n"
+	"	pop %rcx\n"
+	"	pop %r8\n"
+	"	pop %r9\n"
+	"	pop %r10\n"
+	"	pop %r11\n"
+	"	pop %rax\n"
+	"	add $0xff, %al\n"
+	"	sahf\n"
+	"	pop %rax\n"
+	"	lea 0x80(%rsp), %rsp\n"
+	".global breakpoint_call_handler_end\n"
+	".hidden breakpoint_call_handler_end\n"
+	".type breakpoint_call_handler_end,@function\n"
+	"breakpoint_call_handler_end:");
 
 void breakpoint_call_handler_start();
 void breakpoint_call_handler_address();
 void breakpoint_call_handler_end();
 
 __asm__(
-".text\n"
-".global function_call_handler_start\n"
-".hidden function_call_handler_start\n"
-".type function_call_handler_start,@function\n" \
-"function_call_handler_start:\n"
-"	push %r9\n"
-"	push %r8\n"
-"	push %rcx\n"
-"	push %rdx\n"
-"	push %rsi\n"
-"	push %rdi\n"
-"	mov %rsp, %rdi\n"
-"	push %rax\n"
-"   movabs $0x6666666666666666, %rcx\n"
-".global function_call_handler_address\n"
-".hidden function_call_handler_address\n"
-".type function_call_handler_address,@function\n" \
-"function_call_handler_address:"
-"	lea function_call_handler_end(%rip), %rsi\n"
-"	call *%rcx\n"
-"	lea 0x38(%rsp), %rsp\n"
-"	ret\n"
-".global function_call_handler_end\n"
-".hidden function_call_handler_end\n"
-".type function_call_handler_end,@function\n" \
-"function_call_handler_end:"
-);
+	".text\n"
+	".global function_call_handler_start\n"
+	".hidden function_call_handler_start\n"
+	".type function_call_handler_start,@function\n"
+	"function_call_handler_start:\n"
+	"	push %r9\n"
+	"	push %r8\n"
+	"	push %rcx\n"
+	"	push %rdx\n"
+	"	push %rsi\n"
+	"	push %rdi\n"
+	"	mov %rsp, %rdi\n"
+	"	push %rax\n"
+	"   movabs $0x6666666666666666, %rcx\n"
+	".global function_call_handler_address\n"
+	".hidden function_call_handler_address\n"
+	".type function_call_handler_address,@function\n"
+	"function_call_handler_address:"
+	"	lea function_call_handler_end(%rip), %rsi\n"
+	"	call *%rcx\n"
+	"	lea 0x38(%rsp), %rsp\n"
+	"	ret\n"
+	".global function_call_handler_end\n"
+	".hidden function_call_handler_end\n"
+	".type function_call_handler_end,@function\n"
+	"function_call_handler_end:");
 
 void function_call_handler_start();
 void function_call_handler_address();
@@ -182,7 +179,8 @@ void function_call_handler_end();
 #define INS_ONE_BYTE_ILL 0x17
 #define INS_LEA 0x8d
 
-struct applied_patch {
+struct applied_patch
+{
 	struct instruction_range range;
 	uintptr_t target;
 	struct applied_patch *next;
@@ -200,7 +198,8 @@ static void trampoline_body(struct thread_storage *thread, intptr_t data[7])
 }
 
 // receive_trampoline is called by trampolines to handle the intercepted syscall
-static void receive_trampoline(intptr_t data[7]) {
+static void receive_trampoline(intptr_t data[7])
+{
 	struct thread_storage *thread = get_thread_storage();
 	attempt_with_sufficient_stack(thread, (attempt_body)&trampoline_body, data);
 }
@@ -212,8 +211,7 @@ static bool is_valid_pc_relative_offset(intptr_t offset)
 }
 
 // destination_of_pc_relative_addr returns the destination address of a pc-relative offset
-__attribute__((unused))
-static inline intptr_t destination_of_pc_relative_addr(ins_ptr addr)
+__attribute__((unused)) static inline intptr_t destination_of_pc_relative_addr(ins_ptr addr)
 {
 	int32_t relative = *(const int32_t *)addr;
 	return (intptr_t)addr + 4 + relative;
@@ -272,7 +270,7 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 		}
 		x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
 		if (!x86_modrm_is_direct(modrm)) {
-			int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){ 0 });
+			int rm = x86_read_rm(modrm, (struct x86_ins_prefixes){0});
 			switch (rm) {
 				case X86_REGISTER_BP:
 				case X86_REGISTER_13:
@@ -327,12 +325,14 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 	return false;
 }
 
-struct searched_instructions {
+struct searched_instructions
+{
 	ins_ptr addresses[127];
 	struct searched_instructions *next;
 };
 
-struct instruction_search {
+struct instruction_search
+{
 	ins_ptr addr;
 	struct searched_instructions *searched;
 };
@@ -366,7 +366,7 @@ static bool check_already_searched_instruction(struct instruction_search search)
 	}
 not_found:
 	current_search->addresses[i] = search.addr;
-	current_search->addresses[i+1] = NULL;
+	current_search->addresses[i + 1] = NULL;
 	return false;
 }
 
@@ -398,9 +398,7 @@ static void free_searched_instructions(struct searched_instructions *searched, s
 
 // find_return_address_stack_offset returns the stack offset of the return address by inspecting stack manipulation
 // instructions
-__attribute__((warn_unused_result))
-__attribute__((nonnull(3)))
-static bool find_return_address(struct instruction_search search, intptr_t bp, patch_address_formatter formatter, void *formatter_data, intptr_t *out_return_address)
+__attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find_return_address(struct instruction_search search, intptr_t bp, patch_address_formatter formatter, void *formatter_data, intptr_t *out_return_address)
 {
 	if (check_already_searched_instruction(search)) {
 		// avoid infinitely traversing loops
@@ -426,9 +424,10 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 				// jump instruction
 				ins = jump;
 				if (check_already_searched_instruction((struct instruction_search){
-					.addr = ins,
-					.searched = search.searched,
-				})) {
+						.addr = ins,
+						.searched = search.searched,
+					}))
+				{
 					// avoid infinitely traversing loops
 					return false;
 				}
@@ -439,14 +438,24 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 					// conditional jump instruction
 					intptr_t taken_return_address = *out_return_address;
 					intptr_t not_return_address = *out_return_address;
-					bool taken_result = find_return_address((struct instruction_search){
-						.addr = jump,
-						.searched = search.searched,
-					}, bp, formatter, formatter_data, &taken_return_address);
-					bool not_result = find_return_address((struct instruction_search){
-						.addr = x86_next_instruction(ins, &decoded),
-						.searched = search.searched,
-					}, bp, formatter, formatter_data, &not_return_address);
+					bool taken_result = find_return_address(
+						(struct instruction_search){
+							.addr = jump,
+							.searched = search.searched,
+						},
+						bp,
+						formatter,
+						formatter_data,
+						&taken_return_address);
+					bool not_result = find_return_address(
+						(struct instruction_search){
+							.addr = x86_next_instruction(ins, &decoded),
+							.searched = search.searched,
+						},
+						bp,
+						formatter,
+						formatter_data,
+						&not_return_address);
 					// succeed if both succeed and match, or if one succeeds
 					if (taken_result) {
 						*out_return_address = taken_return_address;
@@ -560,9 +569,7 @@ static bool find_return_address(struct instruction_search search, intptr_t bp, p
 }
 
 // find_basic_block scans instructions to find the basic block containing an instruction
-__attribute__((warn_unused_result))
-__attribute__((nonnull(1, 3, 4)))
-static bool find_basic_block(struct thread_storage *thread, struct instruction_search search, ins_ptr instruction, struct instruction_range *out_block)
+__attribute__((warn_unused_result)) __attribute__((nonnull(1, 3, 4))) static bool find_basic_block(struct thread_storage *thread, struct instruction_search search, ins_ptr instruction, struct instruction_range *out_block)
 {
 tail_call:
 	if (check_already_searched_instruction(search)) {
@@ -597,17 +604,23 @@ tail_call:
 				search.addr = jump;
 				goto tail_call;
 			case INS_JUMPS_OR_CONTINUES: {
-				bool jumped_result = find_basic_block(thread, (struct instruction_search){
-					.addr = jump,
-					.searched = search.searched,
-				}, instruction, out_block);
+				bool jumped_result = find_basic_block(thread,
+				                                      (struct instruction_search){
+														  .addr = jump,
+														  .searched = search.searched,
+													  },
+				                                      instruction,
+				                                      out_block);
 				if (!jumped_result) {
 					return false;
 				}
-				bool continued_result = find_basic_block(thread, (struct instruction_search){
-					.addr = x86_next_instruction(ins, &decoded),
-					.searched = search.searched,
-				}, instruction, out_block);
+				bool continued_result = find_basic_block(thread,
+				                                         (struct instruction_search){
+															 .addr = x86_next_instruction(ins, &decoded),
+															 .searched = search.searched,
+														 },
+				                                         instruction,
+				                                         out_block);
 				if (!continued_result) {
 					return false;
 				}
@@ -648,9 +661,8 @@ tail_call:
 }
 
 // find_patch_target finds the longest possible span of patchable instructions
-__attribute__((warn_unused_result))
-__attribute__((nonnull(2, 5)))
-bool find_patch_target(struct instruction_range basic_block, ins_ptr target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data, struct instruction_range *out_result)
+__attribute__((warn_unused_result)) __attribute__((nonnull(2, 5))) bool find_patch_target(struct instruction_range basic_block, ins_ptr target, size_t minimum_size, size_t ideal_size, patch_address_formatter formatter, void *formatter_data,
+                                                                                          struct instruction_range *out_result)
 {
 	// precheck on target
 	struct x86_instruction ins;
@@ -665,7 +677,7 @@ bool find_patch_target(struct instruction_range basic_block, ins_ptr target, siz
 	// find a candidate for the start of the patch, possibly the target itself
 	ins_ptr start = target;
 	ins_ptr end = x86_next_instruction(start, &ins);
-	for (ins_ptr current = basic_block.start; current < target; ) {
+	for (ins_ptr current = basic_block.start; current < target;) {
 		if (!x86_decode_instruction(current, &ins)) {
 			return false;
 		}
@@ -696,8 +708,8 @@ bool find_patch_target(struct instruction_range basic_block, ins_ptr target, siz
 	return true;
 }
 
-__attribute__((warn_unused_result))
-static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd);
+__attribute__((warn_unused_result)) static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip,
+                                                                                 int self_fd);
 
 static char *naive_address_formatter(ins_ptr address, void *unused)
 {
@@ -788,7 +800,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		.addr = (ins_ptr)entry,
 		.searched = &searched,
 	};
-	struct instruction_range basic_block = { 0 };
+	struct instruction_range basic_block = {0};
 	bool found_basic_block = find_basic_block(thread, basic_block_search, (ins_ptr)args->pc - 2, &basic_block) && basic_block.start != NULL;
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_basic_block) {
@@ -806,8 +818,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 }
 
 // migrate_instruction copies and relocates instructions
-__attribute__((warn_unused_result))
-size_t migrate_instructions(uint8_t *dest, ins_ptr src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
+__attribute__((warn_unused_result)) size_t migrate_instructions(uint8_t *dest, ins_ptr src, ssize_t delta, size_t byte_count, patch_address_formatter formatter, void *formatter_data)
 {
 	(void)formatter;
 	(void)formatter_data;
@@ -828,7 +839,7 @@ size_t migrate_instructions(uint8_t *dest, ins_ptr src, ssize_t delta, size_t by
 				PATCH_LOG("is now", *disp);
 				break;
 			}
-			case INS_CONDITIONAL_JMP_8_IMM_START...INS_CONDITIONAL_JMP_8_IMM_END: {
+			case INS_CONDITIONAL_JMP_8_IMM_START ... INS_CONDITIONAL_JMP_8_IMM_END: {
 				PATCH_LOG("expanding 8 bit conditional jump", temp_str(formatter(src, formatter_data)));
 				ins[0] = INS_CONDITIONAL_JMP_32_IMM_0;
 				ins[1] = *decoded.unprefixed + 0x10;
@@ -877,8 +888,7 @@ size_t migrate_instructions(uint8_t *dest, ins_ptr src, ssize_t delta, size_t by
 	return byte_count;
 }
 
-__attribute__((always_inline))
-static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd)
+__attribute__((always_inline)) static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd)
 {
 	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
 	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
@@ -898,7 +908,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	}
 	PATCH_LOG("patch start", (uintptr_t)patch_target.start);
 	PATCH_LOG("patch end", (uintptr_t)patch_target.end);
-	struct mapping target_mapping = { 0 };
+	struct mapping target_mapping = {0};
 	int mapping_error = lookup_mapping_for_address(patch_target.start, &target_mapping);
 	if (mapping_error <= 0) {
 		if (mapping_error < 0) {
@@ -925,7 +935,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 		stub_address = current_region;
 		new_address = false;
 	} else {
-		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, self_fd == -1 ? MAP_ANONYMOUS|MAP_PRIVATE : MAP_PRIVATE, self_fd, self_fd == -1 ? 0 : PAGE_SIZE);
+		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, self_fd == -1 ? MAP_ANONYMOUS | MAP_PRIVATE : MAP_PRIVATE, self_fd, self_fd == -1 ? 0 : PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 			PATCH_LOG("Failed to patch: mmap failed", fs_strerror((intptr_t)new_mapping));
@@ -944,7 +954,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 				ERROR_FLUSH();
 				return PATCH_STATUS_FAILED;
 			}
-			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED|MREMAP_MAYMOVE, (void *)stub_address);
+			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, (void *)stub_address);
 			if (fs_is_map_failed(remap_result)) {
 				PATCH_LOG("Failed to patch: mremap failed", fs_strerror((intptr_t)remap_result));
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
@@ -1021,7 +1031,7 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 		return PATCH_STATUS_FAILED;
 	}
 	// Patch in some illegal instructions
-	for (ins_ptr ill = patch_target.start; ill < patch_target.end; ) {
+	for (ins_ptr ill = patch_target.start; ill < patch_target.end;) {
 		struct x86_instruction ill_decoded;
 		if (!x86_decode_instruction(ill, &ill_decoded)) {
 			break;
@@ -1064,7 +1074,8 @@ static inline enum patch_status patch_common(struct thread_storage *thread, uint
 	return patch_with_ill ? PATCH_STATUS_INSTALLED_ILLEGAL : PATCH_STATUS_INSTALLED_TRAMPOLINE;
 }
 
-struct handle_illegal_args {
+struct handle_illegal_args
+{
 	ucontext_t *context;
 	bool result;
 };
@@ -1110,7 +1121,7 @@ enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr addres
 		.addr = (ins_ptr)entry,
 		.searched = &searched,
 	};
-	struct instruction_range basic_block = { 0 };
+	struct instruction_range basic_block = {0};
 	bool found_basic_block = find_basic_block(thread, basic_block_search, entry, &basic_block);
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_basic_block || basic_block.start == NULL) {
@@ -1134,7 +1145,7 @@ enum patch_status patch_function(struct thread_storage *thread, ins_ptr function
 		.addr = (ins_ptr)function,
 		.searched = &searched,
 	};
-	struct instruction_range basic_block = { 0 };
+	struct instruction_range basic_block = {0};
 	bool found_basic_block = find_basic_block(thread, basic_block_search, (ins_ptr)function, &basic_block);
 	free_searched_instructions(&searched, &searched_cleanup);
 	if (!found_basic_block || basic_block.start == NULL) {

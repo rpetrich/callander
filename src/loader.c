@@ -107,7 +107,7 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 }
 
 // load_binary_with_layout will load and map the binary in fd into the process' address space
-int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_header, int fd, size_t file_offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
+int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * program_header, int fd, size_t file_offset, size_t size, struct binary_info *out_info, uintptr_t load_address, int force_relocation)
 {
 	out_info->header_entry_size = header->e_phentsize;
 	out_info->header_entry_count = header->e_phnum;
@@ -144,7 +144,7 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_
 			}
 		}
 	}
-	end += PAGE_SIZE-1;
+	end += PAGE_SIZE - 1;
 	end &= PAGE_ALIGNMENT_MASK;
 	off_start &= PAGE_ALIGNMENT_MASK;
 	start &= PAGE_ALIGNMENT_MASK;
@@ -158,7 +158,7 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_
 	if (force_relocation > 1) {
 		additional_map_flags = MAP_FIXED;
 	}
-	void *mapped_address = fs_mmap((void *)desired_address, total_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|additional_map_flags, -1, 0);
+	void *mapped_address = fs_mmap((void *)desired_address, total_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | additional_map_flags, -1, 0);
 	if (fs_is_map_failed(mapped_address)) {
 		return -ENOEXEC;
 	}
@@ -173,22 +173,22 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_
 			continue;
 		}
 		uintptr_t this_min = ph->p_vaddr & PAGE_ALIGNMENT_MASK;
-		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
+		uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
 		int protection = protection_for_pflags(ph->p_flags);
-		if (this_max-this_min) {
+		if (this_max - this_min) {
 			size_t offset = ph->p_offset & PAGE_ALIGNMENT_MASK;
-			size_t len = this_max-this_min;
+			size_t len = this_max - this_min;
 			size_t map_len = len;
 			if (offset + len > size) {
-				map_len = ((size - offset) + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
+				map_len = ((size - offset) + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
 			}
 			void *desired_section_mapping = (void *)(map_offset + this_min);
 			int temporary_prot = ph->p_memsz > ph->p_filesz ? (protection | PROT_READ | PROT_WRITE) : protection;
 			if (map_len != 0) {
 #ifdef __APPLE__
-				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE|MAP_FIXED, fd, file_offset + offset);
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot & ~PROT_EXEC, MAP_PRIVATE | MAP_FIXED, fd, file_offset + offset);
 #else
-				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE|MAP_FIXED, fd, file_offset + offset);
+				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE | MAP_FIXED, fd, file_offset + offset);
 #endif
 				if (fs_is_map_failed(section_mapping)) {
 					ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
@@ -211,18 +211,18 @@ int load_binary_with_layout(const ElfW(Ehdr) *header, const ElfW(Phdr) *program_
 			}
 		}
 		if (ph->p_memsz > ph->p_filesz) {
-			size_t brk = (size_t)map_offset+ph->p_vaddr+ph->p_filesz;
-			size_t pgbrk = (brk+PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
-			memset((void *)brk, 0, (pgbrk-brk) & (PAGE_SIZE-1));
-			if (this_max-this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
-				intptr_t result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
+			size_t brk = (size_t)map_offset + ph->p_vaddr + ph->p_filesz;
+			size_t pgbrk = (brk + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
+			memset((void *)brk, 0, (pgbrk - brk) & (PAGE_SIZE - 1));
+			if (this_max - this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
+				intptr_t result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
 				if (result < 0) {
 					ERROR("failed remapping section with new protection", fs_strerror(result));
 					return -ENOEXEC;
 				}
 			}
-			if (pgbrk-(size_t)map_offset < this_max) {
-				void *tail_mapping = fs_mmap((void *)pgbrk, (size_t)map_offset+this_max-pgbrk, protection, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+			if (pgbrk - (size_t)map_offset < this_max) {
+				void *tail_mapping = fs_mmap((void *)pgbrk, (size_t)map_offset + this_max - pgbrk, protection, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
 				if (fs_is_map_failed(tail_mapping)) {
 					ERROR("failed creating .bss-like PT_LOAD", fs_strerror((intptr_t)tail_mapping));
 					return -ENOEXEC;
@@ -402,7 +402,7 @@ void relocate_binary(struct binary_info *info)
 	}
 }
 
-int load_main_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info)
+int load_main_from_auxv(const ElfW(auxv_t) * aux, struct binary_info *out_info)
 {
 	for (; aux->a_type != AT_NULL; aux++) {
 		if (aux->a_type == AT_PHDR) {
@@ -420,7 +420,7 @@ int load_main_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info)
 	return -ENOEXEC;
 }
 
-void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
+void relocate_main_from_auxv(const ElfW(auxv_t) * aux)
 {
 	struct binary_info self_info;
 	if (load_main_from_auxv(aux, &self_info) != 0) {
@@ -429,7 +429,7 @@ void relocate_main_from_auxv(const ElfW(auxv_t) *aux)
 	relocate_binary(&self_info);
 }
 
-int load_interpreter_from_auxv(const ElfW(auxv_t) *aux, struct binary_info *out_info)
+int load_interpreter_from_auxv(const ElfW(auxv_t) * aux, struct binary_info *out_info)
 {
 	for (; aux->a_type != AT_NULL; aux++) {
 		switch (aux->a_type) {
@@ -451,9 +451,9 @@ int apply_postrelocation_readonly(struct binary_info *info)
 				continue;
 			}
 			uintptr_t this_min = ph->p_vaddr & PAGE_ALIGNMENT_MASK;
-			uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE-1) & PAGE_ALIGNMENT_MASK;
+			uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
 			int protection = protection_for_pflags(ph->p_flags);
-			int result = fs_mprotect((void *)(map_offset + this_min), this_max-this_min, protection);
+			int result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
 			if (result < 0) {
 				ERROR("failed remapping section with new protection", fs_strerror(result));
 				return result;
@@ -508,7 +508,7 @@ static inline size_t symbol_count_from_gnu_hash(const struct symbol_info *info)
 	return count;
 }
 
-static void load_hash(const ElfW(Word) *hash, size_t symbol_count, struct symbol_info *out_symbols)
+static void load_hash(const ElfW(Word) * hash, size_t symbol_count, struct symbol_info *out_symbols)
 {
 	if (hash != NULL) {
 		out_symbols->buckets = &hash[2];
@@ -536,7 +536,7 @@ static void add_version(size_t index, const char *version_name, const char *libr
 	if (index >= out_symbols->valid_version_count) {
 		out_symbols->valid_versions = realloc(out_symbols->valid_versions, (index + 1) * sizeof(struct symbol_version_info));
 		for (size_t i = out_symbols->valid_version_count; i <= index; i++) {
-			out_symbols->valid_versions[i] = (struct symbol_version_info) { 0 };
+			out_symbols->valid_versions[i] = (struct symbol_version_info){0};
 		}
 		out_symbols->valid_version_count = index + 1;
 	}
@@ -549,7 +549,7 @@ static void add_version(size_t index, const char *version_name, const char *libr
 	out_symbols->valid_versions[index].library_name = library_name;
 }
 
-static void load_versions(const ElfW(Half) *versym, const ElfW(Verneed) *verneed, const ElfW(Verdef) *verdef, struct symbol_info *out_symbols)
+static void load_versions(const ElfW(Half) * versym, const ElfW(Verneed) * verneed, const ElfW(Verdef) * verdef, struct symbol_info *out_symbols)
 {
 	out_symbols->valid_versions = NULL;
 	out_symbols->valid_version_count = 0;
@@ -706,11 +706,15 @@ int parse_dynamic_symbols(const struct binary_info *info, void *mapped_address, 
 		relbase = (void *)apply_base_address_heuristic(mapped_address, jmprel);
 		calculate_symbol_count_from_rela(relbase, pltrelsz, relaent, out_symbols);
 	}
-	load_versions(versym != 0 ? (const ElfW(Half) *)apply_base_address_heuristic(mapped_address, versym) : NULL, verneed != 0 ? (const ElfW(Verneed) *)apply_base_address_heuristic(mapped_address, verneed) : NULL, verdef != 0 ? (const ElfW(Verdef) *)apply_base_address_heuristic(mapped_address, verdef) : NULL, out_symbols);
+	load_versions(versym != 0 ? (const ElfW(Half) *)apply_base_address_heuristic(mapped_address, versym) : NULL,
+	              verneed != 0 ? (const ElfW(Verneed) *)apply_base_address_heuristic(mapped_address, verneed) : NULL,
+	              verdef != 0 ? (const ElfW(Verdef) *)apply_base_address_heuristic(mapped_address, verdef) : NULL,
+	              out_symbols);
 	return 0;
 }
 
-static void parse_section_symbols(void *mapped_address, const ElfW(Shdr) *symbol_section, const ElfW(Shdr) *string_section, const ElfW(Shdr) *hash_section, const ElfW(Shdr) *version_section, const ElfW(Shdr) *version_need_section, const ElfW(Shdr) *version_def_section, struct symbol_info *out_symbols);
+static void parse_section_symbols(void *mapped_address, const ElfW(Shdr) * symbol_section, const ElfW(Shdr) * string_section, const ElfW(Shdr) * hash_section, const ElfW(Shdr) * version_section, const ElfW(Shdr) * version_need_section,
+                                  const ElfW(Shdr) * version_def_section, struct symbol_info *out_symbols);
 
 int load_section_symbols(int fd, struct binary_info *info, const struct section_info *section_info, bool load_hash, struct symbol_info *out_symbols)
 {
@@ -775,7 +779,8 @@ int load_section_symbols(int fd, struct binary_info *info, const struct section_
 	return 0;
 }
 
-static void parse_section_symbols(void *mapped_address, const ElfW(Shdr) *symbol_section, const ElfW(Shdr) *string_section, const ElfW(Shdr) *hash_section, const ElfW(Shdr) *version_section, const ElfW(Shdr) *version_need_section, const ElfW(Shdr) *version_def_section, struct symbol_info *out_symbols)
+static void parse_section_symbols(void *mapped_address, const ElfW(Shdr) * symbol_section, const ElfW(Shdr) * string_section, const ElfW(Shdr) * hash_section, const ElfW(Shdr) * version_section, const ElfW(Shdr) * version_need_section,
+                                  const ElfW(Shdr) * version_def_section, struct symbol_info *out_symbols)
 {
 	out_symbols->gnu_hash = NULL;
 	out_symbols->mapping = NULL;
@@ -788,7 +793,10 @@ static void parse_section_symbols(void *mapped_address, const ElfW(Shdr) *symbol
 	out_symbols->init_function_count = 0;
 	load_hash(hash_section != NULL ? (const ElfW(Word) *)((uintptr_t)mapped_address + hash_section->sh_offset) : NULL, symbol_section->sh_size / symbol_section->sh_entsize, out_symbols);
 	// TODO: use sh_link
-	load_versions(version_section != NULL ? (const ElfW(Half) *)((uintptr_t)mapped_address + symbol_section->sh_offset) : NULL, version_need_section != NULL ? (const ElfW(Verneed) *)((uintptr_t)mapped_address + version_need_section->sh_offset) : NULL, version_def_section != NULL ? (const ElfW(Verdef) *)((uintptr_t)mapped_address + version_def_section->sh_offset) : NULL, out_symbols);
+	load_versions(version_section != NULL ? (const ElfW(Half) *)((uintptr_t)mapped_address + symbol_section->sh_offset) : NULL,
+	              version_need_section != NULL ? (const ElfW(Verneed) *)((uintptr_t)mapped_address + version_need_section->sh_offset) : NULL,
+	              version_def_section != NULL ? (const ElfW(Verdef) *)((uintptr_t)mapped_address + version_def_section->sh_offset) : NULL,
+	              out_symbols);
 }
 
 unsigned long elf_hash(const unsigned char *name)
@@ -832,7 +840,7 @@ void free_symbols(struct symbol_info *symbols)
 	free(symbols->valid_versions);
 }
 
-const char *symbol_name(const struct symbol_info *symbols, const ElfW(Sym) *symbol)
+const char *symbol_name(const struct symbol_info *symbols, const ElfW(Sym) * symbol)
 {
 	if (symbol == NULL) {
 		return NULL;
@@ -844,7 +852,8 @@ const char *symbol_name(const struct symbol_info *symbols, const ElfW(Sym) *symb
 	return &symbols->strings[offset];
 }
 
-enum version_match {
+enum version_match
+{
 	VERSION_MATCH_NONE,
 	VERSION_MATCH_EXACT,
 	VERSION_MATCH_IF_ONLY,
@@ -882,11 +891,11 @@ static inline enum version_match versions_match(__attribute__((unused)) const ch
 			return VERSION_MATCH_EXACT;
 		}
 		version_to_match = version_to_match->next;
-	} while(version_to_match != NULL);
+	} while (version_to_match != NULL);
 	return VERSION_MATCH_NONE;
 }
 
-static inline const ElfW(Sym) *find_elf_symbol(const struct symbol_info *symbols, const char *name_to_find, const char *version_to_find)
+static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbols, const char *name_to_find, const char *version_to_find)
 {
 	const uint32_t *gnu_table = symbols->gnu_hash;
 	const ElfW(Sym) *fallback_result = NULL;
@@ -905,13 +914,13 @@ static inline const ElfW(Sym) *find_elf_symbol(const struct symbol_info *symbols
 			return NULL;
 		}
 		uint32_t i = buckets[hash % bucket_count];
-	    if (i < symbol_offset) {
+		if (i < symbol_offset) {
 			return NULL;
 		}
 		for (;; i++) {
 			uint32_t entry = chain[i - symbol_offset];
 			bool end_of_chain = (entry & 1) != 0;
-			if ((entry|1) == (hash|1)) {
+			if ((entry | 1) == (hash | 1)) {
 				const ElfW(Sym) *symbol = (const ElfW(Sym) *)(symbols->symbols + i * symbols->symbol_stride);
 				if (fs_strcmp(name_to_find, symbol_name(symbols, symbol)) == 0) {
 					switch (versions_match(name_to_find, version_to_find, symbols, i)) {
@@ -1004,8 +1013,7 @@ static inline const ElfW(Sym) *find_elf_symbol(const struct symbol_info *symbols
 	return fallback_result;
 }
 
-__attribute__((noinline))
-void *find_symbol(const struct binary_info *info, const struct symbol_info *symbols, const char *name_to_find, const char *version_to_find, const ElfW(Sym) **out_symbol)
+__attribute__((noinline)) void *find_symbol(const struct binary_info *info, const struct symbol_info *symbols, const char *name_to_find, const char *version_to_find, const ElfW(Sym) * *out_symbol)
 {
 	const ElfW(Sym) *symbol = find_elf_symbol(symbols, name_to_find, version_to_find);
 	if (out_symbol) {
@@ -1020,7 +1028,7 @@ void *find_symbol(const struct binary_info *info, const struct symbol_info *symb
 	return (void *)((uintptr_t)info->base + symbol->st_value - (uintptr_t)info->default_base);
 }
 
-void *find_next_symbol(const struct binary_info *info, const struct symbol_info *symbols, const char *name_to_find, const ElfW(Sym) **out_symbol)
+void *find_next_symbol(const struct binary_info *info, const struct symbol_info *symbols, const char *name_to_find, const ElfW(Sym) * *out_symbol)
 {
 	// if (symbols->buckets != NULL) {
 	// 	size_t index;
@@ -1064,7 +1072,7 @@ void *find_next_symbol(const struct binary_info *info, const struct symbol_info 
 	return NULL;
 }
 
-bool symbol_info_contains_symbol(const struct symbol_info *symbols, const ElfW(Sym) *symbol)
+bool symbol_info_contains_symbol(const struct symbol_info *symbols, const ElfW(Sym) * symbol)
 {
 	return symbols->symbols <= (uintptr_t)symbol && (uintptr_t)symbol < symbols->symbols + symbols->symbol_stride * symbols->symbol_count;
 }
@@ -1094,7 +1102,7 @@ static inline bool bsearch_symbol_by_address_callback(int index, void *search_va
 
 #endif
 
-void *find_symbol_by_address(const struct binary_info *info, const struct symbol_info *symbols, const void *addr, const ElfW(Sym) **out_symbol)
+void *find_symbol_by_address(const struct binary_info *info, const struct symbol_info *symbols, const void *addr, const ElfW(Sym) * *out_symbol)
 {
 	if ((uintptr_t)addr < (uintptr_t)info->base) {
 		return NULL;
@@ -1124,7 +1132,7 @@ void *find_symbol_by_address(const struct binary_info *info, const struct symbol
 	}
 	uint64_t search_value = (value + 1) << SYMBOL_INDEX_BITS;
 	for (int i = bsearch_bool(count, (void *)search_value, ordered, bsearch_symbol_by_address_callback); i != 0; i--) {
-		uint64_t index = ordered[i-1] & ~(~0ull << SYMBOL_INDEX_BITS);
+		uint64_t index = ordered[i - 1] & ~(~0ull << SYMBOL_INDEX_BITS);
 		const ElfW(Sym) *symbol = (const ElfW(Sym) *)(symbol_addr + index * stride);
 		if ((symbol->st_value <= value) && (symbol->st_value + symbol->st_size) > value) {
 			if (out_symbol) {
@@ -1132,7 +1140,7 @@ void *find_symbol_by_address(const struct binary_info *info, const struct symbol
 			}
 			return (void *)((uintptr_t)info->base + symbol->st_value - (uintptr_t)info->default_base);
 		}
-		if (ordered[i-1] < (value << SYMBOL_INDEX_BITS)) {
+		if (ordered[i - 1] < (value << SYMBOL_INDEX_BITS)) {
 			break;
 		}
 	}
@@ -1191,8 +1199,7 @@ void free_section_info(const struct section_info *section_info)
 	free((void *)section_info->sections);
 }
 
-__attribute__((noinline))
-const ElfW(Shdr) *find_section(const struct binary_info *info, const struct section_info *section_info, const char *name)
+__attribute__((noinline)) const ElfW(Shdr) * find_section(const struct binary_info *info, const struct section_info *section_info, const char *name)
 {
 	for (size_t i = 0; i < info->section_entry_count; i++) {
 		const ElfW(Shdr) *section = (const ElfW(Shdr) *)((char *)section_info->sections + i * info->section_entry_size);
@@ -1204,7 +1211,8 @@ const ElfW(Shdr) *find_section(const struct binary_info *info, const struct sect
 }
 
 // verify_allowed_to_exec verifies that the target file is executable by the current user/group
-int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid) {
+int verify_allowed_to_exec(int fd, struct fs_stat *stat, uid_t uid, gid_t gid)
+{
 	struct fs_statfs mount_stat;
 	int result = fs_fstatfs(fd, &mount_stat);
 	if (result < 0) {
@@ -1266,8 +1274,8 @@ intptr_t read_sleb128(void **cursor)
 		result |= (val & 0x7f) << shift;
 		if ((val & 0x80) == 0) {
 			if (shift < 64 && ((val & 0x40) != 0)) {
-			    // sign extend the result
-			    result |= ~(uintptr_t)0 << shift;
+				// sign extend the result
+				result |= ~(uintptr_t)0 << shift;
 			}
 			return result;
 		}
@@ -1346,10 +1354,7 @@ uintptr_t read_eh_frame_pointer(const struct frame_info *frame_info, void **curs
 
 static bool is_supported_eh_frame_hdr(const struct eh_frame_hdr *hdr)
 {
-	return hdr->version == 1
-		&& hdr->eh_frame_ptr_enc == (DW_EH_PE_pcrel | DW_EH_PE_sdata4)
-		&& hdr->fde_count_enc == DW_EH_PE_udata4
-		&& hdr->table_enc == (DW_EH_PE_datarel | DW_EH_PE_sdata4);
+	return hdr->version == 1 && hdr->eh_frame_ptr_enc == (DW_EH_PE_pcrel | DW_EH_PE_sdata4) && hdr->fde_count_enc == DW_EH_PE_udata4 && hdr->table_enc == (DW_EH_PE_datarel | DW_EH_PE_sdata4);
 }
 
 int load_frame_info_from_section(int fd, const struct binary_info *binary, const struct section_info *section_info, struct frame_info *out_info)
@@ -1372,7 +1377,7 @@ int load_frame_info_from_section(int fd, const struct binary_info *binary, const
 	if (text_section != NULL) {
 		text_base_address = apply_base_address(binary, text_section->sh_addr);
 	}
-	*out_info = (struct frame_info) {
+	*out_info = (struct frame_info){
 		.data = data,
 		.data_base_address = data_base_address,
 		.text_base_address = text_base_address,
@@ -1387,7 +1392,7 @@ int load_frame_info_from_program_header(__attribute__((unused)) const struct bin
 		return -ENOENT;
 	}
 	const int32_t *eh_frame_ptr = (const void *)&header->data;
-	*out_info = (struct frame_info) {
+	*out_info = (struct frame_info){
 		.data = (void *)eh_frame_ptr + *eh_frame_ptr,
 		.data_base_address = (uintptr_t)header,
 		// TODO: determine how to set .text base address from program header
@@ -1402,7 +1407,8 @@ void free_frame_info(struct frame_info *info)
 	(void)info;
 }
 
-struct eh_frame_table_entry {
+struct eh_frame_table_entry
+{
 	int32_t address_offset;
 	int32_t fde_offset;
 };
@@ -1423,7 +1429,7 @@ bool find_containing_frame_info(struct frame_info *info, const void *address, st
 		if (larger_index == 0) {
 			return false;
 		}
-		void *current = (void *)(eh_frame_hdr + table[larger_index-1].fde_offset);
+		void *current = (void *)(eh_frame_hdr + table[larger_index - 1].fde_offset);
 		current += sizeof(uint32_t) + sizeof(uint32_t);
 		uintptr_t frame_location = read_eh_frame_pointer(info, &current, DW_EH_PE_pcrel | DW_EH_PE_sdata4);
 		uintptr_t frame_size = read_eh_frame_value(&current, DW_EH_PE_udata4);
@@ -1477,7 +1483,7 @@ bool find_containing_frame_info(struct frame_info *info, const void *address, st
 			if (has_pointer_format) {
 				uintptr_t augmentation_length = read_uleb128(&current);
 				// read pointer format
-				pointer_format = ((const uint8_t *)current)[augmentation_length-1];
+				pointer_format = ((const uint8_t *)current)[augmentation_length - 1];
 			} else {
 				pointer_format = DW_EH_PE_ptr;
 			}

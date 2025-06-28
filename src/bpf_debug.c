@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 
-#include "freestanding.h"
 #include "axon.h"
+#include "freestanding.h"
 
 static const char *bpf_class_description(uint16_t class)
 {
@@ -123,8 +123,7 @@ static const char *bpf_src_description(uint16_t src)
 	}
 }
 
-__attribute__((used))
-char *copy_bpf_insn_description(struct bpf_insn insn)
+__attribute__((used)) char *copy_bpf_insn_description(struct bpf_insn insn)
 {
 	const char *prefix = "{ .code = ";
 	const char *class = bpf_class_description(BPF_CLASS(insn.code));
@@ -153,7 +152,8 @@ char *copy_bpf_insn_description(struct bpf_insn insn)
 	char k[16];
 	int k_len = BPF_CLASS(insn.code) == BPF_RET || insn.k > 4096 ? fs_utoah(insn.k, k) : fs_utoa(insn.k, k);
 	const char *suffix = " }";
-	char *result = malloc(fs_strlen(prefix) + fs_strlen(class) + 1 + fs_strlen(size) + 1 + fs_strlen(mode) + 1 + fs_strlen(src) + (op != NULL ? fs_strlen(op) + 1 : 0) + (BPF_CLASS(insn.code) == BPF_JMP ? fs_strlen(jt_prefix) + jt_len + fs_strlen(jf_prefix) + jf_len : 0) + fs_strlen(k_prefix) + k_len + fs_strlen(suffix) + 1);
+	char *result = malloc(fs_strlen(prefix) + fs_strlen(class) + 1 + fs_strlen(size) + 1 + fs_strlen(mode) + 1 + fs_strlen(src) + (op != NULL ? fs_strlen(op) + 1 : 0) +
+	                      (BPF_CLASS(insn.code) == BPF_JMP ? fs_strlen(jt_prefix) + jt_len + fs_strlen(jf_prefix) + jf_len : 0) + fs_strlen(k_prefix) + k_len + fs_strlen(suffix) + 1);
 	char *buf = fs_strcpy(result, prefix);
 	buf = fs_strcpy(buf, class);
 	*buf++ = '|';
@@ -178,14 +178,13 @@ char *copy_bpf_insn_description(struct bpf_insn insn)
 	return result;
 }
 
-__attribute__((used))
-char *copy_bpf_prog_description(struct bpf_prog prog, const char **descriptions)
+__attribute__((used)) char *copy_bpf_prog_description(struct bpf_prog prog, const char **descriptions)
 {
 	char **bufs = malloc(prog.len * sizeof(char *));
 	size_t total_len = 1;
 	for (unsigned long i = 0; i < prog.len; i++) {
 		if (i != 0) {
-			int class = BPF_CLASS(prog.filter[i-1].code);
+			int class = BPF_CLASS(prog.filter[i - 1].code);
 			if (class == BPF_JMP || class == BPF_RET) {
 				total_len++; // '\n'
 			}
@@ -225,7 +224,7 @@ char *copy_bpf_prog_description(struct bpf_prog prog, const char **descriptions)
 	char *cur = result;
 	for (uint32_t i = 0; i < prog.len; i++) {
 		if (i != 0) {
-			int class = BPF_CLASS(prog.filter[i-1].code);
+			int class = BPF_CLASS(prog.filter[i - 1].code);
 			if (class == BPF_JMP || class == BPF_RET) {
 				*cur++ = '\n';
 			}
@@ -267,22 +266,22 @@ char *copy_bpf_prog_description(struct bpf_prog prog, const char **descriptions)
 	return result;
 }
 
-__attribute__((used))
-const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t length, bool print_debug_messages, uint32_t *out_result)
+__attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t length, bool print_debug_messages, uint32_t *out_result)
 {
 	size_t pc = 0;
 	uint32_t acc = 0;
 	uint32_t index = 0;
-	uint32_t scratch[BPF_MEMWORDS] = { 0 };
+	uint32_t scratch[BPF_MEMWORDS] = {0};
 	for (; pc <= prog.len; pc++) {
 		if (print_debug_messages) {
 			ERROR("pc", (intptr_t)pc);
-			ERROR("insn", temp_str(copy_bpf_insn_description((struct bpf_insn){
-				.code = prog.filter[pc].code,
-				.jt = prog.filter[pc].jt,
-				.jf = prog.filter[pc].jf,
-				.k = prog.filter[pc].k,
-			})));
+			ERROR("insn",
+			      temp_str(copy_bpf_insn_description((struct bpf_insn){
+					  .code = prog.filter[pc].code,
+					  .jt = prog.filter[pc].jt,
+					  .jf = prog.filter[pc].jf,
+					  .k = prog.filter[pc].k,
+				  })));
 		}
 		uint16_t code = prog.filter[pc].code;
 		switch (BPF_CLASS(code)) {
@@ -477,13 +476,13 @@ const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t len
 				}
 			case BPF_MISC:
 				switch (code) {
-					case BPF_MISC|BPF_TAX:
+					case BPF_MISC | BPF_TAX:
 						index = acc;
 						if (print_debug_messages) {
 							ERROR("index", index);
 						}
 						break;
-					case BPF_MISC|BPF_TXA:
+					case BPF_MISC | BPF_TXA:
 						acc = index;
 						if (print_debug_messages) {
 							ERROR("acc", acc);
@@ -496,14 +495,13 @@ const char *bpf_interpret(struct sock_fprog prog, const char *buffer, size_t len
 			default:
 				return "invalid class!";
 		}
-	next:
-		;
+	next:;
 	}
 	return "program counter advanced outside the program";
 }
 
-__attribute__((always_inline))
-static inline void saturating_increment(uint8_t *target) {
+__attribute__((always_inline)) static inline void saturating_increment(uint8_t *target)
+{
 	if (*target < 0xff) {
 		(*target)++;
 	}
@@ -524,15 +522,15 @@ static void calculate_usage_counts(struct bpf_prog prog, uint8_t *counts)
 				case BPF_JMP:
 					// mark jump targets as used
 					if (BPF_OP(prog.filter[i].code) == BPF_JA) {
-						saturating_increment(&counts[i+prog.filter[i].k+1]);
+						saturating_increment(&counts[i + prog.filter[i].k + 1]);
 					} else {
-						saturating_increment(&counts[i+prog.filter[i].jt+1]);
-						saturating_increment(&counts[i+prog.filter[i].jf+1]);
+						saturating_increment(&counts[i + prog.filter[i].jt + 1]);
+						saturating_increment(&counts[i + prog.filter[i].jf + 1]);
 					}
 					break;
 				default:
 					// all other instructions proceed normally
-					saturating_increment(&counts[i+1]);
+					saturating_increment(&counts[i + 1]);
 					break;
 			}
 		}
@@ -559,8 +557,7 @@ static void fixup_jumps(struct bpf_insn *filter, size_t len, int offset)
 	}
 }
 
-__attribute__((used))
-void optimize_bpf_fprog(struct bpf_prog *prog, char **descriptions)
+__attribute__((used)) void optimize_bpf_fprog(struct bpf_prog *prog, char **descriptions)
 {
 	uint8_t *counts = malloc(sizeof(uint8_t) * prog->len);
 	for (;;) {
@@ -624,10 +621,10 @@ void optimize_bpf_fprog(struct bpf_prog *prog, char **descriptions)
 				// fix up jumps
 				fixup_jumps(prog->filter, i, -1);
 				// remove the unused instruction
-				fs_memmove(&prog->filter[i], &prog->filter[i+1], (prog->len - i - 1) * sizeof(prog->filter[0]));
+				fs_memmove(&prog->filter[i], &prog->filter[i + 1], (prog->len - i - 1) * sizeof(prog->filter[0]));
 				if (descriptions != NULL) {
 					free(descriptions[i]);
-					fs_memmove(&descriptions[i], &descriptions[i+1], (prog->len - i - 1) * sizeof(*descriptions));
+					fs_memmove(&descriptions[i], &descriptions[i + 1], (prog->len - i - 1) * sizeof(*descriptions));
 				}
 				prog->len--;
 			}
@@ -639,8 +636,7 @@ void optimize_bpf_fprog(struct bpf_prog *prog, char **descriptions)
 	free(counts);
 }
 
-__attribute__((used))
-void expand_long_bpf_jumps(struct bpf_prog *prog, char **descriptions, size_t capacity)
+__attribute__((used)) void expand_long_bpf_jumps(struct bpf_prog *prog, char **descriptions, size_t capacity)
 {
 	for (intptr_t i = prog->len - 1; i >= 0; i--) {
 		if (BPF_CLASS(prog->filter[i].code) == BPF_JMP && BPF_OP(prog->filter[i].code) != BPF_JA) {
@@ -649,12 +645,12 @@ void expand_long_bpf_jumps(struct bpf_prog *prog, char **descriptions, size_t ca
 					capacity++;
 					prog->filter = realloc(prog->filter, capacity * sizeof(prog->filter[0]));
 				}
-				fs_memmove(&prog->filter[i+2], &prog->filter[i+1], (prog->len - i - 1) * sizeof(prog->filter[0]));
+				fs_memmove(&prog->filter[i + 2], &prog->filter[i + 1], (prog->len - i - 1) * sizeof(prog->filter[0]));
 				if (descriptions != NULL) {
-					fs_memmove(&descriptions[i+2], &descriptions[i+1], (prog->len - i - 1) * sizeof(*descriptions));
-					descriptions[i+1] = strdup("inserted absolute jump for jt");
+					fs_memmove(&descriptions[i + 2], &descriptions[i + 1], (prog->len - i - 1) * sizeof(*descriptions));
+					descriptions[i + 1] = strdup("inserted absolute jump for jt");
 				}
-				prog->filter[i+1] = (struct bpf_insn)BPF_JUMP(BPF_JMP+BPF_JA+BPF_K, prog->filter[i].jt, 0, 0);
+				prog->filter[i + 1] = (struct bpf_insn)BPF_JUMP(BPF_JMP + BPF_JA + BPF_K, prog->filter[i].jt, 0, 0);
 				prog->filter[i].jt = 0;
 				prog->filter[i].jf++;
 				prog->len++;
@@ -665,12 +661,12 @@ void expand_long_bpf_jumps(struct bpf_prog *prog, char **descriptions, size_t ca
 					capacity++;
 					prog->filter = realloc(prog->filter, capacity * sizeof(prog->filter[0]));
 				}
-				fs_memmove(&prog->filter[i+2], &prog->filter[i+1], (prog->len - i - 1) * sizeof(prog->filter[0]));
+				fs_memmove(&prog->filter[i + 2], &prog->filter[i + 1], (prog->len - i - 1) * sizeof(prog->filter[0]));
 				if (descriptions != NULL) {
-					fs_memmove(&descriptions[i+2], &descriptions[i+1], (prog->len - i - 1) * sizeof(*descriptions));
-					descriptions[i+1] = strdup("inserted absolute jump for jf");
+					fs_memmove(&descriptions[i + 2], &descriptions[i + 1], (prog->len - i - 1) * sizeof(*descriptions));
+					descriptions[i + 1] = strdup("inserted absolute jump for jf");
 				}
-				prog->filter[i+1] = (struct bpf_insn)BPF_JUMP(BPF_JMP+BPF_JA+BPF_K, prog->filter[i].jf, 0, 0);
+				prog->filter[i + 1] = (struct bpf_insn)BPF_JUMP(BPF_JMP + BPF_JA + BPF_K, prog->filter[i].jf, 0, 0);
 				prog->filter[i].jf = 0;
 				prog->filter[i].jt++;
 				prog->len++;
@@ -680,8 +676,7 @@ void expand_long_bpf_jumps(struct bpf_prog *prog, char **descriptions, size_t ca
 	}
 }
 
-__attribute__((used))
-struct sock_fprog convert_to_sock_fprog(struct bpf_prog prog)
+__attribute__((used)) struct sock_fprog convert_to_sock_fprog(struct bpf_prog prog)
 {
 	struct sock_filter *filter = malloc(prog.len * sizeof(struct sock_filter));
 	for (unsigned long i = 0; i < prog.len; i++) {

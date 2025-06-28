@@ -12,8 +12,7 @@ struct attempt;
 struct thread_storage;
 
 // attempt_handle_fault handles an address fault
-__attribute__((warn_unused_result))
-bool attempt_handle_fault(struct thread_storage *thread, ucontext_t *context);
+__attribute__((warn_unused_result)) bool attempt_handle_fault(struct thread_storage *thread, ucontext_t *context);
 
 // attempt_cancel makes a non-local return out of the current attempt, running any cleanup functions
 noreturn void attempt_cancel(struct thread_storage *thread);
@@ -28,7 +27,8 @@ typedef void (*attempt_body)(struct thread_storage *thread, void *data);
 void attempt(struct thread_storage *thread, attempt_body body, void *data);
 
 typedef void (*attempt_cleanup_body)(void *data);
-struct attempt_cleanup_state {
+struct attempt_cleanup_state
+{
 	attempt_cleanup_body body;
 	void *data;
 	struct attempt_cleanup_state *next;
@@ -61,27 +61,31 @@ static inline void attempt_unlock_and_pop_mutex(struct attempt_cleanup_state *st
 }
 
 // attempt_push_free sets up a pointer to be freed if the attempt fails
-static inline void attempt_push_free(struct thread_storage *thread, struct attempt_cleanup_state *state, void *ptr) {
+static inline void attempt_push_free(struct thread_storage *thread, struct attempt_cleanup_state *state, void *ptr)
+{
 	state->body = (attempt_cleanup_body)&free;
 	state->data = ptr;
 	attempt_push_cleanup(thread, state);
 }
 
 // attempt_pop_free frees the pointer and cancels the automatic cleanup
-static inline void attempt_pop_free(struct attempt_cleanup_state *state) {
+static inline void attempt_pop_free(struct attempt_cleanup_state *state)
+{
 	attempt_pop_and_skip_cleanup(state);
 	free(state->data);
 }
 
 // attempt_push_close sets up a fd to be closed if the attempt fails
-static inline void attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, int fd) {
+static inline void attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, int fd)
+{
 	state->body = (attempt_cleanup_body)(void *)&fs_close;
 	state->data = (void *)(intptr_t)fd;
 	attempt_push_cleanup(thread, state);
 }
 
 // attempt_pop_free closes the fd and cancels the automatic cleanup
-static inline void attempt_pop_close(struct attempt_cleanup_state *state) {
+static inline void attempt_pop_close(struct attempt_cleanup_state *state)
+{
 	attempt_pop_and_skip_cleanup(state);
 	fs_close((intptr_t)state->data);
 }

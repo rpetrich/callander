@@ -2,12 +2,11 @@
 
 #include "fd_table.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-__attribute__((warn_unused_result))
-int fixup_exe_open(int dfd, const char *filename, int flags)
+__attribute__((warn_unused_result)) int fixup_exe_open(int dfd, const char *filename, int flags)
 {
 	char path[PATH_MAX];
 	size_t len = fs_strlen(filename);
@@ -28,14 +27,11 @@ int fixup_exe_open(int dfd, const char *filename, int flags)
 	return fs_open(path, flags, 0);
 }
 
-__attribute__((warn_unused_result))
-bool lookup_real_path(int fd, const char *path, path_info *out_path)
+__attribute__((warn_unused_result)) bool lookup_real_path(int fd, const char *path, path_info *out_path)
 {
 	if (path != NULL) {
 		if (path[0] == '/') {
-			if (path[1] == 't' && path[2] == 'a' && path[3] == 'r'
-				&& path[4] == 'g' && path[5] == 'e' && path[6] == 't')
-			{
+			if (path[1] == 't' && path[2] == 'a' && path[3] == 'r' && path[4] == 'g' && path[5] == 'e' && path[6] == 't') {
 				if (path[7] == '/') {
 					*out_path = (path_info){
 						.handle = AT_FDCWD,

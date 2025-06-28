@@ -23,33 +23,25 @@ void resurrect_fd_table(void);
 void clear_fd_table_for_exit(int status);
 
 // install_local_fd takes ownership of local_fd
-__attribute__((warn_unused_result))
-int install_local_fd(int local_fd, int flags);
+__attribute__((warn_unused_result)) int install_local_fd(int local_fd, int flags);
 // install_remote_fd takes ownership of remote_fd
-__attribute__((warn_unused_result))
-int install_remote_fd(int remote_fd, int flags);
+__attribute__((warn_unused_result)) int install_remote_fd(int remote_fd, int flags);
 // become_remote_fd takes ownership of remote_fd
 int become_remote_fd(int fd, int remote_fd);
 // become_local_fd takes ownership of local_fd
 int become_local_fd(int fd, int local_fd);
 // lookup_real_fd looks up the real file descriptor and returns true if it's remote
-__attribute__((warn_unused_result))
-bool lookup_real_fd(int fd, intptr_t *out_real_fd);
+__attribute__((warn_unused_result)) bool lookup_real_fd(int fd, intptr_t *out_real_fd);
 
 int perform_close(int fd);
-__attribute__((warn_unused_result))
-int perform_dup(int oldfd, int flags);
-__attribute__((warn_unused_result))
-int perform_dup3(int oldfd, int newfd, int flags);
+__attribute__((warn_unused_result)) int perform_dup(int oldfd, int flags);
+__attribute__((warn_unused_result)) int perform_dup3(int oldfd, int newfd, int flags);
 int perform_set_fd_flags(int fd, int flags);
-__attribute__((warn_unused_result))
-int perform_get_fd_flags(int fd);
+__attribute__((warn_unused_result)) int perform_get_fd_flags(int fd);
 
-__attribute__((warn_unused_result))
-int chdir_become_local_path(const char *path);
+__attribute__((warn_unused_result)) int chdir_become_local_path(const char *path);
 // chdir_become_local_fd does not take ownership of local_fd
-__attribute__((warn_unused_result))
-int chdir_become_local_fd(int local_fd);
+__attribute__((warn_unused_result)) int chdir_become_local_fd(int local_fd);
 
 extern int fd_table[MAX_TABLE_SIZE];
 

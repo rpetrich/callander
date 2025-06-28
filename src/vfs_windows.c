@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
-#include "vfs.h"
 #include "proxy.h"
+#include "vfs.h"
 #include "windows.h"
 
 #include <dirent.h>
@@ -60,7 +60,13 @@ static intptr_t windows_path_openat(__attribute__((unused)) struct thread_storag
 	params.dwSecurityQosFlags = 0;
 	params.lpSecurityAttributes = NULL;
 	params.hTemplateFile = 0;
-	result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(buf), proxy_value(desired_access), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_ALWAYS), proxy_in(&params, sizeof(params))));
+	result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll,
+	                                                   CreateFile2,
+	                                                   proxy_wide_string(buf),
+	                                                   proxy_value(desired_access),
+	                                                   proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE),
+	                                                   proxy_value(WINDOWS_OPEN_ALWAYS),
+	                                                   proxy_in(&params, sizeof(params))));
 	if (result >= 0) {
 		*out_file = (struct vfs_resolved_file){
 			.ops = &windows_path_ops.dirfd_ops,
@@ -92,7 +98,8 @@ static intptr_t windows_path_renameat2(__attribute__((unused)) struct thread_sto
 {
 	union {
 		WINDOWS_FILE_RENAME_INFO rename;
-		struct {
+		struct
+		{
 			char pad[sizeof(WINDOWS_FILE_RENAME_INFO) - sizeof(uint16_t)];
 			uint16_t buf[PATH_MAX];
 		};
@@ -108,7 +115,13 @@ static intptr_t windows_path_renameat2(__attribute__((unused)) struct thread_sto
 	params.dwSecurityQosFlags = 0;
 	params.lpSecurityAttributes = NULL;
 	params.hTemplateFile = 0;
-	intptr_t handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(temp.buf), proxy_value(WINDOWS_GENERIC_READ | WINDOWS_GENERIC_WRITE | WINDOWS_DELETE), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_ALWAYS), proxy_in(&params, sizeof(params))));
+	intptr_t handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll,
+	                                                            CreateFile2,
+	                                                            proxy_wide_string(temp.buf),
+	                                                            proxy_value(WINDOWS_GENERIC_READ | WINDOWS_GENERIC_WRITE | WINDOWS_DELETE),
+	                                                            proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE),
+	                                                            proxy_value(WINDOWS_OPEN_ALWAYS),
+	                                                            proxy_in(&params, sizeof(params))));
 	if (handle < 0) {
 		return handle;
 	}
@@ -120,7 +133,8 @@ static intptr_t windows_path_renameat2(__attribute__((unused)) struct thread_sto
 	temp.rename.ReplaceIfExists = 1;
 	temp.rename.RootDirectory = NULL;
 	temp.rename.FileNameLength = wide_strlen(&temp.rename.FileName[0]);
-	result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, SetFileInformationByHandle, proxy_value(handle), proxy_value(WINDOWS_FileRenameInfo), proxy_in(&temp, sizeof(temp)), proxy_value(sizeof(temp.rename) + temp.rename.FileNameLength)));
+	result = translate_windows_result(
+		PROXY_WIN32_CALL(kernel32.dll, SetFileInformationByHandle, proxy_value(handle), proxy_value(WINDOWS_FileRenameInfo), proxy_in(&temp, sizeof(temp)), proxy_value(sizeof(temp.rename) + temp.rename.FileNameLength)));
 	PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(handle));
 	return result;
 }
@@ -191,7 +205,13 @@ static intptr_t windows_path_statx(__attribute__((unused)) struct thread_storage
 			uint16_t buf[2];
 			buf[0] = '.';
 			buf[1] = '\0';
-			handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(buf), proxy_value(0), proxy_value(WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE | WINDOWS_FILE_SHARE_DELETE), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
+			handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll,
+			                                                   CreateFile2,
+			                                                   proxy_wide_string(buf),
+			                                                   proxy_value(0),
+			                                                   proxy_value(WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE | WINDOWS_FILE_SHARE_DELETE),
+			                                                   proxy_value(WINDOWS_OPEN_EXISTING),
+			                                                   proxy_in(&params, sizeof(params))));
 			if (handle < 0) {
 				return handle;
 			}
@@ -214,7 +234,13 @@ static intptr_t windows_path_statx(__attribute__((unused)) struct thread_storage
 		params.dwSecurityQosFlags = 0;
 		params.lpSecurityAttributes = NULL;
 		params.hTemplateFile = 0;
-		handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, CreateFile2, proxy_wide_string(translate_windows_wide_path(resolved.info.path, buf)), proxy_value(WINDOWS_FILE_READ_ATTRIBUTES), proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE), proxy_value(WINDOWS_OPEN_EXISTING), proxy_in(&params, sizeof(params))));
+		handle = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll,
+		                                                   CreateFile2,
+		                                                   proxy_wide_string(translate_windows_wide_path(resolved.info.path, buf)),
+		                                                   proxy_value(WINDOWS_FILE_READ_ATTRIBUTES),
+		                                                   proxy_value(WINDOWS_FILE_SHARE_DELETE | WINDOWS_FILE_SHARE_READ | WINDOWS_FILE_SHARE_WRITE),
+		                                                   proxy_value(WINDOWS_OPEN_EXISTING),
+		                                                   proxy_in(&params, sizeof(params))));
 		if (handle < 0) {
 			return handle;
 		}
@@ -273,7 +299,7 @@ static intptr_t windows_file_socket(__attribute__((unused)) struct thread_storag
 {
 	intptr_t result = PROXY_WINSOCK_HANDLE_CALL(ws2_32.dll, socket, proxy_value(domain), proxy_value(type), proxy_value(protocol));
 	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file) {
+		*out_file = (struct vfs_resolved_file){
 			.ops = &windows_socket_ops,
 			.handle = result,
 		};
@@ -470,7 +496,7 @@ static intptr_t windows_file_fstatfs(__attribute__((unused)) struct thread_stora
 
 static intptr_t windows_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
-	uint16_t path_buf[PATH_MAX-1];
+	uint16_t path_buf[PATH_MAX - 1];
 	intptr_t result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, GetFinalPathNameByHandleW, proxy_value(file.handle), proxy_out(&path_buf, sizeof(path_buf)), proxy_value(PATH_MAX), proxy_value(0)));
 	if (result < 0) {
 		return result;
@@ -481,7 +507,7 @@ static intptr_t windows_file_readlink_fd(__attribute__((unused)) struct thread_s
 	for (; i < size && i < PATH_MAX && (char)path_buf[i] != '0'; i++) {
 		buf[i] = path_buf[i] == '\\' ? '/' : path_buf[i];
 	}
-	return i+1;
+	return i + 1;
 }
 
 static intptr_t windows_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
@@ -632,58 +658,59 @@ static intptr_t windows_file_ioctl_open_file(__attribute__((unused)) struct thre
 }
 
 const struct vfs_path_ops windows_path_ops = {
-	.dirfd_ops =  {
-		.socket = windows_file_socket,
-		.close = windows_file_close,
-		.read = windows_file_read,
-		.write = windows_file_write,
-		.recvfrom = windows_file_recvfrom,
-		.sendto = windows_file_sendto,
-		.lseek = windows_file_lseek,
-		.fadvise64 = windows_file_fadvise64,
-		.readahead = windows_file_readahead,
-		.pread = windows_file_pread,
-		.pwrite = windows_file_pwrite,
-		.flock = windows_file_flock,
-		.fsync = windows_file_fsync,
-		.fdatasync = windows_file_fdatasync,
-		.syncfs = windows_file_syncfs,
-		.sync_file_range = windows_file_sync_file_range,
-		.ftruncate = windows_file_ftruncate,
-		.fallocate = windows_file_fallocate,
-		.recvmsg = windows_file_recvmsg,
-		.sendmsg = windows_file_sendmsg,
-		.fcntl_basic = windows_file_fcntl_basic,
-		.fcntl_lock = windows_file_fcntl_lock,
-		.fcntl_int = windows_file_fcntl_int,
-		.fchmod = windows_file_fchmod,
-		.fchown = windows_file_fchown,
-		.fstat = windows_file_fstat,
-		.fstatfs = windows_file_fstatfs,
-		.readlink_fd = windows_file_readlink_fd,
-		.getdents = windows_file_getdents,
-		.getdents64 = windows_file_getdents64,
-		.fgetxattr = windows_file_fgetxattr,
-		.fsetxattr = windows_file_fsetxattr,
-		.fremovexattr = windows_file_fremovexattr,
-		.flistxattr = windows_file_flistxattr,
-		.connect = windows_file_connect,
-		.bind = windows_file_bind,
-		.listen = windows_file_listen,
-		.accept4 = windows_file_accept4,
-		.getsockopt = windows_file_getsockopt,
-		.setsockopt = windows_file_setsockopt,
-		.getsockname = windows_file_getsockname,
-		.getpeername = windows_file_getpeername,
-		.shutdown = windows_file_shutdown,
-		.sendfile = windows_file_sendfile,
-		.splice = windows_file_splice,
-		.tee = windows_file_tee,
-		.copy_file_range = windows_file_copy_file_range,
-		.ioctl = windows_file_ioctl,
-		.ioctl_open_file = windows_file_ioctl_open_file,
-		.mmap = vfs_mmap_via_pread,
-	},
+	.dirfd_ops =
+		{
+			.socket = windows_file_socket,
+			.close = windows_file_close,
+			.read = windows_file_read,
+			.write = windows_file_write,
+			.recvfrom = windows_file_recvfrom,
+			.sendto = windows_file_sendto,
+			.lseek = windows_file_lseek,
+			.fadvise64 = windows_file_fadvise64,
+			.readahead = windows_file_readahead,
+			.pread = windows_file_pread,
+			.pwrite = windows_file_pwrite,
+			.flock = windows_file_flock,
+			.fsync = windows_file_fsync,
+			.fdatasync = windows_file_fdatasync,
+			.syncfs = windows_file_syncfs,
+			.sync_file_range = windows_file_sync_file_range,
+			.ftruncate = windows_file_ftruncate,
+			.fallocate = windows_file_fallocate,
+			.recvmsg = windows_file_recvmsg,
+			.sendmsg = windows_file_sendmsg,
+			.fcntl_basic = windows_file_fcntl_basic,
+			.fcntl_lock = windows_file_fcntl_lock,
+			.fcntl_int = windows_file_fcntl_int,
+			.fchmod = windows_file_fchmod,
+			.fchown = windows_file_fchown,
+			.fstat = windows_file_fstat,
+			.fstatfs = windows_file_fstatfs,
+			.readlink_fd = windows_file_readlink_fd,
+			.getdents = windows_file_getdents,
+			.getdents64 = windows_file_getdents64,
+			.fgetxattr = windows_file_fgetxattr,
+			.fsetxattr = windows_file_fsetxattr,
+			.fremovexattr = windows_file_fremovexattr,
+			.flistxattr = windows_file_flistxattr,
+			.connect = windows_file_connect,
+			.bind = windows_file_bind,
+			.listen = windows_file_listen,
+			.accept4 = windows_file_accept4,
+			.getsockopt = windows_file_getsockopt,
+			.setsockopt = windows_file_setsockopt,
+			.getsockname = windows_file_getsockname,
+			.getpeername = windows_file_getpeername,
+			.shutdown = windows_file_shutdown,
+			.sendfile = windows_file_sendfile,
+			.splice = windows_file_splice,
+			.tee = windows_file_tee,
+			.copy_file_range = windows_file_copy_file_range,
+			.ioctl = windows_file_ioctl,
+			.ioctl_open_file = windows_file_ioctl_open_file,
+			.mmap = vfs_mmap_via_pread,
+		},
 	.mkdirat = windows_path_mkdirat,
 	.mknodat = windows_path_mknodat,
 	.openat = windows_path_openat,
@@ -831,7 +858,7 @@ static intptr_t windows_socket_fchown(__attribute__((unused)) struct thread_stor
 
 static intptr_t windows_socket_fstat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat)
 {
-	*out_stat = (struct fs_stat){ 0 };
+	*out_stat = (struct fs_stat){0};
 	out_stat->st_mode = S_IFSOCK;
 	return 0;
 }

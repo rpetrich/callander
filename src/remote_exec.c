@@ -12,17 +12,18 @@
 #include "exec.h"
 #include "freestanding.h"
 #include "linux.h"
-#include "thandler.h"
 #include "patch.h"
 #include "proxy.h"
 #include "search.h"
+#include "thandler.h"
 
-__attribute__((warn_unused_result))
-static int remote_exec_fd_script(const char *sysroot, int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size], bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state);
-__attribute__((warn_unused_result))
-static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, const char *exec_path, bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state);
+__attribute__((warn_unused_result)) static int remote_exec_fd_script(const char *sysroot, int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) * aux, const char *comm, int depth,
+                                                                     size_t header_size, char header[header_size], bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state);
+__attribute__((warn_unused_result)) static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) * aux, const char *comm, const char *exec_path, bool debug,
+                                                                  struct remote_handlers handlers, struct remote_exec_state *out_state);
 
-static size_t count_arg_bytes(const char *const *argv, size_t *out_total_bytes) {
+static size_t count_arg_bytes(const char *const *argv, size_t *out_total_bytes)
+{
 	size_t argc = 0;
 	if (argv) {
 		while (argv[argc]) {
@@ -35,7 +36,8 @@ static size_t count_arg_bytes(const char *const *argv, size_t *out_total_bytes) 
 	return argc;
 }
 
-int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state)
+int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) * aux, const char *comm, int depth, bool debug, struct remote_handlers handlers,
+                   struct remote_exec_state *out_state)
 {
 	char header[BINPRM_BUF_SIZE + 1];
 	size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
@@ -60,8 +62,7 @@ int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const ch
 	return -ENOEXEC;
 }
 
-__attribute__((used)) __attribute__((visibility("hidden")))
-void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
+__attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
 {
 	// skip gconv. if something is using gconv, it can fail
 	analysis->loader.loaded_gconv_libraries = true;
@@ -90,7 +91,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	LOG("base", (uintptr_t)loaded->info.base);
 	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
 	LOG("size", (uintptr_t)loaded->info.size);
-	struct analysis_frame new_caller = { .address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+	struct analysis_frame new_caller = {.address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
 	struct registers registers = empty_registers;
 	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, loaded->info.entrypoint, &new_caller);
 
@@ -98,7 +99,7 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 	struct loaded_binary *interpreter = analysis->loader.interpreter;
 	if (interpreter != NULL) {
 		LOG("assuming interpreter can run after startup");
-		struct analysis_frame interpreter_caller = { .address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = { 0 } };
+		struct analysis_frame interpreter_caller = {.address = interpreter->info.base, .description = "interpreter", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
 		registers = empty_registers;
 		analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, interpreter->info.entrypoint, &interpreter_caller);
 	} else {
@@ -109,13 +110,13 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 		ins_ptr libc_early_init = resolve_binary_loaded_symbol(&analysis->loader, binary, "__libc_early_init", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (libc_early_init != NULL) {
 			registers = empty_registers;
-			new_caller = (struct analysis_frame){ .address = binary->info.base, .description = "__libc_early_init", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			new_caller = (struct analysis_frame){.address = binary->info.base, .description = "__libc_early_init", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = {0}};
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, libc_early_init, &new_caller);
 		}
 		ins_ptr dl_runtime_resolve = resolve_binary_loaded_symbol(&analysis->loader, binary, "_dl_runtime_resolve", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (dl_runtime_resolve != NULL) {
 			registers = empty_registers;
-			new_caller = (struct analysis_frame){ .address = binary->info.base, .description = "_dl_runtime_resolve", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 } };
+			new_caller = (struct analysis_frame){.address = binary->info.base, .description = "_dl_runtime_resolve", .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = {0}};
 			analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, dl_runtime_resolve, &new_caller);
 		}
 	}
@@ -127,18 +128,17 @@ void perform_analysis(struct program_state *analysis, const char *executable_pat
 
 #ifndef __APPLE__
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
+#pragma GCC optimize("-fomit-frame-pointer")
 #endif
-__attribute__((noinline))
-static void analyze_binary(struct program_state *analysis, const char *executable_path, int fd)
+__attribute__((noinline)) static void analyze_binary(struct program_state *analysis, const char *executable_path, int fd)
 {
 #ifdef MAP_STACK
-	int stack_flags = MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK;
+	int stack_flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK;
 #else
-	int stack_flags = MAP_PRIVATE|MAP_ANONYMOUS;
+	int stack_flags = MAP_PRIVATE | MAP_ANONYMOUS;
 #endif
 	// allocate a temporary stack
-	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ|PROT_WRITE, stack_flags, -1, 0);
+	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, stack_flags, -1, 0);
 	if (fs_is_map_failed(stack)) {
 		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
 	}
@@ -173,14 +173,14 @@ bool region_is_mapped(__attribute__((unused)) struct thread_storage *thread, con
 static bool find_remote_patch_target(const struct loader_context *loader, const ins_ptr target, const ins_ptr entry, struct instruction_range *out_result)
 {
 #ifdef PATCH_REQUIRES_MIGRATION
-	struct instruction_range basic_block = { 0 };
+	struct instruction_range basic_block = {0};
 	if (!patch_find_basic_block(entry, target, &basic_block)) {
 		PATCH_LOG("could not find basic block");
 		return false;
 	}
 	return find_patch_target(basic_block, target, PCREL_JUMP_SIZE, PCREL_JUMP_SIZE, loader_address_formatter, (void *)loader, out_result);
 #else
-	struct instruction_range basic_block = (struct instruction_range){ .start = entry, .end = target };
+	struct instruction_range basic_block = (struct instruction_range){.start = entry, .end = target};
 	struct decoded_ins decoded_end;
 	if (decode_ins(basic_block.end, &decoded_end)) {
 		basic_block.end = next_ins(basic_block.end, &decoded_end);
@@ -226,9 +226,9 @@ static intptr_t alloc_remote_page_near_address(intptr_t address, size_t size, in
 	intptr_t attempt_low = address & -PAGE_SIZE;
 	intptr_t attempt_high = attempt_low;
 	size_t increment = PAGE_SIZE * 1024;
-	int flags = MAP_PRIVATE|MAP_ANONYMOUS;
+	int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 #ifdef MAP_JIT
-	if ((prot & (PROT_WRITE|PROT_EXEC)) == (PROT_WRITE|PROT_EXEC)) {
+	if ((prot & (PROT_WRITE | PROT_EXEC)) == (PROT_WRITE | PROT_EXEC)) {
 		flags |= MAP_JIT;
 	}
 #endif
@@ -252,7 +252,8 @@ static intptr_t alloc_remote_page_near_address(intptr_t address, size_t size, in
 	}
 }
 
-struct remote_patch {
+struct remote_patch
+{
 	uintptr_t address;
 	uintptr_t trampoline;
 	bool owns_trampoline;
@@ -262,7 +263,7 @@ static void init_remote_patches(struct remote_patches *patches)
 {
 	patches->list = NULL;
 	patches->count = 0;
-	patches->existing_trampoline = PAGE_SIZE-1;
+	patches->existing_trampoline = PAGE_SIZE - 1;
 }
 
 static void free_remote_patches(struct remote_patches *patches, struct program_state *analysis)
@@ -301,7 +302,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 	uintptr_t child_patch_start = translate_analysis_address_to_child(&analysis->loader, patch_target.start);
 	uintptr_t child_patch_end = translate_analysis_address_to_child(&analysis->loader, patch_target.end);
 	uintptr_t child_page_start = child_patch_start & -PAGE_SIZE;
-	uintptr_t child_page_end = (child_patch_end + (PAGE_SIZE-1)) & -PAGE_SIZE;
+	uintptr_t child_page_end = (child_patch_end + (PAGE_SIZE - 1)) & -PAGE_SIZE;
 #ifdef __APPLE__
 	{
 		void *copy = malloc(child_page_end - child_page_start);
@@ -311,7 +312,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 		}
 		fs_memcpy(copy, (void *)child_page_start, child_page_end - child_page_start);
 		fs_munmap((void *)child_page_start, child_page_end - child_page_start);
-		intptr_t mmap_result = remote_mmap(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS|MAP_JIT, -1, 0);
+		intptr_t mmap_result = remote_mmap(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
 		if (mmap_result < 0) {
 			DIE("failed to remote map_jit", fs_strerror(mmap_result));
 		}
@@ -330,7 +331,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 #endif
 	// allocate a trampoline page
 	uintptr_t trampoline;
-	size_t bytes_remaining_in_existing = PAGE_SIZE - (patches->existing_trampoline & (PAGE_SIZE-1));
+	size_t bytes_remaining_in_existing = PAGE_SIZE - (patches->existing_trampoline & (PAGE_SIZE - 1));
 	size_t expected_size = (addr - patch_target.start) + ((uintptr_t)template.address - (uintptr_t)template.start) + 10 + ((uintptr_t)template.end - (uintptr_t)template.address) + 5;
 	struct remote_patch patch;
 	patch.address = child_addr;
@@ -443,7 +444,15 @@ static void patch_remote_syscalls(struct remote_patches *patches, struct program
 				}
 				if (!found) {
 					bool is_clone = analysis->syscalls.list[i].nr == LINUX_SYS_clone;
-					remote_patch(patches, analysis, addr, analysis->syscalls.list[i].entry, child_addr, PATCH_TEMPLATE(trampoline_call_handler), is_clone ? handlers->receive_clone_addr : handlers->receive_syscall_addr, is_clone ? 0 : (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), 0);
+					remote_patch(patches,
+					             analysis,
+					             addr,
+					             analysis->syscalls.list[i].entry,
+					             child_addr,
+					             PATCH_TEMPLATE(trampoline_call_handler),
+					             is_clone ? handlers->receive_clone_addr : handlers->receive_syscall_addr,
+					             is_clone ? 0 : (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)),
+					             0);
 				}
 			}
 		}
@@ -452,7 +461,7 @@ static void patch_remote_syscalls(struct remote_patches *patches, struct program
 
 #define STACK_SIZE (2 * 1024 * 1024)
 
-static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, struct binary_info *main_info, struct binary_info *interpreter_info)
+static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const *argv, const char *const *envp, const ElfW(auxv_t) * aux, struct binary_info *main_info, struct binary_info *interpreter_info)
 {
 	size_t string_size = sizeof(ARCH_NAME) + 16;
 	size_t argc = count_arg_bytes(argv, &string_size);
@@ -619,10 +628,11 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 }
 
 // remote_exec_fd_elf executes an elf binary from an open file
-static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path, bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state)
+static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *argv, const char *const *envp, const ElfW(auxv_t) * aux, __attribute__((unused)) const char *comm, __attribute__((unused)) const char *exec_path, bool debug,
+                              struct remote_handlers handlers, struct remote_exec_state *out_state)
 {
 	// analyze the program
-	struct program_state analysis = { 0 };
+	struct program_state analysis = {0};
 	analysis.loader.sysroot = sysroot;
 	analysis.loader.ignore_dlopen = true;
 	init_searched_instructions(&analysis.search);
@@ -653,7 +663,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 		ERROR("remotely loading program", analysis.loader.main->path);
 		ERROR_FLUSH();
 	}
-	struct binary_info main_info = { 0 };
+	struct binary_info main_info = {0};
 	intptr_t result = remote_load_binary(fd, &main_info);
 	if (result < 0) {
 		ERROR("failed to load binary remotely", fs_strerror(result));
@@ -665,7 +675,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	}
 	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
-	struct binary_info interpreter_info = { 0 };
+	struct binary_info interpreter_info = {0};
 	bool has_interpreter = analysis.loader.main->info.interpreter != NULL;
 	int interpreter_fd = -1;
 	char sysroot_path_buf[PATH_MAX];
@@ -734,7 +744,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	intptr_t sp = prepare_and_send_program_stack(stack, argv, envp, aux, &main_info, has_interpreter ? &interpreter_info : NULL);
 
 	// process syscalls until the remote exits
-	*out_state = (struct remote_exec_state) {
+	*out_state = (struct remote_exec_state){
 		.handlers = handlers,
 		.analysis = analysis,
 		.patches = patches,
@@ -751,7 +761,8 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	return 0;
 }
 
-void cleanup_remote_exec(struct remote_exec_state *remote) {
+void cleanup_remote_exec(struct remote_exec_state *remote)
+{
 	// cleanup
 	cleanup_searched_instructions(&remote->analysis.search);
 	free_remote_patches(&remote->patches, &remote->analysis);
@@ -763,11 +774,13 @@ void cleanup_remote_exec(struct remote_exec_state *remote) {
 	remote_unload_binary(&remote->main_info);
 }
 
-void repatch_remote_syscalls(struct remote_exec_state *remote) {
+void repatch_remote_syscalls(struct remote_exec_state *remote)
+{
 	patch_remote_syscalls(&remote->patches, &remote->analysis, &remote->handlers);
 }
 
-static int remote_exec_fd_script(const char *sysroot, int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) *aux, const char *comm, int depth, size_t header_size, char header[header_size], bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state)
+static int remote_exec_fd_script(const char *sysroot, int fd, const char *named_path, const char *const *argv, const char *const *envp, const ElfW(auxv_t) * aux, const char *comm, int depth, size_t header_size, char header[header_size],
+                                 bool debug, struct remote_handlers handlers, struct remote_exec_state *out_state)
 {
 	// Script binary format
 	if (depth > 4) {
@@ -788,7 +801,7 @@ static int remote_exec_fd_script(const char *sysroot, int fd, const char *named_
 	for (;; arg1++) {
 		if (*arg1 == ' ' || *arg1 == '\0') {
 			*arg1++ = '\0';
-			for (char *terminator = arg1; ; ++terminator) {
+			for (char *terminator = arg1;; ++terminator) {
 				if (*terminator == '\0' || *terminator == '\n') {
 					*terminator = '\0';
 					break;

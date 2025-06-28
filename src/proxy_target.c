@@ -4,17 +4,16 @@
 
 #include "axon.h"
 
-__attribute__((visibility("default")))
-struct proxy_target_state proxy_state;
+__attribute__((visibility("default"))) struct proxy_target_state proxy_state;
 
-struct remote_result_future {
+struct remote_result_future
+{
 	struct fs_mutex mutex;
 	intptr_t result;
 	proxy_arg *args;
 };
 
-__attribute__((visibility("default")))
-void receive_response(struct remote_result_future *response, intptr_t result, void *buffer)
+__attribute__((visibility("default"))) void receive_response(struct remote_result_future *response, intptr_t result, void *buffer)
 {
 	// copy in/out arguments
 	for (int i = 0; i < PROXY_ARGUMENT_COUNT; i++) {
@@ -43,7 +42,7 @@ void receive_response(struct remote_result_future *response, intptr_t result, vo
 intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
 	// prepare a response future
-	struct remote_result_future response = { 0 };
+	struct remote_result_future response = {0};
 	response.mutex.state = 1;
 	response.args = args;
 	// prepare a client request
@@ -54,7 +53,7 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 		message.header.result = (intptr_t)&response;
 	}
 	message.header.id = proxy_state.stream_id;
-	struct iovec iov[PROXY_ARGUMENT_COUNT+1];
+	struct iovec iov[PROXY_ARGUMENT_COUNT + 1];
 	iov[0].iov_base = &message;
 	iov[0].iov_len = sizeof(message);
 	// fill the request details
@@ -80,14 +79,12 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	return response.result;
 }
 
-__attribute__((warn_unused_result))
-intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
+__attribute__((warn_unused_result)) intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
 	return PROXY_CALL(TARGET_NR_PEEK, proxy_value(addr), proxy_out(out_buffer, size));
 }
 
-__attribute__((warn_unused_result))
-intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
+__attribute__((warn_unused_result)) intptr_t proxy_poke(intptr_t addr, size_t size, const void *buffer)
 {
 	return PROXY_CALL(TARGET_NR_POKE | PROXY_NO_RESPONSE, proxy_value(addr), proxy_in(buffer, size));
 }

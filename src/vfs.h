@@ -2,9 +2,9 @@
 #define VFS_H
 
 #include <errno.h>
+#include <poll.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <poll.h>
 
 #include "axon.h"
 #include "fd_table.h"
@@ -14,12 +14,14 @@
 #include "proxy.h"
 #include "sockets.h"
 
-struct vfs_resolved_file {
+struct vfs_resolved_file
+{
 	const struct vfs_file_ops *ops;
 	intptr_t handle;
 };
 
-struct vfs_poll_resolved_file {
+struct vfs_poll_resolved_file
+{
 	struct vfs_resolved_file file;
 	short events;
 	short revents;
@@ -29,7 +31,8 @@ struct thread_storage;
 
 // intptr_t remote_socket(int domain, int type, int protocol);
 
-struct vfs_file_ops {
+struct vfs_file_ops
+{
 	intptr_t (*socket)(struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file);
 
 	intptr_t (*close)(struct vfs_resolved_file);
@@ -85,12 +88,14 @@ struct vfs_file_ops {
 	intptr_t (*mmap)(struct thread_storage *, struct vfs_resolved_file, void *addr, size_t length, int prot, int flags, size_t offset);
 };
 
-struct vfs_resolved_path {
+struct vfs_resolved_path
+{
 	const struct vfs_path_ops *ops;
 	path_info info;
 };
 
-struct vfs_path_ops {
+struct vfs_path_ops
+{
 	const struct vfs_file_ops dirfd_ops;
 	intptr_t (*mkdirat)(struct thread_storage *, struct vfs_resolved_path, mode_t mode);
 	intptr_t (*mknodat)(struct thread_storage *, struct vfs_resolved_path, mode_t mode, dev_t dev);
@@ -133,8 +138,7 @@ static inline const struct vfs_path_ops *vfs_path_ops_for_remote(void)
 	}
 }
 
-__attribute__((always_inline))
-static inline const struct vfs_file_ops *vfs_file_ops_for_remote(void)
+__attribute__((always_inline)) static inline const struct vfs_file_ops *vfs_file_ops_for_remote(void)
 {
 	return &vfs_path_ops_for_remote()->dirfd_ops;
 }
@@ -163,7 +167,8 @@ static inline bool vfs_is_remote_path(const struct vfs_resolved_path *path)
 	return path->ops != &local_path_ops;
 }
 
-static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved) {
+static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved)
+{
 	return (struct vfs_resolved_file){
 		.handle = resolved.info.handle,
 		.ops = &resolved.ops->dirfd_ops,
@@ -181,7 +186,11 @@ static inline intptr_t vfs_install_file(intptr_t result, const struct vfs_resolv
 	return install_remote_fd(file->handle, flags);
 }
 
-#define vfs_call(name, target, ...) ({ __typeof__(target) _target = target; LIKELY(_target.ops->name != NULL) ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; })
+#define vfs_call(name, target, ...)                                                                                \
+	({                                                                                                             \
+		__typeof__(target) _target = target;                                                                       \
+		LIKELY(_target.ops->name != NULL) ? _target.ops->name(thread, _target, ##__VA_ARGS__) : (intptr_t)-ENOSYS; \
+	})
 
 intptr_t vfs_truncate_via_open_and_ftruncate(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, off_t length);
 

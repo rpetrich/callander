@@ -16,43 +16,45 @@
 
 FS_DEFINE_SYSCALL
 
-typedef struct z_stream_s {
-    const unsigned char *next_in;     /* next input byte */
-    unsigned int     avail_in;  /* number of bytes available at next_in */
-    unsigned long    total_in;  /* total number of input bytes read so far */
+typedef struct z_stream_s
+{
+	const unsigned char *next_in;     /* next input byte */
+	unsigned int avail_in;  /* number of bytes available at next_in */
+	unsigned long total_in;  /* total number of input bytes read so far */
 
-    unsigned char    *next_out; /* next output byte will go here */
-    unsigned int     avail_out; /* remaining free space at next_out */
-    unsigned long    total_out; /* total number of bytes output so far */
+	unsigned char *next_out; /* next output byte will go here */
+	unsigned int avail_out; /* remaining free space at next_out */
+	unsigned long total_out; /* total number of bytes output so far */
 
-    const char *msg;  /* last error message, NULL if no error */
-    void *state; /* not visible by applications */
+	const char *msg;  /* last error message, NULL if no error */
+	void *state; /* not visible by applications */
 
-    void *zalloc;  /* used to allocate the internal state */
-    void *zfree;   /* used to free the internal state */
-    void *opaque;  /* private data object passed to zalloc and zfree */
+	void *zalloc;  /* used to allocate the internal state */
+	void *zfree;   /* used to free the internal state */
+	void *opaque;  /* private data object passed to zalloc and zfree */
 
-    int     data_type;  /* best guess about the data type: binary or text
-                           for deflate, or the decoding state for inflate */
-    unsigned long   adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
-    unsigned long   reserved;   /* reserved for future use */
+	int data_type;  /* best guess about the data type: binary or text
+	                for deflate, or the decoding state for inflate */
+	unsigned long adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
+	unsigned long reserved;   /* reserved for future use */
 } z_stream;
 
-typedef struct gz_header_s {
-    int     text;       /* true if compressed data believed to be text */
-    unsigned long   time;       /* modification time */
-    int     xflags;     /* extra flags (not used when writing a gzip file) */
-    int     os;         /* operating system */
-    unsigned char   *extra;     /* pointer to extra field or Z_NULL if none */
-    unsigned int    extra_len;  /* extra field length (valid if extra != Z_NULL) */
-    unsigned int    extra_max;  /* space at extra (only when reading header) */
-    unsigned char   *name;      /* pointer to zero-terminated file name or Z_NULL */
-    unsigned int    name_max;   /* space at name (only when reading header) */
-    unsigned char   *comment;   /* pointer to zero-terminated comment or Z_NULL */
-    unsigned int    comm_max;   /* space at comment (only when reading header) */
-    int     hcrc;       /* true if there was or will be a header crc */
-    int     done;       /* true when done reading gzip header (not used
-                           when writing a gzip file) */
+typedef struct gz_header_s
+{
+	int text;       /* true if compressed data believed to be text */
+	unsigned long time;       /* modification time */
+	int xflags;     /* extra flags (not used when writing a gzip file) */
+	int os;         /* operating system */
+	unsigned char *extra;     /* pointer to extra field or Z_NULL if none */
+	unsigned int extra_len;  /* extra field length (valid if extra != Z_NULL) */
+	unsigned int extra_max;  /* space at extra (only when reading header) */
+	unsigned char *name;      /* pointer to zero-terminated file name or Z_NULL */
+	unsigned int name_max;   /* space at name (only when reading header) */
+	unsigned char *comment;   /* pointer to zero-terminated comment or Z_NULL */
+	unsigned int comm_max;   /* space at comment (only when reading header) */
+	int hcrc;       /* true if there was or will be a header crc */
+	int done;       /* true when done reading gzip header (not used
+	 when writing a gzip file) */
 } gz_header;
 
 static intptr_t worker_inflateInit_;
@@ -90,7 +92,7 @@ static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attr
 		DIE("failed to peek", fs_strerror(result));
 	}
 	*stream = copy;
-	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in]; 
+	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in];
 	stream->next_out = &orig_next_out[(intptr_t)copy.next_out - (intptr_t)next_out];
 	return inflate_return;
 }
@@ -137,7 +139,7 @@ static intptr_t inferior_inflateSync(__attribute__((unused)) uintptr_t *args, __
 	}
 	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateSync), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
 	*stream = copy;
-	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in]; 
+	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in];
 	return inflate_return;
 }
 
@@ -199,7 +201,12 @@ static intptr_t inferior_inflateBackEnd(__attribute__((unused)) uintptr_t *args,
 	return orig_inflateBackEnd((void *)args[0]);
 }
 
-static const struct { const char *name; intptr_t (*handler)(uintptr_t *arguments, intptr_t original); intptr_t *original; } zlib_symbols[] = {
+static const struct
+{
+	const char *name;
+	intptr_t (*handler)(uintptr_t *arguments, intptr_t original);
+	intptr_t *original;
+} zlib_symbols[] = {
 	{"inflateInit_", &inferior_inflateInit_, &worker_inflateInit_},
 	{"inflateInit2_", &inferior_inflateInit2_, &worker_inflateInit2_},
 	{"inflate", &inferior_inflate, &worker_inflate},
@@ -218,7 +225,8 @@ static const struct { const char *name; intptr_t (*handler)(uintptr_t *arguments
 	{"inflateBackEnd", &inferior_inflateBackEnd, NULL},
 };
 
-struct full_binary_info {
+struct full_binary_info
+{
 	int fd;
 	struct fs_stat stat;
 	struct binary_info info;
@@ -255,7 +263,8 @@ static bool mapping_is_copy_of_full_binary_info(const struct mapping *mapping, c
 	return mapping->inode == info->stat.st_ino && mapping->device == info->stat.st_dev && (mapping->start < info->info.base || mapping->start >= info->info.base + info->info.size);
 }
 
-struct debug {
+struct debug
+{
 	int version;
 	struct link_map *map;
 	void (*update)();
@@ -303,7 +312,7 @@ noreturn static void process_data(void)
 				EXIT_FROM_ERRNO("Failed to read from socket", result);
 			}
 			bytes_read += result;
-		} while(bytes_read != sizeof(request));
+		} while (bytes_read != sizeof(request));
 		// interpret request
 		response_message response;
 		struct iovec vec[7];
@@ -416,7 +425,7 @@ noreturn static void process_data(void)
 			fs_mutex_lock(&state.write_mutex);
 #endif
 			for (;;) {
-				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count-io_start);
+				intptr_t result = fs_writev(sockfd_local, &vec[io_start], io_count - io_start);
 				if (result <= 0) {
 					if (result == -EINTR) {
 						continue;
@@ -435,7 +444,7 @@ noreturn static void process_data(void)
 				vec[io_start].iov_base += result;
 				vec[io_start].iov_len -= result;
 			}
-	unlock:
+		unlock:
 #ifdef SYS_futex
 			fs_mutex_unlock(&state.write_mutex);
 #else
@@ -446,11 +455,9 @@ noreturn static void process_data(void)
 	__builtin_unreachable();
 }
 
-
 static int (*worker_pthread_create)(pthread_t *restrict thread, const pthread_attr_t *restrict attr, void *(*start_routine)(void *), void *restrict arg);
 
-__attribute__((used)) __attribute__((visibility("hidden")))
-void callander_perform_analysis(struct program_state *analysis, const struct link_map *libz_entry, __attribute__((unused)) void *data)
+__attribute__((used)) __attribute__((visibility("hidden"))) void callander_perform_analysis(struct program_state *analysis, const struct link_map *libz_entry, __attribute__((unused)) void *data)
 {
 	int ld = fs_open("/lib64/ld-linux-x86-64.so.2", O_RDONLY | O_CLOEXEC, 0);
 	struct loaded_binary *ld_binary;
@@ -464,79 +471,103 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 	libc_binary->special_binary_flags |= BINARY_IS_LIBC;
 	fs_close(libc);
 
-	record_syscall(analysis, SYS_clock_gettime, (struct analysis_frame){
-		.next = NULL,
-		.address = NULL,
-		.description = "vDSO",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_clock_gettime,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = NULL,
+					   .description = "vDSO",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
-	record_syscall(analysis, SYS_futex, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
-	record_syscall(analysis, SYS_read, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
-	record_syscall(analysis, SYS_write, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
-	record_syscall(analysis, SYS_writev, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
-	record_syscall(analysis, SYS_exit_group, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
-	record_syscall(analysis, SYS_mmap, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
-	record_syscall(analysis, SYS_munmap, (struct analysis_frame){
-		.next = NULL,
-		.address = &fs_syscall,
-		.description = "libcallbox",
-		.current_state = empty_registers,
-		.entry = NULL,
-		.entry_state = &empty_registers,
-		.token = { 0 },
-	}, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_futex,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_read,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_write,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_writev,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_exit_group,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_mmap,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
+	record_syscall(analysis,
+	               SYS_munmap,
+	               (struct analysis_frame){
+					   .next = NULL,
+					   .address = &fs_syscall,
+					   .description = "libcallbox",
+					   .current_state = empty_registers,
+					   .entry = NULL,
+					   .entry_state = &empty_registers,
+					   .token = {0},
+				   },
+	               EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS);
 
 	struct loaded_binary *binary = register_dlopen(analysis, libz_entry->l_name, NULL, DLOPEN_OPTION_ANALYZE_SYMBOLS);
 	if (binary == NULL) {
@@ -549,7 +580,15 @@ void callander_perform_analysis(struct program_state *analysis, const struct lin
 		if (addr == NULL) {
 			DIE("could not analyze", zlib_symbols[i].name);
 		}
-		struct analysis_frame new_caller = { .address = addr, .description = zlib_symbols[i].name, .next = NULL, .current_state = empty_registers, .entry = binary->info.base, .entry_state = &empty_registers, .token = { 0 }, };
+		struct analysis_frame new_caller = {
+			.address = addr,
+			.description = zlib_symbols[i].name,
+			.next = NULL,
+			.current_state = empty_registers,
+			.entry = binary->info.base,
+			.entry_state = &empty_registers,
+			.token = {0},
+		};
 		struct registers registers = empty_registers;
 		analyze_function(analysis, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, &registers, addr, &new_caller);
 	}
@@ -570,11 +609,10 @@ static const struct link_map *find_link_map(const char *path)
 static void *(*worker_dlopen)(const char *filename, int flags);
 
 #pragma GCC push_options
-#pragma GCC optimize ("-fomit-frame-pointer")
-__attribute__((noinline))
-static void apply_sandbox(const struct link_map *libz_entry)
+#pragma GCC optimize("-fomit-frame-pointer")
+__attribute__((noinline)) static void apply_sandbox(const struct link_map *libz_entry)
 {
-	struct program_state analysis = { 0 };
+	struct program_state analysis = {0};
 	analysis.loader.pid = fs_getpid();
 	analysis.loader.loaded_gconv_libraries = true;
 	analysis.loader.ignore_dlopen = true;
@@ -588,7 +626,7 @@ static void apply_sandbox(const struct link_map *libz_entry)
 	}
 
 	// allocate a temporary stack
-	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0);
+	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
 		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
 	}
@@ -782,8 +820,7 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 	ERROR_FLUSH();
 }
 
-__attribute__((constructor))
-static void constructor(void)
+__attribute__((constructor)) static void constructor(void)
 {
 	struct full_binary_info main;
 	intptr_t result = load_full_binary_info(AT_FDCWD, "/proc/self/exe", &main);

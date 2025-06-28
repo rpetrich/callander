@@ -6,11 +6,12 @@
 struct thread_storage;
 
 #include "attempt.h"
+#include "coverage.h"
 #include "handler.h"
 #include "stack.h"
-#include "coverage.h"
 
-struct thread_storage {
+struct thread_storage
+{
 	struct stack_data stack;
 	struct attempt *attempt;
 	struct signal_state signals;

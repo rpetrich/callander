@@ -17,22 +17,23 @@ typedef uint32_t ins_uint32 __attribute__((aligned(1)));
 typedef int64_t ins_int64 __attribute__((aligned(1)));
 typedef uint64_t ins_uint64 __attribute__((aligned(1)));
 
-enum ins_jump_behavior {
+enum ins_jump_behavior
+{
 	INS_JUMPS_NEVER,
 	INS_JUMPS_ALWAYS,
 	INS_JUMPS_OR_CONTINUES,
 	INS_JUMPS_ALWAYS_INDIRECT,
 };
 
-enum ins_operand_size {
+enum ins_operand_size
+{
 	OPERATION_SIZE_BYTE = 1,
 	OPERATION_SIZE_HALF = 2,
 	OPERATION_SIZE_WORD = 4,
 	OPERATION_SIZE_DWORD = 8,
 };
 
-__attribute__((always_inline))
-static inline uintptr_t mask_for_operand_size(enum ins_operand_size operand_size)
+__attribute__((always_inline)) static inline uintptr_t mask_for_operand_size(enum ins_operand_size operand_size)
 {
 	switch (operand_size) {
 		case OPERATION_SIZE_BYTE:
@@ -46,8 +47,7 @@ static inline uintptr_t mask_for_operand_size(enum ins_operand_size operand_size
 	}
 }
 
-__attribute__((always_inline))
-static inline intptr_t sign_extend(uintptr_t value, enum ins_operand_size operand_size)
+__attribute__((always_inline)) static inline intptr_t sign_extend(uintptr_t value, enum ins_operand_size operand_size)
 {
 	switch (operand_size) {
 		case OPERATION_SIZE_BYTE:
@@ -62,36 +62,36 @@ static inline intptr_t sign_extend(uintptr_t value, enum ins_operand_size operan
 	}
 }
 
-
-struct register_state {
+struct register_state
+{
 	uintptr_t value;
 	uintptr_t max;
 };
 
-__attribute__((nonnull(1)))
-static inline void clear_register(struct register_state *reg) {
+__attribute__((nonnull(1))) static inline void clear_register(struct register_state *reg)
+{
 	reg->value = (uintptr_t)0;
 	reg->max = ~(uintptr_t)0;
 }
 
-__attribute__((nonnull(1)))
-static inline void set_register(struct register_state *reg, uintptr_t value) {
+__attribute__((nonnull(1))) static inline void set_register(struct register_state *reg, uintptr_t value)
+{
 	reg->value = value;
 	reg->max = value;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool register_is_exactly_known(const struct register_state *reg) {
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool register_is_exactly_known(const struct register_state *reg)
+{
 	return reg->value == reg->max;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool register_is_partially_known(const struct register_state *reg) {
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool register_is_partially_known(const struct register_state *reg)
+{
 	return reg->value != (uintptr_t)0 || reg->max != ~(uintptr_t)0;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool truncate_to_8bit(struct register_state *reg) {
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool truncate_to_8bit(struct register_state *reg)
+{
 	if ((reg->max >> 8) == (reg->value >> 8)) {
 		if ((reg->max >> 8) == 0) {
 			return false;
@@ -107,8 +107,8 @@ static inline bool truncate_to_8bit(struct register_state *reg) {
 	return true;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool truncate_to_16bit(struct register_state *reg) {
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool truncate_to_16bit(struct register_state *reg)
+{
 	if ((reg->max >> 16) == (reg->value >> 16)) {
 		if ((reg->max >> 16) == 0) {
 			return false;
@@ -124,8 +124,8 @@ static inline bool truncate_to_16bit(struct register_state *reg) {
 	return true;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool truncate_to_32bit(struct register_state *reg) {
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool truncate_to_32bit(struct register_state *reg)
+{
 	if ((reg->max >> 32) == (reg->value >> 32)) {
 		if ((reg->max >> 32) == 0) {
 			return false;
@@ -141,8 +141,8 @@ static inline bool truncate_to_32bit(struct register_state *reg) {
 	return true;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool truncate_to_operand_size(struct register_state *reg, enum ins_operand_size operand_size) {
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool truncate_to_operand_size(struct register_state *reg, enum ins_operand_size operand_size)
+{
 	uintptr_t mask = mask_for_operand_size(operand_size);
 	if ((reg->max & ~mask) == (reg->value & ~mask)) {
 		if ((reg->max & ~mask) == 0) {
@@ -159,8 +159,7 @@ static inline bool truncate_to_operand_size(struct register_state *reg, enum ins
 	return true;
 }
 
-__attribute__((nonnull(1))) __attribute__((always_inline))
-static inline bool sign_extend_from_operand_size(struct register_state *reg, enum ins_operand_size operand_size)
+__attribute__((nonnull(1))) __attribute__((always_inline)) static inline bool sign_extend_from_operand_size(struct register_state *reg, enum ins_operand_size operand_size)
 {
 	if (reg->value & ((uintptr_t)1 << (operand_size * 8 - 1))) {
 		reg->value |= ~(uintptr_t)0 << (operand_size * 8 - 1);
@@ -177,107 +176,108 @@ static inline bool sign_extend_from_operand_size(struct register_state *reg, enu
 #if MORE_STACK_SLOTS
 #define STACK_SLOT_COUNT 63
 #define GENERATE_PER_STACK_REGISTER() \
-	PER_STACK_REGISTER_IMPL(0) \
-	PER_STACK_REGISTER_IMPL(4) \
-	PER_STACK_REGISTER_IMPL(8) \
-	PER_STACK_REGISTER_IMPL(12) \
-	PER_STACK_REGISTER_IMPL(16) \
-	PER_STACK_REGISTER_IMPL(20) \
-	PER_STACK_REGISTER_IMPL(24) \
-	PER_STACK_REGISTER_IMPL(28) \
-	PER_STACK_REGISTER_IMPL(32) \
-	PER_STACK_REGISTER_IMPL(36) \
-	PER_STACK_REGISTER_IMPL(40) \
-	PER_STACK_REGISTER_IMPL(44) \
-	PER_STACK_REGISTER_IMPL(48) \
-	PER_STACK_REGISTER_IMPL(52) \
-	PER_STACK_REGISTER_IMPL(56) \
-	PER_STACK_REGISTER_IMPL(60) \
-	PER_STACK_REGISTER_IMPL(64) \
-	PER_STACK_REGISTER_IMPL(68) \
-	PER_STACK_REGISTER_IMPL(72) \
-	PER_STACK_REGISTER_IMPL(76) \
-	PER_STACK_REGISTER_IMPL(80) \
-	PER_STACK_REGISTER_IMPL(84) \
-	PER_STACK_REGISTER_IMPL(88) \
-	PER_STACK_REGISTER_IMPL(92) \
-	PER_STACK_REGISTER_IMPL(96) \
-	PER_STACK_REGISTER_IMPL(100) \
-	PER_STACK_REGISTER_IMPL(104) \
-	PER_STACK_REGISTER_IMPL(108) \
-	PER_STACK_REGISTER_IMPL(112) \
-	PER_STACK_REGISTER_IMPL(116) \
-	PER_STACK_REGISTER_IMPL(120) \
-	PER_STACK_REGISTER_IMPL(124) \
-	PER_STACK_REGISTER_IMPL(128) \
-	PER_STACK_REGISTER_IMPL(132) \
-	PER_STACK_REGISTER_IMPL(136) \
-	PER_STACK_REGISTER_IMPL(140) \
-	PER_STACK_REGISTER_IMPL(144) \
-	PER_STACK_REGISTER_IMPL(148) \
-	PER_STACK_REGISTER_IMPL(152) \
-	PER_STACK_REGISTER_IMPL(156) \
-	PER_STACK_REGISTER_IMPL(160) \
-	PER_STACK_REGISTER_IMPL(164) \
-	PER_STACK_REGISTER_IMPL(168) \
-	PER_STACK_REGISTER_IMPL(172) \
-	PER_STACK_REGISTER_IMPL(176) \
-	PER_STACK_REGISTER_IMPL(180) \
-	PER_STACK_REGISTER_IMPL(184) \
-	PER_STACK_REGISTER_IMPL(188) \
-	PER_STACK_REGISTER_IMPL(192) \
-	PER_STACK_REGISTER_IMPL(196) \
-	PER_STACK_REGISTER_IMPL(200) \
-	PER_STACK_REGISTER_IMPL(204) \
-	PER_STACK_REGISTER_IMPL(208) \
-	PER_STACK_REGISTER_IMPL(212) \
-	PER_STACK_REGISTER_IMPL(216) \
-	PER_STACK_REGISTER_IMPL(220) \
-	PER_STACK_REGISTER_IMPL(224) \
-	PER_STACK_REGISTER_IMPL(228) \
-	PER_STACK_REGISTER_IMPL(232) \
-	PER_STACK_REGISTER_IMPL(236) \
-	PER_STACK_REGISTER_IMPL(240) \
-	PER_STACK_REGISTER_IMPL(244) \
+	PER_STACK_REGISTER_IMPL(0)        \
+	PER_STACK_REGISTER_IMPL(4)        \
+	PER_STACK_REGISTER_IMPL(8)        \
+	PER_STACK_REGISTER_IMPL(12)       \
+	PER_STACK_REGISTER_IMPL(16)       \
+	PER_STACK_REGISTER_IMPL(20)       \
+	PER_STACK_REGISTER_IMPL(24)       \
+	PER_STACK_REGISTER_IMPL(28)       \
+	PER_STACK_REGISTER_IMPL(32)       \
+	PER_STACK_REGISTER_IMPL(36)       \
+	PER_STACK_REGISTER_IMPL(40)       \
+	PER_STACK_REGISTER_IMPL(44)       \
+	PER_STACK_REGISTER_IMPL(48)       \
+	PER_STACK_REGISTER_IMPL(52)       \
+	PER_STACK_REGISTER_IMPL(56)       \
+	PER_STACK_REGISTER_IMPL(60)       \
+	PER_STACK_REGISTER_IMPL(64)       \
+	PER_STACK_REGISTER_IMPL(68)       \
+	PER_STACK_REGISTER_IMPL(72)       \
+	PER_STACK_REGISTER_IMPL(76)       \
+	PER_STACK_REGISTER_IMPL(80)       \
+	PER_STACK_REGISTER_IMPL(84)       \
+	PER_STACK_REGISTER_IMPL(88)       \
+	PER_STACK_REGISTER_IMPL(92)       \
+	PER_STACK_REGISTER_IMPL(96)       \
+	PER_STACK_REGISTER_IMPL(100)      \
+	PER_STACK_REGISTER_IMPL(104)      \
+	PER_STACK_REGISTER_IMPL(108)      \
+	PER_STACK_REGISTER_IMPL(112)      \
+	PER_STACK_REGISTER_IMPL(116)      \
+	PER_STACK_REGISTER_IMPL(120)      \
+	PER_STACK_REGISTER_IMPL(124)      \
+	PER_STACK_REGISTER_IMPL(128)      \
+	PER_STACK_REGISTER_IMPL(132)      \
+	PER_STACK_REGISTER_IMPL(136)      \
+	PER_STACK_REGISTER_IMPL(140)      \
+	PER_STACK_REGISTER_IMPL(144)      \
+	PER_STACK_REGISTER_IMPL(148)      \
+	PER_STACK_REGISTER_IMPL(152)      \
+	PER_STACK_REGISTER_IMPL(156)      \
+	PER_STACK_REGISTER_IMPL(160)      \
+	PER_STACK_REGISTER_IMPL(164)      \
+	PER_STACK_REGISTER_IMPL(168)      \
+	PER_STACK_REGISTER_IMPL(172)      \
+	PER_STACK_REGISTER_IMPL(176)      \
+	PER_STACK_REGISTER_IMPL(180)      \
+	PER_STACK_REGISTER_IMPL(184)      \
+	PER_STACK_REGISTER_IMPL(188)      \
+	PER_STACK_REGISTER_IMPL(192)      \
+	PER_STACK_REGISTER_IMPL(196)      \
+	PER_STACK_REGISTER_IMPL(200)      \
+	PER_STACK_REGISTER_IMPL(204)      \
+	PER_STACK_REGISTER_IMPL(208)      \
+	PER_STACK_REGISTER_IMPL(212)      \
+	PER_STACK_REGISTER_IMPL(216)      \
+	PER_STACK_REGISTER_IMPL(220)      \
+	PER_STACK_REGISTER_IMPL(224)      \
+	PER_STACK_REGISTER_IMPL(228)      \
+	PER_STACK_REGISTER_IMPL(232)      \
+	PER_STACK_REGISTER_IMPL(236)      \
+	PER_STACK_REGISTER_IMPL(240)      \
+	PER_STACK_REGISTER_IMPL(244)      \
 	PER_STACK_REGISTER_IMPL(248)
 #else
 #define STACK_SLOT_COUNT 30
 #define GENERATE_PER_STACK_REGISTER() \
-	PER_STACK_REGISTER_IMPL(0) \
-	PER_STACK_REGISTER_IMPL(4) \
-	PER_STACK_REGISTER_IMPL(8) \
-	PER_STACK_REGISTER_IMPL(12) \
-	PER_STACK_REGISTER_IMPL(16) \
-	PER_STACK_REGISTER_IMPL(20) \
-	PER_STACK_REGISTER_IMPL(24) \
-	PER_STACK_REGISTER_IMPL(28) \
-	PER_STACK_REGISTER_IMPL(32) \
-	PER_STACK_REGISTER_IMPL(36) \
-	PER_STACK_REGISTER_IMPL(40) \
-	PER_STACK_REGISTER_IMPL(44) \
-	PER_STACK_REGISTER_IMPL(48) \
-	PER_STACK_REGISTER_IMPL(52) \
-	PER_STACK_REGISTER_IMPL(56) \
-	PER_STACK_REGISTER_IMPL(60) \
-	PER_STACK_REGISTER_IMPL(64) \
-	PER_STACK_REGISTER_IMPL(68) \
-	PER_STACK_REGISTER_IMPL(72) \
-	PER_STACK_REGISTER_IMPL(76) \
-	PER_STACK_REGISTER_IMPL(80) \
-	PER_STACK_REGISTER_IMPL(84) \
-	PER_STACK_REGISTER_IMPL(88) \
-	PER_STACK_REGISTER_IMPL(92) \
-	PER_STACK_REGISTER_IMPL(96) \
-	PER_STACK_REGISTER_IMPL(100) \
-	PER_STACK_REGISTER_IMPL(104) \
-	PER_STACK_REGISTER_IMPL(108) \
-	PER_STACK_REGISTER_IMPL(112) \
+	PER_STACK_REGISTER_IMPL(0)        \
+	PER_STACK_REGISTER_IMPL(4)        \
+	PER_STACK_REGISTER_IMPL(8)        \
+	PER_STACK_REGISTER_IMPL(12)       \
+	PER_STACK_REGISTER_IMPL(16)       \
+	PER_STACK_REGISTER_IMPL(20)       \
+	PER_STACK_REGISTER_IMPL(24)       \
+	PER_STACK_REGISTER_IMPL(28)       \
+	PER_STACK_REGISTER_IMPL(32)       \
+	PER_STACK_REGISTER_IMPL(36)       \
+	PER_STACK_REGISTER_IMPL(40)       \
+	PER_STACK_REGISTER_IMPL(44)       \
+	PER_STACK_REGISTER_IMPL(48)       \
+	PER_STACK_REGISTER_IMPL(52)       \
+	PER_STACK_REGISTER_IMPL(56)       \
+	PER_STACK_REGISTER_IMPL(60)       \
+	PER_STACK_REGISTER_IMPL(64)       \
+	PER_STACK_REGISTER_IMPL(68)       \
+	PER_STACK_REGISTER_IMPL(72)       \
+	PER_STACK_REGISTER_IMPL(76)       \
+	PER_STACK_REGISTER_IMPL(80)       \
+	PER_STACK_REGISTER_IMPL(84)       \
+	PER_STACK_REGISTER_IMPL(88)       \
+	PER_STACK_REGISTER_IMPL(92)       \
+	PER_STACK_REGISTER_IMPL(96)       \
+	PER_STACK_REGISTER_IMPL(100)      \
+	PER_STACK_REGISTER_IMPL(104)      \
+	PER_STACK_REGISTER_IMPL(108)      \
+	PER_STACK_REGISTER_IMPL(112)      \
 	PER_STACK_REGISTER_IMPL(116)
 #endif
 
 #ifdef __x86_64__
 
-enum x86_register_index {
+enum x86_register_index
+{
 	X86_REGISTER_AX,
 	X86_REGISTER_CX,
 	X86_REGISTER_DX,
@@ -296,7 +296,8 @@ enum x86_register_index {
 	X86_REGISTER_15,
 };
 
-enum register_index {
+enum register_index
+{
 #define BASE_REGISTER_COUNT 16
 	REGISTER_RAX = X86_REGISTER_AX,
 	REGISTER_RCX = X86_REGISTER_CX,
@@ -323,7 +324,8 @@ enum register_index {
 #endif
 
 #ifdef __aarch64__
-enum aarch64_register_index {
+enum aarch64_register_index
+{
 	AARCH64_REGISTER_INVALID = -1,
 	AARCH64_REGISTER_X0 = 0,
 	AARCH64_REGISTER_X1,
@@ -358,7 +360,8 @@ enum aarch64_register_index {
 };
 
 #define BASE_REGISTER_COUNT 30
-enum register_index {
+enum register_index
+{
 	REGISTER_X0 = AARCH64_REGISTER_X0,
 	REGISTER_X1 = AARCH64_REGISTER_X1,
 	REGISTER_X2 = AARCH64_REGISTER_X2,
@@ -399,7 +402,8 @@ enum register_index {
 
 #endif
 
-enum {
+enum
+{
 	REGISTER_INVALID = -1,
 	REGISTER_COUNT = BASE_REGISTER_COUNT + 1 + STACK_SLOT_COUNT,
 
@@ -427,7 +431,9 @@ enum {
 	REGISTER_SYSCALL_RESULT = AARCH64_REGISTER_X0,
 
 	SYSV_REGISTER_ARGUMENT_COUNT = 8,
-#define CALL_PRESERVED_REGISTERS (mask_for_register(REGISTER_X19) | mask_for_register(REGISTER_X20) | mask_for_register(REGISTER_X21) | mask_for_register(REGISTER_X22) | mask_for_register(REGISTER_X23) | mask_for_register(REGISTER_X24) | mask_for_register(REGISTER_X25) | mask_for_register(REGISTER_X26) | mask_for_register(REGISTER_X27) | mask_for_register(REGISTER_X28))
+#define CALL_PRESERVED_REGISTERS                                                                                                                                                                                 \
+	(mask_for_register(REGISTER_X19) | mask_for_register(REGISTER_X20) | mask_for_register(REGISTER_X21) | mask_for_register(REGISTER_X22) | mask_for_register(REGISTER_X23) | mask_for_register(REGISTER_X24) | \
+	 mask_for_register(REGISTER_X25) | mask_for_register(REGISTER_X26) | mask_for_register(REGISTER_X27) | mask_for_register(REGISTER_X28))
 #else
 #error "Unknown architecture"
 #endif
@@ -436,11 +442,12 @@ enum {
 
 #define REGISTER_COUNT (BASE_REGISTER_COUNT + 1 + STACK_SLOT_COUNT)
 
-__attribute__((always_inline))
-static inline int ctzuint128(__uint128_t value) {
+__attribute__((always_inline)) static inline int ctzuint128(__uint128_t value)
+{
 	union {
 		__uint128_t value;
-		struct {
+		struct
+		{
 			uint64_t low;
 			uint64_t high;
 		} parts;
@@ -451,25 +458,25 @@ static inline int ctzuint128(__uint128_t value) {
 
 #if REGISTER_COUNT > 64
 typedef __uint128_t register_mask;
-__attribute__((always_inline))
-static inline int first_set_register_in_mask(register_mask mask) {
+__attribute__((always_inline)) static inline int first_set_register_in_mask(register_mask mask)
+{
 	return ctzuint128(mask);
 }
 #else
 typedef uint64_t register_mask;
-__attribute__((always_inline))
-static inline int first_set_register_in_mask(register_mask mask) {
+__attribute__((always_inline)) static inline int first_set_register_in_mask(register_mask mask)
+{
 	return __builtin_ctzll(mask);
 }
 #endif
 
-__attribute__((always_inline))
-static inline register_mask mask_for_conditional_register(bool conditional, enum register_index index)
+__attribute__((always_inline)) static inline register_mask mask_for_conditional_register(bool conditional, enum register_index index)
 {
 #if REGISTER_COUNT > 64
 	union {
 		register_mask mask;
-		struct {
+		struct
+		{
 			uint64_t low;
 			uint64_t high;
 		} parts;
@@ -487,8 +494,7 @@ static inline register_mask mask_for_conditional_register(bool conditional, enum
 #endif
 }
 
-__attribute__((always_inline))
-static inline register_mask mask_for_register(enum register_index index)
+__attribute__((always_inline)) static inline register_mask mask_for_register(enum register_index index)
 {
 	return mask_for_conditional_register(true, index);
 }
@@ -496,17 +502,19 @@ static inline register_mask mask_for_register(enum register_index index)
 #define ALL_REGISTERS ((~(register_mask)0) >> (sizeof(register_mask) * 8 - REGISTER_COUNT))
 #define STACK_REGISTERS ((~(register_mask)0 << (BASE_REGISTER_COUNT + 1)) & ALL_REGISTERS)
 
-struct __attribute__((packed)) decoded_rm {
+struct __attribute__((packed)) decoded_rm
+{
 #if defined(__x86_64__)
 	uintptr_t addr;
-	uint16_t rm:6;
-	uint16_t base:4;
-	uint16_t index:4;
-	uint16_t scale:2;
+	uint16_t rm : 6;
+	uint16_t base : 4;
+	uint16_t index : 4;
+	uint16_t scale : 2;
 #endif
 };
 
-enum {
+enum
+{
 	COMPARISON_IS_INVALID = 0,
 	COMPARISON_SUPPORTS_EQUALITY = 1,
 	COMPARISON_SUPPORTS_RANGE = 2,
@@ -515,13 +523,14 @@ enum {
 
 typedef uint8_t comparison_validity;
 
-struct register_comparison {
+struct register_comparison
+{
 	struct register_state value;
 	uintptr_t mask;
 	struct decoded_rm mem_rm;
 	register_mask sources;
-	uint8_t target_register:6;
-	comparison_validity validity:2;
+	uint8_t target_register : 6;
+	comparison_validity validity : 2;
 };
 
 #if defined(__x86_64__)
@@ -689,6 +698,5 @@ static inline bool ins_relocation_type_requires_symbol(Elf64_Word type)
 			return true;
 	}
 }
-
 
 #endif

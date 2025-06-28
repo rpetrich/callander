@@ -21,20 +21,28 @@
 #ifdef LOGGING
 extern bool should_log;
 #define SHOULD_LOG UNLIKELY(should_log)
-#define LOG(...) do { if (UNLIKELY(should_log)) { ERROR_NOPREFIX(__VA_ARGS__); } } while(0)
+#define LOG(...)                         \
+	do {                                 \
+		if (UNLIKELY(should_log)) {      \
+			ERROR_NOPREFIX(__VA_ARGS__); \
+		}                                \
+	} while (0)
 #else
 #define SHOULD_LOG false
-#define LOG(...) do { } while(0)
+#define LOG(...) \
+	do {         \
+	} while (0)
 #endif
 
-enum {
+enum
+{
 	ALT_STACK_SIZE = 400 * 1024 * 1024,
 	SIGNAL_STACK_SIZE = 512 * 1024,
 	STACK_GUARD_SIZE = 1024 * 1024,
 };
 
-
-enum {
+enum
+{
 	SYSCALL_ARGC_MASK = 0xf,
 	SYSCALL_IS_RESTARTABLE = 0x10,
 	SYSCALL_CAN_BE_FROM_ANYWHERE = 0x20,
@@ -144,28 +152,32 @@ enum {
 
 #define SYSCALL_RETURNS(arg) (0x20 * (arg))
 
-struct syscall_info {
+struct syscall_info
+{
 	uint16_t attributes;
 	uint16_t arguments[6];
 };
 
-struct syscall_decl {
+struct syscall_decl
+{
 	const char *name;
 	struct syscall_info info;
 };
 
-#define SYSCALL_DEF(...) 1+
-#define SYSCALL_DEF_EMPTY 1+
-enum {
+#define SYSCALL_DEF(...) 1 +
+#define SYSCALL_DEF_EMPTY 1 +
+enum
+{
 	SYSCALL_COUNT = 512,
-	SYSCALL_DEFINED_COUNT = 
+	SYSCALL_DEFINED_COUNT =
 #include "syscall_defs.h"
-	0,
+		0,
 };
 #undef SYSCALL_DEF
 #undef SYSCALL_DEF_EMPTY
 
-enum {
+enum
+{
 	BINARY_IS_MAIN = 1 << 0,
 	BINARY_IS_INTERPRETER = 1 << 1,
 	BINARY_IS_LIBC = 1 << 2,
@@ -189,33 +201,36 @@ enum {
 };
 typedef uint32_t binary_flags;
 
-enum {
+enum
+{
 	OVERRIDE_ACCESS_SLOT_COUNT = 3,
 };
 
 #include "ins.h"
 
-struct address_and_size {
+struct address_and_size
+{
 	ins_ptr address;
 	size_t size;
 };
 
-struct loaded_binary {
+struct loaded_binary
+{
 	struct binary_info info;
 	const char *path;
 	unsigned long path_hash;
-	bool has_symbols:1;
-	bool has_sections:1;
-	bool has_linker_symbols:1;
-	bool has_debuglink_info:1;
-	bool has_forced_debuglink_info:1;
-	bool has_debuglink_symbols:1;
-	bool has_loaded_needed_libraries:1;
-	bool has_applied_relocation:1;
-	bool has_finished_loading:1;
-	bool has_frame_info:1;
-	bool owns_binary_info:1;
-	bool owns_path:1;
+	bool has_symbols : 1;
+	bool has_sections : 1;
+	bool has_linker_symbols : 1;
+	bool has_debuglink_info : 1;
+	bool has_forced_debuglink_info : 1;
+	bool has_debuglink_symbols : 1;
+	bool has_loaded_needed_libraries : 1;
+	bool has_applied_relocation : 1;
+	bool has_finished_loading : 1;
+	bool has_frame_info : 1;
+	bool owns_binary_info : 1;
+	bool owns_path : 1;
 	struct symbol_info symbols;
 	struct symbol_info linker_symbols;
 	struct section_info sections;
@@ -246,7 +261,8 @@ struct loaded_binary {
 
 struct loader_stub;
 
-struct loader_context {
+struct loader_context
+{
 	struct loaded_binary *binaries;
 	struct loaded_binary *last;
 	struct loaded_binary *main;
@@ -256,15 +272,15 @@ struct loader_context {
 	uid_t uid;
 	gid_t gid;
 	uintptr_t vdso;
-	bool loaded_nss_libraries:1;
-	bool loaded_gconv_libraries:1;
-	bool ignore_dlopen:1;
-	bool searching_gconv_dlopen:1;
-	bool searching_libcrypto_dlopen:1;
-	bool searching_setxid:1;
-	bool searching_setxid_sighandler:1;
-	bool searching_do_setxid:1;
-	bool searching_enable_async_cancel:1;
+	bool loaded_nss_libraries : 1;
+	bool loaded_gconv_libraries : 1;
+	bool ignore_dlopen : 1;
+	bool searching_gconv_dlopen : 1;
+	bool searching_libcrypto_dlopen : 1;
+	bool searching_setxid : 1;
+	bool searching_setxid_sighandler : 1;
+	bool searching_do_setxid : 1;
+	bool searching_enable_async_cancel : 1;
 	ins_ptr gconv_dlopen;
 	ins_ptr libcrypto_dlopen;
 	ins_ptr setxid_syscall;
@@ -279,38 +295,27 @@ struct loader_context {
 	const char *sysroot;
 };
 
-__attribute__((nonnull(1)))
-char *copy_used_binaries(const struct loader_context *loader);
-__attribute__((nonnull(1)))
-char *copy_address_details(const struct loader_context *loader, const void *addr, bool include_symbol);
-__attribute__((nonnull(1)))
-char *copy_address_description(const struct loader_context *context, const void *address);
+__attribute__((nonnull(1))) char *copy_used_binaries(const struct loader_context *loader);
+__attribute__((nonnull(1))) char *copy_address_details(const struct loader_context *loader, const void *addr, bool include_symbol);
+__attribute__((nonnull(1))) char *copy_address_description(const struct loader_context *context, const void *address);
 struct analysis_frame;
-__attribute__((nonnull(1, 2)))
-char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head);
+__attribute__((nonnull(1, 2))) char *copy_call_trace_description(const struct loader_context *context, const struct analysis_frame *head);
 typedef char *(*additional_print_callback)(const struct loader_context *loader, const struct analysis_frame *frame, void *callback_data);
-__attribute__((nonnull(1, 2)))
-char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data);
-__attribute__((nonnull(1, 2)))
-struct loaded_binary *find_loaded_binary(const struct loader_context *context, const char *path);
-__attribute__((nonnull(1)))
-void free_loader_context(struct loader_context *loader_context);
-__attribute__((nonnull(1, 1)))
-void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) **out_symbol);
-__attribute__((nonnull(1, 2, 3)))
-void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) **out_symbol);
+__attribute__((nonnull(1, 2))) char *copy_call_trace_description_with_additional(const struct loader_context *context, const struct analysis_frame *head, additional_print_callback callback, void *callback_data);
+__attribute__((nonnull(1, 2))) struct loaded_binary *find_loaded_binary(const struct loader_context *context, const char *path);
+__attribute__((nonnull(1))) void free_loader_context(struct loader_context *loader_context);
+__attribute__((nonnull(1, 1))) void *resolve_loaded_symbol(const struct loader_context *context, const char *name, const char *version_name, int symbol_types, struct loaded_binary **out_binary, const ElfW(Sym) * *out_symbol);
+__attribute__((nonnull(1, 2, 3))) void *resolve_binary_loaded_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *name, const char *version_name, int symbol_types, const ElfW(Sym) * *out_symbol);
 
-__attribute__((nonnull(1)))
-struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
+__attribute__((nonnull(1))) struct loaded_binary *binary_for_address(const struct loader_context *context, const void *addr);
 
-__attribute__((nonnull(1)))
-uintptr_t translate_analysis_address_to_child(struct loader_context *loader, ins_ptr addr);
-__attribute__((nonnull(1)))
-struct register_state translate_register_state_to_child(struct loader_context *loader, struct register_state state);
+__attribute__((nonnull(1))) uintptr_t translate_analysis_address_to_child(struct loader_context *loader, ins_ptr addr);
+__attribute__((nonnull(1))) struct register_state translate_register_state_to_child(struct loader_context *loader, struct register_state state);
 
 struct queued_instruction;
 
-struct queued_instructions {
+struct queued_instructions
+{
 	struct queued_instruction *queue;
 	uint32_t count;
 	uint32_t capacity;
@@ -320,12 +325,14 @@ struct searched_instruction_entry;
 
 struct lookup_base_address;
 
-struct lookup_base_addresses {
+struct lookup_base_addresses
+{
 	struct lookup_base_address *addresses;
 	size_t count;
 };
 
-struct effect_token {
+struct effect_token
+{
 	uint16_t generation;
 	uint16_t entry_generation;
 	uint32_t index;
@@ -335,7 +342,8 @@ struct effect_token {
 extern const int syscall_argument_abi_register_indexes[6];
 extern const int sysv_argument_abi_register_indexes[SYSV_REGISTER_ARGUMENT_COUNT];
 
-struct registers {
+struct registers
+{
 	struct register_state registers[REGISTER_COUNT];
 	register_mask sources[REGISTER_COUNT];
 	register_mask matches[REGISTER_COUNT];
@@ -349,13 +357,14 @@ struct registers {
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
 	ins_ptr stack_address_taken;
 #else
-	bool stack_address_taken:1;
+	bool stack_address_taken : 1;
 #endif
 };
 
 extern const struct registers empty_registers;
 
-struct analysis_frame {
+struct analysis_frame
+{
 	const struct analysis_frame *next;
 	const void *address;
 	const char *description;
@@ -365,20 +374,21 @@ struct analysis_frame {
 	struct effect_token token;
 };
 
-enum effects {
-	EFFECT_NONE          = 0,
-	EFFECT_RETURNS       = 1 << 0, // set if the function could potentially return to its caller
-	EFFECT_EXITS         = 1 << 1, // set if the function could potentially exit the program/thread
-	EFFECT_STICKY_EXITS  = 1 << 2, // set if the function always exits by predefined policy
-	EFFECT_PROCESSED     = 1 << 3, // set if the address has been processed
-	EFFECT_PROCESSING    = 1 << 4, // set if the function is currently in the middle of being processed
+enum effects
+{
+	EFFECT_NONE = 0,
+	EFFECT_RETURNS = 1 << 0, // set if the function could potentially return to its caller
+	EFFECT_EXITS = 1 << 1, // set if the function could potentially exit the program/thread
+	EFFECT_STICKY_EXITS = 1 << 2, // set if the function always exits by predefined policy
+	EFFECT_PROCESSED = 1 << 3, // set if the address has been processed
+	EFFECT_PROCESSING = 1 << 4, // set if the function is currently in the middle of being processed
 	EFFECT_AFTER_STARTUP = 1 << 5, // set if the function could run after startup
-	EFFECT_ENTRY_POINT   = 1 << 6, // set if the function is run as the program entrypoint
-	EFFECT_ENTER_CALLS   = 1 << 7, // set if should traverse calls instead of recording loads
+	EFFECT_ENTRY_POINT = 1 << 6, // set if the function is run as the program entrypoint
+	EFFECT_ENTER_CALLS = 1 << 7, // set if should traverse calls instead of recording loads
 	EFFECT_MODIFIES_STACK = 1 << 8, // set if the function could potentially modify the stack
 	EFFECT_STICKY_JUMPS_TO_SELF = 1 << 8, // set if the block jumps into itself to ignore reading off the end of jump tables
 	EFFECT_TEMPORARY_IN_VARY_EFFECTS = 1 << 9, // set temporarily while varying effects
-	VALID_EFFECTS        = (EFFECT_MODIFIES_STACK << 1) - 1,
+	VALID_EFFECTS = (EFFECT_MODIFIES_STACK << 1) - 1,
 	DEFAULT_EFFECTS = EFFECT_EXITS | EFFECT_RETURNS | EFFECT_MODIFIES_STACK,
 };
 typedef uint16_t function_effects;
@@ -387,17 +397,20 @@ struct program_state;
 
 typedef void (*instruction_reached_callback)(struct program_state *, ins_ptr, struct registers *, function_effects, const struct analysis_frame *, struct effect_token *, void *callback_data);
 
-struct searched_instruction_callback {
+struct searched_instruction_callback
+{
 	instruction_reached_callback callback;
 	void *data;
 };
 
-struct address_list {
+struct address_list
+{
 	uintptr_t *addresses;
 	size_t count;
 };
 
-struct searched_instructions {
+struct searched_instructions
+{
 	struct searched_instruction_entry *table;
 	uint32_t mask;
 	uint32_t remaining_slots;
@@ -412,24 +425,25 @@ struct searched_instructions {
 	size_t fopen_mode_count;
 };
 
-__attribute__((nonnull(1)))
-void init_searched_instructions(struct searched_instructions *search);
-__attribute__((nonnull(1)))
-void cleanup_searched_instructions(struct searched_instructions *search);
+__attribute__((nonnull(1))) void init_searched_instructions(struct searched_instructions *search);
+__attribute__((nonnull(1))) void cleanup_searched_instructions(struct searched_instructions *search);
 
-struct recorded_syscall {
+struct recorded_syscall
+{
 	uintptr_t nr;
 	ins_ptr ins;
 	ins_ptr entry;
 	struct registers registers;
 };
 
-enum {
+enum
+{
 	SYSCALL_CONFIG_BLOCK = 1,
 	SYSCALL_CONFIG_DEBUG = 2,
 };
 
-struct recorded_syscalls {
+struct recorded_syscalls
+{
 	struct recorded_syscall *list;
 	int count;
 	int capacity;
@@ -437,44 +451,46 @@ struct recorded_syscalls {
 	uint8_t config[SYSCALL_COUNT];
 };
 
-__attribute__((nonnull(1, 2)))
-char *copy_used_syscalls(const struct loader_context *context, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol);
-__attribute__((nonnull(1)))
-char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, const struct registers *registers, bool include_symbol);
-__attribute__((nonnull(1, 2)))
-void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader);
-__attribute__((nonnull(1)))
-const struct recorded_syscall *find_recorded_syscall(const struct recorded_syscalls *syscalls, uintptr_t nr);
+__attribute__((nonnull(1, 2))) char *copy_used_syscalls(const struct loader_context *context, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol);
+__attribute__((nonnull(1))) char *copy_syscall_description(const struct loader_context *context, uintptr_t nr, const struct registers *registers, bool include_symbol);
+__attribute__((nonnull(1, 2))) void sort_and_coalesce_syscalls(struct recorded_syscalls *syscalls, struct loader_context *loader);
+__attribute__((nonnull(1))) const struct recorded_syscall *find_recorded_syscall(const struct recorded_syscalls *syscalls, uintptr_t nr);
 
-struct mapped_region {
+struct mapped_region
+{
 	uintptr_t start;
 	uintptr_t end;
 };
-struct mapped_region_info {
+struct mapped_region_info
+{
 	struct mapped_region *list;
 	int count;
 };
-__attribute__((nonnull(1, 2)))
-struct sock_fprog generate_seccomp_program(struct loader_context *loader, const struct recorded_syscalls *syscalls, const struct mapped_region_info *blocked_memory_regions, uint32_t syscall_range_low, uint32_t syscall_range_high);
+__attribute__((nonnull(1, 2))) struct sock_fprog generate_seccomp_program(struct loader_context *loader, const struct recorded_syscalls *syscalls, const struct mapped_region_info *blocked_memory_regions, uint32_t syscall_range_low,
+                                                                          uint32_t syscall_range_high);
 
-enum {
+enum
+{
 	SKIPPED_LEA_AREA_COUNT = 32,
 };
 
-struct blocked_symbol {
+struct blocked_symbol
+{
 	const char *name;
 	ins_ptr value;
 	int symbol_types;
-	bool is_dlopen:1;
-	bool is_required:1;
+	bool is_dlopen : 1;
+	bool is_required : 1;
 };
 
-struct known_symbols {
+struct known_symbols
+{
 	struct blocked_symbol *blocked_symbols;
 	uint32_t blocked_symbol_count;
 };
 
-enum {
+enum
+{
 	NORMAL_SYMBOL = 1 << 0,
 	LINKER_SYMBOL = 1 << 1,
 	DEBUG_SYMBOL = 1 << 2,
@@ -486,20 +502,22 @@ enum {
 #endif
 };
 
-__attribute__((nonnull(1, 2)))
-struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types, bool required);
+__attribute__((nonnull(1, 2))) struct blocked_symbol *add_blocked_symbol(struct known_symbols *known_symbols, const char *name, int symbol_types, bool required);
 
-struct dlopen_path {
+struct dlopen_path
+{
 	struct dlopen_path *next;
 	const char *path;
 };
 
-struct reachable_region {
+struct reachable_region
+{
 	ins_ptr entry;
 	ins_ptr exit;
 };
 
-struct reachable_instructions {
+struct reachable_instructions
+{
 	struct reachable_region *regions;
 	size_t count;
 	size_t buffer_size;
@@ -507,7 +525,8 @@ struct reachable_instructions {
 
 typedef void (*address_loaded_callback)(struct program_state *, ins_ptr, const struct analysis_frame *, void *callback_data);
 
-struct program_state {
+struct program_state
+{
 	struct loader_context loader;
 	struct searched_instructions search;
 	struct recorded_syscalls syscalls;
@@ -524,14 +543,12 @@ struct program_state {
 	const struct analysis_frame *current_frame;
 };
 
-__attribute__((nonnull(1, 2, 6)))
-int load_binary_into_analysis(struct program_state *analysis, const char *path, const char *full_path, int fd, const void *existing_base_address, struct loaded_binary **out_binary);
-__attribute__((nonnull(1, 2)))
-int finish_loading_binary(struct program_state *analysis, struct loaded_binary *new_binary, function_effects effects, bool skip_analysis);
-__attribute__((nonnull(1, 2, 3, 4)))
-void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
+__attribute__((nonnull(1, 2, 6))) int load_binary_into_analysis(struct program_state *analysis, const char *path, const char *full_path, int fd, const void *existing_base_address, struct loaded_binary **out_binary);
+__attribute__((nonnull(1, 2))) int finish_loading_binary(struct program_state *analysis, struct loaded_binary *new_binary, function_effects effects, bool skip_analysis);
+__attribute__((nonnull(1, 2, 3, 4))) void analyze_function_symbols(struct program_state *analysis, const struct loaded_binary *binary, const struct symbol_info *symbols, struct analysis_frame *caller);
 
-enum dlopen_options {
+enum dlopen_options
+{
 	DLOPEN_OPTION_ANALYZE_CODE = 1 << 0,
 	DLOPEN_OPTION_ANALYZE_SYMBOLS = 1 << 1,
 	DLOPEN_OPTION_RECURSE_INTO_FOLDERS = 1 << 2,
@@ -539,13 +556,11 @@ enum dlopen_options {
 
 	DLOPEN_OPTION_ANALYZE = DLOPEN_OPTION_ANALYZE_CODE | DLOPEN_OPTION_ANALYZE_SYMBOLS,
 };
-__attribute__((nonnull(1, 2)))
-struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options);
+__attribute__((nonnull(1, 2))) struct loaded_binary *register_dlopen(struct program_state *analysis, const char *path, const struct analysis_frame *caller, enum dlopen_options options);
 
 int load_all_needed_and_relocate(struct program_state *analysis);
 
-__attribute__((nonnull(1)))
-void finish_analysis(struct program_state *analysis);
+__attribute__((nonnull(1))) void finish_analysis(struct program_state *analysis);
 
 void log_basic_blocks(const struct program_state *analysis, function_effects required_effects);
 
@@ -553,18 +568,16 @@ void populate_reachable_regions(struct program_state *analysis);
 
 typedef int trace_flags;
 
-__attribute__((nonnull(1, 3, 4, 5)))
-function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller, trace_flags flags);
+__attribute__((nonnull(1, 3, 4, 5))) function_effects analyze_instructions(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller,
+                                                                           trace_flags flags);
 
-__attribute__((always_inline))
-__attribute__((nonnull(1, 3, 4, 5)))
-static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins, const struct analysis_frame *caller)
+__attribute__((always_inline)) __attribute__((nonnull(1, 3, 4, 5))) static inline function_effects analyze_function(struct program_state *analysis, function_effects required_effects, struct registers *entry_state, ins_ptr ins,
+                                                                                                                    const struct analysis_frame *caller)
 {
 	return analyze_instructions(analysis, required_effects, entry_state, ins, caller, 0);
 }
 
-__attribute__((nonnull(1)))
-void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects);
+__attribute__((nonnull(1))) void record_syscall(struct program_state *analysis, uintptr_t nr, struct analysis_frame self, function_effects effects);
 
 #ifdef STATS
 extern intptr_t analyzed_instruction_count;

@@ -13,12 +13,10 @@
 #include <unistd.h>
 
 // open_executable_in_paths looks for an executable file matching name in paths
-__attribute__((warn_unused_result))
-int open_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid);
+__attribute__((warn_unused_result)) int open_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid);
 
 // find_executable_in_paths looks for an executable file matching name in paths
-__attribute__((warn_unused_result))
-int find_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid, char buf[PATH_MAX], const char **out_path);
+__attribute__((warn_unused_result)) int find_executable_in_paths(const char *name, const char *paths, bool require_executable, uid_t uid, gid_t gid, char buf[PATH_MAX], const char **out_path);
 
 // apply_sysroot applies a sysroot to an absolute path to get a real absolute path
 static inline const char *apply_sysroot(const char *sysroot, const char *path, char buf[PATH_MAX])
@@ -35,6 +33,5 @@ static inline const char *apply_sysroot(const char *sysroot, const char *path, c
 	fs_memcpy(&buf[sysroot_len], path, path_len);
 	return buf;
 }
-
 
 #endif
