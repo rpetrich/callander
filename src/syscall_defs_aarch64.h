@@ -420,7 +420,7 @@ SYSCALL_DEF_EMPTY
 SYSCALL_DEF_EMPTY
 SYSCALL_DEF_EMPTY
 SYSCALL_DEF_EMPTY
-SYSCALL_DEF_EMPTY
+SYSCALL_DEF_futex_time64
 SYSCALL_DEF_EMPTY
 SYSCALL_DEF_pidfd_send_signal
 SYSCALL_DEF_io_uring_setup
@@ -461,3 +461,8 @@ SYSCALL_DEF_lsm_get_self_attr
 SYSCALL_DEF_lsm_set_self_attr
 SYSCALL_DEF_lsm_list_modules
 SYSCALL_DEF_mseal
+SYSCALL_DEF_setxattrat
+SYSCALL_DEF_getxattrat
+SYSCALL_DEF_listxattrat
+SYSCALL_DEF_removexattrat
+SYSCALL_DEF_open_tree_attr
