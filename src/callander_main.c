@@ -862,7 +862,7 @@ static int compare_reachable_regions(const void *left, const void *right, __attr
 	return 0;
 }
 
-typedef void (*poke_unreachable_callback)(intptr_t address, size_t size, void *data);
+typedef void (*poke_unreachable_callback)(const ElfW(Shdr) *section, intptr_t address, size_t size, void *data);
 
 static inline bool bsearch_address_callback(int index, void *items, void *needle)
 {
@@ -870,7 +870,7 @@ static inline bool bsearch_address_callback(int index, void *items, void *needle
 	return (uintptr_t)regions[index].entry >= (uintptr_t)needle;
 }
 
-static void enumerate_unreachable_regions_in_section(struct program_state *analysis, uintptr_t address, size_t size, poke_unreachable_callback callback, void *callback_data)
+static void enumerate_unreachable_regions_in_section(struct program_state *analysis, const ElfW(Shdr) *section, uintptr_t address, size_t size, poke_unreachable_callback callback, void *callback_data)
 {
 	uintptr_t end = address + size;
 	size_t total = 0;
@@ -882,7 +882,7 @@ static void enumerate_unreachable_regions_in_section(struct program_state *analy
 		if ((uintptr_t)analysis->reachable.regions[i].entry > address) {
 			LOG("unreachable start", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)));
 			LOG("unreachable end", temp_str(copy_address_description(&analysis->loader, analysis->reachable.regions[i].entry)));
-			callback(address, (size_t)analysis->reachable.regions[i].entry - address, callback_data);
+			callback(section, address, (size_t)analysis->reachable.regions[i].entry - address, callback_data);
 			total += (size_t)analysis->reachable.regions[i].entry - address;
 		}
 		if ((uintptr_t)analysis->reachable.regions[i].exit > address) {
@@ -891,7 +891,7 @@ static void enumerate_unreachable_regions_in_section(struct program_state *analy
 	}
 	LOG("unreachable start", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)));
 	LOG("unreachable end", temp_str(copy_address_description(&analysis->loader, (ins_ptr)end)));
-	callback(address, end - address, callback_data);
+	callback(section, address, end - address, callback_data);
 	total += end - address;
 	LOG("breakpoint bytes", (ssize_t)total);
 	LOG("total bytes", (ssize_t)size);
@@ -909,7 +909,7 @@ static void enumerate_unreachable_regions_in_binary(struct program_state *analys
 				uint64_t flags = section->sh_flags;
 				if ((flags & (SHF_ALLOC|SHF_EXECINSTR)) == (SHF_ALLOC|SHF_EXECINSTR)) {
 					LOG("poking section", &binary->sections.strings[section->sh_name]);
-					enumerate_unreachable_regions_in_section(analysis, apply_base_address(&binary->info, section->sh_addr), section->sh_size, callback, callback_data);
+					enumerate_unreachable_regions_in_section(analysis, section, apply_base_address(&binary->info, section->sh_addr), section->sh_size, callback, callback_data);
 				}
 			}
 		}
@@ -918,14 +918,15 @@ static void enumerate_unreachable_regions_in_binary(struct program_state *analys
 		for (size_t i = 0; i < binary->info.header_entry_count; i++) {
 			const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&phbuffer[binary->info.header_entry_size * i];
 			if (ph->p_type == PT_LOAD && (ph->p_flags & PF_X) == PF_X) {
-				enumerate_unreachable_regions_in_section(analysis, apply_base_address(&binary->info, ph->p_vaddr), ph->p_memsz, callback, callback_data);
+				enumerate_unreachable_regions_in_section(analysis, NULL, apply_base_address(&binary->info, ph->p_vaddr), ph->p_memsz, callback, callback_data);
 			}
 		}
 	}
 }
 
-static void poke_breakpoint_region(intptr_t address, size_t size, void *data)
+static void poke_breakpoint_region(const ElfW(Shdr) *section, intptr_t address, size_t size, void *data)
 {
+	(void)section;
 	struct loader_context *loader = data;
 	void *translated_address = (void *)translate_analysis_address_to_child(loader, (void *)address);
 	pid_t tracee = loader->pid;
@@ -945,6 +946,21 @@ static void poke_breakpoint_region(intptr_t address, size_t size, void *data)
 		if (result < 0) {
 			DIE("failed to poke", fs_strerror(result));
 		}
+	}
+}
+
+struct local_breakpoint_data {
+	struct program_state *analysis;
+	void *address;
+};
+
+static void poke_local_breakpoint_region(const ElfW(Shdr) *section, intptr_t address, size_t size, void *data)
+{
+	const struct local_breakpoint_data *bpd = data;
+	void *base = (void *)address - bpd->analysis->loader.main->info.base - section->sh_addr + bpd->address + section->sh_offset;
+	long new_bytes = ins_breakpoint_poke_pattern(0);
+	for (ssize_t i = 0; i < (ssize_t)size - INS_BREAKPOINT_LEN; i += INS_BREAKPOINT_LEN) {
+		*(long *)(base + i) = new_bytes;
 	}
 }
 
