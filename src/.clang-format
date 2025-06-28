@@ -1,0 +1,31 @@
+ColumnLimit: 0
+UseTab: AlignWithSpaces
+IndentWidth: 4
+TabWidth: 4
+BreakAfterAttributes: Leave
+BreakAfterReturnType: None
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: true
+  AfterControlStatement: MultiLine
+  AfterFunction: true
+  AfterStruct: true
+AlignArrayOfStructures: None
+AlignOperands: DontAlign
+AlignTrailingComments:
+  Kind: Leave
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: true
+BreakArrays: true
+InsertTrailingCommas: Wrapped
+BinPackArguments: false
+ForEachMacros: [for_each_bit]
+IncludeBlocks: Preserve
+IndentCaseLabels: true
+IndentCaseBlocks: false
+MacroBlockEnd: 'SYSCALL_DEF_.*'
