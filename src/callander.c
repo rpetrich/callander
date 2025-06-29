@@ -4565,6 +4565,25 @@ static void merge_and_log_additional_result(__attribute__((unused)) struct loade
 	}
 }
 
+static inline bool operation_result_crossed_binary_bounds(struct loader_context *loader, struct register_state *state, uintptr_t orig_value)
+{
+	if (state->value > PAGE_SIZE) {
+		struct loaded_binary *binary = binary_for_address(loader, (const void *)orig_value);
+		if (binary != NULL && (binary != binary_for_address(loader, (const void *)state->value) || binary != binary_for_address(loader, (const void *)state->max))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static inline void widen_cross_binary_bound_operation(struct loader_context *loader, struct register_state *state, struct additional_result *additional, uintptr_t orig_value)
+{
+	if (operation_result_crossed_binary_bounds(loader, state, orig_value) || (additional->used && operation_result_crossed_binary_bounds(loader, &additional->state, orig_value))) {
+		additional->used = false;
+		clear_register(state);
+	}
+}
+
 #if defined(__x86_64__)
 
 static inline void update_sources_for_basic_op_usage(struct registers *regs, int dest_reg, int source_reg, enum basic_op_usage usage)
@@ -4648,8 +4667,15 @@ __attribute__((warn_unused_result)) static struct basic_op_result perform_basic_
 	truncate_to_size_prefixes(&src, prefixes);
 	truncate_to_size_prefixes(&rm.state, prefixes);
 	additional->used = false;
-	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, reg, operand_size_from_prefixes(prefixes), additional);
-	truncate_to_size_prefixes(&rm.state, prefixes);
+	uintptr_t orig_value = rm.state.value;
+	enum ins_operand_size size = operand_size_from_prefixes(prefixes);
+	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, reg, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, orig_value);
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, src.value);
+	} else {
+		truncate_to_size_prefixes(&rm.state, prefixes);
+	}
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
 		merge_and_log_additional_result(loader, &rm.state, additional, rm.reg);
@@ -4716,8 +4742,15 @@ __attribute__((warn_unused_result)) static struct basic_op_result perform_basic_
 	truncate_to_size_prefixes(&rm.state, prefixes);
 	truncate_to_size_prefixes(&dest, prefixes);
 	additional->used = false;
-	enum basic_op_usage usage = op(&dest, &rm.state, reg, rm.reg, operand_size_from_prefixes(prefixes), additional);
-	truncate_to_size_prefixes(&dest, prefixes);
+	uintptr_t orig_value = dest.value;
+	enum ins_operand_size size = operand_size_from_prefixes(prefixes);
+	enum basic_op_usage usage = op(&dest, &rm.state, reg, rm.reg, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, orig_value);
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, rm.state.value);
+	} else {
+		truncate_to_size_prefixes(&rm.state, prefixes);
+	}
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
 		merge_and_log_additional_result(loader, &dest, additional, reg);
@@ -4804,18 +4837,19 @@ __attribute__((warn_unused_result)) static struct basic_op_result perform_basic_
 	LOG("basic operation", name);
 	LOG("basic destination", name_for_register(rm.reg));
 	dump_registers(loader, regs, mask_for_register(rm.reg));
-	bool truncated = truncate_to_size_prefixes(&rm.state, prefixes);
+	truncate_to_size_prefixes(&rm.state, prefixes);
 	struct register_state src;
 	set_register(&src, read_imm(prefixes, ins_modrm));
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	struct loaded_binary *binary = register_is_exactly_known(&rm.state) && !truncated ? binary_for_address(loader, (ins_ptr)rm.state.value) : NULL;
-	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, operand_size_from_prefixes(prefixes), additional);
-	if (binary != NULL && binary_for_address(loader, (ins_ptr)rm.state.value) != binary) {
-		additional->used = false;
-		clear_register(&rm.state);
+	uintptr_t orig_value = rm.state.value;
+	enum ins_operand_size size = operand_size_from_prefixes(prefixes);
+	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, orig_value);
+	} else {
+		truncate_to_size_prefixes(&rm.state, prefixes);
 	}
-	truncate_to_size_prefixes(&rm.state, prefixes);
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
 		merge_and_log_additional_result(loader, &rm.state, additional, rm.reg);
@@ -4846,8 +4880,14 @@ __attribute__((warn_unused_result)) static struct basic_op_result perform_basic_
 	set_register(&src, read_imm(prefixes, ins_modrm));
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, operand_size_from_prefixes(prefixes), additional);
-	truncate_to_size_prefixes(&rm.state, prefixes);
+	uintptr_t orig_value = rm.state.value;
+	enum ins_operand_size size = operand_size_from_prefixes(prefixes);
+	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, orig_value);
+	} else {
+		truncate_to_size_prefixes(&rm.state, prefixes);
+	}
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
 		merge_and_log_additional_result(loader, &rm.state, additional, reg);
@@ -4875,8 +4915,14 @@ static void perform_basic_op_imm(__attribute__((unused)) const char *name, basic
 	set_register(&src, read_imm(prefixes, imm));
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	enum basic_op_usage usage = op(&dest, &src, reg, -1, operand_size_from_prefixes(prefixes), additional);
-	truncate_to_size_prefixes(&dest, prefixes);
+	uintptr_t orig_value = dest.value;
+	enum ins_operand_size size = operand_size_from_prefixes(prefixes);
+	enum basic_op_usage usage = op(&dest, &src, reg, -1, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		widen_cross_binary_bound_operation(loader, &dest, additional, orig_value);
+	} else {
+		truncate_to_size_prefixes(&dest, prefixes);
+	}
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
 		merge_and_log_additional_result(loader, &dest, additional, reg);
@@ -4907,8 +4953,14 @@ __attribute__((warn_unused_result)) static struct basic_op_result perform_basic_
 	}
 	LOG("basic immediate", src.value);
 	additional->used = false;
-	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, operand_size_from_prefixes(prefixes), additional);
-	truncate_to_size_prefixes(&rm.state, prefixes);
+	uintptr_t orig_value = rm.state.value;
+	enum ins_operand_size size = operand_size_from_prefixes(prefixes);
+	enum basic_op_usage usage = op(&rm.state, &src, rm.reg, -1, size, additional);
+	if (size == OPERATION_SIZE_DWORD) {
+		widen_cross_binary_bound_operation(loader, &rm.state, additional, orig_value);
+	} else {
+		truncate_to_size_prefixes(&rm.state, prefixes);
+	}
 	if (UNLIKELY(additional->used)) {
 		truncate_to_size_prefixes(&additional->state, prefixes);
 		merge_and_log_additional_result(loader, &rm.state, additional, rm.reg);
@@ -4974,16 +5026,6 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 	}
 }
 
-static inline void fixup_arithmetic_outside_binary_bounds(struct loader_context *loader, struct register_state *state, uintptr_t orig_value)
-{
-	if (state->value > PAGE_SIZE) {
-		struct loaded_binary *binary = binary_for_address(loader, (const void *)orig_value);
-		if (binary != NULL && (binary != binary_for_address(loader, (const void *)state->value) || binary != binary_for_address(loader, (const void *)state->max))) {
-			clear_register(state);
-		}
-	}
-}
-
 __attribute__((warn_unused_result)) static int perform_basic_op(__attribute__((unused)) const char *name, basic_op op, struct loader_context *loader, struct registers *regs, ins_ptr ins, struct aarch64_instruction *decoded,
                                                                 enum ins_operand_size *out_size, struct additional_result *additional)
 {
@@ -5014,18 +5056,13 @@ __attribute__((warn_unused_result)) static int perform_basic_op(__attribute__((u
 	uintptr_t orig_value = left_state.value;
 	enum basic_op_usage usage = op(&left_state, &right_state, left, applied_shift ? REGISTER_INVALID : right, size, additional);
 	if (size == OPERATION_SIZE_DWORD) {
-		fixup_arithmetic_outside_binary_bounds(loader, &left_state, orig_value);
-		fixup_arithmetic_outside_binary_bounds(loader, &left_state, right_state.value);
+		widen_cross_binary_bound_operation(loader, &left_state, additional, orig_value);
+		widen_cross_binary_bound_operation(loader, &left_state, additional, right_state.value);
 	} else {
 		truncate_to_operand_size(&left_state, size);
 	}
 	if (UNLIKELY(additional->used)) {
-		if (size == OPERATION_SIZE_DWORD) {
-			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, orig_value);
-			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, right_state.value);
-		} else {
-			truncate_to_operand_size(&additional->state, size);
-		}
+		truncate_to_operand_size(&additional->state, size);
 		merge_and_log_additional_result(loader, &left_state, additional, left);
 	} else {
 		LOG("result", temp_str(copy_register_state_description(loader, left_state)));
@@ -5208,16 +5245,12 @@ __attribute__((warn_unused_result)) static int perform_unary_op(__attribute__((u
 	uintptr_t orig_value = state.value;
 	bool usage = op(&state, dest, applied_shift ? REGISTER_INVALID : source, size, additional);
 	if (size == OPERATION_SIZE_DWORD) {
-		fixup_arithmetic_outside_binary_bounds(loader, &state, orig_value);
+		widen_cross_binary_bound_operation(loader, &state, additional, orig_value);
 	} else {
 		truncate_to_operand_size(&state, size);
 	}
 	if (UNLIKELY(additional->used)) {
-		if (size == OPERATION_SIZE_DWORD) {
-			fixup_arithmetic_outside_binary_bounds(loader, &additional->state, orig_value);
-		} else {
-			truncate_to_operand_size(&additional->state, size);
-		}
+		truncate_to_operand_size(&additional->state, size);
 		merge_and_log_additional_result(loader, &state, additional, dest);
 	} else {
 		LOG("result", temp_str(copy_register_state_description(loader, state)));
