@@ -173,7 +173,6 @@ sched_setaffinity(any, any, non-NULL) @ libpthread.so.0+0x5f24(create_thread+164
 sched_yield() @ libc.so.6+0xc40c4(sched_yield+4)
 restart_syscall()
 kill(any, any u32) @ libc.so.6+0x32b84(kill+4)
-kill(any, SIGKILL) @ libc.so.6+0x4041c(cancel_handler+24)
 kill(any, SIGKILL) @ libc.so.6+0x11a4cc(__pthread_unwind+44)
 tgkill(any, any, SIGABRT) @ libc.so.6+0x3280c(raise+140)
 tgkill(any, any, SIGFPE) @ libc.so.6+0x3280c(raise+140)

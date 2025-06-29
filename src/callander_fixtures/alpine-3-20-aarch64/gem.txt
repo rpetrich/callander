@@ -1,5 +1,0 @@
-callander: br to unknown address: libruby.so.3.3+0x3749d4
-callander: trace: libruby.so.3.3+0x3749b4-libruby.so.3.3+0x3749d4 (br)
-libruby.so.3.3+0x3747e0-libruby.so.3.3+0x3747e4 (br)
-libruby.so.3.3+0x3747bc(_ZN60_$LT$yjit..core..BranchGenFn$u20$as$u20$core..fmt..Debug$GT$3fmt17hd0d276fc18177c28E*)-libruby.so.3.3+0x3747dc (lookup table)
-libruby.so.3.3+0x557060 (.data.rel.ro)

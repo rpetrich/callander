@@ -69,7 +69,6 @@ openat(any, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xc8c94(__openat64_nocance
 close(any) @ libc.so.6+0xc4620(__close+40)
 close(any) @ libc.so.6+0xc4650(__close+88)
 close(any) @ libc.so.6+0xc8a30(__close_nocancel+8)
-close(any) @ libc.so.6+0xe9ec8(__netlink_close*+8)
 close(any) @ libc.so.6+0xe9f90(__netlink_open*+192)
 close(any) @ libc.so.6+0xea4b4(getifaddrs_internal*+1292)
 pipe2(any, 0) @ libc.so.6+0xc4770(__pipe+8)
