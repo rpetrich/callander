@@ -4976,7 +4976,7 @@ static inline void update_sources_for_basic_op_usage(struct registers *regs, int
 
 static inline void fixup_arithmetic_outside_binary_bounds(struct loader_context *loader, struct register_state *state, uintptr_t orig_value)
 {
-	if (state->value != state->max && state->value > PAGE_SIZE) {
+	if (state->value > PAGE_SIZE) {
 		struct loaded_binary *binary = binary_for_address(loader, (const void *)orig_value);
 		if (binary != NULL && (binary != binary_for_address(loader, (const void *)state->value) || binary != binary_for_address(loader, (const void *)state->max))) {
 			clear_register(state);
