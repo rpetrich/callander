@@ -20,20 +20,30 @@ test_program () {
 		if [ "/sbin/$filename" = "$prog" -a -e "/bin/$filename" ]; then
 			# skipping since duplicate binary in /sbin
 			return
-		else
-			"$SCRIPT_DIR/callander_$arch" --skip-running --show-permitted --block-exec --ignore-dlopen -- "$prog" 2> "$FIXTURE_PATH/$filename"_new.txt
-			if [ "$?" != 0 ]; then
-				echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen -- $prog\" failed"
-			fi
-			if [ -e "$FIXTURE_PATH/$filename.txt" ]; then
-				diff=$(unbuffer git --no-pager diff --no-index -- "$FIXTURE_PATH/$filename".txt "$FIXTURE_PATH/$filename"_new.txt)
-				if [ "$?" != 0 ]; then
-					echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen -- $prog\" changed"
-					echo "$diff"
-				fi
-			fi
-			mv "$FIXTURE_PATH/$filename"{_new,}.txt
 		fi
+		if [ -L "$prog" ]; then
+			# skipping since it's a symlink
+			return
+		fi
+		read -r line < "$prog"
+		case "$line" in
+			'#!'*)
+				# skip shell scripts
+				return
+				;;
+		esac
+		"$SCRIPT_DIR/callander_$arch" --skip-running --show-permitted --block-exec --ignore-dlopen -- "$prog" 2> "$FIXTURE_PATH/$filename"_new.txt
+		if [ "$?" != 0 ]; then
+			echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen -- $prog\" failed"
+		fi
+		if [ -e "$FIXTURE_PATH/$filename.txt" ]; then
+			diff=$(unbuffer git --no-pager diff --no-index -- "$FIXTURE_PATH/$filename".txt "$FIXTURE_PATH/$filename"_new.txt)
+			if [ "$?" != 0 ]; then
+				echo "\"callander --skip-running --show-permitted --block-exec --ignore-dlopen -- $prog\" changed"
+				echo "$diff"
+			fi
+		fi
+		mv "$FIXTURE_PATH/$filename"{_new,}.txt
 	fi
 }
 
