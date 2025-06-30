@@ -64,7 +64,7 @@ fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0x10427f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0x10427f
 getcwd(non-NULL, any) @ libc.so.6+0x10208a(getcwd+122)
 getpriority(NULL-0x2, any u32) @ libc.so.6+0x105075(getpriority+5)
-setpriority(NULL-0x2, any u32, any u32) @ libc.so.6+0x1050b5(setpriority+5)
+setpriority(NULL-0x2, any u32, NULL-0x1fffffffe) @ libc.so.6+0x1050b5(setpriority+5)
 sched_getparam(any u32, any) @ libc.so.6+0xf7945(sched_getparam+5)
 sched_setscheduler(any u32, any u32, any) @ libc.so.6+0xf7a95(sched_setscheduler+5)
 sched_getscheduler(any u32) @ libc.so.6+0xf7975(__sched_getscheduler+5)

@@ -113,7 +113,7 @@ tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x72622(__pthread_kill_implementati
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xe64a1(__open+81)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xe64a1(__open+81)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0xe64a1(__open+81)
-openat(AT_FDCWD, non-NULL, any u32, any) @ libc.so.6+0xe64a1(__open+81)
+openat(AT_FDCWD, non-NULL, O_RDONLY-O_RDWR|O_CREAT|O_TRUNC|O_CLOEXEC, any) @ libc.so.6+0xe64a1(__open+81)
 openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0xe6513(__open+195)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xe6513(__open+195)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ libc.so.6+0xe6513(__open+195)

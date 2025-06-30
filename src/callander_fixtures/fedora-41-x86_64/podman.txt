@@ -1,13 +1,10 @@
 callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/podman+0x86960-/usr/bin/podman+0x8696c
 /usr/bin/podman+0xe4980-/usr/bin/podman+0xe4988 (call)
-/usr/bin/podman+0xe49a8-/usr/bin/podman+0xe49e1 (call)
-/usr/bin/podman+0xe49a0-/usr/bin/podman+0xe49a4 (primary result)
-/usr/bin/podman+0xe2112-/usr/bin/podman+0xe2120 (call)
-/usr/bin/podman+0xe210a-/usr/bin/podman+0xe210e (primary result)
+/usr/bin/podman+0xe49a0-/usr/bin/podman+0xe49e1 (call)
+/usr/bin/podman+0xe210a-/usr/bin/podman+0xe2120 (call)
 /usr/bin/podman+0xe2100-/usr/bin/podman+0xe2104 (conditional continue)
-/usr/bin/podman+0xdba92-/usr/bin/podman+0xdbaa2 (call)
-/usr/bin/podman+0xdba8a-/usr/bin/podman+0xdba8e (primary result)
+/usr/bin/podman+0xdba8a-/usr/bin/podman+0xdbaa2 (call)
 /usr/bin/podman+0xdba80-/usr/bin/podman+0xdba84 (conditional continue)
 /usr/bin/podman+0x113913-/usr/bin/podman+0x11391a (call)
 /usr/bin/podman+0x11390a-/usr/bin/podman+0x113911 (conditional continue)
@@ -50,8 +47,7 @@ callander: full call stack: /usr/bin/podman+0x86960-/usr/bin/podman+0x8696c
 /usr/bin/podman+0x1218478-/usr/bin/podman+0x1218483 (conditional continue)
 /usr/bin/podman+0x121844f-/usr/bin/podman+0x1218472 (conditional continue)
 /usr/bin/podman+0x1218440-/usr/bin/podman+0x1218449 (conditional continue)
-/usr/bin/podman+0x1219b52-/usr/bin/podman+0x1219b72 (call)
-/usr/bin/podman+0x1219b4a-/usr/bin/podman+0x1219b4e (primary result)
+/usr/bin/podman+0x1219b4a-/usr/bin/podman+0x1219b72 (call)
 /usr/bin/podman+0x1219b40-/usr/bin/podman+0x1219b44 (conditional continue)
 /usr/bin/podman+0x1c7fd58 (.data.rel.ro)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function
