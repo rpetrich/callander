@@ -5936,3 +5936,14 @@ char *copy_registers_description(const struct loader_context *loader, const stru
 	buf[i] = '\0';
 	return buf;
 }
+
+char *copy_known_registers_description(const struct loader_context *loader, const struct registers *registers)
+{
+	register_mask mask = 0;
+	for (int r = 0; r < REGISTER_COUNT; r++) {
+		if (register_is_partially_known(&registers->registers[r])) {
+			mask |= mask_for_register(r);
+		}
+	}
+	return mask != 0 ? copy_registers_description(loader, registers, mask) : NULL;
+}

@@ -29,5 +29,6 @@ extern char *copy_raw_syscall_description(intptr_t syscall, intptr_t arg1, intpt
 const char *name_for_register(int register_index);
 
 char *copy_registers_description(const struct loader_context *loader, const struct registers *registers, register_mask mask);
+char *copy_known_registers_description(const struct loader_context *loader, const struct registers *registers);
 
 #endif

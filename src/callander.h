@@ -204,6 +204,7 @@ typedef uint32_t binary_flags;
 enum
 {
 	OVERRIDE_ACCESS_SLOT_COUNT = 3,
+	CANCEL_SYSCALL_SLOT_COUNT = 2,
 };
 
 #include "ins.h"
@@ -281,6 +282,7 @@ struct loader_context
 	bool searching_setxid_sighandler : 1;
 	bool searching_do_setxid : 1;
 	bool searching_enable_async_cancel : 1;
+	bool searching_for_internal_syscall_cancel : 1;
 	ins_ptr gconv_dlopen;
 	ins_ptr libcrypto_dlopen;
 	ins_ptr setxid_syscall;
@@ -290,6 +292,8 @@ struct loader_context
 	ins_ptr do_setxid;
 	ins_ptr enable_async_cancel;
 	ins_ptr nss_module_load;
+	ins_ptr internal_syscall_cancel;
+	ins_ptr internal_syscall_cancel_syscall[CANCEL_SYSCALL_SLOT_COUNT];
 	struct loaded_binary_stub *sorted_binaries;
 	int binary_count;
 	const char *sysroot;

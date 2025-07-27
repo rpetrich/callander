@@ -2919,6 +2919,9 @@ __attribute__((always_inline)) __attribute__((nonnull(1, 2, 3, 4))) static inlin
 	return result;
 }
 
+static void handle_internal_syscall_cancel(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller,
+                                    __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data);
+
 __attribute__((nonnull(1, 2))) static void update_known_symbols(struct program_state *analysis, struct loaded_binary *new_binary)
 {
 	struct known_symbols *known_symbols = &analysis->known_symbols;
@@ -2949,7 +2952,37 @@ __attribute__((nonnull(1, 2))) static void update_known_symbols(struct program_s
 		register_mask arg0 = mask_for_register(sysv_argument_abi_register_indexes[0]);
 		find_and_add_callback(analysis, dlopen, arg0, arg0, arg0, EFFECT_NONE, handle_dlopen, NULL);
 	}
+	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
+		force_protection_for_symbol(&analysis->loader, new_binary, "_rtld_global_ro", NORMAL_SYMBOL | LINKER_SYMBOL, 0);
+		force_protection_for_symbol(&analysis->loader, new_binary, "mtag_mmap_flags", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
+		// libc exit functions
+		update_known_function(analysis, new_binary, "_dl_signal_error", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "__fortify_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "__stack_chk_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "__libc_fatal", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "__assert_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "__libc_longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "abort", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		update_known_function(analysis, new_binary, "pthread_exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+	}
 	if (new_binary->special_binary_flags & BINARY_IS_LIBC) {
+		// special-case __internal_syscall_cancel by searching clock_nanosleep
+		ins_ptr clock_nanosleep = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "clock_nanosleep", NULL, NORMAL_SYMBOL, NULL);
+		if (clock_nanosleep != NULL) {
+			struct registers registers = empty_registers;
+			struct analysis_frame new_caller = {.address = new_binary->info.base, .description = "clock_nanosleep", .next = NULL, .current_state = empty_registers, .entry = new_binary->info.base, .entry_state = &empty_registers, .token = {0}};
+			analysis->loader.searching_for_internal_syscall_cancel = true;
+			analyze_function(analysis, EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, clock_nanosleep, &new_caller);
+			analysis->loader.searching_for_internal_syscall_cancel = false;
+			if (analysis->loader.internal_syscall_cancel == NULL || analysis->loader.internal_syscall_cancel_syscall[0] == NULL) {
+				analysis->loader.internal_syscall_cancel = NULL;
+				analysis->loader.internal_syscall_cancel_syscall[0] = NULL;
+			} else {
+				find_and_add_callback(analysis, analysis->loader.internal_syscall_cancel, 0, 0, 0, EFFECT_NONE, handle_internal_syscall_cancel, NULL);
+			}
+		}
 		// detect gconv and load libraries upfront via LD_PRELOAD
 		ins_ptr gconv_open = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__gconv_open", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
 		if (gconv_open) {
@@ -3004,19 +3037,6 @@ __attribute__((nonnull(1, 2))) static void update_known_symbols(struct program_s
 		}
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
-		force_protection_for_symbol(&analysis->loader, new_binary, "_rtld_global_ro", NORMAL_SYMBOL | LINKER_SYMBOL, 0);
-		force_protection_for_symbol(&analysis->loader, new_binary, "mtag_mmap_flags", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
-		// libc exit functions
-		update_known_function(analysis, new_binary, "_dl_signal_error", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "__fortify_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "__stack_chk_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "__libc_fatal", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "__assert_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "__libc_longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "longjmp", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "abort", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
-		update_known_function(analysis, new_binary, "pthread_exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		if (analysis->ld_profile != NULL) {
 			ins_ptr dl_start_profile = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "_dl_start_profile", NULL, INTERNAL_COMMON_SYMBOL, NULL);
 			// search for __gconv_find_shlib so that handle_gconv_find_shlib can be attached to it
@@ -6533,7 +6553,26 @@ __attribute__((noinline)) static uint8_t analyze_syscall_instruction(struct prog
 			clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_RESULT, ins);
 			return SYSCALL_ANALYSIS_CONTINUE;
 		}
-		ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self->current_state.registers[REGISTER_SYSCALL_NR])));
+		if (analysis->loader.searching_for_internal_syscall_cancel) {
+			for (int i = 0; i < CANCEL_SYSCALL_SLOT_COUNT; i++) {
+				if (analysis->loader.internal_syscall_cancel_syscall[i] == NULL) {
+					analysis->loader.internal_syscall_cancel_syscall[i] = self->address;
+					LOG("found internal_syscall_cancel_syscall", temp_str(copy_address_description(&analysis->loader, self->address)));
+					return SYSCALL_ANALYSIS_CONTINUE;
+				}
+			}
+		}
+		for (int i = 0; i < CANCEL_SYSCALL_SLOT_COUNT; i++) {
+			if (analysis->loader.internal_syscall_cancel_syscall[i] == self->address) {
+				LOG("ignoring unknown syscall inside internal_syscall_cancel", temp_str(copy_register_state_description(&analysis->loader, self->current_state.registers[REGISTER_SYSCALL_NR])));
+				return SYSCALL_ANALYSIS_CONTINUE;
+			}
+		}
+		if (required_effects & EFFECT_AFTER_STARTUP) {
+			ERROR("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self->current_state.registers[REGISTER_SYSCALL_NR])));
+		} else {
+			LOG("found syscall with unknown number", temp_str(copy_register_state_description(&analysis->loader, self->current_state.registers[REGISTER_SYSCALL_NR])));
+		}
 		if (SHOULD_LOG) {
 			register_mask relevant_registers = mask_for_register((enum register_index)REGISTER_SYSCALL_NR);
 			for (const struct analysis_frame *ancestor = self;;) {
@@ -6556,17 +6595,59 @@ __attribute__((noinline)) static uint8_t analyze_syscall_instruction(struct prog
 			}
 		}
 		self->description = NULL;
-		ERROR("full call stack", temp_str(copy_call_trace_description(&analysis->loader, self)));
+		if (required_effects & EFFECT_AFTER_STARTUP) {
+			ERROR("full call stack", temp_str(copy_call_trace_description_with_additional(&analysis->loader, self, blocked_function_trace_callback, NULL)));
+		} else {
+			LOG("full call stack", temp_str(copy_call_trace_description_with_additional(&analysis->loader, self, blocked_function_trace_callback, NULL)));
+		}
 		dump_nonempty_registers(&analysis->loader, &self->current_state, ALL_REGISTERS);
 		clear_register(&self->current_state.registers[REGISTER_SYSCALL_NR]);
 		self->current_state.sources[REGISTER_SYSCALL_NR] = 0;
 		clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_NR, ins);
 		if (required_effects & EFFECT_AFTER_STARTUP) {
-			analysis->syscalls.unknown = true;
+			DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
 		}
-		DIE("try blocking a function from the call stack using --block-function or --block-debug-function");
 	}
 	return SYSCALL_ANALYSIS_CONTINUE;
+}
+
+
+static void handle_internal_syscall_cancel(struct program_state *analysis, ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller,
+                                    __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	LOG("received __internal_syscall_cancel", temp_str(copy_function_call_description(&analysis->loader, ins, state)));
+	dump_registers(&analysis->loader, state, mask_for_register(REGISTER_STACK_8));
+	for (int i = 0; i < CANCEL_SYSCALL_SLOT_COUNT; i++) {
+		if (analysis->loader.internal_syscall_cancel_syscall[i] != NULL) {
+			struct analysis_frame self = (struct analysis_frame){
+				.next = caller,
+				.address = analysis->loader.internal_syscall_cancel_syscall[i],
+				.description = "internal_syscall",
+				.current_state = empty_registers,
+				.entry = ins,
+				.entry_state = state,
+			};
+			for (int i = 0; i < 6; i++) {
+				int source_reg = sysv_argument_abi_register_indexes[i];
+				int dest_reg = syscall_argument_abi_register_indexes[i];
+				self.current_state.registers[dest_reg] = state->registers[source_reg];
+				self.current_state.sources[dest_reg] = mask_for_register(source_reg);
+		#if STORE_LAST_MODIFIED
+				self.current_state.last_modify_ins[dest_reg] = state->last_modify_ins[source_reg];
+		#endif
+			}
+			self.current_state.registers[REGISTER_SYSCALL_NR] = state->registers[REGISTER_STACK_8];
+			self.current_state.sources[REGISTER_SYSCALL_NR] = mask_for_register(REGISTER_STACK_8);
+		#if STORE_LAST_MODIFIED
+			self.current_state.last_modify_ins[REGISTER_SYSCALL_NR] = state->last_modify_ins[REGISTER_STACK_8];
+		#endif
+			LOG("redirecting to syscall at", temp_str(copy_address_description(&analysis->loader, self.address)));
+			dump_nonempty_registers(&analysis->loader, &self.current_state, ALL_REGISTERS);
+			struct additional_result additional;
+			analyze_syscall_instruction(analysis, &self, &additional, caller, analysis->loader.internal_syscall_cancel_syscall[i], effects, &effects);
+		}
+	}
+	LOG("finished __internal_syscall_cancel", temp_str(copy_function_call_description(&analysis->loader, ins, state)));
 }
 
 static void analyze_memory_read(struct program_state *analysis, struct analysis_frame *self, ins_ptr ins, function_effects effects, struct loaded_binary *binary, const void *address)
@@ -6623,6 +6704,11 @@ static bool check_for_searched_function(struct loader_context *loader, ins_ptr a
 	if (loader->searching_enable_async_cancel && loader->enable_async_cancel == NULL) {
 		LOG("found enable_async_cancel", temp_str(copy_address_description(loader, address)));
 		loader->enable_async_cancel = address;
+		return true;
+	}
+	if (loader->searching_for_internal_syscall_cancel && loader->internal_syscall_cancel == NULL) {
+		LOG("found __internal_syscall_cancel", temp_str(copy_address_description(loader, address)));
+		loader->internal_syscall_cancel = address;
 		return true;
 	}
 	return false;
