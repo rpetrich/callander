@@ -416,6 +416,7 @@ enum
 	REGISTER_SYSCALL_ARG4 = X86_REGISTER_8,
 	REGISTER_SYSCALL_ARG5 = X86_REGISTER_9,
 	REGISTER_SYSCALL_RESULT = X86_REGISTER_AX,
+	REGISTER_SYSCALL_ADDITIONAL_CLEARED = 1 << REGISTER_R11,
 
 	SYSV_REGISTER_ARGUMENT_COUNT = 6,
 #define CALL_PRESERVED_REGISTERS (mask_for_register(REGISTER_RBX) | mask_for_register(REGISTER_RBP) | mask_for_register(REGISTER_R12) | mask_for_register(REGISTER_R13) | mask_for_register(REGISTER_R14) | mask_for_register(REGISTER_R15))
@@ -429,6 +430,7 @@ enum
 	REGISTER_SYSCALL_ARG4 = AARCH64_REGISTER_X4,
 	REGISTER_SYSCALL_ARG5 = AARCH64_REGISTER_X5,
 	REGISTER_SYSCALL_RESULT = AARCH64_REGISTER_X0,
+	REGISTER_SYSCALL_ADDITIONAL_CLEARED = 0,
 
 	SYSV_REGISTER_ARGUMENT_COUNT = 8,
 #define CALL_PRESERVED_REGISTERS                                                                                                                                                                                 \

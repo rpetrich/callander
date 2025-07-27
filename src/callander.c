@@ -6420,6 +6420,12 @@ enum syscall_analysis_result
 __attribute__((noinline)) static uint8_t analyze_syscall_instruction(struct program_state *analysis, struct analysis_frame *self, struct additional_result *additional, const struct analysis_frame *caller, ins_ptr ins,
                                                                      function_effects required_effects, function_effects *effects)
 {
+	// clear registers that are clobbered upon syscall entry
+	for_each_bit ((register_mask)REGISTER_SYSCALL_ADDITIONAL_CLEARED, bit, r) {
+		clear_register(&self->current_state.registers[r]);
+		self->current_state.sources[r] = 0;
+		clear_match(&analysis->loader, &self->current_state, r, ins);
+	}
 	additional->used = false;
 	clear_comparison_state(&self->current_state);
 	if (register_is_exactly_known(&self->current_state.registers[REGISTER_SYSCALL_NR])) {
@@ -6468,12 +6474,6 @@ __attribute__((noinline)) static uint8_t analyze_syscall_instruction(struct prog
 		self->current_state.registers[REGISTER_SYSCALL_RESULT].max = (~(uintptr_t)0) >> 1;
 		self->current_state.sources[REGISTER_SYSCALL_RESULT] = 0;
 		clear_match(&analysis->loader, &self->current_state, REGISTER_SYSCALL_RESULT, ins);
-#ifdef __x86_64__
-		// x86 additionally clears r11
-		clear_register(&self->current_state.registers[REGISTER_R11]);
-		self->current_state.sources[REGISTER_R11] = 0;
-		clear_match(&analysis->loader, &self->current_state, REGISTER_R11, ins);
-#endif
 		switch (info_for_syscall(value).attributes & SYSCALL_RETURN_MASK) {
 			case SYSCALL_RETURNS_SELF_PID:
 				// getpid fills the pid into the result
