@@ -237,7 +237,7 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 					}
 					if (binary->offset == 0) {
 						result = fs_pwrite(fd, (const char *)&bootstrap_offsets.old_header, sizeof(bootstrap_offsets.old_header), 0);
-						if (result < sizeof(bootstrap_offsets.old_header)) {
+						if (result < (intptr_t)sizeof(bootstrap_offsets.old_header)) {
 							DIE("error writing", binary_path + 1);
 							DIE("returned", fs_strerror(fd));
 						}
@@ -355,8 +355,11 @@ void bootstrap_trampoline(void);
 
 static bool should_include_binary(struct loaded_binary *binary)
 {
-	return (binary->special_binary_flags & BINARY_IS_LOADED_VIA_DLOPEN) == 0 && fs_strcmp(binary->loaded_path, "[vdso]") != 0 && (bundle_interpreter || (binary->special_binary_flags & BINARY_IS_INTERPRETER) == 0) &&
-		(!bundle_library || (binary->special_binary_flags & BINARY_IS_LIBC) == 0);
+	return (binary->special_binary_flags & BINARY_IS_LOADED_VIA_DLOPEN) == 0
+		&& fs_strcmp(binary->loaded_path, "[vdso]") != 0
+		&& (bundle_interpreter || (binary->special_binary_flags & BINARY_IS_INTERPRETER) == 0)
+		&& (!bundle_library || (binary->special_binary_flags & BINARY_IS_LIBC) == 0);
+		// && (binary->special_binary_flags & BINARY_IS_LIBCAP) == 0;
 }
 
 static bool binary_contributes_symbols(struct loaded_binary *binary)
@@ -387,7 +390,7 @@ __attribute__((unused)) static size_t file_offset_for_binary_address(const struc
 	for (ElfW(Word) i = 0; i < info->header_entry_count; i++) {
 		if (phdr[i].p_type == PT_LOAD) {
 			ElfW(Addr) end = phdr[i].p_vaddr + phdr[i].p_memsz;
-			if (address >= phdr[i].p_vaddr && address < end) {
+			if ((uintptr_t)address >= phdr[i].p_vaddr && (uintptr_t)address < end) {
 				return phdr[i].p_offset + address - phdr[i].p_vaddr;
 			}
 		}
@@ -577,12 +580,12 @@ static void copy_relas(struct loader_context *loader, const struct loaded_binary
 	}
 }
 
-static void copy_relrs(const struct binary_info *binary, ElfW(Relr) * *relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, size_t alternate_defined_size, void *base,
+static void copy_relrs(const struct binary_info *binary, ElfW(Relr) * *relrs, uintptr_t relr, size_t relrsz, ssize_t address_offset, struct alternate_relocation_range alternate, __attribute__((unused)) size_t alternate_defined_size, void *base,
                        ElfW(Rela) * *relas)
 {
 	const ElfW(Relr) *r = binary->base + relr;
 	size_t where = 0;
-	for (int i = 0; i < relrsz / sizeof(*r); i++) {
+	for (size_t i = 0; i < relrsz / sizeof(*r); i++) {
 		ElfW(Relr) rv = r[i];
 		if (rv & 1) {
 			*(*relrs)++ = rv;
@@ -622,7 +625,7 @@ static size_t measure_relr(const ElfW(Relr) * r, size_t relrsz, struct alternate
 {
 	size_t rela_count = 0;
 	size_t where = 0;
-	for (int i = 0; i < relrsz / sizeof(*r); i++) {
+	for (size_t i = 0; i < relrsz / sizeof(*r); i++) {
 		ElfW(Relr) rv = r[i];
 		if (rv & 1) {
 			for (int i = 0; (rv >>= 1) != 0; i++) {
@@ -1319,7 +1322,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 				DIE("failed reading original binary", binary->loaded_path);
 			}
 			result = fs_read_all(original, mapping + offset, binary->size);
-			if (result < binary->size) {
+			if (result < (ssize_t)binary->size) {
 				if (result < 0) {
 					DIE("failed read", fs_strerror(result));
 				}
@@ -1518,7 +1521,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					other_index = index_for_binary_path(&analysis->loader, input_version->library_name, &other);
 				}
 				if (other_index != -1 && binary_contributes_symbols(other)) {
-					for (ssize_t j = 0; j < other->symbols.valid_version_count; j++) {
+					for (size_t j = 0; j < other->symbols.valid_version_count; j++) {
 						const struct symbol_version_info *other_version = &other->symbols.valid_versions[j];
 						if (other_version->library_name == NULL && other_version->version_name != NULL && fs_strcmp(input_version->version_name, other_version->version_name) == 0) {
 							versym[i] = offsets[other_index].version_id_start + j;
@@ -1594,7 +1597,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			for (ElfW(Word) i = 0; i < binary->info.header_entry_count; i++) {
 				switch (phdr[i].p_type) {
 					case PT_GNU_EH_FRAME: {
-						size_t size = binary_index == last_set_eh_frame_index ? offsets[binary_index].eh_frame_size.full_size : offsets[binary_index].eh_frame_size.unterminated_size;
+						size_t size = (ssize_t)binary_index == last_set_eh_frame_index ? offsets[binary_index].eh_frame_size.full_size : offsets[binary_index].eh_frame_size.unterminated_size;
 						memcpy(ehframe + ehframe_offset, binary->frame_info.data, size);
 						size_t eh_frame_vaddr = binary->frame_info.data - binary->info.base;
 						size_t pc_offset_diff = eh_frame_vaddr + address_offset - (address_size + eh_frame_start + ehframe_offset);
@@ -2239,7 +2242,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 
 #pragma GCC push_options
 #pragma GCC optimize("-fomit-frame-pointer")
-__attribute__((noinline, visibility("hidden"))) int main(int argc, char *argv[], char *envp[])
+__attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused)) int argc, char *argv[], char *envp[])
 {
 	struct program_state analysis = {0};
 	// Find PATH and LD_PRELOAD
