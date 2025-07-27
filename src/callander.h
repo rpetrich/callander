@@ -451,7 +451,6 @@ struct recorded_syscalls
 	struct recorded_syscall *list;
 	int count;
 	int capacity;
-	bool unknown;
 	uint8_t config[SYSCALL_COUNT];
 };
 
@@ -485,6 +484,7 @@ struct blocked_symbol
 	int symbol_types;
 	bool is_dlopen : 1;
 	bool is_required : 1;
+	bool reject_entirely : 1;
 };
 
 struct known_symbols

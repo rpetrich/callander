@@ -2866,11 +2866,22 @@ __attribute__((nonnull(1, 2, 3, 4))) static void intercept_jump_slot(struct prog
 	}
 }
 
+static char *blocked_function_trace_callback(const struct loader_context *loader, const struct analysis_frame *frame, __attribute__((unused)) void *callback_data)
+{
+	return copy_known_registers_description(loader, &frame->current_state);
+}
+
 static void blocked_function_called(__attribute__((unused)) struct program_state *analysis, __attribute__((unused)) ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects,
                                     __attribute__((unused)) const struct analysis_frame *caller, __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
-	LOG("blocked function called", (const char *)data);
-	LOG("stack", temp_str(copy_call_trace_description(&analysis->loader, caller)));
+	struct blocked_symbol *blocked_symbol = &analysis->known_symbols.blocked_symbols[(intptr_t)data];
+	if (blocked_symbol->reject_entirely) {
+		ERROR("blocked function called", blocked_symbol->name);
+		DIE("stack", temp_str(copy_call_trace_description_with_additional(&analysis->loader, caller, blocked_function_trace_callback, NULL)));
+	} else {
+		LOG("blocked function called", blocked_symbol->name);
+		LOG("stack", temp_str(copy_call_trace_description_with_additional(&analysis->loader, caller, blocked_function_trace_callback, NULL)));
+	}
 }
 
 __attribute__((nonnull(1, 2, 3))) static void force_protection_for_symbol(const struct loader_context *loader, struct loaded_binary *binary, const char *symbol_name, int symbol_types, int prot)
@@ -2938,7 +2949,7 @@ __attribute__((nonnull(1, 2))) static void update_known_symbols(struct program_s
 				continue;
 			}
 			blocked_symbols[i].value = value;
-			find_and_add_callback(analysis, value, 0, 0, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS | EFFECT_ENTER_CALLS, blocked_function_called, (void *)blocked_symbols[i].name);
+			find_and_add_callback(analysis, value, 0, 0, 0, EFFECT_PROCESSED | EFFECT_AFTER_STARTUP | EFFECT_ENTRY_POINT | EFFECT_EXITS | EFFECT_ENTER_CALLS, blocked_function_called, (void *)(intptr_t)i);
 		}
 	}
 	update_known_function(analysis, new_binary, "Perl_die_unwind", NORMAL_SYMBOL | LINKER_SYMBOL, EFFECT_STICKY_EXITS);

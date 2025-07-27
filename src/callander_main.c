@@ -1355,13 +1355,7 @@ static struct program_state analysis;
 
 static char *segfault_trace_callback(const struct loader_context *loader, const struct analysis_frame *frame, __attribute__((unused)) void *callback_data)
 {
-	register_mask mask = 0;
-	for (int r = 0; r < REGISTER_COUNT; r++) {
-		if (register_is_partially_known(&frame->current_state.registers[r])) {
-			mask |= mask_for_register(r);
-		}
-	}
-	return mask != 0 ? copy_registers_description(loader, &frame->current_state, mask) : NULL;
+	return copy_known_registers_description(loader, &frame->current_state);
 }
 
 static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unused)) siginfo_t *info, __attribute__((unused)) void *void_context)
@@ -1499,6 +1493,17 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				return 1;
 			}
 			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, true);
+			executable_index++;
+			if (!attach) {
+				attach = STAY_ATTACHED;
+			}
+		} else if (fs_strcmp(arg, "--debug-function") == 0) {
+			const char *function_name = argv[executable_index+1];
+			if (function_name == NULL) {
+				ERROR("--debug-function requires an argument");
+				return 1;
+			}
+			add_blocked_symbol(&analysis.known_symbols, function_name, NORMAL_SYMBOL | LINKER_SYMBOL, true)->reject_entirely = true;
 			executable_index++;
 			if (!attach) {
 				attach = STAY_ATTACHED;
@@ -1891,28 +1896,20 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	stack = NULL;
 skip_analysis:
 
-	if (analysis.syscalls.unknown) {
+	const struct recorded_syscall *discovered_execve = find_recorded_syscall(&analysis.syscalls, __NR_execve);
+	const struct recorded_syscall *discovered_execveat = find_recorded_syscall(&analysis.syscalls, __NR_execveat);
+	if (discovered_execve || discovered_execveat) {
 		if (!skip_running) {
 			kill_or_die(tracee);
 		}
-		ERROR("not all syscalls could be determined");
-		return 1;
-	} else {
-		const struct recorded_syscall *discovered_execve = find_recorded_syscall(&analysis.syscalls, __NR_execve);
-		const struct recorded_syscall *discovered_execveat = find_recorded_syscall(&analysis.syscalls, __NR_execveat);
-		if (discovered_execve || discovered_execveat) {
-			if (!skip_running) {
-				kill_or_die(tracee);
-			}
-			if (discovered_execve && discovered_execveat) {
-				ERROR("program calls execve and execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
-			} else if (discovered_execve) {
-				ERROR("program calls execve. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
-			} else {
-				ERROR("program calls execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
-			}
-			return 1;
+		if (discovered_execve && discovered_execveat) {
+			ERROR("program calls execve and execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
+		} else if (discovered_execve) {
+			ERROR("program calls execve. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
+		} else {
+			ERROR("program calls execveat. unable to analyze through execs. if you know your use of this program doesn't result in new programs being executed specify --block-exec");
 		}
+		return 1;
 	}
 
 	if (skip_running) {
