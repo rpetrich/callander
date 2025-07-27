@@ -531,7 +531,8 @@ static void add_version(size_t index, const char *version_name, const char *libr
 {
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
 	ERROR("add version at index", (intptr_t)index);
-	ERROR("name", version_name);
+	ERROR("version name", version_name);
+	ERROR("library name", library_name ?: "(none)");
 #endif
 	if (index >= out_symbols->valid_version_count) {
 		out_symbols->valid_versions = realloc(out_symbols->valid_versions, (index + 1) * sizeof(struct symbol_version_info));
