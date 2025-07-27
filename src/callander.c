@@ -485,7 +485,7 @@ __attribute__((nonnull(1, 2, 4))) static inline void clear_call_dirtied_register
 	regs->mem_rm = invalid_decoded_rm;
 }
 
-__attribute__((nonnull(1))) static inline void push_stack(struct registers *regs, int push_count)
+__attribute__((nonnull(1))) static inline void push_stack(const struct loader_context *loader, struct registers *regs, int push_count, ins_ptr ins)
 {
 	LOG("push stack", push_count);
 	if (push_count == 0) {
@@ -518,9 +518,10 @@ __attribute__((nonnull(1))) static inline void push_stack(struct registers *regs
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | (((regs->matches[i] & STACK_REGISTERS) << push_count) & ALL_REGISTERS);
 	}
+	clear_match_keep_stack(loader, regs, REGISTER_SP, ins);
 }
 
-__attribute__((nonnull(1))) static inline void pop_stack(struct registers *regs, int pop_count)
+__attribute__((nonnull(1))) static inline void pop_stack(const struct loader_context *loader, struct registers *regs, int pop_count, ins_ptr ins)
 {
 	LOG("pop stack", pop_count);
 	if (pop_count == 0) {
@@ -549,6 +550,7 @@ __attribute__((nonnull(1))) static inline void pop_stack(struct registers *regs,
 	for (int i = 0; i < REGISTER_COUNT; i++) {
 		regs->matches[i] = (regs->matches[i] & ~STACK_REGISTERS) | (pop_count > REGISTER_COUNT ? 0 : ((regs->matches[i] >> pop_count) & ALL_REGISTERS));
 	}
+	clear_match_keep_stack(loader, regs, REGISTER_SP, ins);
 }
 
 __attribute__((nonnull(1, 2, 3))) static inline struct registers copy_call_argument_registers(const struct loader_context *loader, const struct registers *regs, __attribute__((unused)) ins_ptr ins)
@@ -3894,9 +3896,9 @@ static bool add_to_stack(const struct loader_context *loader, struct registers *
 	}
 	clear_match_keep_stack(loader, registers, REGISTER_SP, ins);
 	if (offset < 0) {
-		push_stack(registers, -offset);
+		push_stack(loader, registers, -offset, ins);
 	} else if (amount > 0) {
-		pop_stack(registers, offset);
+		pop_stack(loader, registers, offset, ins);
 	}
 	dump_nonempty_registers(loader, registers, STACK_REGISTERS);
 	return true;
@@ -5522,7 +5524,7 @@ __attribute__((always_inline)) static inline function_effects analyze_call(struc
 #else
 	int call_push_count = 0;
 #endif
-	push_stack(&self->current_state, call_push_count);
+	push_stack(&analysis->loader, &self->current_state, call_push_count, ins);
 	struct registers call_state = copy_call_argument_registers(&analysis->loader, &self->current_state, ins);
 	dump_nonempty_registers(&analysis->loader, &call_state, ALL_REGISTERS);
 	call_state.modified = 0;
@@ -5536,7 +5538,7 @@ __attribute__((always_inline)) static inline function_effects analyze_call(struc
 	if (is_stack_preserving_function(&analysis->loader, binary, call_target)) {
 		modified &= ~STACK_REGISTERS;
 	}
-	pop_stack(&self->current_state, call_push_count);
+	pop_stack(&analysis->loader, &self->current_state, call_push_count, ins);
 	clear_call_dirtied_registers(&analysis->loader, &self->current_state, binary, ins, modified);
 	return more_effects;
 }
@@ -7385,12 +7387,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xa0: { // push fs
-						push_stack(&self.current_state, 2);
+						push_stack(&analysis->loader, &self.current_state, 2, ins);
 						dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 						break;
 					}
 					case 0xa1: { // pop fs
-						pop_stack(&self.current_state, 2);
+						pop_stack(&analysis->loader, &self.current_state, 2, ins);
 						dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 						break;
 					}
@@ -7444,12 +7446,12 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						break;
 					}
 					case 0xa8: { // push gs
-						push_stack(&self.current_state, 2);
+						push_stack(&analysis->loader, &self.current_state, 2, ins);
 						dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 						break;
 					}
 					case 0xa9: { // pop gs
-						pop_stack(&self.current_state, 2);
+						pop_stack(&analysis->loader, &self.current_state, 2, ins);
 						dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 						break;
 					}
@@ -8308,13 +8310,19 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				int reg = x86_read_opcode_register_index(*decoded.unprefixed, 0x50, decoded.prefixes);
 				LOG("push", name_for_register(reg));
 				if (trace_flags & TRACE_USES_FRAME_POINTER) {
-					LOG("skipping push because this function is using the frame pointer");
-					break;
+					if (self.current_state.matches[REGISTER_SP] & mask_for_register(REGISTER_RBP)) {
+						LOG("detaching stack frame pointer link");
+						clear_match_keep_stack(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+					} else {
+						LOG("clearing stack because this function was using the frame pointer");
+						clear_stack(&self.current_state, ins);
+						trace_flags &= ~TRACE_USES_FRAME_POINTER;
+					}
 				}
 				if (decoded.prefixes.has_operand_size_override) {
 					clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				} else {
-					push_stack(&self.current_state, 2);
+					push_stack(&analysis->loader, &self.current_state, 2, ins);
 				}
 				self.current_state.registers[REGISTER_STACK_0] = self.current_state.registers[reg];
 				self.current_state.sources[REGISTER_STACK_0] = self.current_state.sources[reg];
@@ -8343,7 +8351,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				if (decoded.prefixes.has_operand_size_override) {
 					clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
 				} else {
-					pop_stack(&self.current_state, 2);
+					pop_stack(&analysis->loader, &self.current_state, 2, ins);
 				}
 				dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
 				break;
@@ -8542,10 +8550,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				uint64_t imm = read_imm(decoded.prefixes, &decoded.unprefixed[1]);
 				LOG("push", imm);
 				if (trace_flags & TRACE_USES_FRAME_POINTER) {
-					LOG("skipping push because this function is using the frame pointer");
-					break;
+					LOG("clearing stack because this function was using the frame pointer");
+					clear_stack(&self.current_state, ins);
+					trace_flags &= ~TRACE_USES_FRAME_POINTER;
 				}
-				push_stack(&self.current_state, 2);
+				push_stack(&analysis->loader, &self.current_state, 2, ins);
 				set_register(&self.current_state.registers[REGISTER_STACK_0], imm);
 				break;
 			}
@@ -8560,10 +8569,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				uint8_t imm = *(const uint8_t *)&decoded.unprefixed[1];
 				LOG("push", (uintptr_t)imm);
 				if (trace_flags & TRACE_USES_FRAME_POINTER) {
-					LOG("skipping push because this function is using the frame pointer");
-					break;
+					LOG("clearing stack because this function was using the frame pointer");
+					clear_stack(&self.current_state, ins);
+					trace_flags &= ~TRACE_USES_FRAME_POINTER;
 				}
-				push_stack(&self.current_state, 2);
+				push_stack(&analysis->loader, &self.current_state, 2, ins);
 				set_register(&self.current_state.registers[REGISTER_STACK_0], imm);
 				break;
 			}
@@ -8761,9 +8771,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									break;
 								}
 								if (imm <= 0) {
-									push_stack(&self.current_state, -(imm >> 2));
+									push_stack(&analysis->loader, &self.current_state, -(imm >> 2), ins);
 								} else {
-									pop_stack(&self.current_state, imm >> 2);
+									pop_stack(&analysis->loader, &self.current_state, imm >> 2, ins);
 								}
 								struct register_state src;
 								set_register(&src, imm);
@@ -8811,9 +8821,9 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									break;
 								}
 								if (imm <= 0) {
-									pop_stack(&self.current_state, -(imm >> 2));
+									pop_stack(&analysis->loader, &self.current_state, -(imm >> 2), ins);
 								} else {
-									push_stack(&self.current_state, imm >> 2);
+									push_stack(&analysis->loader, &self.current_state, imm >> 2, ins);
 								}
 								struct register_state src;
 								set_register(&src, imm);
@@ -10134,14 +10144,14 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 						if (rm.reg >= REGISTER_STACK_0) {
 							if (rm.reg >= REGISTER_COUNT - 2) {
 								// check for cases like push QWORD PTR [rsp+0x70] where source stack register will be pushed out of existence
-								push_stack(&self.current_state, 2);
+								push_stack(&analysis->loader, &self.current_state, 2, ins);
 								break;
 							}
 							// stack positions shift, gaaah!
 							rm.reg += 2;
 						}
 						truncate_to_size_prefixes(&rm.state, decoded.prefixes);
-						push_stack(&self.current_state, 2);
+						push_stack(&analysis->loader, &self.current_state, 2, ins);
 						self.current_state.registers[REGISTER_STACK_0] = rm.state;
 						add_match_and_sources(&analysis->loader, &self.current_state, REGISTER_STACK_0, rm.reg, rm.sources, ins);
 						dump_nonempty_registers(&analysis->loader, &self.current_state, STACK_REGISTERS);
