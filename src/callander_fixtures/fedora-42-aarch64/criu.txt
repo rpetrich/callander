@@ -376,10 +376,12 @@ sendto(any, any, any u32, 0, any, 20) @ libc.so.6+0x96ba8
 sendto(any, any, any u32, 0, any, 28) @ libc.so.6+0x96ba8
 sendto(any, any, any, 0, any, 12) @ libc.so.6+0x96ba8
 sendto(any, any, any, any, 0, 0) @ libc.so.6+0x96ba8
+recvfrom(any, 0, any, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvfrom(any, any, any u8, any u16, any u8, any u8) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvfrom(any, any, any, any u8, any u8, any u8) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvfrom(any, any, any, any, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+recvfrom(any, 0, any, any, any, any) @ libc.so.6+0x96ba8
 recvfrom(any, any, any u8, any u16, any u8, any u8) @ libc.so.6+0x96ba8
 recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x96ba8
 recvfrom(any, any, any, any u8, any u8, any u8) @ libc.so.6+0x96ba8

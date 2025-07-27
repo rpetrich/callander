@@ -1,0 +1,4 @@
+FROM archlinux/archlinux:base-20250701.0.374663
+RUN echo '[core-debug]' >> /etc/pacman.conf
+RUN echo 'Include = /etc/pacman.d/mirrorlist' >> /etc/pacman.conf
+RUN pacman -Sy --noconfirm && pacman -S glibc-debug expect git binutils moreutils --noconfirm

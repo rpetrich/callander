@@ -1,7 +1,7 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-riscv32-static+0x2d3d28-/usr/bin/qemu-riscv32-static+0x2d3d44
-/usr/bin/qemu-riscv32-static+0x2d3d18-/usr/bin/qemu-riscv32-static+0x2d3d24 (conditional continue)
-/usr/bin/qemu-riscv32-static+0x2d3cf0-/usr/bin/qemu-riscv32-static+0x2d3d14 (conditional continue)
-/usr/bin/qemu-riscv32-static+0x2d3ce0-/usr/bin/qemu-riscv32-static+0x2d3ce8 (conditional jump)
-/usr/bin/qemu-riscv32-static+0x28f13c (adrp+add)
+callander: full call stack: /usr/bin/qemu-riscv32-static+0x2d3d28-/usr/bin/qemu-riscv32-static+0x2d3d44 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-riscv32-static+0x2d3d18-/usr/bin/qemu-riscv32-static+0x2d3d24 (conditional continue) r0=0xfffffffa r2=any u32 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-riscv32-static+0x2d3cf0-/usr/bin/qemu-riscv32-static+0x2d3d14 (conditional continue) r2=any u32 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-riscv32-static+0x2d3ce0-/usr/bin/qemu-riscv32-static+0x2d3ce8 (conditional jump) r0=33 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-riscv32-static+0x28f13c (adrp+add) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

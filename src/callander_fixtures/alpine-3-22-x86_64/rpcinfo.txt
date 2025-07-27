@@ -8,6 +8,7 @@ open("/etc/services", O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1
 open("/etc/resolv.conf", O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5f0b4(__fopen_rb_ca*+52)
 open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
 open(any, O_RDWR, any) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
+open(any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
 open(non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0666) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
 open("/dev/null", O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
 open("/etc/passwd", O_RDONLY|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
@@ -63,6 +64,7 @@ pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x68345
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x5f378(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x5f4c2(__stdio_write*+196)
 access(any, F_OK) @ ld-musl-x86_64.so.1+0x69b3b(access+12)
+access(any, R_OK) @ ld-musl-x86_64.so.1+0x69b3b(access+12)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x5668e(mremap+43)
 getpid() @ ld-musl-x86_64.so.1+0x6a1a7(getpid+5)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x5a2fb(socket+32)
@@ -75,9 +77,9 @@ sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x65d0e(
 sendto(any, any, any u32, 0, any, any u32) @ ld-musl-x86_64.so.1+0x68345
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x68345
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x68345
-recvfrom(any, any, any u32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-recvfrom(any, any, any u32, 0, 0, 0) @ ld-musl-x86_64.so.1+0x68345
+recvfrom(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x68345
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x68345
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
@@ -91,13 +93,15 @@ bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x57506(bind+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x58a5d(getsockname+21)
 getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x586a3(getpeername+21)
 setsockopt(any, SOL_IP, IP_RECVERR, any, 4) @ ld-musl-x86_64.so.1+0x5a27a(setsockopt+27)
+setsockopt(any, SOL_SOCKET, SO_LINGER, libkrb5.so.3+0x89608, 8) @ ld-musl-x86_64.so.1+0x5a27a(setsockopt+27)
 setsockopt(any, SOL_TCP, TCP_NODELAY, any, 4) @ ld-musl-x86_64.so.1+0x5a27a(setsockopt+27)
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x5a27a(setsockopt+27)
 setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x5a27a(setsockopt+27)
-getsockopt(any, SOL_SOCKET, SO_TYPE, any, any) @ ld-musl-x86_64.so.1+0x58a84(getsockopt+24)
+getsockopt(any, SOL_SOCKET, SO_TYPE-SO_ERROR, any, any) @ ld-musl-x86_64.so.1+0x58a84(getsockopt+24)
 exit(0) @ ld-musl-x86_64.so.1+0x6690d(pthread_exit+456)
 exit(0) @ ld-musl-x86_64.so.1+0x682e3
 uname(any) @ ld-musl-x86_64.so.1+0x564a2(uname+9)
+fcntl(any, F_DUPFD, any u32) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_SETLK, any) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
 fcntl(any, F_OFD_SETLK-F_OFD_SETLKW, any) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)
@@ -116,6 +120,8 @@ fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x68345
 flock(any, LOCK_SH-LOCK_EX|LOCK_NB) @ ld-musl-x86_64.so.1+0x43478(flock+15)
 flock(any, LOCK_UN) @ ld-musl-x86_64.so.1+0x43478(flock+15)
 flock(any, LOCK_UN|LOCK_NB) @ ld-musl-x86_64.so.1+0x43478(flock+15)
+fsync(any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+fsync(any) @ ld-musl-x86_64.so.1+0x68345
 rename(any, any) @ ld-musl-x86_64.so.1+0x625b9(rename+9)
 mkdir(any, 0700) @ ld-musl-x86_64.so.1+0x5ea7d(mkdir+11)
 unlink(any) @ ld-musl-x86_64.so.1+0x6a905(unlink+9)

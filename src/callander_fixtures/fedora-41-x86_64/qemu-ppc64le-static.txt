@@ -1,5 +1,5 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-ppc64le-static+0x9997
-/usr/bin/qemu-ppc64le-static+0x9991-/usr/bin/qemu-ppc64le-static+0x9995 (conditional continue)
+callander: full call stack: /usr/bin/qemu-ppc64le-static+0x9997 mem=0
+/usr/bin/qemu-ppc64le-static+0x9991-/usr/bin/qemu-ppc64le-static+0x9995 (conditional continue) mem=0
 /usr/bin/qemu-ppc64le-static+0xf5cf8 (lea)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

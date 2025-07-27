@@ -35,7 +35,7 @@ ioctl(any u32, TIOCSPGRP, any) @ libc.so.6+0x10c379(ioctl+57)
 ioctl(any u32, FIONREAD, any) @ libc.so.6+0x10c379(ioctl+57)
 ioctl(any u32, SIOCGIFINDEX, any) @ libc.so.6+0x10c379(ioctl+57)
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ libc.so.6+0x104528(__pread64_nocancel+8)
-writev(STDERR_FILENO, any, any) @ ld-linux-x86-64.so.2+0xc455
+writev(any u16, any, any) @ ld-linux-x86-64.so.2+0xc455
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x8792d
 writev(any u32, any, 2) @ libc.so.6+0x11041e(writev+14)
 writev(any u32, any, 4) @ libc.so.6+0x11041e(writev+14)
@@ -153,7 +153,7 @@ waitid(P_PID, any u32, 0, WEXITED, 0) @ libc.so.6+0xf99c4(waitid+20)
 waitid(P_PIDFD, any u32, 0, WEXITED, 0) @ libc.so.6+0xf99c4(waitid+20)
 waitid(P_PID, any u32, 0, WEXITED, 0) @ libc.so.6+0xf9a07(waitid+87)
 waitid(P_PIDFD, any u32, 0, WEXITED, 0) @ libc.so.6+0xf9a07(waitid+87)
-waitid(P_PIDFD, INT_MAX, 0, WNOHANG|WEXITED, 0x50-0xfffffffffffffcc7) @ libc.so.6+0x110767
+waitid(P_PIDFD, INT_MAX, 0, WNOHANG|WEXITED, any) @ libc.so.6+0x110767
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x102c7a(__open+74)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x102cf6(__open+198)
 openat(any u32, any, any u32, any) @ libc.so.6+0x102dea(openat+58)

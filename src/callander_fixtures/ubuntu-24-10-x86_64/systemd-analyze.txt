@@ -411,6 +411,7 @@ utimensat(any u32, 0, any, 0) @ libc.so.6+0x1261dc(__GI___utimensat64_helper*+12
 utimensat(any u32, "", any, AT_EMPTY_PATH) @ libc.so.6+0x126221(utimensat+17)
 utimensat(AT_FDCWD, non-NULL, any, 0) @ libc.so.6+0x126221(utimensat+17)
 timerfd_create(CLOCK_REALTIME-CLOCK_MONOTONIC, TFD_NONBLOCK|TFD_CLOEXEC) @ libc.so.6+0x134ff9(timerfd_create+9)
+timerfd_create(0x8-0x9, TFD_NONBLOCK|TFD_CLOEXEC) @ libc.so.6+0x134ff9(timerfd_create+9)
 fallocate(any u32, 0, any, any) @ libc.so.6+0x1253c4(posix_fallocate+20)
 fallocate(any u32, 3, any, any) @ libc.so.6+0x126345(fallocate64+21)
 fallocate(any u32, any u32, any, any) @ libc.so.6+0x126381(fallocate64+81)

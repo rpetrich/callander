@@ -144,7 +144,7 @@ tgkill(any u32, any u32, SIGHUP-0xffffffff) @ libc.so.6+0xa3f1a(pthread_kill+282
 waitid(P_PID, any u32, 0, WEXITED, 0) @ libc.so.6+0x11a1c8(waitid+24)
 waitid(P_PIDFD, any u32, 0, WEXITED, 0) @ libc.so.6+0x11a1c8(waitid+24)
 waitid(any u32, any u32, any, any u32, 0) @ libc.so.6+0x11a20b(waitid+91)
-waitid(P_PIDFD, INT_MAX, 0, WNOHANG|WEXITED, 0x50-0xfffffffffffffcc7) @ libc.so.6+0x1339ef(__clone_pidfd_supported*+47)
+waitid(P_PIDFD, INT_MAX, 0, WNOHANG|WEXITED, any) @ libc.so.6+0x1339ef(__clone_pidfd_supported*+47)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x124e11(__open+81)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x124e83(__open+195)
 openat(any u32, any, any u32, any) @ libc.so.6+0x124f80(openat+64)

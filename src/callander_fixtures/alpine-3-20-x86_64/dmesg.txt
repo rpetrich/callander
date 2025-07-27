@@ -34,7 +34,7 @@ rt_sigaction(SIGSETXID, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4
 rt_sigaction(SIGHUP-SIGQUIT, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d9ab(__libc_sigaction*+302)
 rt_sigaction(SIGPIPE, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d9ab(__libc_sigaction*+302)
 rt_sigaction(SIGTERM, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d9ab(__libc_sigaction*+302)
-rt_sigaction(SIGSETXID, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
+rt_sigaction(SIGSETXID, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1cc8e(abort+123)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b860(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6a2(__block_all_sigs*+23)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b858(app_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6bc(__block_app_sigs*+23)

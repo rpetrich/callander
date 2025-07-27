@@ -34,7 +34,7 @@ readv(STDIN_FILENO-0xfffffffe, any, 1) @ libc.so.6+0x10de0e(readv+14)
 readv(STDIN_FILENO-0xfffffffe, any, 3) @ libc.so.6+0x10de0e(readv+14)
 readv(STDIN_FILENO-0xfffffffe, any, 1) @ libc.so.6+0x10de4b(readv+75)
 readv(STDIN_FILENO-0xfffffffe, any, 3) @ libc.so.6+0x10de4b(readv+75)
-writev(STDERR_FILENO, any, any) @ ld-linux-x86-64.so.2+0xc455
+writev(any u16, any, any) @ ld-linux-x86-64.so.2+0xc455
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x8792d
 writev(any u32, any, 2) @ libc.so.6+0x11041e(writev+14)
 writev(any u32, any, 4) @ libc.so.6+0x11041e(writev+14)

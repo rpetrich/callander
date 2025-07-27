@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-ppc-static+0x25ad1f-/usr/bin/qemu-ppc-static+0x25ad40
-/usr/bin/qemu-ppc-static+0x25ad10-/usr/bin/qemu-ppc-static+0x25ad19 (conditional continue)
-/usr/bin/qemu-ppc-static+0x254933-/usr/bin/qemu-ppc-static+0x254955 (call)
-/usr/bin/qemu-ppc-static+0x254931 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25492e (primary result)
-/usr/bin/qemu-ppc-static+0x254929-/usr/bin/qemu-ppc-static+0x25492c (conditional continue)
-/usr/bin/qemu-ppc-static+0x254900-/usr/bin/qemu-ppc-static+0x254927 (conditional continue)
-/usr/bin/qemu-ppc-static+0x2bea90-/usr/bin/qemu-ppc-static+0x2beaa7 (call)
-/usr/bin/qemu-ppc-static+0x2bea3e-/usr/bin/qemu-ppc-static+0x2bea59 (conditional jump)
-/usr/bin/qemu-ppc-static+0x2bea39-/usr/bin/qemu-ppc-static+0x2bea3c (conditional continue)
-/usr/bin/qemu-ppc-static+0x2beaca-/usr/bin/qemu-ppc-static+0x2beae4 (conditional jump)
-/usr/bin/qemu-ppc-static+0x2beac5-/usr/bin/qemu-ppc-static+0x2beac8 (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x2beac0-/usr/bin/qemu-ppc-static+0x2beac3 (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x2bea74-/usr/bin/qemu-ppc-static+0x2bea77 (conditional jump (no continue))
-/usr/bin/qemu-ppc-static+0x2bea70-/usr/bin/qemu-ppc-static+0x2bea72 (conditional continue)
-/usr/bin/qemu-ppc-static+0x2bea5b-/usr/bin/qemu-ppc-static+0x2bea6e (primary result)
-/usr/bin/qemu-ppc-static+0x2bea3e-/usr/bin/qemu-ppc-static+0x2bea59 (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x2bea39-/usr/bin/qemu-ppc-static+0x2bea3c (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x2bea30-/usr/bin/qemu-ppc-static+0x2bea33 (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x2beaf0-/usr/bin/qemu-ppc-static+0x2beaf7 (jump)
-/usr/bin/qemu-ppc-static+0x25a6b0-/usr/bin/qemu-ppc-static+0x25a6d9 (call)
-/usr/bin/qemu-ppc-static+0x25a6a5-/usr/bin/qemu-ppc-static+0x25a6ae (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a69d-/usr/bin/qemu-ppc-static+0x25a6a3 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a690-/usr/bin/qemu-ppc-static+0x25a697 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a7a1-/usr/bin/qemu-ppc-static+0x25a7a8 (jump)
-/usr/bin/qemu-ppc-static+0x25a798-/usr/bin/qemu-ppc-static+0x25a79b (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x25a690-/usr/bin/qemu-ppc-static+0x25a697 (conditional jump)
-/usr/bin/qemu-ppc-static+0x25a6a5-/usr/bin/qemu-ppc-static+0x25a6ae (conditional jump)
-/usr/bin/qemu-ppc-static+0x25a69d-/usr/bin/qemu-ppc-static+0x25a6a3 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a680-/usr/bin/qemu-ppc-static+0x25a697 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a678-/usr/bin/qemu-ppc-static+0x25a67a (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a502-/usr/bin/qemu-ppc-static+0x25a510 (conditional jump)
-/usr/bin/qemu-ppc-static+0x25a4f7-/usr/bin/qemu-ppc-static+0x25a4fc (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a4ee-/usr/bin/qemu-ppc-static+0x25a4f5 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a4e0-/usr/bin/qemu-ppc-static+0x25a4ec (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a4d2-/usr/bin/qemu-ppc-static+0x25a4de (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a4d0-/usr/bin/qemu-ppc-static+0x25a4de (conditional jump)
-/usr/bin/qemu-ppc-static+0x25a4c0-/usr/bin/qemu-ppc-static+0x25a4ce (conditional continue)
-/usr/bin/qemu-ppc-static+0x25a4b0-/usr/bin/qemu-ppc-static+0x25a4bc (primary result)
-/usr/bin/qemu-ppc-static+0x234bdd-/usr/bin/qemu-ppc-static+0x234be4 (jump)
-/usr/bin/qemu-ppc-static+0x234bc0-/usr/bin/qemu-ppc-static+0x234bdb (primary result)
-/usr/bin/qemu-ppc-static+0x7273-/usr/bin/qemu-ppc-static+0x729b (call)
-/usr/bin/qemu-ppc-static+0x797e (call)
-/usr/bin/qemu-ppc-static+0x24e880-/usr/bin/qemu-ppc-static+0x24e8e2 (conditional jump)
-/usr/bin/qemu-ppc-static+0x25bde0-/usr/bin/qemu-ppc-static+0x25bdf0 (call)
-/usr/bin/qemu-ppc-static+0x25e410-/usr/bin/qemu-ppc-static+0x25e417 (call)
-/usr/bin/qemu-ppc-static+0x25e2a4-/usr/bin/qemu-ppc-static+0x25e2ae (conditional jump)
-/usr/bin/qemu-ppc-static+0x25e29e-/usr/bin/qemu-ppc-static+0x25e2a2 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e287-/usr/bin/qemu-ppc-static+0x25e29c (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e27e-/usr/bin/qemu-ppc-static+0x25e281 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e259-/usr/bin/qemu-ppc-static+0x25e278 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e247-/usr/bin/qemu-ppc-static+0x25e253 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e236-/usr/bin/qemu-ppc-static+0x25e241 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e224-/usr/bin/qemu-ppc-static+0x25e230 (conditional continue)
-/usr/bin/qemu-ppc-static+0x25e200-/usr/bin/qemu-ppc-static+0x25e21e (conditional continue)
-/usr/bin/qemu-ppc-static+0x2612d8-/usr/bin/qemu-ppc-static+0x2612e4 (call)
-/usr/bin/qemu-ppc-static+0x2612c3-/usr/bin/qemu-ppc-static+0x2612d2 (conditional continue)
-/usr/bin/qemu-ppc-static+0x2612b2-/usr/bin/qemu-ppc-static+0x2612bd (conditional continue)
-/usr/bin/qemu-ppc-static+0x2612a1-/usr/bin/qemu-ppc-static+0x2612b0 (conditional continue)
-/usr/bin/qemu-ppc-static+0x261293-/usr/bin/qemu-ppc-static+0x26129f (conditional continue)
-/usr/bin/qemu-ppc-static+0x26128b-/usr/bin/qemu-ppc-static+0x26128d (conditional continue)
-/usr/bin/qemu-ppc-static+0x261281-/usr/bin/qemu-ppc-static+0x261285 (conditional continue)
-/usr/bin/qemu-ppc-static+0x261277-/usr/bin/qemu-ppc-static+0x26127b (conditional continue)
-/usr/bin/qemu-ppc-static+0x26123b-/usr/bin/qemu-ppc-static+0x261271 (conditional continue)
-/usr/bin/qemu-ppc-static+0x261230-/usr/bin/qemu-ppc-static+0x261239 (conditional continue)
-/usr/bin/qemu-ppc-static+0x261220-/usr/bin/qemu-ppc-static+0x26122a (conditional continue)
-/usr/bin/qemu-ppc-static+0x261209-/usr/bin/qemu-ppc-static+0x26121a (conditional continue)
-/usr/bin/qemu-ppc-static+0x2611fd-/usr/bin/qemu-ppc-static+0x261205 (primary result)
-/usr/bin/qemu-ppc-static+0x2611f0-/usr/bin/qemu-ppc-static+0x2611f7 (conditional continue (no jump))
-/usr/bin/qemu-ppc-static+0x86cc-/usr/bin/qemu-ppc-static+0x86d7 (call)
-/usr/bin/qemu-ppc-static+0x86c3-/usr/bin/qemu-ppc-static+0x86ca (conditional continue)
-/usr/bin/qemu-ppc-static+0x86b0-/usr/bin/qemu-ppc-static+0x86c1 (conditional continue)
-/usr/bin/qemu-ppc-static+0x8700-/usr/bin/qemu-ppc-static+0x870f (call)
+callander: full call stack: /usr/bin/qemu-ppc-static+0x25ad1f-/usr/bin/qemu-ppc-static+0x25ad40 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-ppc-static+0x25ad10-/usr/bin/qemu-ppc-static+0x25ad19 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-ppc-static+0x254933-/usr/bin/qemu-ppc-static+0x254955 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-ppc-static+0x254931 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-ppc-static+0x25492e (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-ppc-static+0x254929-/usr/bin/qemu-ppc-static+0x25492c (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-ppc-static+0x254900-/usr/bin/qemu-ppc-static+0x254927 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-ppc-static+0x2bea90-/usr/bin/qemu-ppc-static+0x2beaa7 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-ppc-static+0x2bea3e-/usr/bin/qemu-ppc-static+0x2bea59 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-ppc-static+0x2bea39-/usr/bin/qemu-ppc-static+0x2bea3c (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-ppc-static+0x2beaca-/usr/bin/qemu-ppc-static+0x2beae4 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-ppc-static+0x2beac5-/usr/bin/qemu-ppc-static+0x2beac8 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-ppc-static+0x46c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-ppc-static+0x2beac0-/usr/bin/qemu-ppc-static+0x2beac3 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-ppc-static+0x46c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-ppc-static+0x2bea74-/usr/bin/qemu-ppc-static+0x2bea77 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-ppc-static+0x46c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-ppc-static+0x2bea70-/usr/bin/qemu-ppc-static+0x2bea72 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-ppc-static+0x46c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-ppc-static+0x2bea5b-/usr/bin/qemu-ppc-static+0x2bea6e (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-ppc-static+0x46c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-ppc-static+0x2bea3e-/usr/bin/qemu-ppc-static+0x2bea59 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-ppc-static+0x46c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c
+/usr/bin/qemu-ppc-static+0x2bea39-/usr/bin/qemu-ppc-static+0x2bea3c (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c
+/usr/bin/qemu-ppc-static+0x2bea30-/usr/bin/qemu-ppc-static+0x2bea33 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c
+/usr/bin/qemu-ppc-static+0x2beaf0-/usr/bin/qemu-ppc-static+0x2beaf7 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c
+/usr/bin/qemu-ppc-static+0x25a6b0-/usr/bin/qemu-ppc-static+0x25a6d9 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r8=any u32 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c
+/usr/bin/qemu-ppc-static+0x25a6a5-/usr/bin/qemu-ppc-static+0x25a6ae (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a69d-/usr/bin/qemu-ppc-static+0x25a6a3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a690-/usr/bin/qemu-ppc-static+0x25a697 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a7a1-/usr/bin/qemu-ppc-static+0x25a7a8 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=NULL-0x1 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a798-/usr/bin/qemu-ppc-static+0x25a79b (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=0 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a690-/usr/bin/qemu-ppc-static+0x25a697 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=0 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a6a5-/usr/bin/qemu-ppc-static+0x25a6ae (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=0 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a69d-/usr/bin/qemu-ppc-static+0x25a6a3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=0 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a680-/usr/bin/qemu-ppc-static+0x25a697 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c128 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=0 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a678-/usr/bin/qemu-ppc-static+0x25a67a (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a502-/usr/bin/qemu-ppc-static+0x25a510 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a4f7-/usr/bin/qemu-ppc-static+0x25a4fc (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=1
+/usr/bin/qemu-ppc-static+0x25a4ee-/usr/bin/qemu-ppc-static+0x25a4f5 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=1
+/usr/bin/qemu-ppc-static+0x25a4e0-/usr/bin/qemu-ppc-static+0x25a4ec (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 r11=/usr/bin/qemu-ppc-static+0x46c12c mem=any u32
+/usr/bin/qemu-ppc-static+0x25a4d2-/usr/bin/qemu-ppc-static+0x25a4de (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 mem=any u32
+/usr/bin/qemu-ppc-static+0x25a4d0-/usr/bin/qemu-ppc-static+0x25a4de (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8 mem=any u32
+/usr/bin/qemu-ppc-static+0x25a4c0-/usr/bin/qemu-ppc-static+0x25a4ce (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8
+/usr/bin/qemu-ppc-static+0x25a4b0-/usr/bin/qemu-ppc-static+0x25a4bc (primary result) ax=0 dx=0 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r9=/usr/bin/qemu-ppc-static+0x46c120 r10=8
+/usr/bin/qemu-ppc-static+0x234bdd-/usr/bin/qemu-ppc-static+0x234be4 (jump) ax=0 dx=0 si=/usr/bin/qemu-ppc-static+0x317758 di=/usr/bin/qemu-ppc-static+0x46c120 r10=8
+/usr/bin/qemu-ppc-static+0x234bc0-/usr/bin/qemu-ppc-static+0x234bdb (primary result) ax=0 dx=0 si=/usr/bin/qemu-ppc-static+0x317758 di=0 r10=8
+/usr/bin/qemu-ppc-static+0x7273-/usr/bin/qemu-ppc-static+0x729b (call) di=0
+/usr/bin/qemu-ppc-static+0x797e (call) cx=0 dx=non-NULL si=/usr/bin/qemu-ppc-static+0x300a00 di=/usr/bin/qemu-ppc-static+0x2fe82c r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-ppc-static+0x24e880-/usr/bin/qemu-ppc-static+0x24e8e2 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-ppc-static+0x300a00 di=/usr/bin/qemu-ppc-static+0x2fe82c r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-ppc-static+0x25bde0-/usr/bin/qemu-ppc-static+0x25bdf0 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-ppc-static+0x300a00 di=/usr/bin/qemu-ppc-static+0x2fe82c r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e410-/usr/bin/qemu-ppc-static+0x25e417 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-ppc-static+0x300a00 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e2a4-/usr/bin/qemu-ppc-static+0x25e2ae (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e29e-/usr/bin/qemu-ppc-static+0x25e2a2 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e287-/usr/bin/qemu-ppc-static+0x25e29c (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e27e-/usr/bin/qemu-ppc-static+0x25e281 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-ppc-static+0x25e259-/usr/bin/qemu-ppc-static+0x25e278 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-ppc-static+0x25e247-/usr/bin/qemu-ppc-static+0x25e253 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e236-/usr/bin/qemu-ppc-static+0x25e241 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e224-/usr/bin/qemu-ppc-static+0x25e230 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-ppc-static+0x25e200-/usr/bin/qemu-ppc-static+0x25e21e (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-ppc-static+0x2612d8-/usr/bin/qemu-ppc-static+0x2612e4 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-ppc-static+0x2612c3-/usr/bin/qemu-ppc-static+0x2612d2 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-ppc-static+0x2612b2-/usr/bin/qemu-ppc-static+0x2612bd (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x2612a1-/usr/bin/qemu-ppc-static+0x2612b0 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x261293-/usr/bin/qemu-ppc-static+0x26129f (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x26128b-/usr/bin/qemu-ppc-static+0x26128d (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x261281-/usr/bin/qemu-ppc-static+0x261285 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x261277-/usr/bin/qemu-ppc-static+0x26127b (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x26123b-/usr/bin/qemu-ppc-static+0x261271 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x261230-/usr/bin/qemu-ppc-static+0x261239 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-ppc-static+0x45e2e0 mem=NULL-0x24
+/usr/bin/qemu-ppc-static+0x261220-/usr/bin/qemu-ppc-static+0x26122a (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-ppc-static+0x261209-/usr/bin/qemu-ppc-static+0x26121a (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-ppc-static+0x2611fd-/usr/bin/qemu-ppc-static+0x261205 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-ppc-static+0x2611f0-/usr/bin/qemu-ppc-static+0x2611f7 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-ppc-static+0x86cc-/usr/bin/qemu-ppc-static+0x86d7 (call) bp=/usr/bin/qemu-ppc-static+0x46b530 si=0 di=non-NULL
+/usr/bin/qemu-ppc-static+0x86c3-/usr/bin/qemu-ppc-static+0x86ca (conditional continue) bx=non-NULL bp=/usr/bin/qemu-ppc-static+0x46b530 si=0 di=/usr/bin/qemu-ppc-static+0x46b530 mem=non-NULL
+/usr/bin/qemu-ppc-static+0x86b0-/usr/bin/qemu-ppc-static+0x86c1 (conditional continue) bp=/usr/bin/qemu-ppc-static+0x46b530 si=0 di=/usr/bin/qemu-ppc-static+0x46b530 mem=0
+/usr/bin/qemu-ppc-static+0x8700-/usr/bin/qemu-ppc-static+0x870f (call) di=/usr/bin/qemu-ppc-static+0x46b530
 /usr/bin/qemu-ppc-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

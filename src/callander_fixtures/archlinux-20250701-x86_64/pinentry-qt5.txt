@@ -1,0 +1,2 @@
+callander: failed to find: libKF5WaylandClient.so.5
+callander: failed to finish loading: ENOEXEC

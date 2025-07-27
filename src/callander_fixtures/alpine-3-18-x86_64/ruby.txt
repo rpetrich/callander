@@ -37,6 +37,7 @@ poll(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5afe0(lseek64+11)
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x381c0(mmap+118)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x381c0(mmap+118)
+mmap(0, non-NULL, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS-MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x381c0(mmap+118)
 mmap(NULL-0xfffffffffffff000, any, any, MAP_SHARED-MAP_PRIVATE, any, any) @ ld-musl-x86_64.so.1+0x381c0(mmap+118)
 mmap(any, non-NULL, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED, any, any) @ ld-musl-x86_64.so.1+0x381c0(mmap+118)
 mmap(any, non-NULL, any, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x381c0(mmap+118)
@@ -51,7 +52,6 @@ brk(any) @ ld-musl-x86_64.so.1+0x25e99(__malloc_alloc_meta*+279)
 brk(any) @ ld-musl-x86_64.so.1+0x25ec3(__malloc_alloc_meta*+321)
 rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1bfe8(abort+78)
 rt_sigaction(any, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fa8(__libc_sigaction*+282)
-rt_sigaction(SIGINT-SIGQUIT, 0, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fa8(__libc_sigaction*+282)
 rt_sigaction(any, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fbc(__libc_sigaction*+302)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1c019(abort+127)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937c8(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48cd3(__block_all_sigs*+23)
@@ -109,8 +109,8 @@ connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 accept(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f61
+sendto(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+sendto(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)

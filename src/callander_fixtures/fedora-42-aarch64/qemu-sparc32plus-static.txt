@@ -1,7 +1,7 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-sparc32plus-static+0x22aae8-/usr/bin/qemu-sparc32plus-static+0x22ab04
-/usr/bin/qemu-sparc32plus-static+0x22aad8-/usr/bin/qemu-sparc32plus-static+0x22aae4 (conditional continue)
-/usr/bin/qemu-sparc32plus-static+0x22aab0-/usr/bin/qemu-sparc32plus-static+0x22aad4 (conditional continue)
-/usr/bin/qemu-sparc32plus-static+0x22aaa0-/usr/bin/qemu-sparc32plus-static+0x22aaa8 (conditional jump)
-/usr/bin/qemu-sparc32plus-static+0x1e589c (adrp+add)
+callander: full call stack: /usr/bin/qemu-sparc32plus-static+0x22aae8-/usr/bin/qemu-sparc32plus-static+0x22ab04 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-sparc32plus-static+0x22aad8-/usr/bin/qemu-sparc32plus-static+0x22aae4 (conditional continue) r0=0xfffffffa r2=any u32 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-sparc32plus-static+0x22aab0-/usr/bin/qemu-sparc32plus-static+0x22aad4 (conditional continue) r2=any u32 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-sparc32plus-static+0x22aaa0-/usr/bin/qemu-sparc32plus-static+0x22aaa8 (conditional jump) r0=33 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-sparc32plus-static+0x1e589c (adrp+add) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

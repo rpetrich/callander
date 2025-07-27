@@ -132,6 +132,8 @@ capget(any, any) @ libc.so.6+0xf9808(capget+8)
 capset(any, any) @ libc.so.6+0xf6164(syscall+36)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_PID, any u32, any, WEXITED, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
@@ -193,8 +195,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8dd48
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x170158(sigall_set), any, sizeof(kernel_sigset_t)) @ libc.so.6+0x8efe4(__pthread_kill_implementation+100)
 rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8f030(__pthread_kill_implementation+176)
 rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x956ac(pthread_sigmask+76)
-rt_sigtimedwait(any, 0, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-rt_sigtimedwait(any, 0, any, any u32) @ libc.so.6+0x96ba8
+rt_sigtimedwait(any, 0, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+rt_sigtimedwait(any, 0, any, any) @ libc.so.6+0x96ba8
 setpriority(0, 0, any u32) @ libc.so.6+0xefd48(setpriority+8)
 getpriority(0, 0) @ libc.so.6+0xefcd8(getpriority+24)
 setgid(any) @ libc.so.6+0x8a4a4(__GI___nptl_setxid_sighandler+100)
@@ -324,10 +326,8 @@ getsockopt(any, SOL_NETLINK, NETLINK_LIST_MEMBERSHIPS, any, any) @ libc.so.6+0xf
 shutdown(any, SHUT_WR-SHUT_RDWR) @ libc.so.6+0xfaf98(shutdown+24)
 sendmsg(any, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendmsg(any, any, any u16) @ libc.so.6+0x96ba8
-recvmsg(any, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvmsg(any, non-NULL, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvmsg(any, any, any u16) @ libc.so.6+0x96ba8
-recvmsg(any, non-NULL, any u32) @ libc.so.6+0x96ba8
+recvmsg(any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+recvmsg(any, any, any) @ libc.so.6+0x96ba8
 brk(any) @ libc.so.6+0xeff14(brk+20)
 munmap(any, any) @ libc.so.6+0xf4c08(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xf8da8(mremap+72)

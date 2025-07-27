@@ -37,7 +37,7 @@ getpid() @ libc.so.6+0xd54a5(getpid+5)
 exit(0) @ libc.so.6+0x27274
 fcntl(any u32, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xfce3f
 fcntl(any u32, F_GETFL, any) @ libc.so.6+0xfce3f
-fcntl(STDIN_FILENO-STDOUT_FILENO, F_GETFL-F_SETFL, any) @ libc.so.6+0xfcece
+fcntl(STDIN_FILENO-STDOUT_FILENO, F_GETFL, any) @ libc.so.6+0xfcece
 fcntl(any u32, F_SETFL, any) @ libc.so.6+0xfcece
 fsync(STDOUT_FILENO) @ libc.so.6+0xfeb8e(fsync+14)
 fsync(STDOUT_FILENO) @ libc.so.6+0xfebb8(fsync+56)

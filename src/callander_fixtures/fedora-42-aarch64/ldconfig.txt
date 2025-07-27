@@ -1,87 +1,87 @@
 callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/ldconfig+0x5670c-/usr/bin/ldconfig+0x56728
-/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional continue)
-/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl)
-/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue)
-/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x54ec0(__syscall_do_cancel*+64)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue)
-/usr/bin/ldconfig+0x54e9c(__syscall_do_cancel*+28)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional jump)
-/usr/bin/ldconfig+0x54ea4(__syscall_do_cancel*+36)-/usr/bin/ldconfig+0x54ebc(__syscall_do_cancel*+60) (conditional jump)
-/usr/bin/ldconfig+0x54e80(__syscall_do_cancel*)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional jump)
-/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl)
-/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue)
-/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x54ec0(__syscall_do_cancel*+64)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue)
-/usr/bin/ldconfig+0x54e9c(__syscall_do_cancel*+28)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional jump)
-/usr/bin/ldconfig+0x54ea4(__syscall_do_cancel*+36)-/usr/bin/ldconfig+0x54ebc(__syscall_do_cancel*+60) (conditional jump)
-/usr/bin/ldconfig+0x54e80(__syscall_do_cancel*)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional jump)
-/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl)
-/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue)
-/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x54ec0(__syscall_do_cancel*+64)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue)
-/usr/bin/ldconfig+0x54e9c(__syscall_do_cancel*+28)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional jump)
-/usr/bin/ldconfig+0x54ea4(__syscall_do_cancel*+36)-/usr/bin/ldconfig+0x54ebc(__syscall_do_cancel*+60) (conditional jump)
-/usr/bin/ldconfig+0x54e80(__syscall_do_cancel*)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional jump)
-/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl)
-/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue)
-/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue)
-/usr/bin/ldconfig+0x54ee0(__internal_syscall_cancel*)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue)
-/usr/bin/ldconfig+0x54f80(__syscall_cancel*)-/usr/bin/ldconfig+0x54f8c(__syscall_cancel*+12) (bl)
-/usr/bin/ldconfig+0x2e660(writev*)-/usr/bin/ldconfig+0x2e68c(writev*+44) (jump)
-/usr/bin/ldconfig+0x5f94(__libc_message_impl*+244)-/usr/bin/ldconfig+0x5fa0(__libc_message_impl*+256) (bl)
-/usr/bin/ldconfig+0x5f5c(__libc_message_impl*+188)-/usr/bin/ldconfig+0x5f78(__libc_message_impl*+216) (conditional jump)
-/usr/bin/ldconfig+0x5f54(__libc_message_impl*+180)-/usr/bin/ldconfig+0x5f58(__libc_message_impl*+184) (conditional continue (no jump))
-/usr/bin/ldconfig+0x5f2c(__libc_message_impl*+140)-/usr/bin/ldconfig+0x5f3c(__libc_message_impl*+156) (conditional jump)
-/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional jump)
-/usr/bin/ldconfig+0x5f20(__libc_message_impl*+128)-/usr/bin/ldconfig+0x5f28(__libc_message_impl*+136) (jump)
-/usr/bin/ldconfig+0x5f7c(__libc_message_impl*+220)-/usr/bin/ldconfig+0x5f80(__libc_message_impl*+224) (jump)
-/usr/bin/ldconfig+0x5f68(__libc_message_impl*+200)-/usr/bin/ldconfig+0x5f78(__libc_message_impl*+216) (conditional continue)
-/usr/bin/ldconfig+0x6080(__libc_message_impl*+480)-/usr/bin/ldconfig+0x60a0(__libc_message_impl*+512) (jump)
-/usr/bin/ldconfig+0x60a4(__libc_message_impl*+516)-/usr/bin/ldconfig+0x60b0(__libc_message_impl*+528) (conditional jump (no continue))
-/usr/bin/ldconfig+0x6074(__libc_message_impl*+468)-/usr/bin/ldconfig+0x607c(__libc_message_impl*+476) (conditional jump (no continue))
-/usr/bin/ldconfig+0x6068(__libc_message_impl*+456)-/usr/bin/ldconfig+0x6070(__libc_message_impl*+464) (conditional continue)
-/usr/bin/ldconfig+0x5f54(__libc_message_impl*+180)-/usr/bin/ldconfig+0x5f58(__libc_message_impl*+184) (conditional jump)
-/usr/bin/ldconfig+0x5f2c(__libc_message_impl*+140)-/usr/bin/ldconfig+0x5f3c(__libc_message_impl*+156) (conditional jump)
-/usr/bin/ldconfig+0x5f48(__libc_message_impl*+168)-/usr/bin/ldconfig+0x5f50(__libc_message_impl*+176) (conditional jump)
-/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional continue)
-/usr/bin/ldconfig+0x5f20(__libc_message_impl*+128)-/usr/bin/ldconfig+0x5f28(__libc_message_impl*+136) (jump)
-/usr/bin/ldconfig+0x5f7c(__libc_message_impl*+220)-/usr/bin/ldconfig+0x5f80(__libc_message_impl*+224) (jump)
-/usr/bin/ldconfig+0x5f5c(__libc_message_impl*+188)-/usr/bin/ldconfig+0x5f78(__libc_message_impl*+216) (conditional continue)
-/usr/bin/ldconfig+0x5f54(__libc_message_impl*+180)-/usr/bin/ldconfig+0x5f58(__libc_message_impl*+184) (conditional continue (no jump))
-/usr/bin/ldconfig+0x5f48(__libc_message_impl*+168)-/usr/bin/ldconfig+0x5f50(__libc_message_impl*+176) (conditional continue)
-/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional continue)
-/usr/bin/ldconfig+0x5f2c(__libc_message_impl*+140)-/usr/bin/ldconfig+0x5f3c(__libc_message_impl*+156) (conditional continue)
-/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional jump (no continue))
-/usr/bin/ldconfig+0x5f08(__libc_message_impl*+104)-/usr/bin/ldconfig+0x5f28(__libc_message_impl*+136) (jump)
-/usr/bin/ldconfig+0x5ea0(__libc_message_impl*)-/usr/bin/ldconfig+0x5f04(__libc_message_impl*+100) (conditional continue (no jump))
-/usr/bin/ldconfig+0x463a0(__libc_assert_fail*)-/usr/bin/ldconfig+0x46408(__libc_assert_fail*+104) (bl)
-/usr/bin/ldconfig+0x684e0(__printf_buffer_flush*+384)-/usr/bin/ldconfig+0x684fc(__printf_buffer_flush*+412) (bl)
-/usr/bin/ldconfig+0x683c0(__printf_buffer_flush*+96)-/usr/bin/ldconfig+0x683d0(__printf_buffer_flush*+112) (conditional jump)
-/usr/bin/ldconfig+0x68394(__printf_buffer_flush*+52)-/usr/bin/ldconfig+0x6839c(__printf_buffer_flush*+60) (br)
-/usr/bin/ldconfig+0x6837c(__printf_buffer_flush*+28)-/usr/bin/ldconfig+0x68390(__printf_buffer_flush*+48) (lookup table)
-/usr/bin/ldconfig+0x6836c(__printf_buffer_flush*+12)-/usr/bin/ldconfig+0x68374(__printf_buffer_flush*+20) (conditional jump)
-/usr/bin/ldconfig+0x68360(__printf_buffer_flush*)-/usr/bin/ldconfig+0x68368(__printf_buffer_flush*+8) (conditional continue)
-/usr/bin/ldconfig+0x48590(__printf_buffer_write*+112)-/usr/bin/ldconfig+0x48594(__printf_buffer_write*+116) (bl)
-/usr/bin/ldconfig+0x48584(__printf_buffer_write*+100)-/usr/bin/ldconfig+0x4858c(__printf_buffer_write*+108) (conditional continue)
-/usr/bin/ldconfig+0x48548(__printf_buffer_write*+40)-/usr/bin/ldconfig+0x48550(__printf_buffer_write*+48) (jump)
-/usr/bin/ldconfig+0x4853c(__printf_buffer_write*+28)-/usr/bin/ldconfig+0x48544(__printf_buffer_write*+36) (conditional continue)
-/usr/bin/ldconfig+0x48520(__printf_buffer_write*)-/usr/bin/ldconfig+0x48538(__printf_buffer_write*+24) (conditional continue)
+/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional continue) r0=any u32
+/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl) r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue) r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue) r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54ec0(__syscall_do_cancel*+64)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue) r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54e9c(__syscall_do_cancel*+28)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional jump) r1=any u32 r8=3 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54ea4(__syscall_do_cancel*+36)-/usr/bin/ldconfig+0x54ebc(__syscall_do_cancel*+60) (conditional jump) r1=any u32 r8=3 r19=any u32
+/usr/bin/ldconfig+0x54e80(__syscall_do_cancel*)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional continue) r0=0x8-0xffffffff r1=any u32 r8=3 r19=any u32
+/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional jump) r0=0x8-0xffffffff r1=3 r8=3
+/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl) r1=3 r8=3 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue) r6=3 r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue) r6=3 r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54ec0(__syscall_do_cancel*+64)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue) r6=3 r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54e9c(__syscall_do_cancel*+28)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional jump) r1=any u32 r6=3 r7=0 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54ea4(__syscall_do_cancel*+36)-/usr/bin/ldconfig+0x54ebc(__syscall_do_cancel*+60) (conditional jump) r1=any u32 r6=3 r7=0 r8=0 r19=any u32
+/usr/bin/ldconfig+0x54e80(__syscall_do_cancel*)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional continue) r0=0x8-0xffffffff r1=any u32 r6=3 r7=0 r8=0 r19=any u32
+/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional jump) r0=0x8-0xffffffff r1=0 r6=3 r7=0 r8=0
+/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl) r1=0 r6=3 r7=0 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue) r4=3 r5=0 r6=0 r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue) r4=3 r5=0 r6=0 r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54ec0(__syscall_do_cancel*+64)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue) r4=3 r5=0 r6=0 r7=any u32 r8=0 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54e9c(__syscall_do_cancel*+28)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional jump) r1=any u32 r4=3 r5=0 r6=0 r7=0 r8=66 r19=0x1-0xffffffff
+/usr/bin/ldconfig+0x54ea4(__syscall_do_cancel*+36)-/usr/bin/ldconfig+0x54ebc(__syscall_do_cancel*+60) (conditional jump) r1=any u32 r4=3 r5=0 r6=0 r7=0 r8=66 r19=any u32
+/usr/bin/ldconfig+0x54e80(__syscall_do_cancel*)-/usr/bin/ldconfig+0x54ea0(__syscall_do_cancel*+32) (conditional continue) r0=0x8-0xffffffff r1=any u32 r4=3 r5=0 r6=0 r7=0 r8=66 r19=any u32
+/usr/bin/ldconfig+0x56700(__syscall_cancel_arch*)-/usr/bin/ldconfig+0x56708 (conditional jump) r0=0x8-0xffffffff r1=66 r2=2 r4=3 r5=0 r6=0 r7=0 r8=66
+/usr/bin/ldconfig+0x54f08(__internal_syscall_cancel*+40)-/usr/bin/ldconfig+0x54f3c(__internal_syscall_cancel*+92) (bl) r1=66 r2=2 r4=3 r5=0 r6=0 r7=0 r8=66
+/usr/bin/ldconfig+0x54f04(__internal_syscall_cancel*+36) (conditional continue) r0=2 r2=3 r3=0 r4=0 r5=0 r6=66 r7=any u32 r8=0
+/usr/bin/ldconfig+0x54f00(__internal_syscall_cancel*+32) (conditional continue) r0=2 r2=3 r3=0 r4=0 r5=0 r6=66 r7=any u32 r8=0
+/usr/bin/ldconfig+0x54ee0(__internal_syscall_cancel*)-/usr/bin/ldconfig+0x54efc(__internal_syscall_cancel*+28) (conditional continue) r0=2 r2=3 r3=0 r4=0 r5=0 r6=66 r7=any u32 r8=0
+/usr/bin/ldconfig+0x54f80(__syscall_cancel*)-/usr/bin/ldconfig+0x54f8c(__syscall_cancel*+12) (bl) r0=2 r2=3 r3=0 r4=0 r5=0 r6=66
+/usr/bin/ldconfig+0x2e660(writev*)-/usr/bin/ldconfig+0x2e68c(writev*+44) (jump) r0=2 r2=3 r3=0 r4=0 r5=0 r6=66
+/usr/bin/ldconfig+0x5f94(__libc_message_impl*+244)-/usr/bin/ldconfig+0x5fa0(__libc_message_impl*+256) (bl) r0=2 r2=3 r21=0 r24=2 r26=3
+/usr/bin/ldconfig+0x5f5c(__libc_message_impl*+188)-/usr/bin/ldconfig+0x5f78(__libc_message_impl*+216) (conditional jump) r21=0 r24=2 r26=3
+/usr/bin/ldconfig+0x5f54(__libc_message_impl*+180)-/usr/bin/ldconfig+0x5f58(__libc_message_impl*+184) (conditional continue (no jump)) r1=0 r21=0x1-0x24 r24=2 r26=2
+/usr/bin/ldconfig+0x5f2c(__libc_message_impl*+140)-/usr/bin/ldconfig+0x5f3c(__libc_message_impl*+156) (conditional jump) r1=0 r21=0x1-0x24 r24=2 r26=2
+/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional jump) r1=0x1-0x24 r2=0xffffffd0 r21=0x1-0x24 r24=2 r26=2
+/usr/bin/ldconfig+0x5f20(__libc_message_impl*+128)-/usr/bin/ldconfig+0x5f28(__libc_message_impl*+136) (jump) r1=0x1-0xff r2=0xffffffd0 r21=0x1-0xff r24=2 r26=2
+/usr/bin/ldconfig+0x5f7c(__libc_message_impl*+220)-/usr/bin/ldconfig+0x5f80(__libc_message_impl*+224) (jump) r2=0xffffffd0 r21=0x1-0xff r24=2 r26=2
+/usr/bin/ldconfig+0x5f68(__libc_message_impl*+200)-/usr/bin/ldconfig+0x5f78(__libc_message_impl*+216) (conditional continue) r2=0xffffffd0 r21=0x1-0xff r24=1 r26=2
+/usr/bin/ldconfig+0x6080(__libc_message_impl*+480)-/usr/bin/ldconfig+0x60a0(__libc_message_impl*+512) (jump) r2=0xffffffd0 r24=1 r26=1
+/usr/bin/ldconfig+0x60a4(__libc_message_impl*+516)-/usr/bin/ldconfig+0x60b0(__libc_message_impl*+528) (conditional jump (no continue)) r0=0xffffffc8 r2=0xffffffd0 r21=37 r24=1 r26=1 stack+16=0xffffffd0 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x6074(__libc_message_impl*+468)-/usr/bin/ldconfig+0x607c(__libc_message_impl*+476) (conditional jump (no continue)) r0=0xffffffc8 r21=37 r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x6068(__libc_message_impl*+456)-/usr/bin/ldconfig+0x6070(__libc_message_impl*+464) (conditional continue) r1=115 r21=37 r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f54(__libc_message_impl*+180)-/usr/bin/ldconfig+0x5f58(__libc_message_impl*+184) (conditional jump) r1=0 r21=37 r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f2c(__libc_message_impl*+140)-/usr/bin/ldconfig+0x5f3c(__libc_message_impl*+156) (conditional jump) r1=0 r21=0x25-0xff r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f48(__libc_message_impl*+168)-/usr/bin/ldconfig+0x5f50(__libc_message_impl*+176) (conditional jump) r1=NULL-0x72 r21=37 r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional continue) r1=37 r21=37 r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f20(__libc_message_impl*+128)-/usr/bin/ldconfig+0x5f28(__libc_message_impl*+136) (jump) r1=0x1-0xff r21=0x1-0xff r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f7c(__libc_message_impl*+220)-/usr/bin/ldconfig+0x5f80(__libc_message_impl*+224) (jump) r21=0x1-0xff r24=1 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f5c(__libc_message_impl*+188)-/usr/bin/ldconfig+0x5f78(__libc_message_impl*+216) (conditional continue) r21=0x1-0xff r24=0 r26=1 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f54(__libc_message_impl*+180)-/usr/bin/ldconfig+0x5f58(__libc_message_impl*+184) (conditional continue (no jump)) r1=115 r20=/usr/bin/ldconfig+0x8da68 r21=70 r24=0 r25=0 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f48(__libc_message_impl*+168)-/usr/bin/ldconfig+0x5f50(__libc_message_impl*+176) (conditional continue) r1=115 r20=/usr/bin/ldconfig+0x8da68 r21=70 r24=0 r25=0 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional continue) r1=37 r20=/usr/bin/ldconfig+0x8da68 r21=70 r24=0 r25=0 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f2c(__libc_message_impl*+140)-/usr/bin/ldconfig+0x5f3c(__libc_message_impl*+156) (conditional continue) r1=0x1-0xff r20=/usr/bin/ldconfig+0x8da68 r21=70 r24=0 r25=0 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f40(__libc_message_impl*+160)-/usr/bin/ldconfig+0x5f44(__libc_message_impl*+164) (conditional jump (no continue)) r0=/usr/bin/ldconfig+0x8da68 r1=70 r3=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*) r20=/usr/bin/ldconfig+0x8da68 r21=70 r24=0 r25=0 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5f08(__libc_message_impl*+104)-/usr/bin/ldconfig+0x5f28(__libc_message_impl*+136) (jump) r0=/usr/bin/ldconfig+0x8da68 r1=70 r3=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*) r20=/usr/bin/ldconfig+0x8da68 r21=70 r24=0 r25=0 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x5ea0(__libc_message_impl*)-/usr/bin/ldconfig+0x5f04(__libc_message_impl*+100) (conditional continue (no jump)) r0=0xffffffc8 r1=0 r3=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*) r20=/usr/bin/ldconfig+0x8da68 r21=70 stack+16=0xffffffc8 stack+20=0 stack+76=0 stack+124=/usr/bin/ldconfig+0x90068 stack+132=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x463a0(__libc_assert_fail*)-/usr/bin/ldconfig+0x46408(__libc_assert_fail*+104) (bl) r0=/usr/bin/ldconfig+0x8da68 r1=/usr/bin/ldconfig+0x90068 r3=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*) r19=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*) r20=/usr/bin/ldconfig+0x90068
+/usr/bin/ldconfig+0x684e0(__printf_buffer_flush*+384)-/usr/bin/ldconfig+0x684fc(__printf_buffer_flush*+412) (bl) r0=/usr/bin/ldconfig+0x8dba0 r1=/usr/bin/ldconfig+0x90068 r2=70 r3=/usr/bin/ldconfig+0x90080(__PRETTY_FUNCTION__.0*)
+/usr/bin/ldconfig+0x683c0(__printf_buffer_flush*+96)-/usr/bin/ldconfig+0x683d0(__printf_buffer_flush*+112) (conditional jump) r0=1
+/usr/bin/ldconfig+0x68394(__printf_buffer_flush*+52)-/usr/bin/ldconfig+0x6839c(__printf_buffer_flush*+60) (br) r1=/usr/bin/ldconfig+0x683a0(__printf_buffer_flush*+64) r2=/usr/bin/ldconfig+0x683c0(__printf_buffer_flush*+96)
+/usr/bin/ldconfig+0x6837c(__printf_buffer_flush*+28)-/usr/bin/ldconfig+0x68390(__printf_buffer_flush*+48) (lookup table) r1=NULL-0xa r2=/usr/bin/ldconfig+0xa5ee0
+/usr/bin/ldconfig+0x6836c(__printf_buffer_flush*+12)-/usr/bin/ldconfig+0x68374(__printf_buffer_flush*+20) (conditional jump) r1=NULL-0xa r2=non-NULL
+/usr/bin/ldconfig+0x68360(__printf_buffer_flush*)-/usr/bin/ldconfig+0x68368(__printf_buffer_flush*+8) (conditional continue) r1=0x1-0xffffffff r2=non-NULL
+/usr/bin/ldconfig+0x48590(__printf_buffer_write*+112)-/usr/bin/ldconfig+0x48594(__printf_buffer_write*+116) (bl) r2=non-NULL r20=non-NULL
+/usr/bin/ldconfig+0x48584(__printf_buffer_write*+100)-/usr/bin/ldconfig+0x4858c(__printf_buffer_write*+108) (conditional continue) r2=non-NULL r20=non-NULL
+/usr/bin/ldconfig+0x48548(__printf_buffer_write*+40)-/usr/bin/ldconfig+0x48550(__printf_buffer_write*+48) (jump) r2=non-NULL r20=non-NULL
+/usr/bin/ldconfig+0x4853c(__printf_buffer_write*+28)-/usr/bin/ldconfig+0x48544(__printf_buffer_write*+36) (conditional continue) r0=0x1-0xffffffff r2=non-NULL r20=non-NULL
+/usr/bin/ldconfig+0x48520(__printf_buffer_write*)-/usr/bin/ldconfig+0x48538(__printf_buffer_write*+24) (conditional continue) r0=0x1-0xffffffff
 /usr/bin/ldconfig+0xf370(printf_positional*+1232)-/usr/bin/ldconfig+0xf384(printf_positional*+1252) (bl)
-/usr/bin/ldconfig+0x10304(printf_positional*+5220)-/usr/bin/ldconfig+0x10308(printf_positional*+5224) (conditional jump)
+/usr/bin/ldconfig+0x10304(printf_positional*+5220)-/usr/bin/ldconfig+0x10308(printf_positional*+5224) (conditional jump) r0=0
 /usr/bin/ldconfig+0xf564(printf_positional*+1732)-/usr/bin/ldconfig+0xf594(printf_positional*+1780) (conditional continue)
-/usr/bin/ldconfig+0xf558(printf_positional*+1720)-/usr/bin/ldconfig+0xf560(printf_positional*+1728) (conditional continue)
-/usr/bin/ldconfig+0xf54c(printf_positional*+1708)-/usr/bin/ldconfig+0xf554(printf_positional*+1716) (conditional continue)
-/usr/bin/ldconfig+0xf544(printf_positional*+1700)-/usr/bin/ldconfig+0xf548(printf_positional*+1704) (conditional continue)
-/usr/bin/ldconfig+0xf53c(printf_positional*+1692)-/usr/bin/ldconfig+0xf540(printf_positional*+1696) (conditional continue)
-/usr/bin/ldconfig+0xf530(printf_positional*+1680)-/usr/bin/ldconfig+0xf538(printf_positional*+1688) (conditional continue)
-/usr/bin/ldconfig+0xf52c(printf_positional*+1676) (conditional continue)
-/usr/bin/ldconfig+0xf528(printf_positional*+1672) (conditional continue)
-/usr/bin/ldconfig+0xf524(printf_positional*+1668) (conditional continue)
-/usr/bin/ldconfig+0xf520(printf_positional*+1664) (conditional continue)
-/usr/bin/ldconfig+0xf508(printf_positional*+1640)-/usr/bin/ldconfig+0xf51c(printf_positional*+1660) (conditional continue)
-/usr/bin/ldconfig+0xf4f8(printf_positional*+1624)-/usr/bin/ldconfig+0xf504(printf_positional*+1636) (conditional continue)
-/usr/bin/ldconfig+0xcb780(step4_jumps.0*) (.data.rel.ro)
+/usr/bin/ldconfig+0xf558(printf_positional*+1720)-/usr/bin/ldconfig+0xf560(printf_positional*+1728) (conditional continue) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf54c(printf_positional*+1708)-/usr/bin/ldconfig+0xf554(printf_positional*+1716) (conditional continue) r0=NULL-0xfffffffe r1=NULL-0x2f stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf544(printf_positional*+1700)-/usr/bin/ldconfig+0xf548(printf_positional*+1704) (conditional continue) r0=0 r1=NULL-0x2f stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf53c(printf_positional*+1692)-/usr/bin/ldconfig+0xf540(printf_positional*+1696) (conditional continue) r0=any u16 r1=NULL-0x2f stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf530(printf_positional*+1680)-/usr/bin/ldconfig+0xf538(printf_positional*+1688) (conditional continue) r0=any u16 r1=NULL-0x2f stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf52c(printf_positional*+1676) (conditional continue) r0=any u16 r1=37 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf528(printf_positional*+1672) (conditional continue) r0=any u16 r1=37 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf524(printf_positional*+1668) (conditional continue) r0=any u16 r1=37 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf520(printf_positional*+1664) (conditional continue) r0=any u16 r1=37 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf508(printf_positional*+1640)-/usr/bin/ldconfig+0xf51c(printf_positional*+1660) (conditional continue) r0=any u16 r1=37 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xf4f8(printf_positional*+1624)-/usr/bin/ldconfig+0xf504(printf_positional*+1636) (conditional continue) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/ldconfig+0xcb780(step4_jumps.0*) (.data.rel.ro) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

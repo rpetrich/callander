@@ -84,14 +84,8 @@ write(any, any, any) @ libc.so.6+0x96ba8
 write(any, any, 0-LONG_MAX) @ libc.so.6+0xef074(__write_nocancel+20)
 writev(any, any, any) @ ld-linux-aarch64.so.1+0xb480(_dl_debug_vdprintf+384)
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x81cec(__libc_message_impl+332)
-writev(any, any, 2) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-writev(any, any, 0x4-0x5) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-writev(STDERR_FILENO, any, 7) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-writev(STDERR_FILENO, any, 9) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-writev(any, any, 2) @ libc.so.6+0x96ba8
-writev(any, any, 0x4-0x5) @ libc.so.6+0x96ba8
-writev(STDERR_FILENO, any, 7) @ libc.so.6+0x96ba8
-writev(STDERR_FILENO, any, 9) @ libc.so.6+0x96ba8
+writev(any, any, any u8) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+writev(any, any, any u8) @ libc.so.6+0x96ba8
 pread64(any, any, any u32, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 pread64(any, any, 0x8000000000000000-0xffffffffffffffff, NULL-0xfffffffff) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 pread64(any, any, any u32, any) @ libc.so.6+0x96ba8
@@ -118,6 +112,8 @@ capset(any, any) @ libc.so.6+0xf6164(syscall+36)
 personality(0xf001ffff|UNAME26|ADDR_NO_RANDOMIZE|FDPIC_FUNCPTRS|MMAP_PAGE_ZERO|ADDR_COMPAT_LAYOUT|READ_IMPLIES_EXEC|ADDR_LIMIT_32BIT|SHORT_INODE|WHOLE_SECONDS|STICKY_TIMEOUTS|ADDR_LIMIT_3GB) @ libc.so.6+0xf8e88(personality+8)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_PID, 0-INT_MAX, 0, WEXITED, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
@@ -254,11 +250,9 @@ sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_ca
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x96ba8
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x96ba8
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvfrom(any, non-NULL, any, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x96ba8
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x96ba8
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x96ba8
 recvfrom(any, non-NULL, any, any, any, any) @ libc.so.6+0x96ba8
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_SOCKET, SO_REUSEADDR, any, 4) @ libc.so.6+0xfaf40(setsockopt+32)
 setsockopt(STDIN_FILENO-0xfffffffffffffffe, SOL_TCP, TCP_NODELAY, any, 4) @ libc.so.6+0xfaf40(setsockopt+32)

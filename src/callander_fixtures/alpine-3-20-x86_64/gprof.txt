@@ -3,7 +3,7 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 read(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, O_RDWR, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
-open(any, O_RDWR|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
+open(any, O_WRONLY|O_CREAT|O_TRUNC-O_RDWR|O_CREAT|O_TRUNC, 0666) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
@@ -49,6 +49,8 @@ writev(any, any, any) @ ld-musl-x86_64.so.1+0x4ef01(__stdio_write*+196)
 access(any, X_OK) @ ld-musl-x86_64.so.1+0x61bf2(access+12)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x39cf3(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x61cf4(dup+12)
+setitimer(ITIMER_REAL, 0, any) @ ld-musl-x86_64.so.1+0x4d85d(setitimer+12)
+setitimer(ITIMER_REAL, any, 0) @ ld-musl-x86_64.so.1+0x4d85d(setitimer+12)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e
 fcntl(any, F_GETFD, 0) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)

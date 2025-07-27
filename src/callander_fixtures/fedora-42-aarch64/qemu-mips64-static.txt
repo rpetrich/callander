@@ -1,7 +1,7 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-mips64-static+0x29ece8-/usr/bin/qemu-mips64-static+0x29ed04
-/usr/bin/qemu-mips64-static+0x29ecd8-/usr/bin/qemu-mips64-static+0x29ece4 (conditional continue)
-/usr/bin/qemu-mips64-static+0x29ecb0-/usr/bin/qemu-mips64-static+0x29ecd4 (conditional continue)
-/usr/bin/qemu-mips64-static+0x29eca0-/usr/bin/qemu-mips64-static+0x29eca8 (conditional jump)
-/usr/bin/qemu-mips64-static+0x259bfc (adrp+add)
+callander: full call stack: /usr/bin/qemu-mips64-static+0x29ece8-/usr/bin/qemu-mips64-static+0x29ed04 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-mips64-static+0x29ecd8-/usr/bin/qemu-mips64-static+0x29ece4 (conditional continue) r0=0xfffffffa r2=any u32 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-mips64-static+0x29ecb0-/usr/bin/qemu-mips64-static+0x29ecd4 (conditional continue) r2=any u32 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-mips64-static+0x29eca0-/usr/bin/qemu-mips64-static+0x29eca8 (conditional jump) r0=33 stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
+/usr/bin/qemu-mips64-static+0x259bfc (adrp+add) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

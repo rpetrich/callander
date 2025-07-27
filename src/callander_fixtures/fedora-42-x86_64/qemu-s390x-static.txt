@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-s390x-static+0x1fa41f-/usr/bin/qemu-s390x-static+0x1fa440
-/usr/bin/qemu-s390x-static+0x1fa410-/usr/bin/qemu-s390x-static+0x1fa419 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f4033-/usr/bin/qemu-s390x-static+0x1f4055 (call)
-/usr/bin/qemu-s390x-static+0x1f4031 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f402e (primary result)
-/usr/bin/qemu-s390x-static+0x1f4029-/usr/bin/qemu-s390x-static+0x1f402c (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f4000-/usr/bin/qemu-s390x-static+0x1f4027 (conditional continue)
-/usr/bin/qemu-s390x-static+0x25e150-/usr/bin/qemu-s390x-static+0x25e167 (call)
-/usr/bin/qemu-s390x-static+0x25e0fe-/usr/bin/qemu-s390x-static+0x25e119 (conditional jump)
-/usr/bin/qemu-s390x-static+0x25e0f9-/usr/bin/qemu-s390x-static+0x25e0fc (conditional continue)
-/usr/bin/qemu-s390x-static+0x25e18a-/usr/bin/qemu-s390x-static+0x25e1a4 (conditional jump)
-/usr/bin/qemu-s390x-static+0x25e185-/usr/bin/qemu-s390x-static+0x25e188 (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x25e180-/usr/bin/qemu-s390x-static+0x25e183 (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x25e134-/usr/bin/qemu-s390x-static+0x25e137 (conditional jump (no continue))
-/usr/bin/qemu-s390x-static+0x25e130-/usr/bin/qemu-s390x-static+0x25e132 (conditional continue)
-/usr/bin/qemu-s390x-static+0x25e11b-/usr/bin/qemu-s390x-static+0x25e12e (primary result)
-/usr/bin/qemu-s390x-static+0x25e0fe-/usr/bin/qemu-s390x-static+0x25e119 (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x25e0f9-/usr/bin/qemu-s390x-static+0x25e0fc (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x25e0f0-/usr/bin/qemu-s390x-static+0x25e0f3 (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x25e1b0-/usr/bin/qemu-s390x-static+0x25e1b7 (jump)
-/usr/bin/qemu-s390x-static+0x1f9db0-/usr/bin/qemu-s390x-static+0x1f9dd9 (call)
-/usr/bin/qemu-s390x-static+0x1f9da5-/usr/bin/qemu-s390x-static+0x1f9dae (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9d9d-/usr/bin/qemu-s390x-static+0x1f9da3 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9d90-/usr/bin/qemu-s390x-static+0x1f9d97 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9ea1-/usr/bin/qemu-s390x-static+0x1f9ea8 (jump)
-/usr/bin/qemu-s390x-static+0x1f9e98-/usr/bin/qemu-s390x-static+0x1f9e9b (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x1f9d90-/usr/bin/qemu-s390x-static+0x1f9d97 (conditional jump)
-/usr/bin/qemu-s390x-static+0x1f9da5-/usr/bin/qemu-s390x-static+0x1f9dae (conditional jump)
-/usr/bin/qemu-s390x-static+0x1f9d9d-/usr/bin/qemu-s390x-static+0x1f9da3 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9d80-/usr/bin/qemu-s390x-static+0x1f9d97 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9d78-/usr/bin/qemu-s390x-static+0x1f9d7a (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9c02-/usr/bin/qemu-s390x-static+0x1f9c10 (conditional jump)
-/usr/bin/qemu-s390x-static+0x1f9bf7-/usr/bin/qemu-s390x-static+0x1f9bfc (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9bee-/usr/bin/qemu-s390x-static+0x1f9bf5 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9be0-/usr/bin/qemu-s390x-static+0x1f9bec (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9bd2-/usr/bin/qemu-s390x-static+0x1f9bde (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9bd0-/usr/bin/qemu-s390x-static+0x1f9bde (conditional jump)
-/usr/bin/qemu-s390x-static+0x1f9bc0-/usr/bin/qemu-s390x-static+0x1f9bce (conditional continue)
-/usr/bin/qemu-s390x-static+0x1f9bb0-/usr/bin/qemu-s390x-static+0x1f9bbc (primary result)
-/usr/bin/qemu-s390x-static+0x1d42dd-/usr/bin/qemu-s390x-static+0x1d42e4 (jump)
-/usr/bin/qemu-s390x-static+0x1d42c0-/usr/bin/qemu-s390x-static+0x1d42db (primary result)
-/usr/bin/qemu-s390x-static+0x7711-/usr/bin/qemu-s390x-static+0x7739 (call)
-/usr/bin/qemu-s390x-static+0x7e1c (call)
-/usr/bin/qemu-s390x-static+0x1edf80-/usr/bin/qemu-s390x-static+0x1edfe2 (conditional jump)
-/usr/bin/qemu-s390x-static+0x1fb4e0-/usr/bin/qemu-s390x-static+0x1fb4f0 (call)
-/usr/bin/qemu-s390x-static+0x1fdb10-/usr/bin/qemu-s390x-static+0x1fdb17 (call)
-/usr/bin/qemu-s390x-static+0x1fd9a4-/usr/bin/qemu-s390x-static+0x1fd9ae (conditional jump)
-/usr/bin/qemu-s390x-static+0x1fd99e-/usr/bin/qemu-s390x-static+0x1fd9a2 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd987-/usr/bin/qemu-s390x-static+0x1fd99c (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd97e-/usr/bin/qemu-s390x-static+0x1fd981 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd959-/usr/bin/qemu-s390x-static+0x1fd978 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd947-/usr/bin/qemu-s390x-static+0x1fd953 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd936-/usr/bin/qemu-s390x-static+0x1fd941 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd924-/usr/bin/qemu-s390x-static+0x1fd930 (conditional continue)
-/usr/bin/qemu-s390x-static+0x1fd900-/usr/bin/qemu-s390x-static+0x1fd91e (conditional continue)
-/usr/bin/qemu-s390x-static+0x2009d8-/usr/bin/qemu-s390x-static+0x2009e4 (call)
-/usr/bin/qemu-s390x-static+0x2009c3-/usr/bin/qemu-s390x-static+0x2009d2 (conditional continue)
-/usr/bin/qemu-s390x-static+0x2009b2-/usr/bin/qemu-s390x-static+0x2009bd (conditional continue)
-/usr/bin/qemu-s390x-static+0x2009a1-/usr/bin/qemu-s390x-static+0x2009b0 (conditional continue)
-/usr/bin/qemu-s390x-static+0x200993-/usr/bin/qemu-s390x-static+0x20099f (conditional continue)
-/usr/bin/qemu-s390x-static+0x20098b-/usr/bin/qemu-s390x-static+0x20098d (conditional continue)
-/usr/bin/qemu-s390x-static+0x200981-/usr/bin/qemu-s390x-static+0x200985 (conditional continue)
-/usr/bin/qemu-s390x-static+0x200977-/usr/bin/qemu-s390x-static+0x20097b (conditional continue)
-/usr/bin/qemu-s390x-static+0x20093b-/usr/bin/qemu-s390x-static+0x200971 (conditional continue)
-/usr/bin/qemu-s390x-static+0x200930-/usr/bin/qemu-s390x-static+0x200939 (conditional continue)
-/usr/bin/qemu-s390x-static+0x200920-/usr/bin/qemu-s390x-static+0x20092a (conditional continue)
-/usr/bin/qemu-s390x-static+0x200909-/usr/bin/qemu-s390x-static+0x20091a (conditional continue)
-/usr/bin/qemu-s390x-static+0x2008fd-/usr/bin/qemu-s390x-static+0x200905 (primary result)
-/usr/bin/qemu-s390x-static+0x2008f0-/usr/bin/qemu-s390x-static+0x2008f7 (conditional continue (no jump))
-/usr/bin/qemu-s390x-static+0x8b6c-/usr/bin/qemu-s390x-static+0x8b77 (call)
-/usr/bin/qemu-s390x-static+0x8b63-/usr/bin/qemu-s390x-static+0x8b6a (conditional continue)
-/usr/bin/qemu-s390x-static+0x8b50-/usr/bin/qemu-s390x-static+0x8b61 (conditional continue)
-/usr/bin/qemu-s390x-static+0x8ba0-/usr/bin/qemu-s390x-static+0x8baf (call)
+callander: full call stack: /usr/bin/qemu-s390x-static+0x1fa41f-/usr/bin/qemu-s390x-static+0x1fa440 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-s390x-static+0x1fa410-/usr/bin/qemu-s390x-static+0x1fa419 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-s390x-static+0x1f4033-/usr/bin/qemu-s390x-static+0x1f4055 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-s390x-static+0x1f4031 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-s390x-static+0x1f402e (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-s390x-static+0x1f4029-/usr/bin/qemu-s390x-static+0x1f402c (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-s390x-static+0x1f4000-/usr/bin/qemu-s390x-static+0x1f4027 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-s390x-static+0x25e150-/usr/bin/qemu-s390x-static+0x25e167 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-s390x-static+0x25e0fe-/usr/bin/qemu-s390x-static+0x25e119 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-s390x-static+0x25e0f9-/usr/bin/qemu-s390x-static+0x25e0fc (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-s390x-static+0x25e18a-/usr/bin/qemu-s390x-static+0x25e1a4 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-s390x-static+0x25e185-/usr/bin/qemu-s390x-static+0x25e188 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-s390x-static+0x25e180-/usr/bin/qemu-s390x-static+0x25e183 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-s390x-static+0x25e134-/usr/bin/qemu-s390x-static+0x25e137 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-s390x-static+0x25e130-/usr/bin/qemu-s390x-static+0x25e132 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-s390x-static+0x25e11b-/usr/bin/qemu-s390x-static+0x25e12e (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-s390x-static+0x25e0fe-/usr/bin/qemu-s390x-static+0x25e119 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c
+/usr/bin/qemu-s390x-static+0x25e0f9-/usr/bin/qemu-s390x-static+0x25e0fc (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c
+/usr/bin/qemu-s390x-static+0x25e0f0-/usr/bin/qemu-s390x-static+0x25e0f3 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c
+/usr/bin/qemu-s390x-static+0x25e1b0-/usr/bin/qemu-s390x-static+0x25e1b7 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c
+/usr/bin/qemu-s390x-static+0x1f9db0-/usr/bin/qemu-s390x-static+0x1f9dd9 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r8=any u32 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c
+/usr/bin/qemu-s390x-static+0x1f9da5-/usr/bin/qemu-s390x-static+0x1f9dae (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9d9d-/usr/bin/qemu-s390x-static+0x1f9da3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9d90-/usr/bin/qemu-s390x-static+0x1f9d97 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9ea1-/usr/bin/qemu-s390x-static+0x1f9ea8 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=NULL-0x1 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9e98-/usr/bin/qemu-s390x-static+0x1f9e9b (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=0 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9d90-/usr/bin/qemu-s390x-static+0x1f9d97 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=0 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9da5-/usr/bin/qemu-s390x-static+0x1f9dae (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=0 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9d9d-/usr/bin/qemu-s390x-static+0x1f9da3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=0 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9d80-/usr/bin/qemu-s390x-static+0x1f9d97 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c88 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=0 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9d78-/usr/bin/qemu-s390x-static+0x1f9d7a (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9c02-/usr/bin/qemu-s390x-static+0x1f9c10 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9bf7-/usr/bin/qemu-s390x-static+0x1f9bfc (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=1
+/usr/bin/qemu-s390x-static+0x1f9bee-/usr/bin/qemu-s390x-static+0x1f9bf5 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=1
+/usr/bin/qemu-s390x-static+0x1f9be0-/usr/bin/qemu-s390x-static+0x1f9bec (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 r11=/usr/bin/qemu-s390x-static+0x3f3c8c mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9bd2-/usr/bin/qemu-s390x-static+0x1f9bde (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9bd0-/usr/bin/qemu-s390x-static+0x1f9bde (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8 mem=any u32
+/usr/bin/qemu-s390x-static+0x1f9bc0-/usr/bin/qemu-s390x-static+0x1f9bce (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8
+/usr/bin/qemu-s390x-static+0x1f9bb0-/usr/bin/qemu-s390x-static+0x1f9bbc (primary result) ax=0 dx=0 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r9=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8
+/usr/bin/qemu-s390x-static+0x1d42dd-/usr/bin/qemu-s390x-static+0x1d42e4 (jump) ax=0 dx=0 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=/usr/bin/qemu-s390x-static+0x3f3c80 r10=8
+/usr/bin/qemu-s390x-static+0x1d42c0-/usr/bin/qemu-s390x-static+0x1d42db (primary result) ax=0 dx=0 si=/usr/bin/qemu-s390x-static+0x2b52d0 di=0 r10=8
+/usr/bin/qemu-s390x-static+0x7711-/usr/bin/qemu-s390x-static+0x7739 (call) di=0
+/usr/bin/qemu-s390x-static+0x7e1c (call) cx=0 dx=non-NULL si=/usr/bin/qemu-s390x-static+0x29d6f9 di=/usr/bin/qemu-s390x-static+0x29b529 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-s390x-static+0x1edf80-/usr/bin/qemu-s390x-static+0x1edfe2 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-s390x-static+0x29d6f9 di=/usr/bin/qemu-s390x-static+0x29b529 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-s390x-static+0x1fb4e0-/usr/bin/qemu-s390x-static+0x1fb4f0 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-s390x-static+0x29d6f9 di=/usr/bin/qemu-s390x-static+0x29b529 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fdb10-/usr/bin/qemu-s390x-static+0x1fdb17 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-s390x-static+0x29d6f9 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd9a4-/usr/bin/qemu-s390x-static+0x1fd9ae (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd99e-/usr/bin/qemu-s390x-static+0x1fd9a2 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd987-/usr/bin/qemu-s390x-static+0x1fd99c (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd97e-/usr/bin/qemu-s390x-static+0x1fd981 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-s390x-static+0x1fd959-/usr/bin/qemu-s390x-static+0x1fd978 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-s390x-static+0x1fd947-/usr/bin/qemu-s390x-static+0x1fd953 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd936-/usr/bin/qemu-s390x-static+0x1fd941 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd924-/usr/bin/qemu-s390x-static+0x1fd930 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-s390x-static+0x1fd900-/usr/bin/qemu-s390x-static+0x1fd91e (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-s390x-static+0x2009d8-/usr/bin/qemu-s390x-static+0x2009e4 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-s390x-static+0x2009c3-/usr/bin/qemu-s390x-static+0x2009d2 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-s390x-static+0x2009b2-/usr/bin/qemu-s390x-static+0x2009bd (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x2009a1-/usr/bin/qemu-s390x-static+0x2009b0 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x200993-/usr/bin/qemu-s390x-static+0x20099f (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x20098b-/usr/bin/qemu-s390x-static+0x20098d (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x200981-/usr/bin/qemu-s390x-static+0x200985 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x200977-/usr/bin/qemu-s390x-static+0x20097b (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x20093b-/usr/bin/qemu-s390x-static+0x200971 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x200930-/usr/bin/qemu-s390x-static+0x200939 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-s390x-static+0x3e54c0 mem=NULL-0x24
+/usr/bin/qemu-s390x-static+0x200920-/usr/bin/qemu-s390x-static+0x20092a (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-s390x-static+0x200909-/usr/bin/qemu-s390x-static+0x20091a (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-s390x-static+0x2008fd-/usr/bin/qemu-s390x-static+0x200905 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-s390x-static+0x2008f0-/usr/bin/qemu-s390x-static+0x2008f7 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-s390x-static+0x8b6c-/usr/bin/qemu-s390x-static+0x8b77 (call) bp=/usr/bin/qemu-s390x-static+0x3f3090 si=0 di=non-NULL
+/usr/bin/qemu-s390x-static+0x8b63-/usr/bin/qemu-s390x-static+0x8b6a (conditional continue) bx=non-NULL bp=/usr/bin/qemu-s390x-static+0x3f3090 si=0 di=/usr/bin/qemu-s390x-static+0x3f3090 mem=non-NULL
+/usr/bin/qemu-s390x-static+0x8b50-/usr/bin/qemu-s390x-static+0x8b61 (conditional continue) bp=/usr/bin/qemu-s390x-static+0x3f3090 si=0 di=/usr/bin/qemu-s390x-static+0x3f3090 mem=0
+/usr/bin/qemu-s390x-static+0x8ba0-/usr/bin/qemu-s390x-static+0x8baf (call) di=/usr/bin/qemu-s390x-static+0x3f3090
 /usr/bin/qemu-s390x-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

@@ -15,8 +15,8 @@ epoll_create1(EPOLL_CLOEXEC) @ libc.so.6+0xf98c8(epoll_create1+8)
 epoll_ctl(any u32, 1, any u32, any) @ libc.so.6+0xf9908(epoll_ctl+8)
 epoll_ctl(any u32, 2, any u32, 0) @ libc.so.6+0xf9908(epoll_ctl+8)
 epoll_ctl(any u32, 3, any u32, any) @ libc.so.6+0xf9908(epoll_ctl+8)
-epoll_pwait(any, any, any u16, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-epoll_pwait(any, any, any u16, any, any u16) @ libc.so.6+0x96ba8
+epoll_pwait(any, any, any u32, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+epoll_pwait(any, any, any u32, any, any u32) @ libc.so.6+0x96ba8
 dup(any u32) @ libc.so.6+0xe9288(dup+8)
 dup3(any, STDIN_FILENO-0x3, 0) @ libc.so.6+0xe92bc(__dup2+28)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xeeb94(__fcntl64_nocancel+84)
@@ -117,6 +117,8 @@ capget(any, any) @ libc.so.6+0xf9808(capget+8)
 capset(any, any) @ libc.so.6+0xf6164(syscall+36)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_ALL-P_PID, 0, any, WEXITED-WNOHANG|WEXITED, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
@@ -299,10 +301,8 @@ getsockopt(any, SOL_NETLINK, NETLINK_LIST_MEMBERSHIPS, any, any) @ libc.so.6+0xf
 shutdown(any, SHUT_WR-SHUT_RDWR) @ libc.so.6+0xfaf98(shutdown+24)
 sendmsg(any, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendmsg(any, any, any u16) @ libc.so.6+0x96ba8
-recvmsg(any, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvmsg(any, non-NULL, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvmsg(any, any, any u16) @ libc.so.6+0x96ba8
-recvmsg(any, non-NULL, any u32) @ libc.so.6+0x96ba8
+recvmsg(any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+recvmsg(any, any, any) @ libc.so.6+0x96ba8
 brk(any) @ libc.so.6+0xeff14(brk+20)
 munmap(any, any) @ libc.so.6+0xf4c08(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xf8da8(mremap+72)
@@ -316,8 +316,8 @@ mprotect(any, any, PROT_READ) @ libc.so.6+0xf4b08(mprotect+8)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xf4b08(mprotect+8)
 madvise(any, any, MADV_WILLNEED-MADV_DONTNEED) @ libc.so.6+0xf3ec8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE-MADV_NOHUGEPAGE) @ libc.so.6+0xf3ec8(madvise+8)
-accept4(any, 0, any u32, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-accept4(any, 0, any u32, any u32) @ libc.so.6+0x96ba8
+accept4(any, 0, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+accept4(any, 0, any, any) @ libc.so.6+0x96ba8
 recvmmsg(any, any, any u32, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvmmsg(any, any, any u32, 0, 0) @ libc.so.6+0x96ba8
 wait4(any, any, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)

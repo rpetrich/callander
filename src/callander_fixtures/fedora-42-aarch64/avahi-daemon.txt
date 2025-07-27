@@ -278,7 +278,7 @@ name_to_handle_at(any u32, "", non-NULL, any, AT_EACCESS|AT_SYMLINK_FOLLOW|AT_EM
 setns(any u32, CLONE_NEWNS) @ libc.so.6+0xf9fc8(setns+8)
 setns(any u32, CLONE_NEWUSER) @ libc.so.6+0xf9fc8(setns+8)
 setns(any u32, CLONE_NEWPID) @ libc.so.6+0xf9fc8(setns+8)
-sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+sendmmsg(any, any, any u8, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x96ba8
 getrandom(any, any, 0-GRND_NONBLOCK) @ libc.so.6+0x3f4c0(getrandom_vdso+288)
 getrandom(any, any, any u32) @ libc.so.6+0x3f5a4(getrandom_vdso+516)

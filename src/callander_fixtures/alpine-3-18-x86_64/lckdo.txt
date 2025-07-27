@@ -7,7 +7,7 @@ close(any) @ ld-musl-x86_64.so.1+0x57f61
 lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5afe0(lseek64+11)
 munmap(any, non-NULL) @ ld-musl-x86_64.so.1+0x38338(munmap+25)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x57ef5
-rt_sigaction(SIGALRM, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fa8(__libc_sigaction*+282)
+rt_sigaction(SIGALRM, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fa8(__libc_sigaction*+282)
 rt_sigaction(SIGSETXID, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fa8(__libc_sigaction*+282)
 rt_sigaction(SIGALRM, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48fbc(__libc_sigaction*+302)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937c8(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x48cd3(__block_all_sigs*+23)

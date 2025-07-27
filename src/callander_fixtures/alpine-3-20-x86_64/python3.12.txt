@@ -9,7 +9,7 @@ write(any, any, 4) @ ld-musl-x86_64.so.1+0x61e15(checker*+88)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x4431d(child*+653)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x4fef7(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+open(any, any u16, any) @ ld-musl-x86_64.so.1+0x5e990
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x5e9b0(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x1c150(opendir+52)
 close(any) @ ld-musl-x86_64.so.1+0x1cfe2(fcntl+293)
@@ -87,7 +87,7 @@ dup2(any, any) @ ld-musl-x86_64.so.1+0x61d6d(dup3+68)
 pause() @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 pause() @ ld-musl-x86_64.so.1+0x5e990
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-nanosleep(any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x5e990
 getitimer(any, any) @ ld-musl-x86_64.so.1+0x4d6e3(getitimer+12)
 setitimer(any, any, any) @ ld-musl-x86_64.so.1+0x4d85d(setitimer+12)
 getpid() @ ld-musl-x86_64.so.1+0x20ad0(do_setgroups*+66)
@@ -136,7 +136,7 @@ fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x4e2c6(fstatat+83)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x4e923(fdopen+133)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x4ff24(fopen+120)
 fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-fcntl(any, any u32, any) @ ld-musl-x86_64.so.1+0x5e990
+fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x5e990
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x61d96(dup3+109)
 fcntl(any, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x61ff6(fchdir+33)
 fcntl(any, F_GETFD, any u32) @ ld-musl-x86_64.so.1+0x6205a(fchown+46)
@@ -331,7 +331,7 @@ clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, any, 0) @ ld-musl-x86_64.so.1+0x
 exit_group(any) @ ld-musl-x86_64.so.1+0x1cc05(_Exit+8)
 utimes(any) @ ld-musl-x86_64.so.1+0x4e82d(utimensat+233)
 waitid(any, any u32, any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-waitid(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
+waitid(any, any u32, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 openat(any, any, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-x86_64.so.1+0x4e19f(fchmodat+187)
 openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990

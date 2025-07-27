@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-x86_64-static+0x2258df-/usr/bin/qemu-x86_64-static+0x225900
-/usr/bin/qemu-x86_64-static+0x2258d0-/usr/bin/qemu-x86_64-static+0x2258d9 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x21f4f3-/usr/bin/qemu-x86_64-static+0x21f515 (call)
-/usr/bin/qemu-x86_64-static+0x21f4f1 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x21f4ee (primary result)
-/usr/bin/qemu-x86_64-static+0x21f4e9-/usr/bin/qemu-x86_64-static+0x21f4ec (conditional continue)
-/usr/bin/qemu-x86_64-static+0x21f4c0-/usr/bin/qemu-x86_64-static+0x21f4e7 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x289610-/usr/bin/qemu-x86_64-static+0x289627 (call)
-/usr/bin/qemu-x86_64-static+0x2895be-/usr/bin/qemu-x86_64-static+0x2895d9 (conditional jump)
-/usr/bin/qemu-x86_64-static+0x2895b9-/usr/bin/qemu-x86_64-static+0x2895bc (conditional continue)
-/usr/bin/qemu-x86_64-static+0x28964a-/usr/bin/qemu-x86_64-static+0x289664 (conditional jump)
-/usr/bin/qemu-x86_64-static+0x289645-/usr/bin/qemu-x86_64-static+0x289648 (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0x289640-/usr/bin/qemu-x86_64-static+0x289643 (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0x2895f4-/usr/bin/qemu-x86_64-static+0x2895f7 (conditional jump (no continue))
-/usr/bin/qemu-x86_64-static+0x2895f0-/usr/bin/qemu-x86_64-static+0x2895f2 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x2895db-/usr/bin/qemu-x86_64-static+0x2895ee (primary result)
-/usr/bin/qemu-x86_64-static+0x2895be-/usr/bin/qemu-x86_64-static+0x2895d9 (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0x2895b9-/usr/bin/qemu-x86_64-static+0x2895bc (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0x2895b0-/usr/bin/qemu-x86_64-static+0x2895b3 (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0x289670-/usr/bin/qemu-x86_64-static+0x289677 (jump)
-/usr/bin/qemu-x86_64-static+0x225270-/usr/bin/qemu-x86_64-static+0x225299 (call)
-/usr/bin/qemu-x86_64-static+0x225265-/usr/bin/qemu-x86_64-static+0x22526e (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22525d-/usr/bin/qemu-x86_64-static+0x225263 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225250-/usr/bin/qemu-x86_64-static+0x225257 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225361-/usr/bin/qemu-x86_64-static+0x225368 (jump)
-/usr/bin/qemu-x86_64-static+0x225358-/usr/bin/qemu-x86_64-static+0x22535b (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0x225250-/usr/bin/qemu-x86_64-static+0x225257 (conditional jump)
-/usr/bin/qemu-x86_64-static+0x225265-/usr/bin/qemu-x86_64-static+0x22526e (conditional jump)
-/usr/bin/qemu-x86_64-static+0x22525d-/usr/bin/qemu-x86_64-static+0x225263 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225240-/usr/bin/qemu-x86_64-static+0x225257 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225238-/usr/bin/qemu-x86_64-static+0x22523a (conditional continue)
-/usr/bin/qemu-x86_64-static+0x2250c2-/usr/bin/qemu-x86_64-static+0x2250d0 (conditional jump)
-/usr/bin/qemu-x86_64-static+0x2250b7-/usr/bin/qemu-x86_64-static+0x2250bc (conditional continue)
-/usr/bin/qemu-x86_64-static+0x2250ae-/usr/bin/qemu-x86_64-static+0x2250b5 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x2250a0-/usr/bin/qemu-x86_64-static+0x2250ac (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225092-/usr/bin/qemu-x86_64-static+0x22509e (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225090-/usr/bin/qemu-x86_64-static+0x22509e (conditional jump)
-/usr/bin/qemu-x86_64-static+0x225080-/usr/bin/qemu-x86_64-static+0x22508e (conditional continue)
-/usr/bin/qemu-x86_64-static+0x225070-/usr/bin/qemu-x86_64-static+0x22507c (primary result)
-/usr/bin/qemu-x86_64-static+0x1ff79d-/usr/bin/qemu-x86_64-static+0x1ff7a4 (jump)
-/usr/bin/qemu-x86_64-static+0x1ff780-/usr/bin/qemu-x86_64-static+0x1ff79b (primary result)
-/usr/bin/qemu-x86_64-static+0x8d60-/usr/bin/qemu-x86_64-static+0x8d88 (call)
-/usr/bin/qemu-x86_64-static+0x946b (call)
-/usr/bin/qemu-x86_64-static+0x219440-/usr/bin/qemu-x86_64-static+0x2194a2 (conditional jump)
-/usr/bin/qemu-x86_64-static+0x2269a0-/usr/bin/qemu-x86_64-static+0x2269b0 (call)
-/usr/bin/qemu-x86_64-static+0x228fd0-/usr/bin/qemu-x86_64-static+0x228fd7 (call)
-/usr/bin/qemu-x86_64-static+0x228e64-/usr/bin/qemu-x86_64-static+0x228e6e (conditional jump)
-/usr/bin/qemu-x86_64-static+0x228e5e-/usr/bin/qemu-x86_64-static+0x228e62 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228e47-/usr/bin/qemu-x86_64-static+0x228e5c (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228e3e-/usr/bin/qemu-x86_64-static+0x228e41 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228e19-/usr/bin/qemu-x86_64-static+0x228e38 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228e07-/usr/bin/qemu-x86_64-static+0x228e13 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228df6-/usr/bin/qemu-x86_64-static+0x228e01 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228de4-/usr/bin/qemu-x86_64-static+0x228df0 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x228dc0-/usr/bin/qemu-x86_64-static+0x228dde (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be98-/usr/bin/qemu-x86_64-static+0x22bea4 (call)
-/usr/bin/qemu-x86_64-static+0x22be83-/usr/bin/qemu-x86_64-static+0x22be92 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be72-/usr/bin/qemu-x86_64-static+0x22be7d (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be61-/usr/bin/qemu-x86_64-static+0x22be70 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be53-/usr/bin/qemu-x86_64-static+0x22be5f (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be4b-/usr/bin/qemu-x86_64-static+0x22be4d (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be41-/usr/bin/qemu-x86_64-static+0x22be45 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22be37-/usr/bin/qemu-x86_64-static+0x22be3b (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22bdfb-/usr/bin/qemu-x86_64-static+0x22be31 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22bdf0-/usr/bin/qemu-x86_64-static+0x22bdf9 (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22bde0-/usr/bin/qemu-x86_64-static+0x22bdea (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22bdc9-/usr/bin/qemu-x86_64-static+0x22bdda (conditional continue)
-/usr/bin/qemu-x86_64-static+0x22bdbd-/usr/bin/qemu-x86_64-static+0x22bdc5 (primary result)
-/usr/bin/qemu-x86_64-static+0x22bdb0-/usr/bin/qemu-x86_64-static+0x22bdb7 (conditional continue (no jump))
-/usr/bin/qemu-x86_64-static+0xa1bc-/usr/bin/qemu-x86_64-static+0xa1c7 (call)
-/usr/bin/qemu-x86_64-static+0xa1b3-/usr/bin/qemu-x86_64-static+0xa1ba (conditional continue)
-/usr/bin/qemu-x86_64-static+0xa1a0-/usr/bin/qemu-x86_64-static+0xa1b1 (conditional continue)
-/usr/bin/qemu-x86_64-static+0xa1f0-/usr/bin/qemu-x86_64-static+0xa1ff (call)
+callander: full call stack: /usr/bin/qemu-x86_64-static+0x2258df-/usr/bin/qemu-x86_64-static+0x225900 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-x86_64-static+0x2258d0-/usr/bin/qemu-x86_64-static+0x2258d9 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-x86_64-static+0x21f4f3-/usr/bin/qemu-x86_64-static+0x21f515 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-x86_64-static+0x21f4f1 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-x86_64-static+0x21f4ee (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-x86_64-static+0x21f4e9-/usr/bin/qemu-x86_64-static+0x21f4ec (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-x86_64-static+0x21f4c0-/usr/bin/qemu-x86_64-static+0x21f4e7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-x86_64-static+0x289610-/usr/bin/qemu-x86_64-static+0x289627 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-x86_64-static+0x2895be-/usr/bin/qemu-x86_64-static+0x2895d9 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-x86_64-static+0x2895b9-/usr/bin/qemu-x86_64-static+0x2895bc (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-x86_64-static+0x28964a-/usr/bin/qemu-x86_64-static+0x289664 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-x86_64-static+0x289645-/usr/bin/qemu-x86_64-static+0x289648 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-x86_64-static+0x289640-/usr/bin/qemu-x86_64-static+0x289643 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-x86_64-static+0x2895f4-/usr/bin/qemu-x86_64-static+0x2895f7 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-x86_64-static+0x2895f0-/usr/bin/qemu-x86_64-static+0x2895f2 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-x86_64-static+0x2895db-/usr/bin/qemu-x86_64-static+0x2895ee (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-x86_64-static+0x2895be-/usr/bin/qemu-x86_64-static+0x2895d9 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c
+/usr/bin/qemu-x86_64-static+0x2895b9-/usr/bin/qemu-x86_64-static+0x2895bc (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c
+/usr/bin/qemu-x86_64-static+0x2895b0-/usr/bin/qemu-x86_64-static+0x2895b3 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c
+/usr/bin/qemu-x86_64-static+0x289670-/usr/bin/qemu-x86_64-static+0x289677 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c
+/usr/bin/qemu-x86_64-static+0x225270-/usr/bin/qemu-x86_64-static+0x225299 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r8=any u32 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c
+/usr/bin/qemu-x86_64-static+0x225265-/usr/bin/qemu-x86_64-static+0x22526e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x22525d-/usr/bin/qemu-x86_64-static+0x225263 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225250-/usr/bin/qemu-x86_64-static+0x225257 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225361-/usr/bin/qemu-x86_64-static+0x225368 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=NULL-0x1 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225358-/usr/bin/qemu-x86_64-static+0x22535b (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=0 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225250-/usr/bin/qemu-x86_64-static+0x225257 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=0 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225265-/usr/bin/qemu-x86_64-static+0x22526e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=0 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x22525d-/usr/bin/qemu-x86_64-static+0x225263 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=0 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225240-/usr/bin/qemu-x86_64-static+0x225257 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c128 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=0 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225238-/usr/bin/qemu-x86_64-static+0x22523a (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x2250c2-/usr/bin/qemu-x86_64-static+0x2250d0 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x2250b7-/usr/bin/qemu-x86_64-static+0x2250bc (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=1
+/usr/bin/qemu-x86_64-static+0x2250ae-/usr/bin/qemu-x86_64-static+0x2250b5 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=1
+/usr/bin/qemu-x86_64-static+0x2250a0-/usr/bin/qemu-x86_64-static+0x2250ac (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 r11=/usr/bin/qemu-x86_64-static+0x43c12c mem=any u32
+/usr/bin/qemu-x86_64-static+0x225092-/usr/bin/qemu-x86_64-static+0x22509e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 mem=any u32
+/usr/bin/qemu-x86_64-static+0x225090-/usr/bin/qemu-x86_64-static+0x22509e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8 mem=any u32
+/usr/bin/qemu-x86_64-static+0x225080-/usr/bin/qemu-x86_64-static+0x22508e (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8
+/usr/bin/qemu-x86_64-static+0x225070-/usr/bin/qemu-x86_64-static+0x22507c (primary result) ax=0 dx=0 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r9=/usr/bin/qemu-x86_64-static+0x43c120 r10=8
+/usr/bin/qemu-x86_64-static+0x1ff79d-/usr/bin/qemu-x86_64-static+0x1ff7a4 (jump) ax=0 dx=0 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=/usr/bin/qemu-x86_64-static+0x43c120 r10=8
+/usr/bin/qemu-x86_64-static+0x1ff780-/usr/bin/qemu-x86_64-static+0x1ff79b (primary result) ax=0 dx=0 si=/usr/bin/qemu-x86_64-static+0x2e0af0 di=0 r10=8
+/usr/bin/qemu-x86_64-static+0x8d60-/usr/bin/qemu-x86_64-static+0x8d88 (call) di=0
+/usr/bin/qemu-x86_64-static+0x946b (call) cx=0 dx=non-NULL si=/usr/bin/qemu-x86_64-static+0x2c9b2f di=/usr/bin/qemu-x86_64-static+0x2c7957 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-x86_64-static+0x219440-/usr/bin/qemu-x86_64-static+0x2194a2 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-x86_64-static+0x2c9b2f di=/usr/bin/qemu-x86_64-static+0x2c7957 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-x86_64-static+0x2269a0-/usr/bin/qemu-x86_64-static+0x2269b0 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-x86_64-static+0x2c9b2f di=/usr/bin/qemu-x86_64-static+0x2c7957 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228fd0-/usr/bin/qemu-x86_64-static+0x228fd7 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-x86_64-static+0x2c9b2f r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228e64-/usr/bin/qemu-x86_64-static+0x228e6e (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228e5e-/usr/bin/qemu-x86_64-static+0x228e62 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228e47-/usr/bin/qemu-x86_64-static+0x228e5c (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228e3e-/usr/bin/qemu-x86_64-static+0x228e41 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-x86_64-static+0x228e19-/usr/bin/qemu-x86_64-static+0x228e38 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-x86_64-static+0x228e07-/usr/bin/qemu-x86_64-static+0x228e13 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228df6-/usr/bin/qemu-x86_64-static+0x228e01 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228de4-/usr/bin/qemu-x86_64-static+0x228df0 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-x86_64-static+0x228dc0-/usr/bin/qemu-x86_64-static+0x228dde (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-x86_64-static+0x22be98-/usr/bin/qemu-x86_64-static+0x22bea4 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-x86_64-static+0x22be83-/usr/bin/qemu-x86_64-static+0x22be92 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-x86_64-static+0x22be72-/usr/bin/qemu-x86_64-static+0x22be7d (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22be61-/usr/bin/qemu-x86_64-static+0x22be70 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22be53-/usr/bin/qemu-x86_64-static+0x22be5f (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22be4b-/usr/bin/qemu-x86_64-static+0x22be4d (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22be41-/usr/bin/qemu-x86_64-static+0x22be45 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22be37-/usr/bin/qemu-x86_64-static+0x22be3b (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22bdfb-/usr/bin/qemu-x86_64-static+0x22be31 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22bdf0-/usr/bin/qemu-x86_64-static+0x22bdf9 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-x86_64-static+0x42e2e0 mem=NULL-0x24
+/usr/bin/qemu-x86_64-static+0x22bde0-/usr/bin/qemu-x86_64-static+0x22bdea (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-x86_64-static+0x22bdc9-/usr/bin/qemu-x86_64-static+0x22bdda (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-x86_64-static+0x22bdbd-/usr/bin/qemu-x86_64-static+0x22bdc5 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-x86_64-static+0x22bdb0-/usr/bin/qemu-x86_64-static+0x22bdb7 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-x86_64-static+0xa1bc-/usr/bin/qemu-x86_64-static+0xa1c7 (call) bp=/usr/bin/qemu-x86_64-static+0x43b530 si=0 di=non-NULL
+/usr/bin/qemu-x86_64-static+0xa1b3-/usr/bin/qemu-x86_64-static+0xa1ba (conditional continue) bx=non-NULL bp=/usr/bin/qemu-x86_64-static+0x43b530 si=0 di=/usr/bin/qemu-x86_64-static+0x43b530 mem=non-NULL
+/usr/bin/qemu-x86_64-static+0xa1a0-/usr/bin/qemu-x86_64-static+0xa1b1 (conditional continue) bp=/usr/bin/qemu-x86_64-static+0x43b530 si=0 di=/usr/bin/qemu-x86_64-static+0x43b530 mem=0
+/usr/bin/qemu-x86_64-static+0xa1f0-/usr/bin/qemu-x86_64-static+0xa1ff (call) di=/usr/bin/qemu-x86_64-static+0x43b530
 /usr/bin/qemu-x86_64-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

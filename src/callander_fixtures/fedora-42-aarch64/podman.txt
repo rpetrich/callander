@@ -1,32 +1,32 @@
 callander: found syscall with unknown number: any
 callander: full call stack: /usr/bin/podman+0x23860-/usr/bin/podman+0x2387c
-/usr/bin/podman+0x55158-/usr/bin/podman+0x551e0 (bl)
-/usr/bin/podman+0x55130-/usr/bin/podman+0x55154 (conditional continue)
-/usr/bin/podman+0x72084 (bl)
-/usr/bin/podman+0x71bd4-/usr/bin/podman+0x71bd8 (conditional jump)
-/usr/bin/podman+0x71bb4-/usr/bin/podman+0x71bc4 (jump)
-/usr/bin/podman+0x71ba4-/usr/bin/podman+0x71bb0 (conditional continue)
-/usr/bin/podman+0x71b98-/usr/bin/podman+0x71ba0 (conditional continue)
-/usr/bin/podman+0x71b90-/usr/bin/podman+0x71b94 (conditional continue)
-/usr/bin/podman+0x71b70-/usr/bin/podman+0x71b80 (jump)
-/usr/bin/podman+0x71b58-/usr/bin/podman+0x71b6c (conditional continue)
-/usr/bin/podman+0x71b4c-/usr/bin/podman+0x71b54 (conditional continue)
-/usr/bin/podman+0x71b34-/usr/bin/podman+0x71b48 (conditional continue)
-/usr/bin/podman+0x71b2c-/usr/bin/podman+0x71b30 (conditional continue)
-/usr/bin/podman+0x71b0c-/usr/bin/podman+0x71b1c (jump)
-/usr/bin/podman+0x71af8-/usr/bin/podman+0x71b08 (conditional continue)
-/usr/bin/podman+0x71af4 (conditional continue)
-/usr/bin/podman+0x71acc-/usr/bin/podman+0x71af0 (conditional continue)
-/usr/bin/podman+0x71ac0-/usr/bin/podman+0x71ac8 (conditional continue)
-/usr/bin/podman+0x71514-/usr/bin/podman+0x71524 (bl)
-/usr/bin/podman+0x71508-/usr/bin/podman+0x71510 (conditional continue)
-/usr/bin/podman+0x714ec-/usr/bin/podman+0x71500 (jump)
-/usr/bin/podman+0x714bc-/usr/bin/podman+0x714e8 (conditional continue)
-/usr/bin/podman+0x714b4-/usr/bin/podman+0x714b8 (conditional continue)
-/usr/bin/podman+0x714ac-/usr/bin/podman+0x714b0 (conditional continue)
-/usr/bin/podman+0x71480-/usr/bin/podman+0x714a8 (conditional continue)
-/usr/bin/podman+0x71460-/usr/bin/podman+0x7147c (conditional continue)
-/usr/bin/podman+0x9a290-/usr/bin/podman+0x9a2a0 (blr)
-/usr/bin/podman+0x9a250-/usr/bin/podman+0x9a28c (conditional continue)
-/usr/bin/podman+0x54c98 (adrp+add)
+/usr/bin/podman+0x55158-/usr/bin/podman+0x551e0 (bl) r27=/usr/bin/podman+0x29d6000
+/usr/bin/podman+0x55130-/usr/bin/podman+0x55154 (conditional continue) r0=0x1-0xff r5=any u8
+/usr/bin/podman+0x72084 (bl) r0=33 r5=any u8 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71bd4-/usr/bin/podman+0x71bd8 (conditional jump) r0=33 r5=any u8 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71bb4-/usr/bin/podman+0x71bc4 (jump) r0=any u32 r5=any u8 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71ba4-/usr/bin/podman+0x71bb0 (conditional continue) r0=any u32 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71b98-/usr/bin/podman+0x71ba0 (conditional continue) r0=10 r5=any u8 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71b90-/usr/bin/podman+0x71b94 (conditional continue) r0=10 r5=any u8 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71b70-/usr/bin/podman+0x71b80 (jump) r0=any u32 r5=any u8 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71b58-/usr/bin/podman+0x71b6c (conditional continue) r0=any u32 r26=non-NULL r27=/usr/bin/podman+0x299a000
+/usr/bin/podman+0x71b4c-/usr/bin/podman+0x71b54 (conditional continue) r0=5 r3=non-NULL r4=non-NULL r5=NULL-0x1 r26=non-NULL r27=/usr/bin/podman+0x299a000 stack+36=non-NULL stack+60=5 stack+72=non-NULL stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=5
+/usr/bin/podman+0x71b34-/usr/bin/podman+0x71b48 (conditional continue) r0=5 r3=non-NULL r4=non-NULL r5=NULL-0x1 r27=/usr/bin/podman+0x2870000 stack+36=non-NULL stack+60=5 stack+72=non-NULL stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=5
+/usr/bin/podman+0x71b2c-/usr/bin/podman+0x71b30 (conditional continue) r0=NULL-0x1a r3=non-NULL r4=non-NULL r5=NULL-0x1 r27=/usr/bin/podman+0x2870000 stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=NULL-0x1a
+/usr/bin/podman+0x71b0c-/usr/bin/podman+0x71b1c (jump) r0=any u32 r3=non-NULL r4=non-NULL r5=NULL-0x1 r27=/usr/bin/podman+0x2870000 stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=any u32
+/usr/bin/podman+0x71af8-/usr/bin/podman+0x71b08 (conditional continue) r0=any u32 r3=non-NULL r4=non-NULL r27=/usr/bin/podman+0x2870000 stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=any u32
+/usr/bin/podman+0x71af4 (conditional continue) r0=any u32 r3=non-NULL r4=non-NULL r5=non-NULL r27=/usr/bin/podman+0x2870000 stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=any u32
+/usr/bin/podman+0x71acc-/usr/bin/podman+0x71af0 (conditional continue) r0=any u32 r3=non-NULL r5=non-NULL r27=/usr/bin/podman+0x2870000 stack+80=0 stack+84=0 stack+88=0 stack+92=0 stack+96=0 stack+104=non-NULL stack+124=any u32
+/usr/bin/podman+0x71ac0-/usr/bin/podman+0x71ac8 (conditional continue) r0=any u32 r3=non-NULL r4=NULL-0xfffffffffffffb2d stack+24=0 stack+28=0 stack+32=0 stack+36=0 stack+40=0 stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x71514-/usr/bin/podman+0x71524 (bl) r0=any u32 r3=non-NULL r4=NULL-0xfffffffffffffb2d stack+24=0 stack+28=0 stack+32=0 stack+36=0 stack+40=0 stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x71508-/usr/bin/podman+0x71510 (conditional continue) r0=0x1-0xffffffff r3=non-NULL r4=NULL-0xfffffffffffffb2d stack+24=0 stack+28=0 stack+32=0 stack+36=0 stack+40=0 stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x714ec-/usr/bin/podman+0x71500 (jump) r0=0x1-0xffffffff r3=non-NULL stack+24=0 stack+28=0 stack+32=0 stack+36=0 stack+40=0 stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x714bc-/usr/bin/podman+0x714e8 (conditional continue) r0=0x1-0xffffffff stack+24=0 stack+28=0 stack+32=0 stack+36=0 stack+40=0 stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x714b4-/usr/bin/podman+0x714b8 (conditional continue) r0=non-NULL r2=non-NULL r3=any u8 stack+4=non-NULL stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x714ac-/usr/bin/podman+0x714b0 (conditional continue) r0=non-NULL r2=non-NULL stack+4=non-NULL stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x71480-/usr/bin/podman+0x714a8 (conditional continue) r0=non-NULL stack+4=non-NULL stack+48=non-NULL stack+68=any u32
+/usr/bin/podman+0x71460-/usr/bin/podman+0x7147c (conditional continue) r0=any u32 stack+68=any u32
+/usr/bin/podman+0x9a290-/usr/bin/podman+0x9a2a0 (blr) r3=/usr/bin/podman+0x71460 r27=/usr/bin/podman+0x28e3000 stack+4=any u32
+/usr/bin/podman+0x9a250-/usr/bin/podman+0x9a28c (conditional continue) r0=0x1-0xff r27=/usr/bin/podman+0x28e3000 stack+4=any u32
+/usr/bin/podman+0x54c98 (adrp+add) stack+196=0 stack+200=0 stack+204=0 stack+208=0 stack+212=0 stack+216=0 stack+220=0 stack+224=0 stack+228=0 stack+232=0 stack+236=0 stack+240=0 stack+244=0 stack+248=0
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

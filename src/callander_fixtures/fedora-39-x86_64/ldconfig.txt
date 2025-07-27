@@ -1,6 +1,8 @@
 callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c2af
 read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c2e8
 read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c716
+write(STDERR_FILENO, /usr/sbin/ldconfig+0xb7468, 45) @ /usr/sbin/ldconfig+0xaa16
+write(STDERR_FILENO, /usr/sbin/ldconfig+0xb7468, 45) @ /usr/sbin/ldconfig+0xaa46
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c402
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c43b
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c749
@@ -10,9 +12,12 @@ close(any u32) @ /usr/sbin/ldconfig+0x4c499
 lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x4bff9
 mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d5ca
 mmap(0, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d626
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig+0x53339
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x4d669
 munmap(any, any) @ /usr/sbin/ldconfig+0x4d699
 brk(any) @ /usr/sbin/ldconfig+0x4c7b9
+brk(0) @ /usr/sbin/ldconfig+0x53309
+brk(any) @ /usr/sbin/ldconfig+0x53314
 rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x60ee8
 rt_sigaction(SIGALRM, any, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x60ee8
 rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x1591
@@ -24,6 +29,7 @@ pread64(any u32, any, any, any) @ /usr/sbin/ldconfig+0x7aebc
 writev(STDERR_FILENO, any, any u32) @ /usr/sbin/ldconfig+0x4e322
 writev(any u32, any, any u32) @ /usr/sbin/ldconfig+0x4e359
 writev(any u32, any, any) @ /usr/sbin/ldconfig+0x8c411
+access("/etc/suid-debug", F_OK) @ /usr/sbin/ldconfig+0x52a1d
 access("/var/run/utmpx", F_OK) @ /usr/sbin/ldconfig+0x7a899
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x4e444
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x4d579
@@ -51,6 +57,10 @@ sched_setscheduler(any u32, any u32, any) @ /usr/sbin/ldconfig+0x7a7e9
 sched_getscheduler(any u32) @ /usr/sbin/ldconfig+0x7a759
 sched_get_priority_max(1) @ /usr/sbin/ldconfig+0x7a789
 sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x7a7b9
+arch_prctl(0x3001, any) @ /usr/sbin/ldconfig+0x9b72
+arch_prctl(0x3002, 0x1-0x2) @ /usr/sbin/ldconfig+0x9d59
+arch_prctl(0x3003, 0) @ /usr/sbin/ldconfig+0x9d91
+arch_prctl(0x1002, NULL-0xfffffffffffffffe) @ /usr/sbin/ldconfig+0xa945
 arch_prctl(0x3002, NULL-0x3) @ /usr/sbin/ldconfig+0xa3539
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x4c7f9
 gettid() @ /usr/sbin/ldconfig+0x20985
@@ -75,10 +85,13 @@ futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(/usr/sbin/ldconfig+0xf31d4, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NULL-0x1, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x4d386
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x75c65
+set_tid_address(any) @ /usr/sbin/ldconfig+0x52280
 restart_syscall()
 clock_gettime(CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x48355
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0xa54d5
 clock_nanosleep(any u32, any u32, any, any) @ /usr/sbin/ldconfig+0xa5511
+exit_group(127) @ /usr/sbin/ldconfig+0xaa22
+exit_group(127) @ /usr/sbin/ldconfig+0xaa52
 exit_group(any u32) @ /usr/sbin/ldconfig+0x4872b
 tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x20967
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x20967
@@ -94,4 +107,6 @@ newfstatat(any u32, any, any, 0) @ /usr/sbin/ldconfig+0x4b77c
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x4b77c
 newfstatat(any u32, "", any, AT_EMPTY_PATH) @ /usr/sbin/ldconfig+0x4b77c
 readlinkat(AT_FDCWD, "/proc/self/exe", any, 0x1000) @ /usr/sbin/ldconfig+0x8c1ce
+set_robust_list(any, sizeof(struct robust_list_head)) @ /usr/sbin/ldconfig+0x522dc
 getrandom(/usr/sbin/ldconfig+0xf2bf0, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x22187
+rseq(any, 32, 0, RSEQ_SIG) @ /usr/sbin/ldconfig+0x52357

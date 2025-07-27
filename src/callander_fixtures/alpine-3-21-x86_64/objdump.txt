@@ -48,6 +48,7 @@ pread64(any, any, any, any) @ ld-musl-x86_64.so.1+0x68345
 readv(any, any, 2) @ ld-musl-x86_64.so.1+0x5f378(__stdio_read*+77)
 writev(any, any, any) @ ld-musl-x86_64.so.1+0x5f4c2(__stdio_write*+196)
 access(any, X_OK) @ ld-musl-x86_64.so.1+0x69b3b(access+12)
+access(non-NULL, X_OK|W_OK|R_OK) @ ld-musl-x86_64.so.1+0x69b3b(access+12)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x5668e(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x69c3d(dup+12)
 exit(0) @ ld-musl-x86_64.so.1+0x6690d(pthread_exit+456)

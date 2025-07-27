@@ -135,6 +135,8 @@ utimensat(AT_FDCWD, any, 0, 0) @ libc.so.6+0xee9b8(__GI___utimensat64_helper+24)
 utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xeea18(utimensat+24)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_PID, 0-INT_MAX, 0, WEXITED, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
@@ -261,8 +263,10 @@ connect(any, any, any u32) @ libc.so.6+0x96ba8
 getsockname(any, any, any) @ libc.so.6+0xfaaf4(getsockname+20)
 getpeername(any, any, any) @ libc.so.6+0xfaa94(getpeername+20)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+sendto(any, any, any, any u8, any u8, any u8) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x96ba8
+sendto(any, any, any, any u8, any u8, any u8) @ libc.so.6+0x96ba8
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x96ba8
 recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvfrom(any, non-NULL, any, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)

@@ -42,10 +42,9 @@ rt_sigaction(SIGPIPE, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d9
 rt_sigaction(SIGSETXID, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d93b(__libc_sigaction*+190)
 rt_sigaction(SIGHUP-SIGQUIT, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d9ab(__libc_sigaction*+302)
 rt_sigaction(SIGPIPE, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d9ab(__libc_sigaction*+302)
-rt_sigaction(SIGHUP-SIGINT, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
-rt_sigaction(SIGQUIT, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
+rt_sigaction(SIGHUP-SIGQUIT, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
 rt_sigaction(SIGPIPE, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
-rt_sigaction(SIGSETXID, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
+rt_sigaction(SIGSETXID, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4da00(__libc_sigaction*+387)
 rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x1cc8e(abort+123)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b860(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6a2(__block_all_sigs*+23)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9b858(app_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x4d6bc(__block_app_sigs*+23)
@@ -94,7 +93,9 @@ sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvfrom(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
@@ -106,6 +107,7 @@ recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 recvmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x5e990
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3b081(bind+23)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3d3ed(getsockname+21)
+getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3d030(getpeername+21)
 setsockopt(any, SOL_SOCKET, SO_PASSCRED, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_TCP, TCP_FASTOPEN_CONNECT, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)
 setsockopt(any, SOL_IPV6, IPV6_V6ONLY, any, 4) @ ld-musl-x86_64.so.1+0x4137e(setsockopt+27)

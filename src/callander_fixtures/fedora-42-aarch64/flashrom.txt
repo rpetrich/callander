@@ -116,6 +116,8 @@ timerfd_settime(any, 0-TFD_TIMER_ABSTIME, any, 0) @ libc.so.6+0xf9598(timerfd_se
 capset(any, any) @ libc.so.6+0xf6164(syscall+36)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_PID, any u32, any, WEXITED, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)

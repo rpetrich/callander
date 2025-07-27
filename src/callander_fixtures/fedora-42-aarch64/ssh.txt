@@ -274,8 +274,8 @@ madvise(any, any, MADV_WILLNEED-MADV_DONTNEED) @ libc.so.6+0xf3ec8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE-MADV_DONTDUMP) @ libc.so.6+0xf3ec8(madvise+8)
 recvmmsg(any, any, any u32, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 recvmmsg(any, any, any u32, 0, 0) @ libc.so.6+0x96ba8
-wait4(any, any, 0-WNOHANG, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-wait4(any, any, 0-WNOHANG, 0) @ libc.so.6+0x96ba8
+wait4(any, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+wait4(any, any, any, any) @ libc.so.6+0x96ba8
 prlimit64(0, RLIMIT_NPROC-RLIMIT_NOFILE, 0, any) @ libc.so.6+0xef880(__getrlimit+32)
 sendmmsg(any, any, any u32, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendmmsg(any, any, 2, MSG_NOSIGNAL) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)

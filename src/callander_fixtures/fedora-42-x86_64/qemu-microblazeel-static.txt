@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-microblazeel-static+0x1c895f-/usr/bin/qemu-microblazeel-static+0x1c8980
-/usr/bin/qemu-microblazeel-static+0x1c8950-/usr/bin/qemu-microblazeel-static+0x1c8959 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c2573-/usr/bin/qemu-microblazeel-static+0x1c2595 (call)
-/usr/bin/qemu-microblazeel-static+0x1c2571 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c256e (primary result)
-/usr/bin/qemu-microblazeel-static+0x1c2569-/usr/bin/qemu-microblazeel-static+0x1c256c (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c2540-/usr/bin/qemu-microblazeel-static+0x1c2567 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x22c6d0-/usr/bin/qemu-microblazeel-static+0x22c6e7 (call)
-/usr/bin/qemu-microblazeel-static+0x22c67e-/usr/bin/qemu-microblazeel-static+0x22c699 (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x22c679-/usr/bin/qemu-microblazeel-static+0x22c67c (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x22c70a-/usr/bin/qemu-microblazeel-static+0x22c724 (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x22c705-/usr/bin/qemu-microblazeel-static+0x22c708 (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x22c700-/usr/bin/qemu-microblazeel-static+0x22c703 (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x22c6b4-/usr/bin/qemu-microblazeel-static+0x22c6b7 (conditional jump (no continue))
-/usr/bin/qemu-microblazeel-static+0x22c6b0-/usr/bin/qemu-microblazeel-static+0x22c6b2 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x22c69b-/usr/bin/qemu-microblazeel-static+0x22c6ae (primary result)
-/usr/bin/qemu-microblazeel-static+0x22c67e-/usr/bin/qemu-microblazeel-static+0x22c699 (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x22c679-/usr/bin/qemu-microblazeel-static+0x22c67c (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x22c670-/usr/bin/qemu-microblazeel-static+0x22c673 (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x22c730-/usr/bin/qemu-microblazeel-static+0x22c737 (jump)
-/usr/bin/qemu-microblazeel-static+0x1c82f0-/usr/bin/qemu-microblazeel-static+0x1c8319 (call)
-/usr/bin/qemu-microblazeel-static+0x1c82e5-/usr/bin/qemu-microblazeel-static+0x1c82ee (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c82dd-/usr/bin/qemu-microblazeel-static+0x1c82e3 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c82d0-/usr/bin/qemu-microblazeel-static+0x1c82d7 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c83e1-/usr/bin/qemu-microblazeel-static+0x1c83e8 (jump)
-/usr/bin/qemu-microblazeel-static+0x1c83d8-/usr/bin/qemu-microblazeel-static+0x1c83db (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x1c82d0-/usr/bin/qemu-microblazeel-static+0x1c82d7 (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x1c82e5-/usr/bin/qemu-microblazeel-static+0x1c82ee (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x1c82dd-/usr/bin/qemu-microblazeel-static+0x1c82e3 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c82c0-/usr/bin/qemu-microblazeel-static+0x1c82d7 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c82b8-/usr/bin/qemu-microblazeel-static+0x1c82ba (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c8142-/usr/bin/qemu-microblazeel-static+0x1c8150 (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x1c8137-/usr/bin/qemu-microblazeel-static+0x1c813c (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c812e-/usr/bin/qemu-microblazeel-static+0x1c8135 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c8120-/usr/bin/qemu-microblazeel-static+0x1c812c (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c8112-/usr/bin/qemu-microblazeel-static+0x1c811e (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c8110-/usr/bin/qemu-microblazeel-static+0x1c811e (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x1c8100-/usr/bin/qemu-microblazeel-static+0x1c810e (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1c80f0-/usr/bin/qemu-microblazeel-static+0x1c80fc (primary result)
-/usr/bin/qemu-microblazeel-static+0x1a281d-/usr/bin/qemu-microblazeel-static+0x1a2824 (jump)
-/usr/bin/qemu-microblazeel-static+0x1a2800-/usr/bin/qemu-microblazeel-static+0x1a281b (primary result)
-/usr/bin/qemu-microblazeel-static+0x7022-/usr/bin/qemu-microblazeel-static+0x704a (call)
-/usr/bin/qemu-microblazeel-static+0x772d (call)
-/usr/bin/qemu-microblazeel-static+0x1bc4c0-/usr/bin/qemu-microblazeel-static+0x1bc522 (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x1c9a20-/usr/bin/qemu-microblazeel-static+0x1c9a30 (call)
-/usr/bin/qemu-microblazeel-static+0x1cc050-/usr/bin/qemu-microblazeel-static+0x1cc057 (call)
-/usr/bin/qemu-microblazeel-static+0x1cbee4-/usr/bin/qemu-microblazeel-static+0x1cbeee (conditional jump)
-/usr/bin/qemu-microblazeel-static+0x1cbede-/usr/bin/qemu-microblazeel-static+0x1cbee2 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbec7-/usr/bin/qemu-microblazeel-static+0x1cbedc (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbebe-/usr/bin/qemu-microblazeel-static+0x1cbec1 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbe99-/usr/bin/qemu-microblazeel-static+0x1cbeb8 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbe87-/usr/bin/qemu-microblazeel-static+0x1cbe93 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbe76-/usr/bin/qemu-microblazeel-static+0x1cbe81 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbe64-/usr/bin/qemu-microblazeel-static+0x1cbe70 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cbe40-/usr/bin/qemu-microblazeel-static+0x1cbe5e (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cef18-/usr/bin/qemu-microblazeel-static+0x1cef24 (call)
-/usr/bin/qemu-microblazeel-static+0x1cef03-/usr/bin/qemu-microblazeel-static+0x1cef12 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1ceef2-/usr/bin/qemu-microblazeel-static+0x1ceefd (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1ceee1-/usr/bin/qemu-microblazeel-static+0x1ceef0 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1ceed3-/usr/bin/qemu-microblazeel-static+0x1ceedf (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1ceecb-/usr/bin/qemu-microblazeel-static+0x1ceecd (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1ceec1-/usr/bin/qemu-microblazeel-static+0x1ceec5 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1ceeb7-/usr/bin/qemu-microblazeel-static+0x1ceebb (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cee7b-/usr/bin/qemu-microblazeel-static+0x1ceeb1 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cee70-/usr/bin/qemu-microblazeel-static+0x1cee79 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cee60-/usr/bin/qemu-microblazeel-static+0x1cee6a (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cee49-/usr/bin/qemu-microblazeel-static+0x1cee5a (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x1cee3d-/usr/bin/qemu-microblazeel-static+0x1cee45 (primary result)
-/usr/bin/qemu-microblazeel-static+0x1cee30-/usr/bin/qemu-microblazeel-static+0x1cee37 (conditional continue (no jump))
-/usr/bin/qemu-microblazeel-static+0x847c-/usr/bin/qemu-microblazeel-static+0x8487 (call)
-/usr/bin/qemu-microblazeel-static+0x8473-/usr/bin/qemu-microblazeel-static+0x847a (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x8460-/usr/bin/qemu-microblazeel-static+0x8471 (conditional continue)
-/usr/bin/qemu-microblazeel-static+0x84b0-/usr/bin/qemu-microblazeel-static+0x84bf (call)
+callander: full call stack: /usr/bin/qemu-microblazeel-static+0x1c895f-/usr/bin/qemu-microblazeel-static+0x1c8980 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-microblazeel-static+0x1c8950-/usr/bin/qemu-microblazeel-static+0x1c8959 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-microblazeel-static+0x1c2573-/usr/bin/qemu-microblazeel-static+0x1c2595 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-microblazeel-static+0x1c2571 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-microblazeel-static+0x1c256e (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-microblazeel-static+0x1c2569-/usr/bin/qemu-microblazeel-static+0x1c256c (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-microblazeel-static+0x1c2540-/usr/bin/qemu-microblazeel-static+0x1c2567 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-microblazeel-static+0x22c6d0-/usr/bin/qemu-microblazeel-static+0x22c6e7 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-microblazeel-static+0x22c67e-/usr/bin/qemu-microblazeel-static+0x22c699 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-microblazeel-static+0x22c679-/usr/bin/qemu-microblazeel-static+0x22c67c (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-microblazeel-static+0x22c70a-/usr/bin/qemu-microblazeel-static+0x22c724 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-microblazeel-static+0x22c705-/usr/bin/qemu-microblazeel-static+0x22c708 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-microblazeel-static+0x22c700-/usr/bin/qemu-microblazeel-static+0x22c703 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-microblazeel-static+0x22c6b4-/usr/bin/qemu-microblazeel-static+0x22c6b7 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-microblazeel-static+0x22c6b0-/usr/bin/qemu-microblazeel-static+0x22c6b2 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-microblazeel-static+0x22c69b-/usr/bin/qemu-microblazeel-static+0x22c6ae (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-microblazeel-static+0x22c67e-/usr/bin/qemu-microblazeel-static+0x22c699 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c
+/usr/bin/qemu-microblazeel-static+0x22c679-/usr/bin/qemu-microblazeel-static+0x22c67c (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c
+/usr/bin/qemu-microblazeel-static+0x22c670-/usr/bin/qemu-microblazeel-static+0x22c673 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c
+/usr/bin/qemu-microblazeel-static+0x22c730-/usr/bin/qemu-microblazeel-static+0x22c737 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c
+/usr/bin/qemu-microblazeel-static+0x1c82f0-/usr/bin/qemu-microblazeel-static+0x1c8319 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r8=any u32 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c
+/usr/bin/qemu-microblazeel-static+0x1c82e5-/usr/bin/qemu-microblazeel-static+0x1c82ee (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82dd-/usr/bin/qemu-microblazeel-static+0x1c82e3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82d0-/usr/bin/qemu-microblazeel-static+0x1c82d7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c83e1-/usr/bin/qemu-microblazeel-static+0x1c83e8 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=NULL-0x1 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c83d8-/usr/bin/qemu-microblazeel-static+0x1c83db (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=0 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82d0-/usr/bin/qemu-microblazeel-static+0x1c82d7 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=0 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82e5-/usr/bin/qemu-microblazeel-static+0x1c82ee (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=0 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82dd-/usr/bin/qemu-microblazeel-static+0x1c82e3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=0 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82c0-/usr/bin/qemu-microblazeel-static+0x1c82d7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d868 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=0 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c82b8-/usr/bin/qemu-microblazeel-static+0x1c82ba (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c8142-/usr/bin/qemu-microblazeel-static+0x1c8150 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c8137-/usr/bin/qemu-microblazeel-static+0x1c813c (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=1
+/usr/bin/qemu-microblazeel-static+0x1c812e-/usr/bin/qemu-microblazeel-static+0x1c8135 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=1
+/usr/bin/qemu-microblazeel-static+0x1c8120-/usr/bin/qemu-microblazeel-static+0x1c812c (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 r11=/usr/bin/qemu-microblazeel-static+0x38d86c mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c8112-/usr/bin/qemu-microblazeel-static+0x1c811e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c8110-/usr/bin/qemu-microblazeel-static+0x1c811e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8 mem=any u32
+/usr/bin/qemu-microblazeel-static+0x1c8100-/usr/bin/qemu-microblazeel-static+0x1c810e (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8
+/usr/bin/qemu-microblazeel-static+0x1c80f0-/usr/bin/qemu-microblazeel-static+0x1c80fc (primary result) ax=0 dx=0 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r9=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8
+/usr/bin/qemu-microblazeel-static+0x1a281d-/usr/bin/qemu-microblazeel-static+0x1a2824 (jump) ax=0 dx=0 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=/usr/bin/qemu-microblazeel-static+0x38d860 r10=8
+/usr/bin/qemu-microblazeel-static+0x1a2800-/usr/bin/qemu-microblazeel-static+0x1a281b (primary result) ax=0 dx=0 si=/usr/bin/qemu-microblazeel-static+0x27cc98 di=0 r10=8
+/usr/bin/qemu-microblazeel-static+0x7022-/usr/bin/qemu-microblazeel-static+0x704a (call) di=0
+/usr/bin/qemu-microblazeel-static+0x772d (call) cx=0 dx=non-NULL si=/usr/bin/qemu-microblazeel-static+0x268a49 di=/usr/bin/qemu-microblazeel-static+0x26686e r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-microblazeel-static+0x1bc4c0-/usr/bin/qemu-microblazeel-static+0x1bc522 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-microblazeel-static+0x268a49 di=/usr/bin/qemu-microblazeel-static+0x26686e r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-microblazeel-static+0x1c9a20-/usr/bin/qemu-microblazeel-static+0x1c9a30 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-microblazeel-static+0x268a49 di=/usr/bin/qemu-microblazeel-static+0x26686e r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cc050-/usr/bin/qemu-microblazeel-static+0x1cc057 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-microblazeel-static+0x268a49 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbee4-/usr/bin/qemu-microblazeel-static+0x1cbeee (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbede-/usr/bin/qemu-microblazeel-static+0x1cbee2 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbec7-/usr/bin/qemu-microblazeel-static+0x1cbedc (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbebe-/usr/bin/qemu-microblazeel-static+0x1cbec1 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-microblazeel-static+0x1cbe99-/usr/bin/qemu-microblazeel-static+0x1cbeb8 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-microblazeel-static+0x1cbe87-/usr/bin/qemu-microblazeel-static+0x1cbe93 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbe76-/usr/bin/qemu-microblazeel-static+0x1cbe81 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbe64-/usr/bin/qemu-microblazeel-static+0x1cbe70 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cbe40-/usr/bin/qemu-microblazeel-static+0x1cbe5e (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-microblazeel-static+0x1cef18-/usr/bin/qemu-microblazeel-static+0x1cef24 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-microblazeel-static+0x1cef03-/usr/bin/qemu-microblazeel-static+0x1cef12 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-microblazeel-static+0x1ceef2-/usr/bin/qemu-microblazeel-static+0x1ceefd (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1ceee1-/usr/bin/qemu-microblazeel-static+0x1ceef0 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1ceed3-/usr/bin/qemu-microblazeel-static+0x1ceedf (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1ceecb-/usr/bin/qemu-microblazeel-static+0x1ceecd (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1ceec1-/usr/bin/qemu-microblazeel-static+0x1ceec5 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1ceeb7-/usr/bin/qemu-microblazeel-static+0x1ceebb (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1cee7b-/usr/bin/qemu-microblazeel-static+0x1ceeb1 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1cee70-/usr/bin/qemu-microblazeel-static+0x1cee79 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-microblazeel-static+0x37fd20 mem=NULL-0x24
+/usr/bin/qemu-microblazeel-static+0x1cee60-/usr/bin/qemu-microblazeel-static+0x1cee6a (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-microblazeel-static+0x1cee49-/usr/bin/qemu-microblazeel-static+0x1cee5a (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-microblazeel-static+0x1cee3d-/usr/bin/qemu-microblazeel-static+0x1cee45 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-microblazeel-static+0x1cee30-/usr/bin/qemu-microblazeel-static+0x1cee37 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-microblazeel-static+0x847c-/usr/bin/qemu-microblazeel-static+0x8487 (call) bp=/usr/bin/qemu-microblazeel-static+0x38cc70 si=0 di=non-NULL
+/usr/bin/qemu-microblazeel-static+0x8473-/usr/bin/qemu-microblazeel-static+0x847a (conditional continue) bx=non-NULL bp=/usr/bin/qemu-microblazeel-static+0x38cc70 si=0 di=/usr/bin/qemu-microblazeel-static+0x38cc70 mem=non-NULL
+/usr/bin/qemu-microblazeel-static+0x8460-/usr/bin/qemu-microblazeel-static+0x8471 (conditional continue) bp=/usr/bin/qemu-microblazeel-static+0x38cc70 si=0 di=/usr/bin/qemu-microblazeel-static+0x38cc70 mem=0
+/usr/bin/qemu-microblazeel-static+0x84b0-/usr/bin/qemu-microblazeel-static+0x84bf (call) di=/usr/bin/qemu-microblazeel-static+0x38cc70
 /usr/bin/qemu-microblazeel-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

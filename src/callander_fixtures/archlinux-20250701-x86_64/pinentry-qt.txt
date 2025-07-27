@@ -1,0 +1,2 @@
+callander: failed to find: libKF6WindowSystem.so.6
+callander: failed to finish loading: ENOEXEC

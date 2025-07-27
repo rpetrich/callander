@@ -86,6 +86,8 @@ utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xee9b8(__GI___utimensat64_helper+2
 personality(0xf001ffff|UNAME26|ADDR_NO_RANDOMIZE|FDPIC_FUNCPTRS|MMAP_PAGE_ZERO|ADDR_COMPAT_LAYOUT|READ_IMPLIES_EXEC|ADDR_LIMIT_32BIT|SHORT_INODE|WHOLE_SECONDS|STICKY_TIMEOUTS|ADDR_LIMIT_3GB) @ libc.so.6+0xf8e88(personality+8)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_PID, 0-INT_MAX, 0, WEXITED, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)

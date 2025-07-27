@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-or1k-static+0x1c375f-/usr/bin/qemu-or1k-static+0x1c3780
-/usr/bin/qemu-or1k-static+0x1c3750-/usr/bin/qemu-or1k-static+0x1c3759 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1bd373-/usr/bin/qemu-or1k-static+0x1bd395 (call)
-/usr/bin/qemu-or1k-static+0x1bd371 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1bd36e (primary result)
-/usr/bin/qemu-or1k-static+0x1bd369-/usr/bin/qemu-or1k-static+0x1bd36c (conditional continue)
-/usr/bin/qemu-or1k-static+0x1bd340-/usr/bin/qemu-or1k-static+0x1bd367 (conditional continue)
-/usr/bin/qemu-or1k-static+0x227190-/usr/bin/qemu-or1k-static+0x2271a7 (call)
-/usr/bin/qemu-or1k-static+0x22713e-/usr/bin/qemu-or1k-static+0x227159 (conditional jump)
-/usr/bin/qemu-or1k-static+0x227139-/usr/bin/qemu-or1k-static+0x22713c (conditional continue)
-/usr/bin/qemu-or1k-static+0x2271ca-/usr/bin/qemu-or1k-static+0x2271e4 (conditional jump)
-/usr/bin/qemu-or1k-static+0x2271c5-/usr/bin/qemu-or1k-static+0x2271c8 (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x2271c0-/usr/bin/qemu-or1k-static+0x2271c3 (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x227174-/usr/bin/qemu-or1k-static+0x227177 (conditional jump (no continue))
-/usr/bin/qemu-or1k-static+0x227170-/usr/bin/qemu-or1k-static+0x227172 (conditional continue)
-/usr/bin/qemu-or1k-static+0x22715b-/usr/bin/qemu-or1k-static+0x22716e (primary result)
-/usr/bin/qemu-or1k-static+0x22713e-/usr/bin/qemu-or1k-static+0x227159 (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x227139-/usr/bin/qemu-or1k-static+0x22713c (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x227130-/usr/bin/qemu-or1k-static+0x227133 (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x2271f0-/usr/bin/qemu-or1k-static+0x2271f7 (jump)
-/usr/bin/qemu-or1k-static+0x1c30f0-/usr/bin/qemu-or1k-static+0x1c3119 (call)
-/usr/bin/qemu-or1k-static+0x1c30e5-/usr/bin/qemu-or1k-static+0x1c30ee (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c30dd-/usr/bin/qemu-or1k-static+0x1c30e3 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c30d0-/usr/bin/qemu-or1k-static+0x1c30d7 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c31e1-/usr/bin/qemu-or1k-static+0x1c31e8 (jump)
-/usr/bin/qemu-or1k-static+0x1c31d8-/usr/bin/qemu-or1k-static+0x1c31db (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x1c30d0-/usr/bin/qemu-or1k-static+0x1c30d7 (conditional jump)
-/usr/bin/qemu-or1k-static+0x1c30e5-/usr/bin/qemu-or1k-static+0x1c30ee (conditional jump)
-/usr/bin/qemu-or1k-static+0x1c30dd-/usr/bin/qemu-or1k-static+0x1c30e3 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c30c0-/usr/bin/qemu-or1k-static+0x1c30d7 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c30b8-/usr/bin/qemu-or1k-static+0x1c30ba (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c2f42-/usr/bin/qemu-or1k-static+0x1c2f50 (conditional jump)
-/usr/bin/qemu-or1k-static+0x1c2f37-/usr/bin/qemu-or1k-static+0x1c2f3c (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c2f2e-/usr/bin/qemu-or1k-static+0x1c2f35 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c2f20-/usr/bin/qemu-or1k-static+0x1c2f2c (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c2f12-/usr/bin/qemu-or1k-static+0x1c2f1e (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c2f10-/usr/bin/qemu-or1k-static+0x1c2f1e (conditional jump)
-/usr/bin/qemu-or1k-static+0x1c2f00-/usr/bin/qemu-or1k-static+0x1c2f0e (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c2ef0-/usr/bin/qemu-or1k-static+0x1c2efc (primary result)
-/usr/bin/qemu-or1k-static+0x19d61d-/usr/bin/qemu-or1k-static+0x19d624 (jump)
-/usr/bin/qemu-or1k-static+0x19d600-/usr/bin/qemu-or1k-static+0x19d61b (primary result)
-/usr/bin/qemu-or1k-static+0x6ff1-/usr/bin/qemu-or1k-static+0x7019 (call)
-/usr/bin/qemu-or1k-static+0x76fc (call)
-/usr/bin/qemu-or1k-static+0x1b72c0-/usr/bin/qemu-or1k-static+0x1b7322 (conditional jump)
-/usr/bin/qemu-or1k-static+0x1c4820-/usr/bin/qemu-or1k-static+0x1c4830 (call)
-/usr/bin/qemu-or1k-static+0x1c6e50-/usr/bin/qemu-or1k-static+0x1c6e57 (call)
-/usr/bin/qemu-or1k-static+0x1c6ce4-/usr/bin/qemu-or1k-static+0x1c6cee (conditional jump)
-/usr/bin/qemu-or1k-static+0x1c6cde-/usr/bin/qemu-or1k-static+0x1c6ce2 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6cc7-/usr/bin/qemu-or1k-static+0x1c6cdc (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6cbe-/usr/bin/qemu-or1k-static+0x1c6cc1 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6c99-/usr/bin/qemu-or1k-static+0x1c6cb8 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6c87-/usr/bin/qemu-or1k-static+0x1c6c93 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6c76-/usr/bin/qemu-or1k-static+0x1c6c81 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6c64-/usr/bin/qemu-or1k-static+0x1c6c70 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c6c40-/usr/bin/qemu-or1k-static+0x1c6c5e (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9d18-/usr/bin/qemu-or1k-static+0x1c9d24 (call)
-/usr/bin/qemu-or1k-static+0x1c9d03-/usr/bin/qemu-or1k-static+0x1c9d12 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9cf2-/usr/bin/qemu-or1k-static+0x1c9cfd (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9ce1-/usr/bin/qemu-or1k-static+0x1c9cf0 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9cd3-/usr/bin/qemu-or1k-static+0x1c9cdf (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9ccb-/usr/bin/qemu-or1k-static+0x1c9ccd (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9cc1-/usr/bin/qemu-or1k-static+0x1c9cc5 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9cb7-/usr/bin/qemu-or1k-static+0x1c9cbb (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9c7b-/usr/bin/qemu-or1k-static+0x1c9cb1 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9c70-/usr/bin/qemu-or1k-static+0x1c9c79 (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9c60-/usr/bin/qemu-or1k-static+0x1c9c6a (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9c49-/usr/bin/qemu-or1k-static+0x1c9c5a (conditional continue)
-/usr/bin/qemu-or1k-static+0x1c9c3d-/usr/bin/qemu-or1k-static+0x1c9c45 (primary result)
-/usr/bin/qemu-or1k-static+0x1c9c30-/usr/bin/qemu-or1k-static+0x1c9c37 (conditional continue (no jump))
-/usr/bin/qemu-or1k-static+0x844c-/usr/bin/qemu-or1k-static+0x8457 (call)
-/usr/bin/qemu-or1k-static+0x8443-/usr/bin/qemu-or1k-static+0x844a (conditional continue)
-/usr/bin/qemu-or1k-static+0x8430-/usr/bin/qemu-or1k-static+0x8441 (conditional continue)
-/usr/bin/qemu-or1k-static+0x8480-/usr/bin/qemu-or1k-static+0x848f (call)
+callander: full call stack: /usr/bin/qemu-or1k-static+0x1c375f-/usr/bin/qemu-or1k-static+0x1c3780 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-or1k-static+0x1c3750-/usr/bin/qemu-or1k-static+0x1c3759 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-or1k-static+0x1bd373-/usr/bin/qemu-or1k-static+0x1bd395 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-or1k-static+0x1bd371 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-or1k-static+0x1bd36e (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-or1k-static+0x1bd369-/usr/bin/qemu-or1k-static+0x1bd36c (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-or1k-static+0x1bd340-/usr/bin/qemu-or1k-static+0x1bd367 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-or1k-static+0x227190-/usr/bin/qemu-or1k-static+0x2271a7 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-or1k-static+0x22713e-/usr/bin/qemu-or1k-static+0x227159 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-or1k-static+0x227139-/usr/bin/qemu-or1k-static+0x22713c (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-or1k-static+0x2271ca-/usr/bin/qemu-or1k-static+0x2271e4 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-or1k-static+0x2271c5-/usr/bin/qemu-or1k-static+0x2271c8 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-or1k-static+0x37f728 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-or1k-static+0x2271c0-/usr/bin/qemu-or1k-static+0x2271c3 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-or1k-static+0x37f728 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-or1k-static+0x227174-/usr/bin/qemu-or1k-static+0x227177 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-or1k-static+0x37f728 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-or1k-static+0x227170-/usr/bin/qemu-or1k-static+0x227172 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-or1k-static+0x37f728 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-or1k-static+0x22715b-/usr/bin/qemu-or1k-static+0x22716e (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-or1k-static+0x37f728 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-or1k-static+0x22713e-/usr/bin/qemu-or1k-static+0x227159 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-or1k-static+0x37f728 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c
+/usr/bin/qemu-or1k-static+0x227139-/usr/bin/qemu-or1k-static+0x22713c (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c
+/usr/bin/qemu-or1k-static+0x227130-/usr/bin/qemu-or1k-static+0x227133 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c
+/usr/bin/qemu-or1k-static+0x2271f0-/usr/bin/qemu-or1k-static+0x2271f7 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c
+/usr/bin/qemu-or1k-static+0x1c30f0-/usr/bin/qemu-or1k-static+0x1c3119 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r8=any u32 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c
+/usr/bin/qemu-or1k-static+0x1c30e5-/usr/bin/qemu-or1k-static+0x1c30ee (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30dd-/usr/bin/qemu-or1k-static+0x1c30e3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30d0-/usr/bin/qemu-or1k-static+0x1c30d7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c31e1-/usr/bin/qemu-or1k-static+0x1c31e8 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=NULL-0x1 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c31d8-/usr/bin/qemu-or1k-static+0x1c31db (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=0 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30d0-/usr/bin/qemu-or1k-static+0x1c30d7 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=0 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30e5-/usr/bin/qemu-or1k-static+0x1c30ee (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=0 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30dd-/usr/bin/qemu-or1k-static+0x1c30e3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=0 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30c0-/usr/bin/qemu-or1k-static+0x1c30d7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f728 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=0 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c30b8-/usr/bin/qemu-or1k-static+0x1c30ba (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c2f42-/usr/bin/qemu-or1k-static+0x1c2f50 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c2f37-/usr/bin/qemu-or1k-static+0x1c2f3c (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=1
+/usr/bin/qemu-or1k-static+0x1c2f2e-/usr/bin/qemu-or1k-static+0x1c2f35 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=1
+/usr/bin/qemu-or1k-static+0x1c2f20-/usr/bin/qemu-or1k-static+0x1c2f2c (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 r11=/usr/bin/qemu-or1k-static+0x37f72c mem=any u32
+/usr/bin/qemu-or1k-static+0x1c2f12-/usr/bin/qemu-or1k-static+0x1c2f1e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 mem=any u32
+/usr/bin/qemu-or1k-static+0x1c2f10-/usr/bin/qemu-or1k-static+0x1c2f1e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8 mem=any u32
+/usr/bin/qemu-or1k-static+0x1c2f00-/usr/bin/qemu-or1k-static+0x1c2f0e (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8
+/usr/bin/qemu-or1k-static+0x1c2ef0-/usr/bin/qemu-or1k-static+0x1c2efc (primary result) ax=0 dx=0 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r9=/usr/bin/qemu-or1k-static+0x37f720 r10=8
+/usr/bin/qemu-or1k-static+0x19d61d-/usr/bin/qemu-or1k-static+0x19d624 (jump) ax=0 dx=0 si=/usr/bin/qemu-or1k-static+0x2752f8 di=/usr/bin/qemu-or1k-static+0x37f720 r10=8
+/usr/bin/qemu-or1k-static+0x19d600-/usr/bin/qemu-or1k-static+0x19d61b (primary result) ax=0 dx=0 si=/usr/bin/qemu-or1k-static+0x2752f8 di=0 r10=8
+/usr/bin/qemu-or1k-static+0x6ff1-/usr/bin/qemu-or1k-static+0x7019 (call) di=0
+/usr/bin/qemu-or1k-static+0x76fc (call) cx=0 dx=non-NULL si=/usr/bin/qemu-or1k-static+0x261f17 di=/usr/bin/qemu-or1k-static+0x25fd37 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-or1k-static+0x1b72c0-/usr/bin/qemu-or1k-static+0x1b7322 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-or1k-static+0x261f17 di=/usr/bin/qemu-or1k-static+0x25fd37 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-or1k-static+0x1c4820-/usr/bin/qemu-or1k-static+0x1c4830 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-or1k-static+0x261f17 di=/usr/bin/qemu-or1k-static+0x25fd37 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6e50-/usr/bin/qemu-or1k-static+0x1c6e57 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-or1k-static+0x261f17 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6ce4-/usr/bin/qemu-or1k-static+0x1c6cee (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6cde-/usr/bin/qemu-or1k-static+0x1c6ce2 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6cc7-/usr/bin/qemu-or1k-static+0x1c6cdc (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6cbe-/usr/bin/qemu-or1k-static+0x1c6cc1 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-or1k-static+0x1c6c99-/usr/bin/qemu-or1k-static+0x1c6cb8 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-or1k-static+0x1c6c87-/usr/bin/qemu-or1k-static+0x1c6c93 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6c76-/usr/bin/qemu-or1k-static+0x1c6c81 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6c64-/usr/bin/qemu-or1k-static+0x1c6c70 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c6c40-/usr/bin/qemu-or1k-static+0x1c6c5e (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-or1k-static+0x1c9d18-/usr/bin/qemu-or1k-static+0x1c9d24 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-or1k-static+0x1c9d03-/usr/bin/qemu-or1k-static+0x1c9d12 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-or1k-static+0x1c9cf2-/usr/bin/qemu-or1k-static+0x1c9cfd (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9ce1-/usr/bin/qemu-or1k-static+0x1c9cf0 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9cd3-/usr/bin/qemu-or1k-static+0x1c9cdf (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9ccb-/usr/bin/qemu-or1k-static+0x1c9ccd (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9cc1-/usr/bin/qemu-or1k-static+0x1c9cc5 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9cb7-/usr/bin/qemu-or1k-static+0x1c9cbb (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9c7b-/usr/bin/qemu-or1k-static+0x1c9cb1 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9c70-/usr/bin/qemu-or1k-static+0x1c9c79 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-or1k-static+0x371be0 mem=NULL-0x24
+/usr/bin/qemu-or1k-static+0x1c9c60-/usr/bin/qemu-or1k-static+0x1c9c6a (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-or1k-static+0x1c9c49-/usr/bin/qemu-or1k-static+0x1c9c5a (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-or1k-static+0x1c9c3d-/usr/bin/qemu-or1k-static+0x1c9c45 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-or1k-static+0x1c9c30-/usr/bin/qemu-or1k-static+0x1c9c37 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-or1k-static+0x844c-/usr/bin/qemu-or1k-static+0x8457 (call) bp=/usr/bin/qemu-or1k-static+0x37eb30 si=0 di=non-NULL
+/usr/bin/qemu-or1k-static+0x8443-/usr/bin/qemu-or1k-static+0x844a (conditional continue) bx=non-NULL bp=/usr/bin/qemu-or1k-static+0x37eb30 si=0 di=/usr/bin/qemu-or1k-static+0x37eb30 mem=non-NULL
+/usr/bin/qemu-or1k-static+0x8430-/usr/bin/qemu-or1k-static+0x8441 (conditional continue) bp=/usr/bin/qemu-or1k-static+0x37eb30 si=0 di=/usr/bin/qemu-or1k-static+0x37eb30 mem=0
+/usr/bin/qemu-or1k-static+0x8480-/usr/bin/qemu-or1k-static+0x848f (call) di=/usr/bin/qemu-or1k-static+0x37eb30
 /usr/bin/qemu-or1k-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

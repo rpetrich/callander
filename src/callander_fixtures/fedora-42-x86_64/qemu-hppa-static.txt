@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-hppa-static+0x1d445f-/usr/bin/qemu-hppa-static+0x1d4480
-/usr/bin/qemu-hppa-static+0x1d4450-/usr/bin/qemu-hppa-static+0x1d4459 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1ce073-/usr/bin/qemu-hppa-static+0x1ce095 (call)
-/usr/bin/qemu-hppa-static+0x1ce071 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1ce06e (primary result)
-/usr/bin/qemu-hppa-static+0x1ce069-/usr/bin/qemu-hppa-static+0x1ce06c (conditional continue)
-/usr/bin/qemu-hppa-static+0x1ce040-/usr/bin/qemu-hppa-static+0x1ce067 (conditional continue)
-/usr/bin/qemu-hppa-static+0x2381d0-/usr/bin/qemu-hppa-static+0x2381e7 (call)
-/usr/bin/qemu-hppa-static+0x23817e-/usr/bin/qemu-hppa-static+0x238199 (conditional jump)
-/usr/bin/qemu-hppa-static+0x238179-/usr/bin/qemu-hppa-static+0x23817c (conditional continue)
-/usr/bin/qemu-hppa-static+0x23820a-/usr/bin/qemu-hppa-static+0x238224 (conditional jump)
-/usr/bin/qemu-hppa-static+0x238205-/usr/bin/qemu-hppa-static+0x238208 (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x238200-/usr/bin/qemu-hppa-static+0x238203 (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x2381b4-/usr/bin/qemu-hppa-static+0x2381b7 (conditional jump (no continue))
-/usr/bin/qemu-hppa-static+0x2381b0-/usr/bin/qemu-hppa-static+0x2381b2 (conditional continue)
-/usr/bin/qemu-hppa-static+0x23819b-/usr/bin/qemu-hppa-static+0x2381ae (primary result)
-/usr/bin/qemu-hppa-static+0x23817e-/usr/bin/qemu-hppa-static+0x238199 (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x238179-/usr/bin/qemu-hppa-static+0x23817c (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x238170-/usr/bin/qemu-hppa-static+0x238173 (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x238230-/usr/bin/qemu-hppa-static+0x238237 (jump)
-/usr/bin/qemu-hppa-static+0x1d3df0-/usr/bin/qemu-hppa-static+0x1d3e19 (call)
-/usr/bin/qemu-hppa-static+0x1d3de5-/usr/bin/qemu-hppa-static+0x1d3dee (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3ddd-/usr/bin/qemu-hppa-static+0x1d3de3 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3dd0-/usr/bin/qemu-hppa-static+0x1d3dd7 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3ee1-/usr/bin/qemu-hppa-static+0x1d3ee8 (jump)
-/usr/bin/qemu-hppa-static+0x1d3ed8-/usr/bin/qemu-hppa-static+0x1d3edb (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x1d3dd0-/usr/bin/qemu-hppa-static+0x1d3dd7 (conditional jump)
-/usr/bin/qemu-hppa-static+0x1d3de5-/usr/bin/qemu-hppa-static+0x1d3dee (conditional jump)
-/usr/bin/qemu-hppa-static+0x1d3ddd-/usr/bin/qemu-hppa-static+0x1d3de3 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3dc0-/usr/bin/qemu-hppa-static+0x1d3dd7 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3db8-/usr/bin/qemu-hppa-static+0x1d3dba (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3c42-/usr/bin/qemu-hppa-static+0x1d3c50 (conditional jump)
-/usr/bin/qemu-hppa-static+0x1d3c37-/usr/bin/qemu-hppa-static+0x1d3c3c (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3c2e-/usr/bin/qemu-hppa-static+0x1d3c35 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3c20-/usr/bin/qemu-hppa-static+0x1d3c2c (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3c12-/usr/bin/qemu-hppa-static+0x1d3c1e (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3c10-/usr/bin/qemu-hppa-static+0x1d3c1e (conditional jump)
-/usr/bin/qemu-hppa-static+0x1d3c00-/usr/bin/qemu-hppa-static+0x1d3c0e (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d3bf0-/usr/bin/qemu-hppa-static+0x1d3bfc (primary result)
-/usr/bin/qemu-hppa-static+0x1ae31d-/usr/bin/qemu-hppa-static+0x1ae324 (jump)
-/usr/bin/qemu-hppa-static+0x1ae300-/usr/bin/qemu-hppa-static+0x1ae31b (primary result)
-/usr/bin/qemu-hppa-static+0x731b-/usr/bin/qemu-hppa-static+0x7343 (call)
-/usr/bin/qemu-hppa-static+0x7a26 (call)
-/usr/bin/qemu-hppa-static+0x1c7fc0-/usr/bin/qemu-hppa-static+0x1c8022 (conditional jump)
-/usr/bin/qemu-hppa-static+0x1d5520-/usr/bin/qemu-hppa-static+0x1d5530 (call)
-/usr/bin/qemu-hppa-static+0x1d7b50-/usr/bin/qemu-hppa-static+0x1d7b57 (call)
-/usr/bin/qemu-hppa-static+0x1d79e4-/usr/bin/qemu-hppa-static+0x1d79ee (conditional jump)
-/usr/bin/qemu-hppa-static+0x1d79de-/usr/bin/qemu-hppa-static+0x1d79e2 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d79c7-/usr/bin/qemu-hppa-static+0x1d79dc (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d79be-/usr/bin/qemu-hppa-static+0x1d79c1 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d7999-/usr/bin/qemu-hppa-static+0x1d79b8 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d7987-/usr/bin/qemu-hppa-static+0x1d7993 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d7976-/usr/bin/qemu-hppa-static+0x1d7981 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d7964-/usr/bin/qemu-hppa-static+0x1d7970 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1d7940-/usr/bin/qemu-hppa-static+0x1d795e (conditional continue)
-/usr/bin/qemu-hppa-static+0x1daa18-/usr/bin/qemu-hppa-static+0x1daa24 (call)
-/usr/bin/qemu-hppa-static+0x1daa03-/usr/bin/qemu-hppa-static+0x1daa12 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da9f2-/usr/bin/qemu-hppa-static+0x1da9fd (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da9e1-/usr/bin/qemu-hppa-static+0x1da9f0 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da9d3-/usr/bin/qemu-hppa-static+0x1da9df (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da9cb-/usr/bin/qemu-hppa-static+0x1da9cd (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da9c1-/usr/bin/qemu-hppa-static+0x1da9c5 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da9b7-/usr/bin/qemu-hppa-static+0x1da9bb (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da97b-/usr/bin/qemu-hppa-static+0x1da9b1 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da970-/usr/bin/qemu-hppa-static+0x1da979 (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da960-/usr/bin/qemu-hppa-static+0x1da96a (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da949-/usr/bin/qemu-hppa-static+0x1da95a (conditional continue)
-/usr/bin/qemu-hppa-static+0x1da93d-/usr/bin/qemu-hppa-static+0x1da945 (primary result)
-/usr/bin/qemu-hppa-static+0x1da930-/usr/bin/qemu-hppa-static+0x1da937 (conditional continue (no jump))
-/usr/bin/qemu-hppa-static+0x877c-/usr/bin/qemu-hppa-static+0x8787 (call)
-/usr/bin/qemu-hppa-static+0x8773-/usr/bin/qemu-hppa-static+0x877a (conditional continue)
-/usr/bin/qemu-hppa-static+0x8760-/usr/bin/qemu-hppa-static+0x8771 (conditional continue)
-/usr/bin/qemu-hppa-static+0x87b0-/usr/bin/qemu-hppa-static+0x87bf (call)
+callander: full call stack: /usr/bin/qemu-hppa-static+0x1d445f-/usr/bin/qemu-hppa-static+0x1d4480 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-hppa-static+0x1d4450-/usr/bin/qemu-hppa-static+0x1d4459 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-hppa-static+0x1ce073-/usr/bin/qemu-hppa-static+0x1ce095 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-hppa-static+0x1ce071 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hppa-static+0x1ce06e (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hppa-static+0x1ce069-/usr/bin/qemu-hppa-static+0x1ce06c (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hppa-static+0x1ce040-/usr/bin/qemu-hppa-static+0x1ce067 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hppa-static+0x2381d0-/usr/bin/qemu-hppa-static+0x2381e7 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-hppa-static+0x23817e-/usr/bin/qemu-hppa-static+0x238199 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-hppa-static+0x238179-/usr/bin/qemu-hppa-static+0x23817c (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-hppa-static+0x23820a-/usr/bin/qemu-hppa-static+0x238224 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-hppa-static+0x238205-/usr/bin/qemu-hppa-static+0x238208 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hppa-static+0x238200-/usr/bin/qemu-hppa-static+0x238203 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hppa-static+0x2381b4-/usr/bin/qemu-hppa-static+0x2381b7 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hppa-static+0x2381b0-/usr/bin/qemu-hppa-static+0x2381b2 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hppa-static+0x23819b-/usr/bin/qemu-hppa-static+0x2381ae (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hppa-static+0x23817e-/usr/bin/qemu-hppa-static+0x238199 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc
+/usr/bin/qemu-hppa-static+0x238179-/usr/bin/qemu-hppa-static+0x23817c (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc
+/usr/bin/qemu-hppa-static+0x238170-/usr/bin/qemu-hppa-static+0x238173 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc
+/usr/bin/qemu-hppa-static+0x238230-/usr/bin/qemu-hppa-static+0x238237 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc
+/usr/bin/qemu-hppa-static+0x1d3df0-/usr/bin/qemu-hppa-static+0x1d3e19 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r8=any u32 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc
+/usr/bin/qemu-hppa-static+0x1d3de5-/usr/bin/qemu-hppa-static+0x1d3dee (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3ddd-/usr/bin/qemu-hppa-static+0x1d3de3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3dd0-/usr/bin/qemu-hppa-static+0x1d3dd7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3ee1-/usr/bin/qemu-hppa-static+0x1d3ee8 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=NULL-0x1 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3ed8-/usr/bin/qemu-hppa-static+0x1d3edb (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=0 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3dd0-/usr/bin/qemu-hppa-static+0x1d3dd7 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=0 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3de5-/usr/bin/qemu-hppa-static+0x1d3dee (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=0 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3ddd-/usr/bin/qemu-hppa-static+0x1d3de3 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=0 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3dc0-/usr/bin/qemu-hppa-static+0x1d3dd7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc8 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=0 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3db8-/usr/bin/qemu-hppa-static+0x1d3dba (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3c42-/usr/bin/qemu-hppa-static+0x1d3c50 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3c37-/usr/bin/qemu-hppa-static+0x1d3c3c (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=1
+/usr/bin/qemu-hppa-static+0x1d3c2e-/usr/bin/qemu-hppa-static+0x1d3c35 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=1
+/usr/bin/qemu-hppa-static+0x1d3c20-/usr/bin/qemu-hppa-static+0x1d3c2c (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 r11=/usr/bin/qemu-hppa-static+0x39ffcc mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3c12-/usr/bin/qemu-hppa-static+0x1d3c1e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3c10-/usr/bin/qemu-hppa-static+0x1d3c1e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8 mem=any u32
+/usr/bin/qemu-hppa-static+0x1d3c00-/usr/bin/qemu-hppa-static+0x1d3c0e (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8
+/usr/bin/qemu-hppa-static+0x1d3bf0-/usr/bin/qemu-hppa-static+0x1d3bfc (primary result) ax=0 dx=0 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r9=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8
+/usr/bin/qemu-hppa-static+0x1ae31d-/usr/bin/qemu-hppa-static+0x1ae324 (jump) ax=0 dx=0 si=/usr/bin/qemu-hppa-static+0x287858 di=/usr/bin/qemu-hppa-static+0x39ffc0 r10=8
+/usr/bin/qemu-hppa-static+0x1ae300-/usr/bin/qemu-hppa-static+0x1ae31b (primary result) ax=0 dx=0 si=/usr/bin/qemu-hppa-static+0x287858 di=0 r10=8
+/usr/bin/qemu-hppa-static+0x731b-/usr/bin/qemu-hppa-static+0x7343 (call) di=0
+/usr/bin/qemu-hppa-static+0x7a26 (call) cx=0 dx=non-NULL si=/usr/bin/qemu-hppa-static+0x274321 di=/usr/bin/qemu-hppa-static+0x272149 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-hppa-static+0x1c7fc0-/usr/bin/qemu-hppa-static+0x1c8022 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-hppa-static+0x274321 di=/usr/bin/qemu-hppa-static+0x272149 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-hppa-static+0x1d5520-/usr/bin/qemu-hppa-static+0x1d5530 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-hppa-static+0x274321 di=/usr/bin/qemu-hppa-static+0x272149 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d7b50-/usr/bin/qemu-hppa-static+0x1d7b57 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-hppa-static+0x274321 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d79e4-/usr/bin/qemu-hppa-static+0x1d79ee (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d79de-/usr/bin/qemu-hppa-static+0x1d79e2 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d79c7-/usr/bin/qemu-hppa-static+0x1d79dc (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d79be-/usr/bin/qemu-hppa-static+0x1d79c1 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-hppa-static+0x1d7999-/usr/bin/qemu-hppa-static+0x1d79b8 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-hppa-static+0x1d7987-/usr/bin/qemu-hppa-static+0x1d7993 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d7976-/usr/bin/qemu-hppa-static+0x1d7981 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d7964-/usr/bin/qemu-hppa-static+0x1d7970 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hppa-static+0x1d7940-/usr/bin/qemu-hppa-static+0x1d795e (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hppa-static+0x1daa18-/usr/bin/qemu-hppa-static+0x1daa24 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-hppa-static+0x1daa03-/usr/bin/qemu-hppa-static+0x1daa12 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-hppa-static+0x1da9f2-/usr/bin/qemu-hppa-static+0x1da9fd (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da9e1-/usr/bin/qemu-hppa-static+0x1da9f0 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da9d3-/usr/bin/qemu-hppa-static+0x1da9df (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da9cb-/usr/bin/qemu-hppa-static+0x1da9cd (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da9c1-/usr/bin/qemu-hppa-static+0x1da9c5 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da9b7-/usr/bin/qemu-hppa-static+0x1da9bb (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da97b-/usr/bin/qemu-hppa-static+0x1da9b1 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da970-/usr/bin/qemu-hppa-static+0x1da979 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-hppa-static+0x392560 mem=NULL-0x24
+/usr/bin/qemu-hppa-static+0x1da960-/usr/bin/qemu-hppa-static+0x1da96a (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-hppa-static+0x1da949-/usr/bin/qemu-hppa-static+0x1da95a (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hppa-static+0x1da93d-/usr/bin/qemu-hppa-static+0x1da945 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-hppa-static+0x1da930-/usr/bin/qemu-hppa-static+0x1da937 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-hppa-static+0x877c-/usr/bin/qemu-hppa-static+0x8787 (call) bp=/usr/bin/qemu-hppa-static+0x39f3d0 si=0 di=non-NULL
+/usr/bin/qemu-hppa-static+0x8773-/usr/bin/qemu-hppa-static+0x877a (conditional continue) bx=non-NULL bp=/usr/bin/qemu-hppa-static+0x39f3d0 si=0 di=/usr/bin/qemu-hppa-static+0x39f3d0 mem=non-NULL
+/usr/bin/qemu-hppa-static+0x8760-/usr/bin/qemu-hppa-static+0x8771 (conditional continue) bp=/usr/bin/qemu-hppa-static+0x39f3d0 si=0 di=/usr/bin/qemu-hppa-static+0x39f3d0 mem=0
+/usr/bin/qemu-hppa-static+0x87b0-/usr/bin/qemu-hppa-static+0x87bf (call) di=/usr/bin/qemu-hppa-static+0x39f3d0
 /usr/bin/qemu-hppa-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

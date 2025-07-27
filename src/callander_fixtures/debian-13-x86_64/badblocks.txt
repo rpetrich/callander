@@ -56,7 +56,7 @@ pread64(any u32, any, any, any) @ libc.so.6+0xe6d05(__pread64+85)
 pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ libc.so.6+0x104528(__pread64_nocancel+8)
 pwrite64(any u32, any, any, any) @ libc.so.6+0xe6d71(__libc_pwrite+17)
 pwrite64(any u32, any, any, any) @ libc.so.6+0xe6db5(__libc_pwrite+85)
-writev(STDERR_FILENO, any, any) @ ld-linux-x86-64.so.2+0xc455
+writev(any u16, any, any) @ ld-linux-x86-64.so.2+0xc455
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x8792d
 writev(any u32, any, 2) @ libc.so.6+0x11041e(writev+14)
 writev(any u32, any, 4) @ libc.so.6+0x11041e(writev+14)

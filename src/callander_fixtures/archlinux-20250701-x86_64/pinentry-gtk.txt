@@ -1,0 +1,2 @@
+callander: failed to find: libgtk-3.so.0
+callander: failed to finish loading: ENOEXEC

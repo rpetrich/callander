@@ -1,6 +1,8 @@
 callander: permitted syscalls: read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c47f
 read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c4b8
 read(any u32, any, any) @ /usr/sbin/ldconfig+0x4c8e6
+write(STDERR_FILENO, /usr/sbin/ldconfig+0xbcc10, 45) @ /usr/sbin/ldconfig+0xadee
+write(STDERR_FILENO, /usr/sbin/ldconfig+0xbcc10, 45) @ /usr/sbin/ldconfig+0xae1e
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c5d2
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c60b
 write(any u32, any, any) @ /usr/sbin/ldconfig+0x4c919
@@ -13,9 +15,12 @@ poll(any, any, any u32) @ /usr/sbin/ldconfig+0xb201b
 lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x4c1c9
 mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d7ba
 mmap(0, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x4d816
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig+0x595d9
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x4d859
 munmap(any, any) @ /usr/sbin/ldconfig+0x4d889
 brk(any) @ /usr/sbin/ldconfig+0x4c989
+brk(0) @ /usr/sbin/ldconfig+0x595a9
+brk(any) @ /usr/sbin/ldconfig+0x595b4
 rt_sigaction(SIGABRT, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x68af6
 rt_sigprocmask(SIG_UNBLOCK, any, 0, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x1594
 rt_sigprocmask(SIG_BLOCK, /usr/sbin/ldconfig+0xc21a8, any, sizeof(kernel_sigset_t)) @ /usr/sbin/ldconfig+0x205ec
@@ -68,7 +73,11 @@ prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: fatal") @ /usr/sbin/
 prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: assert") @ /usr/sbin/ldconfig+0x4e74d
 prctl(PR_SET_VMA, 0, NULL-0xfffffffffffffffe, any, " glibc: malloc") @ /usr/sbin/ldconfig+0x4e74d
 prctl(PR_SET_VMA, 0, any, any, " glibc: malloc arena") @ /usr/sbin/ldconfig+0x4e74d
+arch_prctl(0x5001, 1) @ /usr/sbin/ldconfig+0xa9e2
+arch_prctl(0x1002, NULL-0xfffffffffffffffe) @ /usr/sbin/ldconfig+0xad0e
 arch_prctl(0x5002, 1) @ /usr/sbin/ldconfig+0x5939c
+arch_prctl(0x5005, any) @ /usr/sbin/ldconfig+0x594fc
+arch_prctl(0x5003, -1) @ /usr/sbin/ldconfig+0x5954e
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x4c9c9
 gettid() @ /usr/sbin/ldconfig+0x20695
 futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
@@ -89,10 +98,13 @@ futex(/usr/sbin/ldconfig+0xf60ac, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NUL
 futex(/usr/sbin/ldconfig+0xf64ac, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x4d554
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x7f3e5
+set_tid_address(any) @ /usr/sbin/ldconfig+0x58020
 restart_syscall()
 clock_gettime(CLOCK_REALTIME-CLOCK_MONOTONIC, any) @ /usr/sbin/ldconfig+0x48305
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ /usr/sbin/ldconfig+0x9fb65
 clock_nanosleep(any u32, any u32, any, any) @ /usr/sbin/ldconfig+0x9fba1
+exit_group(127) @ /usr/sbin/ldconfig+0xadfa
+exit_group(127) @ /usr/sbin/ldconfig+0xae2a
 exit_group(any u32) @ /usr/sbin/ldconfig+0x4869b
 tgkill(any u32, any u32, SIGABRT) @ /usr/sbin/ldconfig+0x20677
 tgkill(any u32, any u32, SIGFPE) @ /usr/sbin/ldconfig+0x20677
@@ -107,6 +119,8 @@ openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ /usr/sbi
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ /usr/sbin/ldconfig+0x4b90c
 newfstatat(AT_FDCWD, any, any, 0) @ /usr/sbin/ldconfig+0x4b90c
 readlinkat(AT_FDCWD, "/proc/self/exe", any, 0x1000) @ /usr/sbin/ldconfig+0x5677e
+set_robust_list(any, sizeof(struct robust_list_head)) @ /usr/sbin/ldconfig+0x5807c
 sendmmsg(any u32, any, 2, MSG_NOSIGNAL) @ /usr/sbin/ldconfig+0xb2355
 sendmmsg(any u32, any, any u32, any u32) @ /usr/sbin/ldconfig+0xb2390
 getrandom(/usr/sbin/ldconfig+0xf5a90, 8, GRND_NONBLOCK) @ /usr/sbin/ldconfig+0x21f87
+rseq(any, 32, 0, RSEQ_SIG) @ /usr/sbin/ldconfig+0x580f7

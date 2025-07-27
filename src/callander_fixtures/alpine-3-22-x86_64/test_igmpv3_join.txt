@@ -13,7 +13,7 @@ munmap(any, any) @ ld-musl-x86_64.so.1+0x682d9
 brk(any) @ ld-musl-x86_64.so.1+0x29d11(__malloc_alloc_meta*+369)
 brk(0) @ ld-musl-x86_64.so.1+0x29e0d(__malloc_alloc_meta*+621)
 brk(any) @ ld-musl-x86_64.so.1+0x29e32(__malloc_alloc_meta*+658)
-rt_sigaction(SIGSETXID, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
+rt_sigaction(SIGSETXID, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
 rt_sigaction(SIGSETXID, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfd3(__libc_sigaction*+384)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9e818(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dc7b(__block_all_sigs*+23)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x9e810(app_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dc95(__block_app_sigs*+23)
@@ -34,6 +34,7 @@ sendto(any, any, 20, 0, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 sendto(any, any, 20, 0, 0, 0) @ ld-musl-x86_64.so.1+0x68345
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 recvfrom(any, any, 0x2000, MSG_DONTWAIT, 0, 0) @ ld-musl-x86_64.so.1+0x68345
+setsockopt(any, SOL_IP, MCAST_JOIN_SOURCE_GROUP, any, 264) @ ld-musl-x86_64.so.1+0x5a27a(setsockopt+27)
 exit(0) @ ld-musl-x86_64.so.1+0x6690d(pthread_exit+456)
 exit(0) @ ld-musl-x86_64.so.1+0x682e3
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x5a34f(socket+116)

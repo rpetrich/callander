@@ -53,9 +53,9 @@ fchmod(STDIN_FILENO-0xfffffffe, 0600) @ libc.so.6+0xe97c8(fchmod+8)
 fchmod(any u32, 0400) @ libc.so.6+0xe97c8(fchmod+8)
 fchmodat(AT_FDCWD, any, any u32) @ libc.so.6+0xe907c(chmod+28)
 fchownat(AT_FDCWD, non-NULL, any u32, any u32, 0) @ libc.so.6+0xe90e4(chown+36)
-openat(any, any, O_RDONLY, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+openat(any, any, any u16, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-openat(any, any, O_RDONLY, any) @ libc.so.6+0x96ba8
+openat(any, any, any u16, any) @ libc.so.6+0x96ba8
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x96ba8
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xeeddc(__open_nocancel+92)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xeeddc(__open_nocancel+92)

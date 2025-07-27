@@ -50,6 +50,8 @@ access(any, X_OK) @ ld-musl-x86_64.so.1+0x69b3b(access+12)
 access(non-NULL, X_OK|W_OK|R_OK) @ ld-musl-x86_64.so.1+0x69b3b(access+12)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ ld-musl-x86_64.so.1+0x5668e(mremap+43)
 dup(any) @ ld-musl-x86_64.so.1+0x69c3d(dup+12)
+setitimer(ITIMER_REAL, 0, any) @ ld-musl-x86_64.so.1+0x5de33(setitimer+12)
+setitimer(ITIMER_REAL, any, 0) @ ld-musl-x86_64.so.1+0x5de33(setitimer+12)
 exit(0) @ ld-musl-x86_64.so.1+0x6690d(pthread_exit+456)
 exit(0) @ ld-musl-x86_64.so.1+0x682e3
 fcntl(any, F_GETFD, 0) @ ld-musl-x86_64.so.1+0x41cc3(fcntl+124)

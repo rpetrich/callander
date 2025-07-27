@@ -113,8 +113,8 @@ ppoll(any, 1, 0, 0, 0) @ libc.so.6+0x3ce68(__GI___arc4random_buf.part.0+296)
 ppoll(any, non-NULL, any, any u8, any u8) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 ppoll(any, non-NULL, any, any u8, any u8) @ libc.so.6+0x96ba8
 signalfd4(any, any, sizeof(kernel_sigset_t), SFD_NONBLOCK|SFD_CLOEXEC) @ libc.so.6+0xf945c(signalfd+28)
-splice(any, 0, any, any u32, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-splice(any, 0, any, any u32, any, any) @ libc.so.6+0x96ba8
+splice(any, 0, any, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+splice(any, 0, any, any, any, any) @ libc.so.6+0x96ba8
 readlinkat(AT_FDCWD, any, any, any) @ libc.so.6+0xedf40(readlink+32)
 readlinkat(any u32, any, non-NULL, any) @ libc.so.6+0xedf88(readlinkat+8)
 newfstatat(any, any, any, any) @ libc.so.6+0xe9e98(fstatat64+24)
@@ -127,6 +127,8 @@ capget(any, any) @ libc.so.6+0xf9808(capget+8)
 capset(any, any) @ libc.so.6+0xf6164(syscall+36)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_PID, any u32, any, any, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
@@ -187,8 +189,8 @@ rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8dd48
 rt_sigprocmask(SIG_BLOCK, libc.so.6+0x170158(sigall_set), any, sizeof(kernel_sigset_t)) @ libc.so.6+0x8efe4(__pthread_kill_implementation+100)
 rt_sigprocmask(SIG_SETMASK, any, 0, sizeof(kernel_sigset_t)) @ libc.so.6+0x8f030(__pthread_kill_implementation+176)
 rt_sigprocmask(SIG_BLOCK-SIG_SETMASK, any, any, sizeof(kernel_sigset_t)) @ libc.so.6+0x956ac(pthread_sigmask+76)
-rt_sigtimedwait(any, 0, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-rt_sigtimedwait(any, 0, any, any u16) @ libc.so.6+0x96ba8
+rt_sigtimedwait(any, 0, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+rt_sigtimedwait(any, 0, any, any u32) @ libc.so.6+0x96ba8
 setgid(any) @ libc.so.6+0x8a4a4(__GI___nptl_setxid_sighandler+100)
 setgid(any) @ libc.so.6+0x8a7f4(__nptl_setxid+596)
 setgid(any u32) @ libc.so.6+0xe2718(setgid+56)

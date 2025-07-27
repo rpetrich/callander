@@ -1,5 +1,5 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-sparc64-static+0x80b7
-/usr/bin/qemu-sparc64-static+0x80b1-/usr/bin/qemu-sparc64-static+0x80b5 (conditional continue)
+callander: full call stack: /usr/bin/qemu-sparc64-static+0x80b7 mem=0
+/usr/bin/qemu-sparc64-static+0x80b1-/usr/bin/qemu-sparc64-static+0x80b5 (conditional continue) mem=0
 /usr/bin/qemu-sparc64-static+0x6fd98 (lea)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

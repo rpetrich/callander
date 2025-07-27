@@ -124,7 +124,7 @@ newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xfa81c(fstatat64
 newfstatat(any u32, "", any, AT_EMPTY_PATH) @ libc.so.6+0xfa81c(fstatat64+12)
 newfstatat(AT_FDCWD, any, any, 0) @ libc.so.6+0xfa81c(fstatat64+12)
 faccessat(AT_FDCWD, any, F_OK) @ libc.so.6+0xfb67f(faccessat+303)
-utimensat(AT_FDCWD, non-NULL, non-NULL, 0) @ libc.so.6+0xff981(utimensat+17)
+utimensat(AT_FDCWD, non-NULL, any, 0) @ libc.so.6+0xff981(utimensat+17)
 prlimit64(0, RLIMIT_NOFILE, 0, any) @ libc.so.6+0x100892(__getrlimit+18)
 prlimit64(0, RLIMIT_NOFILE, any, 0) @ libc.so.6+0x1008d3(setrlimit64+19)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3fe32(getrandom+18)

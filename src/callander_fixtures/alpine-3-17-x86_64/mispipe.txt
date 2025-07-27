@@ -12,7 +12,6 @@ lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 munmap(any, non-NULL) @ ld-musl-x86_64.so.1+0x3926b(munmap+25)
 munmap(any, any) @ ld-musl-x86_64.so.1+0x58350
 rt_sigaction(any, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
-rt_sigaction(SIGINT-SIGQUIT, 0, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x494cb(__libc_sigaction*+282)
 rt_sigaction(any, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x494df(__libc_sigaction*+302)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937b8(all_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x491f6(__block_all_sigs*+23)
 rt_sigprocmask(SIG_BLOCK, ld-musl-x86_64.so.1+0x937b0(app_mask*), any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x49210(__block_app_sigs*+23)

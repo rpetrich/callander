@@ -1,76 +1,76 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-mips-static+0x254cdf-/usr/bin/qemu-mips-static+0x254d00
-/usr/bin/qemu-mips-static+0x254cd0-/usr/bin/qemu-mips-static+0x254cd9 (conditional continue)
-/usr/bin/qemu-mips-static+0x24e8f3-/usr/bin/qemu-mips-static+0x24e915 (call)
-/usr/bin/qemu-mips-static+0x24e8f1 (conditional continue)
-/usr/bin/qemu-mips-static+0x24e8ee (primary result)
-/usr/bin/qemu-mips-static+0x24e8e9-/usr/bin/qemu-mips-static+0x24e8ec (conditional continue)
-/usr/bin/qemu-mips-static+0x24e8c0-/usr/bin/qemu-mips-static+0x24e8e7 (conditional continue)
-/usr/bin/qemu-mips-static+0x2b8a50-/usr/bin/qemu-mips-static+0x2b8a67 (call)
-/usr/bin/qemu-mips-static+0x2b89fe-/usr/bin/qemu-mips-static+0x2b8a19 (conditional jump)
-/usr/bin/qemu-mips-static+0x2b89f9-/usr/bin/qemu-mips-static+0x2b89fc (conditional continue)
-/usr/bin/qemu-mips-static+0x2b8a8a-/usr/bin/qemu-mips-static+0x2b8aa4 (conditional jump)
-/usr/bin/qemu-mips-static+0x2b8a85-/usr/bin/qemu-mips-static+0x2b8a88 (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x2b8a80-/usr/bin/qemu-mips-static+0x2b8a83 (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x2b8a34-/usr/bin/qemu-mips-static+0x2b8a37 (conditional jump (no continue))
-/usr/bin/qemu-mips-static+0x2b8a30-/usr/bin/qemu-mips-static+0x2b8a32 (conditional continue)
-/usr/bin/qemu-mips-static+0x2b8a1b-/usr/bin/qemu-mips-static+0x2b8a2e (primary result)
-/usr/bin/qemu-mips-static+0x2b89fe-/usr/bin/qemu-mips-static+0x2b8a19 (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x2b89f9-/usr/bin/qemu-mips-static+0x2b89fc (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x2b89f0-/usr/bin/qemu-mips-static+0x2b89f3 (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x2b8ab0-/usr/bin/qemu-mips-static+0x2b8ab7 (jump)
-/usr/bin/qemu-mips-static+0x254670-/usr/bin/qemu-mips-static+0x254699 (call)
-/usr/bin/qemu-mips-static+0x254665-/usr/bin/qemu-mips-static+0x25466e (conditional continue)
-/usr/bin/qemu-mips-static+0x25465d-/usr/bin/qemu-mips-static+0x254663 (conditional continue)
-/usr/bin/qemu-mips-static+0x254650-/usr/bin/qemu-mips-static+0x254657 (conditional continue)
-/usr/bin/qemu-mips-static+0x254761-/usr/bin/qemu-mips-static+0x254768 (jump)
-/usr/bin/qemu-mips-static+0x254758-/usr/bin/qemu-mips-static+0x25475b (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x254650-/usr/bin/qemu-mips-static+0x254657 (conditional jump)
-/usr/bin/qemu-mips-static+0x254665-/usr/bin/qemu-mips-static+0x25466e (conditional jump)
-/usr/bin/qemu-mips-static+0x25465d-/usr/bin/qemu-mips-static+0x254663 (conditional continue)
-/usr/bin/qemu-mips-static+0x254640-/usr/bin/qemu-mips-static+0x254657 (conditional continue)
-/usr/bin/qemu-mips-static+0x254638-/usr/bin/qemu-mips-static+0x25463a (conditional continue)
-/usr/bin/qemu-mips-static+0x2544c2-/usr/bin/qemu-mips-static+0x2544d0 (conditional jump)
-/usr/bin/qemu-mips-static+0x2544b7-/usr/bin/qemu-mips-static+0x2544bc (conditional continue)
-/usr/bin/qemu-mips-static+0x2544ae-/usr/bin/qemu-mips-static+0x2544b5 (conditional continue)
-/usr/bin/qemu-mips-static+0x2544a0-/usr/bin/qemu-mips-static+0x2544ac (conditional continue)
-/usr/bin/qemu-mips-static+0x254492-/usr/bin/qemu-mips-static+0x25449e (conditional continue)
-/usr/bin/qemu-mips-static+0x254490-/usr/bin/qemu-mips-static+0x25449e (conditional jump)
-/usr/bin/qemu-mips-static+0x254480-/usr/bin/qemu-mips-static+0x25448e (conditional continue)
-/usr/bin/qemu-mips-static+0x254470-/usr/bin/qemu-mips-static+0x25447c (primary result)
-/usr/bin/qemu-mips-static+0x22ea1d-/usr/bin/qemu-mips-static+0x22ea24 (jump)
-/usr/bin/qemu-mips-static+0x22ea00-/usr/bin/qemu-mips-static+0x22ea1b (primary result)
-/usr/bin/qemu-mips-static+0x76ef-/usr/bin/qemu-mips-static+0x7717 (call)
-/usr/bin/qemu-mips-static+0x7e57 (call)
-/usr/bin/qemu-mips-static+0x248850-/usr/bin/qemu-mips-static+0x2488b2 (conditional jump)
-/usr/bin/qemu-mips-static+0x255da0-/usr/bin/qemu-mips-static+0x255db0 (call)
-/usr/bin/qemu-mips-static+0x2583d0-/usr/bin/qemu-mips-static+0x2583d7 (call)
-/usr/bin/qemu-mips-static+0x258264-/usr/bin/qemu-mips-static+0x25826e (conditional jump)
-/usr/bin/qemu-mips-static+0x25825e-/usr/bin/qemu-mips-static+0x258262 (conditional continue)
-/usr/bin/qemu-mips-static+0x258247-/usr/bin/qemu-mips-static+0x25825c (conditional continue)
-/usr/bin/qemu-mips-static+0x25823e-/usr/bin/qemu-mips-static+0x258241 (conditional continue)
-/usr/bin/qemu-mips-static+0x258219-/usr/bin/qemu-mips-static+0x258238 (conditional continue)
-/usr/bin/qemu-mips-static+0x258207-/usr/bin/qemu-mips-static+0x258213 (conditional continue)
-/usr/bin/qemu-mips-static+0x2581f6-/usr/bin/qemu-mips-static+0x258201 (conditional continue)
-/usr/bin/qemu-mips-static+0x2581e4-/usr/bin/qemu-mips-static+0x2581f0 (conditional continue)
-/usr/bin/qemu-mips-static+0x2581c0-/usr/bin/qemu-mips-static+0x2581de (conditional continue)
-/usr/bin/qemu-mips-static+0x25b298-/usr/bin/qemu-mips-static+0x25b2a4 (call)
-/usr/bin/qemu-mips-static+0x25b283-/usr/bin/qemu-mips-static+0x25b292 (conditional continue)
-/usr/bin/qemu-mips-static+0x25b272-/usr/bin/qemu-mips-static+0x25b27d (conditional continue)
-/usr/bin/qemu-mips-static+0x25b261-/usr/bin/qemu-mips-static+0x25b270 (conditional continue)
-/usr/bin/qemu-mips-static+0x25b253-/usr/bin/qemu-mips-static+0x25b25f (conditional continue)
-/usr/bin/qemu-mips-static+0x25b24b-/usr/bin/qemu-mips-static+0x25b24d (conditional continue)
-/usr/bin/qemu-mips-static+0x25b241-/usr/bin/qemu-mips-static+0x25b245 (conditional continue)
-/usr/bin/qemu-mips-static+0x25b237-/usr/bin/qemu-mips-static+0x25b23b (conditional continue)
-/usr/bin/qemu-mips-static+0x25b1fb-/usr/bin/qemu-mips-static+0x25b231 (conditional continue)
-/usr/bin/qemu-mips-static+0x25b1f0-/usr/bin/qemu-mips-static+0x25b1f9 (conditional continue)
-/usr/bin/qemu-mips-static+0x25b1e0-/usr/bin/qemu-mips-static+0x25b1ea (conditional continue)
-/usr/bin/qemu-mips-static+0x25b1c9-/usr/bin/qemu-mips-static+0x25b1da (conditional continue)
-/usr/bin/qemu-mips-static+0x25b1bd-/usr/bin/qemu-mips-static+0x25b1c5 (primary result)
-/usr/bin/qemu-mips-static+0x25b1b0-/usr/bin/qemu-mips-static+0x25b1b7 (conditional continue (no jump))
-/usr/bin/qemu-mips-static+0x8bac-/usr/bin/qemu-mips-static+0x8bb7 (call)
-/usr/bin/qemu-mips-static+0x8ba3-/usr/bin/qemu-mips-static+0x8baa (conditional continue)
-/usr/bin/qemu-mips-static+0x8b90-/usr/bin/qemu-mips-static+0x8ba1 (conditional continue)
-/usr/bin/qemu-mips-static+0x8be0-/usr/bin/qemu-mips-static+0x8bef (call)
+callander: full call stack: /usr/bin/qemu-mips-static+0x254cdf-/usr/bin/qemu-mips-static+0x254d00 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-mips-static+0x254cd0-/usr/bin/qemu-mips-static+0x254cd9 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-mips-static+0x24e8f3-/usr/bin/qemu-mips-static+0x24e915 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-mips-static+0x24e8f1 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-mips-static+0x24e8ee (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-mips-static+0x24e8e9-/usr/bin/qemu-mips-static+0x24e8ec (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-mips-static+0x24e8c0-/usr/bin/qemu-mips-static+0x24e8e7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-mips-static+0x2b8a50-/usr/bin/qemu-mips-static+0x2b8a67 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-mips-static+0x2b89fe-/usr/bin/qemu-mips-static+0x2b8a19 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-mips-static+0x2b89f9-/usr/bin/qemu-mips-static+0x2b89fc (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-mips-static+0x2b8a8a-/usr/bin/qemu-mips-static+0x2b8aa4 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-mips-static+0x2b8a85-/usr/bin/qemu-mips-static+0x2b8a88 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-mips-static+0x486108 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-mips-static+0x2b8a80-/usr/bin/qemu-mips-static+0x2b8a83 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-mips-static+0x486108 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-mips-static+0x2b8a34-/usr/bin/qemu-mips-static+0x2b8a37 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-mips-static+0x486108 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-mips-static+0x2b8a30-/usr/bin/qemu-mips-static+0x2b8a32 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-mips-static+0x486108 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-mips-static+0x2b8a1b-/usr/bin/qemu-mips-static+0x2b8a2e (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-mips-static+0x486108 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-mips-static+0x2b89fe-/usr/bin/qemu-mips-static+0x2b8a19 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-mips-static+0x486108 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c
+/usr/bin/qemu-mips-static+0x2b89f9-/usr/bin/qemu-mips-static+0x2b89fc (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-mips-static+0x486108 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c
+/usr/bin/qemu-mips-static+0x2b89f0-/usr/bin/qemu-mips-static+0x2b89f3 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-mips-static+0x486108 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c
+/usr/bin/qemu-mips-static+0x2b8ab0-/usr/bin/qemu-mips-static+0x2b8ab7 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-mips-static+0x486108 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c
+/usr/bin/qemu-mips-static+0x254670-/usr/bin/qemu-mips-static+0x254699 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r8=any u32 r9=/usr/bin/qemu-mips-static+0x486100 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c
+/usr/bin/qemu-mips-static+0x254665-/usr/bin/qemu-mips-static+0x25466e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x25465d-/usr/bin/qemu-mips-static+0x254663 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254650-/usr/bin/qemu-mips-static+0x254657 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254761-/usr/bin/qemu-mips-static+0x254768 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=NULL-0x1 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254758-/usr/bin/qemu-mips-static+0x25475b (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=0 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254650-/usr/bin/qemu-mips-static+0x254657 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=0 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254665-/usr/bin/qemu-mips-static+0x25466e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=0 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x25465d-/usr/bin/qemu-mips-static+0x254663 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=0 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254640-/usr/bin/qemu-mips-static+0x254657 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486108 r9=/usr/bin/qemu-mips-static+0x486100 r10=0 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254638-/usr/bin/qemu-mips-static+0x25463a (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x2544c2-/usr/bin/qemu-mips-static+0x2544d0 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x2544b7-/usr/bin/qemu-mips-static+0x2544bc (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 r11=/usr/bin/qemu-mips-static+0x48610c mem=1
+/usr/bin/qemu-mips-static+0x2544ae-/usr/bin/qemu-mips-static+0x2544b5 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 r11=/usr/bin/qemu-mips-static+0x48610c mem=1
+/usr/bin/qemu-mips-static+0x2544a0-/usr/bin/qemu-mips-static+0x2544ac (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 r11=/usr/bin/qemu-mips-static+0x48610c mem=any u32
+/usr/bin/qemu-mips-static+0x254492-/usr/bin/qemu-mips-static+0x25449e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 mem=any u32
+/usr/bin/qemu-mips-static+0x254490-/usr/bin/qemu-mips-static+0x25449e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8 mem=any u32
+/usr/bin/qemu-mips-static+0x254480-/usr/bin/qemu-mips-static+0x25448e (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8
+/usr/bin/qemu-mips-static+0x254470-/usr/bin/qemu-mips-static+0x25447c (primary result) ax=0 dx=0 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r9=/usr/bin/qemu-mips-static+0x486100 r10=8
+/usr/bin/qemu-mips-static+0x22ea1d-/usr/bin/qemu-mips-static+0x22ea24 (jump) ax=0 dx=0 si=/usr/bin/qemu-mips-static+0x311368 di=/usr/bin/qemu-mips-static+0x486100 r10=8
+/usr/bin/qemu-mips-static+0x22ea00-/usr/bin/qemu-mips-static+0x22ea1b (primary result) ax=0 dx=0 si=/usr/bin/qemu-mips-static+0x311368 di=0 r10=8
+/usr/bin/qemu-mips-static+0x76ef-/usr/bin/qemu-mips-static+0x7717 (call) di=0
+/usr/bin/qemu-mips-static+0x7e57 (call) cx=0 dx=non-NULL si=/usr/bin/qemu-mips-static+0x2fdbc6 di=/usr/bin/qemu-mips-static+0x2fb9ed r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-mips-static+0x248850-/usr/bin/qemu-mips-static+0x2488b2 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-mips-static+0x2fdbc6 di=/usr/bin/qemu-mips-static+0x2fb9ed r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-mips-static+0x255da0-/usr/bin/qemu-mips-static+0x255db0 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-mips-static+0x2fdbc6 di=/usr/bin/qemu-mips-static+0x2fb9ed r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-mips-static+0x2583d0-/usr/bin/qemu-mips-static+0x2583d7 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-mips-static+0x2fdbc6 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-mips-static+0x258264-/usr/bin/qemu-mips-static+0x25826e (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-mips-static+0x25825e-/usr/bin/qemu-mips-static+0x258262 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-mips-static+0x258247-/usr/bin/qemu-mips-static+0x25825c (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-mips-static+0x25823e-/usr/bin/qemu-mips-static+0x258241 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-mips-static+0x258219-/usr/bin/qemu-mips-static+0x258238 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-mips-static+0x258207-/usr/bin/qemu-mips-static+0x258213 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-mips-static+0x2581f6-/usr/bin/qemu-mips-static+0x258201 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-mips-static+0x2581e4-/usr/bin/qemu-mips-static+0x2581f0 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-mips-static+0x2581c0-/usr/bin/qemu-mips-static+0x2581de (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-mips-static+0x25b298-/usr/bin/qemu-mips-static+0x25b2a4 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-mips-static+0x25b283-/usr/bin/qemu-mips-static+0x25b292 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-mips-static+0x25b272-/usr/bin/qemu-mips-static+0x25b27d (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b261-/usr/bin/qemu-mips-static+0x25b270 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b253-/usr/bin/qemu-mips-static+0x25b25f (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b24b-/usr/bin/qemu-mips-static+0x25b24d (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b241-/usr/bin/qemu-mips-static+0x25b245 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b237-/usr/bin/qemu-mips-static+0x25b23b (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b1fb-/usr/bin/qemu-mips-static+0x25b231 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b1f0-/usr/bin/qemu-mips-static+0x25b1f9 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-mips-static+0x477520 mem=NULL-0x24
+/usr/bin/qemu-mips-static+0x25b1e0-/usr/bin/qemu-mips-static+0x25b1ea (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-mips-static+0x25b1c9-/usr/bin/qemu-mips-static+0x25b1da (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-mips-static+0x25b1bd-/usr/bin/qemu-mips-static+0x25b1c5 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-mips-static+0x25b1b0-/usr/bin/qemu-mips-static+0x25b1b7 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-mips-static+0x8bac-/usr/bin/qemu-mips-static+0x8bb7 (call) bp=/usr/bin/qemu-mips-static+0x485510 si=0 di=non-NULL
+/usr/bin/qemu-mips-static+0x8ba3-/usr/bin/qemu-mips-static+0x8baa (conditional continue) bx=non-NULL bp=/usr/bin/qemu-mips-static+0x485510 si=0 di=/usr/bin/qemu-mips-static+0x485510 mem=non-NULL
+/usr/bin/qemu-mips-static+0x8b90-/usr/bin/qemu-mips-static+0x8ba1 (conditional continue) bp=/usr/bin/qemu-mips-static+0x485510 si=0 di=/usr/bin/qemu-mips-static+0x485510 mem=0
+/usr/bin/qemu-mips-static+0x8be0-/usr/bin/qemu-mips-static+0x8bef (call) di=/usr/bin/qemu-mips-static+0x485510
 /usr/bin/qemu-mips-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

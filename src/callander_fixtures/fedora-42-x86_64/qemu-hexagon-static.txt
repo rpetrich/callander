@@ -1,75 +1,75 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-hexagon-static+0x3029df-/usr/bin/qemu-hexagon-static+0x302a00
-/usr/bin/qemu-hexagon-static+0x3029d0-/usr/bin/qemu-hexagon-static+0x3029d9 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x2fc5f3-/usr/bin/qemu-hexagon-static+0x2fc615 (call)
-/usr/bin/qemu-hexagon-static+0x2fc5f1 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x2fc5ee (primary result)
-/usr/bin/qemu-hexagon-static+0x2fc5e9-/usr/bin/qemu-hexagon-static+0x2fc5ec (conditional continue)
-/usr/bin/qemu-hexagon-static+0x2fc5c0-/usr/bin/qemu-hexagon-static+0x2fc5e7 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x3663d0-/usr/bin/qemu-hexagon-static+0x3663e7 (call)
-/usr/bin/qemu-hexagon-static+0x36637e-/usr/bin/qemu-hexagon-static+0x366399 (conditional jump)
-/usr/bin/qemu-hexagon-static+0x366379-/usr/bin/qemu-hexagon-static+0x36637c (conditional continue)
-/usr/bin/qemu-hexagon-static+0x36640a-/usr/bin/qemu-hexagon-static+0x366424 (conditional jump)
-/usr/bin/qemu-hexagon-static+0x366405-/usr/bin/qemu-hexagon-static+0x366408 (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x366400-/usr/bin/qemu-hexagon-static+0x366403 (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x3663b4-/usr/bin/qemu-hexagon-static+0x3663b7 (conditional jump (no continue))
-/usr/bin/qemu-hexagon-static+0x3663b0-/usr/bin/qemu-hexagon-static+0x3663b2 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x36639b-/usr/bin/qemu-hexagon-static+0x3663ae (primary result)
-/usr/bin/qemu-hexagon-static+0x36637e-/usr/bin/qemu-hexagon-static+0x366399 (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x366379-/usr/bin/qemu-hexagon-static+0x36637c (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x366370-/usr/bin/qemu-hexagon-static+0x366373 (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x366430-/usr/bin/qemu-hexagon-static+0x366437 (jump)
-/usr/bin/qemu-hexagon-static+0x302370-/usr/bin/qemu-hexagon-static+0x302399 (call)
-/usr/bin/qemu-hexagon-static+0x302365-/usr/bin/qemu-hexagon-static+0x30236e (conditional continue)
-/usr/bin/qemu-hexagon-static+0x30235d-/usr/bin/qemu-hexagon-static+0x302363 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x302350-/usr/bin/qemu-hexagon-static+0x302357 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x302461-/usr/bin/qemu-hexagon-static+0x302468 (jump)
-/usr/bin/qemu-hexagon-static+0x302458-/usr/bin/qemu-hexagon-static+0x30245b (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x302350-/usr/bin/qemu-hexagon-static+0x302357 (conditional jump)
-/usr/bin/qemu-hexagon-static+0x302365-/usr/bin/qemu-hexagon-static+0x30236e (conditional jump)
-/usr/bin/qemu-hexagon-static+0x30235d-/usr/bin/qemu-hexagon-static+0x302363 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x302340-/usr/bin/qemu-hexagon-static+0x302357 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x302338-/usr/bin/qemu-hexagon-static+0x30233a (conditional continue)
-/usr/bin/qemu-hexagon-static+0x3021c2-/usr/bin/qemu-hexagon-static+0x3021d0 (conditional jump)
-/usr/bin/qemu-hexagon-static+0x3021b7-/usr/bin/qemu-hexagon-static+0x3021bc (conditional continue)
-/usr/bin/qemu-hexagon-static+0x3021ae-/usr/bin/qemu-hexagon-static+0x3021b5 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x3021a0-/usr/bin/qemu-hexagon-static+0x3021ac (conditional continue)
-/usr/bin/qemu-hexagon-static+0x302192-/usr/bin/qemu-hexagon-static+0x30219e (conditional continue)
-/usr/bin/qemu-hexagon-static+0x302190-/usr/bin/qemu-hexagon-static+0x30219e (conditional jump)
-/usr/bin/qemu-hexagon-static+0x302170-/usr/bin/qemu-hexagon-static+0x30218e (conditional continue)
-/usr/bin/qemu-hexagon-static+0x2dc89d-/usr/bin/qemu-hexagon-static+0x2dc8a4 (jump)
-/usr/bin/qemu-hexagon-static+0x2dc880-/usr/bin/qemu-hexagon-static+0x2dc89b (primary result)
-/usr/bin/qemu-hexagon-static+0x70d8-/usr/bin/qemu-hexagon-static+0x7100 (call)
-/usr/bin/qemu-hexagon-static+0x77e3 (call)
-/usr/bin/qemu-hexagon-static+0x2f6540-/usr/bin/qemu-hexagon-static+0x2f65a2 (conditional jump)
-/usr/bin/qemu-hexagon-static+0x303aa0-/usr/bin/qemu-hexagon-static+0x303ab0 (call)
-/usr/bin/qemu-hexagon-static+0x3060d0-/usr/bin/qemu-hexagon-static+0x3060d7 (call)
-/usr/bin/qemu-hexagon-static+0x305f64-/usr/bin/qemu-hexagon-static+0x305f6e (conditional jump)
-/usr/bin/qemu-hexagon-static+0x305f5e-/usr/bin/qemu-hexagon-static+0x305f62 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305f47-/usr/bin/qemu-hexagon-static+0x305f5c (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305f3e-/usr/bin/qemu-hexagon-static+0x305f41 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305f19-/usr/bin/qemu-hexagon-static+0x305f38 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305f07-/usr/bin/qemu-hexagon-static+0x305f13 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305ef6-/usr/bin/qemu-hexagon-static+0x305f01 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305ee4-/usr/bin/qemu-hexagon-static+0x305ef0 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x305ec0-/usr/bin/qemu-hexagon-static+0x305ede (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f98-/usr/bin/qemu-hexagon-static+0x308fa4 (call)
-/usr/bin/qemu-hexagon-static+0x308f83-/usr/bin/qemu-hexagon-static+0x308f92 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f72-/usr/bin/qemu-hexagon-static+0x308f7d (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f61-/usr/bin/qemu-hexagon-static+0x308f70 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f53-/usr/bin/qemu-hexagon-static+0x308f5f (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f4b-/usr/bin/qemu-hexagon-static+0x308f4d (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f41-/usr/bin/qemu-hexagon-static+0x308f45 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308f37-/usr/bin/qemu-hexagon-static+0x308f3b (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308efb-/usr/bin/qemu-hexagon-static+0x308f31 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308ef0-/usr/bin/qemu-hexagon-static+0x308ef9 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308ee0-/usr/bin/qemu-hexagon-static+0x308eea (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308ec9-/usr/bin/qemu-hexagon-static+0x308eda (conditional continue)
-/usr/bin/qemu-hexagon-static+0x308ebd-/usr/bin/qemu-hexagon-static+0x308ec5 (primary result)
-/usr/bin/qemu-hexagon-static+0x308eb0-/usr/bin/qemu-hexagon-static+0x308eb7 (conditional continue (no jump))
-/usr/bin/qemu-hexagon-static+0x852c-/usr/bin/qemu-hexagon-static+0x8537 (call)
-/usr/bin/qemu-hexagon-static+0x8523-/usr/bin/qemu-hexagon-static+0x852a (conditional continue)
-/usr/bin/qemu-hexagon-static+0x8510-/usr/bin/qemu-hexagon-static+0x8521 (conditional continue)
-/usr/bin/qemu-hexagon-static+0x8560-/usr/bin/qemu-hexagon-static+0x856f (call)
+callander: full call stack: /usr/bin/qemu-hexagon-static+0x3029df-/usr/bin/qemu-hexagon-static+0x302a00 dx=any u32 r8=0 r9=-1 as u32 stack+16=-1 as u32
+/usr/bin/qemu-hexagon-static+0x3029d0-/usr/bin/qemu-hexagon-static+0x3029d9 (conditional continue) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-hexagon-static+0x2fc5f3-/usr/bin/qemu-hexagon-static+0x2fc615 (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/qemu-hexagon-static+0x2fc5f1 (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hexagon-static+0x2fc5ee (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hexagon-static+0x2fc5e9-/usr/bin/qemu-hexagon-static+0x2fc5ec (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hexagon-static+0x2fc5c0-/usr/bin/qemu-hexagon-static+0x2fc5e7 (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/qemu-hexagon-static+0x3663d0-/usr/bin/qemu-hexagon-static+0x3663e7 (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/qemu-hexagon-static+0x36637e-/usr/bin/qemu-hexagon-static+0x366399 (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/qemu-hexagon-static+0x366379-/usr/bin/qemu-hexagon-static+0x36637c (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/qemu-hexagon-static+0x36640a-/usr/bin/qemu-hexagon-static+0x366424 (conditional jump) mem=0-LONG_MAX
+/usr/bin/qemu-hexagon-static+0x366405-/usr/bin/qemu-hexagon-static+0x366408 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hexagon-static+0x562408 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hexagon-static+0x366400-/usr/bin/qemu-hexagon-static+0x366403 (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hexagon-static+0x562408 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hexagon-static+0x3663b4-/usr/bin/qemu-hexagon-static+0x3663b7 (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hexagon-static+0x562408 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hexagon-static+0x3663b0-/usr/bin/qemu-hexagon-static+0x3663b2 (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hexagon-static+0x562408 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hexagon-static+0x36639b-/usr/bin/qemu-hexagon-static+0x3663ae (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/qemu-hexagon-static+0x562408 r8=0 r9=-1 as u32 r10=0
+/usr/bin/qemu-hexagon-static+0x36637e-/usr/bin/qemu-hexagon-static+0x366399 (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/qemu-hexagon-static+0x562408 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c
+/usr/bin/qemu-hexagon-static+0x366379-/usr/bin/qemu-hexagon-static+0x36637c (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c
+/usr/bin/qemu-hexagon-static+0x366370-/usr/bin/qemu-hexagon-static+0x366373 (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c
+/usr/bin/qemu-hexagon-static+0x366430-/usr/bin/qemu-hexagon-static+0x366437 (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c
+/usr/bin/qemu-hexagon-static+0x302370-/usr/bin/qemu-hexagon-static+0x302399 (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r8=any u32 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c
+/usr/bin/qemu-hexagon-static+0x302365-/usr/bin/qemu-hexagon-static+0x30236e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x30235d-/usr/bin/qemu-hexagon-static+0x302363 (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302350-/usr/bin/qemu-hexagon-static+0x302357 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302461-/usr/bin/qemu-hexagon-static+0x302468 (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=NULL-0x1 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302458-/usr/bin/qemu-hexagon-static+0x30245b (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=0 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302350-/usr/bin/qemu-hexagon-static+0x302357 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=0 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302365-/usr/bin/qemu-hexagon-static+0x30236e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=0 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x30235d-/usr/bin/qemu-hexagon-static+0x302363 (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=0 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302340-/usr/bin/qemu-hexagon-static+0x302357 (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562408 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=0 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302338-/usr/bin/qemu-hexagon-static+0x30233a (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x3021c2-/usr/bin/qemu-hexagon-static+0x3021d0 (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x3021b7-/usr/bin/qemu-hexagon-static+0x3021bc (conditional continue) ax=NULL-0x1fffffff cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=1
+/usr/bin/qemu-hexagon-static+0x3021ae-/usr/bin/qemu-hexagon-static+0x3021b5 (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=1
+/usr/bin/qemu-hexagon-static+0x3021a0-/usr/bin/qemu-hexagon-static+0x3021ac (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 r11=/usr/bin/qemu-hexagon-static+0x56240c mem=any u32
+/usr/bin/qemu-hexagon-static+0x302192-/usr/bin/qemu-hexagon-static+0x30219e (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 mem=any u32
+/usr/bin/qemu-hexagon-static+0x302190-/usr/bin/qemu-hexagon-static+0x30219e (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8 mem=any u32
+/usr/bin/qemu-hexagon-static+0x302170-/usr/bin/qemu-hexagon-static+0x30218e (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r9=/usr/bin/qemu-hexagon-static+0x562400 r10=8
+/usr/bin/qemu-hexagon-static+0x2dc89d-/usr/bin/qemu-hexagon-static+0x2dc8a4 (jump) ax=0 dx=0 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=/usr/bin/qemu-hexagon-static+0x562400 r10=8
+/usr/bin/qemu-hexagon-static+0x2dc880-/usr/bin/qemu-hexagon-static+0x2dc89b (primary result) ax=0 dx=0 si=/usr/bin/qemu-hexagon-static+0x3eaa68 di=0 r10=8
+/usr/bin/qemu-hexagon-static+0x70d8-/usr/bin/qemu-hexagon-static+0x7100 (call) di=0
+/usr/bin/qemu-hexagon-static+0x77e3 (call) cx=0 dx=non-NULL si=/usr/bin/qemu-hexagon-static+0x3afd38 di=/usr/bin/qemu-hexagon-static+0x3adb62 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-hexagon-static+0x2f6540-/usr/bin/qemu-hexagon-static+0x2f65a2 (conditional jump) cx=0 dx=non-NULL si=/usr/bin/qemu-hexagon-static+0x3afd38 di=/usr/bin/qemu-hexagon-static+0x3adb62 r10=NULL-0xfffffff r11=0 r12=0
+/usr/bin/qemu-hexagon-static+0x303aa0-/usr/bin/qemu-hexagon-static+0x303ab0 (call) ax=0 cx=0 dx=non-NULL si=/usr/bin/qemu-hexagon-static+0x3afd38 di=/usr/bin/qemu-hexagon-static+0x3adb62 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hexagon-static+0x3060d0-/usr/bin/qemu-hexagon-static+0x3060d7 (call) ax=NULL-0xfffffff cx=0 dx=non-NULL di=/usr/bin/qemu-hexagon-static+0x3afd38 r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305f64-/usr/bin/qemu-hexagon-static+0x305f6e (conditional jump) ax=NULL-0xfffffff cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305f5e-/usr/bin/qemu-hexagon-static+0x305f62 (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305f47-/usr/bin/qemu-hexagon-static+0x305f5c (conditional continue) ax=0x2-0x100000001 cx=0 dx=non-NULL di=NULL-0xfffffffffffff r10=NULL-0xfffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305f3e-/usr/bin/qemu-hexagon-static+0x305f41 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-hexagon-static+0x305f19-/usr/bin/qemu-hexagon-static+0x305f38 (conditional continue) ax=0x2-0x100000001 cx=0 si=0 r10=NULL-0xfffffff r11=0 mem=0x1-0xff
+/usr/bin/qemu-hexagon-static+0x305f07-/usr/bin/qemu-hexagon-static+0x305f13 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe si=0 r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305ef6-/usr/bin/qemu-hexagon-static+0x305f01 (conditional continue) cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305ee4-/usr/bin/qemu-hexagon-static+0x305ef0 (conditional continue) ax=0x11-0xffffffffffffffff cx=0 dx=0x20-0xfffffffffffffffe r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hexagon-static+0x305ec0-/usr/bin/qemu-hexagon-static+0x305ede (conditional continue) ax=any u8 cx=0 dx=0x20-0xffffffffffffffff r10=0x20-0xffffffffffffffff r11=0
+/usr/bin/qemu-hexagon-static+0x308f98-/usr/bin/qemu-hexagon-static+0x308fa4 (call) ax=NULL-0xffffffffffffffe cx=0 dx=0x20-0xffffffffffffffff r9=any u32 r11=any u16
+/usr/bin/qemu-hexagon-static+0x308f83-/usr/bin/qemu-hexagon-static+0x308f92 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=any u16 di=non-NULL r9=any u32 r11=any u16
+/usr/bin/qemu-hexagon-static+0x308f72-/usr/bin/qemu-hexagon-static+0x308f7d (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308f61-/usr/bin/qemu-hexagon-static+0x308f70 (conditional continue) ax=NULL-0xffffffffffffffe cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308f53-/usr/bin/qemu-hexagon-static+0x308f5f (conditional continue) cx=non-NULL dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308f4b-/usr/bin/qemu-hexagon-static+0x308f4d (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308f41-/usr/bin/qemu-hexagon-static+0x308f45 (conditional continue) dx=0x20-0xffffffffffffffff si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308f37-/usr/bin/qemu-hexagon-static+0x308f3b (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308efb-/usr/bin/qemu-hexagon-static+0x308f31 (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308ef0-/usr/bin/qemu-hexagon-static+0x308ef9 (conditional continue) si=0 di=non-NULL r9=any u32 r10=/usr/bin/qemu-hexagon-static+0x54b920 mem=NULL-0x24
+/usr/bin/qemu-hexagon-static+0x308ee0-/usr/bin/qemu-hexagon-static+0x308eea (conditional continue) si=0 di=non-NULL r9=any u32 mem=NULL-0x24
+/usr/bin/qemu-hexagon-static+0x308ec9-/usr/bin/qemu-hexagon-static+0x308eda (conditional continue) si=0 di=non-NULL r9=any u32
+/usr/bin/qemu-hexagon-static+0x308ebd-/usr/bin/qemu-hexagon-static+0x308ec5 (primary result) si=0 di=non-NULL
+/usr/bin/qemu-hexagon-static+0x308eb0-/usr/bin/qemu-hexagon-static+0x308eb7 (conditional continue (no jump)) si=0 di=non-NULL
+/usr/bin/qemu-hexagon-static+0x852c-/usr/bin/qemu-hexagon-static+0x8537 (call) bp=/usr/bin/qemu-hexagon-static+0x561810 si=0 di=non-NULL
+/usr/bin/qemu-hexagon-static+0x8523-/usr/bin/qemu-hexagon-static+0x852a (conditional continue) bx=non-NULL bp=/usr/bin/qemu-hexagon-static+0x561810 si=0 di=/usr/bin/qemu-hexagon-static+0x561810 mem=non-NULL
+/usr/bin/qemu-hexagon-static+0x8510-/usr/bin/qemu-hexagon-static+0x8521 (conditional continue) bp=/usr/bin/qemu-hexagon-static+0x561810 si=0 di=/usr/bin/qemu-hexagon-static+0x561810 mem=0
+/usr/bin/qemu-hexagon-static+0x8560-/usr/bin/qemu-hexagon-static+0x856f (call) di=/usr/bin/qemu-hexagon-static+0x561810
 /usr/bin/qemu-hexagon-static (fini)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function

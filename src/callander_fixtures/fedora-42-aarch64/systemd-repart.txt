@@ -113,10 +113,8 @@ writev(any, any, any) @ ld-linux-aarch64.so.1+0xb480(_dl_debug_vdprintf+384)
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x81cec(__libc_message_impl+332)
 writev(any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 writev(any, any, any) @ libc.so.6+0x96ba8
-pread64(any, any, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-pread64(any, non-NULL, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-pread64(any, any, any, any u32) @ libc.so.6+0x96ba8
-pread64(any, non-NULL, any, any) @ libc.so.6+0x96ba8
+pread64(any, any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+pread64(any, any, any, any) @ libc.so.6+0x96ba8
 pread64(STDIN_FILENO-0xfffffffffffffffe, any, 511, any) @ libc.so.6+0xeef74(__pread64_nocancel+20)
 pread64(any, any, 400, any) @ libc.so.6+0xeef74(__pread64_nocancel+20)
 sendfile(any, any, 0, any) @ libc.so.6+0xee018(sendfile+24)
@@ -148,6 +146,8 @@ capget(any, any) @ libc.so.6+0xf9808(capget+8)
 capset(any, any) @ libc.so.6+0xf6164(syscall+36)
 exit(0) @ libc.so.6+0x26284(__libc_start_call_main+164)
 exit(0) @ libc.so.6+0x8d06c(start_thread+412)
+exit(any) @ libc.so.6+0xf83e0(thread_start+16)
+exit(any) @ libc.so.6+0xf8650(thread_start+16)
 exit_group(any) @ ld-linux-aarch64.so.1+0x1caa0(_exit+32)
 exit_group(any) @ libc.so.6+0xc9404(_Exit+36)
 waitid(P_ALL-P_PID, 0, any, any, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
@@ -338,10 +338,8 @@ getsockopt(any, SOL_NETLINK, NETLINK_LIST_MEMBERSHIPS, any, any) @ libc.so.6+0xf
 shutdown(any, SHUT_WR-SHUT_RDWR) @ libc.so.6+0xfaf98(shutdown+24)
 sendmsg(any, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendmsg(any, any, any u16) @ libc.so.6+0x96ba8
-recvmsg(any, any, any u16) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvmsg(any, non-NULL, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
-recvmsg(any, any, any u16) @ libc.so.6+0x96ba8
-recvmsg(any, non-NULL, any u32) @ libc.so.6+0x96ba8
+recvmsg(any, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+recvmsg(any, any, any) @ libc.so.6+0x96ba8
 brk(any) @ libc.so.6+0xeff14(brk+20)
 munmap(any, any) @ libc.so.6+0xf4c08(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xf8da8(mremap+72)

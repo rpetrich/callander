@@ -37,7 +37,7 @@ rt_sigaction(SIGINT, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5d
 rt_sigaction(SIGTERM, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
 rt_sigaction(SIGTSTP, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
 rt_sigaction(SIGWINCH, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
-rt_sigaction(SIGSETXID, non-NULL, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
+rt_sigaction(SIGSETXID, any, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfbc(__libc_sigaction*+361)
 rt_sigaction(SIGINT, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfd3(__libc_sigaction*+384)
 rt_sigaction(SIGTERM, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfd3(__libc_sigaction*+384)
 rt_sigaction(SIGTSTP, 0, 0, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x5dfd3(__libc_sigaction*+384)

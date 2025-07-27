@@ -240,7 +240,7 @@ newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x498b4(fstatat64+
 faccessat(any, any, F_OK) @ ld-musl-x86_64.so.1+0x5ab10(faccessat+44)
 set_robust_list(0, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x55b05(pthread_exit+413)
 set_robust_list(any, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x56a6f(__pthread_mutex_trylock_owner*+182)
-fallocate(any, 0, 0, non-NULL) @ ld-musl-x86_64.so.1+0x1c4bb(posix_fallocate+19)
+fallocate(any, 0, 0, any) @ ld-musl-x86_64.so.1+0x1c4bb(posix_fallocate+19)
 getrandom(any, any, any) @ ld-musl-x86_64.so.1+0x377d5(syscall+153)
 getrandom(any, non-NULL, 0-GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 getrandom(any, non-NULL, 0-GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x57f61

@@ -1,0 +1,16 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/captree+0xa9c0-/usr/bin/captree+0xa9cc
+/usr/bin/captree+0x8f7c0-/usr/bin/captree+0x8f7c8 (call)
+/usr/bin/captree+0x8f860-/usr/bin/captree+0x8f8c5 (call)
+/usr/bin/captree+0x8f438-/usr/bin/captree+0x8f471 (call) ax=262 r8=0 r9=0
+/usr/bin/captree+0x8f42b-/usr/bin/captree+0x8f432 (conditional continue (no jump)) si=0 di=0
+/usr/bin/captree+0x8f422-/usr/bin/captree+0x8f425 (conditional continue) di=0
+/usr/bin/captree+0x8f3ea-/usr/bin/captree+0x8f41a (conditional jump) di=0
+/usr/bin/captree+0x8f3e0-/usr/bin/captree+0x8f3e4 (conditional continue) ax=0xffffffffffffff9c si=256
+/usr/bin/captree+0x9ff35-/usr/bin/captree+0x9ff50 (call) ax=0xffffffffffffff9c si=256
+/usr/bin/captree+0x9ff0a-/usr/bin/captree+0x9ff2e (jump)
+/usr/bin/captree+0x9ff00-/usr/bin/captree+0x9ff04 (conditional continue)
+/usr/bin/captree+0x9fba6-/usr/bin/captree+0x9fbc7 (call)
+/usr/bin/captree+0x9fba0-/usr/bin/captree+0x9fba4 (conditional continue)
+/usr/bin/captree+0x115f78 (.data.rel.ro)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

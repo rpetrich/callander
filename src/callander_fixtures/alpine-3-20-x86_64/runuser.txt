@@ -84,15 +84,23 @@ getpid() @ ld-musl-x86_64.so.1+0x20ad0(do_setgroups*+66)
 getpid() @ ld-musl-x86_64.so.1+0x622c6(getpid+5)
 getpid() @ ld-musl-x86_64.so.1+0x627de(do_setxid*+69)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x413ff(socket+32)
+socket(AF_UNIX, SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x413ff(socket+32)
 socket(AF_UNIX, 0-SOCK_DGRAM|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x4142e(socket+79)
+connect(any, any, 110) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 connect(any, ld-musl-x86_64.so.1+0x9b848(log_addr*), 12) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+connect(any, any, 110) @ ld-musl-x86_64.so.1+0x5e990
 connect(any, ld-musl-x86_64.so.1+0x9a100(addr*), 24) @ ld-musl-x86_64.so.1+0x5e990
 connect(any, ld-musl-x86_64.so.1+0x9b848(log_addr*), 12) @ ld-musl-x86_64.so.1+0x5e990
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, 401, MSG_NOSIGNAL, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, any, 0, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, 401, MSG_NOSIGNAL, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, any, any, 0, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvfrom(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5e990
+getpeername(any, any, any) @ ld-musl-x86_64.so.1+0x3d030(getpeername+21)
 fork() @ ld-musl-x86_64.so.1+0x43974(_Fork+37)
 exit(0) @ ld-musl-x86_64.so.1+0x5c286(pthread_exit+454)
 exit(0) @ ld-musl-x86_64.so.1+0x5e92e

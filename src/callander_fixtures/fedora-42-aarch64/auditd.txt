@@ -215,8 +215,10 @@ connect(any, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 connect(any, any, any u32) @ libc.so.6+0x96ba8
 getsockname(any, any, any) @ libc.so.6+0xfaaf4(getsockname+20)
 getpeername(any, any, any) @ libc.so.6+0xfaa94(getpeername+20)
+sendto(any, any, any u32, any u8, any, any u8) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)
+sendto(any, any, any u32, any u8, any, any u8) @ libc.so.6+0x96ba8
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x96ba8
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x96ba8
 recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x895bc(__internal_syscall_cancel+124)

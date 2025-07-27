@@ -1,0 +1,75 @@
+callander: found syscall with unknown number: any
+callander: full call stack: /usr/bin/sln+0x5f0d0(__internal_syscall_cancel*+128)-/usr/bin/sln+0x5f0d4(__internal_syscall_cancel*+132) cx=any u32 mem=0x1-0xff
+/usr/bin/sln+0x5f01d(__syscall_do_cancel*+45)-/usr/bin/sln+0x5f077(__internal_syscall_cancel*+39) (conditional jump) cx=any u32 mem=0x1-0xff
+/usr/bin/sln+0x5f00e(__syscall_do_cancel*+30)-/usr/bin/sln+0x5f015(__syscall_do_cancel*+37) (conditional jump) ax=any u32 cx=any u32 r8=any u32 mem=any u32 stack+16=0 stack+24=-1 as u32
+/usr/bin/sln+0x5f017(__syscall_do_cancel*+39)-/usr/bin/sln+0x5f01b(__syscall_do_cancel*+43) (conditional jump) ax=any u32 cx=any u32 r8=any u32 mem=any u32 stack+16=0 stack+24=-1 as u32
+/usr/bin/sln+0x5eff0(__syscall_do_cancel*)-/usr/bin/sln+0x5f015(__syscall_do_cancel*+37) (conditional continue) ax=any u32 cx=any u32 r8=any u32 stack+16=0 stack+24=-1 as u32
+/usr/bin/sln+0x606d0(__syscall_cancel_arch*)-/usr/bin/sln+0x606d9 (conditional jump) ax=any u32 r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/sln+0x5f083(__internal_syscall_cancel*+51)-/usr/bin/sln+0x5f0a5(__internal_syscall_cancel*+85) (call) r8=any u32 stack+8=0 stack+16=-1 as u32
+/usr/bin/sln+0x5f081(__internal_syscall_cancel*+49) (conditional continue) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/sln+0x5f07e(__internal_syscall_cancel*+46) (primary result) ax=any u32 cx=16 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/sln+0x5f079(__internal_syscall_cancel*+41)-/usr/bin/sln+0x5f07c(__internal_syscall_cancel*+44) (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/sln+0x5f050(__internal_syscall_cancel*)-/usr/bin/sln+0x5f077(__internal_syscall_cancel*+39) (conditional continue) ax=any u32 cx=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0 stack+24=202
+/usr/bin/sln+0x5f2b0(__futex_abstimed_wait_common*+96)-/usr/bin/sln+0x5f2c7(__futex_abstimed_wait_common*+119) (call) ax=any u32 dx=any u32 r8=0 r9=-1 as u32 mem=0-LONG_MAX stack+8=202
+/usr/bin/sln+0x5f25e(__futex_abstimed_wait_common*+14)-/usr/bin/sln+0x5f279(__futex_abstimed_wait_common*+41) (conditional jump) ax=any u32 dx=any u32 si=any u32 r9=0x1-0xff mem=0-LONG_MAX
+/usr/bin/sln+0x5f259(__futex_abstimed_wait_common*+9)-/usr/bin/sln+0x5f25c(__futex_abstimed_wait_common*+12) (conditional continue) dx=NULL-0x1 mem=0-LONG_MAX
+/usr/bin/sln+0x5f2ea(__futex_abstimed_wait_common*+154)-/usr/bin/sln+0x5f304(__futex_abstimed_wait_common*+180) (conditional jump) mem=0-LONG_MAX
+/usr/bin/sln+0x5f2e5(__futex_abstimed_wait_common*+149)-/usr/bin/sln+0x5f2e8(__futex_abstimed_wait_common*+152) (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/sln+0xa3488(lock*+8) r8=0 r9=-1 as u32 r10=0
+/usr/bin/sln+0x5f2e0(__futex_abstimed_wait_common*+144)-/usr/bin/sln+0x5f2e3(__futex_abstimed_wait_common*+147) (conditional continue (no jump)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/sln+0xa3488(lock*+8) r8=0 r9=-1 as u32 r10=0
+/usr/bin/sln+0x5f294(__futex_abstimed_wait_common*+68)-/usr/bin/sln+0x5f297(__futex_abstimed_wait_common*+71) (conditional jump (no continue)) ax=0-INT_MAX cx=0 dx=2 si=any u32 di=/usr/bin/sln+0xa3488(lock*+8) r8=0 r9=-1 as u32 r10=0
+/usr/bin/sln+0x5f290(__futex_abstimed_wait_common*+64)-/usr/bin/sln+0x5f292(__futex_abstimed_wait_common*+66) (conditional continue) ax=any u32 cx=0 dx=2 si=any u32 di=/usr/bin/sln+0xa3488(lock*+8) r8=0 r9=-1 as u32 r10=0
+/usr/bin/sln+0x5f27b(__futex_abstimed_wait_common*+43)-/usr/bin/sln+0x5f28e(__futex_abstimed_wait_common*+62) (primary result) ax=0-LONG_MAX cx=0 dx=2 si=any u32 di=/usr/bin/sln+0xa3488(lock*+8) r8=0 r9=-1 as u32 r10=0
+/usr/bin/sln+0x5f25e(__futex_abstimed_wait_common*+14)-/usr/bin/sln+0x5f279(__futex_abstimed_wait_common*+41) (conditional continue (no jump)) ax=2 cx=0 dx=0 si=any u32 di=/usr/bin/sln+0xa3488(lock*+8) r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12)
+/usr/bin/sln+0x5f259(__futex_abstimed_wait_common*+9)-/usr/bin/sln+0x5f25c(__futex_abstimed_wait_common*+12) (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12)
+/usr/bin/sln+0x5f250(__futex_abstimed_wait_common*)-/usr/bin/sln+0x5f253(__futex_abstimed_wait_common*+3) (conditional continue (no jump)) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12)
+/usr/bin/sln+0x5f310(__futex_abstimed_wait64*)-/usr/bin/sln+0x5f317(__futex_abstimed_wait64*+7) (jump) ax=any u32 cx=0 dx=0 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r8=any u32 r9=0 r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12)
+/usr/bin/sln+0x1afe0(pthread_rwlock_wrlock*+416)-/usr/bin/sln+0x1b009(pthread_rwlock_wrlock*+457) (call) ax=any u32 cx=0 dx=0 bx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r8=any u32 r9=/usr/bin/sln+0xa3480(lock*) r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12)
+/usr/bin/sln+0x1afd5(pthread_rwlock_wrlock*+405)-/usr/bin/sln+0x1afde(pthread_rwlock_wrlock*+414) (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1afcd(pthread_rwlock_wrlock*+397)-/usr/bin/sln+0x1afd3(pthread_rwlock_wrlock*+403) (conditional continue) ax=0 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1afc0(pthread_rwlock_wrlock*+384)-/usr/bin/sln+0x1afc7(pthread_rwlock_wrlock*+391) (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1b0d1(pthread_rwlock_wrlock*+657)-/usr/bin/sln+0x1b0d8(pthread_rwlock_wrlock*+664) (jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=NULL-0x1 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1b0c8(pthread_rwlock_wrlock*+648)-/usr/bin/sln+0x1b0cb(pthread_rwlock_wrlock*+651) (conditional continue (no jump)) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=0 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1afc0(pthread_rwlock_wrlock*+384)-/usr/bin/sln+0x1afc7(pthread_rwlock_wrlock*+391) (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=0 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1afd5(pthread_rwlock_wrlock*+405)-/usr/bin/sln+0x1afde(pthread_rwlock_wrlock*+414) (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=2 di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=0 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1afcd(pthread_rwlock_wrlock*+397)-/usr/bin/sln+0x1afd3(pthread_rwlock_wrlock*+403) (conditional continue) ax=0 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=0 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1afb0(pthread_rwlock_wrlock*+368)-/usr/bin/sln+0x1afc7(pthread_rwlock_wrlock*+391) (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3488(lock*+8) r9=/usr/bin/sln+0xa3480(lock*) r10=0 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1ae87(pthread_rwlock_wrlock*+71)-/usr/bin/sln+0x1ae8d(pthread_rwlock_wrlock*+77) (conditional jump) ax=1 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8 r11=/usr/bin/sln+0xa348c(lock*+12) mem=1
+/usr/bin/sln+0x1ae7e(pthread_rwlock_wrlock*+62)-/usr/bin/sln+0x1ae85(pthread_rwlock_wrlock*+69) (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8 r11=/usr/bin/sln+0xa348c(lock*+12) mem=1
+/usr/bin/sln+0x1ae70(pthread_rwlock_wrlock*+48)-/usr/bin/sln+0x1ae7c(pthread_rwlock_wrlock*+60) (conditional continue) ax=1 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8 r11=/usr/bin/sln+0xa348c(lock*+12) mem=any u32
+/usr/bin/sln+0x1ae62(pthread_rwlock_wrlock*+34)-/usr/bin/sln+0x1ae6e(pthread_rwlock_wrlock*+46) (conditional continue) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8 mem=any u32
+/usr/bin/sln+0x1ae60(pthread_rwlock_wrlock*+32)-/usr/bin/sln+0x1ae6e(pthread_rwlock_wrlock*+46) (conditional jump) ax=any u32 cx=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8 mem=any u32
+/usr/bin/sln+0x1ae50(pthread_rwlock_wrlock*+16)-/usr/bin/sln+0x1ae5e(pthread_rwlock_wrlock*+30) (conditional continue) ax=any u32 dx=any u32 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8
+/usr/bin/sln+0x1ae40(pthread_rwlock_wrlock*)-/usr/bin/sln+0x1ae4c(pthread_rwlock_wrlock*+12) (primary result) ax=0 dx=0 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r9=/usr/bin/sln+0xa3480(lock*) r10=8
+/usr/bin/sln+0xc28d(__abort_lock_wrlock*+29)-/usr/bin/sln+0xc294(__abort_lock_wrlock*+36) (jump) ax=0 dx=0 si=/usr/bin/sln+0x7b970(sigall_set*) di=/usr/bin/sln+0xa3480(lock*) r10=8
+/usr/bin/sln+0xc270(__abort_lock_wrlock*)-/usr/bin/sln+0xc28b(__abort_lock_wrlock*+27) (primary result) ax=0 dx=0 si=/usr/bin/sln+0x7b970(sigall_set*) di=0 r10=8
+/usr/bin/sln+0x12e5(abort*)-/usr/bin/sln+0x130d(abort*+40) (call) di=0
+/usr/bin/sln+0x1280(__libc_message_impl.cold*) (call) cx=/usr/bin/sln+0x7b7a0(__PRETTY_FUNCTION__.0*) si=/usr/bin/sln+0x76de7 di=/usr/bin/sln+0x77380 r8=/usr/bin/sln+0x79580 r12=0
+/usr/bin/sln+0x3410(__libc_message_impl*)-/usr/bin/sln+0x3472(__libc_message_impl*+98) (conditional jump) cx=/usr/bin/sln+0x7b7a0(__PRETTY_FUNCTION__.0*) si=/usr/bin/sln+0x76de7 di=/usr/bin/sln+0x77380 r8=/usr/bin/sln+0x79580 r12=0
+/usr/bin/sln+0x6cec(__libc_assert_fail*+76)-/usr/bin/sln+0x6d01(__libc_assert_fail*+97) (call) ax=0 cx=/usr/bin/sln+0x7b7a0(__PRETTY_FUNCTION__.0*) bx=/usr/bin/sln+0x76de7 si=/usr/bin/sln+0x76de7 di=/usr/bin/sln+0x77380 r8=/usr/bin/sln+0x79580 r12=/usr/bin/sln+0x7b7a0(__PRETTY_FUNCTION__.0*) r13=/usr/bin/sln+0x79580
+/usr/bin/sln+0x6ca0(__libc_assert_fail*)-/usr/bin/sln+0x6cea(__libc_assert_fail*+74) (conditional continue) dx=0 bx=/usr/bin/sln+0x76de7 r12=/usr/bin/sln+0x7b7a0(__PRETTY_FUNCTION__.0*) r13=/usr/bin/sln+0x79580
+/usr/bin/sln+0x6b86b(__printf_buffer_flush*+267)-/usr/bin/sln+0x6b885(__printf_buffer_flush*+293) (call) cx=/usr/bin/sln+0x7b7a0(__PRETTY_FUNCTION__.0*) dx=70 si=/usr/bin/sln+0x76de7 di=/usr/bin/sln+0x79580
+/usr/bin/sln+0x6b7b4(__printf_buffer_flush*+84)-/usr/bin/sln+0x6b7bc(__printf_buffer_flush*+92) (conditional jump) dx=/usr/bin/sln+0x90908
+/usr/bin/sln+0x6b781(__printf_buffer_flush*+33)-/usr/bin/sln+0x6b78b(__printf_buffer_flush*+43) (lookup table) ax=0x1-0xb dx=/usr/bin/sln+0x90908
+/usr/bin/sln+0x6b76f(__printf_buffer_flush*+15)-/usr/bin/sln+0x6b77b(__printf_buffer_flush*+27) (conditional continue) ax=0x1-0xb dx=non-NULL
+/usr/bin/sln+0x6b760(__printf_buffer_flush*)-/usr/bin/sln+0x6b769(__printf_buffer_flush*+9) (conditional continue) ax=0x1-0xffffffff dx=non-NULL
+/usr/bin/sln+0x56c22(__printf_buffer_write*+98)-/usr/bin/sln+0x56c25(__printf_buffer_write*+101) (call) ax=0x1-0xffffffff dx=non-NULL r12=non-NULL
+/usr/bin/sln+0x56c19(__printf_buffer_write*+89)-/usr/bin/sln+0x56c20(__printf_buffer_write*+96) (conditional continue) ax=0x1-0xffffffff dx=non-NULL r12=non-NULL
+/usr/bin/sln+0x56be2(__printf_buffer_write*+34)-/usr/bin/sln+0x56bec(__printf_buffer_write*+44) (jump) ax=0x1-0xffffffff dx=non-NULL r12=non-NULL
+/usr/bin/sln+0x56bcf(__printf_buffer_write*+15)-/usr/bin/sln+0x56be0(__printf_buffer_write*+32) (conditional continue) ax=0x1-0xffffffff dx=non-NULL r12=non-NULL
+/usr/bin/sln+0x56bc0(__printf_buffer_write*)-/usr/bin/sln+0x56bc9(__printf_buffer_write*+9) (conditional continue) ax=0x1-0xffffffff
+/usr/bin/sln+0xeb8f(printf_positional*+1599)-/usr/bin/sln+0xeba1(printf_positional*+1617) (call) ax=0
+/usr/bin/sln+0x1000b(printf_positional*+6843)-/usr/bin/sln+0x10011(printf_positional*+6849) (conditional jump) ax=0
+/usr/bin/sln+0xef10(printf_positional*+2496)-/usr/bin/sln+0xef37(printf_positional*+2535) (conditional continue)
+/usr/bin/sln+0xef02(printf_positional*+2482)-/usr/bin/sln+0xef0a(printf_positional*+2490) (conditional continue)
+/usr/bin/sln+0xeef8(printf_positional*+2472)-/usr/bin/sln+0xeefc(printf_positional*+2476) (conditional continue) ax=0 mem=NULL-0xfffffffe
+/usr/bin/sln+0xeeec(printf_positional*+2460)-/usr/bin/sln+0xeef2(printf_positional*+2466) (conditional continue) ax=0 mem=0
+/usr/bin/sln+0xeee1(printf_positional*+2449)-/usr/bin/sln+0xeee6(printf_positional*+2454) (conditional continue) ax=any u8 mem=NULL-0x2f
+/usr/bin/sln+0xeed6(printf_positional*+2438)-/usr/bin/sln+0xeedb(printf_positional*+2443) (conditional continue) ax=any u8 mem=NULL-0x2f
+/usr/bin/sln+0xeece(printf_positional*+2430)-/usr/bin/sln+0xeed0(printf_positional*+2432) (conditional continue) ax=any u8 mem=any u8
+/usr/bin/sln+0xeec6(printf_positional*+2422)-/usr/bin/sln+0xeec8(printf_positional*+2424) (conditional continue) ax=any u8 mem=any u8
+/usr/bin/sln+0xeebe(printf_positional*+2414)-/usr/bin/sln+0xeec0(printf_positional*+2416) (conditional continue) ax=any u8 mem=any u8
+/usr/bin/sln+0xeeb6(printf_positional*+2406)-/usr/bin/sln+0xeeb8(printf_positional*+2408) (conditional continue) ax=any u8 mem=any u8
+/usr/bin/sln+0xee9e(printf_positional*+2382)-/usr/bin/sln+0xeeb0(printf_positional*+2400) (conditional continue) ax=any u8 mem=any u8
+/usr/bin/sln+0xee8c(printf_positional*+2364)-/usr/bin/sln+0xee98(printf_positional*+2376) (conditional continue)
+/usr/bin/sln+0x9cbc0(step4_jumps.0*) (.data.rel.ro)
+callander: try blocking a function from the call stack using --block-function or --block-debug-function

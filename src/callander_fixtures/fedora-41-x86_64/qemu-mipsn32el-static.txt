@@ -1,5 +1,5 @@
 callander: found syscall with unknown number: any
-callander: full call stack: /usr/bin/qemu-mipsn32el-static+0x15557
-/usr/bin/qemu-mipsn32el-static+0x15551-/usr/bin/qemu-mipsn32el-static+0x15555 (conditional continue)
+callander: full call stack: /usr/bin/qemu-mipsn32el-static+0x15557 mem=0
+/usr/bin/qemu-mipsn32el-static+0x15551-/usr/bin/qemu-mipsn32el-static+0x15555 (conditional continue) mem=0
 /usr/bin/qemu-mipsn32el-static+0xeefc9 (lea)
 callander: try blocking a function from the call stack using --block-function or --block-debug-function
