@@ -2894,6 +2894,7 @@ __attribute__((nonnull(1, 2, 3))) static void force_protection_for_symbol(const 
 				binary->override_access_ranges[i].address = address;
 				binary->override_access_ranges[i].size = symbol->st_size;
 				binary->override_access_permissions[i] = prot;
+				LOG("forcing protection", temp_str(copy_address_description(loader, address)));
 				return;
 			}
 		}
