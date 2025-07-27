@@ -69,6 +69,7 @@ __attribute__((always_inline)) __attribute__((nonnull(1))) static inline struct 
 		} else if (value == 0x67) {
 			// address size override
 			result.has_address_size_override = true;
+			++(*ins);
 			break;
 		} else if (value == 0x2e) {
 			// cs segment override
