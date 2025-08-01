@@ -296,9 +296,7 @@ const struct registers empty_registers = {
 #if STORE_LAST_MODIFIED
 	.last_modify_ins = {0},
 #endif
-#if defined(__x86_64__)
 	.mem_rm = invalid_decoded_rm,
-#endif
 	.compare_state = {0},
 	.stack_address_taken = NULL,
 };
