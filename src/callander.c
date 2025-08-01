@@ -2586,12 +2586,14 @@ static void handle_mprotect(struct program_state *analysis, __attribute__((unuse
                             __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	// block creating executable stacks
+	LOG("received mprotect", temp_str(copy_address_description(&analysis->loader, ins)));
 	int third_arg = sysv_argument_abi_register_indexes[2];
-	if (!register_is_exactly_known(&state->registers[third_arg])) {
+	if (!register_is_exactly_known(&state->registers[third_arg]) || state->registers[third_arg].value == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
 		if (caller != NULL) {
 			struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
 			const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
-			if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+			if (name != NULL && (fs_strcmp(name, "pthread_create") == 0 || fs_strcmp(name, "__nptl_change_stack_perm") == 0)) {
+				LOG("from within pthread_create, forcing PROT_READ|PROT_WRITE", temp_str(copy_address_description(&analysis->loader, caller->entry)));
 				set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 			}
 		}
@@ -2630,6 +2632,12 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
 			}
 		}
 	}
+}
+
+static void handle_change_stack_perm(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, __attribute__((unused)) struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller,
+                            __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
+{
+	set_effects(&analysis->search, ins, token, (effects & ~EFFECT_PROCESSING) | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, 0);
 }
 
 static void handle_IO_file_fopen(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller,
@@ -2978,6 +2986,11 @@ __attribute__((nonnull(1, 2))) static void update_known_symbols(struct program_s
 		update_known_function(analysis, new_binary, "abort", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "pthread_exit", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
+		// block executable stacks
+		ins_ptr __nptl_change_stack_perm = resolve_binary_loaded_symbol(&analysis->loader, new_binary, "__nptl_change_stack_perm", NULL, NORMAL_SYMBOL | LINKER_SYMBOL, NULL);
+		if (__nptl_change_stack_perm) {
+			find_and_add_callback(analysis, __nptl_change_stack_perm, 0, 0, 0, EFFECT_NONE, handle_change_stack_perm, NULL);
+		}
 	}
 	if (new_binary->special_binary_flags & BINARY_IS_LIBC) {
 		// special-case __internal_syscall_cancel by searching clock_nanosleep
