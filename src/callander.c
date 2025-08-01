@@ -3372,7 +3372,7 @@ __attribute__((unused)) __attribute__((nonnull(1, 2))) static char *copy_functio
 	const int *register_indexes;
 	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
 		size_t name_len = fs_strlen(name);
-		if (name[name_len - 1] == ')' && name[name_len - 2] == '0' && name[name_len - 3] == 'i' && name[name_len - 4] == 'b' && name[name_len - 5] == 'a' && name[name_len - 6] == '.') {
+		if (name_len > 6 && fs_strcmp(&name[name_len - 6], ".abi0)") == 0) {
 			register_indexes = golang_abi0_argument_abi_register_indexes;
 			argc = sizeof(golang_abi0_argument_abi_register_indexes) / sizeof(golang_abi0_argument_abi_register_indexes[0]);
 		} else {
@@ -5346,77 +5346,6 @@ static void set_compare_from_operation(struct registers *regs, int reg, uintptr_
 
 static bool find_skipped_symbol_for_address(struct loader_context *loader, struct loaded_binary *binary, const void *address, struct address_and_size *out_symbol);
 
-static uintptr_t size_of_jump_table_from_metadata(struct loader_context *loader, struct loaded_binary *binary, const void *table, ins_ptr ins, int debug_symbol_types, const ElfW(Sym) * *out_function_symbol)
-{
-	if (binary == NULL) {
-		return 0;
-	}
-	const struct symbol_info *symbols;
-	bool has_symbol = find_any_symbol_by_address(loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL | (debug_symbol_types & INTERNAL_COMMON_SYMBOL), &symbols, out_function_symbol) != NULL;
-	if ((binary->special_binary_flags & BINARY_HAS_CUSTOM_JUMPTABLE_METADATA) == 0) {
-		LOG("binary does not have jump table metadata", binary ? binary->path : "none");
-		return 0;
-	}
-	if (has_symbol) {
-		const char *name = symbol_name(symbols, *out_function_symbol);
-		if (fs_strcmp(name, "strncmp") == 0) {
-			return 16;
-		} else if (fs_strcmp(name, "__memcmp_sse4_1") == 0) {
-			return 81;
-		} else if (fs_strcmp(name, "__memcpy_ssse3_back") == 0 || fs_strcmp(name, "__memmove_ssse3_back") == 0) {
-			return 16;
-		} else if (fs_strcmp(name, "__stpncpy_sse2_unaligned") == 0) {
-			return 17;
-		} else if (fs_strcmp(name, "DES_ede3_cfb_encrypt") == 0) {
-			return 9;
-		} else if (fs_strcmp(name, "krb5int_get_fq_local_hostname") == 0) {
-			return 12;
-		} else if (fs_strcmp(name, "rb_external_str_new_with_enc") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "coderange_scan") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "rb_str_coderange_scan_restartable") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "rb_enc_cr_str_copy_for_substr") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "rb_enc_strlen_cr") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "str_nth_len") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "enc_str_scrub") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "str_strlen") == 0) {
-			return 8;
-		} else if (fs_strcmp(name, "rb_str_sublen") == 0) {
-			return 8;
-		}
-		LOG("symbol does not have jump table metadata", name);
-	}
-	// workaround for manual jump table in libc's __vfprintf_internal implementation
-	if (binary->special_binary_flags & BINARY_IS_LIBC) {
-		const char *name = find_any_symbol_name_by_address(loader, binary, table, INTERNAL_COMMON_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD);
-		if (name != NULL && fs_strncmp(name, "step", sizeof("step") - 1) == 0) {
-			const char *jumps_text = &name[5];
-			switch (name[4]) {
-				case '3':
-					if (*jumps_text != 'a' && *jumps_text != 'b') {
-						break;
-					}
-					jumps_text++;
-					// fallthrough
-				case '0':
-				case '1':
-				case '2':
-				case '4':
-					if (fs_strncmp(jumps_text, "_jumps", sizeof("_jumps") - 1) == 0) {
-						return 32;
-					}
-					break;
-			}
-		}
-	}
-	return 0;
-}
 
 #ifdef __x86_64__
 static bool lookup_table_jump_is_valid(const struct loaded_binary *binary, const struct frame_details *frame_details, const ElfW(Sym) * function_symbol, ins_ptr jump)
@@ -6184,28 +6113,46 @@ __attribute__((always_inline)) static inline function_effects analyze_conditiona
 	return jump_effects | continue_effects;
 }
 
+__attribute__((warn_unused_result)) __attribute__((nonnull(1))) static int find_string(const char **haystack, const char *needle)
+{
+	if (needle != NULL) {
+		for (int i = 0; haystack[i] != NULL; i++) {
+			if (fs_strcmp(haystack[i], needle) == 0) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+__attribute__((warn_unused_result)) __attribute__((nonnull(1))) static int find_first_prefix(const char **haystack, const char *needle)
+{
+	if (needle != NULL) {
+		for (int i = 0; haystack[i] != NULL; i++) {
+			if (fs_strncmp(haystack[i], needle, fs_strlen(haystack[i])) == 0) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+static const char *setxid_names[] = {
+	"setuid",
+	"setgid",
+	"seteuid",
+	"setegid",
+	"setreuid",
+	"setregid",
+	"setresuid",
+	"setresgid",
+	"setgroups",
+	NULL,
+};
+
 static bool is_setxid_name(const char *name)
 {
-	if (name == NULL) {
-		return false;
-	}
-	if (name[0] != 's' || name[1] != 'e' || name[2] != 't') {
-		return false;
-	}
-	name += 3;
-	if (name[0] == 'r' && name[1] == 'e') {
-		name += 2;
-		if (name[0] == 's') {
-			name++;
-		}
-	} else if (name[0] == 'e') {
-		name++;
-	} else if (name[0] == 'g' && name[1] == 'r' && name[2] == 'o' && name[3] == 'u' && name[4] == 'p' && name[5] == 's' && name[6] == '\0') {
-		return true;
-		// } else if (name[0] == 'f' && name[1] == 's') {
-		// 	name += 2;
-	}
-	return (name[0] == 'u' || name[0] == 'g') && name[1] == 'i' && name[2] == 'd' && name[3] == '\0';
+	return find_string(setxid_names, name) != -1;
 }
 
 __attribute__((noinline)) static bool is_landing_pad_ins_decode(ins_ptr addr)
@@ -8464,14 +8411,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 								}
 								struct frame_details frame_details = {0};
 								bool has_frame_details = binary->has_frame_info ? find_containing_frame_info(&binary->frame_info, ins, &frame_details) : false;
-								const ElfW(Sym) *function_symbol = NULL;
-								uintptr_t override_size = size_of_jump_table_from_metadata(
-									&analysis->loader, binary, (const void *)base_addr, ins, (max - value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL, &function_symbol);
-								if (override_size != 0) {
-									max = override_size - 1;
-									LOG("overwrote maximum of signed lookup table to", max);
-								}
-								if ((max - value > MAX_LOOKUP_TABLE_SIZE) && !has_frame_details && (function_symbol == NULL)) {
+								if ((max - value > MAX_LOOKUP_TABLE_SIZE) && !has_frame_details) {
 									LOG("signed lookup table rejected because range of index is too large", max - value);
 									dump_registers(&analysis->loader, &self.current_state, mask_for_register(base) | mask_for_register(index));
 									self.description = "rejected lookup table";
@@ -8493,6 +8433,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 									clear_match(&analysis->loader, &copy, reg, ins);
 									copy.requires_known_target |= mask_for_register(reg);
 									ins_ptr continue_target = next_ins(ins, &decoded);
+									const ElfW(Sym) *function_symbol = NULL;
+									find_any_symbol_by_address(&analysis->loader, binary, ins, NORMAL_SYMBOL | LINKER_SYMBOL, NULL, &function_symbol);
 									for (uintptr_t i = value; i <= max; i++) {
 										LOG("processing table index", (intptr_t)i);
 										int32_t relative = ((const ins_int32 *)base_addr)[i];
@@ -12039,19 +11981,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											goto update_and_return;
 										}
 									}
-									struct frame_details frame_details = {0};
-									bool has_frame_details = binary->has_frame_info ? find_containing_frame_info(&binary->frame_info, ins, &frame_details) : false;
-									const ElfW(Sym) *function_symbol = NULL;
-									uintptr_t override_size = size_of_jump_table_from_metadata(&analysis->loader,
-									                                                           binary,
-									                                                           (const void *)base_addr,
-									                                                           ins,
-									                                                           (index_state.max - index_state.value > MAX_LOOKUP_TABLE_SIZE && !has_frame_details) ? DEBUG_SYMBOL_FORCING_LOAD : DEBUG_SYMBOL,
-									                                                           &function_symbol);
-									if (override_size != 0) {
-										index_state.max = ((override_size - 1) * 4) >> decoded.decomposed.operands[1].shiftValue;
-										LOG("overwrote maximum of lookup table to", index_state.max);
-									}
 									copy.sources[dest] = used_registers;
 									clear_match(&analysis->loader, &copy, dest, ins);
 									if (decoded.decomposed.operation != ARM64_LDR) {
@@ -14024,78 +13953,56 @@ static void *find_any_symbol_by_address(__attribute__((unused)) const struct loa
 	return NULL;
 }
 
+static const char *special_binary_names[] = {
+	"libc.",
+	"libcrypto.",
+	"libcap.",
+	"libpthread.",
+	"libpython",
+	"libperl",
+	"libp11kit.",
+	"libseccomp.",
+	"libsasl2.",
+	"libnss_systemd.",
+	"libkrb5.",
+	"libkrb5s",
+	"libruby.",
+	"libruby-",
+	"libruby2",
+	"ubuntu-core-launcher",
+	"ruby",
+	"perl",
+	NULL,
+};
+
+static int special_binary_flags[] = {
+	0,
+	BINARY_IS_LIBC,
+	BINARY_IS_LIBCRYPTO,
+	BINARY_IS_LIBCAP,
+	BINARY_IS_PTHREAD,
+	BINARY_IS_LIBPYTHON,
+	BINARY_IS_PERL,
+	BINARY_IS_LIBP11KIT,
+	BINARY_IS_SECCOMP,
+	BINARY_IS_LIBSASL2,
+	BINARY_IS_LIBNSS_SYSTEMD,
+	BINARY_IS_LIBKRB5,
+	BINARY_IS_LIBKRB5,
+	BINARY_IS_RUBY,
+	BINARY_IS_RUBY,
+	BINARY_IS_RUBY,
+	BINARY_IS_LIBCAP,
+	BINARY_IS_RUBY,
+	BINARY_IS_PERL,
+};
+
 static int special_binary_flags_for_path(const char *path)
 {
 	const char *slash = fs_strrchr(path, '/');
-	if (slash) {
-		path = slash + 1;
-	}
-	int result = 0;
-	if (path[0] == 'l' && path[1] == 'i' && path[2] == 'b') { // lib
-		if (path[3] == 'c') {
-			if (path[4] == '.') { // libc.
-				result |= BINARY_IS_LIBC | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-			} else if (path[4] == 'r' && path[5] == 'y' && path[6] == 'p' && path[7] == 't' && path[8] == 'o' && path[9] == '.') { // libcrypto.
-				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-				result |= BINARY_IS_LIBCRYPTO;
-			} else if (path[4] == 'a' && path[5] == 'p' && path[6] == '.') {
-				result |= BINARY_IS_LIBCAP;
-			}
-		} else if (path[3] == 'g') {
-			if (path[4] == 'n' && path[5] == 'u' && path[6] == 't' && path[7] == 'l' && path[8] == 's' && path[9] == '.') { // libgnutls.
-				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-			} else if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == '.') { // libgcrypt.
-				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-			}
-		} else if (path[3] == 'h') {
-			if (path[4] == 'c' && path[5] == 'r' && path[6] == 'y' && path[7] == 'p' && path[8] == 't' && path[9] == 'o' && path[10] == '.') { // libhcrypto.
-				// result |= BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-			}
-		} else if (path[3] == 'p') {
-			if (path[4] == 't' && path[5] == 'h' && path[6] == 'r' && path[7] == 'e' && path[8] == 'a' && path[9] == 'd' && path[10] == '.') { // libpthread.
-				result |= BINARY_IS_PTHREAD;
-			}
-			if (path[4] == 'y' && path[5] == 't' && path[6] == 'h' && path[7] == 'o' && path[8] == 'n') {
-				result |= BINARY_IS_LIBPYTHON;
-			}
-			if (path[4] == 'e' && path[5] == 'r' && path[6] == 'l') {
-				result |= BINARY_IS_PERL;
-			}
-			if (path[4] == '1' && path[5] == '1' && path[6] == '-' && path[7] == 'k' && path[8] == 'i' && path[9] == 't' && path[10] == '.') {
-				result |= BINARY_IS_LIBP11KIT;
-			}
-		} else if (path[3] == 'r' && path[4] == 'e' && path[5] == 'a' && path[6] == 'd') {
-			// result |= BINARY_IS_LIBREADLINE;
-		} else if (path[3] == 's') {
-			if (path[4] == 'e' && path[5] == 'c' && path[6] == 'c' && path[7] == 'o' && path[8] == 'm' && path[9] == 'p' && path[10] == '.') { // libseccomp.
-				result |= BINARY_IS_SECCOMP;
-			}
-			if (path[4] == 'a' && path[5] == 's' && path[6] == 'l' && path[7] == '2' && path[8] == '.') {
-				result |= BINARY_IS_LIBSASL2;
-			}
-		} else if (path[3] == 'n') {
-			if (path[4] == 's' && path[5] == 's' && path[6] == '_' && path[7] == 's' && path[8] == 'y' && path[9] == 's' && path[10] == 't' && path[11] == 'e' && path[12] == 'm' && path[13] == 'd' && path[14] == '.') { // libnss_systemd.
-				result |= BINARY_IS_LIBNSS_SYSTEMD;
-			}
-		} else if (path[3] == 'k') {
-			if (path[4] == 'r' && path[5] == 'b' && path[6] == '5' && (path[7] == '.' || path[7] == 's')) { // libkrb5
-				result |= BINARY_IS_LIBKRB5;
-				// result |= BINARY_ASSUME_FUNCTION_CALLfS_PRESERVE_STACK | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-			}
-		} else if (path[3] == 'r') {
-			if (path[4] == 'u' && path[5] == 'b' && path[6] == 'y' && (path[7] == '.' || path[7] == '-' || path[7] == '2')) { // libruby. or libruby-
-				// result |= BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
-				result |= BINARY_IS_RUBY;
-			}
-		}
-	} else if (fs_strcmp(path, "ubuntu-core-launcher") == 0) {
-		result |= BINARY_IS_LIBCAP;
-	} else if (fs_strncmp(path, "ruby", sizeof("ruby") - 1) == 0) {
-		result |= BINARY_IS_RUBY;
-	} else if (fs_strncmp(path, "perl", sizeof("perl") - 1) == 0) {
-		result |= BINARY_IS_PERL;
-	}
-	return result;
+	const char *name = slash != NULL ? &slash[1] : path;
+	int index = find_first_prefix(special_binary_names, name);
+	return special_binary_flags[index + 1];
 }
 
 struct loaded_binary_stub
@@ -14206,7 +14113,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 				case SHT_PROGBITS: {
 					const char *name = &new_binary->sections.strings[section->sh_name];
 					if (fs_strcmp(name, ".go.buildinfo") == 0) {
-						new_binary->special_binary_flags |= BINARY_IS_GOLANG | BINARY_ASSUME_FUNCTION_CALLS_PRESERVE_STACK;
+						new_binary->special_binary_flags |= BINARY_IS_GOLANG;
 					}
 					if (debuglink == NULL) {
 						if (fs_strcmp(name, ".gnu_debuglink") == 0) {
@@ -14254,7 +14161,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 		new_binary->special_binary_flags |= BINARY_IS_MAIN;
 	}
 	if (INTERNAL_COMMON_SYMBOL & DEBUG_SYMBOL_FORCING_LOAD) {
-		if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD | BINARY_IS_LIBREADLINE | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA)) {
+		if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_LIBNSS_SYSTEMD)) {
 			result = load_debuglink(&analysis->loader, new_binary, false);
 			if (result < 0) {
 				if (result == -ENOENT || result == -ENOEXEC) {
@@ -14382,7 +14289,7 @@ __attribute__((warn_unused_result)) static int load_needed_libraries(struct prog
 				ERROR("failed to load interpreter", interpreter_path);
 				return result;
 			}
-			analysis->loader.interpreter->special_binary_flags |= BINARY_IS_INTERPRETER | BINARY_HAS_CUSTOM_JUMPTABLE_METADATA;
+			analysis->loader.interpreter->special_binary_flags |= BINARY_IS_INTERPRETER;
 		}
 	}
 	if (new_binary->has_symbols) {
