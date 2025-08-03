@@ -30,11 +30,11 @@ static void install_at_lib_path(const char *path)
 					fs_memcpy(&new_path[len], ".axon", sizeof(".axon"));
 					int result = fs_renameat(dirfd, name, dirfd, new_path);
 					if (result < 0) {
-						ERROR("error renaming existing interpreter", fs_strerror(result));
+						ERROR("error renaming existing interpreter: ", fs_strerror(result));
 					}
 					result = fs_symlinkat("/bin/axon", dirfd, name);
 					if (result < 0) {
-						ERROR("error symlinking as interpreter", fs_strerror(result));
+						ERROR("error symlinking as interpreter: ", fs_strerror(result));
 					}
 				}
 			}

@@ -33,11 +33,11 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	const ElfW(Ehdr) header;
 	int read_bytes = fs_pread_all(fd, (char *)&header, sizeof(header), 0);
 	if (read_bytes < 0) {
-		ERROR("unable to read ELF header", fs_strerror(read_bytes));
+		ERROR("unable to read ELF header: ", fs_strerror(read_bytes));
 		return -ENOEXEC;
 	}
 	if (read_bytes < (int)sizeof(ElfW(Ehdr))) {
-		ERROR("too few bytes for ELF header", read_bytes);
+		ERROR("too few bytes for ELF header: ", read_bytes);
 		return -ENOEXEC;
 	}
 	if (header.e_ident[EI_MAG0] != ELFMAG0 || header.e_ident[EI_MAG1] != ELFMAG1 || header.e_ident[EI_MAG2] != ELFMAG2 || header.e_ident[EI_MAG3] != ELFMAG3) {
@@ -69,21 +69,21 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 		return -ENOEXEC;
 	}
 	if (header.e_type != ET_EXEC && header.e_type != ET_DYN) {
-		ERROR("ELF binary has unexpected type", (int)header.e_type);
+		ERROR("ELF binary has unexpected type: ", (int)header.e_type);
 		return -ENOEXEC;
 	}
 	if (header.e_machine != CURRENT_ELF_MACHINE) {
-		ERROR("ELF binary has unexpected machine type", (int)header.e_machine);
+		ERROR("ELF binary has unexpected machine type: ", (int)header.e_machine);
 		return -ENOEXEC;
 	}
 	if (header.e_version != EV_CURRENT) {
-		ERROR("ELF binary version is not current", header.e_version);
+		ERROR("ELF binary version is not current: ", header.e_version);
 		return -ENOEXEC;
 	}
 	struct fs_stat stat;
 	int result = fs_fstat(fd, &stat);
 	if (result < 0) {
-		ERROR("could not stat binary", fs_strerror(result));
+		ERROR("could not stat binary: ", fs_strerror(result));
 		return -ENOEXEC;
 	}
 	size_t phsize = header.e_phentsize * header.e_phnum;
@@ -92,10 +92,10 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 	if (l != (int)phsize) {
 		free(phbuffer);
 		if (l < 0) {
-			ERROR("unable to read phbuffer", fs_strerror(l));
+			ERROR("unable to read phbuffer: ", fs_strerror(l));
 		} else {
-			ERROR("read of phbuffer was the wrong size", l);
-			ERROR("expected", (int)phsize);
+			ERROR("read of phbuffer was the wrong size: ", l);
+			ERROR("expected: ", (int)phsize);
 		}
 		return -ENOEXEC;
 	}
@@ -191,19 +191,19 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE | MAP_FIXED, fd, file_offset + offset);
 #endif
 				if (fs_is_map_failed(section_mapping)) {
-					ERROR("failed mapping section", fs_strerror((intptr_t)section_mapping));
+					ERROR("failed mapping section: ", fs_strerror((intptr_t)section_mapping));
 					return -ENOEXEC;
 				}
 				if (section_mapping != desired_section_mapping) {
-					ERROR("section mapped to incorrect address", (uintptr_t)section_mapping);
-					ERROR("expected", (uintptr_t)desired_section_mapping);
+					ERROR("section mapped to incorrect address: ", (uintptr_t)section_mapping);
+					ERROR("expected: ", (uintptr_t)desired_section_mapping);
 					return -ENOEXEC;
 				}
 #ifdef __APPLE__
 				if (temporary_prot & PROT_EXEC) {
 					result = fs_mprotect(desired_section_mapping, map_len, temporary_prot);
 					if (result != 0) {
-						ERROR("failed adding PROT_EXEC", fs_strerror(result));
+						ERROR("failed adding PROT_EXEC: ", fs_strerror(result));
 						return -ENOEXEC;
 					}
 				}
@@ -217,14 +217,14 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 			if (this_max - this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
 				intptr_t result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
 				if (result < 0) {
-					ERROR("failed remapping section with new protection", fs_strerror(result));
+					ERROR("failed remapping section with new protection: ", fs_strerror(result));
 					return -ENOEXEC;
 				}
 			}
 			if (pgbrk - (size_t)map_offset < this_max) {
 				void *tail_mapping = fs_mmap((void *)pgbrk, (size_t)map_offset + this_max - pgbrk, protection, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
 				if (fs_is_map_failed(tail_mapping)) {
-					ERROR("failed creating .bss-like PT_LOAD", fs_strerror((intptr_t)tail_mapping));
+					ERROR("failed creating .bss-like PT_LOAD: ", fs_strerror((intptr_t)tail_mapping));
 					return -ENOEXEC;
 				}
 			}
@@ -455,7 +455,7 @@ int apply_postrelocation_readonly(struct binary_info *info)
 			int protection = protection_for_pflags(ph->p_flags);
 			int result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
 			if (result < 0) {
-				ERROR("failed remapping section with new protection", fs_strerror(result));
+				ERROR("failed remapping section with new protection: ", fs_strerror(result));
 				return result;
 			}
 		}
@@ -530,9 +530,9 @@ static void load_hash(const ElfW(Word) * hash, size_t symbol_count, struct symbo
 static void add_version(size_t index, const char *version_name, const char *library_name, struct symbol_info *out_symbols)
 {
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-	ERROR("add version at index", (intptr_t)index);
-	ERROR("version name", version_name);
-	ERROR("library name", library_name ?: "(none)");
+	ERROR("add version at index: ", (intptr_t)index);
+	ERROR("version name: ", version_name);
+	ERROR("library name: ", library_name ?: "(none)");
 #endif
 	if (index >= out_symbols->valid_version_count) {
 		out_symbols->valid_versions = realloc(out_symbols->valid_versions, (index + 1) * sizeof(struct symbol_version_info));
@@ -848,7 +848,7 @@ const char *symbol_name(const struct symbol_info *symbols, const ElfW(Sym) * sym
 	}
 	size_t offset = symbol->st_name;
 	if (offset > symbols->strings_size) {
-		DIE("symbol offset is beyond the end of the strings table", offset);
+		DIE("symbol offset is beyond the end of the strings table: ", offset);
 	}
 	return &symbols->strings[offset];
 }
@@ -873,8 +873,8 @@ static inline enum version_match versions_match(__attribute__((unused)) const ch
 		return index == 1 || index == 2 ? VERSION_MATCH_EXACT : VERSION_MATCH_IF_ONLY;
 	}
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-	ERROR("querying version", version_to_query);
-	ERROR("for symbol", symbol_name);
+	ERROR("querying version: ", version_to_query);
+	ERROR("for symbol: ", symbol_name);
 #endif
 	struct symbol_version_info first = symbol_version_for_index(symbols, index);
 	const struct symbol_version_info *version_to_match = &first;
@@ -883,9 +883,9 @@ static inline enum version_match versions_match(__attribute__((unused)) const ch
 			return VERSION_MATCH_NONE;
 		}
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-		ERROR("against", version_to_match->version_name);
+		ERROR("against: ", version_to_match->version_name);
 		if (version_to_match->library_name != NULL) {
-			ERROR("in", version_to_match->library_name);
+			ERROR("in: ", version_to_match->library_name);
 		}
 #endif
 		if (fs_strcmp(version_to_query, version_to_match->version_name) == 0) {
@@ -927,9 +927,9 @@ static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbol
 					switch (versions_match(name_to_find, version_to_find, symbols, i)) {
 						case VERSION_MATCH_NONE:
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-							ERROR("VERSION_MATCH_NONE for GNU", name_to_find);
+							ERROR("VERSION_MATCH_NONE for GNU: ", name_to_find);
 							if (version_to_find != NULL) {
-								ERROR("version to find is", version_to_find);
+								ERROR("version to find is: ", version_to_find);
 							}
 #endif
 							break;
@@ -937,9 +937,9 @@ static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbol
 							return symbol;
 						case VERSION_MATCH_IF_ONLY:
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-							ERROR("VERSION_MATCH_IF_ONLY for GNU", name_to_find);
+							ERROR("VERSION_MATCH_IF_ONLY for GNU: ", name_to_find);
 							if (version_to_find != NULL) {
-								ERROR("version to find is", version_to_find);
+								ERROR("version to find is: ", version_to_find);
 							}
 #endif
 							fallback_result = fallback_result ? NULL : symbol;
@@ -961,9 +961,9 @@ static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbol
 				switch (versions_match(name_to_find, version_to_find, symbols, i)) {
 					case VERSION_MATCH_NONE:
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-						ERROR("VERSION_MATCH_NONE for buckets", name_to_find);
+						ERROR("VERSION_MATCH_NONE for buckets: ", name_to_find);
 						if (version_to_find != NULL) {
-							ERROR("version to find is", version_to_find);
+							ERROR("version to find is: ", version_to_find);
 						}
 #endif
 						break;
@@ -971,9 +971,9 @@ static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbol
 						return symbol;
 					case VERSION_MATCH_IF_ONLY:
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-						ERROR("VERSION_MATCH_IF_ONLY for buckets", name_to_find);
+						ERROR("VERSION_MATCH_IF_ONLY for buckets: ", name_to_find);
 						if (version_to_find != NULL) {
-							ERROR("version to find is", version_to_find);
+							ERROR("version to find is: ", version_to_find);
 						}
 #endif
 						fallback_result = fallback_result ? NULL : symbol;
@@ -990,9 +990,9 @@ static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbol
 				switch (versions_match(name_to_find, version_to_find, symbols, i)) {
 					case VERSION_MATCH_NONE:
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-						ERROR("VERSION_MATCH_NONE for linear", name_to_find);
+						ERROR("VERSION_MATCH_NONE for linear: ", name_to_find);
 						if (version_to_find != NULL) {
-							ERROR("version to find is", version_to_find);
+							ERROR("version to find is: ", version_to_find);
 						}
 #endif
 						break;
@@ -1000,9 +1000,9 @@ static inline const ElfW(Sym) * find_elf_symbol(const struct symbol_info *symbol
 						return symbol;
 					case VERSION_MATCH_IF_ONLY:
 #ifdef LOADER_SYMBOL_VERSION_DEBUG
-						ERROR("VERSION_MATCH_IF_ONLY for linear", name_to_find);
+						ERROR("VERSION_MATCH_IF_ONLY for linear: ", name_to_find);
 						if (version_to_find != NULL) {
-							ERROR("version to find is", version_to_find);
+							ERROR("version to find is: ", version_to_find);
 						}
 #endif
 						fallback_result = fallback_result ? NULL : symbol;
@@ -1322,7 +1322,7 @@ uintptr_t read_eh_frame_value(void **cursor, unsigned char encoding)
 			return result;
 		}
 		default:
-			DIE("unknown eh_frame encoding", encoding & 0xf);
+			DIE("unknown eh_frame encoding: ", encoding & 0xf);
 			return 0;
 	}
 }
@@ -1349,7 +1349,7 @@ uintptr_t read_eh_frame_pointer(const struct frame_info *frame_info, void **curs
 		case DW_EH_PE_textrel:
 			return frame_info->text_base_address + read_eh_frame_value(cursor, encoding);
 		default:
-			DIE("unknown eh_frame encoding", encoding & 0xf0);
+			DIE("unknown eh_frame encoding: ", encoding & 0xf0);
 	}
 }
 

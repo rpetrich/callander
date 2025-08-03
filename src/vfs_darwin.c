@@ -335,7 +335,7 @@ static intptr_t darwin_file_fstatfs(__attribute__((unused)) struct thread_storag
 static intptr_t darwin_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
 	if (size < 1024) {
-		DIE("expected at least 1024 byte buffer", (int)size);
+		DIE("expected at least 1024 byte buffer: ", (int)size);
 	}
 	intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_fcntl, proxy_value(file.handle), proxy_value(DARWIN_F_GETPATH), proxy_out(buf, size)));
 	if (result >= 0) {

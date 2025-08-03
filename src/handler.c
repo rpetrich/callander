@@ -127,7 +127,7 @@ __attribute__((noinline)) static intptr_t invalid_local_operation(void)
 intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6, ucontext_t *context)
 {
 #if 0
-	ERROR("syscall", temp_str(copy_raw_syscall_description(syscall, arg1, arg2, arg3, arg4, arg5, arg6)));
+	ERROR("syscall: ", temp_str(copy_raw_syscall_description(syscall, arg1, arg2, arg3, arg4, arg5, arg6)));
 	ERROR_FLUSH();
 #endif
 	switch (syscall) {

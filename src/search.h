@@ -27,7 +27,7 @@ static inline const char *apply_sysroot(const char *sysroot, const char *path, c
 	size_t sysroot_len = fs_strlen(sysroot);
 	size_t path_len = fs_strlen(path);
 	if (sysroot_len + path_len + 1 > PATH_MAX) {
-		DIE("adding sysroot to path exceeds path maximum", path);
+		DIE("adding sysroot to path exceeds path maximum: ", path);
 	}
 	fs_memcpy(buf, sysroot, sysroot_len);
 	fs_memcpy(&buf[sysroot_len], path, path_len);

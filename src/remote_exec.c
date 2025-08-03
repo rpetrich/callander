@@ -43,12 +43,12 @@ int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const ch
 	size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
 	if ((int)header_size < 0) {
 		fs_close(fd);
-		ERROR("unable to read header", fs_strerror(header_size));
+		ERROR("unable to read header: ", fs_strerror(header_size));
 		return -ENOEXEC;
 	}
 	if (header_size < 4) {
 		fs_close(fd);
-		ERROR("header too small", header_size);
+		ERROR("header too small: ", header_size);
 		return -ENOEXEC;
 	}
 	if (header[0] == '#' && header[1] == '!') {
@@ -58,7 +58,7 @@ int remote_exec_fd(const char *sysroot, int fd, const char *named_path, const ch
 		return remote_exec_fd_elf(sysroot, fd, argv, envp, aux, comm, named_path, debug, handlers, out_state);
 	}
 	fs_close(fd);
-	ERROR("not magic enough", named_path);
+	ERROR("not magic enough: ", named_path);
 	return -ENOEXEC;
 }
 
@@ -70,7 +70,7 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 	struct loaded_binary *loaded;
 	int result = load_binary_into_analysis(analysis, executable_path, executable_path, fd, NULL, &loaded);
 	if (result != 0) {
-		DIE("failed to load main binary", fs_strerror(result));
+		DIE("failed to load main binary: ", fs_strerror(result));
 	}
 	if (UNLIKELY(loaded->mode & S_ISUID)) {
 		DIE("executable is setuid");
@@ -84,13 +84,13 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 	// finish loading the main binary
 	result = finish_loading_binary(analysis, loaded, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, false);
 	if (result != 0) {
-		DIE("failed to finish loading main binary", fs_strerror(result));
+		DIE("failed to finish loading main binary: ", fs_strerror(result));
 	}
 	analysis->main = (uintptr_t)loaded->info.entrypoint;
 
-	LOG("base", (uintptr_t)loaded->info.base);
-	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
-	LOG("size", (uintptr_t)loaded->info.size);
+	LOG("base: ", (uintptr_t)loaded->info.base);
+	LOG("entrypoint: ", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
+	LOG("size: ", (uintptr_t)loaded->info.size);
 	struct analysis_frame new_caller = {.address = loaded->info.base, .description = "entrypoint", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
 	struct registers registers = empty_registers;
 	analyze_function(analysis, EFFECT_AFTER_STARTUP | EFFECT_PROCESSED | EFFECT_ENTER_CALLS, &registers, loaded->info.entrypoint, &new_caller);
@@ -140,13 +140,13 @@ __attribute__((noinline)) static void analyze_binary(struct program_state *analy
 	// allocate a temporary stack
 	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, stack_flags, -1, 0);
 	if (fs_is_map_failed(stack)) {
-		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
+		DIE("failed to allocate stack: ", fs_strerror((intptr_t)stack));
 	}
 
 	// apply the guard page
 	intptr_t result = fs_mprotect(stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard", fs_strerror(result));
+		DIE("failed to protect stack guard: ", fs_strerror(result));
 	}
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(perform_analysis, analysis, executable_path, fd, (char *)stack + ALT_STACK_SIZE + STACK_GUARD_SIZE);
 	// unmap the temporary stack
@@ -200,13 +200,13 @@ static void ensure_all_syscalls_are_patchable(struct program_state *analysis)
 		if (remote_should_try_to_patch(&analysis->syscalls.list[i])) {
 			struct instruction_range patch_target;
 			if (!find_remote_patch_target(&analysis->loader, analysis->syscalls.list[i].ins, analysis->syscalls.list[i].entry, &patch_target)) {
-				ERROR("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
-				ERROR("from entry", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].entry)));
+				ERROR("instruction is not patchable: ", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
+				ERROR("from entry: ", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].entry)));
 				die = true;
 			} else {
-				PATCH_LOG("patching from", temp_str(copy_address_description(&analysis->loader, patch_target.start)));
-				PATCH_LOG("to", temp_str(copy_address_description(&analysis->loader, patch_target.end)));
-				PATCH_LOG("for", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
+				PATCH_LOG("patching from: ", temp_str(copy_address_description(&analysis->loader, patch_target.start)));
+				PATCH_LOG("to: ", temp_str(copy_address_description(&analysis->loader, patch_target.end)));
+				PATCH_LOG("for: ", temp_str(copy_address_description(&analysis->loader, analysis->syscalls.list[i].ins)));
 			}
 		}
 	}
@@ -279,17 +279,17 @@ static void free_remote_patches(struct remote_patches *patches, struct program_s
 
 void remote_patch(struct remote_patches *patches, struct program_state *analysis, const ins_ptr addr, const ins_ptr entry, uintptr_t child_addr, struct patch_template template, uintptr_t remote_handler, size_t skip_len, uintptr_t data)
 {
-	PATCH_LOG("remotely patching", temp_str(copy_address_description(&analysis->loader, addr)));
-	PATCH_LOG("with entry", temp_str(copy_address_description(&analysis->loader, entry)));
+	PATCH_LOG("remotely patching: ", temp_str(copy_address_description(&analysis->loader, addr)));
+	PATCH_LOG("with entry: ", temp_str(copy_address_description(&analysis->loader, entry)));
 	// TODO: reprotect with correct protection
 #if 0
-	ERROR("mprotect", (uintptr_t)addr & -PAGE_SIZE);
-	ERROR("mprotect", child_addr & -PAGE_SIZE);
-	ERROR("size", PAGE_SIZE);
-	ERROR("prot", PROT_READ | PROT_WRITE | PROT_EXEC);
+	ERROR("mprotect: ", (uintptr_t)addr & -PAGE_SIZE);
+	ERROR("mprotect: ", child_addr & -PAGE_SIZE);
+	ERROR("size: ", PAGE_SIZE);
+	ERROR("prot: ", PROT_READ | PROT_WRITE | PROT_EXEC);
 	int protect_result = remote_mprotect(child_addr & -PAGE_SIZE, PAGE_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
 	if (protect_result < 0) {
-		DIE("failed to remote mprotect", fs_strerror(protect_result));
+		DIE("failed to remote mprotect: ", fs_strerror(protect_result));
 		return protect_result;
 	}
 	char breakpoint = 0xcc;
@@ -297,7 +297,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 #else
 	struct instruction_range patch_target;
 	if (!find_remote_patch_target(&analysis->loader, addr, entry, &patch_target)) {
-		DIE("instruction is not patchable", temp_str(copy_address_description(&analysis->loader, addr)));
+		DIE("instruction is not patchable: ", temp_str(copy_address_description(&analysis->loader, addr)));
 	}
 	uintptr_t child_patch_start = translate_analysis_address_to_child(&analysis->loader, patch_target.start);
 	uintptr_t child_patch_end = translate_analysis_address_to_child(&analysis->loader, patch_target.end);
@@ -308,25 +308,25 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 		void *copy = malloc(child_page_end - child_page_start);
 		intptr_t result = proxy_peek(child_page_start, child_page_end - child_page_start, copy);
 		if (result < 0) {
-			DIE("failed reading copy", fs_strerror(result));
+			DIE("failed reading copy: ", fs_strerror(result));
 		}
 		fs_memcpy(copy, (void *)child_page_start, child_page_end - child_page_start);
 		fs_munmap((void *)child_page_start, child_page_end - child_page_start);
 		intptr_t mmap_result = remote_mmap(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS | MAP_JIT, -1, 0);
 		if (mmap_result < 0) {
-			DIE("failed to remote map_jit", fs_strerror(mmap_result));
+			DIE("failed to remote map_jit: ", fs_strerror(mmap_result));
 		}
 		pthread_jit_write_protect_np(false);
 		result = proxy_poke(mmap_result, child_page_end - child_page_start, copy);
 		if (result < 0) {
-			DIE("failed writing copy", fs_strerror(result));
+			DIE("failed writing copy: ", fs_strerror(result));
 		}
 		free(copy);
 	}
 #else
 	int protect_result = remote_mprotect(child_page_start, child_page_end - child_page_start, PROT_READ | PROT_WRITE | PROT_EXEC);
 	if (protect_result < 0) {
-		DIE("failed to remote mprotect", fs_strerror(protect_result));
+		DIE("failed to remote mprotect: ", fs_strerror(protect_result));
 	}
 #endif
 	// allocate a trampoline page
@@ -347,10 +347,10 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 	patches->list = realloc(patches->list, (patch_count + 1) * sizeof(struct remote_patch));
 	patches->list[patch_count] = patch;
 	patches->count++;
-	PATCH_LOG("target instruction is at", child_addr);
-	PATCH_LOG("starting patch at", child_patch_start);
-	PATCH_LOG("ending patch at", child_patch_end);
-	PATCH_LOG("redirecting to trampoline at", trampoline);
+	PATCH_LOG("target instruction is at: ", child_addr);
+	PATCH_LOG("starting patch at: ", child_patch_start);
+	PATCH_LOG("ending patch at: ", child_patch_end);
+	PATCH_LOG("redirecting to trampoline at: ", trampoline);
 	// prepare and poke the trampoline
 	uint8_t trampoline_buf[PAGE_SIZE];
 	size_t cur = 0;
@@ -399,7 +399,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 			}
 			cur += tail_size;
 #else
-			DIE("tail has size, but target doesn't support migration", tail_size);
+			DIE("tail has size, but target doesn't support migration: ", tail_size);
 #endif
 		}
 		// jump back to the resume point in the function
@@ -409,7 +409,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 	}
 	intptr_t result = proxy_poke(trampoline, cur, trampoline_buf);
 	if (result < 0) {
-		DIE("failed writing trampoline", fs_strerror(result));
+		DIE("failed writing trampoline: ", fs_strerror(result));
 	}
 	patches->existing_trampoline = trampoline + cur;
 	// patch the original code to jump to the trampoline page
@@ -418,7 +418,7 @@ void remote_patch(struct remote_patches *patches, struct program_state *analysis
 	patch_write_pc_relative_jump((ins_ptr)&jump_buf, detour_relative_offset);
 	result = proxy_poke(child_patch_start, sizeof(jump_buf), jump_buf);
 	if (result < 0) {
-		DIE("failed writing detour jump", fs_strerror(result));
+		DIE("failed writing detour jump: ", fs_strerror(result));
 	}
 #ifdef __APPLE__
 	pthread_jit_write_protect_np(true);
@@ -433,7 +433,7 @@ static void patch_remote_syscalls(struct remote_patches *patches, struct program
 			const ins_ptr addr = analysis->syscalls.list[i].ins;
 			uintptr_t child_addr = translate_analysis_address_to_child(&analysis->loader, addr);
 			if (child_addr == 0 || child_addr == (uintptr_t)addr) {
-				PATCH_LOG("missing child address", temp_str(copy_address_description(&analysis->loader, addr)));
+				PATCH_LOG("missing child address: ", temp_str(copy_address_description(&analysis->loader, addr)));
 			} else {
 				bool found = false;
 				for (size_t j = 0, count = patches->count; j < count; j++) {
@@ -607,7 +607,7 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 					aux_buf++;
 					break;
 				default:
-					ERROR("unknown auxv type", (intptr_t)aux_buf->a_type);
+					ERROR("unknown auxv type: ", (intptr_t)aux_buf->a_type);
 					break;
 			}
 			++aux;
@@ -622,7 +622,7 @@ static intptr_t prepare_and_send_program_stack(intptr_t stack, const char *const
 	args->arg3 = 0;
 	intptr_t result = proxy_poke(dynv_base, dynv_size, dynv_buf);
 	if (result < 0) {
-		DIE("failed writing program stack", fs_strerror(result));
+		DIE("failed writing program stack: ", fs_strerror(result));
 	}
 	return dynv_base + ((intptr_t)args - (intptr_t)&dynv_buf[0]);
 }
@@ -642,7 +642,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	}
 	analyze_binary(&analysis, exec_path, fd);
 	if (debug) {
-		ERROR("syscalls", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, false, true, true)));
+		ERROR("syscalls: ", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, false, true, true)));
 		ERROR_FLUSH();
 	}
 	if (debug) {
@@ -652,7 +652,7 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	// check that all libraries have a dynamic base address
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 		if (binary->info.default_base != NULL) {
-			ERROR("found library with a fixed base address", binary->path);
+			ERROR("found library with a fixed base address: ", binary->path);
 			return -ENOEXEC;
 		}
 	}
@@ -660,18 +660,18 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	ensure_all_syscalls_are_patchable(&analysis);
 	// load the main binary
 	if (debug) {
-		ERROR("remotely loading program", analysis.loader.main->path);
+		ERROR("remotely loading program: ", analysis.loader.main->path);
 		ERROR_FLUSH();
 	}
 	struct binary_info main_info = {0};
 	intptr_t result = remote_load_binary(fd, &main_info);
 	if (result < 0) {
-		ERROR("failed to load binary remotely", fs_strerror(result));
+		ERROR("failed to load binary remotely: ", fs_strerror(result));
 		return result;
 	}
 	if (debug) {
-		ERROR("mapped main", exec_path);
-		ERROR("at", (uintptr_t)main_info.base);
+		ERROR("mapped main: ", exec_path);
+		ERROR("at: ", (uintptr_t)main_info.base);
 	}
 	analysis.loader.main->child_base = (uintptr_t)main_info.base;
 	// load the interpreter, if necessary
@@ -681,13 +681,13 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 	char sysroot_path_buf[PATH_MAX];
 	if (has_interpreter) {
 		if (debug) {
-			ERROR("remotely loading interpreter", analysis.loader.main->info.interpreter);
+			ERROR("remotely loading interpreter: ", analysis.loader.main->info.interpreter);
 			ERROR_FLUSH();
 		}
 		interpreter_fd = fs_openat(AT_FDCWD, apply_sysroot(sysroot, analysis.loader.main->info.interpreter, sysroot_path_buf), O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
 			remote_unload_binary(&main_info);
-			ERROR("unable to open ELF interpreter", fs_strerror(interpreter_fd));
+			ERROR("unable to open ELF interpreter: ", fs_strerror(interpreter_fd));
 			return interpreter_fd;
 		}
 		struct fs_stat stat;
@@ -695,18 +695,18 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 		if (UNLIKELY(result < 0)) {
 			remote_unload_binary(&main_info);
 			fs_close(interpreter_fd);
-			ERROR("ELF interpreter is not executable", fs_strerror(result));
+			ERROR("ELF interpreter is not executable: ", fs_strerror(result));
 			return result;
 		}
 		result = remote_load_binary(interpreter_fd, &interpreter_info);
 		if (UNLIKELY(result != 0)) {
 			remote_unload_binary(&main_info);
-			DIE("unable to load ELF interpreter", fs_strerror(result));
+			DIE("unable to load ELF interpreter: ", fs_strerror(result));
 			return result;
 		}
 		if (debug) {
-			ERROR("mapped interpreter", analysis.loader.main->info.interpreter);
-			ERROR("at", (uintptr_t)interpreter_info.base);
+			ERROR("mapped interpreter: ", analysis.loader.main->info.interpreter);
+			ERROR("at: ", (uintptr_t)interpreter_info.base);
 		}
 		if (analysis.loader.interpreter != NULL) {
 			analysis.loader.interpreter->child_base = (uintptr_t)interpreter_info.base;
@@ -726,10 +726,10 @@ static int remote_exec_fd_elf(const char *sysroot, int fd, const char *const *ar
 			fs_close(interpreter_fd);
 		}
 		remote_unload_binary(&main_info);
-		ERROR("creating stack failed", fs_strerror(stack));
+		ERROR("creating stack failed: ", fs_strerror(stack));
 		return stack;
 	}
-	LOG("stack", (uintptr_t)stack);
+	LOG("stack: ", (uintptr_t)stack);
 
 	// poke in breakpoints/patches
 	if (debug) {

@@ -75,10 +75,10 @@ static void make_pc_known_invalid(ins_ptr pc, struct patch_state_shard *state_sh
 void patch_syscall(struct thread_storage *thread, ins_ptr pc, intptr_t sp, intptr_t bp, int self_fd)
 {
 	if (!patch_syscalls) {
-		// ERROR("ignoring syscall patch at", (uintptr_t)pc);
+		// ERROR("ignoring syscall patch at: ", (uintptr_t)pc);
 		return;
 	}
-	// ERROR("patching syscall at", (uintptr_t)pc);
+	// ERROR("patching syscall at: ", (uintptr_t)pc);
 	struct patch_body_args args = {
 		.pc = pc,
 		.sp = sp,

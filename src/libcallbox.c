@@ -84,12 +84,12 @@ static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attr
 	copy.next_out = (void *)next_out;
 	intptr_t result = proxy_poke(next_in, avail_in, stream->next_in);
 	if (result < 0) {
-		DIE("failed to poke", fs_strerror(result));
+		DIE("failed to poke: ", fs_strerror(result));
 	}
 	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflate), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
 	result = proxy_peek(next_out, avail_out - copy.avail_out, orig_next_out);
 	if (result < 0) {
-		DIE("failed to peek", fs_strerror(result));
+		DIE("failed to peek: ", fs_strerror(result));
 	}
 	*stream = copy;
 	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in];
@@ -135,7 +135,7 @@ static intptr_t inferior_inflateSync(__attribute__((unused)) uintptr_t *args, __
 	copy.next_in = (void *)next_in;
 	intptr_t result = proxy_poke(next_in, avail_in, stream->next_in);
 	if (result < 0) {
-		DIE("failed to poke", fs_strerror(result));
+		DIE("failed to poke: ", fs_strerror(result));
 	}
 	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateSync), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
 	*stream = copy;
@@ -578,7 +578,7 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void callander_perfo
 	for (size_t i = 0; i < sizeof(zlib_symbols) / sizeof(zlib_symbols[0]); i++) {
 		void *addr = resolve_binary_loaded_symbol(&analysis->loader, binary, zlib_symbols[i].name, NULL, NORMAL_SYMBOL, NULL);
 		if (addr == NULL) {
-			DIE("could not analyze", zlib_symbols[i].name);
+			DIE("could not analyze: ", zlib_symbols[i].name);
 		}
 		struct analysis_frame new_caller = {
 			.address = addr,
@@ -622,18 +622,18 @@ __attribute__((noinline)) static void apply_sandbox(const struct link_map *libz_
 	// revoke permissions
 	intptr_t result = fs_prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 	if (result != 0) {
-		DIE("failed to set no new privileges", fs_strerror(result));
+		DIE("failed to set no new privileges: ", fs_strerror(result));
 	}
 
 	// allocate a temporary stack
 	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
-		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
+		DIE("failed to allocate stack: ", fs_strerror((intptr_t)stack));
 	}
 	// apply the guard page
 	result = fs_mprotect(stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard", fs_strerror(result));
+		DIE("failed to protect stack guard: ", fs_strerror(result));
 	}
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(callander_perform_analysis, &analysis, libz_entry, NULL, (char *)stack + ALT_STACK_SIZE + STACK_GUARD_SIZE);
 	// unmap the temporary stack
@@ -649,21 +649,21 @@ __attribute__((noinline)) static void apply_sandbox(const struct link_map *libz_
 				entry = find_link_map(binary->loaded_path);
 				if (entry == NULL) {
 					for (const struct link_map *other = global_r_debug->r_map; other != NULL; other = other->l_next) {
-						ERROR("found in link map", other->l_name);
+						ERROR("found in link map: ", other->l_name);
 					}
-					DIE("missing base for", binary->loaded_path);
+					DIE("missing base for: ", binary->loaded_path);
 				}
 			}
 			binary->child_base = (uintptr_t)entry->l_addr;
 		}
 	}
 	struct sock_fprog prog = generate_seccomp_program(&analysis.loader, &analysis.syscalls, NULL, 0, ~(uint32_t)0);
-	// ERROR("permitted syscalls", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, true, true, true)));
+	// ERROR("permitted syscalls: ", temp_str(copy_used_syscalls(&analysis.loader, &analysis.syscalls, true, true, true)));
 	free_loader_context(&analysis.loader);
 	ERROR_FLUSH();
 	result = FS_SYSCALL(__NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, (intptr_t)&prog);
 	if (result < 0) {
-		DIE("failed to apply program", fs_strerror(result));
+		DIE("failed to apply program: ", fs_strerror(result));
 	}
 	free(prog.filter);
 }
@@ -674,7 +674,7 @@ static void spawn_worker(const struct link_map *libz_entry)
 	int sockets[2];
 	intptr_t result = fs_socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets);
 	if (result < 0) {
-		DIE("failed to create sockets", fs_strerror(result));
+		DIE("failed to create sockets: ", fs_strerror(result));
 	}
 	ERROR_FLUSH();
 #if 0
@@ -683,7 +683,7 @@ static void spawn_worker(const struct link_map *libz_entry)
 	pid_t child_pid = fs_fork();
 #endif
 	if (child_pid < 0) {
-		DIE("failed to fork child", fs_strerror(child_pid));
+		DIE("failed to fork child: ", fs_strerror(child_pid));
 	}
 	if (child_pid != 0) {
 		fs_close(sockets[1]);
@@ -693,7 +693,7 @@ static void spawn_worker(const struct link_map *libz_entry)
 	fs_close(sockets[0]);
 	result = fs_prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0);
 	if (result < 0) {
-		DIE("failed to set death signal", fs_strerror(result));
+		DIE("failed to set death signal: ", fs_strerror(result));
 	}
 	hello_message hello;
 #ifdef __linux__
@@ -707,7 +707,7 @@ static void spawn_worker(const struct link_map *libz_entry)
 	hello.state = &state;
 	result = fs_write_all(sockets[1], (const char *)&hello, sizeof(hello));
 	if (result < (intptr_t)sizeof(hello)) {
-		DIE("failed to write startup message", fs_strerror(result));
+		DIE("failed to write startup message: ", fs_strerror(result));
 	}
 	apply_sandbox(libz_entry);
 	process_data();
@@ -718,14 +718,14 @@ static void *find_loaded_symbol(const struct link_map *entry, const char *symbol
 	struct full_binary_info binary;
 	intptr_t result = load_full_binary_info(AT_FDCWD, entry->l_name, &binary);
 	if (result < 0) {
-		DIE("error loading binary", fs_strerror(result));
+		DIE("error loading binary: ", fs_strerror(result));
 	}
 	struct binary_info loaded;
 	load_existing(&loaded, entry->l_addr);
 	struct symbol_info symbols;
 	result = load_dynamic_symbols(binary.fd, &binary.info, &symbols);
 	if (result < 0) {
-		DIE("error loading symbols", fs_strerror(result));
+		DIE("error loading symbols: ", fs_strerror(result));
 	}
 	void *symbol = find_symbol(&loaded, &symbols, symbol_name, NULL, NULL);
 	free_symbols(&symbols);
@@ -740,8 +740,8 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 	const struct link_map *libc_entry = NULL;
 	const struct link_map *libdl_entry = NULL;
 	for (const struct link_map *entry = global_r_debug->r_map; entry != NULL; entry = entry->l_next) {
-		// ERROR("found in link map", entry->l_name);
-		// ERROR("at", (uintptr_t)entry->l_addr);
+		// ERROR("found in link map: ", entry->l_name);
+		// ERROR("at: ", (uintptr_t)entry->l_addr);
 		if (fs_strcmp(entry->l_name, "/lib/x86_64-linux-gnu/libz.so.1") == 0) {
 			libz_entry = entry;
 		} else if (fs_strcmp(entry->l_name, "/lib/x86_64-linux-gnu/libpthread.so.0") == 0) {
@@ -787,20 +787,20 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 		struct full_binary_info libz;
 		intptr_t result = load_full_binary_info(AT_FDCWD, libz_entry->l_name, &libz);
 		if (result < 0) {
-			DIE("error loading libz", fs_strerror(result));
+			DIE("error loading libz: ", fs_strerror(result));
 		}
 		struct binary_info loaded_libz;
 		load_existing(&loaded_libz, libz_entry->l_addr);
 		struct symbol_info libz_symbols;
 		result = load_dynamic_symbols(libz.fd, &libz.info, &libz_symbols);
 		if (result < 0) {
-			DIE("error loading libz symbols", fs_strerror(result));
+			DIE("error loading libz symbols: ", fs_strerror(result));
 		}
 		struct thread_storage *thread = get_thread_storage();
 		for (size_t i = 0; i < sizeof(zlib_symbols) / sizeof(zlib_symbols[0]); i++) {
 			void *value = find_symbol(&loaded_libz, &libz_symbols, zlib_symbols[i].name, NULL, NULL);
 			if (!value) {
-				DIE("missing zlib symbol", zlib_symbols[i].name);
+				DIE("missing zlib symbol: ", zlib_symbols[i].name);
 			}
 			if (zlib_symbols[i].original != NULL) {
 				*zlib_symbols[i].original = (intptr_t)value;
@@ -808,9 +808,9 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 			enum patch_status status = patch_function(thread, value, zlib_symbols[i].handler, -1);
 			if (status != PATCH_STATUS_INSTALLED_TRAMPOLINE) {
 				if (status == PATCH_STATUS_INSTALLED_ILLEGAL) {
-					DIE("failed to install trampoline", zlib_symbols[i].name);
+					DIE("failed to install trampoline: ", zlib_symbols[i].name);
 				}
-				DIE("failed to patch", zlib_symbols[i].name);
+				DIE("failed to patch: ", zlib_symbols[i].name);
 			}
 		}
 		free_symbols(&libz_symbols);
@@ -825,7 +825,7 @@ __attribute__((constructor)) static void constructor(void)
 	struct full_binary_info main;
 	intptr_t result = load_full_binary_info(AT_FDCWD, "/proc/self/exe", &main);
 	if (result < 0) {
-		DIE("failed to load main binary", fs_strerror(result));
+		DIE("failed to load main binary: ", fs_strerror(result));
 	}
 
 	struct full_binary_info interpreter;
@@ -833,21 +833,21 @@ __attribute__((constructor)) static void constructor(void)
 	if (main.info.interpreter) {
 		result = load_full_binary_info(AT_FDCWD, main.info.interpreter, &interpreter);
 		if (result < 0) {
-			DIE("failed to load interpreter binary", fs_strerror(result));
+			DIE("failed to load interpreter binary: ", fs_strerror(result));
 		}
 	}
 
 	// struct symbol_info symbols;
 	// result = load_dynamic_symbols(fd, info, &symbols);
 	// if (result < 0) {
-	// 	DIE("failed to load dynamic symbols for self", fs_strerror(result));
+	// 	DIE("failed to load dynamic symbols for self: ", fs_strerror(result));
 	// }
 
 	// free_symbols(&symbols);
 
 	int fd = fs_open("/proc/self/maps", O_RDONLY | O_CLOEXEC, 0);
 	if (fd < 0) {
-		DIE("unable to open self maps", fs_strerror(fd));
+		DIE("unable to open self maps: ", fs_strerror(fd));
 	}
 
 	void *main_base = NULL;
@@ -864,12 +864,12 @@ __attribute__((constructor)) static void constructor(void)
 			if (result == 0) {
 				break;
 			}
-			DIE("error reading mapping", fs_strerror(fd));
+			DIE("error reading mapping: ", fs_strerror(fd));
 		}
 		if ((mapping.device != 0 || mapping.inode != 0) && (mapping.prot & PROT_EXEC) && mapping.path[0] != '\0') {
-			// ERROR("found library", mapping.path);
+			// ERROR("found library: ", mapping.path);
 			uintptr_t base = (uintptr_t)mapping.start - mapping.offset;
-			// ERROR("at", (uintptr_t)base);
+			// ERROR("at: ", (uintptr_t)base);
 			if (main_base == NULL) {
 				if (mapping_is_copy_of_full_binary_info(&mapping, &main)) {
 					// ERROR("is main");
@@ -908,7 +908,7 @@ __attribute__((constructor)) static void constructor(void)
 	struct symbol_info symbols;
 	result = load_dynamic_symbols(debug_info->fd, loaded_debug, &symbols);
 	if (result < 0) {
-		DIE("failed to load symbols", fs_strerror(result));
+		DIE("failed to load symbols: ", fs_strerror(result));
 	}
 
 	global_r_debug = find_symbol(loaded_debug, &symbols, "_r_debug", NULL, NULL);
@@ -917,7 +917,7 @@ __attribute__((constructor)) static void constructor(void)
 	}
 
 	if (global_r_debug->r_version != 1) {
-		DIE("invalid r_debug version", global_r_debug->r_version);
+		DIE("invalid r_debug version: ", global_r_debug->r_version);
 	}
 
 	struct thread_storage *thread = get_thread_storage();

@@ -262,7 +262,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 #endif
 	int stat_result = fs_fstat(SELF_FD, &axon_stat);
 	if (UNLIKELY(stat_result != 0)) {
-		DIE("unable to stat axon binary", fs_strerror(stat_result));
+		DIE("unable to stat axon binary: ", fs_strerror(stat_result));
 	}
 
 #ifdef STACK_PROTECTOR
@@ -274,7 +274,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 	// Set signal handlers
 	int result = intercept_signals();
 	if (UNLIKELY(result < 0)) {
-		DIE("failed to intercept signals", fs_strerror(result));
+		DIE("failed to intercept signals: ", fs_strerror(result));
 	}
 
 	// Unmap the old binary
@@ -282,7 +282,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 	// 	result = fs_munmap((void *)old_base_address, data.self_size);
 	// 	result = fs_mprotect((void *)old_base_address, data.self_size, PROT_READ);
 	// 	if (UNLIKELY(result < 0)) {
-	// 		DIE("failed to unmap self", -result);
+	// 		DIE("failed to unmap self: ", -result);
 	// 	}
 	// }
 
@@ -306,7 +306,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		} else if (fs_strncmp(*current_envp, "PROXY_FD=", sizeof("PROXY_FD=") - 1) == 0) {
 			const char *proxy_fd_str = &(*current_envp)[sizeof("PROXY_FD=") - 1];
 			if (*fs_scans(proxy_fd_str, &proxy_fd) != '\0') {
-				DIE("unexpected PROXY_FD", proxy_fd_str);
+				DIE("unexpected PROXY_FD: ", proxy_fd_str);
 			}
 		}
 		++current_envp;
@@ -318,7 +318,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		switch (aux->a_type) {
 			case AT_PAGESZ:
 				if (UNLIKELY(aux->a_un.a_val != PAGE_SIZE)) {
-					DIE("unexpected page size", aux->a_un.a_val);
+					DIE("unexpected page size: ", aux->a_un.a_val);
 				}
 				break;
 			case AT_EUID:
@@ -353,14 +353,14 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		if (data.intercept) {
 			result = apply_seccomp();
 			if (UNLIKELY(result != 0)) {
-				DIE("failed to apply seccomp filter", fs_strerror(result));
+				DIE("failed to apply seccomp filter: ", fs_strerror(result));
 			}
 #ifdef ENABLE_TRACER
 			// Send initial working directory
 			if (enabled_traces & TRACE_TYPE_UPDATE_WORKING_DIR) {
 				int result = fs_getcwd(filename, PATH_MAX);
 				if (UNLIKELY(result < 0)) {
-					DIE("unable to read working directory", fs_strerror(result));
+					DIE("unable to read working directory: ", fs_strerror(result));
 				}
 				send_update_working_dir_event(get_thread_storage(), filename, result - 1);
 			}
@@ -375,7 +375,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		// Find the executable to exec
 		int fd = open_executable_in_paths(argv[data.interpreter_base == 0], path, true, startup_euid, startup_egid);
 		if (UNLIKELY(fd < 0)) {
-			DIE("could not find main executable", argv[1]);
+			DIE("could not find main executable: ", argv[1]);
 		}
 		if (data.intercept) {
 			result = exec_fd(fd, NULL, argv + (data.interpreter_base == 0), envp, argv[1], 0);
@@ -383,26 +383,26 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 			char buf[PATH_MAX];
 			intptr_t count = fs_fd_getpath(fd, buf);
 			if (count < 0) {
-				DIE("unable to read exec path", fs_strerror(count));
+				DIE("unable to read exec path: ", fs_strerror(count));
 			}
 			result = fs_execve(buf, (char *const *)(argv + (data.interpreter_base == 0)), (char *const *)envp);
 		}
 		if (UNLIKELY(result < 0)) {
-			DIE("unable to exec", fs_strerror(result));
+			DIE("unable to exec: ", fs_strerror(result));
 		}
 	}
 
 	// Set comm so that pgrep, for example, will work
 	int prctl_result = fs_prctl(PR_SET_NAME, (uintptr_t)data.comm, 0, 0, 0);
 	if (prctl_result < 0) {
-		DIE("failed to set name", fs_strerror(prctl_result));
+		DIE("failed to set name: ", fs_strerror(prctl_result));
 	}
 
 	// Map the main binary
 	struct binary_info info = {0};
 	result = load_binary(MAIN_FD, &info, 0, false);
 	if (UNLIKELY(result != 0)) {
-		DIE("unable to load main binary", fs_strerror(result));
+		DIE("unable to load main binary: ", fs_strerror(result));
 	}
 
 	// Try to set /proc/self/exe so that execs out of proc will work without
@@ -449,7 +449,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		struct fs_stat main_stat;
 		int result = fs_fstat(MAIN_FD, &main_stat);
 		if (result < 0) {
-			DIE("unable to fstat main binary", fs_strerror(result));
+			DIE("unable to fstat main binary: ", fs_strerror(result));
 		}
 		struct fs_stat path_stat;
 		result = fs_stat(data.exec_path, &path_stat);
@@ -460,7 +460,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 			// otherwise readlink on the main binary
 			result = fs_fd_getpath(MAIN_FD, filename);
 			if (result < 0) {
-				DIE("unable to read path of main binary", fs_strerror(result));
+				DIE("unable to read path of main binary: ", fs_strerror(result));
 			}
 			send_exec_event(get_thread_storage(), filename, result, argv, 0);
 		}
@@ -493,7 +493,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 			interpreter_fd = fs_openat(AT_FDCWD, info.interpreter, O_RDONLY | O_CLOEXEC, 0);
 		}
 		if (UNLIKELY(interpreter_fd < 0)) {
-			DIE("unable to open ELF interpreter", fs_strerror(interpreter_fd));
+			DIE("unable to open ELF interpreter: ", fs_strerror(interpreter_fd));
 		}
 		struct fs_stat stat;
 		int err = verify_allowed_to_exec(interpreter_fd, &stat, startup_euid, startup_egid);
@@ -503,7 +503,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		}
 		result = load_binary(interpreter_fd, &interpreter_info, 0, false);
 		if (UNLIKELY(result != 0)) {
-			DIE("unable to load ELF interpreter", -result);
+			DIE("unable to load ELF interpreter: ", -result);
 		}
 #ifdef USE_PROGRAM_STACK
 		// Always alternate stacks if a go program

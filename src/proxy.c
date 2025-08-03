@@ -45,7 +45,7 @@ static void setup_shared(void)
 		if ((intptr_t)mapped == -EBADF) {
 			DIE("not connected to a target");
 		}
-		DIE("mmap of shared page failed", fs_strerror((intptr_t)mapped));
+		DIE("mmap of shared page failed: ", fs_strerror((intptr_t)mapped));
 	}
 	shared_page *expected = NULL;
 	if (!atomic_compare_exchange_strong(&shared, &expected, (shared_page *)mapped)) {
@@ -72,8 +72,8 @@ static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 				return true;
 			}
 #if 0
-			ERROR("handing off", read_message_id);
-			ERROR("waiting for", id);
+			ERROR("handing off: ", read_message_id);
+			ERROR("waiting for: ", id);
 			ERROR_FLUSH();
 #endif
 			shared_mutex_unlock_handoff(&shared->read_lock, read_message_id);
@@ -97,7 +97,7 @@ static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 				if (result == 0) {
 					remote_exited();
 				}
-				DIE("error reading response", fs_strerror(result));
+				DIE("error reading response: ", fs_strerror(result));
 			}
 			shared->response_cursor += result;
 			break;
@@ -147,9 +147,9 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 				break;
 			default:
 				if (shared->hello.target_platform == TARGET_PLATFORM_DARWIN) {
-					DIE("attempted to send linux syscall to darwin target", syscall & ~(PROXY_NO_RESPONSE | PROXY_NO_WORKER));
+					DIE("attempted to send linux syscall to darwin target: ", syscall & ~(PROXY_NO_RESPONSE | PROXY_NO_WORKER));
 				} else {
-					DIE("attempted to send darwin syscall to linux target", (uintptr_t)(syscall & ~(PROXY_NO_RESPONSE | PROXY_NO_WORKER)));
+					DIE("attempted to send darwin syscall to linux target: ", (uintptr_t)(syscall & ~(PROXY_NO_RESPONSE | PROXY_NO_WORKER)));
 				}
 				break;
 		}
@@ -173,7 +173,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 		if (result == -EFAULT) {
 			return -EFAULT;
 		}
-		DIE("error sending", fs_strerror(result));
+		DIE("error sending: ", fs_strerror(result));
 	}
 	return request.id;
 }
@@ -211,7 +211,7 @@ static intptr_t proxy_wait(uint32_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT
 			if (result == 0) {
 				remote_exited();
 			}
-			DIE("error receiving", fs_strerror(result));
+			DIE("error receiving: ", fs_strerror(result));
 		}
 	}
 	// return result to caller
@@ -239,7 +239,7 @@ intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *me
 	}
 	intptr_t result = fs_read_all(PROXY_FD, (char *)message, sizeof(*message));
 	if (result < 0) {
-		DIE("failed to read stream message", fs_strerror(result));
+		DIE("failed to read stream message: ", fs_strerror(result));
 	}
 	return shared->response_buffer.message.result;
 }
@@ -349,7 +349,7 @@ static intptr_t page_alloc(int page_count)
 	shared_mutex_unlock(&shared->pages_lock);
 	intptr_t result = PROXY_CALL(__NR_mmap, proxy_value(0), proxy_value(page_count * PAGE_SIZE), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS), proxy_value(-1), proxy_value(0));
 	if (fs_is_map_failed((void *)result)) {
-		DIE("failed to alloc", fs_strerror(result));
+		DIE("failed to alloc: ", fs_strerror(result));
 	}
 	return result;
 }
@@ -405,12 +405,12 @@ void install_proxy(int fd)
 	if (fd == -1) {
 		int sockfd = fs_socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd < 0) {
-			DIE("error creating socket", fs_strerror(sockfd));
+			DIE("error creating socket: ", fs_strerror(sockfd));
 		}
 		int reuse = 1;
 		int result = fs_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse));
 		if (result < 0) {
-			DIE("error setting reuseaddr", fs_strerror(result));
+			DIE("error setting reuseaddr: ", fs_strerror(result));
 		}
 
 		struct sockaddr_in addr;
@@ -419,36 +419,36 @@ void install_proxy(int fd)
 		addr.sin_port = fs_htons(8484);
 		result = fs_bind(sockfd, &addr, sizeof(addr));
 		if (result < 0) {
-			DIE("error binding", fs_strerror(result));
+			DIE("error binding: ", fs_strerror(result));
 		}
 
 		result = fs_listen(sockfd, 1);
 		if (result < 0) {
-			DIE("error listening", fs_strerror(result));
+			DIE("error listening: ", fs_strerror(result));
 		}
 
 		fd = fs_accept(sockfd, NULL, NULL);
 		if (fd < 0) {
-			DIE("error accepting", fs_strerror(fd));
+			DIE("error accepting: ", fs_strerror(fd));
 		}
 		fs_close(sockfd);
 	} else {
 		int result = fs_fcntl(fd, F_SETFL, O_RDWR);
 		if (result < 0) {
-			DIE("error setting flags", fs_strerror(result));
+			DIE("error setting flags: ", fs_strerror(result));
 		}
 	}
 
 	int flags = 1;
 	int result = fs_setsockopt(fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
 	if (result < 0 && (result != -ENOTSOCK) && (result != -EOPNOTSUPP)) {
-		DIE("failed to disable nagle on socket", fs_strerror(result));
+		DIE("failed to disable nagle on socket: ", fs_strerror(result));
 	}
 
 	if (fd != PROXY_FD) {
 		result = fs_dup2(fd, PROXY_FD);
 		if (result < 0) {
-			DIE("error duping", fs_strerror(result));
+			DIE("error duping: ", fs_strerror(result));
 		}
 
 		fs_close(fd);
@@ -456,17 +456,17 @@ void install_proxy(int fd)
 
 	int memfd = fs_memfd_create("proxy", 0);
 	if (result < 0) {
-		DIE("unable to create memfd", fs_strerror(result));
+		DIE("unable to create memfd: ", fs_strerror(result));
 	}
 
 	result = fs_ftruncate(memfd, (sizeof(shared_page) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
 	if (result == -1) {
-		DIE("unable to ftruncate", fs_strerror(result));
+		DIE("unable to ftruncate: ", fs_strerror(result));
 	}
 
 	result = fs_dup2(memfd, SHARED_PAGE_FD);
 	if (result < 0) {
-		DIE("error duping", fs_strerror(result));
+		DIE("error duping: ", fs_strerror(result));
 	}
 
 	fs_close(memfd);
@@ -477,7 +477,7 @@ void install_proxy(int fd)
 		if (result == 0) {
 			DIE("client disconnected");
 		}
-		DIE("unable to read startup message", fs_strerror(result));
+		DIE("unable to read startup message: ", fs_strerror(result));
 	}
 }
 
@@ -511,7 +511,7 @@ void proxy_spawn_worker(void)
 				                                 proxy_value(-1),
 				                                 proxy_value(0));
 				if (fs_is_map_failed((void *)stack_addr)) {
-					DIE("unable to map a worker stack", fs_strerror(stack_addr));
+					DIE("unable to map a worker stack: ", fs_strerror(stack_addr));
 					return;
 				}
 				PROXY_CALL(LINUX_SYS_clone | TARGET_NO_RESPONSE | PROXY_NO_WORKER,

@@ -91,13 +91,13 @@ static void default_handler(__attribute__((unused)) int nr, __attribute__((unuse
 	};
 	int sa_result = fs_sigaction(nr, &sa, NULL);
 	if (sa_result < 0) {
-		DIE("failed to reset sigaction", fs_strerror(sa_result));
+		DIE("failed to reset sigaction: ", fs_strerror(sa_result));
 	}
 	// And resend the signal now that the handler has been unset
 	if (nr == SIGSYS) {
 		int kill_result = fs_tkill(fs_gettid(), nr);
 		if (kill_result < 0) {
-			DIE("failed to resend signal", fs_strerror(sa_result));
+			DIE("failed to resend signal: ", fs_strerror(sa_result));
 		}
 	}
 }

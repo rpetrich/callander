@@ -90,10 +90,6 @@ extern noreturn void abort();
 #endif
 
 #if 0
-// ERROR_WRITE_LITERAL is a helper that writes a literal constant string
-#define ERROR_WRITE_LITERAL(fd, lit) \
-	do {                             \
-	} while (0)
 #define ERROR_WRITEV(fd, vec, count) ((void)(fd), (void)(vec), (void)(count), 0)
 #define ERROR_WRITE(fd, bytes, len) ((void)(fd), (void)(bytes), (void)(len), 0)
 #define ERROR_FLUSH() \
@@ -126,68 +122,7 @@ extern void error_flush(void);
 	do {              \
 	} while (0)
 #endif
-// ERROR_WRITE_LITERAL is a helper that writes a literal constant string
-#define ERROR_WRITE_LITERAL(lit) ERROR_WRITE(lit, sizeof(lit) - 1)
 #endif
-
-// error_write_uint is a helper that writes a uintptr_t in hex notation
-static inline void error_write_uint(const char *prefix, size_t prefix_len, uintptr_t value)
-{
-	char buf[32];
-	struct iovec vec[2];
-	vec[0].iov_base = (void *)prefix;
-	vec[0].iov_len = prefix_len;
-	vec[1].iov_base = buf;
-	size_t len = fs_utoah(value, buf);
-	buf[len] = '\n';
-	vec[1].iov_len = len + 1;
-	ERROR_WRITEV(vec, 2);
-}
-// error_write_int is a helper that writes a uintptr_t in decimal notation
-static inline void error_write_int(const char *prefix, size_t prefix_len, intptr_t value)
-{
-	char buf[32];
-	struct iovec vec[3];
-	vec[0].iov_base = (void *)prefix;
-	vec[0].iov_len = prefix_len;
-	vec[1].iov_base = buf;
-	size_t len = fs_itoa(value, buf);
-	buf[len] = '\n';
-	vec[1].iov_len = len + 1;
-	ERROR_WRITEV(vec, 2);
-}
-// error_write_str is a helper that writes a null-terminated string
-static inline void error_write_str(const char *prefix, size_t prefix_len, const char *value)
-{
-	struct iovec vec[3];
-	vec[0].iov_base = (void *)prefix;
-	vec[0].iov_len = prefix_len;
-	vec[1].iov_base = (void *)value;
-	vec[1].iov_len = fs_strlen(value);
-	vec[2].iov_base = "\n";
-	vec[2].iov_len = 1;
-	ERROR_WRITEV(vec, 3);
-}
-// error_write_uint128 is a helper that writes a __uint128_t in hex notation
-static inline void error_write_uint128(const char *prefix, size_t prefix_len, __uint128_t value)
-{
-	char buffer[64];
-	buffer[0] = '0';
-	buffer[1] = 'x';
-	size_t i = 2;
-	do {
-		buffer[i++] = "0123456789abcdef"[(unsigned char)value & 0xf];
-		value = value >> 4;
-	} while (value);
-	fs_reverse(&buffer[2], i - 2);
-	buffer[i] = '\n';
-	struct iovec vec[2];
-	vec[0].iov_base = (void *)prefix;
-	vec[0].iov_len = prefix_len;
-	vec[1].iov_base = buffer;
-	vec[1].iov_len = i + 1;
-	ERROR_WRITEV(vec, 2);
-}
 
 struct temp_str
 {
@@ -197,13 +132,6 @@ struct temp_str
 static inline struct temp_str temp_str(char *str)
 {
 	return (struct temp_str){.str = str};
-}
-
-// error_write_temp_str is a helper that writes a null-terminated string and frees it
-static inline void error_write_temp_str(const char *prefix, size_t prefix_len, struct temp_str value)
-{
-	error_write_str(prefix, prefix_len, value.str);
-	free(value.str);
 }
 
 struct char_range
@@ -220,51 +148,13 @@ __attribute__((always_inline)) static inline struct char_range char_range(const 
 	};
 }
 
-static inline void error_write_char_range(const char *prefix, size_t prefix_len, struct char_range value)
+struct error_newline
 {
-	ERROR_WRITE(prefix, prefix_len);
-	char buf[811];
-	size_t index = 0;
-	for (size_t i = 0; i < value.size; i++) {
-		buf[index++] = "0123456789abcdef"[(unsigned char)value.buf[i] >> 4];
-		buf[index++] = "0123456789abcdef"[(unsigned char)value.buf[i] & 0xf];
-		if ((i & 3) == 3) {
-			buf[index++] = ' ';
-		}
-		if (index >= 810) {
-			ERROR_WRITE(buf, index);
-			index = 0;
-		}
-	}
-	buf[index] = '\n';
-	ERROR_WRITE(buf, index + 1);
-}
+};
 
 #ifndef PRODUCT_NAME
 #define PRODUCT_NAME "axon"
 #endif
-
-#define ERROR_MESSAGE_(message)            \
-	do {                                   \
-		ERROR_WRITE_LITERAL(message "\n"); \
-	} while (0)
-#define ERROR_MESSAGE_WITH_VALUE_(message, value)                                                  \
-	do {                                                                                           \
-		_Generic((value),                                                                          \
-		    long int: error_write_int,                                                             \
-		    int: error_write_int,                                                                  \
-		    long unsigned: error_write_uint,                                                       \
-		    unsigned: error_write_uint,                                                            \
-		    __uint128_t: error_write_uint128,                                                      \
-		    const char *: error_write_str,                                                         \
-		    char *: error_write_str,                                                               \
-		    struct char_range: error_write_char_range,                                             \
-		    struct temp_str: error_write_temp_str)(message ": ", sizeof(message ": ") - 1, value); \
-	} while (0)
-#define ERROR_(skip0, skip1, actual, ...) actual
-// ERROR is a macro that logs its arguments. it accepts either a constant or a constant and a value
-#define ERROR(...) ERROR_(__VA_ARGS__, ERROR_MESSAGE_WITH_VALUE_(PRODUCT_NAME ": " __VA_ARGS__), ERROR_MESSAGE_(PRODUCT_NAME ": " __VA_ARGS__))
-#define ERROR_NOPREFIX(...) ERROR_(__VA_ARGS__, ERROR_MESSAGE_WITH_VALUE_(__VA_ARGS__), ERROR_MESSAGE_(__VA_ARGS__))
 
 // UNLIKELY is a macro that hints code generation that a value is unlikely
 #define UNLIKELY(val) __builtin_expect(!!(val), 0)
@@ -278,5 +168,185 @@ static inline void error_write_char_range(const char *prefix, size_t prefix_len,
 		abort();                 \
 		__builtin_unreachable(); \
 	} while (0)
+
+
+#define FE_0(WHAT)
+#define FE_1(WHAT, X) WHAT(X, 1) 
+#define FE_2(WHAT, X, ...) WHAT(X, 2)FE_1(WHAT, __VA_ARGS__)
+#define FE_3(WHAT, X, ...) WHAT(X, 3)FE_2(WHAT, __VA_ARGS__)
+#define FE_4(WHAT, X, ...) WHAT(X, 4)FE_3(WHAT, __VA_ARGS__)
+#define FE_5(WHAT, X, ...) WHAT(X, 5)FE_4(WHAT, __VA_ARGS__)
+#define FE_6(WHAT, X, ...) WHAT(X, 6)FE_5(WHAT, __VA_ARGS__)
+#define FE_7(WHAT, X, ...) WHAT(X, 7)FE_6(WHAT, __VA_ARGS__)
+#define FE_8(WHAT, X, ...) WHAT(X, 8)FE_7(WHAT, __VA_ARGS__)
+#define FE_9(WHAT, X, ...) WHAT(X, 9)FE_8(WHAT, __VA_ARGS__)
+#define FE_10(WHAT, X, ...) WHAT(X, 10)FE_9(WHAT, __VA_ARGS__)
+#define FE_11(WHAT, X, ...) WHAT(X, 11)FE_10(WHAT, __VA_ARGS__)
+
+#define GET_MACRO(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,NAME,...) NAME 
+#define FOR_EACH(action,...) GET_MACRO(_0,__VA_ARGS__,FE_11,FE_10,FE_9,FE_8,FE_7,FE_6,FE_5,FE_4,FE_3,FE_2,FE_1,FE_0)(action,__VA_ARGS__)
+
+#define CONCAT(a, b) CONCAT_INNER(a, b)
+#define CONCAT_INNER(a, b) a##b
+
+__attribute__((always_inline)) static inline void error_discard_iovec(void *, struct iovec *vec) {
+	free(vec->iov_base);
+}
+
+__attribute__((always_inline)) static inline void error_discard_noop(const void *, struct iovec *) {
+}
+
+#define ERROR_ACCEPT_(value, n) __typeof__(value) CONCAT(_log_value_, n) = value; char CONCAT(_log_buf_, n)[_Generic((value), \
+	long int: 32, \
+	int: 32, \
+	long unsigned: 32, \
+	unsigned: 32, \
+    __uint128_t: 64, \
+	default: 0 \
+)];
+
+#define ERROR_GENERIC_(value, prefix) _Generic((value), \
+	long int: CONCAT(prefix, int), \
+	int: CONCAT(prefix, int), \
+	long unsigned: CONCAT(prefix, uint), \
+	unsigned: CONCAT(prefix, uint), \
+    __uint128_t: CONCAT(prefix, uint128), \
+	struct iovec: CONCAT(prefix, iovec), \
+	struct char_range: CONCAT(prefix, char_range), \
+	struct temp_str: CONCAT(prefix, temp_str), \
+	const char *: CONCAT(prefix, string), \
+	char *: CONCAT(prefix, string), \
+	struct error_newline: CONCAT(prefix, error_newline) \
+)
+
+#define ERROR_FORMAT_(value, n) ERROR_GENERIC_(value, error_format_)(CONCAT(_log_value_, n), CONCAT(_log_buf_, n))
+
+#define ERROR_DISCARD_(value, n) _Generic((value), \
+	struct temp_str: error_discard_iovec, \
+	struct char_range: error_discard_iovec, \
+	default: error_discard_noop \
+)(CONCAT(&_log_value_, n), _log_iovec_cur++);
+
+#ifdef ERRORS_ARE_BUFFERED
+#define ERROR_RAW_(value, n) ERROR_GENERIC_(value, error_format_and_write_)(value);
+#define ERROR_RAW(...) do { \
+	FOR_EACH(ERROR_RAW_, ##__VA_ARGS__) \
+} while(0)
+#else
+#define ERROR_FORMAT_COMMA_(value, n) ERROR_FORMAT_(value, n),
+#define ERROR_RAW(...) do { \
+	FOR_EACH(ERROR_ACCEPT_, ##__VA_ARGS__) \
+	struct iovec _log_iovec[] = { \
+		FOR_EACH(ERROR_FORMAT_COMMA_, ##__VA_ARGS__) \
+	}; \
+	ERROR_WRITEV(_log_iovec, sizeof(_log_iovec)/sizeof(_log_iovec[0])); \
+	struct iovec *_log_iovec_cur = _log_iovec; \
+	FOR_EACH(ERROR_DISCARD_, ##__VA_ARGS__) \
+} while(0)
+#endif
+
+#define ERROR_RAW_SINGLE_(prefix, value, ...) ERROR_GENERIC_(value, error_message_write_)(prefix, value)
+
+// ERROR is a macro that logs a message and an optional list of arguments
+#define ERROR_(skip0, skip1, skip2, skip3, skip4, skip5, skip6, skip7, skip8, skip9, actual, ...) actual
+#define ERROR_NOPREFIX(str, ...) ERROR_(__VA_ARGS__, \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW_SINGLE_(str "", ##__VA_ARGS__, ""), \
+	ERROR_WRITE(str "\n", sizeof(str)) \
+)
+#define ERROR(str, ...) ERROR_NOPREFIX(PRODUCT_NAME ": " str, ##__VA_ARGS__)
+
+__attribute__((always_inline))
+static inline struct iovec error_format_int(intptr_t value, char *buf) {
+	size_t len = fs_itoa(value, buf);
+	return (struct iovec){ .iov_base = buf, .iov_len = len };
+}
+
+__attribute__((always_inline))
+static inline struct iovec error_format_uint(intptr_t value, char *buf) {
+	size_t len = fs_utoah(value, buf);
+	return (struct iovec){ .iov_base = buf, .iov_len = len };
+}
+
+static inline struct iovec error_format_uint128(__uint128_t value, char *buf)
+{
+	buf[0] = '0';
+	buf[1] = 'x';
+	size_t i = 2;
+	do {
+		buf[i++] = "0123456789abcdef"[(unsigned char)value & 0xf];
+		value = value >> 4;
+	} while (value);
+	fs_reverse(&buf[2], i - 2);
+	buf[i] = '\n';
+	return (struct iovec){ .iov_base = buf, .iov_len = i + 1 };
+}
+
+__attribute__((always_inline))
+static inline struct iovec error_format_iovec(struct iovec value, char *) {
+	return value;
+}
+
+__attribute__((always_inline))
+static inline struct iovec error_format_char_range(struct char_range value, char *) {
+	return (struct iovec){ .iov_base = (char *)value.buf, .iov_len = value.size };
+}
+
+__attribute__((always_inline))
+static inline struct iovec error_format_temp_str(struct temp_str value, char *) {
+	return (struct iovec){ .iov_base = value.str, .iov_len = fs_strlen(value.str) };
+}
+
+__attribute__((always_inline))
+static inline struct iovec error_format_string(const char *value, char *) {
+	return (struct iovec){ .iov_base = (char *)value, .iov_len = __builtin_constant_p(value) ? strlen(value) : fs_strlen(value) };
+}
+
+__attribute__((always_inline))
+static inline struct iovec error_format_error_newline(struct error_newline, char *) {
+	return (struct iovec){ .iov_base = "\n", .iov_len = 1 };
+}
+
+#define ERROR_FORMAT_AND_WRITE_DEF(name, type, attribute) \
+	__attribute__((unused)) attribute \
+	void CONCAT(error_format_and_write_, name)(type value) { \
+		ERROR_ACCEPT_(value, n) \
+		struct iovec _log_iovec = ERROR_FORMAT_(value, n); \
+		ERROR_WRITE(_log_iovec.iov_base, _log_iovec.iov_len); \
+		struct iovec *_log_iovec_cur = &_log_iovec; \
+		ERROR_DISCARD_(value, n) \
+	}
+
+ERROR_FORMAT_AND_WRITE_DEF(int, intptr_t, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(uint, uintptr_t, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(uint128, __uint128_t, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(iovec, struct iovec, __attribute__((always_inline)) static inline)
+ERROR_FORMAT_AND_WRITE_DEF(char_range, struct char_range, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(temp_str, struct temp_str, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(string, const char *, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(error_newline, struct error_newline, __attribute__((noinline)) static)
+
+#define ERROR_MESSAGE_WRITE_DEF(name, type) \
+	__attribute__((unused)) __attribute__((noinline)) \
+	static void CONCAT(error_message_write_, name)(const char *prefix, type value) { \
+		ERROR_RAW(prefix, value, (struct error_newline){}); \
+	}
+
+ERROR_MESSAGE_WRITE_DEF(int, intptr_t)
+ERROR_MESSAGE_WRITE_DEF(uint, uintptr_t)
+ERROR_MESSAGE_WRITE_DEF(uint128, __uint128_t)
+ERROR_MESSAGE_WRITE_DEF(iovec, struct iovec)
+ERROR_MESSAGE_WRITE_DEF(char_range, struct char_range)
+ERROR_MESSAGE_WRITE_DEF(temp_str, struct temp_str)
+ERROR_MESSAGE_WRITE_DEF(string, const char *)
+ERROR_MESSAGE_WRITE_DEF(error_newline, struct error_newline)
 
 #endif

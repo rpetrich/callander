@@ -121,14 +121,14 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 	if (bootstrap_offsets.remap_binary) {
 		int fd = fs_open("/proc/self/exe", O_RDONLY | O_CLOEXEC, 0);
 		if (fd < 0) {
-			DIE("unable to open self", fs_strerror(fd));
+			DIE("unable to open self: ", fs_strerror(fd));
 		}
 		struct binary_info info;
 		bootstrap_offsets.header.e_phnum -= 3;
 		int result = load_binary_with_layout(&bootstrap_offsets.header, base + bootstrap_offsets.real_program_header, fd, 0, -1, &info, (uintptr_t)base, 2);
 		bootstrap_offsets.header.e_phnum += 3;
 		if (result < 0) {
-			DIE("unable to load", fs_strerror(result));
+			DIE("unable to load: ", fs_strerror(result));
 		}
 		if (info.phbuffer) {
 			free(info.phbuffer);
@@ -170,18 +170,18 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 			} else if (fs_strcmp(debug, "extract") == 0) {
 				int self_fd = fs_open("/proc/self/exe", O_RDONLY | O_CLOEXEC, 0);
 				if (self_fd < 0) {
-					DIE("unable to open self", fs_strerror(self_fd));
+					DIE("unable to open self: ", fs_strerror(self_fd));
 				}
 				intptr_t result = fs_mkdir("extracted", 0755);
 				if (result < 0) {
 					if (result == -EEXIST) {
 						DIE("./extracted already exists");
 					}
-					DIE("unable to create ./extracted", fs_strerror(result));
+					DIE("unable to create ./extracted: ", fs_strerror(result));
 				}
 				intptr_t dirfd = fs_open("extracted", O_PATH | O_CLOEXEC, 0);
 				if (dirfd < 0) {
-					DIE("unable to open ./extracted", fs_strerror(result));
+					DIE("unable to open ./extracted: ", fs_strerror(result));
 				}
 				for (size_t i = 0; i < sizeof(bootstrap_offsets.embedded_binaries) / sizeof(bootstrap_offsets.embedded_binaries[0]); i++) {
 					const struct embedded_binary *binary = &bootstrap_offsets.embedded_binaries[i];
@@ -192,11 +192,11 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 					char *buf = malloc(binary->size);
 					intptr_t result = fs_lseek(self_fd, binary->offset, SEEK_SET);
 					if (result < 0) {
-						DIE("couldn't seek self", fs_strerror(result));
+						DIE("couldn't seek self: ", fs_strerror(result));
 					}
 					result = fs_read_all(self_fd, buf, binary->size);
 					if (result < binary->size) {
-						DIE("couldn't read from self", fs_strerror(result));
+						DIE("couldn't read from self: ", fs_strerror(result));
 					}
 					// revert relr patching
 					if (binary->contributes_symbols) {
@@ -228,18 +228,18 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 					int fd = openat_creating_paths(dirfd, binary_path + 1, O_RDWR | O_CLOEXEC, 0755);
 					if (fd < 0) {
 						ERROR_NOPREFIX("error opening", binary_path + 1);
-						DIE("returned", fs_strerror(fd));
+						DIE("returned: ", fs_strerror(fd));
 					}
 					result = fs_write_all(fd, buf, binary->size);
 					if (result < binary->size) {
-						DIE("error writing", binary_path + 1);
-						DIE("returned", fs_strerror(fd));
+						DIE("error writing: ", binary_path + 1);
+						DIE("returned: ", fs_strerror(fd));
 					}
 					if (binary->offset == 0) {
 						result = fs_pwrite(fd, (const char *)&bootstrap_offsets.old_header, sizeof(bootstrap_offsets.old_header), 0);
 						if (result < (intptr_t)sizeof(bootstrap_offsets.old_header)) {
-							DIE("error writing", binary_path + 1);
-							DIE("returned", fs_strerror(fd));
+							DIE("error writing: ", binary_path + 1);
+							DIE("returned: ", fs_strerror(fd));
 						}
 					}
 					free(buf);
@@ -316,12 +316,12 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 		const char *path = apply_origin((const char *)execfn->a_un.a_val, bootstrap_offsets.interpreter_path, buf);
 		int fd = fs_open(path, O_RDONLY | O_CLOEXEC, 0);
 		if (fd < 0) {
-			DIE("error opening interpreter", fs_strerror(fd));
+			DIE("error opening interpreter: ", fs_strerror(fd));
 		}
 		struct binary_info info;
 		int result = load_binary(fd, &info, 0, false);
 		if (result < 0) {
-			DIE("error loading interpreter", fs_strerror(result));
+			DIE("error loading interpreter: ", fs_strerror(result));
 		}
 		fs_close(fd);
 		if (info.phbuffer) {
@@ -335,12 +335,12 @@ __attribute__((visibility("hidden"))) __attribute__((used)) noreturn void bootst
 	// patch the ELF header
 	int result = fs_mprotect((void *)base, PAGE_SIZE, PROT_READ|PROT_WRITE);
 	if (result < 0) {
-		DIE("failed to remap writable", fs_strerror(result));
+		DIE("failed to remap writable: ", fs_strerror(result));
 	}
 	*(ElfW(Ehdr) *)base = bootstrap_offsets.header;
 	result = fs_mprotect((void *)base, PAGE_SIZE, PROT_READ|PROT_EXEC);
 	if (result < 0) {
-		DIE("failed to remap executable", fs_strerror(result));
+		DIE("failed to remap executable: ", fs_strerror(result));
 	}
 #endif
 	// jump to the embedded ELF interpreter's entrypoint
@@ -463,6 +463,12 @@ __attribute__((unused)) static inline int compare_symbol_ordering(const void *le
 	const ElfW(Sym) *right_sym = symbol_for_ordering_entry(right);
 	enum ordering_class left_class = ordering_class_for_sym(left_sym);
 	enum ordering_class right_class = ordering_class_for_sym(right_sym);
+	// if (left_class == ORDERING_CLASS_DEFINED && left->binary_index != 0) {
+	// 	left_class = ORDERING_CLASS_LOCAL;
+	// }
+	// if (right_class == ORDERING_CLASS_DEFINED && right->binary_index != 0) {
+	// 	right_class = ORDERING_CLASS_LOCAL;
+	// }
 	// sort first by ordering class
 	if (left_class < right_class) {
 		return -1;
@@ -524,12 +530,22 @@ static void copy_relas(struct loader_context *loader, const struct loaded_binary
 				if (symbol_info.library_name != NULL) {
 					const ElfW(Sym) *source_sym = (void *)binary->symbols.symbols + binary->symbols.symbol_stride * symbol_index;
 					const char *name = binary->symbols.strings + source_sym->st_name;
+					// ERROR("searching for: ", name);
+					// ERROR("with version: ", symbol_info.version_name);
+					// ERROR("in: ", symbol_info.library_name);
+					// ERROR("for address: ", (uintptr_t)rel->r_offset);
+					// ERROR("of: ", binary->path);
 					for (struct loaded_binary *other = loader->main; other != NULL; other = other->previous) {
 						if (fs_strcmp(other->path, symbol_info.library_name) == 0) {
 							if (should_include_binary(other) && binary != other && binary_contributes_symbols(other)) {
 								const ElfW(Sym) *dest_sym = NULL;
 								find_symbol(&other->info, &other->symbols, name, symbol_info.version_name, &dest_sym);
 								if (dest_sym != NULL) {
+									// ERROR("found: ", other->symbols.strings + dest_sym->st_name);
+									// TODO figure out why this relocation in libc.so.6:
+									// 00000000001afe90  0000000a00000401 R_AARCH64_GLOB_DAT     0000000000000000 _rtld_global_ro@GLIBC_PRIVATE + 0
+									// is being rewritten to:
+									// 000000000028fe90  0000000a00000401 R_AARCH64_GLOB_DAT     0000000000000000 memcpy + 0
 									symbol_binary = other;
 									symbol_index = ((uintptr_t)dest_sym - other->symbols.symbols) / other->symbols.symbol_stride;
 								}
@@ -766,7 +782,7 @@ __attribute__((noinline)) static void patch_eh_frames(void *data, int32_t pc_off
 			if (pointer_format == (DW_EH_PE_pcrel | DW_EH_PE_sdata4)) {
 				*(int32_t *)current += pc_offset_diff;
 			} else {
-				DIE("unexpected pointer encoding", (uintptr_t)pointer_format);
+				DIE("unexpected pointer encoding: ", (uintptr_t)pointer_format);
 			}
 		}
 		// read length
@@ -814,7 +830,7 @@ static void measure_verdefs(const ElfW(Verdef) * verdef, size_t *out_size)
 {
 	for (;;) {
 		if (verdef->vd_version != 1) {
-			DIE("invalid vd_version", (int)verdef->vd_version);
+			DIE("invalid vd_version: ", (int)verdef->vd_version);
 			*out_size += sizeof(*verdef);
 			break;
 		}
@@ -861,6 +877,7 @@ static void copy_versions(ElfW(Verdef) * verdef, ElfW(Verneed) * verneed, struct
 	size_t vd_next = 0;
 	size_t vn_next = 0;
 	size_t verneed_count = 0;
+	// const void *verneed_orig = verneed;
 	for (struct loaded_binary *binary = loader->main; binary != NULL; binary = binary->previous) {
 		if (should_include_binary(binary) && binary_contributes_symbols(binary)) {
 			// copy verdefs
@@ -935,6 +952,9 @@ static void copy_versions(ElfW(Verdef) * verdef, ElfW(Verneed) * verneed, struct
 			binary_index++;
 		}
 	}
+	// size_t verneed_size = vn_next + (const void *)verneed - verneed_orig;
+	// ERROR("verneed_count: ", verneed_count);
+	// ERROR("verneed_size: ", verneed_size);
 }
 
 #define EH_FRAME_HDR_STR_OFFSET 0
@@ -981,6 +1001,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	for (struct loaded_binary *binary = main; binary != NULL; binary = binary->previous) {
 		if (fs_strcmp(binary->path, "ld-linux-" ARCH_NAME ".so.1") == 0) {
 			binary->special_binary_flags |= BINARY_IS_INTERPRETER;
+			ERROR("found interpreter: ", binary->loaded_path);
+			ERROR_FLUSH();
 		}
 		binary_count += should_include_binary(binary);
 	}
@@ -1319,14 +1341,14 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			// read the original binary
 			int original = fs_open(binary->loaded_path, O_RDONLY | O_CLOEXEC, 0);
 			if (original < 0) {
-				DIE("failed reading original binary", binary->loaded_path);
+				DIE("failed reading original binary: ", binary->loaded_path);
 			}
 			result = fs_read_all(original, mapping + offset, binary->size);
 			if (result < (ssize_t)binary->size) {
 				if (result < 0) {
-					DIE("failed read", fs_strerror(result));
+					DIE("failed read: ", fs_strerror(result));
 				}
-				DIE("short read", result);
+				DIE("short read: ", result);
 			}
 			fs_close(original);
 			// copy phdrs, fixing up the addresses
@@ -1418,7 +1440,10 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 								*real_phdr++ = *phdr;
 							}
 							if (should_preserve_headers_for_binary(binary, bootstrap)) {
+								LOG("preserving headers for: ", binary->path);
 								phdr++;
+							} else {
+								LOG("skipping headers for: ", binary->path);
 							}
 							break;
 					}
@@ -1528,8 +1553,19 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 							goto found;
 						}
 					}
-					DIE("could not find replacement version definition for version needed", input_version->version_name);
-				found:;
+					ERROR("could not find replacement version definition for version: ", input_version->version_name);
+					ERROR("needed by: ", symbol_ordering[i].binary->path);
+					ERROR("expected in: ", input_version->library_name);
+					ERROR("resolved to: ", other->path);
+					ERROR("loaded from: ", other->loaded_path);
+					for (size_t j = 0; j < other->symbols.valid_version_count; j++) {
+						const struct symbol_version_info *other_version = &other->symbols.valid_versions[j];
+						if (other_version->library_name == NULL && other_version->version_name != NULL) {
+							ERROR("found: ", other_version->version_name);
+						}
+					}
+					DIE("quitting");
+					found:;
 				} else {
 					versym[i] = offsets[symbol_ordering[i].binary_index].version_id_start + version_id;
 				}
@@ -1766,12 +1802,12 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		}
 	}
 	if (relas != mapping + size + rela_start + rela_size) {
-		ERROR("written rela count", ((uintptr_t)relas - (uintptr_t)(mapping + size + rela_start)) / sizeof(ElfW(Rela)));
-		DIE("does not match expected count", rela_size / sizeof(ElfW(Rela)));
+		ERROR("written rela count: ", ((uintptr_t)relas - (uintptr_t)(mapping + size + rela_start)) / sizeof(ElfW(Rela)));
+		DIE("does not match expected count: ", rela_size / sizeof(ElfW(Rela)));
 	}
 	if (jmprels != mapping + size + jmprel_start + jmprel_size) {
-		ERROR("written jmprel count", ((uintptr_t)jmprels - (uintptr_t)(mapping + size + jmprel_start)) / sizeof(ElfW(Rela)));
-		DIE("does not match expected count", jmprel_size / sizeof(ElfW(Rela)));
+		ERROR("written jmprel count: ", ((uintptr_t)jmprels - (uintptr_t)(mapping + size + jmprel_start)) / sizeof(ElfW(Rela)));
+		DIE("does not match expected count: ", jmprel_size / sizeof(ElfW(Rela)));
 	}
 	if (verdef_count != 0) {
 		copy_versions(mapping + size + verdef_start, mapping + size + verneed_start, &analysis->loader, offsets, mapping + size + string_start);
@@ -1964,8 +2000,8 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 		};
 	}
 	if (shdr_index != used_section_count) {
-		ERROR("written section count", (intptr_t)shdr_index);
-		DIE("does not match expected count", (intptr_t)used_section_count);
+		ERROR("written section count: ", (intptr_t)shdr_index);
+		DIE("does not match expected count: ", (intptr_t)used_section_count);
 	}
 	// add a read-only mapping for the relocated structures
 	*real_phdr++ = *phdr++ = (ElfW(Phdr)){
@@ -2076,6 +2112,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 			case DT_FINI_ARRAYSZ:
 				dyn->d_un.d_val = fini_array_size;
 				break;
+			// case DT_PLTGOT:
 			case DT_INIT:
 			case DT_FINI:
 			case DT_SONAME:
@@ -2127,7 +2164,7 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 	}
 	// add relr
 	if (relr_size) {
-		// ERROR("adding RELR", relr_size);
+		// ERROR("adding RELR: ", relr_size);
 		dyn->d_tag = DT_RELR;
 		dyn->d_un.d_ptr = address_size + relr_start;
 		dyn++;
@@ -2221,12 +2258,12 @@ static void write_combined_binary(struct program_state *analysis, struct loaded_
 					if (result == -EEXIST) {
 						result = fs_unlink(secondary_name);
 						if (result != 0) {
-							DIE("failed unlinking secondary", fs_strerror(result));
+							DIE("failed unlinking secondary: ", fs_strerror(result));
 						}
 						result = fs_linkat(AT_FDCWD, name, AT_FDCWD, secondary_name, 0);
 					}
 					if (result != 0) {
-						DIE("failed linking secondary", fs_strerror(result));
+						DIE("failed linking secondary: ", fs_strerror(result));
 					}
 				}
 			}
@@ -2293,7 +2330,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			executable_index++;
 			break;
 		} else {
-			ERROR("unknown command line option", arg);
+			ERROR("unknown command line option: ", arg);
 			return 1;
 		}
 		executable_index++;
@@ -2301,10 +2338,10 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	const char *executable_path = argv[executable_index];
 
 	if (!executable_path) {
-		ERROR_WRITE_LITERAL(
+		ERROR_NOPREFIX(
 			"usage: smoosh [binary]\n"
 			"Merges a program with its libraries\n"
-			"Copyright (C) 2020-2025 Ryan Petrich\n");
+			"Copyright (C) 2020-2025 Ryan Petrich");
 		return 1;
 	}
 
@@ -2316,7 +2353,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 		const char *loaded_executable_path = NULL;
 		int fd = find_executable_in_paths(executable_path, path, false, analysis.loader.uid, analysis.loader.gid, path_buf, &loaded_executable_path);
 		if (UNLIKELY(fd < 0)) {
-			ERROR("could not find main executable", executable_path);
+			ERROR("could not find main executable: ", executable_path);
 			return 1;
 		}
 
@@ -2324,7 +2361,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 		struct loaded_binary *loaded;
 		intptr_t result = load_binary_into_analysis(&analysis, executable_path, loaded_executable_path, fd, NULL, &loaded);
 		if (result != 0) {
-			DIE("failed to load main binary", fs_strerror(result));
+			DIE("failed to load main binary: ", fs_strerror(result));
 		}
 		loaded->special_binary_flags |= BINARY_IS_MAIN;
 		fs_close(fd);
@@ -2342,16 +2379,16 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	if (bundle_interpreter) {
 		int fd = fs_open("/proc/self/exe", O_RDONLY | O_CLOEXEC, 0);
 		if (fd < 0) {
-			DIE("failed to read self", fs_strerror(fd));
+			DIE("failed to read self: ", fs_strerror(fd));
 		}
 		char buf[PATH_MAX];
 		intptr_t result = fs_fd_getpath(fd, buf);
 		if (result < 0) {
-			DIE("failed to read self path", fs_strerror(fd));
+			DIE("failed to read self path: ", fs_strerror(fd));
 		}
 		result = load_binary_into_analysis(&analysis, "bootstrap", buf, fd, NULL, &bootstrap);
 		if (result != 0) {
-			DIE("failed to load self", fs_strerror(result));
+			DIE("failed to load self: ", fs_strerror(result));
 		}
 		fs_close(fd);
 	}

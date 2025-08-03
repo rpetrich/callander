@@ -36,9 +36,6 @@ int main(int argc, const char *argv[])
 	char buf[4096 * 10 + 1];
 	int read_cursor = 0;
 	int scan_cursor = 0;
-	struct iovec vec[2];
-	vec[1].iov_base = "\n";
-	vec[1].iov_len = 1;
 	for (;;) {
 		int result = fs_read(0, &buf[read_cursor], (sizeof(buf) - 1) - read_cursor);
 		if (result <= 0) {
@@ -48,7 +45,7 @@ int main(int argc, const char *argv[])
 			if (result == 0) {
 				break;
 			}
-			DIE("error reading", fs_strerror(result));
+			DIE("error reading: ", fs_strerror(result));
 		}
 		read_cursor += result;
 		buf[read_cursor] = '\0';
@@ -66,13 +63,10 @@ int main(int argc, const char *argv[])
 				scan_cursor++;
 			} else {
 				if ((uintptr_t)number < SYSCALL_DEFINED_COUNT && syscall_list[number] != NULL) {
-					vec[0].iov_base = (void *)syscall_list[number];
-					vec[0].iov_len = fs_strlen(syscall_list[number]);
+					ERROR_RAW(syscall_list[number], "\n");
 				} else {
-					vec[0].iov_base = &buf[scan_cursor];
-					vec[0].iov_len = result - &buf[scan_cursor];
+					ERROR_RAW(((struct iovec){ &buf[scan_cursor], result - &buf[scan_cursor] }), "\n");
 				}
-				ERROR_WRITEV(vec, 2);
 				scan_cursor = result - &buf[0];
 			}
 		}

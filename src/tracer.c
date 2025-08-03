@@ -301,7 +301,7 @@ void install_tracer(uint32_t *enabled_traces, char **envp)
 	int result;
 	result = fs_dup2(2, TRACER_FD);
 	if (UNLIKELY(result < 0)) {
-		DIE("unable to assign standard error to axon trace fd", fs_strerror(result));
+		DIE("unable to assign standard error to axon trace fd: ", fs_strerror(result));
 	}
 }
 

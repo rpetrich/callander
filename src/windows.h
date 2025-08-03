@@ -172,9 +172,9 @@ intptr_t translate_winsock_error(intptr_t result);
 		ERROR("windows call to " #name);                                                                        \
 		intptr_t windows_result = PROXY_CALL(kind, get_windows_function(&name, #module, #name), ##__VA_ARGS__); \
 		if (windows_result < 0) {                                                                               \
-			ERROR("error is", -(intptr_t)windows_result);                                                       \
+			ERROR("error is: ", -(intptr_t)windows_result);                                                       \
 		} else {                                                                                                \
-			ERROR("result is", (uintptr_t)windows_result);                                                      \
+			ERROR("result is: ", (uintptr_t)windows_result);                                                      \
 		}                                                                                                       \
 		ERROR_FLUSH();                                                                                          \
 		windows_result;                                                                                         \
@@ -192,11 +192,11 @@ inline static proxy_arg get_windows_function(intptr_t *cached, const char *modul
 		hello_message *hello = proxy_get_hello_message();
 		intptr_t handle = PROXY_CALL(TARGET_NR_CALL, proxy_value(hello->windows.GetModuleHandleA), proxy_string(module));
 		if (handle == -1) {
-			DIE("could not find module", module);
+			DIE("could not find module: ", module);
 		}
 		result = PROXY_CALL(TARGET_NR_CALL, proxy_value(hello->windows.GetProcAddress), proxy_value(handle), proxy_string(name));
 		if (result == 0) {
-			DIE("could not find procedure", name);
+			DIE("could not find procedure: ", name);
 		}
 		*cached = result;
 	}

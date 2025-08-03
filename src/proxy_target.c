@@ -67,7 +67,7 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 			fs_mutex_unlock(&proxy_state.target_state->write_mutex);
 			return result;
 		}
-		DIE("failed to proxy send", fs_strerror(result));
+		DIE("failed to proxy send: ", fs_strerror(result));
 	}
 	fs_mutex_unlock(&proxy_state.target_state->write_mutex);
 	// exit if no response is expected

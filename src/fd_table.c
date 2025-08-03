@@ -22,36 +22,36 @@ void initialize_fd_table(void)
 	struct fd_state *states = get_fd_states();
 	int null = fs_open("/dev/null", O_RDONLY, 0);
 	if (null < 0) {
-		DIE("error opening /dev/null", fs_strerror(null));
+		DIE("error opening /dev/null: ", fs_strerror(null));
 	}
 	int result = fs_dup3(null, DEAD_FD, 0);
 	if (result < 0) {
-		DIE("error duping /dev/null", fs_strerror(result));
+		DIE("error duping /dev/null: ", fs_strerror(result));
 	}
 	result = fs_close(null);
 	if (result < 0) {
-		DIE("error closing", fs_strerror(result));
+		DIE("error closing: ", fs_strerror(result));
 	}
 	result = fs_dup3(DEAD_FD, CWD_FD, 0);
 	if (result < 0) {
-		DIE("error duping cwd", fs_strerror(result));
+		DIE("error duping cwd: ", fs_strerror(result));
 	}
 	fd_table[CWD_FD] = HAS_LOCAL_FD;
 #if 0
 	// duplicate local standard err and standard out
 	result = fs_dup3(0, 3, 0);
 	if (result < 0) {
-		DIE("error duping to 3", fs_strerror(result));
+		DIE("error duping to 3: ", fs_strerror(result));
 	}
 	fd_table[3] = HAS_LOCAL_FD;
 	result = fs_dup3(1, 4, 0);
 	if (result < 0) {
-		DIE("error duping to 4", fs_strerror(result));
+		DIE("error duping to 4: ", fs_strerror(result));
 	}
 	fd_table[4] = HAS_LOCAL_FD;
 	result = fs_dup3(2, 5, 0);
 	if (result < 0) {
-		DIE("error duping to 5", fs_strerror(result));
+		DIE("error duping to 5: ", fs_strerror(result));
 	}
 	fd_table[5] = HAS_LOCAL_FD;
 	// setup remote standard in, standard out and standard error
@@ -59,19 +59,19 @@ void initialize_fd_table(void)
 	states[0].count = 2;
 	result = fs_dup3(DEAD_FD, 0, 0);
 	if (result < 0) {
-		DIE("error duping to 0", fs_strerror(result));
+		DIE("error duping to 0: ", fs_strerror(result));
 	}
 	fd_table[1] = (1 << USED_BITS) | HAS_REMOTE_FD;
 	states[1].count = 2;
 	result = fs_dup3(DEAD_FD, 1, 0);
 	if (result < 0) {
-		DIE("error duping to 1", fs_strerror(result));
+		DIE("error duping to 1: ", fs_strerror(result));
 	}
 	fd_table[2] = (2 << USED_BITS) | HAS_REMOTE_FD;
 	states[2].count = 2;
 	result = fs_dup3(DEAD_FD, 2, 0);
 	if (result < 0) {
-		DIE("error duping to 2", fs_strerror(result));
+		DIE("error duping to 2: ", fs_strerror(result));
 	}
 #else
 	// setup standard in, standard out and standard error
@@ -81,19 +81,19 @@ void initialize_fd_table(void)
 	// duplicate remote standard err and standard out
 	result = fs_dup3(DEAD_FD, 3, 0);
 	if (result < 0) {
-		DIE("error duping to 3", fs_strerror(result));
+		DIE("error duping to 3: ", fs_strerror(result));
 	}
 	fd_table[3] = (0 << USED_BITS) | HAS_REMOTE_FD;
 	states[0].count = 2;
 	result = fs_dup3(DEAD_FD, 4, 0);
 	if (result < 0) {
-		DIE("error duping to 4", fs_strerror(result));
+		DIE("error duping to 4: ", fs_strerror(result));
 	}
 	fd_table[4] = (1 << USED_BITS) | HAS_REMOTE_FD;
 	states[1].count = 2;
 	result = fs_dup3(DEAD_FD, 5, 0);
 	if (result < 0) {
-		DIE("error duping to 4", fs_strerror(result));
+		DIE("error duping to 4: ", fs_strerror(result));
 	}
 	fd_table[5] = (2 << USED_BITS) | HAS_REMOTE_FD;
 	states[2].count = 2;
@@ -104,19 +104,19 @@ static void serialize_fd_table(int new_table[MAX_TABLE_SIZE])
 {
 	int memfd = fs_memfd_create("fdtable", 0);
 	if (memfd < 0) {
-		DIE("error creating memfd", fs_strerror(memfd));
+		DIE("error creating memfd: ", fs_strerror(memfd));
 	}
 	int result = fs_pwrite(memfd, (char *)new_table, sizeof(fd_table), 0);
 	if (result < 0) {
-		DIE("error writing fd table", fs_strerror(result));
+		DIE("error writing fd table: ", fs_strerror(result));
 	}
 	result = fs_dup3(memfd, TABLE_FD, 0);
 	if (result < 0) {
-		DIE("error duping memfd", fs_strerror(result));
+		DIE("error duping memfd: ", fs_strerror(result));
 	}
 	result = fs_close(memfd);
 	if (result < 0) {
-		DIE("error closing", fs_strerror(result));
+		DIE("error closing: ", fs_strerror(result));
 	}
 }
 
@@ -166,11 +166,11 @@ void resurrect_fd_table(void)
 {
 	int result = fs_pread_all(TABLE_FD, (char *)&fd_table, sizeof(fd_table), 0);
 	if (result <= 0) {
-		DIE("error reading fd table", fs_strerror(result));
+		DIE("error reading fd table: ", fs_strerror(result));
 	}
 	result = fs_close(TABLE_FD);
 	if (result < 0) {
-		DIE("error closing", fs_strerror(result));
+		DIE("error closing: ", fs_strerror(result));
 	}
 }
 

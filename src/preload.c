@@ -123,6 +123,6 @@ __attribute__((constructor)) void preload_main(int argc, char **argv, char **env
 	}
 	newargv[argc + 1] = NULL;
 	int exec_result = fs_execve(axon_path, newargv, env);
-	DIE("unable to reexec axon", -exec_result);
+	DIE("unable to reexec axon: ", -exec_result);
 }
 #endif

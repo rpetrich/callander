@@ -428,7 +428,7 @@ struct sock_fprog generate_seccomp_program(struct loader_context *loader, const 
 	optimize_bpf_fprog(&prog, descriptions);
 	expand_long_bpf_jumps(&prog, descriptions, pos);
 	if (record_descriptions) {
-		ERROR("program", temp_str(copy_bpf_prog_description(prog, (const char **)descriptions)));
+		ERROR("program: ", temp_str(copy_bpf_prog_description(prog, (const char **)descriptions)));
 	}
 	if (descriptions != NULL) {
 		for (size_t i = 0; i < prog.len; i++) {

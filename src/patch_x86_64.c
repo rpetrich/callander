@@ -224,48 +224,48 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 	(void)formatter_data;
 	ins_ptr ins = addr->unprefixed;
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
-		PATCH_LOG("Patching address with movl $..., %...prefix", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with movl $..., %...prefix: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0xe9) {
 		if (*expanded_rel8) {
 			return false;
 		}
-		PATCH_LOG("Patching address with jump", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with jump: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == INS_MOV_REG) {
-		PATCH_LOG("Patching address with mov prefix", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with mov prefix: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == INS_CMP_32_IMM) {
-		PATCH_LOG("Patching address with cmp prefix", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with cmp prefix: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0x85 || ins[1] == 0x86) {
-		PATCH_LOG("Patching address with test", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with test: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0x8b || ins[0] == 0x89) {
 		if (ins[1] == 0x0d) {
-			PATCH_LOG("Patching address with pc-relative mov prefix", temp_str(formatter(ins, formatter_data)));
+			PATCH_LOG("Patching address with pc-relative mov prefix: ", temp_str(formatter(ins, formatter_data)));
 			return true;
 		}
 		if (ins[1] == 0x44 || ins[1] == 0x54 || ins[1] == 0x74 || ins[1] == 0x7c) {
-			PATCH_LOG("Patching address with sp-relative mov prefix", temp_str(formatter(ins, formatter_data)));
+			PATCH_LOG("Patching address with sp-relative mov prefix: ", temp_str(formatter(ins, formatter_data)));
 			return true;
 		}
-		PATCH_LOG("Patching address with mov", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with mov: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	} else if (ins[0] == 0xc7) {
-		PATCH_LOG("Patching address with mov $..., %...", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with mov $..., %...: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	} else if (ins[0] == 0x83) {
-		PATCH_LOG("Patching address with sub $..., %...", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with sub $..., %...: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	} else if (ins[0] == INS_LEA) {
 		if ((ins[1] & 0xc7) != 0x5) {
-			PATCH_LOG("Patching address with lea", temp_str(formatter(ins, formatter_data)));
+			PATCH_LOG("Patching address with lea: ", temp_str(formatter(ins, formatter_data)));
 			return true;
 		}
 		x86_mod_rm_t modrm = x86_read_modrm(&ins[1]);
@@ -277,7 +277,7 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 					if (*expanded_rel8) {
 						return false;
 					}
-					PATCH_LOG("Patching address with rip-relative lea", temp_str(formatter(ins, formatter_data)));
+					PATCH_LOG("Patching address with rip-relative lea: ", temp_str(formatter(ins, formatter_data)));
 					return true;
 			}
 		}
@@ -286,7 +286,7 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 		if (*expanded_rel8) {
 			return false;
 		}
-		PATCH_LOG("Patching conditional jump", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching conditional jump: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] >= INS_CONDITIONAL_JMP_8_IMM_START && ins[0] <= INS_CONDITIONAL_JMP_8_IMM_END) {
@@ -294,34 +294,34 @@ static bool is_patchable_instruction(const struct x86_instruction *addr, bool *e
 			return false;
 		}
 		*expanded_rel8 = true;
-		PATCH_LOG("Patching short conditional jump", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching short conditional jump: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] >= INS_MOVL_START && ins[0] <= INS_MOVL_END) {
-		PATCH_LOG("Patching address with rex.b movl prefix", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with rex.b movl prefix: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] == 0x31) {
-		PATCH_LOG("Patching address with xor reg to reg", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with xor reg to reg: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (ins[0] >= INS_PUSHQ_START && ins[0] <= INS_PUSHQ_END) {
-		PATCH_LOG("Patching push", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching push: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (x86_is_return_instruction(addr)) {
-		PATCH_LOG("Patching address with ret", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with ret: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (x86_is_syscall_instruction(ins)) {
-		PATCH_LOG("Patching address with syscall", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with syscall: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
 	if (x86_is_nop_instruction(ins)) {
-		PATCH_LOG("Patching address with nop", temp_str(formatter(ins, formatter_data)));
+		PATCH_LOG("Patching address with nop: ", temp_str(formatter(ins, formatter_data)));
 		return true;
 	}
-	PATCH_LOG("Address not patchable", temp_str(formatter(ins, formatter_data)));
+	PATCH_LOG("Address not patchable: ", temp_str(formatter(ins, formatter_data)));
 	return false;
 }
 
@@ -475,11 +475,11 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find
 				if (ins[0] >= INS_PUSHQ_START && ins[0] <= INS_PUSHQ_END) {
 					// pushq %r...
 					*out_return_address -= 8;
-					PATCH_LOG("push", temp_str(formatter(ins, formatter_data)));
+					PATCH_LOG("push: ", temp_str(formatter(ins, formatter_data)));
 				} else if (ins[0] >= INS_POPQ_START && ins[0] <= INS_POPQ_END) {
 					// popq %r...
 					*out_return_address += 8;
-					PATCH_LOG("pop", temp_str(formatter(ins, formatter_data)));
+					PATCH_LOG("pop: ", temp_str(formatter(ins, formatter_data)));
 				}
 				break;
 			case 2:
@@ -487,11 +487,11 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find
 					if (ins[1] >= INS_PUSHQ_START && ins[1] <= INS_PUSHQ_END) {
 						// pushq %r...
 						*out_return_address -= 8;
-						PATCH_LOG("rexb push", temp_str(formatter(ins, formatter_data)));
+						PATCH_LOG("rexb push: ", temp_str(formatter(ins, formatter_data)));
 					} else if (ins[1] >= INS_POPQ_START && ins[1] <= INS_POPQ_END) {
 						// popq %r...
 						*out_return_address += 8;
-						PATCH_LOG("rexb pop", temp_str(formatter(ins, formatter_data)));
+						PATCH_LOG("rexb pop: ", temp_str(formatter(ins, formatter_data)));
 					}
 				}
 				break;
@@ -499,28 +499,28 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find
 				if (ins[0] == INS_ADD_SUB_RSP_8_IMM_0 && ins[1] == INS_ADD_SUB_RSP_8_IMM_1) {
 					if (ins[2] == INS_ADD_RSP_IMM_2) {
 						// addq $..., %rsp (8-bit immediate)
-						PATCH_LOG("add %rsp", temp_str(formatter(ins, formatter_data)));
-						PATCH_LOG("add %rsp value", (int)ins[3]);
+						PATCH_LOG("add %rsp: ", temp_str(formatter(ins, formatter_data)));
+						PATCH_LOG("add %rsp value: ", (int)ins[3]);
 						*out_return_address += ins[3];
 					} else if (ins[2] == INS_SUB_RSP_IMM_2) {
 						// subq $..., %rsp (8-bit immediate)
-						PATCH_LOG("sub %rsp", temp_str(formatter(ins, formatter_data)));
-						PATCH_LOG("sub %rsp value", (int)ins[3]);
+						PATCH_LOG("sub %rsp: ", temp_str(formatter(ins, formatter_data)));
+						PATCH_LOG("sub %rsp value: ", (int)ins[3]);
 						*out_return_address -= ins[3];
 					}
 				}
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_LEA && ins[2] == 0x65) {
 					// lea ...(%rbp), %rsp (8-bit immediate)
-					PATCH_LOG("lea ...(%rbp), %rsp", temp_str(formatter(ins, formatter_data)));
-					PATCH_LOG("lea %rbp value", (int)ins[3]);
+					PATCH_LOG("lea ...(%rbp), %rsp: ", temp_str(formatter(ins, formatter_data)));
+					PATCH_LOG("lea %rbp value: ", (int)ins[3]);
 					*out_return_address = bp + (int8_t)ins[3];
 				}
 				break;
 			case 5:
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_LEA && ins[2] == 0x64 && ins[3] == 0x24) {
 					// lea -...(%rsp), %rsp (8-bit immediate)
-					PATCH_LOG("lea -...(%rsp), %rsp", (uintptr_t)ins);
-					PATCH_LOG("lea %rsp value", (int)ins[4]);
+					PATCH_LOG("lea -...(%rsp), %rsp: ", (uintptr_t)ins);
+					PATCH_LOG("lea %rsp value: ", (int)ins[4]);
 					*out_return_address -= ins[4];
 				}
 				break;
@@ -528,13 +528,13 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_ADD_SUB_RSP_32_IMM_1) {
 					if (ins[2] == INS_ADD_RSP_IMM_2) {
 						// addq $..., %rsp (32-bit immediate)
-						PATCH_LOG("add %rsp", temp_str(formatter(ins, formatter_data)));
-						PATCH_LOG("add %rsp value", (int)*(const uint32_t *)&ins[3]);
+						PATCH_LOG("add %rsp: ", temp_str(formatter(ins, formatter_data)));
+						PATCH_LOG("add %rsp value: ", (int)*(const uint32_t *)&ins[3]);
 						*out_return_address += *(const uint32_t *)&ins[3];
 					} else if (ins[2] == INS_SUB_RSP_IMM_2) {
 						// subq $..., %rsp (32-bit immediate)
-						PATCH_LOG("sub %rsp", temp_str(formatter(ins, formatter_data)));
-						PATCH_LOG("sub %rsp value", (int)*(const uint32_t *)&ins[3]);
+						PATCH_LOG("sub %rsp: ", temp_str(formatter(ins, formatter_data)));
+						PATCH_LOG("sub %rsp value: ", (int)*(const uint32_t *)&ins[3]);
 						*out_return_address -= *(const uint32_t *)&ins[3];
 					}
 				}
@@ -542,8 +542,8 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find
 			case 8:
 				if (ins[0] == INS_REX_W_PREFIX && ins[1] == INS_LEA && ins[2] == 0xa4 && ins[3] == 0x24) {
 					// lea ...(%rsp), %rsp (32-bit immediate)
-					PATCH_LOG("lea ...(%rsp), %rsp", temp_str(formatter(ins, formatter_data)));
-					PATCH_LOG("lea %rsp value", (int)*(const uint32_t *)&ins[4]);
+					PATCH_LOG("lea ...(%rsp), %rsp: ", temp_str(formatter(ins, formatter_data)));
+					PATCH_LOG("lea %rsp value: ", (int)*(const uint32_t *)&ins[4]);
 					*out_return_address -= *(const uint32_t *)&ins[4];
 				}
 				break;
@@ -551,7 +551,7 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(3))) static bool find
 				if (ins[0] == 0x64 && ins[1] == 0x48 && ins[2] == 0x33 && ins[4] == 0x25 && ins[5] == 0x28 && ins[6] == 0 && ins[7] == 0 && ins[8] == 0) {
 					// xor %fs:0x28,%rcx
 					// GCC's stack check. next conditional jump should be to __stack_chk_fail
-					PATCH_LOG("found stack check", temp_str(formatter(ins, formatter_data)));
+					PATCH_LOG("found stack check: ", temp_str(formatter(ins, formatter_data)));
 					previous_ins_is_stack_check = true;
 				}
 				break;
@@ -578,14 +578,14 @@ tail_call:
 	ins_ptr jump;
 	ins_ptr ins = search.addr;
 	bool has_instruction = instruction == ins;
-	PATCH_LOG("searching for", (uintptr_t)instruction);
+	PATCH_LOG("searching for: ", (uintptr_t)instruction);
 	struct x86_instruction decoded;
 	for (;;) {
-		PATCH_LOG("processing", (uintptr_t)ins);
+		PATCH_LOG("processing: ", (uintptr_t)ins);
 		if (!x86_decode_instruction(ins, &decoded)) {
 			return false;
 		}
-		PATCH_LOG("bytes", char_range((const char *)ins, decoded.length));
+		PATCH_LOG("bytes: ", char_range((const char *)ins, decoded.length));
 		if (x86_is_return_instruction(&decoded)) {
 			break;
 		}
@@ -742,8 +742,8 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 	if (!x86_is_syscall_instruction(syscall_ins)) {
 		return;
 	}
-	PATCH_LOG("pc", (uintptr_t)args->pc);
-	PATCH_LOG("sp", (uintptr_t)args->sp);
+	PATCH_LOG("pc: ", (uintptr_t)args->pc);
+	PATCH_LOG("sp: ", (uintptr_t)args->sp);
 	// Find the function entry point
 	struct searched_instructions searched;
 	struct attempt_cleanup_state searched_cleanup;
@@ -759,9 +759,9 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		PATCH_LOG("could not find return address");
 		return;
 	}
-	PATCH_LOG("ret slot", (uintptr_t)return_address);
+	PATCH_LOG("ret slot: ", (uintptr_t)return_address);
 	uintptr_t ret = *(const uintptr_t *)return_address;
-	PATCH_LOG("ret addr", ret);
+	PATCH_LOG("ret addr: ", ret);
 	if (ret == 0) {
 		PATCH_LOG("invalid ret address");
 		return;
@@ -770,21 +770,21 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 	if (*(ins_ptr)(ret - 5) == INS_CALL_32_IMM) {
 		entry = ret + *(const int32_t *)(ret - 4);
 	} else {
-		PATCH_LOG("not a call", (uintptr_t)*(ins_ptr)(ret - 5));
+		PATCH_LOG("not a call: ", (uintptr_t)*(ins_ptr)(ret - 5));
 		const ElfW(Ehdr) *library_base = NULL;
 		const char *library_path = NULL;
 		if (!debug_find_library(syscall_ins, &library_base, &library_path)) {
 			PATCH_LOG("unknown library");
 			return;
 		}
-		PATCH_LOG("in library", library_path);
-		PATCH_LOG("base", (uintptr_t)library_base);
+		PATCH_LOG("in library: ", library_path);
+		PATCH_LOG("base: ", (uintptr_t)library_base);
 		struct binary_info library_info;
 		load_existing(&library_info, (uintptr_t)library_base);
 		struct symbol_info symbols;
 		int symbol_result = parse_dynamic_symbols(&library_info, (void *)library_base, &symbols);
 		if (symbol_result < 0) {
-			PATCH_LOG("error reading symbols", fs_strerror(symbol_result));
+			PATCH_LOG("error reading symbols: ", fs_strerror(symbol_result));
 			return;
 		}
 		entry = (uintptr_t)find_symbol_by_address(&library_info, &symbols, syscall_ins, NULL);
@@ -793,7 +793,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 			return;
 		}
 	}
-	PATCH_LOG("entry", entry);
+	PATCH_LOG("entry: ", entry);
 	// Find the basic block containing the syscall instruction
 	init_searched_instructions(thread, &searched, &searched_cleanup);
 	const struct instruction_search basic_block_search = {
@@ -832,33 +832,33 @@ __attribute__((warn_unused_result)) size_t migrate_instructions(uint8_t *dest, i
 		uint8_t *ins = dest + (decoded.unprefixed - src);
 		switch (*decoded.unprefixed) {
 			case 0xe9: {
-				PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
+				PATCH_LOG("fixing up rip-relative addressing: ", temp_str(formatter(src, formatter_data)));
 				ins_int32 *disp = (ins_int32 *)&ins[1];
-				PATCH_LOG("was", *disp);
+				PATCH_LOG("was: ", *disp);
 				*disp += delta;
-				PATCH_LOG("is now", *disp);
+				PATCH_LOG("is now: ", *disp);
 				break;
 			}
 			case INS_CONDITIONAL_JMP_8_IMM_START ... INS_CONDITIONAL_JMP_8_IMM_END: {
-				PATCH_LOG("expanding 8 bit conditional jump", temp_str(formatter(src, formatter_data)));
+				PATCH_LOG("expanding 8 bit conditional jump: ", temp_str(formatter(src, formatter_data)));
 				ins[0] = INS_CONDITIONAL_JMP_32_IMM_0;
 				ins[1] = *decoded.unprefixed + 0x10;
 				int8_t old_disp = ((const int8_t *)decoded.unprefixed)[1];
 				ins_int32 *disp = (ins_int32 *)&ins[2];
-				PATCH_LOG("was", (intptr_t)old_disp);
+				PATCH_LOG("was: ", (intptr_t)old_disp);
 				*disp = (int32_t)old_disp + delta - 4;
-				PATCH_LOG("is now", *disp);
+				PATCH_LOG("is now: ", *disp);
 				byte_count += 4;
 				dest += 4;
 				break;
 			}
 			case INS_CONDITIONAL_JMP_32_IMM_0:
 				if (decoded.unprefixed[1] >= INS_CONDITIONAL_JMP_32_IMM_1_START && decoded.unprefixed[1] <= INS_CONDITIONAL_JMP_32_IMM_1_END) {
-					PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
+					PATCH_LOG("fixing up rip-relative addressing: ", temp_str(formatter(src, formatter_data)));
 					ins_int32 *disp = (ins_int32 *)&ins[2];
-					PATCH_LOG("was", *disp);
+					PATCH_LOG("was: ", *disp);
 					*disp += delta;
-					PATCH_LOG("is now", *disp);
+					PATCH_LOG("is now: ", *disp);
 				}
 				break;
 			case 0x8b:
@@ -870,11 +870,11 @@ __attribute__((warn_unused_result)) size_t migrate_instructions(uint8_t *dest, i
 					switch (rm) {
 						case X86_REGISTER_BP:
 						case X86_REGISTER_13: {
-							PATCH_LOG("fixing up rip-relative addressing", temp_str(formatter(src, formatter_data)));
+							PATCH_LOG("fixing up rip-relative addressing: ", temp_str(formatter(src, formatter_data)));
 							ins_int32 *disp = (ins_int32 *)&ins[2];
-							PATCH_LOG("was", *disp);
+							PATCH_LOG("was: ", *disp);
 							*disp += delta;
-							PATCH_LOG("is now", *disp);
+							PATCH_LOG("is now: ", *disp);
 							break;
 						}
 					}
@@ -890,8 +890,8 @@ __attribute__((warn_unused_result)) size_t migrate_instructions(uint8_t *dest, i
 
 __attribute__((always_inline)) static inline enum patch_status patch_common(struct thread_storage *thread, uintptr_t instruction, struct instruction_range basic_block, struct patch_template template, void *handler, bool skip, int self_fd)
 {
-	PATCH_LOG("basic block start", (uintptr_t)basic_block.start);
-	PATCH_LOG("basic block end", (uintptr_t)basic_block.end);
+	PATCH_LOG("basic block start: ", (uintptr_t)basic_block.start);
+	PATCH_LOG("basic block end: ", (uintptr_t)basic_block.end);
 	// Find the patch target
 	struct x86_instruction decoded;
 	if (!x86_decode_instruction((ins_ptr)instruction, &decoded)) {
@@ -906,19 +906,19 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 		ERROR_FLUSH();
 		return PATCH_STATUS_FAILED;
 	}
-	PATCH_LOG("patch start", (uintptr_t)patch_target.start);
-	PATCH_LOG("patch end", (uintptr_t)patch_target.end);
+	PATCH_LOG("patch start: ", (uintptr_t)patch_target.start);
+	PATCH_LOG("patch end: ", (uintptr_t)patch_target.end);
 	struct mapping target_mapping = {0};
 	int mapping_error = lookup_mapping_for_address(patch_target.start, &target_mapping);
 	if (mapping_error <= 0) {
 		if (mapping_error < 0) {
-			DIE("could not read memory mappings", fs_strerror(mapping_error));
+			DIE("could not read memory mappings: ", fs_strerror(mapping_error));
 		}
 		DIE("could not find memory mapping");
 	}
 	if ((target_mapping.flags & (MAP_SHARED | MAP_PRIVATE)) == MAP_SHARED) {
 		// Found that the mapping was shared, don't patch
-		PATCH_LOG("found shared mapping", (uintptr_t)target_mapping.flags);
+		PATCH_LOG("found shared mapping: ", (uintptr_t)target_mapping.flags);
 		ERROR_FLUSH();
 		return PATCH_STATUS_FAILED;
 	}
@@ -938,7 +938,7 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, self_fd == -1 ? MAP_ANONYMOUS | MAP_PRIVATE : MAP_PRIVATE, self_fd, self_fd == -1 ? 0 : PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
-			PATCH_LOG("Failed to patch: mmap failed", fs_strerror((intptr_t)new_mapping));
+			PATCH_LOG("Failed to patch: mmap failed: ", fs_strerror((intptr_t)new_mapping));
 			return PATCH_STATUS_FAILED;
 		}
 		if (is_valid_pc_relative_offset((uintptr_t)new_mapping - (uintptr_t)patch_target.end)) {
@@ -950,13 +950,13 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 			if (!is_valid_pc_relative_offset((intptr_t)stub_address - (uintptr_t)patch_target.end)) {
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
-				PATCH_LOG("Failed to patch: invalid pc-relative offset", (intptr_t)stub_address - (uintptr_t)patch_target.end);
+				PATCH_LOG("Failed to patch: invalid pc-relative offset: ", (intptr_t)stub_address - (uintptr_t)patch_target.end);
 				ERROR_FLUSH();
 				return PATCH_STATUS_FAILED;
 			}
 			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, (void *)stub_address);
 			if (fs_is_map_failed(remap_result)) {
-				PATCH_LOG("Failed to patch: mremap failed", fs_strerror((intptr_t)remap_result));
+				PATCH_LOG("Failed to patch: mremap failed: ", fs_strerror((intptr_t)remap_result));
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 				ERROR_FLUSH();
@@ -965,7 +965,7 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 		}
 		new_address = true;
 	}
-	PATCH_LOG("trampoline", (uintptr_t)stub_address);
+	PATCH_LOG("trampoline: ", (uintptr_t)stub_address);
 	// Construct the trampoline
 	uint8_t *trampoline = (uint8_t *)stub_address;
 	size_t head_size = instruction - (intptr_t)patch_target.start;
@@ -1065,7 +1065,7 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 	if (mapping_error == 0) {
 		int result = fs_mprotect((void *)start_page, protect_size, target_mapping.flags & (PROT_READ | PROT_WRITE | PROT_EXEC));
 		if (result < 0) {
-			PATCH_LOG("Failed to update protection", fs_strerror(result));
+			PATCH_LOG("Failed to update protection: ", fs_strerror(result));
 		}
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
@@ -1110,7 +1110,7 @@ bool patch_handle_illegal_instruction(struct thread_storage *thread, ucontext_t 
 
 enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr address, ins_ptr entry, void (*handler)(uintptr_t *), int self_fd)
 {
-	PATCH_LOG("patching breakpoint", (uintptr_t)address);
+	PATCH_LOG("patching breakpoint: ", (uintptr_t)address);
 	// Construct the basic block that contains the address. Need to do a full
 	// analysis of the procedure since it's possible for code to jump into the
 	// middle of what looks like a basic block!
@@ -1133,7 +1133,7 @@ enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr addres
 
 enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
 {
-	PATCH_LOG("patching function", (uintptr_t)function);
+	PATCH_LOG("patching function: ", (uintptr_t)function);
 	// Construct the entry basic block. Need to do a full analysis of the
 	// procedure since it's possible for code to jump back into the middle of
 	// the patch point, if we're unlucky. In all but exceptional circumstances

@@ -274,8 +274,8 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 	uint32_t scratch[BPF_MEMWORDS] = {0};
 	for (; pc <= prog.len; pc++) {
 		if (print_debug_messages) {
-			ERROR("pc", (intptr_t)pc);
-			ERROR("insn",
+			ERROR("pc: ", (intptr_t)pc);
+			ERROR("insn: ",
 			      temp_str(copy_bpf_insn_description((struct bpf_insn){
 					  .code = prog.filter[pc].code,
 					  .jt = prog.filter[pc].jt,
@@ -291,7 +291,7 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 					case BPF_IMM:
 						acc = prog.filter[pc].k;
 						if (print_debug_messages) {
-							ERROR("acc", acc);
+							ERROR("acc: ", acc);
 						}
 						goto next;
 					case BPF_ABS:
@@ -307,13 +307,13 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 						}
 						acc = scratch[offset];
 						if (print_debug_messages) {
-							ERROR("acc", acc);
+							ERROR("acc: ", acc);
 						}
 						goto next;
 					case BPF_LEN:
 						acc = length;
 						if (print_debug_messages) {
-							ERROR("acc", acc);
+							ERROR("acc: ", acc);
 						}
 						goto next;
 					case BPF_MSH:
@@ -344,7 +344,7 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 						return "invalid size for BPF_LD!";
 				}
 				if (print_debug_messages) {
-					ERROR("acc", acc);
+					ERROR("acc: ", acc);
 				}
 				break;
 			}
@@ -362,7 +362,7 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 						return "invalid mode for BPF_LDX!";
 				}
 				if (print_debug_messages) {
-					ERROR("index", index);
+					ERROR("index: ", index);
 				}
 				break;
 			}
@@ -428,7 +428,7 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 						return "BPF_ALU operation not supported!";
 				}
 				if (print_debug_messages) {
-					ERROR("acc", acc);
+					ERROR("acc: ", acc);
 				}
 				break;
 			}
@@ -479,13 +479,13 @@ __attribute__((used)) const char *bpf_interpret(struct sock_fprog prog, const ch
 					case BPF_MISC | BPF_TAX:
 						index = acc;
 						if (print_debug_messages) {
-							ERROR("index", index);
+							ERROR("index: ", index);
 						}
 						break;
 					case BPF_MISC | BPF_TXA:
 						acc = index;
 						if (print_debug_messages) {
-							ERROR("acc", acc);
+							ERROR("acc: ", acc);
 						}
 						break;
 					default:
@@ -681,16 +681,13 @@ __attribute__((used)) struct sock_fprog convert_to_sock_fprog(struct bpf_prog pr
 	struct sock_filter *filter = malloc(prog.len * sizeof(struct sock_filter));
 	for (unsigned long i = 0; i < prog.len; i++) {
 		if (UNLIKELY(!bpf_code_is_valid(prog.filter[i].code))) {
-			ERROR("invalid code", temp_str(copy_bpf_insn_description(prog.filter[i])));
-			DIE("for instruction at index", (intptr_t)i);
+			DIE("invalid code of ", temp_str(copy_bpf_insn_description(prog.filter[i])), " for instruction at index ", (intptr_t)i);
 		}
 		if (UNLIKELY(!bpf_jump_offset_is_valid(prog.filter[i].jt))) {
-			ERROR("invalid jt", temp_str(copy_bpf_insn_description(prog.filter[i])));
-			DIE("for instruction at index", (intptr_t)i);
+			DIE("invalid jt of ", temp_str(copy_bpf_insn_description(prog.filter[i])), " for instruction at index ", (intptr_t)i);
 		}
 		if (UNLIKELY(!bpf_jump_offset_is_valid(prog.filter[i].jf))) {
-			ERROR("invalid jf", temp_str(copy_bpf_insn_description(prog.filter[i])));
-			DIE("for instruction at index", (intptr_t)i);
+			DIE("invalid jf of ", temp_str(copy_bpf_insn_description(prog.filter[i])), " for instruction at index ", (intptr_t)i);
 		}
 		filter[i] = (struct sock_filter){
 			.code = prog.filter[i].code,

@@ -337,7 +337,7 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 		} else {                                                                                         \
 			self.description = buf;                                                                      \
 		}                                                                                                \
-		DIE("unsupported instruction", temp_str(copy_call_trace_description(&analysis->loader, &self))); \
+		DIE("unsupported instruction: ", temp_str(copy_call_trace_description(&analysis->loader, &self))); \
 	} while (0)
 
 #endif

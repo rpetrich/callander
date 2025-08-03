@@ -67,7 +67,7 @@ static inline void *get_allocated_stack(struct stack_data *stack_data)
 		stack = fs_mmap(NULL, ALT_STACK_SIZE + PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif
 		if (fs_is_map_failed(stack)) {
-			DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
+			DIE("failed to allocate stack: ", fs_strerror((intptr_t)stack));
 		}
 		// apply the guard page
 #ifdef STACK_DESCENDS
@@ -77,7 +77,7 @@ static inline void *get_allocated_stack(struct stack_data *stack_data)
 		int result = fs_mprotect((char *)stack + ALT_STACK_SIZE, PROT_NONE);
 #endif
 		if (result != 0) {
-			DIE("failed to protect stack guard", fs_strerror(result));
+			DIE("failed to protect stack guard: ", fs_strerror(result));
 		}
 #if defined(__x86_64__)
 		// align the stack

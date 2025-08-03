@@ -154,29 +154,7 @@ __attribute__((used, visibility("hidden"))) void abort(void)
 
 __attribute__((used, visibility("hidden"))) void __assert_fail(__attribute__((unused)) const char *expr, __attribute__((unused)) const char *file, __attribute__((unused)) unsigned int line, __attribute__((unused)) const char *function)
 {
-	struct iovec vec[8];
-	vec[0].iov_base = "axon: assertion failed at ";
-	vec[0].iov_len = sizeof("axon: assertion failed at ") - 1;
-	vec[1].iov_base = (void *)expr;
-	vec[1].iov_len = strlen(expr);
-	vec[2].iov_base = " in ";
-	vec[2].iov_len = sizeof(" in ") - 1;
-	vec[3].iov_base = (void *)function;
-	vec[3].iov_len = strlen(function);
-	vec[4].iov_base = " (";
-	vec[4].iov_len = sizeof(" (") - 1;
-	vec[5].iov_base = (void *)file;
-	vec[5].iov_len = strlen(file);
-	vec[6].iov_base = (void *)file;
-	vec[6].iov_len = strlen(file);
-	char buf[33];
-	buf[0] = ':';
-	int size = fs_itoa(line, &buf[1]);
-	buf[size + 1] = ')';
-	buf[size + 2] = '\n';
-	vec[7].iov_base = buf;
-	vec[7].iov_len = size + 3;
-	ERROR_WRITEV(vec, 8);
+	ERROR_NOPREFIX(PRODUCT_NAME, "assertion failed at ", expr, " in ", function, " (", file, ":", line, ")");
 	abort();
 	__builtin_unreachable();
 }

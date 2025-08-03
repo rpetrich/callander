@@ -49,7 +49,7 @@ static void write_profile(const struct loader_context *loader, const struct reco
 {
 	int fd = fs_open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	if (fd < 0) {
-		DIE("error opening profile", fs_strerror(fd));
+		DIE("error opening profile: ", fs_strerror(fd));
 	}
 	// headers
 	intptr_t result = fs_write_all(fd, PROFILE_HEADER_LINE "\n\n", sizeof(PROFILE_HEADER_LINE "\n\n") - 1);
@@ -91,7 +91,7 @@ static void write_profile(const struct loader_context *loader, const struct reco
 	return;
 error_write:
 	fs_close(fd);
-	DIE("error writing profile", fs_strerror(result));
+	DIE("error writing profile: ", fs_strerror(result));
 }
 
 struct line_buf
@@ -414,12 +414,12 @@ finish_profile:
 
 static void log_used_syscalls(const struct loader_context *loader, const struct recorded_syscalls *syscalls, bool log_arguments, bool log_caller, bool include_symbol)
 {
-	ERROR("permitted syscalls", temp_str(copy_used_syscalls(loader, syscalls, log_arguments, log_caller, include_symbol)));
+	ERROR("permitted syscalls: ", temp_str(copy_used_syscalls(loader, syscalls, log_arguments, log_caller, include_symbol)));
 }
 
 static void log_used_binaries(const struct loader_context *loader)
 {
-	ERROR("loaded binaries", temp_str(copy_used_binaries(loader)));
+	ERROR("loaded binaries: ", temp_str(copy_used_binaries(loader)));
 }
 
 __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysis(struct program_state *analysis, const char *executable_path, int fd)
@@ -428,13 +428,13 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 	struct loaded_binary *loaded;
 	int result = load_binary_into_analysis(analysis, executable_path, executable_path, fd, NULL, &loaded);
 	if (result != 0) {
-		DIE("failed to load main binary", fs_strerror(result));
+		DIE("failed to load main binary: ", fs_strerror(result));
 	}
 	if (UNLIKELY(loaded->mode & S_ISUID) && loaded->uid != analysis->loader.uid) {
-		DIE("executable is setuid and not currently running as uid", loaded->uid);
+		DIE("executable is setuid and not currently running as uid: ", loaded->uid);
 	}
 	if (UNLIKELY(loaded->mode & S_ISGID) && loaded->gid != analysis->loader.gid) {
-		DIE("executable is setgid and not currently running as gid", loaded->gid);
+		DIE("executable is setgid and not currently running as gid: ", loaded->gid);
 	}
 
 	// load LD_PRELOAD libraries
@@ -448,7 +448,7 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 				preload_path[i - cur] = '\0';
 				struct loaded_binary *binary = register_dlopen(analysis, preload_path, NULL, DLOPEN_OPTION_ANALYZE);
 				if (binary == NULL) {
-					DIE("failed to load shared object specified via LD_PRELOAD", preload_path);
+					DIE("failed to load shared object specified via LD_PRELOAD: ", preload_path);
 					free(preload_path);
 				} else if (binary->path != preload_path) {
 					free(preload_path);
@@ -474,7 +474,7 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 			ERROR_FLUSH();
 			fs_exit(1);
 		}
-		DIE("failed to finish loading", fs_strerror(result));
+		DIE("failed to finish loading: ", fs_strerror(result));
 	}
 	analysis->main = (uintptr_t)loaded->info.entrypoint;
 
@@ -485,14 +485,14 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 		struct loaded_binary *vdso;
 		result = load_binary_into_analysis(analysis, "[vdso]", "[vdso]", -1, (const void *)analysis->loader.vdso, &vdso);
 		if (result != 0) {
-			DIE("failed to load vDSO", fs_strerror(result));
+			DIE("failed to load vDSO: ", fs_strerror(result));
 		}
 		result = finish_loading_binary(analysis, vdso, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, false);
 		if (result != 0) {
-			DIE("failed to finish loading vDSO", fs_strerror(result));
+			DIE("failed to finish loading vDSO: ", fs_strerror(result));
 		}
 		if (vdso->has_symbols) {
-			LOG("analyzing symbols for", vdso->path);
+			LOG("analyzing symbols for ", vdso->path);
 			struct analysis_frame vdso_caller = {.address = vdso->info.base, .description = "vdso", .next = NULL, .current_state = empty_registers, .entry = vdso->info.base, .entry_state = &empty_registers, .token = {0}};
 			analyze_function_symbols(analysis, vdso, &vdso->symbols, &vdso_caller);
 		} else {
@@ -500,13 +500,11 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 		}
 	}
 
-	LOG("base", (uintptr_t)loaded->info.base);
-	LOG("entrypoint", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)));
-	LOG("size", (uintptr_t)loaded->info.size);
+	LOG("base: ", (uintptr_t)loaded->info.base, ", entrypoint: ", temp_str(copy_address_description(&analysis->loader, loaded->info.entrypoint)), ", size: ", (uintptr_t)loaded->info.size);
 	if (analysis->main_function_name != NULL) {
 		void *main = resolve_loaded_symbol(&analysis->loader, analysis->main_function_name, NULL, NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL, NULL, NULL);
 		if (main == NULL) {
-			DIE("could not resolve main function", analysis->main_function_name);
+			DIE("could not resolve main function: ", analysis->main_function_name);
 		}
 		analysis->main = (uintptr_t)main;
 		struct analysis_frame new_caller = {.address = loaded->info.base, .description = "main", .next = NULL, .current_state = empty_registers, .entry = loaded->info.base, .entry_state = &empty_registers, .token = {0}};
@@ -543,7 +541,7 @@ static void kill_or_die(pid_t pid)
 {
 	intptr_t result = fs_kill(pid, 9);
 	if (result < 0) {
-		DIE("failed to kill", fs_strerror(result));
+		DIE("failed to kill: ", fs_strerror(result));
 	}
 }
 
@@ -580,7 +578,7 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader, bo
 			for (struct loaded_binary *binary = loader->binaries; binary != NULL; binary = binary->next) {
 				if (binary->inode == mapping.inode && binary->device == mapping.device) {
 					if (binary->child_base == 0) {
-						LOG("populated child address", &mapping.path[0]);
+						LOG("populated child address: ", &mapping.path[0]);
 						binary->child_base = (uintptr_t)mapping.start - mapping.offset;
 					}
 					goto next_mapping;
@@ -591,14 +589,14 @@ static int populate_child_addresses(pid_t pid, struct loader_context *loader, bo
 			for (struct loaded_binary *binary = loader->binaries; binary != NULL; binary = binary->next) {
 				if (binary->inode == mapping.inode) {
 					if (binary->child_base == 0) {
-						LOG("populated child address", &mapping.path[0]);
+						LOG("populated child address: ", &mapping.path[0]);
 						binary->child_base = (uintptr_t)mapping.start - mapping.offset;
 					}
 					goto next_mapping;
 				}
 			}
 			if (!allow_unexpected) {
-				DIE("found unexpected binary in running process", &mapping.path[0]);
+				DIE("found unexpected binary in running process: ", &mapping.path[0]);
 			}
 		}
 	next_mapping:;
@@ -680,7 +678,7 @@ static void wait_for_ptrace_event(enum __ptrace_request request, pid_t pid)
 	// identify that we're looking for syscall entries
 	intptr_t result = fs_ptrace(request, pid, 0, 0);
 	if (result < 0) {
-		DIE("failed to wait for syscall entry", fs_strerror(result));
+		DIE("failed to wait for syscall entry: ", fs_strerror(result));
 	}
 	// wait for syscall
 	int status;
@@ -725,17 +723,17 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	regs.USER_REG_ARG6 = arg6;
 	intptr_t result = ptrace_setregs(pid, &regs);
 	if (result < 0) {
-		DIE("failed to set registers", fs_strerror(result));
+		DIE("failed to set registers: ", fs_strerror(result));
 	}
 	long original_bytes;
 	result = fs_ptrace(PTRACE_PEEKTEXT, pid, (void *)valid_regs.USER_REG_PC, &original_bytes);
 	if (result < 0) {
-		DIE("failed to peek under program counter", fs_strerror(result));
+		DIE("failed to peek under program counter: ", fs_strerror(result));
 	}
 	long new_bytes = ins_syscall_poke_pattern(original_bytes);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.USER_REG_PC, (void *)new_bytes);
 	if (result < 0) {
-		DIE("failed to poke a syscall", fs_strerror(result));
+		DIE("failed to poke a syscall: ", fs_strerror(result));
 	}
 	// wait for syscall entry
 	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
@@ -745,11 +743,11 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	wait_for_ptrace_event(PTRACE_SINGLESTEP, pid);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.USER_REG_PC, (void *)original_bytes);
 	if (result < 0) {
-		DIE("failed to poke the original data back", fs_strerror(result));
+		DIE("failed to poke the original data back: ", fs_strerror(result));
 	}
 	result = ptrace_getregs(pid, &regs);
 	if (result < 0) {
-		DIE("failed to read registers back", fs_strerror(result));
+		DIE("failed to read registers back: ", fs_strerror(result));
 	}
 	return regs.USER_REG_RESULT;
 }
@@ -794,15 +792,15 @@ static void remote_apply_seccomp_filter(int tracee, struct user_regs_struct regs
 	};
 	intptr_t result = fs_process_vm_write(tracee, &child_prog, sizeof(struct sock_fprog), remote_address);
 	if (result < 0) {
-		DIE("failed to send program header to child", fs_strerror(result));
+		DIE("failed to send program header to child: ", fs_strerror(result));
 	}
 	result = fs_process_vm_write(tracee, prog->filter, sizeof(struct sock_filter) * prog->len, remote_address + sizeof(struct sock_fprog));
 	if (result < 0) {
-		DIE("failed to send program filter to child", fs_strerror(result));
+		DIE("failed to send program filter to child: ", fs_strerror(result));
 	}
 	result = remote_perform_syscall(tracee, regs, __NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, remote_address, 0, 0, 0);
 	if (result < 0) {
-		DIE("failed to set seccomp policy in child", fs_strerror(result));
+		DIE("failed to set seccomp policy in child: ", fs_strerror(result));
 	}
 }
 
@@ -825,7 +823,7 @@ static void remote_apply_seccomp_filter_or_split(int tracee, struct user_regs_st
 		free(prog.filter);
 	}
 	if (syscall_range_low == syscall_range_high) {
-		DIE("syscall has too many call sites to generate a seccomp program", name_for_syscall(syscall_range_low));
+		DIE("syscall has too many call sites to generate a seccomp program: ", name_for_syscall(syscall_range_low));
 	}
 	// split, so half the syscalls are in one program and half in another
 	uint32_t mid = syscall_range_low + ((syscall_range_high == ~(uint32_t)0 ? syscalls->list[syscalls->count - 1].nr : syscall_range_high) - syscall_range_low) / 2;
@@ -876,8 +874,7 @@ static void enumerate_unreachable_regions_in_section(struct program_state *analy
 			break;
 		}
 		if ((uintptr_t)analysis->reachable.regions[i].entry > address) {
-			LOG("unreachable start", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)));
-			LOG("unreachable end", temp_str(copy_address_description(&analysis->loader, analysis->reachable.regions[i].entry)));
+			LOG("unreachable from ", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)), " to ", temp_str(copy_address_description(&analysis->loader, analysis->reachable.regions[i].entry)));
 			callback(section, address, (size_t)analysis->reachable.regions[i].entry - address, callback_data);
 			total += (size_t)analysis->reachable.regions[i].entry - address;
 		}
@@ -885,12 +882,10 @@ static void enumerate_unreachable_regions_in_section(struct program_state *analy
 			address = (uintptr_t)analysis->reachable.regions[i].exit;
 		}
 	}
-	LOG("unreachable start", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)));
-	LOG("unreachable end", temp_str(copy_address_description(&analysis->loader, (ins_ptr)end)));
+	LOG("unreachable from ", temp_str(copy_address_description(&analysis->loader, (ins_ptr)address)), " to ", temp_str(copy_address_description(&analysis->loader, (ins_ptr)end)));
 	callback(section, address, end - address, callback_data);
 	total += end - address;
-	LOG("breakpoint bytes", (ssize_t)total);
-	LOG("total bytes", (ssize_t)size);
+	LOG("breakpoints for ", (ssize_t)total, " bytes out of ", (ssize_t)size, " total");
 }
 
 static void enumerate_unreachable_regions_in_binary(struct program_state *analysis, struct loaded_binary *binary, poke_unreachable_callback callback, void *callback_data)
@@ -904,7 +899,7 @@ static void enumerate_unreachable_regions_in_binary(struct program_state *analys
 			if (section->sh_addr != 0) {
 				uint64_t flags = section->sh_flags;
 				if ((flags & (SHF_ALLOC | SHF_EXECINSTR)) == (SHF_ALLOC | SHF_EXECINSTR)) {
-					LOG("poking section", &binary->sections.strings[section->sh_name]);
+					LOG("poking section: ", &binary->sections.strings[section->sh_name]);
 					enumerate_unreachable_regions_in_section(analysis, section, apply_base_address(&binary->info, section->sh_addr), section->sh_size, callback, callback_data);
 				}
 			}
@@ -934,13 +929,13 @@ static void poke_breakpoint_region(const ElfW(Shdr) * section, intptr_t address,
 #else
 		result = fs_ptrace(PTRACE_PEEKTEXT, tracee, translated_address + i, &original_bytes);
 		if (result < 0) {
-			DIE("failed to peek", fs_strerror(result));
+			DIE("failed to peek: ", fs_strerror(result));
 		}
 #endif
 		long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, translated_address + i, (void *)new_bytes);
 		if (result < 0) {
-			DIE("failed to poke", fs_strerror(result));
+			DIE("failed to poke: ", fs_strerror(result));
 		}
 	}
 }
@@ -978,7 +973,7 @@ static void attach_unreachable_breakpoints(struct program_state *analysis)
 		if (fs_strcmp(binary->path, "[vdso]") == 0) {
 			continue;
 		}
-		LOG("poking", binary->path);
+		LOG("poking: ", binary->path);
 		enumerate_unreachable_regions_in_binary(analysis, binary, poke_breakpoint_region, &analysis->loader);
 	}
 #if 0
@@ -1255,14 +1250,14 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		size_t version_string_size;
 		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
 		if (result < 0) {
-			DIE("failed reading python version", fs_strerror(result));
+			DIE("failed reading python version: ", fs_strerror(result));
 		}
 		version_string[version_string_size - 1] = '\0';
 		const char *version_major;
 		const char *version_minor;
 		const char *version_patch;
 		if (!parse_version_components(version_string, &version_major, &version_minor, &version_patch)) {
-			DIE("failed parsing python version", version_string);
+			DIE("failed parsing python version: ", version_string);
 		}
 		MAKE_VERSION_BUF(dynload_buf, "/usr/lib/python", ".", "/lib-dynload");
 		MAKE_VERSION_BUF(dynload64_buf, "/usr/lib64/python", ".", "/lib-dynload");
@@ -1296,14 +1291,14 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		size_t version_string_size;
 		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
 		if (result < 0) {
-			DIE("failed reading ruby version", fs_strerror(result));
+			DIE("failed reading ruby version: ", fs_strerror(result));
 		}
 		version_string[version_string_size - 1] = '\0';
 		const char *version_major;
 		const char *version_minor;
 		const char *version_patch;
 		if (!parse_version_components(version_string, &version_major, &version_minor, &version_patch)) {
-			DIE("failed parsing ruby version", version_string);
+			DIE("failed parsing ruby version: ", version_string);
 		}
 		// add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
 		// add_blocked_symbol(&analysis->known_symbols, "rb_f_syscall.lto_priv.0", NORMAL_SYMBOL | LINKER_SYMBOL | DEBUG_SYMBOL_FORCING_LOAD, false);
@@ -1363,7 +1358,7 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 	if (info->si_code == SEGV_ACCERR && stack != NULL && info->si_addr >= stack && info->si_addr < (stack + STACK_GUARD_SIZE)) {
 		ERROR("binary requires more stack to analyze than was configured at build time");
 		ERROR_FLUSH();
-		DIE("analysis trace is", temp_str(copy_call_trace_description_with_additional(&analysis.loader, analysis.current_frame, segfault_trace_callback, NULL)));
+		DIE("analysis trace is ", temp_str(copy_call_trace_description_with_additional(&analysis.loader, analysis.current_frame, segfault_trace_callback, NULL)));
 	}
 	struct fs_sigaction sa = {
 		.handler = SIG_DFL,
@@ -1373,7 +1368,7 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 	};
 	int sa_result = fs_sigaction(SIGSEGV, &sa, NULL);
 	if (sa_result < 0) {
-		DIE("failed to reset sigaction", fs_strerror(sa_result));
+		DIE("failed to reset sigaction: ", fs_strerror(sa_result));
 	}
 }
 
@@ -1468,7 +1463,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				}
 			}
 			if (!found) {
-				ERROR("invalid or unknown syscall", syscall_name);
+				ERROR("invalid or unknown syscall: ", syscall_name);
 				return 1;
 			}
 			executable_index++;
@@ -1594,7 +1589,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			executable_index++;
 			break;
 		} else {
-			ERROR("unknown command line option", arg);
+			ERROR("unknown command line option: ", arg);
 			return 1;
 		}
 		executable_index++;
@@ -1602,7 +1597,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	const char *executable_path = argv[executable_index];
 
 	if (!executable_path) {
-		ERROR_WRITE_LITERAL(
+		ERROR_NOPREFIX(
 			"usage: callander [command]\n"
 			"Runs programs in an automatically generated seccomp sandbox\n"
 			"Copyright (C) 2020-2023 Ryan Petrich\n"
@@ -1619,14 +1614,14 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			"  --read-profile PROFILE_PATH  read syscall profile file at specified path, rejecting stale profiles\n"
 			"  --show-permitted             shows permitted syscalls before launching program\n"
 			"  --attach-gdb                 attaches gdb to the program at startup\n"
-			"  --                           stop processing command line arguments\n");
+			"  --                           stop processing command line arguments");
 		return 1;
 	}
 
 	// open the main executable
 	int fd = open_executable_in_paths(executable_path, path, true, analysis.loader.uid, analysis.loader.gid);
 	if (UNLIKELY(fd < 0)) {
-		ERROR("could not find main executable", executable_path);
+		ERROR("could not find main executable at ", executable_path);
 		return 1;
 	}
 
@@ -1634,9 +1629,9 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	char path_buf[PATH_MAX];
 	intptr_t result = fs_fd_getpath(fd, path_buf);
 	if (result < 0) {
-		DIE("failed to read path", fs_strerror(result));
+		DIE("failed to read path: ", fs_strerror(result));
 	}
-	LOG("will exec", &path_buf[0]);
+	LOG("will exec ", &path_buf[0]);
 
 	char **new_argv = &argv[executable_index];
 
@@ -1650,7 +1645,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			if (header_size == 0) {
 				DIE("could not read executable header");
 			}
-			DIE("could not read executable header", fs_strerror(header_size));
+			DIE("could not read executable header: ", fs_strerror(header_size));
 		}
 		header[header_size] = '\0';
 		if (header[0] == '#' && header[1] == '!') {
@@ -1658,7 +1653,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				// TODO: Support JRuby in RubyPick
 				int new_fd = open_executable_in_paths("/usr/bin/ruby-mri", path, true, analysis.loader.uid, analysis.loader.gid);
 				if (new_fd < 0) {
-					DIE("could not load #! interpreter", fs_strerror(new_fd));
+					DIE("could not load #! interpreter: ", fs_strerror(new_fd));
 				}
 				fs_close(fd);
 				fd = new_fd;
@@ -1706,7 +1701,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				}
 				int new_fd = open_executable_in_paths(arg0, path, true, analysis.loader.uid, analysis.loader.gid);
 				if (new_fd < 0) {
-					DIE("could not load #! interpreter", fs_strerror(new_fd));
+					DIE("could not load #! interpreter: ", fs_strerror(new_fd));
 				}
 				fs_close(fd);
 				fd = new_fd;
@@ -1725,7 +1720,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	} while (0);
 	result = apply_program_special_cases(&analysis, loaded_executable_path != NULL ? loaded_executable_path : &path_buf[0], (char *const *)envp);
 	if (result < 0) {
-		DIE("failed to apply program special cases", fs_strerror(result));
+		DIE("failed to apply program special cases: ", fs_strerror(result));
 	}
 
 	char *new_ld_preload = NULL;
@@ -1735,18 +1730,18 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	if (!skip_running) {
 		new_ld_preload = fs_mmap(NULL, PAGE_SIZE * 128, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		if (fs_is_map_failed(new_ld_preload)) {
-			DIE("failed to allocate a shared page for LD_PRELOAD", fs_strerror((intptr_t)new_ld_preload));
+			DIE("failed to allocate a shared page for LD_PRELOAD: ", fs_strerror((intptr_t)new_ld_preload));
 		}
 		int pipe_fds[2];
 		result = FS_SYSCALL(SYS_pipe2, (intptr_t)&pipe_fds, O_CLOEXEC);
 		if (result < 0) {
-			DIE("failed to create pipe", fs_strerror(result));
+			DIE("failed to create pipe: ", fs_strerror(result));
 		}
 		pid_t tracer = fs_getpid();
 		ERROR_FLUSH();
 		result = fs_fork();
 		if (result < 0) {
-			DIE("failed to fork", fs_strerror(result));
+			DIE("failed to fork: ", fs_strerror(result));
 		}
 		if (result == 0) {
 			char **new_envp = malloc((envp_count + 3) * sizeof(*envp));
@@ -1761,13 +1756,13 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			// child does not need any new privs, so revoke them preemptively
 			result = fs_prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 			if (result != 0) {
-				DIE("failed to set no new privileges", fs_strerror(result));
+				DIE("failed to set no new privileges: ", fs_strerror(result));
 			}
 
 			// set the tracer so Yama doesn't block ptrace in the parent
 			result = fs_prctl(PR_SET_PTRACER, tracer, 0, 0, 0);
 			if (result < 0) {
-				LOG("failed to set tracer", fs_strerror(result));
+				LOG("failed to set tracer: ", fs_strerror(result));
 			}
 
 			// wait to be woken up on the pipe
@@ -1778,7 +1773,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				if (result == 0) {
 					return 0;
 				}
-				DIE("error reading from pipe", fs_strerror(result));
+				DIE("error reading from pipe: ", fs_strerror(result));
 			}
 			if (*new_ld_preload != '\0') {
 				*d++ = new_ld_preload;
@@ -1788,14 +1783,14 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 
 			result = fs_ptrace(PTRACE_TRACEME, 0, 0, 0);
 			if (result < 0) {
-				DIE("failed to be traced", fs_strerror(result));
+				DIE("failed to be traced: ", fs_strerror(result));
 			}
 
 			// ask to be traced
 			// exec the new program
 			result = fs_execve(loaded_executable_path ?: &path_buf[0], new_argv, (char *const *)new_envp);
 			if (result < 0) {
-				DIE("failed to exec", fs_strerror(result));
+				DIE("failed to exec: ", fs_strerror(result));
 			}
 			return 0;
 		}
@@ -1823,19 +1818,19 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			goto skip_analysis;
 		}
 		if (strict_profile) {
-			DIE("profile at path does not match", profile_path);
+			DIE("profile at path does not match: ", profile_path);
 		}
 	}
 
 	// allocate a signal stack
 	void *signal_stack = fs_mmap(NULL, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(signal_stack)) {
-		DIE("failed to allocate signal stack", fs_strerror((intptr_t)signal_stack));
+		DIE("failed to allocate signal stack: ", fs_strerror((intptr_t)signal_stack));
 	}
 	// apply the guard page
 	result = fs_mprotect(signal_stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard", fs_strerror(result));
+		DIE("failed to protect stack guard: ", fs_strerror(result));
 	}
 	// assign the signal stack
 	stack_t sigstack = {
@@ -1845,7 +1840,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	};
 	result = fs_sigaltstack(&sigstack, NULL);
 	if (result < 0) {
-		DIE("failed to assign signal stack", fs_strerror(result));
+		DIE("failed to assign signal stack: ", fs_strerror(result));
 	}
 	// look for segfaults
 	struct fs_sigaction action = {
@@ -1857,18 +1852,18 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	fs_sigdelset(&action.mask, SIGSEGV);
 	result = fs_sigaction(SIGSEGV, &action, NULL);
 	if (result < 0) {
-		DIE("failed to register for SIGSEGV", fs_strerror(result));
+		DIE("failed to register for SIGSEGV: ", fs_strerror(result));
 	}
 
 	// allocate a temporary stack
 	stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
-		DIE("failed to allocate stack", fs_strerror((intptr_t)stack));
+		DIE("failed to allocate stack: ", fs_strerror((intptr_t)stack));
 	}
 	// apply the guard page
 	result = fs_mprotect(stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard", fs_strerror(result));
+		DIE("failed to protect stack guard: ", fs_strerror(result));
 	}
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(perform_analysis, &analysis, loaded_executable_path ?: path_buf, fd, (char *)stack + ALT_STACK_SIZE + STACK_GUARD_SIZE);
 #if 0
@@ -1888,7 +1883,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				break;
 			}
 		}
-		ERROR("bytes of stack used", ((ALT_STACK_SIZE / PAGE_SIZE) - i) * PAGE_SIZE);
+		ERROR("bytes of stack used: ", ((ALT_STACK_SIZE / PAGE_SIZE) - i) * PAGE_SIZE);
 	}
 #endif
 	// unmap the temporary stack
@@ -1954,7 +1949,7 @@ skip_analysis:
 			if (result == 0) {
 				DIE("failed to write to pipe");
 			}
-			DIE("failed to write to pipe", fs_strerror(result));
+			DIE("failed to write to pipe: ", fs_strerror(result));
 		}
 
 		// cleanup the shared LD_PRELOAD mapping
@@ -1967,7 +1962,7 @@ skip_analysis:
 	result = fs_ptrace(PTRACE_SETOPTIONS, tracee, NULL, (void *)PTRACE_O_EXITKILL);
 	if (result < 0) {
 		kill_or_die(tracee);
-		DIE("failed to set PTRACE_O_EXITKILL", fs_strerror(result));
+		DIE("failed to set PTRACE_O_EXITKILL: ", fs_strerror(result));
 	}
 
 	// no longer need the wakeup fd
@@ -1976,33 +1971,33 @@ skip_analysis:
 	// find the mapped addresses so we can determine where main landed
 	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
-		DIE("failed to read child process map", fs_strerror(result));
+		DIE("failed to read child process map: ", fs_strerror(result));
 	}
 	if (analysis.loader.main->child_base == 0) {
 		DIE("failed to find main base address");
 	}
-	LOG("runtime base", analysis.loader.main->child_base);
+	LOG("runtime base is " , analysis.loader.main->child_base);
 	uintptr_t child_main = translate_analysis_address_to_child(&analysis.loader, (void *)analysis.main);
 	// overwrite the main function with a breakpoint instruction
 	long original_bytes;
 	result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)child_main, &original_bytes);
 	if (result < 0) {
-		DIE("failed to peek", fs_strerror(result));
+		DIE("failed to peek: ", fs_strerror(result));
 	}
 	long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)new_bytes);
 	if (result < 0) {
-		DIE("failed to poke", fs_strerror(result));
+		DIE("failed to poke: ", fs_strerror(result));
 	}
 	// resume the program
 	result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 	if (result < 0) {
-		DIE("failed to continue", fs_strerror(result));
+		DIE("failed to continue: ", fs_strerror(result));
 	}
 	// wait for child to hit our breakpoint, or otherwise exit
 	result = waitpid_uninterrupted(tracee, &status, 0);
 	if (result < 0) {
-		DIE("failed waiting for child to hit breakpoint", fs_strerror(result));
+		DIE("failed waiting for child to hit breakpoint: ", fs_strerror(result));
 	}
 	// ensure we're stopped at a signal
 	if (!WIFSTOPPED(status)) {
@@ -2019,16 +2014,16 @@ skip_analysis:
 	// send the original main bytes back, restoring the main function back to its original state
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)original_bytes);
 	if (result < 0) {
-		DIE("failed to poke original breakpoint bytes back", fs_strerror(result));
+		DIE("failed to poke original breakpoint bytes back: ", fs_strerror(result));
 	}
 	// find where all the other library addresses are
 	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
-		DIE("failed to read child process map", fs_strerror(result));
+		DIE("failed to read child process map: ", fs_strerror(result));
 	}
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 		if (binary->child_base == 0) {
-			DIE("failed to find base address for", binary->path);
+			DIE("failed to find base address for ", binary->path);
 		}
 	}
 	// patch breakpoint instructions over unreachable code
@@ -2045,8 +2040,8 @@ skip_analysis:
 				struct searched_instruction_data *data = &analysis.search.table[i];
 				for (uint32_t j = 0; j < data->count; j++) {
 					if (data->entries[j].effects == EFFECT_NONE) {
-						ERROR("address was analyzed, but was missing effects", temp_str(copy_address_description(&analysis.loader, address)));
-						ERROR("missing effects at index", (intptr_t)j);
+						ERROR("address was analyzed, but was missing effects: ", temp_str(copy_address_description(&analysis.loader, address)));
+						ERROR("missing effects at index: ", (intptr_t)j);
 					}
 				}
 			}
@@ -2058,7 +2053,7 @@ skip_analysis:
 	}
 	cleanup_searched_instructions(&analysis.search);
 #ifdef STATS
-	ERROR("analyzed instruction count", analyzed_instruction_count);
+	ERROR("analyzed instruction count: ", analyzed_instruction_count);
 #endif
 	// prepare seccomp program to inject into child
 	if (show_permitted) {
@@ -2074,12 +2069,11 @@ skip_analysis:
 	struct user_regs_struct regs;
 	result = ptrace_getregs(tracee, &regs);
 	if (result < 0) {
-		DIE("failed to read registers", fs_strerror(result));
+		DIE("failed to read registers: ", fs_strerror(result));
 	}
 	// rewind back to where the breakpoint was
 	if (regs.USER_REG_PC != (INS_BREAKS_AFTER_BREAKPOINT ? (child_main + INS_BREAKPOINT_LEN) : child_main)) {
-		ERROR("interrupted at wrong child address", (uintptr_t)regs.USER_REG_PC);
-		ERROR("expected", (uintptr_t)child_main + INS_BREAKPOINT_LEN);
+		ERROR("interrupted at wrong child address: ", (uintptr_t)regs.USER_REG_PC, ", expected: ", (uintptr_t)child_main + INS_BREAKPOINT_LEN);
 	}
 	if (INS_BREAKS_AFTER_BREAKPOINT) {
 		regs.USER_REG_PC -= INS_BREAKPOINT_LEN;
@@ -2090,17 +2084,17 @@ skip_analysis:
 			if (!symbol.is_required) {
 				continue;
 			}
-			DIE("failed to find blocked function", symbol.name);
+			DIE("failed to find blocked function: ", symbol.name);
 		}
 		uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);
 		result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)addr, &original_bytes);
 		if (result < 0) {
-			DIE("failed to peek at blocked function", fs_strerror(result));
+			DIE("failed to peek at blocked function: ", fs_strerror(result));
 		}
 		new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)addr, (void *)new_bytes);
 		if (result < 0) {
-			DIE("failed to poke at blocked function", fs_strerror(result));
+			DIE("failed to poke at blocked function: ", fs_strerror(result));
 		}
 	}
 	// map in anonymous pages to hold the program
@@ -2123,22 +2117,22 @@ skip_analysis:
 	// TODO: allowlist this
 	// result = remote_perform_syscall(tracee, regs, __NR_munmap, mmap_result, ceiled_allocation_size, 0, 0, 0, 0);
 	// if (fs_is_map_failed((void *)mmap_result)) {
-	// 	DIE("failed to munmap in child", fs_strerror(result));
+	// 	DIE("failed to munmap in child: ", fs_strerror(result));
 	// }
 	// restore the register state
 	result = ptrace_setregs(tracee, &regs);
 	if (result < 0) {
-		DIE("failed to restore registers", fs_strerror(result));
+		DIE("failed to restore registers: ", fs_strerror(result));
 	}
 	if (attach == ATTACH_GDB || attach == ATTACH_STRACE) {
 		result = fs_kill(tracee, SIGSTOP);
 		if (result < 0) {
-			DIE("failed to stop process", fs_strerror(result));
+			DIE("failed to stop process: ", fs_strerror(result));
 		}
 		// detach from the child, it can proceed as normal
 		result = fs_ptrace(PTRACE_DETACH, tracee, 0, 0);
 		if (result < 0) {
-			DIE("failed to detach", fs_strerror(result));
+			DIE("failed to detach: ", fs_strerror(result));
 		}
 		ERROR_FLUSH();
 		char pid_buf[64];
@@ -2178,7 +2172,7 @@ skip_analysis:
 		}
 		result = fs_execve(exec_path, (void *)args, (char *const *)envp);
 		if (result < 0) {
-			DIE("failed to exec attaching program", fs_strerror(result));
+			DIE("failed to exec attaching program: ", fs_strerror(result));
 		}
 	} else {
 		ERROR_FLUSH();
@@ -2186,13 +2180,13 @@ skip_analysis:
 			// continue executing in the child
 			result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 			if (result < 0) {
-				DIE("failed to continue", fs_strerror(result));
+				DIE("failed to continue: ", fs_strerror(result));
 			}
 		} else {
 			// detach from the child, it can proceed as normal
 			result = fs_ptrace(PTRACE_DETACH, tracee, 0, 0);
 			if (result < 0) {
-				DIE("failed to detach", fs_strerror(result));
+				DIE("failed to detach: ", fs_strerror(result));
 			}
 		}
 #ifdef STANDALONE
@@ -2203,7 +2197,7 @@ skip_analysis:
 	wait_for_child:
 		result = waitpid_uninterrupted(tracee, &status, 0);
 		if (result < 0) {
-			DIE("failed waiting for child", fs_strerror(result));
+			DIE("failed waiting for child: ", fs_strerror(result));
 		}
 		// pass through the exit status
 		if (attach) {
@@ -2211,28 +2205,27 @@ skip_analysis:
 				siginfo_t siginfo;
 				result = fs_ptrace(PTRACE_GETSIGINFO, tracee, 0, &siginfo);
 				if (result < 0) {
-					DIE("failed to get signal info", fs_strerror(result));
+					DIE("failed to get signal info: ", fs_strerror(result));
 				}
 				if (siginfo.si_signo == SIGSYS) {
 					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - SYSCALL_INSTRUCTION_SIZE;
 					ins_ptr analysis_addr = NULL;
 					result = ptrace_getregs(tracee, &regs);
 					if (result < 0) {
-						DIE("failed to read registers back", fs_strerror(result));
+						DIE("failed to read registers back: ", fs_strerror(result));
 					}
 					uintptr_t nr = regs.USER_REG_SYSCALL;
 					uint8_t config = nr < SYSCALL_COUNT ? analysis.syscalls.config[nr] : 0;
 					if (config & SYSCALL_CONFIG_BLOCK) {
-						ERROR("blocked syscall was issued", name_for_syscall(nr));
+						ERROR("blocked syscall was issued: ", name_for_syscall(nr));
 					} else {
 						const struct loaded_binary *binary = binary_for_child_address(&analysis.loader, call_addr, &analysis_addr);
 						if (binary != NULL) {
-							ERROR("received an unexpected seccomp SIGSYS at", temp_str(copy_address_description(&analysis.loader, analysis_addr)));
-							ERROR("binary mapped at address", binary->child_base);
+							ERROR("received an unexpected seccomp SIGSYS at: ", temp_str(copy_address_description(&analysis.loader, analysis_addr)), ", binary is mapped at address: ", binary->child_base);
 						} else {
-							ERROR("received an unexpected seccomp SIGSYS at", call_addr);
+							ERROR("received an unexpected seccomp SIGSYS at: ", call_addr);
 						}
-						ERROR("faulting address", (uintptr_t)siginfo.si_call_addr);
+						ERROR("faulting address: ", (uintptr_t)siginfo.si_call_addr);
 						struct seccomp_data data = {
 							.nr = nr,
 							.arch = CURRENT_AUDIT_ARCH,
@@ -2250,7 +2243,7 @@ skip_analysis:
 						uint32_t bpf_result;
 						const char *bpf_error = bpf_interpret(prog, (const char *)&data, sizeof(data), SHOULD_LOG, &bpf_result);
 						if (bpf_error != NULL) {
-							ERROR("error interpreting BPF program", bpf_error);
+							ERROR("error interpreting BPF program: ", bpf_error);
 						} else {
 							switch (bpf_result) {
 								case SECCOMP_RET_ALLOW:
@@ -2263,17 +2256,16 @@ skip_analysis:
 									ERROR("BPF result is SECCOMP_RET_KILL_PROCESS");
 									break;
 								default:
-									ERROR("BPF result is", bpf_result);
+									ERROR("BPF result is ", bpf_result);
 									break;
 							}
 						}
-						ERROR("syscall was", temp_str(copy_raw_syscall_description(nr, data.args[0], data.args[1], data.args[2], data.args[3], data.args[4], data.args[5])));
-						ERROR("perhaps callander's analysis is insufficient?");
+						ERROR("syscall was ", temp_str(copy_raw_syscall_description(nr, data.args[0], data.args[1], data.args[2], data.args[3], data.args[4], data.args[5])), "; perhaps callander's analysis is insufficient?");
 					}
 				} else if (siginfo.si_signo == SIGTRAP) {
 					result = ptrace_getregs(tracee, &regs);
 					if (result < 0) {
-						DIE("failed to read registers back", fs_strerror(result));
+						DIE("failed to read registers back: ", fs_strerror(result));
 					}
 					uintptr_t breakpoint_address = regs.USER_REG_PC;
 					if (INS_BREAKS_AFTER_BREAKPOINT) {
@@ -2286,36 +2278,35 @@ skip_analysis:
 							if (symbol.is_dlopen) {
 								char *dlopen_path = remote_read_string(tracee, regs.USER_REG_ARG1);
 								if (dlopen_path != NULL) {
-									ERROR("dlopen on an unexpected binary was called", dlopen_path);
+									ERROR("dlopen on an unexpected path was called: ", dlopen_path);
 									free(dlopen_path);
 									break;
 								}
 							}
-							ERROR("blocked function was called", symbol.name);
+							ERROR("blocked function ", symbol.name, " was called");
 							break;
 						}
 					}
 					for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 						if (binary->child_base <= breakpoint_address && breakpoint_address < binary->child_base + binary->info.size) {
 							ins_ptr translated = (ins_ptr)(breakpoint_address - binary->child_base + (uintptr_t)binary->info.base);
-							ERROR("trapped at", temp_str(copy_address_description(&analysis.loader, translated)));
+							ERROR("trapped at ", temp_str(copy_address_description(&analysis.loader, translated)));
 							if (trap_unreachable_code) {
 								size_t i = (size_t)bsearch_bool(analysis.reachable.count, analysis.reachable.regions, (void *)translated, bsearch_address_callback);
 								if (i < analysis.reachable.count && analysis.reachable.regions[i].entry <= translated && translated < analysis.reachable.regions[i].exit) {
 									ERROR("in reachable block");
 								} else {
-									ERROR("assumed unreachable instruction was somehow reached");
-									DIE("perhaps callander's analysis is insufficient?");
+									DIE("assumed unreachable instruction was somehow reached; perhaps callander's analysis is insufficient?");
 								}
 							}
 							goto error_exit;
 						}
 					}
-					DIE("trapped at", breakpoint_address);
+					DIE("trapped at ", breakpoint_address);
 				} else {
 					result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 					if (result < 0) {
-						DIE("failed to continue child after receiving signal", fs_strerror(result));
+						DIE("failed to continue child after receiving signal: ", fs_strerror(result));
 					}
 					goto wait_for_child;
 				}

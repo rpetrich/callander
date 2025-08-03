@@ -56,7 +56,7 @@ intptr_t translate_windows_error(intptr_t result)
 			return -EINVAL;
 		// TODO: translate more errors
 		default:
-			DIE("unknown windows error", result);
+			DIE("unknown windows error: ", result);
 	}
 }
 
@@ -180,7 +180,7 @@ intptr_t translate_winsock_error(intptr_t result)
 		// case 10110:
 		// 	return -ENOMORE;
 		default:
-			DIE("unknown winsock error", result);
+			DIE("unknown winsock error: ", result);
 	}
 }
 

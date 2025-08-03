@@ -42,22 +42,22 @@ static void discovered_library_mapping(int fd, void *address)
 	char buf[PATH_MAX];
 	int result = fs_fd_getpath(fd, buf);
 	if (result >= 0) {
-		PATCH_LOG("mapped library", &buf[0]);
-		PATCH_LOG("at", (uintptr_t)address);
+		PATCH_LOG("mapped library: ", &buf[0]);
+		PATCH_LOG("at: ", (uintptr_t)address);
 		for (struct loaded_binary *binary = remote.analysis.loader.binaries; binary != NULL; binary = binary->next) {
 			if (fs_strcmp(binary->loaded_path, buf) == 0) {
 				if (binary->child_base != 0) {
 					return;
 				}
-				PATCH_LOG("known library loaded", binary->path);
+				PATCH_LOG("known library loaded: ", binary->path);
 				binary->child_base = (uintptr_t)address;
 				update_patches();
 				ERROR_FLUSH();
 				return;
 			}
-			PATCH_LOG("didn't match", binary->loaded_path);
+			PATCH_LOG("didn't match: ", binary->loaded_path);
 		}
-		DIE("could not find library", &buf[0]);
+		DIE("could not find library: ", &buf[0]);
 	}
 }
 
@@ -89,7 +89,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 		}
 		*cur++ = ')';
 		*cur++ = '\0';
-		PATCH_LOG("received syscall", buf);
+		PATCH_LOG("received syscall: ", buf);
 		free(buf);
 	}
 	switch (data[6]) {
@@ -111,7 +111,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 		case LINUX_SYS_openat: {
 			int flags = data[2];
 			const char *path = (const char *)data[1];
-			PATCH_LOG("path", path);
+			PATCH_LOG("path: ", path);
 			data[0] = fs_openat(translate_at_fd_to_darwin(data[0]), path, flags, data[3]);
 			break;
 		}
@@ -144,7 +144,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			// }
 			int fd = translate_at_fd_to_darwin(data[0]);
 			const char *path = (const char *)data[1];
-			PATCH_LOG("path", path ? path : "(null)");
+			PATCH_LOG("path: ", path ? path : "(null)");
 			struct fs_stat stat;
 			intptr_t result;
 			if ((flags & LINUX_AT_EMPTY_PATH) && (path == NULL || *path == '\0')) {
@@ -267,7 +267,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 						vm_prot_t cur, max;
 						kern_return_t ret = mach_vm_remap(mach_task_self(), &writable_addr, rounded_size, 0, VM_FLAGS_ANYWHERE | VM_FLAGS_RANDOM_ADDR, mach_task_self(), (mach_vm_address_t)result, FALSE, &cur, &max, VM_INHERIT_DEFAULT);
 						if (ret != KERN_SUCCESS) {
-							PATCH_LOG("mach_vm_remap failed", ret);
+							PATCH_LOG("mach_vm_remap failed: ", ret);
 							data[0] = -EINVAL;
 							break;
 						}
@@ -360,18 +360,18 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 			break;
 		}
 		default: {
-			DIE("unknown syscall", name_for_syscall(nr));
+			DIE("unknown syscall: ", name_for_syscall(nr));
 			break;
 		}
 	}
 	if (data[0] < 0) {
-		PATCH_LOG("=", fs_strerror(data[0]));
+		PATCH_LOG("=: ", fs_strerror(data[0]));
 		data[0] = -translate_errno_to_linux(-data[0]);
 	}
 	if (data[0] > (intptr_t)PAGE_SIZE) {
-		PATCH_LOG("=", (uintptr_t)data[0]);
+		PATCH_LOG("=: ", (uintptr_t)data[0]);
 	} else {
-		PATCH_LOG("=", data[0]);
+		PATCH_LOG("=: ", data[0]);
 	}
 	ERROR_FLUSH();
 }
@@ -383,22 +383,22 @@ static uintptr_t tls_value;
 static void tls_handler(uintptr_t *arguments, intptr_t original)
 {
 	ins_ptr ins = (ins_ptr)original;
-	PATCH_LOG("tls handler", temp_str(copy_address_description(&remote.analysis.loader, ins)));
+	PATCH_LOG("tls handler: ", temp_str(copy_address_description(&remote.analysis.loader, ins)));
 	struct decoded_ins decoded;
 	if (!decode_ins(ins, &decoded)) {
 		DIE("could not decode instruction");
 	}
 	switch (decoded.decomposed.operation) {
 		case ARM64_MRS: {
-			PATCH_LOG("reading tls", tls_value);
-			PATCH_LOG("into", get_register_name(decoded.decomposed.operands[0].reg[0]));
+			PATCH_LOG("reading tls: ", tls_value);
+			PATCH_LOG("into: ", get_register_name(decoded.decomposed.operands[0].reg[0]));
 			arguments[decoded.decomposed.operands[0].reg[0] - REG_X0] = tls_value;
 			break;
 		}
 		case ARM64_MSR: {
 			uintptr_t new_value = arguments[decoded.decomposed.operands[1].reg[0] - REG_X0];
-			PATCH_LOG("storing tls", new_value);
-			PATCH_LOG("from", get_register_name(decoded.decomposed.operands[1].reg[0]));
+			PATCH_LOG("storing tls: ", new_value);
+			PATCH_LOG("from: ", get_register_name(decoded.decomposed.operands[1].reg[0]));
 			tls_value = new_value;
 			break;
 		}
@@ -439,7 +439,7 @@ static void update_patches(void)
 		}
 		uintptr_t child_addr = translate_analysis_address_to_child(&remote.analysis.loader, addr);
 		if (child_addr != 0 && child_addr != (uintptr_t)addr) {
-			PATCH_LOG("patching tls instruction", temp_str(copy_address_description(&remote.analysis.loader, addr)));
+			PATCH_LOG("patching tls instruction: ", temp_str(copy_address_description(&remote.analysis.loader, addr)));
 			remote_patch(&remote.patches, &remote.analysis, addr, addr, child_addr, PATCH_TEMPLATE(breakpoint_call_handler), (uintptr_t)&tls_handler, (SYSCALL_INSTRUCTION_SIZE / sizeof(*addr)), (uintptr_t)addr);
 			tls_addresses[i] = 0;
 		}
@@ -507,7 +507,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	char sysroot_buf[PATH_MAX];
 	int result = fs_getcwd(sysroot_buf, sizeof(sysroot_buf));
 	if (result < 0) {
-		DIE("could not read cwd", fs_strerror(result));
+		DIE("could not read cwd: ", fs_strerror(result));
 	}
 	char path_buf[PATH_MAX];
 	executable_path = apply_sysroot(sysroot_buf, executable_path, path_buf);
@@ -525,7 +525,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	// open the main executable
 	int fd = open_executable_in_paths(executable_path, path, true, startup_euid, startup_egid);
 	if (UNLIKELY(fd < 0)) {
-		DIE("could not find main executable", argv[1]);
+		DIE("could not find main executable: ", argv[1]);
 	}
 
 	// execute it via the "remote_exec" facilities
@@ -541,7 +541,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	                        (struct remote_handlers){.receive_syscall_addr = (intptr_t)&receive_syscall, .receive_clone_addr = (intptr_t)&receive_syscall},
 	                        &remote);
 	if (result < 0) {
-		DIE("remote exec failed", fs_strerror(result));
+		DIE("remote exec failed: ", fs_strerror(result));
 	}
 
 	update_patches();
@@ -602,8 +602,8 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 		if (fs_fd_getpath(fd, path) < 0) {
 			DIE("could not query path");
 		}
-		PATCH_LOG("loaded", &path[0]);
-		PATCH_LOG("remotely at", (uintptr_t)out_info->base);
+		PATCH_LOG("loaded: ", &path[0]);
+		PATCH_LOG("remotely at: ", (uintptr_t)out_info->base);
 		ERROR_FLUSH();
 	}
 	return result;

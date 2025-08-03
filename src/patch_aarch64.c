@@ -137,12 +137,12 @@ __attribute__((warn_unused_result)) static enum patch_status patch_common(struct
 // patch_body attempts to patch a syscall instruction already having taken the shard's lock
 void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 {
-	PATCH_LOG("pc", (uintptr_t)args->pc);
-	PATCH_LOG("sp", (uintptr_t)args->sp);
+	PATCH_LOG("pc: ", (uintptr_t)args->pc);
+	PATCH_LOG("sp: ", (uintptr_t)args->sp);
 	// Check if syscall has been rewritten
 	ins_ptr instruction = args->pc - 1;
 	if (!is_syscall_instruction(instruction)) {
-		PATCH_LOG("not a syscall", (uintptr_t)*instruction);
+		PATCH_LOG("not a syscall: ", (uintptr_t)*instruction);
 		return;
 	}
 	args->patched = patch_common(thread, instruction, PATCH_TEMPLATE(trampoline_call_handler), &receive_trampoline, true, args->self_fd);
@@ -167,13 +167,13 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 	int mapping_error = lookup_mapping_for_address(instruction, &target_mapping);
 	if (mapping_error <= 0) {
 		if (mapping_error < 0) {
-			DIE("could not read memory mappings", fs_strerror(mapping_error));
+			DIE("could not read memory mappings: ", fs_strerror(mapping_error));
 		}
 		DIE("could not find memory mapping");
 	}
 	if ((target_mapping.flags & (MAP_SHARED | MAP_PRIVATE)) == MAP_SHARED) {
 		// Found that the mapping was shared, don't patch
-		PATCH_LOG("found shared mapping", (uintptr_t)target_mapping.flags);
+		PATCH_LOG("found shared mapping: ", (uintptr_t)target_mapping.flags);
 		return PATCH_STATUS_FAILED;
 	}
 	// Find an unused page to detour to
@@ -190,7 +190,7 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE, self_fd, PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
-			PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
+			PATCH_LOG("Failed to patch: mmap failed: ", -(intptr_t)new_mapping);
 			return PATCH_STATUS_FAILED;
 		}
 		if (is_valid_pc_relative_offset((uintptr_t)new_mapping - ((uintptr_t)instruction + sizeof(uint32_t)))) {
@@ -199,7 +199,7 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 		} else {
 			// search for a compatible address by searching the address space for a gap
 			stub_address = find_unused_address(thread, start_page);
-			PATCH_LOG("new stub_address", stub_address);
+			PATCH_LOG("new stub_address: ", stub_address);
 			if (!is_valid_pc_relative_offset((intptr_t)stub_address - ((uintptr_t)instruction + sizeof(uint32_t)))) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
 				PATCH_LOG("Failed to patch: invalid pc-relative offset");
@@ -210,7 +210,7 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 			void *new_attempt = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, (void *)stub_address);
 			if (UNLIKELY(fs_is_map_failed(new_attempt))) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
-				PATCH_LOG("Failed to patch: mremap failed", -(intptr_t)new_mapping);
+				PATCH_LOG("Failed to patch: mremap failed: ", -(intptr_t)new_mapping);
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				return PATCH_STATUS_FAILED;
 			}
@@ -220,7 +220,7 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 			new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_FIXED | MAP_PRIVATE, self_fd, PAGE_SIZE);
 			if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
-				PATCH_LOG("Failed to patch: mmap failed", -(intptr_t)new_mapping);
+				PATCH_LOG("Failed to patch: mmap failed: ", -(intptr_t)new_mapping);
 				return PATCH_STATUS_FAILED;
 			}
 #endif
@@ -262,7 +262,7 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 	if (mapping_error == 0) {
 		int result = fs_mprotect((void *)start_page, PAGE_SIZE, target_mapping.flags & (PROT_READ | PROT_WRITE | PROT_EXEC));
 		if (result < 0) {
-			PATCH_LOG("Failed to update protection", -result);
+			PATCH_LOG("Failed to update protection: ", -result);
 		}
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &region_lock);
@@ -271,13 +271,13 @@ static enum patch_status patch_common(struct thread_storage *thread, ins_ptr ins
 
 enum patch_status patch_breakpoint(struct thread_storage *thread, ins_ptr address, __attribute__((unused)) ins_ptr entry, void (*handler)(uintptr_t *), int self_fd)
 {
-	PATCH_LOG("patching breakpoint", (uintptr_t)address);
+	PATCH_LOG("patching breakpoint: ", (uintptr_t)address);
 	return patch_common(thread, address, PATCH_TEMPLATE(breakpoint_call_handler), handler, false, self_fd);
 }
 
 enum patch_status patch_function(struct thread_storage *thread, ins_ptr function, intptr_t (*handler)(uintptr_t *arguments, intptr_t original), int self_fd)
 {
-	PATCH_LOG("patching function", (uintptr_t)function);
+	PATCH_LOG("patching function: ", (uintptr_t)function);
 	return patch_common(thread, function, PATCH_TEMPLATE(trampoline_call_handler), handler, true, self_fd);
 }
 
@@ -286,7 +286,7 @@ void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump)
 	relative_jump /= sizeof(int32_t);
 	intptr_t remaining = relative_jump & ~((1u << 26) - 1);
 	if (remaining != 0 && remaining != (~0u << 26)) {
-		DIE("relative jump is too far", relative_jump);
+		DIE("relative jump is too far: ", relative_jump);
 	}
 	relative_jump &= ((1u << 26) - 1);
 	atomic_store((_Atomic uint32_t *)buf, INS_B_PC_REL | relative_jump);

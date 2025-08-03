@@ -64,18 +64,9 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 					switch (results->ai_addr->sa_family) {
 						case AF_INET: {
 							struct sockaddr_in *addr = (struct sockaddr_in *)results->ai_addr;
-							char buffer[16];
 							uint8_t addr_bytes[4];
 							memcpy(&addr_bytes, &addr->sin_addr.s_addr, 4);
-							int offset = 0;
-							offset += fs_utoa(addr_bytes[0], &buffer[offset]);
-							buffer[offset++] = '.';
-							offset += fs_utoa(addr_bytes[1], &buffer[offset]);
-							buffer[offset++] = '.';
-							offset += fs_utoa(addr_bytes[2], &buffer[offset]);
-							buffer[offset++] = '.';
-							offset += fs_utoa(addr_bytes[3], &buffer[offset]);
-							ERROR("result", &buffer[0]);
+							ERROR("result: ", addr_bytes[0], ".", addr_bytes[1], ".", addr_bytes[2], ".", addr_bytes[3]);
 							break;
 						}
 						case AF_INET6: {
@@ -88,11 +79,11 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 								}
 								offset += fs_utoah_noprefix(((uintptr_t)addr->sin6_addr.s6_addr[j * 2] << 8) | addr->sin6_addr.s6_addr[j * 2 + 1], &buffer[offset]);
 							}
-							ERROR("result", &buffer[0]);
+							ERROR("result: ", &buffer[0]);
 							break;
 						}
 						default:
-							ERROR("result with unknown address type", (uintptr_t)results->ai_addr->sa_family);
+							ERROR("result with unknown address type: ", (uintptr_t)results->ai_addr->sa_family);
 							break;
 					}
 					free(results->ai_addr);
@@ -105,10 +96,10 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				ERROR("no results");
 				break;
 			case EAI_SYSTEM:
-				ERROR("system failure during lookup", fs_strerror(local_errno));
+				ERROR("system failure during lookup: ", fs_strerror(local_errno));
 				break;
 			default:
-				ERROR("unknown error", (uintptr_t)result);
+				ERROR("unknown error: ", (uintptr_t)result);
 				break;
 		}
 	}

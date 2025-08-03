@@ -90,7 +90,7 @@ shared_mutex_lock_id_slow_path(struct shared_mutex *mutex, uint32_t id, int stat
 					}
 					break;
 				default:
-					DIE("futex wait bitset failed", fs_strerror(result));
+					DIE("futex wait bitset failed: ", fs_strerror(result));
 			}
 		}
 		state = fs_cmpxchg(&mutex->state, 0, 2);

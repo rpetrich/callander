@@ -34,7 +34,7 @@ __attribute__((always_inline)) static inline bool bpf_code_is_valid(uint32_t cod
 __attribute__((always_inline)) static inline uint16_t validate_bpf_code(uint32_t code)
 {
 	if (UNLIKELY(!bpf_code_is_valid(code))) {
-		DIE("invalid bpf code", (intptr_t)code);
+		DIE("invalid bpf code: ", (intptr_t)code);
 	}
 	return (uint16_t)code;
 }
@@ -47,7 +47,7 @@ __attribute__((always_inline)) static inline bool bpf_jump_offset_is_valid(uint3
 __attribute__((always_inline)) static inline uint8_t validate_bpf_jump_offset(uint32_t offset)
 {
 	if (UNLIKELY(!bpf_jump_offset_is_valid(offset))) {
-		DIE("invalid bpf jump offset", (intptr_t)offset);
+		DIE("invalid bpf jump offset: ", (intptr_t)offset);
 	}
 	return (uint8_t)offset;
 }
