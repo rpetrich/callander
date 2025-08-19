@@ -66,7 +66,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 							struct sockaddr_in *addr = (struct sockaddr_in *)results->ai_addr;
 							uint8_t addr_bytes[4];
 							memcpy(&addr_bytes, &addr->sin_addr.s_addr, 4);
-							ERROR("result: ", addr_bytes[0], ".", addr_bytes[1], ".", addr_bytes[2], ".", addr_bytes[3]);
+							ERROR("result: ", (int)addr_bytes[0], ".", (int)addr_bytes[1], ".", (int)addr_bytes[2], ".", (int)addr_bytes[3]);
 							break;
 						}
 						case AF_INET6: {
