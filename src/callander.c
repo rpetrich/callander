@@ -2410,6 +2410,38 @@ static const char *find_any_symbol_name_by_address(const struct loader_context *
 	return NULL;
 }
 
+static bool has_same_binary_caller_symbol_named(const struct loader_context *loader, const struct analysis_frame *caller, const char *name)
+{
+	const struct loaded_binary *required_binary = binary_for_address(loader, caller->entry);
+	if (required_binary == NULL) {
+		return false;
+	}
+	const ElfW(Sym) *symbol;
+	void *result = find_symbol(&required_binary->info, &required_binary->symbols, name, NULL, &symbol);
+	if (result == NULL) {
+		return false;
+	}
+	size_t size = symbol->st_size;
+	for (const struct loaded_binary *binary = required_binary;;) {
+		if ((void *)caller->entry >= result && (void *)caller->entry < result + size) {
+			// normal symbols with proper size information
+			return true;
+		}
+		if (size == 0 && caller->entry == result) {
+			// symbols without a size, but with a starting address
+			return true;
+		}
+		caller = caller->next;
+		if (caller == NULL) {
+			return false;
+		}
+		binary = binary_for_address(loader, caller->entry);
+		if (binary != required_binary) {
+			return false;
+		}
+	}
+}
+
 static void handle_mprotect(struct program_state *analysis, __attribute__((unused)) ins_ptr ins, struct registers *state, __attribute__((unused)) function_effects effects, __attribute__((unused)) const struct analysis_frame *caller,
                             __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
@@ -2423,6 +2455,9 @@ static void handle_mprotect(struct program_state *analysis, __attribute__((unuse
 			if (name != NULL && (fs_strcmp(name, "pthread_create") == 0 || fs_strcmp(name, "__nptl_change_stack_perm") == 0)) {
 				LOG("from within pthread_create, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
 				set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+			} else if (has_same_binary_caller_symbol_named(&analysis->loader, caller, "malloc") && state->registers[third_arg].value == (PROT_READ | PROT_WRITE)) {
+				LOG("from within malloc, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
+				set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 			}
 		}
 	}
@@ -2432,30 +2467,34 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
                         __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	// block creating executable stacks
+	LOG("encountered mmap call: ", temp_str(copy_address_description(&analysis->loader, ins)));
 	int third_arg = sysv_argument_abi_register_indexes[2];
 	int fourth_arg = sysv_argument_abi_register_indexes[3];
 	if (!register_is_exactly_known(&state->registers[third_arg]) || state->registers[third_arg].value == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
+		struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
 		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & LINUX_MAP_STACK) == LINUX_MAP_STACK) {
 			if (caller != NULL) {
-				struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
 				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
 				if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+					LOG("from within pthread_create, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
 					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 					clear_match(&analysis->loader, state, third_arg, ins);
 				} else {
-					while (binary_has_flags(binary, BINARY_IS_LIBC)) {
-						if (name != NULL && (fs_strcmp(name, "posix_spawnp") == 0 || fs_strcmp(name, "posix_spawn") == 0)) {
+					if (binary_has_flags(binary, BINARY_IS_LIBC)) {
+						if (has_same_binary_caller_symbol_named(&analysis->loader, caller, "posix_spawnp") || has_same_binary_caller_symbol_named(&analysis->loader, caller, "posix_spawn")) {
+							LOG("from within posix_spawn, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
 							set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
 							clear_match(&analysis->loader, state, third_arg, ins);
-							break;
 						}
-						caller = caller->next;
-						if (caller == NULL) {
-							break;
-						}
-						binary = binary_for_address(&analysis->loader, caller->entry);
-						name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
 					}
+				}
+			}
+		} else if (state->registers[third_arg].value == (PROT_READ | PROT_WRITE)) {
+			if (binary_has_flags(binary, BINARY_IS_LIBC)) {
+				if (has_same_binary_caller_symbol_named(&analysis->loader, caller, "malloc")) {
+					LOG("from within malloc, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
+					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+					clear_match(&analysis->loader, state, third_arg, ins);
 				}
 			}
 		}
@@ -2802,7 +2841,6 @@ __attribute__((nonnull(1, 2))) static void update_known_symbols(struct program_s
 	}
 	if (new_binary->special_binary_flags & (BINARY_IS_LIBC | BINARY_IS_INTERPRETER)) {
 		force_protection_for_symbol(&analysis->loader, new_binary, "_rtld_global_ro", NORMAL_SYMBOL | LINKER_SYMBOL, 0);
-		force_protection_for_symbol(&analysis->loader, new_binary, "mtag_mmap_flags", NORMAL_SYMBOL | LINKER_SYMBOL, PROT_READ);
 		// libc exit functions
 		update_known_function(analysis, new_binary, "_dl_signal_error", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
 		update_known_function(analysis, new_binary, "__fortify_fail", NORMAL_SYMBOL, EFFECT_STICKY_EXITS);
@@ -4216,7 +4254,7 @@ static enum basic_op_usage basic_op_or(BASIC_OP_ARGS)
 		dest->value = dest->max = dest->value | source->value;
 		return BASIC_OP_USED_BOTH;
 	}
-	if (source->value < dest->value) {
+	if (source->value > dest->value) {
 		dest->value = source->value;
 	}
 	dest->max |= source->max;
