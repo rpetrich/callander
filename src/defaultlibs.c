@@ -299,6 +299,21 @@ void error_write(const char *buf, size_t length)
 	atomic_fetch_add(&error_offset, length);
 }
 
+void error_write_str(const char *str)
+{
+	for (;;) {
+		size_t existing_offset = atomic_load(&error_offset);
+		for (size_t i = existing_offset; i < sizeof(error_buffer); i++) {
+			if (*str == '\0') {
+				atomic_fetch_add(&error_offset, i - existing_offset);
+				return;
+			}
+			error_buffer[i] = *str++;
+		}
+		error_flush();
+	}
+}
+
 void error_flush(void)
 {
 	size_t existing_offset = atomic_exchange(&error_offset, 0);

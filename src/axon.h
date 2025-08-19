@@ -99,9 +99,11 @@ extern noreturn void abort();
 #ifdef ERRORS_ARE_BUFFERED
 extern void error_writev(const struct iovec *vec, int count);
 extern void error_write(const char *buf, size_t length);
+extern void error_write_str(const char *str);
 extern void error_flush(void);
 #define ERROR_WRITEV error_writev
 #define ERROR_WRITE error_write
+#define ERROR_WRITE_STR error_write_str
 #define ERROR_FLUSH error_flush
 #else
 #define ERROR_WRITEV(vec, count)            \
@@ -117,6 +119,14 @@ extern void error_flush(void);
 			abort();                        \
 			__builtin_unreachable();        \
 		}                                   \
+	} while (0)
+#define ERROR_WRITE_STR(str)                        \
+	do {                                            \
+	    const char *tmp = str;                      \
+		if (fs_write(2, tmp, fs_strlen(str)) < 0) { \
+			abort();                                \
+			__builtin_unreachable();                \
+		}                                           \
 	} while (0)
 #define ERROR_FLUSH() \
 	do {              \
@@ -330,9 +340,20 @@ ERROR_FORMAT_AND_WRITE_DEF(uint, uintptr_t, __attribute__((noinline)) static)
 ERROR_FORMAT_AND_WRITE_DEF(uint128, __uint128_t, __attribute__((noinline)) static)
 ERROR_FORMAT_AND_WRITE_DEF(iovec, struct iovec, __attribute__((always_inline)) static inline)
 ERROR_FORMAT_AND_WRITE_DEF(char_range, struct char_range, __attribute__((noinline)) static)
-ERROR_FORMAT_AND_WRITE_DEF(temp_str, struct temp_str, __attribute__((noinline)) static)
-ERROR_FORMAT_AND_WRITE_DEF(string, const char *, __attribute__((noinline)) static)
+// ERROR_FORMAT_AND_WRITE_DEF(temp_str, struct temp_str, __attribute__((noinline)) static)
+// ERROR_FORMAT_AND_WRITE_DEF(string, const char *, __attribute__((noinline)) static)
 ERROR_FORMAT_AND_WRITE_DEF(error_newline, struct error_newline, __attribute__((noinline)) static)
+
+__attribute__((unused)) __attribute__((always_inline)) static inline
+void error_format_and_write_temp_str(struct temp_str value) {
+	ERROR_WRITE_STR(value.str);
+	free(value.str);
+}
+
+__attribute__((unused)) __attribute__((always_inline)) static inline
+void error_format_and_write_string(const char *value) {
+	ERROR_WRITE_STR(value);
+}
 
 #define ERROR_MESSAGE_WRITE_DEF(name, type) \
 	__attribute__((unused)) __attribute__((noinline)) \
