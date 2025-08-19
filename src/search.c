@@ -43,7 +43,7 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 		return result;
 	}
 	if (paths == NULL) {
-		return -ENOEXEC;
+		return -ENOENT;
 	}
 	// Resolve name inside each of the paths in paths
 	size_t name_len = end - name;
@@ -56,6 +56,7 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 	memcpy(&buf[end_pos + 1], name, name_len + 1);
 	const char *path = paths;
 	// Try each path
+	bool found = false;
 	for (;;) {
 		const char *next_path = fs_strchr(path, ':');
 		if (next_path != path) {
@@ -68,19 +69,8 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 				memcpy(full_path, path, path_len);
 				int result = fs_openat(AT_FDCWD, full_path, O_RDONLY | O_CLOEXEC, 0);
 				if (result >= 0) {
-					if (!require_executable) {
-						if (out_path) {
-							int getpath_result = fs_fd_getpath(result, buf);
-							if (getpath_result < 0) {
-								fs_close(result);
-								return getpath_result;
-							}
-							*out_path = buf;
-						}
-						return result;
-					}
 					struct fs_stat stat;
-					if (verify_allowed_to_exec(result, &stat, uid, gid) == 0) {
+					if (!require_executable || verify_allowed_to_exec(result, &stat, uid, gid) == 0) {
 						if (out_path) {
 							int getpath_result = fs_fd_getpath(result, buf);
 							if (getpath_result < 0) {
@@ -92,11 +82,12 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 						return result;
 					}
 					fs_close(result);
+					found = true;
 				}
 			}
 		}
 		if (*next_path == '\0') {
-			return -ENOEXEC;
+			return found ? -ENOEXEC : -ENOENT;
 		}
 		path = &next_path[1];
 	}
