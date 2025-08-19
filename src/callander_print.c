@@ -5268,7 +5268,7 @@ static void fill_ioctl_description(uintptr_t value, char buf[])
 static char *copy_enum_flags_value_description(const struct loader_context *context, uintptr_t value, const struct enum_option *options, size_t sizeof_options, const char *flags[64], description_format_options description_options)
 {
 	char num_buf[128];
-	if (flags == NULL) {
+	if (flags == NULL || value == ~(uintptr_t)0 || value == ~(uint32_t)0) {
 		uintptr_t compared_value = (description_options & DESCRIBE_AS_IOCTL) ? (value & 0xffffffff) : value;
 		for (size_t i = 0; i < sizeof_options / sizeof(*options); i++) {
 			if (compared_value == options[i].value) {
