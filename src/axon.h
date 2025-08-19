@@ -184,7 +184,6 @@ struct error_newline
 #define DIE(...)                 \
 	do {                         \
 		ERROR(__VA_ARGS__);      \
-		ERROR_FLUSH();           \
 		abort();                 \
 		__builtin_unreachable(); \
 	} while (0)
@@ -269,6 +268,21 @@ __attribute__((always_inline)) static inline void error_discard_noop(const void 
 
 // ERROR is a macro that logs a message and an optional list of arguments
 #define ERROR_(skip0, skip1, skip2, skip3, skip4, skip5, skip6, skip7, skip8, skip9, actual, ...) actual
+#ifdef ERRORS_ARE_BUFFERED
+#define ERROR_NOPREFIX(str, ...) ERROR_(__VA_ARGS__, \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW(str "", ##__VA_ARGS__, ((struct error_newline){})), \
+	ERROR_RAW_SINGLE_(str "", ##__VA_ARGS__, ""), \
+	ERROR_WRITE_STR(str "\n") \
+)
+#else
 #define ERROR_NOPREFIX(str, ...) ERROR_(__VA_ARGS__, \
 	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
 	ERROR_RAW(((struct iovec){ str, sizeof(str)-1 }), ##__VA_ARGS__, ((struct error_newline){})), \
