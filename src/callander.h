@@ -155,7 +155,7 @@ enum
 struct syscall_info
 {
 	uint16_t attributes;
-	uint16_t arguments[6];
+	uint16_t arguments[8];
 };
 
 struct syscall_decl
@@ -539,6 +539,7 @@ struct program_state
 	uintptr_t main;
 	const char *ld_preload;
 	const char *ld_profile;
+	const char *glibc_tunables;
 	struct dlopen_path *dlopen;
 	const char *main_function_name;
 	struct reachable_instructions reachable;

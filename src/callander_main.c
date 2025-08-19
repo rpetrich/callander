@@ -1393,6 +1393,11 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				if (*new_path != '\0') {
 					analysis.ld_profile = new_path;
 				}
+			} else if (fs_strncmp(*s, "GLIBC_TUNABLES=", sizeof("GLIBC_TUNABLES=") - 1) == 0) {
+				const char *tunables = &(*s)[sizeof("GLIBC_TUNABLES=") - 1];
+				if (*tunables != '\0') {
+					analysis.glibc_tunables = tunables;
+				}
 			}
 			envp_count++;
 		}

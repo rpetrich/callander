@@ -2446,7 +2446,7 @@ static void handle_mprotect(struct program_state *analysis, __attribute__((unuse
                             __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	// block creating executable stacks
-	LOG("encountered mprotect call: ", temp_str(copy_address_description(&analysis->loader, ins)));
+	LOG("encountered mprotect call: ", temp_str(copy_function_call_description(&analysis->loader, ins, state)));
 	int third_arg = sysv_argument_abi_register_indexes[2];
 	if (!register_is_exactly_known(&state->registers[third_arg]) || state->registers[third_arg].value == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
 		if (caller != NULL) {
@@ -2467,35 +2467,47 @@ static void handle_mmap(struct program_state *analysis, __attribute__((unused)) 
                         __attribute__((unused)) struct effect_token *token, __attribute__((unused)) void *data)
 {
 	// block creating executable stacks
-	LOG("encountered mmap call: ", temp_str(copy_address_description(&analysis->loader, ins)));
+	LOG("encountered mmap call: ", temp_str(copy_function_call_description(&analysis->loader, ins, state)));
 	int third_arg = sysv_argument_abi_register_indexes[2];
 	int fourth_arg = sysv_argument_abi_register_indexes[3];
+	struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
 	if (!register_is_exactly_known(&state->registers[third_arg]) || state->registers[third_arg].value == (PROT_READ | PROT_WRITE | PROT_EXEC)) {
-		struct loaded_binary *binary = binary_for_address(&analysis->loader, caller->entry);
-		if (register_is_exactly_known(&state->registers[fourth_arg]) && (state->registers[fourth_arg].value & LINUX_MAP_STACK) == LINUX_MAP_STACK) {
-			if (caller != NULL) {
-				const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
-				if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
-					LOG("from within pthread_create, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
-					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
-					clear_match(&analysis->loader, state, third_arg, ins);
-				} else {
-					if (binary_has_flags(binary, BINARY_IS_LIBC)) {
-						if (has_same_binary_caller_symbol_named(&analysis->loader, caller, "posix_spawnp") || has_same_binary_caller_symbol_named(&analysis->loader, caller, "posix_spawn")) {
-							LOG("from within posix_spawn, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
-							set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
-							clear_match(&analysis->loader, state, third_arg, ins);
+		if (register_is_exactly_known(&state->registers[fourth_arg])) {
+			if ((state->registers[fourth_arg].value & LINUX_MAP_STACK) == LINUX_MAP_STACK) {
+				if (caller != NULL) {
+					const char *name = find_any_symbol_name_by_address(&analysis->loader, binary, caller->entry, NORMAL_SYMBOL);
+					if (name != NULL && fs_strcmp(name, "pthread_create") == 0) {
+						LOG("from within pthread_create, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
+						set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+						clear_match(&analysis->loader, state, third_arg, ins);
+					} else {
+						if (binary_has_flags(binary, BINARY_IS_LIBC)) {
+							if (has_same_binary_caller_symbol_named(&analysis->loader, caller, "posix_spawnp") || has_same_binary_caller_symbol_named(&analysis->loader, caller, "posix_spawn")) {
+								LOG("from within posix_spawn, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
+								set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+								clear_match(&analysis->loader, state, third_arg, ins);
+							}
 						}
 					}
 				}
 			}
-		} else if (state->registers[third_arg].value == (PROT_READ | PROT_WRITE)) {
-			if (binary_has_flags(binary, BINARY_IS_LIBC)) {
-				if (has_same_binary_caller_symbol_named(&analysis->loader, caller, "malloc")) {
-					LOG("from within malloc, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
-					set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
-					clear_match(&analysis->loader, state, third_arg, ins);
-				}
+		}
+		if (state->registers[third_arg].value == (PROT_READ | PROT_WRITE)) {
+			if (binary_has_flags(binary, BINARY_IS_LIBC) && has_same_binary_caller_symbol_named(&analysis->loader, caller, "malloc")) {
+				LOG("from within malloc, forcing PROT_READ|PROT_WRITE: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
+				set_register(&state->registers[third_arg], PROT_READ | PROT_WRITE);
+				clear_match(&analysis->loader, state, third_arg, ins);
+			}
+		}
+	}
+	if (state->registers[fourth_arg].value == (MAP_PRIVATE | MAP_ANONYMOUS) && (uint32_t)state->registers[fourth_arg].max == ~(uint32_t)0) {
+		if (binary_has_flags(binary, BINARY_IS_LIBC) && has_same_binary_caller_symbol_named(&analysis->loader, caller, "malloc")) {
+			LOG("from within malloc, forcing MAP_PRIVATE|MAP_ANONYMOUS: ", temp_str(copy_address_description(&analysis->loader, caller->entry)));
+			if (analysis->glibc_tunables == NULL) {
+				set_register(&state->registers[fourth_arg], MAP_PRIVATE | MAP_ANONYMOUS);
+				clear_match(&analysis->loader, state, third_arg, ins);
+			} else {
+				LOG("skipping forcing MAP_PRIVATE|MAP_ANONYMOUS due to the presence of GLIBC_TUNABLES: ", analysis->glibc_tunables);
 			}
 		}
 	}
