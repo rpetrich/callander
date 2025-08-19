@@ -100,10 +100,12 @@ extern noreturn void abort();
 extern void error_writev(const struct iovec *vec, int count);
 extern void error_write(const char *buf, size_t length);
 extern void error_write_str(const char *str);
+extern void error_write_char(char c);
 extern void error_flush(void);
 #define ERROR_WRITEV error_writev
 #define ERROR_WRITE error_write
 #define ERROR_WRITE_STR error_write_str
+#define ERROR_WRITE_CHAR error_write_char
 #define ERROR_FLUSH error_flush
 #else
 #define ERROR_WRITEV(vec, count)            \
@@ -120,13 +122,21 @@ extern void error_flush(void);
 			__builtin_unreachable();        \
 		}                                   \
 	} while (0)
-#define ERROR_WRITE_STR(str)                        \
-	do {                                            \
-	    const char *tmp = str;                      \
-		if (fs_write(2, tmp, fs_strlen(str)) < 0) { \
-			abort();                                \
-			__builtin_unreachable();                \
-		}                                           \
+#define ERROR_WRITE_STR(str)                          \
+	do {                                              \
+	    const char *_tmp = str;                       \
+		if (fs_write(2, _tmp, fs_strlen(_str)) < 0) { \
+			abort();                                  \
+			__builtin_unreachable();                  \
+		}                                             \
+	} while (0)
+#define ERROR_WRITE_CHAR(c)              \
+	do {                                 \
+	    char _tmp = c;                   \
+		if (fs_write(2, &_tmp, 1) < 0) { \
+			abort();                     \
+			__builtin_unreachable();     \
+		}                                \
 	} while (0)
 #define ERROR_FLUSH() \
 	do {              \
@@ -272,6 +282,7 @@ __attribute__((always_inline)) static inline void error_discard_noop(const void 
 	ERROR_RAW_SINGLE_(str "", ##__VA_ARGS__, ""), \
 	ERROR_WRITE(str "\n", sizeof(str)) \
 )
+#endif
 #define ERROR(str, ...) ERROR_NOPREFIX(PRODUCT_NAME ": " str, ##__VA_ARGS__)
 
 __attribute__((always_inline))
@@ -342,7 +353,7 @@ ERROR_FORMAT_AND_WRITE_DEF(iovec, struct iovec, __attribute__((always_inline)) s
 ERROR_FORMAT_AND_WRITE_DEF(char_range, struct char_range, __attribute__((noinline)) static)
 // ERROR_FORMAT_AND_WRITE_DEF(temp_str, struct temp_str, __attribute__((noinline)) static)
 // ERROR_FORMAT_AND_WRITE_DEF(string, const char *, __attribute__((noinline)) static)
-ERROR_FORMAT_AND_WRITE_DEF(error_newline, struct error_newline, __attribute__((noinline)) static)
+// ERROR_FORMAT_AND_WRITE_DEF(error_newline, struct error_newline, __attribute__((noinline)) static)
 
 __attribute__((unused)) __attribute__((always_inline)) static inline
 void error_format_and_write_temp_str(struct temp_str value) {
@@ -355,8 +366,13 @@ void error_format_and_write_string(const char *value) {
 	ERROR_WRITE_STR(value);
 }
 
+__attribute__((unused)) __attribute__((always_inline)) static inline
+void error_format_and_write_error_newline(struct error_newline) {
+	ERROR_WRITE_CHAR('\n');
+}
+
 #define ERROR_MESSAGE_WRITE_DEF(name, type) \
-	__attribute__((unused)) __attribute__((noinline)) \
+	__attribute__((unused)) __attribute__((noinline)) __attribute__((cold)) \
 	static void CONCAT(error_message_write_, name)(const char *prefix, type value) { \
 		ERROR_RAW(prefix, value, (struct error_newline){}); \
 	}

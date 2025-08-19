@@ -314,6 +314,18 @@ void error_write_str(const char *str)
 	}
 }
 
+void error_write_char(char c)
+{
+	size_t i = atomic_load(&error_offset);
+	if (UNLIKELY(i == sizeof(error_buffer))) {
+		char copy = c;
+		error_write(&copy, 1);
+	} else {
+		error_buffer[i] = c;
+		atomic_fetch_add(&error_offset, 1);
+	}
+}
+
 void error_flush(void)
 {
 	size_t existing_offset = atomic_exchange(&error_offset, 0);
