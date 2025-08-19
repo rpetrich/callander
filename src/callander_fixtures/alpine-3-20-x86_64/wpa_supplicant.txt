@@ -106,14 +106,13 @@ accept(any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendto(any, non-NULL, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-sendto(any, any, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
-recvfrom(any, any, 1500, 0, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvfrom(any, any, 2300, 0, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvfrom(any, any, 3000, 0, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvfrom(any, any, 0x2000, MSG_DONTWAIT, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+sendto(any, any, any, 0, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+sendto(any, non-NULL, any, any, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, any, any u16, any u8, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvfrom(any, any, any, 0-MSG_PEEK, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
-recvfrom(any, any, 0x2000, MSG_DONTWAIT, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, any, any u16, any u8, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
+recvfrom(any, non-NULL, any, 0-MSG_PEEK, any, any u32) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
@@ -122,15 +121,9 @@ sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_DONTWAIT) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x5e990
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x5e990
-recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmsg(any, any, MSG_CTRUNC) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmsg(any, any, MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmsg(any, any, MSG_ERRQUEUE) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+recvmsg(any, any, any u16) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 recvmsg(any, any, MSG_CMSG_CLOEXEC) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x5e990
-recvmsg(any, any, MSG_CTRUNC) @ ld-musl-x86_64.so.1+0x5e990
-recvmsg(any, any, MSG_PEEK|MSG_TRUNC) @ ld-musl-x86_64.so.1+0x5e990
-recvmsg(any, any, MSG_ERRQUEUE) @ ld-musl-x86_64.so.1+0x5e990
+recvmsg(any, any, any u16) @ ld-musl-x86_64.so.1+0x5e990
 recvmsg(any, any, MSG_CMSG_CLOEXEC) @ ld-musl-x86_64.so.1+0x5e990
 shutdown(any, SHUT_RDWR) @ ld-musl-x86_64.so.1+0x413a7(shutdown+26)
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3b081(bind+23)
@@ -178,9 +171,9 @@ uname(any) @ ld-musl-x86_64.so.1+0x39680(uname+9)
 shmdt(any) @ ld-musl-x86_64.so.1+0x1f3d9(shmdt+9)
 fcntl(any, F_DUPFD, 3) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_GETFD, 0) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
-fcntl(any, F_SETFD, any u32) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
+fcntl(any, F_SETFD, FD_CLOEXEC-0xffffffff) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
-fcntl(any, F_SETFL, any u16) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
+fcntl(any, F_SETFL, O_LARGEFILE-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECT|O_LARGEFILE) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ ld-musl-x86_64.so.1+0x1cfa4(fcntl+231)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1cfbf(fcntl+258)
 fcntl(any, F_DUPFD_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x1cfcf(fcntl+274)
@@ -226,9 +219,8 @@ tkill(any, SIGABRT) @ ld-musl-x86_64.so.1+0x4d830(raise+43)
 tkill(any, SIGIO) @ ld-musl-x86_64.so.1+0x4d830(raise+43)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x5b550(cancel_handler*+93)
 tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x5d04b(pthread_kill+62)
-futex(any, FUTEX_WAIT, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT, any, 0, any u32, 202)
-futex(any, any u32, 0-INT_MAX, any, 202, any u32)
+futex(any, FUTEX_WAIT, any, 0, 0x40000000-0xffffffff, 0)
 futex(any, any, any, 0, 0, any u32)
 futex(any, any, any, any, 0, 0)
 futex(any, FUTEX_WAKE, 1, any, any, 202)
@@ -236,11 +228,12 @@ futex(any, FUTEX_WAKE, 1, any, 202, any)
 futex(any, FUTEX_WAKE, 1, 202, any, 0x40000000)
 futex(any, FUTEX_WAKE, 1, 202, 0xfffffffffffff001-0xffffffffffffffff, any)
 futex(any, FUTEX_WAKE, INT_MAX, any, 202, any)
+futex(any, FUTEX_WAKE-0xffffffff, 0-INT_MAX, any, 202, any u32)
 futex(any, FUTEX_REQUEUE, 0, 1, any, 202)
 futex(any, FUTEX_UNLOCK_PI, NULL-0x3fffffff, any, any, any)
 futex(any, FUTEX_UNLOCK_PI, any, any u32, any u32, any)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 0)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 202)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0x40000000-0xffffffff, 0)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, 202)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, 202, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 202, any, 0x40000000)
@@ -266,8 +259,8 @@ newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e2df(fstatat+10
 newfstatat(any, "", any, AT_EMPTY_PATH) @ ld-musl-x86_64.so.1+0x4e36e(fstatat+251)
 set_robust_list(0, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x5c2b8(pthread_exit+504)
 set_robust_list(any, sizeof(struct robust_list_head)) @ ld-musl-x86_64.so.1+0x5d386(__pthread_mutex_trylock_owner*+114)
-accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-accept4(any, any, any, SOCK_CLOEXEC) @ ld-musl-x86_64.so.1+0x5e990
+accept4(any, any, any, any) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
+accept4(any, any, any, any) @ ld-musl-x86_64.so.1+0x5e990
 recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 recvmmsg(any, any, 0x1-0x2, 0, 0) @ ld-musl-x86_64.so.1+0x5e990
 prlimit64(0, RLIMIT_CPU-0x3fff, 0, any) @ ld-musl-x86_64.so.1+0x37fc5(getrlimit+30)
@@ -275,6 +268,8 @@ getrandom(any, any, any) @ ld-musl-x86_64.so.1+0x39150(syscall+86)
 getrandom(any, any, GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 getrandom(any, non-NULL, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 getrandom(any, 16, 0-GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
-getrandom(any, any, 0-GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x5e990
+getrandom(any, any, GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x5e990
+getrandom(any, non-NULL, 0) @ ld-musl-x86_64.so.1+0x5e990
+getrandom(any, 16, 0-GRND_NONBLOCK) @ ld-musl-x86_64.so.1+0x5e990
 membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x20541(membarrier+26)
 membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) @ ld-musl-x86_64.so.1+0x2067e(__membarrier_init*+12)

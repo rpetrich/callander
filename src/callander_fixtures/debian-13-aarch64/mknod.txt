@@ -8,7 +8,9 @@ fcntl(any, F_GETFL, any) @ libc.so.6+0xe49f4
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, libc.so.6+0x162fb4) @ libc.so.6+0xe4ac8
 fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xe4ac8
 ioctl(any, TCGETS, any) @ libc.so.6+0xe53d8(tcgetattr+56)
-mknodat(AT_FDCWD, any, 0-060777, any u32) @ libc.so.6+0xe301c(mknodat+28)
+mknodat(AT_FDCWD, any, 010000-010777, 0) @ libc.so.6+0xe301c(mknodat+28)
+mknodat(AT_FDCWD, any, 020000-020777, any u32) @ libc.so.6+0xe301c(mknodat+28)
+mknodat(AT_FDCWD, any, 060000-060777, any u32) @ libc.so.6+0xe301c(mknodat+28)
 faccessat(AT_FDCWD, "/var/run/setrans/.setrans-unix", F_OK) @ libc.so.6+0xdebd4(access+20)
 fchmodat(AT_FDCWD, any, 0-0777) @ libc.so.6+0xdec34(chmod+20)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe30e4(__open+100)
@@ -48,7 +50,7 @@ fstat(any, any) @ libc.so.6+0xdfaec(fstat+12)
 exit(0) @ libc.so.6+0x222c4
 exit_group(any) @ ld-linux-aarch64.so.1+0x1bcb8
 exit_group(any) @ libc.so.6+0xbf1fc(_Exit+28)
-futex(any, FUTEX_WAIT, any u32, 0, any, any)
+futex(any, FUTEX_WAIT, 0x2-0xffffffff, 0, any, any)
 futex(any, any u32, 1, 0, any, any)
 futex(any, any u32, INT_MAX, 0, any, any)
 futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
@@ -100,9 +102,10 @@ sendmsg(STDIN_FILENO-0xfffffffffffffffe, any, MSG_NOSIGNAL) @ libc.so.6+0xf1834(
 brk(any) @ libc.so.6+0xe5ecc(brk+12)
 munmap(any, any) @ libc.so.6+0xeac08(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xef2c8(mremap+72)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xea1fc(mmap+28)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
-mprotect(any, any, any u32) @ libc.so.6+0xeaa88(mprotect+8)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xeaa88(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe9f48(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe9f48(madvise+8)
 getrandom(libc.so.6+0x1b6738, 8, GRND_NONBLOCK) @ libc.so.6+0x92cac

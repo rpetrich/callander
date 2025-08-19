@@ -13,15 +13,13 @@ unlinkat(AT_FDCWD, "/.ismount-test-file", 0) @ ld-musl-aarch64.so.1+0x695d0(unli
 faccessat(AT_FDCWD, "/sys/class/zram-control/", F_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 faccessat(AT_FDCWD, "/proc/mounts", R_OK) @ ld-musl-aarch64.so.1+0x684f4(access+28)
 openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, "/proc/mounts", O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, "/etc/mtab", O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(any, "loop/backing_file", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, "disksize", any, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, "hot_add", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, "mm_stat", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, "comp_algorithm", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(any, "max_comp_streams", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, "comp_algorithm", O_RDONLY|O_CLOEXEC-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, "max_comp_streams", O_RDONLY|O_CLOEXEC-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, "reset", O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, "hot_remove", O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, "orig_data_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
@@ -39,8 +37,8 @@ openat(any, "loop/backing_file", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-a
 openat(any, "disksize", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, "hot_add", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, "mm_stat", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, "comp_algorithm", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(any, "max_comp_streams", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, "comp_algorithm", O_RDONLY|O_CLOEXEC-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, "max_comp_streams", O_RDONLY|O_CLOEXEC-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, "reset", O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, "hot_remove", O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(any, "orig_data_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -85,14 +83,16 @@ exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
-futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT, non-NULL, 0, any u32, 0)
+futex(any, FUTEX_WAIT, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE, 1, any, any, any)
 futex(any, FUTEX_REQUEUE, 0, 1, ld-musl-aarch64.so.1+0xc2ab4, any)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0, 0)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any u32, 0)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xc2ab4, any)

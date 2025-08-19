@@ -4,7 +4,7 @@ fcntl(any, F_GETFL, any) @ libc.so.6+0xde7fc
 fcntl(STDIN_FILENO-STDERR_FILENO, F_DUPFD, 3) @ libc.so.6+0xde8c0
 fcntl(any, F_GETFL, /usr/bin/tee+0x644c) @ libc.so.6+0xde8c0
 fcntl(any, F_GETFL, /usr/bin/tee+0x6454) @ libc.so.6+0xde8c0
-fcntl(any, F_SETFL, 0-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ libc.so.6+0xde8c0
+fcntl(any, F_SETFL, O_APPEND-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ libc.so.6+0xde8c0
 ioctl(any, TCGETS, any) @ libc.so.6+0xdef90(tcgetattr+48)
 openat(AT_FDCWD, any, O_WRONLY, any) @ libc.so.6+0xd96fc(__open+108)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND, 0666) @ libc.so.6+0xd96fc(__open+108)
@@ -44,7 +44,7 @@ futex(any, any, INT_MAX, 0, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, any, any)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
 futex(any, FUTEX_WAIT_BITSET|FUTEX_PRIVATE_FLAG|FUTEX_CLOCK_REALTIME, 0, 0, 0, -1 as u32)
-futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_WAIT, any u32, 0, any, any)
+futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_WAIT, 0x2-0xffffffff, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
 futex(ld-linux-aarch64.so.1+0x40ab0(_rtld_global+2696), FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, ld-linux-aarch64.so.1+0x40ac0(_rtld_global+2712))
@@ -83,9 +83,12 @@ sysinfo(any) @ libc.so.6+0xe9208(sysinfo+8)
 brk(any) @ libc.so.6+0xdf848(brk+8)
 munmap(any, any) @ libc.so.6+0xe3a88(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xe8ac0(mremap+64)
-mmap(any, any, any, any, any, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0) @ libc.so.6+0xe3a38(mmap+24)
 fadvise64(any, 0, 0, 2) @ libc.so.6+0xddbcc(posix_fadvise+12)
-mprotect(any, any, any u32) @ libc.so.6+0xe3ac8(mprotect+8)
+mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xe3ac8(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe3bc8(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe3bc8(madvise+8)
 getrandom(libc.so.6+0x1a6930, 8, GRND_NONBLOCK) @ libc.so.6+0x3da74(getrandom+36)

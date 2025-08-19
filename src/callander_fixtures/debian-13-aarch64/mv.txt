@@ -18,7 +18,7 @@ fcntl(any, F_GETFL, any) @ libc.so.6+0xe49f4
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, any) @ libc.so.6+0xe4ac8
 fcntl(any, F_DUPFD, 3) @ libc.so.6+0xe4ac8
 fcntl(any, F_GETFD, any) @ libc.so.6+0xe4ac8
-fcntl(any, F_SETFD, any u32) @ libc.so.6+0xe4ac8
+fcntl(any, F_SETFD, FD_CLOEXEC-0xffffffff) @ libc.so.6+0xe4ac8
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ libc.so.6+0xe4ac8
 ioctl(any, TCGETS, any) @ libc.so.6+0xe53d8(tcgetattr+56)
 ioctl(any, FICLONE, any u32) @ libc.so.6+0xe9b8c(ioctl+12)
@@ -44,8 +44,18 @@ fchownat(any u32, any, any u32, any u32, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0xdf68
 fchown(STDIN_FILENO-0xfffffffe, any u32, any u32) @ libc.so.6+0xdf648(fchown+8)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xe30e4(__open+100)
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xe3170(__open+240)
-openat(any, any, any, any) @ libc.so.6+0xe32c4(openat+100)
-openat(any, any, any, any) @ libc.so.6+0xe3358(openat+248)
+openat(any, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, O_WRONLY|O_CREAT, any u32) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, O_WRONLY|O_CREAT|O_EXCL, any u32) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, O_WRONLY|O_TRUNC, any) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_LARGEFILE, any) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC-0xffffffffffffffff, any) @ libc.so.6+0xe32c4(openat+100)
+openat(any, any, O_RDONLY-O_WRONLY, any) @ libc.so.6+0xe3358(openat+248)
+openat(any, any, O_WRONLY|O_CREAT, any u32) @ libc.so.6+0xe3358(openat+248)
+openat(any, any, O_WRONLY|O_CREAT|O_EXCL, any u32) @ libc.so.6+0xe3358(openat+248)
+openat(any, any, O_WRONLY|O_TRUNC, any) @ libc.so.6+0xe3358(openat+248)
+openat(any, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_LARGEFILE, any) @ libc.so.6+0xe3358(openat+248)
+openat(any, any, O_RDONLY|O_NOCTTY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC-0xffffffffffffffff, any) @ libc.so.6+0xe3358(openat+248)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe4c54(__open_nocancel+84)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xe4c54(__open_nocancel+84)
 openat(AT_FDCWD, non-NULL, O_RDONLY, any) @ libc.so.6+0xe4c54(__open_nocancel+84)
@@ -80,7 +90,7 @@ utimensat(any, non-NULL, any, any) @ libc.so.6+0xe4734(utimensat+20)
 exit(0) @ libc.so.6+0x222c4
 exit_group(any) @ ld-linux-aarch64.so.1+0x1bcb8
 exit_group(any) @ libc.so.6+0xbf1fc(_Exit+28)
-futex(any, FUTEX_WAIT, any u32, 0, any, any)
+futex(any, FUTEX_WAIT, 0x2-0xffffffff, 0, any, any)
 futex(any, any u32, 1, 0, any, any)
 futex(any, any u32, INT_MAX, 0, any, any)
 futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
@@ -152,13 +162,14 @@ sendmsg(STDIN_FILENO-0xfffffffffffffffe, any, MSG_NOSIGNAL) @ libc.so.6+0xf1834(
 brk(any) @ libc.so.6+0xe5ecc(brk+12)
 munmap(any, any) @ libc.so.6+0xeac08(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xef2c8(mremap+72)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xea1fc(mmap+28)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
 fadvise64(any, 0, 0, 2) @ libc.so.6+0xe3610(posix_fadvise+16)
-mprotect(any, any, any u32) @ libc.so.6+0xeaa88(mprotect+8)
+mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xeaa88(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe9f48(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe9f48(madvise+8)
-renameat2(any, any, any, any, 1-0xffff00ff|AT_SYMLINK_NOFOLLOW|AT_EACCESS|AT_SYMLINK_FOLLOW|AT_NO_AUTOMOUNT|AT_EMPTY_PATH|AT_STATX_FORCE_SYNC|AT_STATX_DONT_SYNC|AT_RECURSIVE) @ libc.so.6+0x515d8(renameat2+24)
+renameat2(any, any, any, any, 1-0xffffffff) @ libc.so.6+0x515d8(renameat2+24)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3a288(getrandom+40)
 getrandom(any, 8, GRND_NONBLOCK) @ libc.so.6+0x3a2d0(getrandom+112)
 getrandom(libc.so.6+0x1b6738, 8, GRND_NONBLOCK) @ libc.so.6+0x92cac

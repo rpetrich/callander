@@ -1,8 +1,8 @@
 callander: permitted syscalls: getcwd(any, 0x1000-0x1001) @ ld-musl-aarch64.so.1+0x68adc(getcwd+36)
 dup(any) @ ld-musl-aarch64.so.1+0x68624(dup+16)
-fcntl(STDIN_FILENO-STDOUT_FILENO, F_SETFL, 0-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
+fcntl(STDIN_FILENO-STDOUT_FILENO, F_SETFL, O_NOFOLLOW-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
-fcntl(any, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
+fcntl(any, F_SETFD, FD_CLOEXEC-0xffffffff) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ ld-musl-aarch64.so.1+0x21090(fcntl+244)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x210b0(fcntl+276)
@@ -48,13 +48,18 @@ fchown(any, 0, any u32) @ ld-musl-aarch64.so.1+0x68990(fchown+40)
 openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
 openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, "/etc/resolv.conf", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
 openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, non-NULL, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "/run/agetty.reload", O_RDONLY|O_CREAT|O_CLOEXEC-O_WRONLY|O_CREAT|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "/etc/os-release", O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "/usr/lib/os-release", O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, "/run/agetty.reload", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_CREAT|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "/run/agetty.reload", O_RDONLY|O_CREAT|O_CLOEXEC-O_WRONLY|O_CREAT|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, "/etc/os-release", O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, "/usr/lib/os-release", O_RDONLY|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
@@ -100,14 +105,16 @@ exit(0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x6075c
 exit(0) @ ld-musl-aarch64.so.1+0x62314(pthread_exit+416)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
-futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT, non-NULL, 0, any u32, 0)
+futex(any, FUTEX_WAIT, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE, 1, any, any, any)
 futex(any, FUTEX_REQUEUE, 0, 1, ld-musl-aarch64.so.1+0xc2ab4, any)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0, 0)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any u32, 0)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, ld-musl-aarch64.so.1+0xc2ab4, any)

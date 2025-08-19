@@ -12,7 +12,8 @@ close(any u32) @ /usr/sbin/ldconfig+0x516f5
 poll(any, 1, any u32) @ /usr/sbin/ldconfig+0x9c3ce
 poll(any, any, any u32) @ /usr/sbin/ldconfig+0x9c40d
 lseek(any u32, any, any) @ /usr/sbin/ldconfig+0x50e05
-mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig+0x51d81
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/sbin/ldconfig+0x51d81
+mmap(any, any, any u32, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, any u32, any) @ /usr/sbin/ldconfig+0x51d81
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ /usr/sbin/ldconfig+0x58969
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x51e05
 munmap(any, any) @ /usr/sbin/ldconfig+0x51dd5
@@ -70,7 +71,6 @@ sched_get_priority_min(1) @ /usr/sbin/ldconfig+0x7f5c5
 arch_prctl(0x1002, NULL-0xfffffffffffffffe) @ /usr/sbin/ldconfig+0xa7eb
 chroot(non-NULL) @ /usr/sbin/ldconfig+0x51c25
 gettid() @ /usr/sbin/ldconfig+0x20d55
-futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, any, any)
 futex(any, any u8, 1, 0, any, any u32)
 futex(any, any u8, INT_MAX, 0, any u32, any)
@@ -78,13 +78,13 @@ futex(any, any u8, INT_MAX, 0, any, any u32)
 futex(any, any u32, any u32, 0, 0, -1 as u32)
 futex(any, FUTEX_WAKE, 1, 0, any, any)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x2-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80000)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, any, any)
-futex(/usr/sbin/ldconfig+0xf5b8c, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, NULL-0x1, any)
+futex(/usr/sbin/ldconfig+0xf5b8c, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x1-0xffffffff, 0, NULL-0x1, any)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig+0x53199
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig+0x7ec61
 set_tid_address(any) @ /usr/sbin/ldconfig+0x578f8

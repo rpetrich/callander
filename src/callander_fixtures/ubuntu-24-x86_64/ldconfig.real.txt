@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any u32
+callander: found syscall with unknown number at any u32
 callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.real+0x96f42 ax=any u32 dx=2 si=128 r8=NULL-/usr/sbin/ldconfig.real+0x103d8f r10=0 r12=/usr/sbin/ldconfig.real+0x103d90 r13=2 r14=1 mem=any u32
 /usr/sbin/ldconfig.real+0x96f0f-/usr/sbin/ldconfig.real+0x96f1e (conditional jump) ax=any u32 dx=0x1-0xffffffff r8=NULL-/usr/sbin/ldconfig.real+0x103d8f r12=/usr/sbin/ldconfig.real+0x103d90 r13=2 r14=1 mem=any u32
 /usr/sbin/ldconfig.real+0x96f04-/usr/sbin/ldconfig.real+0x96f0d (conditional continue) dx=0x1-0xffffffff r8=NULL-/usr/sbin/ldconfig.real+0x103d8f r12=/usr/sbin/ldconfig.real+0x103d90 r13=2 r14=1
@@ -100,8 +100,8 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb0d5d-/usr/sbin/ldconfig.real+0xb0d73 (conditional jump) dx=0 bx=0 di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r12=0 r13=non-NULL r15=0 mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb0cf7-/usr/sbin/ldconfig.real+0xb0d44 (jump) ax=any u32 dx=any u32 bx=0 di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r13=non-NULL r15=0
 /usr/sbin/ldconfig.real+0xb0cdb-/usr/sbin/ldconfig.real+0xb0cf1 (conditional continue) ax=any u32 dx=any u32 di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r13=0x1-0xffffffff r14=non-NULL r15=0x1-0xffffffff
-/usr/sbin/ldconfig.real+0xb0cb8-/usr/sbin/ldconfig.real+0xb0cd9 (conditional continue) ax=any u32 dx=any u32 si=NULL-0x7f di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r13=0x1-0xffffffff r14=non-NULL r15=any u32 mem=NULL-0x7f
-/usr/sbin/ldconfig.real+0xb0ca1-/usr/sbin/ldconfig.real+0xb0cd9 (conditional jump) ax=any u32 dx=any u32 si=NULL-0x7f di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r13=0x1-0xffffffff r14=non-NULL r15=any u32 mem=NULL-0x7f
+/usr/sbin/ldconfig.real+0xb0cb8-/usr/sbin/ldconfig.real+0xb0cd9 (conditional continue) ax=any u32 dx=any u32 si=0x40-0x7f di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r13=0x1-0xffffffff r14=non-NULL r15=any u32 mem=0x40-0x7f
+/usr/sbin/ldconfig.real+0xb0ca1-/usr/sbin/ldconfig.real+0xb0cd9 (conditional jump) ax=any u32 dx=any u32 si=0x40-0x7f di=any u32 r8=any u32 r9=non-NULL r10=0x1-0xffffffff r13=0x1-0xffffffff r14=non-NULL r15=any u32 mem=0x40-0x7f
 /usr/sbin/ldconfig.real+0xb0c95-/usr/sbin/ldconfig.real+0xb0c9b (conditional continue) ax=any u32 cx=any u32 dx=any u32 bx=0 si=any u32 di=any u32 r8=any u32 r9=non-NULL r13=0x1-0xffffffff r14=non-NULL r15=any u32 mem=any u32
 /usr/sbin/ldconfig.real+0xb0c85-/usr/sbin/ldconfig.real+0xb0c8f (conditional continue) ax=any u32 cx=any u32 dx=any u32 bx=0 si=any u32 di=any u32 r8=any u32 r9=non-NULL r13=any u32 r14=non-NULL mem=non-NULL
 /usr/sbin/ldconfig.real+0xb0c6c-/usr/sbin/ldconfig.real+0xb0c83 (conditional continue) ax=any u32 cx=any u32 dx=any u32 bx=0 si=any u32 di=any u32 r8=any u32 r13=any u32 r14=non-NULL mem=0
@@ -142,12 +142,12 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb0a4f-/usr/sbin/ldconfig.real+0xb0aad (conditional continue) ax=NULL-0xfffffffffffff000 di=20 r9=0 r12=non-NULL r13=any u32
 /usr/sbin/ldconfig.real+0xb0a45-/usr/sbin/ldconfig.real+0xb0a49 (conditional continue) ax=non-NULL si=non-NULL di=0x1-0xfffffffffffffffe r9=0 r12=non-NULL r13=any u32 mem=0x1-0xfffffffffffffffe
 /usr/sbin/ldconfig.real+0xb0a1c-/usr/sbin/ldconfig.real+0xb0a3f (conditional continue) ax=non-NULL si=non-NULL di=non-NULL r9=0 r12=non-NULL r13=any u32 mem=non-NULL
-/usr/sbin/ldconfig.real+0xb0a0c-/usr/sbin/ldconfig.real+0xb0a16 (conditional continue) ax=non-NULL cx=NULL-0x7f r9=0 r12=non-NULL r13=any u32
-/usr/sbin/ldconfig.real+0xb09f0-/usr/sbin/ldconfig.real+0xb0a06 (conditional continue) ax=non-NULL cx=NULL-0x7f r12=non-NULL r13=any u32
-/usr/sbin/ldconfig.real+0xb09e0-/usr/sbin/ldconfig.real+0xb09ea (conditional continue) ax=0x7ffffffd cx=NULL-0x7f dx=any u32 si=non-NULL r12=non-NULL r13=any u32
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional jump) ax=0x2-0xffffffffffffffff cx=NULL-0x7f dx=any u32 si=non-NULL r12=non-NULL r13=any u32
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=NULL-0x7f dx=any u32 si=non-NULL r12=non-NULL r13=any u32
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=NULL-0x7f si=non-NULL r12=non-NULL mem=non-NULL
+/usr/sbin/ldconfig.real+0xb0a0c-/usr/sbin/ldconfig.real+0xb0a16 (conditional continue) ax=non-NULL cx=0x40-0x7f r9=0 r12=non-NULL r13=any u32
+/usr/sbin/ldconfig.real+0xb09f0-/usr/sbin/ldconfig.real+0xb0a06 (conditional continue) ax=non-NULL cx=0x40-0x7f r12=non-NULL r13=any u32
+/usr/sbin/ldconfig.real+0xb09e0-/usr/sbin/ldconfig.real+0xb09ea (conditional continue) ax=0x7ffffffd cx=0x40-0x7f dx=any u32 si=non-NULL r12=non-NULL r13=any u32
+/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional jump) ax=0x2-0xffffffffffffffff cx=0x40-0x7f dx=any u32 si=non-NULL r12=non-NULL r13=any u32
+/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=0x40-0x7f dx=any u32 si=non-NULL r12=non-NULL r13=any u32
+/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=0x40-0x7f si=non-NULL r12=non-NULL mem=non-NULL
 /usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue) r12=non-NULL
 /usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue) r12=non-NULL mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue) r12=non-NULL mem=NULL-0x3f
@@ -160,9 +160,9 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb07e1-/usr/sbin/ldconfig.real+0xb07f6 (conditional continue) ax=non-NULL si=non-NULL di=non-NULL r10=0 r12=non-NULL
 /usr/sbin/ldconfig.real+0xb07d1-/usr/sbin/ldconfig.real+0xb07db (conditional continue) ax=non-NULL r10=0 r12=non-NULL
 /usr/sbin/ldconfig.real+0xb07b2-/usr/sbin/ldconfig.real+0xb07cb (conditional continue) ax=non-NULL r12=non-NULL
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=NULL-0x7f dx=NULL-0x4 si=non-NULL r12=non-NULL r13=0x1-0x5
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=NULL-0x7f dx=NULL-0x4 si=non-NULL r12=non-NULL r13=0x1-0x5
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=NULL-0x7f si=non-NULL r12=non-NULL r13=NULL-0x4 mem=non-NULL
+/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=0x40-0x7f dx=NULL-0x4 si=non-NULL r12=non-NULL r13=0x1-0x5
+/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=0x40-0x7f dx=NULL-0x4 si=non-NULL r12=non-NULL r13=0x1-0x5
+/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=0x40-0x7f si=non-NULL r12=non-NULL r13=NULL-0x4 mem=non-NULL
 /usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue) r12=non-NULL r13=NULL-0x4
 /usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue) r12=non-NULL r13=NULL-0x4 mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue) r12=non-NULL r13=NULL-0x4 mem=NULL-0x3f
@@ -175,9 +175,9 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb07e1-/usr/sbin/ldconfig.real+0xb07f6 (conditional continue) ax=non-NULL si=non-NULL di=non-NULL r10=0 r12=non-NULL r13=NULL-0x4
 /usr/sbin/ldconfig.real+0xb07d1-/usr/sbin/ldconfig.real+0xb07db (conditional continue) ax=non-NULL r10=0 r12=non-NULL r13=NULL-0x4
 /usr/sbin/ldconfig.real+0xb07b2-/usr/sbin/ldconfig.real+0xb07cb (conditional continue) ax=non-NULL r12=non-NULL r13=NULL-0x4
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=NULL-0x7f dx=NULL-0x3 si=non-NULL r12=non-NULL r13=0x1-0x4
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=NULL-0x7f dx=NULL-0x3 si=non-NULL r12=non-NULL r13=0x1-0x4
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=NULL-0x7f si=non-NULL r12=non-NULL r13=NULL-0x3 mem=non-NULL
+/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=0x40-0x7f dx=NULL-0x3 si=non-NULL r12=non-NULL r13=0x1-0x4
+/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=0x40-0x7f dx=NULL-0x3 si=non-NULL r12=non-NULL r13=0x1-0x4
+/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=0x40-0x7f si=non-NULL r12=non-NULL r13=NULL-0x3 mem=non-NULL
 /usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue) r12=non-NULL r13=NULL-0x3
 /usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue) r12=non-NULL r13=NULL-0x3 mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue) r12=non-NULL r13=NULL-0x3 mem=NULL-0x3f
@@ -190,9 +190,9 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb07e1-/usr/sbin/ldconfig.real+0xb07f6 (conditional continue) ax=non-NULL si=non-NULL di=non-NULL r10=0 r12=non-NULL r13=NULL-0x3
 /usr/sbin/ldconfig.real+0xb07d1-/usr/sbin/ldconfig.real+0xb07db (conditional continue) ax=non-NULL r10=0 r12=non-NULL r13=NULL-0x3
 /usr/sbin/ldconfig.real+0xb07b2-/usr/sbin/ldconfig.real+0xb07cb (conditional continue) ax=non-NULL r12=non-NULL r13=NULL-0x3
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=NULL-0x7f dx=NULL-0x2 si=non-NULL r12=non-NULL r13=0x1-0x3
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=NULL-0x7f dx=NULL-0x2 si=non-NULL r12=non-NULL r13=0x1-0x3
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=NULL-0x7f si=non-NULL r12=non-NULL r13=NULL-0x2 mem=non-NULL
+/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=0x40-0x7f dx=NULL-0x2 si=non-NULL r12=non-NULL r13=0x1-0x3
+/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=0x40-0x7f dx=NULL-0x2 si=non-NULL r12=non-NULL r13=0x1-0x3
+/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=0x40-0x7f si=non-NULL r12=non-NULL r13=NULL-0x2 mem=non-NULL
 /usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue) r12=non-NULL r13=NULL-0x2
 /usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue) r12=non-NULL r13=NULL-0x2 mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue) r12=non-NULL r13=NULL-0x2 mem=NULL-0x3f
@@ -205,9 +205,9 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb07e1-/usr/sbin/ldconfig.real+0xb07f6 (conditional continue) ax=non-NULL si=non-NULL di=non-NULL r10=0 r12=non-NULL r13=NULL-0x2
 /usr/sbin/ldconfig.real+0xb07d1-/usr/sbin/ldconfig.real+0xb07db (conditional continue) ax=non-NULL r10=0 r12=non-NULL r13=NULL-0x2
 /usr/sbin/ldconfig.real+0xb07b2-/usr/sbin/ldconfig.real+0xb07cb (conditional continue) ax=non-NULL r12=non-NULL r13=NULL-0x2
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=NULL-0x7f dx=NULL-0x1 si=non-NULL r12=non-NULL r13=0x1-0x2
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=NULL-0x7f dx=NULL-0x1 si=non-NULL r12=non-NULL r13=0x1-0x2
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=NULL-0x7f si=non-NULL r12=non-NULL r13=NULL-0x1 mem=non-NULL
+/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional continue) ax=1 cx=0x40-0x7f dx=NULL-0x1 si=non-NULL r12=non-NULL r13=0x1-0x2
+/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=0x40-0x7f dx=NULL-0x1 si=non-NULL r12=non-NULL r13=0x1-0x2
+/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=0x40-0x7f si=non-NULL r12=non-NULL r13=NULL-0x1 mem=non-NULL
 /usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue) r12=non-NULL r13=NULL-0x1
 /usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue) r12=non-NULL r13=NULL-0x1 mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue) r12=non-NULL r13=NULL-0x1 mem=NULL-0x3f
@@ -233,11 +233,11 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb064d-/usr/sbin/ldconfig.real+0xb068c (conditional continue) ax=non-NULL r12=2 r13=1 r15=non-NULL
 /usr/sbin/ldconfig.real+0xb0644-/usr/sbin/ldconfig.real+0xb0647 (conditional continue) ax=0 dx=0 si=non-NULL r9=non-NULL r12=non-NULL r13=1
 /usr/sbin/ldconfig.real+0xb0973-/usr/sbin/ldconfig.real+0xb0981 (jump) ax=0 dx=0 si=non-NULL r12=non-NULL r13=1
-/usr/sbin/ldconfig.real+0xb0962-/usr/sbin/ldconfig.real+0xb096d (conditional continue) ax=0 cx=NULL-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
-/usr/sbin/ldconfig.real+0xb09e0-/usr/sbin/ldconfig.real+0xb09ea (conditional jump) ax=NULL-0x7ffffffc cx=NULL-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
-/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional jump) ax=0x2-0xffffffffffffffff cx=NULL-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
-/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=NULL-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
-/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=NULL-0x7f si=non-NULL r12=non-NULL r13=0 mem=non-NULL
+/usr/sbin/ldconfig.real+0xb0962-/usr/sbin/ldconfig.real+0xb096d (conditional continue) ax=0 cx=0x40-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
+/usr/sbin/ldconfig.real+0xb09e0-/usr/sbin/ldconfig.real+0xb09ea (conditional jump) ax=NULL-0x7ffffffc cx=0x40-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
+/usr/sbin/ldconfig.real+0xb07a8-/usr/sbin/ldconfig.real+0xb07ac (conditional jump) ax=0x2-0xffffffffffffffff cx=0x40-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
+/usr/sbin/ldconfig.real+0xb0957-/usr/sbin/ldconfig.real+0xb096d (conditional jump) ax=non-NULL cx=0x40-0x7f dx=0 si=non-NULL r12=non-NULL r13=1
+/usr/sbin/ldconfig.real+0xb08fa-/usr/sbin/ldconfig.real+0xb0955 (conditional continue) cx=0x40-0x7f si=non-NULL r12=non-NULL r13=0 mem=non-NULL
 /usr/sbin/ldconfig.real+0xb08e5-/usr/sbin/ldconfig.real+0xb08f8 (conditional continue) r12=non-NULL r13=0
 /usr/sbin/ldconfig.real+0xb08dd-/usr/sbin/ldconfig.real+0xb08e3 (conditional continue) r12=non-NULL r13=0 mem=NULL-0x3f
 /usr/sbin/ldconfig.real+0xb08cd-/usr/sbin/ldconfig.real+0xb08db (conditional continue) r12=non-NULL r13=0 mem=NULL-0x3f
@@ -264,7 +264,7 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0xb0617-/usr/sbin/ldconfig.real+0xb061f (conditional continue) ax=0xffffffffffffffb0 si=0 r8=NULL-0x88000008 r9=0 r11=non-NULL r12=any u32 r14=non-NULL mem=0
 /usr/sbin/ldconfig.real+0xb05af-/usr/sbin/ldconfig.real+0xb0611 (conditional continue) ax=0xffffffffffffffb0 si=0 r8=NULL-0x88000008 r9=non-NULL r11=non-NULL r12=any u32 r14=non-NULL mem=1
 /usr/sbin/ldconfig.real+0xb1374-/usr/sbin/ldconfig.real+0xb138b (jump) cx=0 si=0 r8=NULL-0x88000008 r9=0 r11=non-NULL r14=non-NULL mem=1
-/usr/sbin/ldconfig.real+0xb04fe-/usr/sbin/ldconfig.real+0xb0534 (conditional jump (no continue)) ax=NULL-0x7f cx=0 si=0 r8=NULL-0x88000008 r9=0 r11=non-NULL mem=NULL-0x7f
+/usr/sbin/ldconfig.real+0xb04fe-/usr/sbin/ldconfig.real+0xb0534 (conditional jump (no continue)) ax=0x40-0x7f cx=0 si=0 r8=NULL-0x88000008 r9=0 r11=non-NULL mem=0x40-0x7f
 /usr/sbin/ldconfig.real+0xb12fa-/usr/sbin/ldconfig.real+0xb1300 (jump) ax=16 cx=0 si=0 di=non-NULL r8=NULL-0x88000008 r9=0 r11=non-NULL
 /usr/sbin/ldconfig.real+0xb04ed-/usr/sbin/ldconfig.real+0xb04f8 (conditional jump (no continue)) ax=16 cx=0 si=0 di=non-NULL r8=NULL-0x88000008 r9=0 r11=non-NULL
 /usr/sbin/ldconfig.real+0xb04d8-/usr/sbin/ldconfig.real+0xb04eb (conditional continue) ax=16 cx=0 si=0 di=non-NULL r8=NULL-0x88000008 r9=0 r11=non-NULL
@@ -382,14 +382,14 @@ callander: full call stack: /usr/sbin/ldconfig.real+0x96f32-/usr/sbin/ldconfig.r
 /usr/sbin/ldconfig.real+0x64c30-/usr/sbin/ldconfig.real+0x64c59 (conditional continue) cx=non-NULL r12=16 r15=any u32
 /usr/sbin/ldconfig.real+0x64bc0-/usr/sbin/ldconfig.real+0x64bf7 (conditional jump) ax=0x1-0xffffffff r15=any u32
 /usr/sbin/ldconfig.real+0x805ae-/usr/sbin/ldconfig.real+0x80600 (indirect call) bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x80660 r12=/usr/sbin/ldconfig.real+0x64bc0
-/usr/sbin/ldconfig.real+0x8059b-/usr/sbin/ldconfig.real+0x805a8 (conditional continue) ax=0 dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0
-/usr/sbin/ldconfig.real+0x80596-/usr/sbin/ldconfig.real+0x80599 (conditional continue (no jump)) ax=0xfffff001-0xfffffff4 dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
-/usr/sbin/ldconfig.real+0x80591-/usr/sbin/ldconfig.real+0x80594 (conditional continue) ax=0xfffff001-0xfffffff4 dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
-/usr/sbin/ldconfig.real+0x80589-/usr/sbin/ldconfig.real+0x8058f (conditional continue (no jump)) ax=0xfffffffffffff001-0xffffffffffffffff dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
-/usr/sbin/ldconfig.real+0x80577-/usr/sbin/ldconfig.real+0x80587 (alternate result) ax=0xfffffffffffff001-0xffffffffffffffff dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
-/usr/sbin/ldconfig.real+0x80573-/usr/sbin/ldconfig.real+0x80575 (conditional continue) ax=any u32 dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
-/usr/sbin/ldconfig.real+0x8056f-/usr/sbin/ldconfig.real+0x80571 (conditional continue) ax=any u32 dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
-/usr/sbin/ldconfig.real+0x80560-/usr/sbin/ldconfig.real+0x8056d (conditional continue) ax=any u32 dx=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x8059b-/usr/sbin/ldconfig.real+0x805a8 (conditional continue) ax=0 dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0
+/usr/sbin/ldconfig.real+0x80596-/usr/sbin/ldconfig.real+0x80599 (conditional continue (no jump)) ax=0xfffff001-0xfffffff4 dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x80591-/usr/sbin/ldconfig.real+0x80594 (conditional continue) ax=0xfffff001-0xfffffff4 dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x80589-/usr/sbin/ldconfig.real+0x8058f (conditional continue (no jump)) ax=0xfffffffffffff001-0xffffffffffffffff dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x80577-/usr/sbin/ldconfig.real+0x80587 (alternate result) ax=0xfffffffffffff001-0xffffffffffffffff dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=128 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r10=0 r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x80573-/usr/sbin/ldconfig.real+0x80575 (conditional continue) ax=any u32 dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x8056f-/usr/sbin/ldconfig.real+0x80571 (conditional continue) ax=any u32 dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
+/usr/sbin/ldconfig.real+0x80560-/usr/sbin/ldconfig.real+0x8056d (conditional continue) ax=any u32 dx=0x1-0xffffffff bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0 mem=any u32
 /usr/sbin/ldconfig.real+0x80510-/usr/sbin/ldconfig.real+0x80536 (conditional jump) ax=any u32 bx=/usr/sbin/ldconfig.real+0x1040c4 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d r12=/usr/sbin/ldconfig.real+0x64bc0
 /usr/sbin/ldconfig.real+0x806f0-/usr/sbin/ldconfig.real+0x806f8 (conditional jump) ax=any u32 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d
 /usr/sbin/ldconfig.real+0x64f40-/usr/sbin/ldconfig.real+0x64f52 (jump) ax=0 si=/usr/sbin/ldconfig.real+0x64bc0 di=/usr/sbin/ldconfig.real+0x1040c4 r8=0 r9=/usr/sbin/ldconfig.real+0xc960d

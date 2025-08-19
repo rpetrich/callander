@@ -30,8 +30,9 @@ lseek(any, any, any) @ ld-musl-x86_64.so.1+0x5b425(lseek64+11)
 mmap(0, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(NULL-0xfffffffffffff000, any, any, MAP_SHARED-MAP_PRIVATE, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
+mmap(NULL-0xfffffffffffff000, non-NULL, any, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mmap(any, non-NULL, PROT_NONE-PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_FIXED, any, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
-mmap(any, non-NULL, any, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
+mmap(any, 0x1000, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, any) @ ld-musl-x86_64.so.1+0x390f3(mmap+118)
 mprotect(NULL-0xfffffffffffff000, any, PROT_READ) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
 mprotect(NULL-0xfffffffffffff000, any, PROT_READ|PROT_WRITE) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
 mprotect(NULL-0xfffffffffffff000, any, PROT_READ|PROT_WRITE|PROT_EXEC) @ ld-musl-x86_64.so.1+0x39165(mprotect+37)
@@ -104,14 +105,17 @@ fork() @ ld-musl-x86_64.so.1+0x41471(_Fork+47)
 vfork() @ ld-musl-x86_64.so.1+0x425f1
 exit(0) @ ld-musl-x86_64.so.1+0x56014(pthread_exit+483)
 exit(0) @ ld-musl-x86_64.so.1+0x5835a
-wait4(any, any, 0-WNOHANG|__WALL, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(any, any, 0-WNOHANG, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
+wait4(any, any, __WALL-WNOHANG|__WALL, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
 wait4(any, any, 0xffffffff00000000|__WCLONE, 0) @ ld-musl-x86_64.so.1+0x55594(__syscall_cp_c*+57)
-wait4(any, any, 0-WNOHANG|__WALL, 0) @ ld-musl-x86_64.so.1+0x583bc
+wait4(any, any, 0-WNOHANG, 0) @ ld-musl-x86_64.so.1+0x583bc
+wait4(any, any, __WALL-WNOHANG|__WALL, 0) @ ld-musl-x86_64.so.1+0x583bc
 wait4(any, any, 0xffffffff00000000|__WCLONE, 0) @ ld-musl-x86_64.so.1+0x583bc
 kill(any, SIGINT) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, SIGKILL) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
 kill(any, SIGSTOP) @ ld-musl-x86_64.so.1+0x4924c(kill+12)
-fcntl(any, F_GETFD-F_SETFL, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, F_GETFD-F_GETFL, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
+fcntl(any, F_SETFL, O_LARGEFILE-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETOWN, any) @ ld-musl-x86_64.so.1+0x1d2ad(fcntl+328)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1d33a(open+126)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x3f3f1(socket+114)

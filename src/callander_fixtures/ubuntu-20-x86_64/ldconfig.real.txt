@@ -23,7 +23,7 @@ mmap(any, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1 as u
 mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, any, any u32, MAP_PRIVATE|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, any, any u32, MAP_PRIVATE|MAP_FIXED|MAP_32BIT|MAP_DENYWRITE, any u32, any) @ /usr/sbin/ldconfig.real+0x7438e
-mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
+mmap(0, any, PROT_READ, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, 0x4000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e
 mmap(0, 0x8000000, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT|MAP_NORESERVE, -1 as u32, 0) @ /usr/sbin/ldconfig.real+0x7438e

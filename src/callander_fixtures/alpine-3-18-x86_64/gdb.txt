@@ -6,7 +6,7 @@ write(any, any, 4) @ ld-musl-x86_64.so.1+0x418a7(child*+842)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 write(any, any, 4) @ ld-musl-x86_64.so.1+0x5aadf(checker*+109)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x417bd(child*+608)
+open(any, O_RDONLY|O_LARGEFILE-0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x417bd(child*+608)
 open("/etc/hosts", O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
 open("/etc/services", O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
 open("/etc/resolv.conf", O_RDONLY|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x49f38(__fopen_rb_ca*+52)
@@ -118,20 +118,14 @@ socket(any, any, any) @ ld-musl-x86_64.so.1+0x3ed28(socket+27)
 socket(any, any, any) @ ld-musl-x86_64.so.1+0x3ed58(socket+75)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 connect(any, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
-sendto(any, any, any, any u32, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 sendto(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 recvfrom(any, any, any, any u32, any u32, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 recvfrom(any, any, any, any, any, any) @ ld-musl-x86_64.so.1+0x57f61
-sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-sendmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x57f61
-sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x57f61
-sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-x86_64.so.1+0x57f61
-recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-recvmsg(any, any, MSG_CMSG_CLOEXEC) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-recvmsg(any, any, 0) @ ld-musl-x86_64.so.1+0x57f61
-recvmsg(any, any, MSG_CMSG_CLOEXEC) @ ld-musl-x86_64.so.1+0x57f61
+sendmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+sendmsg(any, any, any u32) @ ld-musl-x86_64.so.1+0x57f61
+recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+recvmsg(any, any, any) @ ld-musl-x86_64.so.1+0x57f61
 bind(any, any, any u32) @ ld-musl-x86_64.so.1+0x3944e(bind+20)
 getsockname(any, any, any) @ ld-musl-x86_64.so.1+0x3b411(getsockname+18)
 socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, any) @ ld-musl-x86_64.so.1+0x3edd0(socketpair+43)
@@ -163,7 +157,9 @@ fcntl(any, F_DUPFD_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x1c31d(fcntl+213)
 fcntl(any, F_DUPFD_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x1c32d(fcntl+229)
 fcntl(any, F_DUPFD, 0) @ ld-musl-x86_64.so.1+0x1c354(fcntl+268)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1c36a(fcntl+290)
-fcntl(any, F_GETFD-F_SETLK, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
+fcntl(any, F_GETFD-F_GETFL, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
+fcntl(any, F_SETFL, O_LARGEFILE-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
+fcntl(any, F_GETLK-F_SETLK, any) @ ld-musl-x86_64.so.1+0x1c390(fcntl+328)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1c41d(open+126)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x3ed7f(socket+114)
 fcntl(any, F_SETFL, O_NONBLOCK) @ ld-musl-x86_64.so.1+0x3ed99(socket+140)
@@ -272,8 +268,8 @@ getsid(any) @ ld-musl-x86_64.so.1+0x5af33(getsid+9)
 rt_sigpending(any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x492fb(sigpending+11)
 rt_sigtimedwait(any, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
 rt_sigtimedwait(any, any, any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x57f61
-rt_sigsuspend(/usr/bin/gdb+0x706420, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
-rt_sigsuspend(/usr/bin/gdb+0x706420, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x57f61
+rt_sigsuspend(any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x550cb(__syscall_cp_c*+57)
+rt_sigsuspend(any, sizeof(kernel_sigset_t)) @ ld-musl-x86_64.so.1+0x57f61
 sigaltstack(any, any) @ ld-musl-x86_64.so.1+0x490fb(sigaltstack+61)
 mknod(any, any u32, any) @ ld-musl-x86_64.so.1+0x49a5b(mknod+8)
 personality(any) @ ld-musl-x86_64.so.1+0x1f319(personality+6)

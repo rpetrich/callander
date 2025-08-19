@@ -5,8 +5,8 @@ ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
 flock(any, any) @ ld-musl-aarch64.so.1+0x243b8(flock+20)
 faccessat(AT_FDCWD, any, W_OK|R_OK) @ ld-musl-aarch64.so.1+0x64c78(access+32)
 openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x61dbc(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x51bb8(__stdio_close*+24)
 close(any) @ ld-musl-aarch64.so.1+0x5dc8c

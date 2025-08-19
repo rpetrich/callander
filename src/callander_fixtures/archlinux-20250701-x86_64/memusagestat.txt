@@ -1,2 +1,1 @@
-callander: failed to find: libgd.so.3
-callander: failed to finish loading: ENOEXEC
+callander: failed to find libgd.so.3

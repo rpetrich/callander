@@ -4,10 +4,10 @@ read(any, any, any) @ ld-musl-x86_64.so.1+0x68345
 write(any, any, 4) @ ld-musl-x86_64.so.1+0x3b2db(child*+443)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 write(any, any, any) @ ld-musl-x86_64.so.1+0x68345
-open(any, any, any) @ ld-musl-x86_64.so.1+0x3b39d(child*+637)
+open(any, O_RDONLY|O_LARGEFILE-0xffffffffffffffff, any) @ ld-musl-x86_64.so.1+0x3b39d(child*+637)
 open(any, any, any) @ ld-musl-x86_64.so.1+0x604c2(fopen+75)
 open(any, any u16, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-open(any, any, any) @ ld-musl-x86_64.so.1+0x68345
+open(any, any u16, any) @ ld-musl-x86_64.so.1+0x68345
 open(any, O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_CLOEXEC, any) @ ld-musl-x86_64.so.1+0x68365(__map_file*+24)
 close(any) @ ld-musl-x86_64.so.1+0x3b30b(child*+491)
 close(any) @ ld-musl-x86_64.so.1+0x3b31e(child*+510)
@@ -82,7 +82,7 @@ dup2(any, any) @ ld-musl-x86_64.so.1+0x69cb6(dup3+68)
 pause() @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 pause() @ ld-musl-x86_64.so.1+0x68345
 nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-nanosleep(any, any u32) @ ld-musl-x86_64.so.1+0x68345
+nanosleep(any, 0) @ ld-musl-x86_64.so.1+0x68345
 getitimer(any, any) @ ld-musl-x86_64.so.1+0x5dcbc(getitimer+12)
 setitimer(any, any, any) @ ld-musl-x86_64.so.1+0x5de33(setitimer+12)
 getpid() @ ld-musl-x86_64.so.1+0x43b61(do_setgroups*+66)
@@ -91,10 +91,10 @@ getpid() @ ld-musl-x86_64.so.1+0x6a6a3(do_setxid*+69)
 sendfile(any, any, any, any) @ ld-musl-x86_64.so.1+0x43ae1(sendfile+14)
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0) @ ld-musl-x86_64.so.1+0x5a2fb(socket+32)
 socket(AF_UNIX, SOCK_STREAM, 0) @ ld-musl-x86_64.so.1+0x5a32a(socket+79)
-connect(any, ld-musl-x86_64.so.1+0x9d0c0(addr*), 24) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-connect(any, ld-musl-x86_64.so.1+0x9d0c0(addr*), 24) @ ld-musl-x86_64.so.1+0x68345
-sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-x86_64.so.1+0x68345
+connect(any, ld-musl-x86_64.so.1+0x9d0c0(addr*), any u32) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+connect(any, ld-musl-x86_64.so.1+0x9d0c0(addr*), any) @ ld-musl-x86_64.so.1+0x68345
+sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+sendmsg(any, any, any) @ ld-musl-x86_64.so.1+0x68345
 clone(SIGCHLD|CLONE_VM|CLONE_VFORK, any, any, any, any) @ ld-musl-x86_64.so.1+0x68308
 clone(CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID|CLONE_DETACHED, any, any, ld-musl-x86_64.so.1+0xa4f90(__thread_list_lock*), any) @ ld-musl-x86_64.so.1+0x68308
 fork() @ ld-musl-x86_64.so.1+0x5b318(_Fork+34)
@@ -128,7 +128,7 @@ fcntl(any, F_GETFD, any) @ ld-musl-x86_64.so.1+0x5e878(fstatat+79)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x5eeef(fdopen+133)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x604ef(fopen+120)
 fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-fcntl(any, any u32, any) @ ld-musl-x86_64.so.1+0x68345
+fcntl(any, F_SETLKW, any) @ ld-musl-x86_64.so.1+0x68345
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x69d00(dup3+142)
 fcntl(any, F_GETFD, 0xfffffffffffff001-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x69f44(fchdir+33)
 fcntl(any, F_GETFD, any u32) @ ld-musl-x86_64.so.1+0x69fa5(fchown+46)
@@ -242,13 +242,12 @@ tkill(any, SIGSETXID) @ ld-musl-x86_64.so.1+0x65bee(cancel_handler*+93)
 tkill(any, any) @ ld-musl-x86_64.so.1+0x66edb(pthread_kill+62)
 tkill(any, SIGSYNCCALL) @ ld-musl-x86_64.so.1+0x68093(__synccall*+356)
 futex(any, FUTEX_WAIT, any, 0, any u32, 202)
-futex(any, any u32, 1, any, 202, any)
-futex(any, any u32, INT_MAX, any, 202, any)
 futex(any, any, any, 0, any u32, 0)
-futex(any, any, any, any, 0, 0)
 futex(any, FUTEX_WAKE, 1, any, any, 202)
 futex(any, FUTEX_WAKE, 1, 202, any, 0x40000000)
 futex(any, FUTEX_WAKE, 1, 202, 0xfffffffffffff001-0xffffffffffffffff, any)
+futex(any, FUTEX_WAKE-0xffffffff, 1, any, 202, any)
+futex(any, FUTEX_WAKE-0xffffffff, INT_MAX, any, 202, any)
 futex(any, FUTEX_REQUEUE, 0, 1, any, 202)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 202)
@@ -258,10 +257,11 @@ futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 202, 0xfffffffffffff001-0xfffffffff
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, any, 202)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG-FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 202, 128)
 futex(any, FUTEX_UNLOCK_PI|FUTEX_PRIVATE_FLAG, any, any, any, any)
-futex(ld-musl-x86_64.so.1+0xa2420(maplock*), any u32, 0-INT_MAX, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0xa3b20(lock*), any u32, 0-INT_MAX, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0xa3b60(key_lock*), any u32, 0-INT_MAX, any, 202, any u32)
-futex(ld-musl-x86_64.so.1+0xa48e0(lock*), any u32, 0-INT_MAX, any, 202, any u32)
+futex(non-NULL, any, any, any, 0, 0)
+futex(ld-musl-x86_64.so.1+0xa2420(maplock*), FUTEX_WAKE-0xffffffff, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0xa3b20(lock*), FUTEX_WAKE-0xffffffff, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0xa3b60(key_lock*), FUTEX_WAKE-0xffffffff, 0-INT_MAX, any, 202, any u32)
+futex(ld-musl-x86_64.so.1+0xa48e0(lock*), FUTEX_WAKE-0xffffffff, 0-INT_MAX, any, 202, any u32)
 futex(ld-musl-x86_64.so.1+0xa4ec0(vmlock*), FUTEX_WAIT, any, 0, 0x1-0xffffffff, ld-musl-x86_64.so.1+0xa4ec4(vmlock*+4))
 futex(ld-musl-x86_64.so.1+0xa4ec0(vmlock*), FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0x1-0xffffffff, ld-musl-x86_64.so.1+0xa4ec4(vmlock*+4))
 futex(ld-musl-x86_64.so.1+0xa4f90(__thread_list_lock*), FUTEX_WAIT, any, 0, 0x1-0xffffffff, ld-musl-x86_64.so.1+0xa5014(tl_lock_waiters*))
@@ -302,12 +302,12 @@ fadvise64(any, any, any, any) @ ld-musl-x86_64.so.1+0x41e93(posix_fadvise+11)
 clock_settime(any, any) @ ld-musl-x86_64.so.1+0x68a4d(clock_settime+12)
 clock_gettime(any, any) @ ld-musl-x86_64.so.1+0x6898e(clock_gettime+45)
 clock_getres(any, any) @ ld-musl-x86_64.so.1+0x68903(clock_getres+12)
-clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, any, 0) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, any, 0) @ ld-musl-x86_64.so.1+0x68345
+clock_nanosleep(any u32, TIMER_ABSTIME, any, any u32) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
+clock_nanosleep(any, TIMER_ABSTIME, any, any) @ ld-musl-x86_64.so.1+0x68345
 exit_group(any) @ ld-musl-x86_64.so.1+0x41991(_Exit+8)
 utimes(any) @ ld-musl-x86_64.so.1+0x5edf9(utimensat+233)
 waitid(any, any u32, any, any, any u32) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
-waitid(any, any, any, any, any) @ ld-musl-x86_64.so.1+0x68345
+waitid(any, any u32, any, any, any) @ ld-musl-x86_64.so.1+0x68345
 openat(any, any, O_RDONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ ld-musl-x86_64.so.1+0x5e755(fchmodat+187)
 openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x65d0e(__syscall_cp_c*+168)
 openat(any, any, any, any) @ ld-musl-x86_64.so.1+0x68345

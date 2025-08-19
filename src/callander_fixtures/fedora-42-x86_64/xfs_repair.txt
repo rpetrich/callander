@@ -13,10 +13,13 @@ fstat(any u32, any) @ libc.so.6+0xe3bb9(fstat+9)
 poll(any, NULL-0x1, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 poll(any, NULL-0x1, any) @ libc.so.6+0x79870
 lseek(any u32, any, any) @ libc.so.6+0xe7359(lseek+9)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0xf100a(mmap+42)
-mmap(any, any, PROT_NONE, any u32, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
-mmap(non-NULL, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0xf100a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any u32, PROT_READ|PROT_WRITE, MAP_SHARED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, any u32, any u32, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any u32, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ libc.so.6+0xf106e(mmap+142)
 mprotect(any, any, PROT_READ) @ libc.so.6+0xf18b9(mprotect+9)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xf18b9(mprotect+9)
 munmap(any, any) @ libc.so.6+0xf1969(munmap+9)
@@ -64,7 +67,7 @@ dup2(STDIN_FILENO, STDOUT_FILENO) @ libc.so.6+0xe3119(__dup2+9)
 dup2(STDERR_FILENO--1 as u32, STDOUT_FILENO) @ libc.so.6+0xe3119(__dup2+9)
 getpid() @ libc.so.6+0xc6819(getpid+9)
 socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_RAW|SOCK_CLOEXEC, 0) @ libc.so.6+0xf6ab9(socket+9)
-socket(AF_INET, any u32, 17) @ libc.so.6+0xf6ab9(socket+9)
+socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK-0xffffffff, 17) @ libc.so.6+0xf6ab9(socket+9)
 socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0xf6ab9(socket+9)
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0xf6ab9(socket+9)
 connect(any, any, any u32) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
@@ -158,11 +161,15 @@ tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x7327a(__pthread_kill_implementat
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x7327a(__pthread_kill_implementation+266)
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x73306(__pthread_raise_internal+38)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-openat(any, any, O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_RDWR, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(any, any, O_RDONLY, any) @ libc.so.6+0x79870
-openat(any, any, O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x79870
+openat(any, any, O_RDWR, any) @ libc.so.6+0x79870
+openat(any, any, O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x79870
+openat(any, any, O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x79870
 openat(any, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x79870
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x79870
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0xe8a84(__open_nocancel+68)

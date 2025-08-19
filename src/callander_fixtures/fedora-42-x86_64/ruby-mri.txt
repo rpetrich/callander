@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any
+callander: found syscall with unknown number at any
 callander: full call stack: libc.so.6+0xf2a70(syscall)-libc.so.6+0xf2a8b(syscall+27) cx=2 dx=2 si=libruby.so.3.4+0x46f0c8
 libruby.so.3.4+0x1100d0-libruby.so.3.4+0x1100dd (call) ax=0 cx=2 dx=libruby.so.3.4+0x46f0c8 bx=2 bp=2 r13=2 r14=-1 as u32
 libruby.so.3.4+0x10ff5a-libruby.so.3.4+0x10ff61 (lookup table) dx=libruby.so.3.4+0x46f0c8 bx=NULL-0x5 r13=0x2-0x8 r14=-1 as u32

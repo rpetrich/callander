@@ -19,7 +19,7 @@ poll(any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 poll(any, any, any) @ libc.so.6+0x79870
 lseek(any u32, any, any) @ libc.so.6+0xe7359(lseek+9)
 mmap(any, any, any u32, any u32, any u32, any) @ libc.so.6+0xf100a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, any u32, any) @ libc.so.6+0xf106e(mmap+142)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xf18b9(mprotect+9)
 munmap(any, any) @ libc.so.6+0xf1969(munmap+9)
 brk(NULL-0xfffffffffffffffe) @ libc.so.6+0xe9709(brk+9)
@@ -402,7 +402,7 @@ splice(any, any, any, any, any, any u32) @ libc.so.6+0x6dae4(__internal_syscall_
 splice(any, any, any, any, any, any u32) @ libc.so.6+0x79870
 utimensat(STDIN_FILENO-0xfffffffe, 0, any, 0) @ libc.so.6+0xe878c(__GI___utimensat64_helper+12)
 utimensat(any u32, any, any, 0) @ libc.so.6+0xe87cc(utimensat+12)
-timerfd_create(any u32, any u32) @ libc.so.6+0xf5f99(timerfd_create+9)
+timerfd_create(any u32, TFD_CLOEXEC-0xffffffff) @ libc.so.6+0xf5f99(timerfd_create+9)
 fallocate(any u32, 0, any, any) @ libc.so.6+0xe7c74(posix_fallocate64+20)
 timerfd_settime(STDIN_FILENO-0xfffffffe, any u32, any, any) @ libc.so.6+0xf57bc(timerfd_settime+12)
 timerfd_settime(any u32, 0, any, 0) @ libc.so.6+0xf57bc(timerfd_settime+12)

@@ -14,9 +14,8 @@ poll(any, 1, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 poll(any, 1, any) @ libc.so.6+0x9de20
 lseek(any u32, any, any) @ libc.so.6+0x10bc99(lseek+9)
 mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0x11540a(mmap+42)
-mmap(any, any, PROT_NONE, any u32, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(non-NULL, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0x11546d(mmap+141)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, any u32, any) @ libc.so.6+0x11546d(mmap+141)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x115cb9(mprotect+9)
 munmap(any, any) @ libc.so.6+0x115d69(munmap+9)
 brk(NULL-0xfffffffffffffffe) @ libc.so.6+0x10df49(brk+9)
@@ -77,9 +76,9 @@ dup(any u32) @ libc.so.6+0x1079f9(dup+9)
 dup2(STDERR_FILENO-0x7fffffff, STDIN_FILENO-STDERR_FILENO) @ libc.so.6+0x107a29(__dup2+9)
 getpid() @ libc.so.6+0xeb0c9(getpid+9)
 getpid() @ libc.so.6+0x116eeb(syscall+27)
-socket(any u32, SOCK_STREAM-0xfff7f7ff|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0x11aed9(socket+9)
-socket(AF_INET, any u32, 17) @ libc.so.6+0x11aed9(socket+9)
+socket(any u32, SOCK_CLOEXEC-0xffffffff, 0) @ libc.so.6+0x11aed9(socket+9)
 socket(AF_INET, SOCK_STREAM, 6) @ libc.so.6+0x11aed9(socket+9)
+socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK-0xffffffff, 17) @ libc.so.6+0x11aed9(socket+9)
 socket(AF_INET6, SOCK_STREAM, 6) @ libc.so.6+0x11aed9(socket+9)
 connect(any, any, any u32) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 connect(any, any, any u32) @ libc.so.6+0x9de20
@@ -89,11 +88,9 @@ sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x92004(__internal_syscall
 sendto(any, NULL-0xfffffffffffffffe, non-NULL, MSG_DONTWAIT|MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
 sendto(any, any, any, any u8, any, any u32) @ libc.so.6+0x9de20
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 recvfrom(any, any, 1, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x9de20
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x9de20
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x9de20
 recvfrom(any, any, 1, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
 sendmsg(any, any, MSG_NOSIGNAL) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 sendmsg(any, any, MSG_DONTWAIT|MSG_NOSIGNAL) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
@@ -256,7 +253,7 @@ waitid(P_PID, any u32, any, any, 0) @ libc.so.6+0x92004(__internal_syscall_cance
 waitid(P_PID, any u32, any, any, 0) @ libc.so.6+0x9de20
 inotify_add_watch(any u32, any, any u32) @ libc.so.6+0x11a019(inotify_add_watch+9)
 inotify_rm_watch(any u32, any) @ libc.so.6+0x11a079(inotify_rm_watch+9)
-openat(any, any, O_RDONLY-O_CREAT|O_EXCL, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, any, O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, any, O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, non-NULL, O_RDONLY|O_CREAT|O_EXCL|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any u32) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
@@ -269,7 +266,7 @@ openat(any, "..", O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.
 openat(any, "/proc/", any u32, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, libnss_myhostname.so.2+0x184d7-libnss_myhostname.so.2+0x184d8, any u32, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-openat(any, any, O_RDONLY-O_CREAT|O_EXCL, any) @ libc.so.6+0x9de20
+openat(any, any, O_RDONLY, any) @ libc.so.6+0x9de20
 openat(any, any, O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_PATH, any) @ libc.so.6+0x9de20
 openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.so.6+0x9de20
 openat(any, non-NULL, O_RDONLY|O_CREAT|O_EXCL|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any u32) @ libc.so.6+0x9de20

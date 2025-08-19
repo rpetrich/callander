@@ -14,9 +14,8 @@ poll(any, 1, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 poll(any, 1, any) @ libc.so.6+0x9de20
 lseek(any u32, any, any) @ libc.so.6+0x10bc99(lseek+9)
 mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0x11540a(mmap+42)
-mmap(any, any, PROT_NONE, any u32, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(non-NULL, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0x11546d(mmap+141)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, any u32, any) @ libc.so.6+0x11546d(mmap+141)
 mprotect(any, any, PROT_READ) @ libc.so.6+0x115cb9(mprotect+9)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x115cb9(mprotect+9)
 munmap(any, any) @ libc.so.6+0x115d69(munmap+9)
@@ -51,8 +50,8 @@ pread64(STDIN_FILENO-0xfffffffe, any, 511, 0) @ libc.so.6+0x10d41c(__pread64_noc
 pread64(any u32, any, 384, any) @ libc.so.6+0x10d41c(__pread64_nocancel+12)
 pwrite64(any, libc.so.6+0x1aebbc, any u16, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 pwrite64(any, libc.so.6+0x1aebbc, any u16, any) @ libc.so.6+0x9de20
-readv(any, any, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-readv(any, any, any u8) @ libc.so.6+0x9de20
+readv(any, any, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+readv(any, any, any u16) @ libc.so.6+0x9de20
 writev(STDERR_FILENO, any, any) @ libc.so.6+0x8aba1(__libc_message_impl*+353)
 writev(any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 writev(any, any, any) @ libc.so.6+0x9de20
@@ -81,10 +80,10 @@ accept(any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 accept(any, any, any) @ libc.so.6+0x9de20
 sendto(any, any, any, any u16, any, any u32) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 sendto(any, any, any, any u16, any, any u32) @ libc.so.6+0x9de20
+recvfrom(any, any, any u8, any u16, any u8, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, 1, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+recvfrom(any, any, any u8, any u16, any u8, any u8) @ libc.so.6+0x9de20
 recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x9de20
-recvfrom(any, any, 1, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
 sendmsg(any, any, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 sendmsg(any, any, any u16) @ libc.so.6+0x9de20
 recvmsg(any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
@@ -127,12 +126,8 @@ getsockopt(any u32, SOL_SOCKET, SO_PEERPIDFD, any, any) @ libc.so.6+0x11aa9c(get
 getsockopt(any u32, SOL_IPV6, IPV6_MTU, any, any) @ libc.so.6+0x11aa9c(getsockopt+12)
 getsockopt(any u32, SOL_NETLINK, NETLINK_LIST_MEMBERSHIPS, any, any) @ libc.so.6+0x11aa9c(getsockopt+12)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, any, 0) @ libc.so.6+0xe3ec6(_Fork+70)
-clone(any, 0, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
-clone(SIGCHLD|CLONE_NEWNS, any u8, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
-clone(SIGCHLD|CLONE_NEWUSER, any u8, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
-clone(SIGCHLD|CLONE_NEWNS|CLONE_NEWUSER, any u8, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
-clone(SIGCHLD|CLONE_NEWNET, any u8, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
-clone(SIGCHLD|CLONE_NEWNS|CLONE_NEWNET, any u8, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
+clone(SIGCHLD, 0, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
+clone(SIGCHLD|CLONE_NEWNS-0xffffffffffffffff, any u8, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
 clone(any u32, any, any, any u32, any) @ libc.so.6+0x118fa4(clone+52)
 exit(0) @ libc.so.6+0x276d7(__libc_start_call_main*+151)
 exit(0) @ libc.so.6+0x95817(start_thread*+791)
@@ -141,8 +136,8 @@ wait4(any, any, any u16, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*
 wait4(any, any, any u16, any u16) @ libc.so.6+0x9de20
 kill(any u32, any u32) @ libc.so.6+0x3e0f9(kill+9)
 uname(any) @ libc.so.6+0x102869(uname+9)
-semget(0x1-0xd4dffff, 1, 0600) @ libc.so.6+0x11b0d9(semget+9)
 semget(0x1-0xffffffff, 1, 0) @ libc.so.6+0x11b0d9(semget+9)
+semget(0xd4d0000-0xd4dffff, 1, 0600) @ libc.so.6+0x11b0d9(semget+9)
 semctl(0, 0, SEM_INFO, any) @ libc.so.6+0x11b144(semctl+68)
 semctl(any u32, 0, IPC_RMID, any) @ libc.so.6+0x11b144(semctl+68)
 semctl(any u32, 0, GETVAL, any) @ libc.so.6+0x11b144(semctl+68)
@@ -276,7 +271,9 @@ chroot(".") @ libc.so.6+0x10dfa9(chroot+9)
 chroot(".") @ libc.so.6+0x10dfa9(chroot+9)
 chroot(any) @ libc.so.6+0x116eeb(syscall+27)
 mount(any, any, any, any, any) @ libc.so.6+0x11a0dc(mount+12)
-umount2(any, any u32) @ libc.so.6+0x119c49(umount2+9)
+umount2(any, MNT_DETACH) @ libc.so.6+0x119c49(umount2+9)
+umount2(any, UMOUNT_NOFOLLOW-0xffffffff) @ libc.so.6+0x119c49(umount2+9)
+umount2("/run/mount/tmptgt", 0) @ libc.so.6+0x119c49(umount2+9)
 reboot(0xfee1dead, 0x28121969, 0x1234567) @ libc.so.6+0x116725(reboot+21)
 reboot(0xfee1dead, 0x28121969, 0x4321fedc) @ libc.so.6+0x116725(reboot+21)
 sethostname(non-NULL, any) @ libc.so.6+0x116c59(sethostname+9)
@@ -377,12 +374,8 @@ faccessat(any u32, any, F_OK-W_OK) @ libc.so.6+0x107d70(faccessat+400)
 pselect6(any, any, any u16, any u16, any, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 pselect6(any, any, any u16, any u16, any, any u16) @ libc.so.6+0x9de20
 ppoll(any, 1, 0, 0, 0) @ libc.so.6+0x3f103(__GI___arc4random_buf.part.0*+291)
-ppoll(any, non-NULL, any u16, any u16, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-ppoll(any, non-NULL, any, any u8, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-ppoll(any, 2, any, any u16, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-ppoll(any, non-NULL, any u16, any u16, any u16) @ libc.so.6+0x9de20
-ppoll(any, non-NULL, any, any u8, any u8) @ libc.so.6+0x9de20
-ppoll(any, 2, any, any u16, any u16) @ libc.so.6+0x9de20
+ppoll(any, non-NULL, any, any u16, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+ppoll(any, non-NULL, any, any u16, any u16) @ libc.so.6+0x9de20
 unshare(CLONE_NEWNS) @ libc.so.6+0x11a379(unshare+9)
 unshare(CLONE_NEWCGROUP) @ libc.so.6+0x11a379(unshare+9)
 unshare(CLONE_NEWUSER) @ libc.so.6+0x11a379(unshare+9)
@@ -480,8 +473,8 @@ faccessat2(any u32, "queue/physical_block_size", F_OK, 0) @ libc.so.6+0x107c0a(f
 faccessat2(any u32, "queue/dax", F_OK, 0) @ libc.so.6+0x107c0a(faccessat+42)
 faccessat2(any u32, "diskseq", F_OK, 0) @ libc.so.6+0x107c0a(faccessat+42)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0x107c0a(faccessat+42)
-epoll_pwait2(any, any, any, any, 0, 8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-epoll_pwait2(any, any, any, any, 0, 8) @ libc.so.6+0x9de20
+epoll_pwait2(any, any, any, any, any u8, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+epoll_pwait2(any, any, any, any, any u8, any u8) @ libc.so.6+0x9de20
 mount_setattr(any u32, "", AT_EMPTY_PATH, any, 32) @ libc.so.6+0x11a10c(mount_setattr+12)
 mount_setattr(any u32, "", AT_EMPTY_PATH|AT_RECURSIVE, any, 32) @ libc.so.6+0x11a10c(mount_setattr+12)
 mount_setattr(any u32, "", AT_EMPTY_PATH, any, 32) @ libc.so.6+0x11a10c(mount_setattr+12)

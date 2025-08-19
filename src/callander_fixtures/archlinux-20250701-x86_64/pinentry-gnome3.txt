@@ -1,2 +1,1 @@
-callander: failed to find: libgcr-base-3.so.1
-callander: failed to finish loading: ENOEXEC
+callander: failed to find libgcr-base-3.so.1

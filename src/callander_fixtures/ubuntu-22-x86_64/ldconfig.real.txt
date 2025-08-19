@@ -10,7 +10,8 @@ close(any u32) @ /usr/sbin/ldconfig.real+0x737f9
 poll(any, 1, any u32) @ /usr/sbin/ldconfig.real+0xcf755
 poll(any, any, any u32) @ /usr/sbin/ldconfig.real+0xcf78d
 lseek(any u32, any, any) @ /usr/sbin/ldconfig.real+0x72f59
-mmap(any, any, any u32, any u32, any u32, any) @ /usr/sbin/ldconfig.real+0x73eb5
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ /usr/sbin/ldconfig.real+0x73eb5
+mmap(any, any, any u32, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, any u32, any) @ /usr/sbin/ldconfig.real+0x73eb5
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig.real+0x73f39
 munmap(any, any) @ /usr/sbin/ldconfig.real+0x73f09
 brk(any) @ /usr/sbin/ldconfig.real+0x73b59
@@ -64,16 +65,16 @@ sched_get_priority_min(1) @ /usr/sbin/ldconfig.real+0xabfd9
 arch_prctl(0x3002, NULL-0x3) @ /usr/sbin/ldconfig.real+0xd803d
 chroot(non-NULL) @ /usr/sbin/ldconfig.real+0x73d59
 gettid() @ /usr/sbin/ldconfig.real+0x2d695
-futex(any, FUTEX_WAIT, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, 0, any)
 futex(any, FUTEX_WAIT, 0x1-0xffffffff, 0, 0x40000000, any)
 futex(any, FUTEX_WAIT, 2, 0, 128, any)
+futex(any, FUTEX_WAIT, 0x2-0xfff80002, 0, NULL-0xfff80000, 0x1-0xfff80001)
 futex(any, any u32, any u32, 0, 0, -1 as u32)
 futex(any, FUTEX_WAKE, 1, 0, any, any)
 futex(any, FUTEX_LOCK_PI, 0, 0, 0, any)
 futex(any, FUTEX_UNLOCK_PI, 0, 0, any, any)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, NULL-0xfff80002, 0, NULL-0xfff80000, NULL-0xfff80001)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 2, 0, any, any)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x2-0xfff80002, 0, NULL-0xfff80000, 0x1-0xfff80001)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, 0, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, 0, any, any)
 futex(any, FUTEX_LOCK_PI|FUTEX_PRIVATE_FLAG, 0, 0, 0, any)
@@ -99,7 +100,7 @@ futex(/usr/sbin/ldconfig.real+0x127fc0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.r
 futex(/usr/sbin/ldconfig.real+0x127fc0, any u8, INT_MAX, 0, /usr/sbin/ldconfig.real+0x127fc0, 4)
 futex(/usr/sbin/ldconfig.real+0x127fc8, any u8, INT_MAX, 0, any, any)
 futex(/usr/sbin/ldconfig.real+0x127fcc, any u8, 1, 0, /usr/sbin/ldconfig.real+0x127fc0, any u32)
-futex(/usr/sbin/ldconfig.real+0x12cb94, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any u32, 0, 202, 2177)
+futex(/usr/sbin/ldconfig.real+0x12cb94, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x1-0xffffffff, 0, 202, 2177)
 sched_getaffinity(0, 0x1000, any) @ /usr/sbin/ldconfig.real+0x75aa6
 getdents64(any u32, any, any) @ /usr/sbin/ldconfig.real+0xab575
 restart_syscall()

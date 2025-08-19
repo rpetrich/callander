@@ -9,7 +9,7 @@ fcntl(any, F_SETFD, FD_CLOEXEC) @ libc.so.6+0xe49f4
 fcntl(any, F_GETFL, any) @ libc.so.6+0xe49f4
 fcntl(STDIN_FILENO-0xfffffffffffffffe, F_GETFL, libc.so.6+0x162fb4) @ libc.so.6+0xe4ac8
 fcntl(any, F_GETFD, any) @ libc.so.6+0xe4ac8
-fcntl(any, F_SETFD, any u32) @ libc.so.6+0xe4ac8
+fcntl(any, F_SETFD, FD_CLOEXEC-0xffffffff) @ libc.so.6+0xe4ac8
 fcntl(any, F_GETFL, 0) @ libc.so.6+0xe4ac8
 fcntl(any, F_GETFL, 1024) @ libc.so.6+0xe4ac8
 fcntl(any, F_GETFL, libmount.so.1+0x6387c) @ libc.so.6+0xe4ac8
@@ -117,7 +117,7 @@ exit_group(any) @ ld-linux-aarch64.so.1+0x1bcb8
 exit_group(any) @ libc.so.6+0xbf1fc(_Exit+28)
 unshare(CLONE_NEWNS) @ libc.so.6+0xf0348(unshare+8)
 unshare(CLONE_NEWUSER) @ libc.so.6+0xf0348(unshare+8)
-futex(any, FUTEX_WAIT, any u32, 0, any, any)
+futex(any, FUTEX_WAIT, 0x2-0xffffffff, 0, any, any)
 futex(any, any u32, 1, 0, any, any)
 futex(any, any u32, INT_MAX, 0, any, any)
 futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
@@ -217,10 +217,12 @@ brk(any) @ libc.so.6+0xe5ecc(brk+12)
 munmap(any, any) @ libc.so.6+0xeac08(munmap+8)
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ libc.so.6+0xef2c8(mremap+72)
 clone(SIGCHLD|CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID, 0, 0, 0, any) @ libc.so.6+0xbf188(_Fork+40)
-mmap(0, any, any, any, any, 0) @ libc.so.6+0xea1fc(mmap+28)
-mmap(any, any, PROT_NONE, any, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ libc.so.6+0xea1fc(mmap+28)
 fadvise64(any, 0, 0, 1) @ libc.so.6+0xe3610(posix_fadvise+16)
-mprotect(any, any, any u32) @ libc.so.6+0xeaa88(mprotect+8)
+mprotect(any, NULL-0x800000, PROT_READ) @ libc.so.6+0xeaa88(mprotect+8)
+mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xeaa88(mprotect+8)
 madvise(any, any, MADV_DONTNEED) @ libc.so.6+0xe9f48(madvise+8)
 madvise(any, any, MADV_HUGEPAGE) @ libc.so.6+0xe9f48(madvise+8)
 wait4(0x1-0x7fffffff, any, 0, 0) @ libc.so.6+0xda470(wait4+48)
@@ -234,7 +236,7 @@ getrandom(libc.so.6+0x1b6738, 8, GRND_NONBLOCK) @ libc.so.6+0x92cac
 statx(any, "", AT_EMPTY_PATH, STATX_MNT_ID, any) @ libc.so.6+0xe40ac(statx+36)
 statx(AT_FDCWD, non-NULL, AT_NO_AUTOMOUNT|AT_STATX_DONT_SYNC, STATX_TYPE|STATX_MODE|STATX_INO, any) @ libc.so.6+0xe40ac(statx+36)
 statx(AT_FDCWD, non-NULL, AT_SYMLINK_NOFOLLOW|AT_NO_AUTOMOUNT|AT_STATX_DONT_SYNC, STATX_TYPE|STATX_MODE|STATX_INO, any) @ libc.so.6+0xe40ac(statx+36)
-open_tree(any u32, non-NULL, 0x1-0x80001) @ libc.so.6+0xf0108(open_tree+8)
+open_tree(any u32, non-NULL, 0x80000-0x80001) @ libc.so.6+0xf0108(open_tree+8)
 open_tree(AT_FDCWD, non-NULL, 0x88001) @ libc.so.6+0xf0108(open_tree+8)
 open_tree(-1 as u32, non-NULL, 0x88001) @ libc.so.6+0xf0108(open_tree+8)
 move_mount(any u32, "", AT_FDCWD, any, 4) @ libc.so.6+0xf0088(move_mount+8)

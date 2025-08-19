@@ -19,7 +19,7 @@ openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x2b1f8
 openat(any, any, O_RDONLY, any) @ /usr/sbin/ldconfig+0x2b2c8
 openat(any, any, any, any) @ /usr/sbin/ldconfig+0x2b360
 openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x2b8f4
-openat(AT_FDCWD, any, O_RDONLY-O_RDWR|O_EXCL|O_CLOEXEC, any) @ /usr/sbin/ldconfig+0x2b950
+openat(AT_FDCWD, any, any, any) @ /usr/sbin/ldconfig+0x2b950
 close(any) @ /usr/sbin/ldconfig+0x2a84c
 close(any) @ /usr/sbin/ldconfig+0x2a880
 close(any) @ /usr/sbin/ldconfig+0x2b68c
@@ -51,7 +51,7 @@ fdatasync(any) @ /usr/sbin/ldconfig+0x2c2a0
 exit_group(127) @ /usr/sbin/ldconfig+0x6f70
 exit_group(any) @ /usr/sbin/ldconfig+0x27e1c
 set_tid_address(any) @ /usr/sbin/ldconfig+0x33650
-futex(any, FUTEX_WAIT, any u32, 0, any, any)
+futex(any, FUTEX_WAIT, 0x2-0xffffffff, 0, any, any)
 futex(any, any u32, 1, 0, any, any)
 futex(any, any u32, INT_MAX, 0, any, any)
 futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
@@ -120,7 +120,8 @@ brk(0) @ /usr/sbin/ldconfig+0x34574
 brk(any) @ /usr/sbin/ldconfig+0x34580
 munmap(any, any) @ /usr/sbin/ldconfig+0x2cd48
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x2dbc8
-mmap(any, any, any, any, any, any) @ /usr/sbin/ldconfig+0x2cc7c
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any, 0) @ /usr/sbin/ldconfig+0x2cc7c
+mmap(any, any, any, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffffffffffff, any, any) @ /usr/sbin/ldconfig+0x2cc7c
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /usr/sbin/ldconfig+0x345a8
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x2cd08
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x2cc48

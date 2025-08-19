@@ -13,8 +13,10 @@ fstat(any u32, any) @ libc.so.6+0x1084b9(fstat+9)
 poll(any, any u32, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 poll(any, any u32, any) @ libc.so.6+0x9de20
 lseek(any u32, any, any) @ libc.so.6+0x10bc99(lseek+9)
-mmap(any, any, any u32, any u32, any u32, any) @ libc.so.6+0x11540a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0x11546d(mmap+141)
+mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0x11540a(mmap+42)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(any, any, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, any u32, any) @ libc.so.6+0x11540a(mmap+42)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, any u32, any) @ libc.so.6+0x11546d(mmap+141)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x115cb9(mprotect+9)
 munmap(any, any) @ libc.so.6+0x115d69(munmap+9)
 brk(NULL-0xfffffffffffffffe) @ libc.so.6+0x10df49(brk+9)
@@ -76,10 +78,8 @@ sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x92004(__internal_syscall
 sendto(any, NULL-0xfffffffffffffffe, any, any u16, any u8, any u8) @ libc.so.6+0x9de20
 sendto(any, any, any, any u8, any, any u32) @ libc.so.6+0x9de20
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
-recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, 1, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x9de20
-recvfrom(any, any, 1, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
+recvfrom(any, any, any, any u16, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+recvfrom(any, any, any, any u16, any, any) @ libc.so.6+0x9de20
 sendmsg(any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 sendmsg(any, any, any) @ libc.so.6+0x9de20
 recvmsg(any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
@@ -141,8 +141,8 @@ kill(any u32, SIGTERM) @ libc.so.6+0x3e0f9(kill+9)
 kill(0x2-0xffffffff, 0x0) @ libc.so.6+0x3e0f9(kill+9)
 kill(0x2-0xffffffff, SIGCONT) @ libc.so.6+0x3e0f9(kill+9)
 uname(any) @ libc.so.6+0x102869(uname+9)
-semget(0x1-0xd4dffff, 1, 0600) @ libc.so.6+0x11b0d9(semget+9)
 semget(0x1-0xffffffff, 1, 0) @ libc.so.6+0x11b0d9(semget+9)
+semget(0xd4d0000-0xd4dffff, 1, 0600) @ libc.so.6+0x11b0d9(semget+9)
 semctl(0, 0, SEM_INFO, any) @ libc.so.6+0x11b144(semctl+68)
 semctl(any u32, 0, IPC_RMID, any) @ libc.so.6+0x11b144(semctl+68)
 semctl(any u32, 0, GETVAL, any) @ libc.so.6+0x11b144(semctl+68)
@@ -314,10 +314,8 @@ tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x9774a(__pthread_kill_implementat
 tgkill(any u32, any u32, SIGFPE-SIGKILL) @ libc.so.6+0x9774a(__pthread_kill_implementation*+266)
 tgkill(any u32, any u32, SIGTERM) @ libc.so.6+0x9774a(__pthread_kill_implementation*+266)
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x977d6(__pthread_raise_internal*+38)
-waitid(P_PID, any u32, any, any, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-waitid(P_PIDFD, any u32, any, WEXITED-WNOHANG|WEXITED, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-waitid(P_PID, any u32, any, any, 0) @ libc.so.6+0x9de20
-waitid(P_PIDFD, any u32, any, WEXITED-WNOHANG|WEXITED, 0) @ libc.so.6+0x9de20
+waitid(any u8, any u32, any, any, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+waitid(any u8, any u32, any, any, any u8) @ libc.so.6+0x9de20
 waitid(P_PIDFD, INT_MAX, 0, WNOHANG|WEXITED, any) @ libc.so.6+0x11913f(__clone_pidfd_supported*+47)
 add_key("logon", non-NULL, any, any, any) @ libc.so.6+0x116eeb(syscall+27)
 add_key("encrypted", non-NULL, any, any, any u32) @ libc.so.6+0x116eeb(syscall+27)
@@ -348,7 +346,8 @@ mkdirat(AT_FDCWD, "/proc/sys/kernel/random/boot_id", 0) @ libc.so.6+0x10bd19(mkd
 mkdirat(AT_FDCWD, "/etc/machine-id", 0) @ libc.so.6+0x10bd19(mkdirat+9)
 mkdirat(AT_FDCWD, "/proc/", 0) @ libc.so.6+0x10bd19(mkdirat+9)
 mkdirat(AT_FDCWD, "/proc/", 0) @ libc.so.6+0x10bd19(mkdirat+9)
-mknodat(AT_FDCWD, any, any u32, any u32) @ libc.so.6+0x10bda5(mknodat+21)
+mknodat(AT_FDCWD, any, 020600, any u32) @ libc.so.6+0x10bda5(mknodat+21)
+mknodat(AT_FDCWD, any, 060000-037777777777, any u32) @ libc.so.6+0x10bda5(mknodat+21)
 newfstatat(any u32, any, any, any u32) @ libc.so.6+0x1084ec(fstatat64+12)
 unlinkat(any u32, any, AT_REMOVEDIR) @ libc.so.6+0x10cf79(unlinkat+9)
 readlinkat(any u32, any, non-NULL, any) @ libc.so.6+0x10c61c(readlinkat+12)
@@ -396,12 +395,8 @@ getcpu(any, 0, 0) @ libc.so.6+0x1077d9(sched_getcpu+153)
 getrandom(any, any, 0) @ libc.so.6+0x413b2(getentropy+50)
 getrandom(any, any, 0-GRND_NONBLOCK) @ libc.so.6+0x415f3(getrandom_vdso*+243)
 getrandom(any, non-NULL, 0-GRND_RANDOM) @ libc.so.6+0x415f3(getrandom_vdso*+243)
-getrandom(any, any, GRND_NONBLOCK) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-getrandom(any, any, GRND_INSECURE) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-getrandom(any, non-NULL, 0-GRND_RANDOM) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-getrandom(any, any, GRND_NONBLOCK) @ libc.so.6+0x9de20
-getrandom(any, any, GRND_INSECURE) @ libc.so.6+0x9de20
-getrandom(any, non-NULL, 0-GRND_RANDOM) @ libc.so.6+0x9de20
+getrandom(any, any, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+getrandom(any, any, any u8) @ libc.so.6+0x9de20
 getrandom(libc.so.6+0x1ed218(tcache_key*), 8, GRND_NONBLOCK) @ libc.so.6+0xa2a25(ptmalloc_init.part.0*+53)
 getrandom(any, non-NULL, any u8) @ libc.so.6+0x116eeb(syscall+27)
 memfd_create(any, MFD_CLOEXEC) @ libc.so.6+0x11a499(memfd_create+9)
@@ -450,8 +445,8 @@ faccessat2(any u32, "queue/physical_block_size", F_OK, 0) @ libc.so.6+0x107c0a(f
 faccessat2(any u32, "queue/dax", F_OK, 0) @ libc.so.6+0x107c0a(faccessat+42)
 faccessat2(any u32, "diskseq", F_OK, 0) @ libc.so.6+0x107c0a(faccessat+42)
 faccessat2(AT_FDCWD, any, F_OK, AT_EACCESS) @ libc.so.6+0x107c0a(faccessat+42)
-epoll_pwait2(any, any, any, any, 0, 8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-epoll_pwait2(any, any, any, any, 0, 8) @ libc.so.6+0x9de20
+epoll_pwait2(any, any, any, any, any u16, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+epoll_pwait2(any, any, any, any, any u16, any u16) @ libc.so.6+0x9de20
 mount_setattr(any u32, "", AT_EMPTY_PATH, any, 32) @ libc.so.6+0x11a10c(mount_setattr+12)
 mount_setattr(any u32, "", AT_EMPTY_PATH|AT_RECURSIVE, any, 32) @ libc.so.6+0x11a10c(mount_setattr+12)
 mount_setattr(-1 as u32, 0, 0, 0, 0) @ libc.so.6+0x11a10c(mount_setattr+12)

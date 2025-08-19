@@ -13,8 +13,18 @@ fstat(any u32, any) @ libc.so.6+0xe3bb9(fstat+9)
 poll(any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 poll(any, any, any) @ libc.so.6+0x79870
 lseek(any u32, any, any) @ libc.so.6+0xe7359(lseek+9)
-mmap(any, any, any u32, any u32, any u32, any) @ libc.so.6+0xf100a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, any u32, any u32, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, STDIN_FILENO, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(any, any, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(non-NULL, any, any u32, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, STDIN_FILENO, 0) @ libc.so.6+0xf106e(mmap+142)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xf18b9(mprotect+9)
 munmap(any, any) @ libc.so.6+0xf1969(munmap+9)
 brk(NULL-0xfffffffffffffffe) @ libc.so.6+0xe9709(brk+9)
@@ -71,8 +81,10 @@ connect(any, any, any u32) @ libc.so.6+0x79870
 accept(any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 accept(any, any, any) @ libc.so.6+0x79870
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+sendto(any, any, any, any u8, any u8, any u8) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x79870
+sendto(any, any, any, any u8, any u8, any u8) @ libc.so.6+0x79870
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x79870
 recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x79870
@@ -147,7 +159,8 @@ fcntl(any u32, F_OFD_SETLK, any) @ libc.so.6+0xe8955(__fcntl64_nocancel_adjusted
 fcntl(any u32, F_DUPFD_CLOEXEC, any u32) @ libc.so.6+0xe8955(__fcntl64_nocancel_adjusted+37)
 fcntl(any u32, F_SETPIPE_SZ, 0x100000) @ libc.so.6+0xe8955(__fcntl64_nocancel_adjusted+37)
 fcntl(any u32, F_GETPIPE_SZ, any) @ libc.so.6+0xe8955(__fcntl64_nocancel_adjusted+37)
-flock(any u32, LOCK_SH-LOCK_EX|LOCK_NB) @ libc.so.6+0xe3b89(flock+9)
+flock(any u32, LOCK_SH-LOCK_EX) @ libc.so.6+0xe3b89(flock+9)
+flock(any u32, LOCK_NB-LOCK_EX|LOCK_NB) @ libc.so.6+0xe3b89(flock+9)
 flock(any u32, LOCK_UN) @ libc.so.6+0xe3b89(flock+9)
 flock(any u32, LOCK_UN|LOCK_NB) @ libc.so.6+0xe3b89(flock+9)
 fsync(any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
@@ -257,8 +270,8 @@ clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0x6dae4(__internal_sysc
 clock_nanosleep(CLOCK_REALTIME, 0, any, any) @ libc.so.6+0x79870
 exit_group(NULL-0x1fe) @ ld-linux-x86-64.so.2+0x23c05(_exit+21)
 exit_group(any u32) @ libc.so.6+0xbf456(_Exit+22)
-epoll_wait(any, any, 1, 0) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-epoll_wait(any, any, 1, 0) @ libc.so.6+0x79870
+epoll_wait(any, any, any u16, any u16) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+epoll_wait(any, any, any u16, any u16) @ libc.so.6+0x79870
 epoll_ctl(any u32, 1, any u32, any) @ libc.so.6+0xf5a8c(epoll_ctl+12)
 epoll_ctl(any u32, 2, any u32, 0) @ libc.so.6+0xf5a8c(epoll_ctl+12)
 tgkill(any u32, any u32, SIGSETXID) @ libc.so.6+0x6ec38(__nptl_setxid+312)
@@ -312,12 +325,12 @@ unshare(CLONE_NEWNS) @ libc.so.6+0xf5f39(unshare+9)
 unshare(CLONE_NEWUSER) @ libc.so.6+0xf5f39(unshare+9)
 set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0x7112a(start_thread+234)
 set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xbf3f1(_Fork+129)
-splice(any, any, any, any, any, any u8) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-splice(any, any, any, any, any, any u8) @ libc.so.6+0x79870
+splice(any, any, any, any, any, any u16) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+splice(any, any, any, any, any, any u16) @ libc.so.6+0x79870
 utimensat(AT_FDCWD, any, 0, 0) @ libc.so.6+0xe878c(__GI___utimensat64_helper+12)
 utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xe87cc(utimensat+12)
-accept4(any, 0, 0, SOCK_CLOEXEC) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-accept4(any, 0, 0, SOCK_CLOEXEC) @ libc.so.6+0x79870
+accept4(any, 0, any u8, any u32) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+accept4(any, 0, any u8, any u32) @ libc.so.6+0x79870
 eventfd2(0, 0) @ libc.so.6+0xf2a8b(syscall+27)
 eventfd2(0, EFD_NONBLOCK|EFD_CLOEXEC) @ libc.so.6+0xf4fe9(eventfd+9)
 epoll_create1(EPOLL_CLOEXEC) @ libc.so.6+0xf5a59(epoll_create1+9)
@@ -340,8 +353,8 @@ getrandom(any, non-NULL, GRND_RANDOM) @ libc.so.6+0x79870
 getrandom(libc.so.6+0x1f0238(tcache_key), 8, GRND_NONBLOCK) @ libc.so.6+0x7e485(ptmalloc_init.part.0+53)
 getrandom(any, non-NULL, 0) @ libc.so.6+0xf2a8b(syscall+27)
 memfd_create(any, MFD_CLOEXEC) @ libc.so.6+0xf6059(memfd_create+9)
-copy_file_range(any, any, any, any, non-NULL, 0) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-copy_file_range(any, any, any, any, non-NULL, 0) @ libc.so.6+0x79870
+copy_file_range(any, any, any, any, any, any u16) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+copy_file_range(any, any, any, any, any, any u16) @ libc.so.6+0x79870
 statx(STDIN_FILENO-0xfffffffe, "", AT_EMPTY_PATH, STATX_TYPE, any) @ libc.so.6+0xe819c(statx+12)
 statx(STDIN_FILENO-0xfffffffe, "", AT_EMPTY_PATH, STATX_GID, any) @ libc.so.6+0xe819c(statx+12)
 statx(STDIN_FILENO-0xfffffffe, "", AT_EMPTY_PATH, STATX_TYPE|STATX_MODE|STATX_UID|STATX_GID, any) @ libc.so.6+0xe819c(statx+12)

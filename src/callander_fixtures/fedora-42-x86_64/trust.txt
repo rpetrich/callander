@@ -11,13 +11,17 @@ fstat(any u32, any) @ libc.so.6+0xe3bb9(fstat+9)
 poll(any, 1, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 poll(any, 1, any) @ libc.so.6+0x79870
 lseek(any u32, any, any) @ libc.so.6+0xe7359(lseek+9)
-mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
 mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
 mmap(0, any, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
 mmap(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
-mmap(any, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0xf100a(mmap+42)
-mmap(0, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0xf106e(mmap+142)
-mmap(0, any, PROT_READ|PROT_WRITE, any u32, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_NONE, MAP_32BIT-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_32BIT-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
 mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
 mmap(0, any, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
 mmap(0, any, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, -1 as u32, 0) @ libc.so.6+0xf106e(mmap+142)
@@ -84,7 +88,7 @@ symlink(non-NULL, any) @ libc.so.6+0xe81f9(symlink+9)
 readlink(any, any, any) @ libc.so.6+0xe7d29(readlink+9)
 chmod(any, 0444) @ libc.so.6+0xe2f79(chmod+9)
 chmod(any, 0555) @ libc.so.6+0xe2f79(chmod+9)
-fchmod(any u32, any u32) @ libc.so.6+0xe35e9(fchmod+9)
+fchmod(any u32, 0700-037777777777) @ libc.so.6+0xe35e9(fchmod+9)
 umask(any u32) @ libc.so.6+0xe86a9(umask+9)
 getuid() @ libc.so.6+0xc68c9(getuid+9)
 getgid() @ libc.so.6+0xc57c9(getgid+9)
@@ -133,12 +137,14 @@ tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x7327a(__pthread_kill_implementat
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x7327a(__pthread_kill_implementation+266)
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x73306(__pthread_raise_internal+38)
 openat(any, "..", O_RDONLY, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL-O_CREAT|O_EXCL, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_DIRECTORY|O_CLOEXEC|__O_TMPFILE, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 openat(any, "..", O_RDONLY, any) @ libc.so.6+0x79870
-openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL, any) @ libc.so.6+0x79870
+openat(AT_FDCWD, any, O_RDONLY, any) @ libc.so.6+0x79870
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL-O_CREAT|O_EXCL, any) @ libc.so.6+0x79870
 openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x79870
 openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_DIRECTORY|O_CLOEXEC|__O_TMPFILE, any) @ libc.so.6+0x79870
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x79870

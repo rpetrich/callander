@@ -52,7 +52,7 @@ fdatasync(any) @ /usr/sbin/ldconfig+0x395f8
 exit_group(127) @ /usr/sbin/ldconfig+0xffa4
 exit_group(any) @ /usr/sbin/ldconfig+0x32638
 set_tid_address(any) @ /usr/sbin/ldconfig+0x3f854
-futex(any, FUTEX_WAIT, any u32, 0, any, any)
+futex(any, FUTEX_WAIT, 0x2-0xffffffff, 0, any, any)
 futex(any, any, 1, 0, any, any)
 futex(any, any, 0x2-0xffffffff, 0, 0, -1 as u32)
 futex(any, any, INT_MAX, 0, any, any)
@@ -120,7 +120,8 @@ brk(0) @ /usr/sbin/ldconfig+0x407f8
 brk(any) @ /usr/sbin/ldconfig+0x40804
 munmap(any, any) @ /usr/sbin/ldconfig+0x396c8
 mremap(any, any, any, MREMAP_MAYMOVE, any) @ /usr/sbin/ldconfig+0x3b160
-mmap(any, any, any, any, any, any) @ /usr/sbin/ldconfig+0x39678
+mmap(any, any, PROT_NONE-PROT_READ, any, any, 0) @ /usr/sbin/ldconfig+0x39678
+mmap(any, any, any, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffffffffffff, any, any) @ /usr/sbin/ldconfig+0x39678
 mmap(0, any, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) @ /usr/sbin/ldconfig+0x4082c
 mprotect(any, any, any u32) @ /usr/sbin/ldconfig+0x39708
 madvise(any, any, MADV_DONTNEED) @ /usr/sbin/ldconfig+0x39748

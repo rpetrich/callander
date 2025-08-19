@@ -14,7 +14,7 @@ dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x491cc(child*+536)
 dup3(any, any, 0) @ ld-musl-aarch64.so.1+0x492c0(child*+780)
 dup3(any, STDIN_FILENO-STDOUT_FILENO, 0) @ ld-musl-aarch64.so.1+0x68650(dup2+28)
 fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
-fcntl(any, F_SETFL, 0-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
+fcntl(any, F_SETFL, O_NOFOLLOW-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_SETLK, any) @ ld-musl-aarch64.so.1+0x21028(fcntl+140)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x21194(open+136)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x461c4(socket+132)
@@ -27,7 +27,7 @@ fcntl(STDIN_FILENO-0x7fffffff, F_GETFD, any) @ ld-musl-aarch64.so.1+0x52cac(fsta
 fcntl(AT_FDCWD, F_GETFD, any) @ ld-musl-aarch64.so.1+0x52cac(fstatat+88)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x531ec(fdopen+120)
 fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x532d4(fdopen+352)
-fcntl(any, F_SETFL, any) @ ld-musl-aarch64.so.1+0x532ec(fdopen+376)
+fcntl(any, F_SETFL, O_APPEND-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x532ec(fdopen+376)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x53404(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x54b00(fopen+116)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x68684(dup2+80)
@@ -59,49 +59,80 @@ chdir(any) @ ld-musl-aarch64.so.1+0x492e4(child*+816)
 chdir(non-NULL) @ ld-musl-aarch64.so.1+0x68570(chdir+12)
 fchdir(any) @ ld-musl-aarch64.so.1+0x49224(child*+624)
 chroot(non-NULL) @ ld-musl-aarch64.so.1+0x24640(chroot+12)
-fchmod(STDIN_FILENO-0xfffffffffffffffe, 0-0700) @ ld-musl-aarch64.so.1+0x52a44(fchmod+32)
+fchmod(STDIN_FILENO-0xfffffffffffffffe, 0200-0700) @ ld-musl-aarch64.so.1+0x52a44(fchmod+32)
 fchmodat(AT_FDCWD, any, 0-07777) @ ld-musl-aarch64.so.1+0x52a14(chmod+24)
-fchmodat(AT_FDCWD, any, 0-0700) @ ld-musl-aarch64.so.1+0x52a88(fchmod+100)
+fchmodat(AT_FDCWD, any, 0200-0700) @ ld-musl-aarch64.so.1+0x52a88(fchmod+100)
 fchmodat(AT_FDCWD, any, 0-07777) @ ld-musl-aarch64.so.1+0x52bf0(fchmodat+328)
 fchownat(AT_FDCWD, any, any u32, any u32, AT_SYMLINK_NOFOLLOW) @ ld-musl-aarch64.so.1+0x68d74(lchown+36)
 openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x2055c(__init_libc*+424)
-openat(AT_FDCWD, any, any, any) @ ld-musl-aarch64.so.1+0x49294(child*+736)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x49294(child*+736)
 openat(AT_FDCWD, any, O_RDONLY|O_NOCTTY|O_LARGEFILE|O_CLOEXEC|O_PATH, any) @ ld-musl-aarch64.so.1+0x52b78(fchmodat+208)
 openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, "/etc/services", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
 openat(AT_FDCWD, "/etc/resolv.conf", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x533e4(__fopen_rb_ca*+64)
-openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_APPEND, 0666) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, "/dev/null", O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
-openat(AT_FDCWD, any, O_RDONLY-O_WRONLY|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x54adc(fopen+80)
+openat(any, "n\n", any u32, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, "r mode \"%s\" is not one of errors, all, or client\n", any u32, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, "icts with --old-args.\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, "r conflicts with -XX\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, " batch-file name must be %d characters or less.\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(any, "elete does not work without --recursive (-r) or --dirs (-d).\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-O_RDWR|O_CREAT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0700) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_NOFOLLOW, 0-0700) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, any, O_RDONLY|O_NOATIME-O_WRONLY|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_NOFOLLOW|O_NOATIME, 0600) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW|O_NOATIME, 0600) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW|O_NOATIME, 0700) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_NOFOLLOW|O_NOATIME, 0-0700) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, non-NULL, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW, 0664) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, non-NULL, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW|O_NOATIME, 0664) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, " %s: %s (in daemon mode)\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, "ecify --groupmap once.\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, "nce.\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, "o server\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, " batch-file name must be %d characters or less.\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, "elete does not work without --recursive (-r) or --dirs (-d).\n", any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "(when used with --daemon)\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "ecific rsync options.  See also the rsyncd.conf(5) manpage.\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, " %s: %s (in daemon mode)\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "rsync --daemon --help\" for assistance with daemon mode.)\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "zlibx", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, " prior --chown.\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "ecify --groupmap once.\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "nce.\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "s", any, any) @ ld-musl-aarch64.so.1+0x607bc
+openat(AT_FDCWD, "o server\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, "/dev/tty", O_RDWR|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
 openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x607bc
-openat(AT_FDCWD, any, O_RDONLY-O_WRONLY|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, "n\n", any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, "r mode \"%s\" is not one of errors, all, or client\n", any u32, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, "icts with --old-args.\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(any, "r conflicts with -XX\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-O_RDWR|O_CREAT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW, 0700) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_NOFOLLOW, 0-0700) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDONLY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, any, O_RDONLY|O_NOATIME-O_WRONLY|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_NOFOLLOW|O_NOATIME, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW|O_NOATIME, 0600) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW|O_NOATIME, 0700) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC|O_NOFOLLOW|O_NOATIME, 0-0700) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, non-NULL, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW, 0664) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, non-NULL, O_RDWR|O_CREAT|O_LARGEFILE|O_NOFOLLOW|O_NOATIME, 0664) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, "ecify --groupmap once.\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, "nce.\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, "o server\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, " batch-file name must be %d characters or less.\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
-openat(AT_FDCWD, "elete does not work without --recursive (-r) or --dirs (-d).\n", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "(when used with --daemon)\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "ecific rsync options.  See also the rsyncd.conf(5) manpage.\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, " %s: %s (in daemon mode)\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "rsync --daemon --help\" for assistance with daemon mode.)\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "zlibx", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, " prior --chown.\n", O_RDONLY|O_NOFOLLOW-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_NONBLOCK|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "ecify --groupmap once.\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "nce.\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "s", any, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "o server\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, " batch-file name must be %d characters or less.\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
+openat(AT_FDCWD, "elete does not work without --recursive (-r) or --dirs (-d).\n", O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, "/dev/tty", O_RDWR|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, "/dev/console", O_WRONLY|O_NOCTTY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x6145c(__syscall_cp_c*+204)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64f04(__map_file*+36)
@@ -158,7 +189,7 @@ exit_group(any) @ ld-musl-aarch64.so.1+0x20c50(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xc2e78(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48730(__post_Fork*+44)
 set_tid_address(any) @ ld-musl-aarch64.so.1+0x623ac(start*+92)
 futex(any, FUTEX_WAIT, any, 0, any u32, 0)
-futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE, 1, any, any, any)
 futex(any, FUTEX_WAKE, INT_MAX, any, any, any)
@@ -166,7 +197,7 @@ futex(any, FUTEX_REQUEUE, 0, 1, any, any)
 futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any u32, 0)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)
 futex(any, FUTEX_REQUEUE|FUTEX_PRIVATE_FLAG, 0, 1, any, any)

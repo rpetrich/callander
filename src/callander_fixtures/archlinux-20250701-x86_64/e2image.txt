@@ -13,10 +13,13 @@ fstat(any u32, any) @ libc.so.6+0x1084b9(fstat+9)
 poll(any, 1, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 poll(any, 1, any) @ libc.so.6+0x9de20
 lseek(any u32, any, any) @ libc.so.6+0x10bc99(lseek+9)
-mmap(0, any, any u32, any u32, any u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(any, any, PROT_NONE, any u32, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(non-NULL, any, PROT_NONE-PROT_READ, any u32, any u32, 0) @ libc.so.6+0x11540a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, 0) @ libc.so.6+0x11546d(mmap+141)
+mmap(0, 0-LONG_MAX, PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(0, any, any u32, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0x11540a(mmap+42)
+mmap(0, 0-LONG_MAX, PROT_READ|PROT_WRITE, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ libc.so.6+0x11546d(mmap+141)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, -1 as u32, 0) @ libc.so.6+0x11546d(mmap+141)
+mmap(0, any, PROT_READ, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ libc.so.6+0x11546d(mmap+141)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0x115cb9(mprotect+9)
 munmap(any, any) @ libc.so.6+0x115d69(munmap+9)
 brk(NULL-0xfffffffffffffffe) @ libc.so.6+0x10df49(brk+9)
@@ -66,7 +69,7 @@ dup(STDIN_FILENO-0xfffffffe) @ libc.so.6+0x1079f9(dup+9)
 dup2(any u32, any u32) @ libc.so.6+0x107a29(__dup2+9)
 getpid() @ libc.so.6+0xeb0c9(getpid+9)
 socket(any u16, SOCK_STREAM|SOCK_CLOEXEC-SOCK_RAW|SOCK_CLOEXEC, 0) @ libc.so.6+0x11aed9(socket+9)
-socket(AF_INET, any u32, 17) @ libc.so.6+0x11aed9(socket+9)
+socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK-0xffffffff, 17) @ libc.so.6+0x11aed9(socket+9)
 socket(AF_INET, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0x11aed9(socket+9)
 socket(AF_INET6, SOCK_DGRAM|SOCK_NONBLOCK|SOCK_CLOEXEC, 0) @ libc.so.6+0x11aed9(socket+9)
 connect(any, any, any u32) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
@@ -75,14 +78,10 @@ sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x92004(__internal_syscall_ca
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x9de20
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x9de20
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x9de20
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x9de20
-recvmsg(any, any, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvmsg(any, any, MSG_ERRQUEUE) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-recvmsg(any, any, 0) @ libc.so.6+0x9de20
-recvmsg(any, any, MSG_ERRQUEUE) @ libc.so.6+0x9de20
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x9de20
+recvmsg(any, any, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+recvmsg(any, any, any u16) @ libc.so.6+0x9de20
 bind(any u32, any, 12) @ libc.so.6+0x11a9d9(bind+9)
 bind(any u32, any, 16) @ libc.so.6+0x11a9d9(bind+9)
 getsockname(any u32, any, any) @ libc.so.6+0x11aa69(getsockname+9)
@@ -95,8 +94,8 @@ exit(0) @ libc.so.6+0x276d7(__libc_start_call_main*+151)
 exit(0) @ libc.so.6+0x95817(start_thread*+791)
 exit(any) @ libc.so.6+0x118fbc(clone+76)
 exit(any) @ libc.so.6+0x119194(__GI___clone3*+52)
-wait4(any, any, 0, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-wait4(any, any, 0, 0) @ libc.so.6+0x9de20
+wait4(any, any, any u16, any u16) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+wait4(any, any, any u16, any u16) @ libc.so.6+0x9de20
 kill(any u32, SIGINT) @ libc.so.6+0x3e0f9(kill+9)
 uname(any) @ libc.so.6+0x102869(uname+9)
 fcntl(any, F_SETLKW, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
@@ -196,38 +195,56 @@ tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x97713(__pthread_kill_implementati
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x9774a(__pthread_kill_implementation*+266)
 tgkill(any u32, any u32, SIGFPE) @ libc.so.6+0x9774a(__pthread_kill_implementation*+266)
 tgkill(any u32, any u32, SIGABRT) @ libc.so.6+0x977d6(__pthread_raise_internal*+38)
-waitid(P_PID, any u32, 0, WEXITED, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-waitid(P_PIDFD, any u32, 0, WEXITED, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-waitid(P_PID, any u32, 0, WEXITED, 0) @ libc.so.6+0x9de20
-waitid(P_PIDFD, any u32, 0, WEXITED, 0) @ libc.so.6+0x9de20
+waitid(any u8, any u32, any u8, any u8, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+waitid(any u8, any u32, any u8, any u8, any u8) @ libc.so.6+0x9de20
 waitid(P_PIDFD, INT_MAX, 0, WNOHANG|WEXITED, any) @ libc.so.6+0x11913f(__clone_pidfd_supported*+47)
 openat(any, "dm/uuid", O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "slaves", O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "alignment_offset", O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-openat(any, "alignment_offset", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "alignment_offset", O_RDWR, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "alignment_offset", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "alignment_offset", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "queue/minimum_io_size", O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-openat(any, "queue/minimum_io_size", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/minimum_io_size", O_RDWR, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/minimum_io_size", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/minimum_io_size", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "queue/optimal_io_size", O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-openat(any, "queue/optimal_io_size", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/optimal_io_size", O_RDWR, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/optimal_io_size", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/optimal_io_size", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "queue/physical_block_size", O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-openat(any, "queue/physical_block_size", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/physical_block_size", O_RDWR, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/physical_block_size", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/physical_block_size", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "queue/dax", O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-openat(any, "queue/dax", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/dax", O_RDWR, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/dax", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+openat(any, "queue/dax", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "diskseq", any u16, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "..", O_RDONLY, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
 openat(any, "dm/uuid", O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x9de20
 openat(any, "slaves", O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x9de20
 openat(any, "alignment_offset", O_RDONLY, any) @ libc.so.6+0x9de20
-openat(any, "alignment_offset", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
+openat(any, "alignment_offset", O_RDWR, any) @ libc.so.6+0x9de20
+openat(any, "alignment_offset", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x9de20
+openat(any, "alignment_offset", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
 openat(any, "queue/minimum_io_size", O_RDONLY, any) @ libc.so.6+0x9de20
-openat(any, "queue/minimum_io_size", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
+openat(any, "queue/minimum_io_size", O_RDWR, any) @ libc.so.6+0x9de20
+openat(any, "queue/minimum_io_size", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x9de20
+openat(any, "queue/minimum_io_size", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
 openat(any, "queue/optimal_io_size", O_RDONLY, any) @ libc.so.6+0x9de20
-openat(any, "queue/optimal_io_size", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
+openat(any, "queue/optimal_io_size", O_RDWR, any) @ libc.so.6+0x9de20
+openat(any, "queue/optimal_io_size", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x9de20
+openat(any, "queue/optimal_io_size", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
 openat(any, "queue/physical_block_size", O_RDONLY, any) @ libc.so.6+0x9de20
-openat(any, "queue/physical_block_size", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
+openat(any, "queue/physical_block_size", O_RDWR, any) @ libc.so.6+0x9de20
+openat(any, "queue/physical_block_size", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x9de20
+openat(any, "queue/physical_block_size", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
 openat(any, "queue/dax", O_RDONLY, any) @ libc.so.6+0x9de20
-openat(any, "queue/dax", O_RDWR-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
+openat(any, "queue/dax", O_RDWR, any) @ libc.so.6+0x9de20
+openat(any, "queue/dax", O_WRONLY|O_TRUNC-O_ACCMODE|O_TRUNC, any) @ libc.so.6+0x9de20
+openat(any, "queue/dax", O_WRONLY|O_APPEND-O_ACCMODE|O_TRUNC|O_APPEND, any) @ libc.so.6+0x9de20
 openat(any, "diskseq", any u16, any) @ libc.so.6+0x9de20
 openat(any, "..", O_RDONLY, any) @ libc.so.6+0x9de20
 openat(AT_FDCWD, any, any, any) @ libc.so.6+0x9de20
@@ -235,8 +252,8 @@ openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0x10d314(__open_nocancel+68)
 newfstatat(any u32, any, any, 0) @ libc.so.6+0x1084ec(fstatat64+12)
 newfstatat(any u32, any, any, AT_SYMLINK_NOFOLLOW) @ libc.so.6+0x1084ec(fstatat64+12)
 faccessat(any u32, any, F_OK) @ libc.so.6+0x107d70(faccessat+400)
-pselect6(any, any, 0, 0, any, 0) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
-pselect6(any, any, 0, 0, any, 0) @ libc.so.6+0x9de20
+pselect6(any, any, any u8, any u8, any, any u8) @ libc.so.6+0x92004(__internal_syscall_cancel*+132)
+pselect6(any, any, any u8, any u8, any, any u8) @ libc.so.6+0x9de20
 set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0x955f1(start_thread*+241)
 set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xe3f01(_Fork+129)
 utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0x10d01c(__GI___utimensat64_helper*+12)

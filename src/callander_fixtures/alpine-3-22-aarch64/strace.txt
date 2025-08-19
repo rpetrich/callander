@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any
+callander: found syscall with unknown number at any
 callander: full call stack: ld-musl-aarch64.so.1+0x3d4d0(syscall)-ld-musl-aarch64.so.1+0x3d51c(syscall+76) r7=0xfffffff8 r16=/usr/bin/strace+0x12fe40 r17=ld-musl-aarch64.so.1+0x3d4d0(syscall) stack+20=0xfffffff8
 /usr/bin/strace+0x4a20-/usr/bin/strace+0x4a2c (br) r16=/usr/bin/strace+0x12fe40 r17=ld-musl-aarch64.so.1+0x3d4d0(syscall)
 /usr/bin/strace+0xe93c-/usr/bin/strace+0xe95c (bl) r19=any u32 r21=0x1-0xffffffff r22=1 r23=0 r26=/usr/bin/strace+0xb5000 r27=/usr/bin/strace+0x130000 r28=/usr/bin/strace+0x130230

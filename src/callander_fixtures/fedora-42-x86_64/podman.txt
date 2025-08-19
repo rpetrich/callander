@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any
+callander: found syscall with unknown number at any
 callander: full call stack: /usr/bin/podman+0xf380-/usr/bin/podman+0xf38c
 /usr/bin/podman+0xe7680-/usr/bin/podman+0xe7688 (call)
 /usr/bin/podman+0xe7720-/usr/bin/podman+0xe7785 (call)
@@ -6,10 +6,12 @@ callander: full call stack: /usr/bin/podman+0xf380-/usr/bin/podman+0xf38c
 /usr/bin/podman+0xe3be9-/usr/bin/podman+0xe3bf0 (conditional continue (no jump)) si=0 di=0
 /usr/bin/podman+0xe3be0-/usr/bin/podman+0xe3be3 (conditional continue) di=0
 /usr/bin/podman+0xe3baa-/usr/bin/podman+0xe3bd9 (conditional jump) di=0
-/usr/bin/podman+0xe3ba0-/usr/bin/podman+0xe3ba4 (conditional continue) ax=0xffffffffffffff9c si=NULL-0xfff r8=NULL-0xfff
-/usr/bin/podman+0x1161e6-/usr/bin/podman+0x116206 (call) ax=0xffffffffffffff9c si=NULL-0xfff r8=NULL-0xfff
-/usr/bin/podman+0x1161e0-/usr/bin/podman+0x1161e4 (conditional continue) si=NULL-0xfff di=NULL-0xfff r8=NULL-0xfff
-/usr/bin/podman+0x11741b-/usr/bin/podman+0x11746f (call) si=NULL-0xfff di=NULL-0xfff r8=NULL-0xfff
+/usr/bin/podman+0xe3ba0-/usr/bin/podman+0xe3ba4 (conditional continue) ax=0xffffffffffffff9c dx=0x80000-0xffffffffffffffff si=NULL-0x3ff di=0x80000-0xffffffffffffffff r8=NULL-0x3ff
+/usr/bin/podman+0x1161e6-/usr/bin/podman+0x116206 (call) ax=0xffffffffffffff9c dx=0x80000-0xffffffffffffffff si=NULL-0x3ff di=0x80000-0xffffffffffffffff r8=NULL-0x3ff
+/usr/bin/podman+0x1161e0-/usr/bin/podman+0x1161e4 (conditional continue) cx=0x80000-0xffffffffffffffff dx=0x80000-0xffffffffffffffff si=0x200-0x3ff di=NULL-0x3ff r8=NULL-0x3ff
+/usr/bin/podman+0x117456-/usr/bin/podman+0x11746f (call) cx=0x80000-0xffffffffffffffff dx=0x80000-0xffffffffffffffff si=0x200-0x3ff di=NULL-0x3ff r8=NULL-0x3ff
+/usr/bin/podman+0x117442-/usr/bin/podman+0x117452 (primary result) dx=0x80000-0xffffffffffffffff si=NULL-0x1ff di=any u32 r8=0x400-0x5ff
+/usr/bin/podman+0x11741b-/usr/bin/podman+0x11743e (primary result) dx=0x80000-0xffffffffffffffff si=0x800-0x9ff di=any u32 r8=NULL-0x1ff
 /usr/bin/podman+0x1173ea-/usr/bin/podman+0x117406 (jump) di=any u32
 /usr/bin/podman+0x1173e0-/usr/bin/podman+0x1173e4 (conditional continue) di=any u32
 /usr/bin/podman+0x115606-/usr/bin/podman+0x115639 (call) di=any u32

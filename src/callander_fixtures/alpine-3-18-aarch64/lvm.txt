@@ -14,7 +14,7 @@ fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x45cc0(socket+148)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x5128c(fstatat64+108)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x517f0(fdopen+176)
 fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x51810(fdopen+208)
-fcntl(any, F_SETFL, any) @ ld-musl-aarch64.so.1+0x51828(fdopen+232)
+fcntl(any, F_SETFL, O_APPEND-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x51828(fdopen+232)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x52fd4(fopen64+148)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x64e0c(dup2+80)
 ioctl(any, any, non-NULL) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
@@ -36,10 +36,12 @@ ioctl(any, GET_ARRAY_INFO, any) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
 ioctl(any, _IOR('D',3,416)|0xffffffff00000000, any) @ ld-musl-aarch64.so.1+0x3cc28(ioctl+52)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x5186c(fdopen+300)
 ioctl(any, TIOCGWINSZ, any) @ ld-musl-aarch64.so.1+0x51e9c(__stdout_write*+56)
-flock(any, LOCK_SH-LOCK_EX|LOCK_NB) @ ld-musl-aarch64.so.1+0x243b8(flock+20)
+flock(any, LOCK_SH-LOCK_EX) @ ld-musl-aarch64.so.1+0x243b8(flock+20)
+flock(any, LOCK_NB-LOCK_EX|LOCK_NB) @ ld-musl-aarch64.so.1+0x243b8(flock+20)
 flock(any, LOCK_UN) @ ld-musl-aarch64.so.1+0x243b8(flock+20)
 flock(any, LOCK_UN|LOCK_NB) @ ld-musl-aarch64.so.1+0x243b8(flock+20)
-mknodat(AT_FDCWD, any, any u32, NULL-0xfffffffffff) @ ld-musl-aarch64.so.1+0x514c4(mknod+36)
+mknodat(AT_FDCWD, any, 020600, NULL-0xfffffffffff) @ ld-musl-aarch64.so.1+0x514c4(mknod+36)
+mknodat(AT_FDCWD, any, 060000-037777777777, NULL-0xfffffffffff) @ ld-musl-aarch64.so.1+0x514c4(mknod+36)
 mkdirat(AT_FDCWD, any, 0755) @ ld-musl-aarch64.so.1+0x51454(mkdir+28)
 mkdirat(AT_FDCWD, any, 0777) @ ld-musl-aarch64.so.1+0x51454(mkdir+28)
 unlinkat(AT_FDCWD, "", AT_REMOVEDIR) @ ld-musl-aarch64.so.1+0x658f0(rmdir+24)
@@ -56,28 +58,39 @@ faccessat(any, "queue/physical_block_size", F_OK) @ ld-musl-aarch64.so.1+0x64f10
 faccessat(any, "queue/dax", F_OK) @ ld-musl-aarch64.so.1+0x64f10(faccessat+56)
 fchownat(AT_FDCWD, any, any u32, any u32, 0) @ ld-musl-aarch64.so.1+0x64d30(chown+40)
 openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20630(__init_libc*+380)
-openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, any, O_RDWR|O_CREAT|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_EXCL|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
-openat(AT_FDCWD, non-NULL, O_WRONLY|O_CREAT|O_APPEND, 0666) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x52fb0(fopen64+112)
 openat(any, "dm/uuid", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, "alignment_offset", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, "queue/minimum_io_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, "queue/optimal_io_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, "queue/physical_block_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(any, "queue/dax", O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(any, "queue/dax", O_RDONLY|O_NOFOLLOW-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, "slaves", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dc8c
-openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NONBLOCK|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDWR|O_DIRECT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECT|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDWR|O_DIRECT|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_DIRECT|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5dc8c
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x5dc8c
 openat(any, "dm/uuid", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, "alignment_offset", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, "queue/minimum_io_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, "queue/optimal_io_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, "queue/physical_block_size", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-openat(any, "queue/dax", O_RDONLY-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(any, "queue/dax", O_RDONLY|O_NOFOLLOW-O_ACCMODE|O_TRUNC|O_APPEND|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(any, "slaves", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
-openat(AT_FDCWD, any, O_RDONLY-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-O_RDWR|O_NONBLOCK|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDWR|O_DIRECT|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDWR|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_DIRECT|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDWR|O_DIRECT|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDWR|O_EXCL|O_DIRECT|O_NOFOLLOW|O_NOATIME, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
+openat(AT_FDCWD, any, O_RDONLY|O_CLOEXEC-O_CREAT|O_EXCL|O_NOCTTY|O_TRUNC|O_APPEND|O_DSYNC|O_ASYNC|O_DIRECTORY|O_LARGEFILE|O_DIRECT|O_NOFOLLOW|O_NOATIME|O_CLOEXEC|__O_SYNC|O_PATH|__O_TMPFILE, any) @ ld-musl-aarch64.so.1+0x5e778(__syscall_cp_c*+76)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x61dbc(__map_file*+44)
 close(any) @ ld-musl-aarch64.so.1+0x20014(opendir+56)
 close(any) @ ld-musl-aarch64.so.1+0x51bb8(__stdio_close*+24)
@@ -116,7 +129,7 @@ exit_group(any) @ ld-musl-aarch64.so.1+0x20cbc(_Exit+12)
 set_tid_address(ld-musl-aarch64.so.1+0xb2240(__thread_list_lock*)) @ ld-musl-aarch64.so.1+0x48040(_Fork+128)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
 futex(any, FUTEX_WAIT, non-NULL, 0, 0, any)
-futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAIT, 0xffffffff80000000-0xffffffffffffffff, 0, 0x80000000-0xffffffff, any)
 futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, any u32)
 futex(any, FUTEX_WAKE, 1, any, any, any)
@@ -125,7 +138,7 @@ futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any u32, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0, 0)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, 0, any)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0xffffffff80000000-0xffffffffffffffff, 0, 0x80000000-0xffffffff, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, any u32)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)

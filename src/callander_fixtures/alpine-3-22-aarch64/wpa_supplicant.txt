@@ -27,9 +27,9 @@ getcwd(non-NULL, 0x100000000) @ ld-musl-aarch64.so.1+0x68b34(getcwd+36)
 dup3(any, STDIN_FILENO-STDERR_FILENO, 0) @ ld-musl-aarch64.so.1+0x686a8(dup2+28)
 fcntl(any, F_DUPFD, 3) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
 fcntl(any, F_GETFD, 0) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
-fcntl(any, F_SETFD, any u32) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
+fcntl(any, F_SETFD, FD_CLOEXEC-0xffffffff) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
 fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
-fcntl(any, F_SETFL, any u32) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
+fcntl(any, F_SETFL, O_NOFOLLOW-0xffffffff) @ ld-musl-aarch64.so.1+0x20ab4(fcntl+140)
 fcntl(any, F_DUPFD_CLOEXEC, 3) @ ld-musl-aarch64.so.1+0x20b1c(fcntl+244)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x20b3c(fcntl+276)
 fcntl(any, F_DUPFD_CLOEXEC, 0) @ ld-musl-aarch64.so.1+0x20b54(fcntl+300)
@@ -46,7 +46,7 @@ fcntl(STDIN_FILENO-0x7fffffff, F_GETFD, any) @ ld-musl-aarch64.so.1+0x52960(fsta
 fcntl(AT_FDCWD, F_GETFD, any) @ ld-musl-aarch64.so.1+0x52960(fstatat+88)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x52e78(fdopen+120)
 fcntl(any, F_GETFL, any) @ ld-musl-aarch64.so.1+0x52f60(fdopen+352)
-fcntl(any, F_SETFL, any) @ ld-musl-aarch64.so.1+0x52f78(fdopen+376)
+fcntl(any, F_SETFL, O_APPEND-0xffffffffffffffff) @ ld-musl-aarch64.so.1+0x52f78(fdopen+376)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x53090(__fopen_rb_ca*+96)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-aarch64.so.1+0x54770(fopen+116)
 fcntl(any, F_GETFD, any) @ ld-musl-aarch64.so.1+0x686dc(dup2+80)
@@ -87,9 +87,7 @@ openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x1
 openat(AT_FDCWD, "/etc/hosts", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x53070(__fopen_rb_ca*+64)
 openat(AT_FDCWD, "/etc/services", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x53070(__fopen_rb_ca*+64)
 openat(AT_FDCWD, "/etc/resolv.conf", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x53070(__fopen_rb_ca*+64)
-openat(AT_FDCWD, any, O_RDONLY, any) @ ld-musl-aarch64.so.1+0x5474c(fopen+80)
-openat(AT_FDCWD, any, O_WRONLY|O_CREAT|O_TRUNC, 0666) @ ld-musl-aarch64.so.1+0x5474c(fopen+80)
-openat(AT_FDCWD, non-NULL, any, any) @ ld-musl-aarch64.so.1+0x5474c(fopen+80)
+openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW-0xffffffffffffffff, any) @ ld-musl-aarch64.so.1+0x5474c(fopen+80)
 openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x60868
 openat(any, any, any u32, any) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 openat(AT_FDCWD, any, O_RDONLY|O_NONBLOCK|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x64fa8(__map_file*+36)
@@ -144,7 +142,7 @@ set_tid_address(ld-musl-aarch64.so.1+0xc2e80(__thread_list_lock*)) @ ld-musl-aar
 set_tid_address(any) @ ld-musl-aarch64.so.1+0x62458(start*+92)
 futex(any, FUTEX_WAIT, any, 0, any, 0)
 futex(any, FUTEX_WAIT, any, any, 0, 0)
-futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE, 1, any, any, any)
 futex(any, FUTEX_WAKE, INT_MAX, any, any, any)
@@ -153,7 +151,7 @@ futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, any, 0)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, any, 0, 0)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, INT_MAX)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, INT_MAX, any, any, any)
@@ -228,9 +226,9 @@ sendto(any, any, any, 0, any, any u32) @ ld-musl-aarch64.so.1+0x60868
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x60868
 sendto(any, any, any, 0, any, any u32) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 sendto(any, any, any, MSG_NOSIGNAL, any, any u32) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
-recvfrom(any, any, any u16, any u8, any, any) @ ld-musl-aarch64.so.1+0x60868
+recvfrom(any, any, any u32, any u16, any, any) @ ld-musl-aarch64.so.1+0x60868
 recvfrom(any, non-NULL, any, any, any, any) @ ld-musl-aarch64.so.1+0x60868
-recvfrom(any, any, any u16, any u8, any, any) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
+recvfrom(any, any, any u32, any u16, any, any) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 recvfrom(any, non-NULL, any, any, any, any) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 setsockopt(any, SOL_IP-SOL_SOCKET, SO_SNDBUF-SO_OOBINLINE, any, 4) @ ld-musl-aarch64.so.1+0x45bc4(setsockopt+32)
 setsockopt(any, SOL_SOCKET, SO_REUSEADDR, any, 4) @ ld-musl-aarch64.so.1+0x45bc4(setsockopt+32)
@@ -259,12 +257,10 @@ getsockopt(any, SOL_SOCKET, SO_PEERSEC, any, any) @ ld-musl-aarch64.so.1+0x41b34
 getsockopt(any, SOL_SOCKET, SO_PEERGROUPS, non-NULL, any) @ ld-musl-aarch64.so.1+0x41b34(getsockopt+28)
 getsockopt(any, SOL_IPV6, IPV6_MTU, any, any) @ ld-musl-aarch64.so.1+0x41b34(getsockopt+28)
 shutdown(STDIN_FILENO-0xfffffffffffffffe, SHUT_RDWR) @ ld-musl-aarch64.so.1+0x45bfc(shutdown+36)
-sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x60868
-sendmsg(any, any, MSG_DONTWAIT) @ ld-musl-aarch64.so.1+0x60868
+sendmsg(any, any, any u8) @ ld-musl-aarch64.so.1+0x60868
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x60868
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x60868
-sendmsg(any, any, 0) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
-sendmsg(any, any, MSG_DONTWAIT) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
+sendmsg(any, any, any u8) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 sendmsg(any, any, MSG_NOSIGNAL) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 sendmsg(any, any, MSG_NOSIGNAL|MSG_FASTOPEN) @ ld-musl-aarch64.so.1+0x614fc(__syscall_cp_c*+200)
 recvmsg(any, any, any u16) @ ld-musl-aarch64.so.1+0x60868

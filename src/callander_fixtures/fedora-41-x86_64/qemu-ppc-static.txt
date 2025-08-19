@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any
+callander: found syscall with unknown number at any
 callander: full call stack: /usr/bin/qemu-ppc-static+0x9657 mem=0
 /usr/bin/qemu-ppc-static+0x9651-/usr/bin/qemu-ppc-static+0x9655 (conditional continue) mem=0
 /usr/bin/qemu-ppc-static+0xeb248 (lea)

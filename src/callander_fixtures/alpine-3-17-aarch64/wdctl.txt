@@ -16,7 +16,7 @@ faccessat(AT_FDCWD, non-NULL, F_OK) @ ld-musl-aarch64.so.1+0x64150(access+32)
 faccessat(any, "identity", F_OK) @ ld-musl-aarch64.so.1+0x643e8(faccessat+56)
 openat(AT_FDCWD, "/dev/null", O_RDWR|O_NOFOLLOW, any) @ ld-musl-aarch64.so.1+0x20548(__init_libc*+380)
 openat(any, "identity", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
-openat(any, "pretimeout_governor", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
+openat(any, "pretimeout_governor", O_RDONLY|O_CLOEXEC-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, "bootstatus", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, "nowayout", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, "timeleft", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
@@ -27,7 +27,7 @@ openat(any, "status", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1
 openat(AT_FDCWD, any, O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(AT_FDCWD, non-NULL, O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5d210
 openat(any, "identity", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
-openat(any, "pretimeout_governor", O_RDONLY|O_NOFOLLOW-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
+openat(any, "pretimeout_governor", O_RDONLY|O_CLOEXEC-O_WRONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, "bootstatus", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, "nowayout", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
 openat(any, "timeleft", O_RDONLY|O_NOFOLLOW|O_CLOEXEC, any) @ ld-musl-aarch64.so.1+0x5dcc8(__syscall_cp_c*+76)
@@ -62,7 +62,7 @@ exit(0) @ ld-musl-aarch64.so.1+0x5e8d0(pthread_exit+396)
 exit_group(any) @ ld-musl-aarch64.so.1+0x20bd4(_Exit+12)
 futex(any, FUTEX_WAIT, any, 0, 0, 0)
 futex(any, FUTEX_WAIT, non-NULL, 0, 0, any)
-futex(any, FUTEX_WAIT, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAIT, 0xffffffff80000000-0xffffffffffffffff, 0, 0x80000000-0xffffffff, any)
 futex(any, FUTEX_WAKE, 0-INT_MAX, any, any u32, any u32)
 futex(any, FUTEX_WAKE, 1, any, any, any)
@@ -71,7 +71,7 @@ futex(any, FUTEX_LOCK_PI-FUTEX_UNLOCK_PI, 0, 0, any u32, any)
 futex(any, FUTEX_UNLOCK_PI, any, any, any, any)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, any, 0, 0, 0)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, 0, any)
-futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, non-NULL, 0, any, any u32)
+futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0x40000000-0xffffffffffffffff, 0, any, 0x40000000-0xffffffff)
 futex(any, FUTEX_WAIT|FUTEX_PRIVATE_FLAG, 0xffffffff80000000-0xffffffffffffffff, 0, 0x80000000-0xffffffff, any)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 0-INT_MAX, any, any u32, any u32)
 futex(any, FUTEX_WAKE|FUTEX_PRIVATE_FLAG, 1, any, any, any)

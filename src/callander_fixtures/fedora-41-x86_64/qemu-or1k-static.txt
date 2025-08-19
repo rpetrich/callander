@@ -1,4 +1,4 @@
-callander: found syscall with unknown number: any
+callander: found syscall with unknown number at any
 callander: full call stack: /usr/bin/qemu-or1k-static+0x6e57 mem=0
 /usr/bin/qemu-or1k-static+0x6e51-/usr/bin/qemu-or1k-static+0x6e55 (conditional continue) mem=0
 /usr/bin/qemu-or1k-static+0x5df88 (lea)

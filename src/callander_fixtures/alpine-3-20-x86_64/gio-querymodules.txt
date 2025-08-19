@@ -75,7 +75,8 @@ exit(0) @ ld-musl-x86_64.so.1+0x5e92e
 wait4(any, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x5b66d(__syscall_cp_c*+165)
 wait4(any, any, WNOHANG, 0) @ ld-musl-x86_64.so.1+0x5e990
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
-fcntl(any, F_GETFL-F_SETFL, any) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
+fcntl(any, F_GETFL, any) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
+fcntl(any, F_SETFL, O_LARGEFILE-0xffffffffffffffff) @ ld-musl-x86_64.so.1+0x1cf39(fcntl+124)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x1d089(open+127)
 fcntl(any, F_SETFD, FD_CLOEXEC) @ ld-musl-x86_64.so.1+0x41453(socket+116)
 fcntl(any, F_SETFL, O_NONBLOCK) @ ld-musl-x86_64.so.1+0x4146c(socket+141)

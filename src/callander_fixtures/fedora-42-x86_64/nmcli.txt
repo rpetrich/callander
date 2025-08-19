@@ -13,8 +13,22 @@ fstat(any u32, any) @ libc.so.6+0xe3bb9(fstat+9)
 poll(any, any u32, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 poll(any, any u32, any) @ libc.so.6+0x79870
 lseek(any u32, any, any) @ libc.so.6+0xe7359(lseek+9)
-mmap(any, any, any u32, any u32, any u32, any) @ libc.so.6+0xf100a(mmap+42)
-mmap(0, any, any u32, any u32, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, any u32, any u32, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ, MAP_SHARED-MAP_PRIVATE, any u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED-MAP_PRIVATE, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS, STDIN_FILENO, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(NULL-0xfffffffffffffffe, any, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(any, any, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(any, any, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, any u32, any) @ libc.so.6+0xf100a(mmap+42)
+mmap(non-NULL, any, any u32, MAP_PRIVATE|MAP_ANONYMOUS-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf100a(mmap+42)
+mmap(0, any, any u32, MAP_32BIT-0xffffffff, -1 as u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, 0) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_32BIT-MAP_PRIVATE|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_SHARED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_32BIT, any u32, any) @ libc.so.6+0xf106e(mmap+142)
+mmap(0, any, PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANONYMOUS|MAP_32BIT, STDIN_FILENO, 0) @ libc.so.6+0xf106e(mmap+142)
 mprotect(any, any, PROT_READ|PROT_WRITE) @ libc.so.6+0xf18b9(mprotect+9)
 munmap(any, any) @ libc.so.6+0xf1969(munmap+9)
 brk(NULL-0xfffffffffffffffe) @ libc.so.6+0xe9709(brk+9)
@@ -69,10 +83,8 @@ sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x6dae4(__internal_syscall_ca
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 sendto(any, any, any, 0, any, any u32) @ libc.so.6+0x79870
 sendto(any, any, any, MSG_NOSIGNAL, 0, 0) @ libc.so.6+0x79870
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-recvfrom(any, any, any, 0, any, any) @ libc.so.6+0x79870
-recvfrom(any, any, any, MSG_DONTWAIT, any, any) @ libc.so.6+0x79870
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+recvfrom(any, any, any, any u8, any, any) @ libc.so.6+0x79870
 sendmsg(any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 sendmsg(any, any, any) @ libc.so.6+0x79870
 recvmsg(any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
@@ -262,8 +274,22 @@ inotify_add_watch(any u32, any, IN_CREATE|IN_ISDIR) @ libc.so.6+0xf5bd9(inotify_
 inotify_add_watch(any u32, non-NULL, IN_MODIFY|IN_ATTRIB|IN_CLOSE_WRITE) @ libc.so.6+0xf5bd9(inotify_add_watch+9)
 inotify_add_watch(any u32, non-NULL, IN_MODIFY|IN_ATTRIB|IN_CLOSE_WRITE|IN_MOVED_FROM|IN_MOVED_TO|IN_CREATE|IN_DELETE|IN_DELETE_SELF|IN_MOVE_SELF|IN_UNMOUNT|IN_ONLYDIR) @ libc.so.6+0xf5bd9(inotify_add_watch+9)
 inotify_rm_watch(any u32, any u32) @ libc.so.6+0xf5c39(inotify_rm_watch+9)
-openat(any, any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-openat(any, any, any, any) @ libc.so.6+0x79870
+openat(any, any, any u8, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_WRONLY|O_TRUNC-O_CREAT|O_EXCL|O_TRUNC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_WRONLY|O_APPEND-O_CREAT|O_EXCL|O_TRUNC|O_APPEND, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_RDONLY|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, non-NULL, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(AT_FDCWD, any, any, any) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+openat(any, any, any u8, any) @ libc.so.6+0x79870
+openat(any, any, O_WRONLY|O_TRUNC-O_CREAT|O_EXCL|O_TRUNC, any) @ libc.so.6+0x79870
+openat(any, any, O_WRONLY|O_APPEND-O_CREAT|O_EXCL|O_TRUNC|O_APPEND, any) @ libc.so.6+0x79870
+openat(any, any, O_RDONLY|O_CLOEXEC, any) @ libc.so.6+0x79870
+openat(any, any, O_RDONLY|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0x79870
+openat(any, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.so.6+0x79870
+openat(any, non-NULL, any, any) @ libc.so.6+0x79870
+openat(AT_FDCWD, any, any, any) @ libc.so.6+0x79870
 openat(AT_FDCWD, any, any u32, any) @ libc.so.6+0xe8a84(__open_nocancel+68)
 openat(any u32, ".", O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC, any) @ libc.so.6+0xe8b17(__GI___openat64_nocancel+55)
 openat(AT_FDCWD, any, O_RDONLY|O_NOFOLLOW|O_CLOEXEC|O_PATH, any) @ libc.so.6+0xe8b17(__GI___openat64_nocancel+55)
@@ -283,8 +309,8 @@ unshare(CLONE_NEWNS) @ libc.so.6+0xf5f39(unshare+9)
 unshare(CLONE_NEWUSER) @ libc.so.6+0xf5f39(unshare+9)
 set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0x7112a(start_thread+234)
 set_robust_list(any, sizeof(struct robust_list_head)) @ libc.so.6+0xbf3f1(_Fork+129)
-splice(any, any, any, any, any, SPLICE_F_MORE) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
-splice(any, any, any, any, any, SPLICE_F_MORE) @ libc.so.6+0x79870
+splice(any, any, any, any, any, any u8) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
+splice(any, any, any, any, any, any u8) @ libc.so.6+0x79870
 utimensat(AT_FDCWD, any, any, 0) @ libc.so.6+0xe87cc(utimensat+12)
 accept4(any, 0, 0, SOCK_CLOEXEC) @ libc.so.6+0x6dae4(__internal_syscall_cancel+132)
 accept4(any, 0, 0, SOCK_CLOEXEC) @ libc.so.6+0x79870
