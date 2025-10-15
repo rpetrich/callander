@@ -17,6 +17,7 @@
 #include "tls.h"
 #include "tracer.h"
 #include "vfs.h"
+#include "patch.h"
 
 #include "callander_print.h"
 
@@ -88,7 +89,7 @@ static bool decode_sockaddr(struct trace_sockaddr *out, const union copied_socka
 			return true;
 		}
 		case AF_UNIX: {
-			memcpy(&out->sun_path, &data->un.sun_path, size - (sizeof(sa_family_t)));
+			fs_memcpy(&out->sun_path, &data->un.sun_path, size - (sizeof(sa_family_t)));
 			return true;
 		}
 		default: {
@@ -112,11 +113,6 @@ static void unmap_and_exit_thread(void *arg1, void *arg2)
 
 typedef unsigned int tcflag_t;
 typedef unsigned char cc_t;
-
-__attribute__((noinline)) static intptr_t invalid_local_remote_mixed_operation(void)
-{
-	return -EINVAL;
-}
 
 __attribute__((noinline)) static intptr_t invalid_local_operation(void)
 {
@@ -185,9 +181,6 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_execveat: {
 			int dirfd = arg1;
-			if (dirfd != AT_FDCWD) {
-				return -ENOEXEC;
-			}
 			const char *path = (const char *)arg2;
 			const char *const *argv = (const char *const *)arg3;
 			const char *const *envp = (const char *const *)arg4;
@@ -230,7 +223,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				if (i != 0 && polls[i].file.ops != polls[i - 1].file.ops) {
 					// cannot poll on both local and remote file descriptors
 					attempt_pop_free(&state);
-					return invalid_local_remote_mixed_operation();
+					return vfs_invalid_mixed_op();
 				}
 				polls[i].events = fds[i].events;
 				polls[i].revents = fds[i].revents;
@@ -249,10 +242,24 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_mmap: {
 			// TODO: need to update seccomp policy to trap to userspace
+			intptr_t result;
 			if ((arg4 & MAP_ANONYMOUS) == 0) {
-				return vfs_call(mmap, vfs_resolve_file(arg5), (void *)arg1, arg2, arg3, arg4, arg6);
+				result = vfs_call(mmap, vfs_resolve_file(arg5), (void *)arg1, arg2, arg3, arg4, arg6);
+			} else {
+				result = FS_SYSCALL(__NR_mmap, arg1, arg2, arg3, arg4, -1, arg6);
 			}
-			return FS_SYSCALL(__NR_mmap, arg1, arg2, arg3, arg4, -1, arg6);
+			if (result >= 0) {
+				patch_memory_map_changed((void *)result, arg2);
+			}
+			return result;
+		}
+		case LINUX_SYS_mremap: {
+			intptr_t result = FS_SYSCALL(__NR_mremap, arg1, arg2, arg3, arg4, arg5);
+			if (result >= 0) {
+				patch_memory_map_changed((void *)arg1, arg2);
+				patch_memory_map_changed((void *)result, arg3);
+			}
+			return result;
 		}
 		case LINUX_SYS_pread64: {
 			return vfs_call(pread, vfs_resolve_file(arg1), (char *)arg2, arg3, arg4);
@@ -342,14 +349,14 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						if (has_local) {
 							// cannot poll on both local and remote file descriptors
 							attempt_pop_free(&state);
-							return invalid_local_remote_mixed_operation();
+							return vfs_invalid_mixed_op();
 						}
 						has_remote = true;
 					} else {
 						if (has_remote) {
 							// cannot poll on both local and remote file descriptors
 							attempt_pop_free(&state);
-							return invalid_local_remote_mixed_operation();
+							return vfs_invalid_mixed_op();
 						}
 						has_local = true;
 					}
@@ -515,16 +522,16 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			struct epoll_event *events = (struct epoll_event *)arg2;
 			int maxevents = arg3;
 			int timeout = arg4;
-			if (vfs_is_remote_file(&file)) {
-				// TODO: support pwait properly when remote
-				// TODO: support on aarch64
-#ifdef __NR_epoll_wait
-				return PROXY_LINUX_CALL(LINUX_SYS_epoll_wait, proxy_value(file.handle), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
-#else
-				return -ENOSYS;
-#endif
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, (intptr_t)events, maxevents, timeout, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, (intptr_t)events, maxevents, timeout, arg5);
+			// TODO: support pwait properly when remote
+			// TODO: support on aarch64
+#ifdef __NR_epoll_wait
+			return PROXY_LINUX_CALL(LINUX_SYS_epoll_wait, proxy_value(file.handle), proxy_out(events, sizeof(struct epoll_event) * maxevents), proxy_value(maxevents), proxy_value(timeout));
+#else
+			return -ENOSYS;
+#endif
 		}
 		case LINUX_SYS_epoll_pwait2: {
 			return -ENOSYS;
@@ -535,27 +542,27 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			struct epoll_event *event = (struct epoll_event *)arg4;
 			struct vfs_resolved_file ep_file = vfs_resolve_file(arg1);
 			struct vfs_resolved_file file = vfs_resolve_file(arg3);
-			if (vfs_is_remote_file(&file)) {
-				if (!vfs_is_remote_file(&ep_file)) {
-					intptr_t new_epfd = PROXY_LINUX_CALL(LINUX_SYS_epoll_create1 | PROXY_NO_WORKER, proxy_value(EPOLL_CLOEXEC));
-					if (new_epfd < 0) {
-						return new_epfd;
-					}
-					int result = become_remote_fd(arg1, new_epfd);
-					if (result < 0) {
-						remote_close(new_epfd);
-						return result;
-					}
-					// TODO: find a better way to transition between local and remote
-					ep_file.ops = &local_path_ops.dirfd_ops;
-					ep_file.handle = new_epfd;
+			if (vfs_is_local_file(&file)) {
+				if (vfs_is_local_file(&ep_file)) {
+					return FS_SYSCALL(syscall, ep_file.handle, arg2, file.handle, arg4);
 				}
-				return PROXY_LINUX_CALL(LINUX_SYS_epoll_ctl, proxy_value(ep_file.handle), proxy_value(op), proxy_value(file.handle), proxy_in(event, sizeof(*event)));
+				return vfs_unsupported_op();
 			}
-			if (vfs_is_remote_file(&ep_file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&ep_file)) {
+				intptr_t new_epfd = PROXY_LINUX_CALL(LINUX_SYS_epoll_create1 | PROXY_NO_WORKER, proxy_value(EPOLL_CLOEXEC));
+				if (new_epfd < 0) {
+					return new_epfd;
+				}
+				int result = become_remote_fd(arg1, new_epfd);
+				if (result < 0) {
+					remote_close(new_epfd);
+					return result;
+				}
+				// TODO: find a better way to transition between local and remote
+				ep_file.ops = &local_path_ops.dirfd_ops;
+				ep_file.handle = new_epfd;
 			}
-			return FS_SYSCALL(syscall, ep_file.handle, arg2, file.handle, arg4);
+			return PROXY_LINUX_CALL(LINUX_SYS_epoll_ctl, proxy_value(ep_file.handle), proxy_value(op), proxy_value(file.handle), proxy_in(event, sizeof(*event)));
 		}
 		case LINUX_SYS_mq_open: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2, arg3, arg4), arg2);
@@ -563,34 +570,34 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_mq_timedsend: {
 			// TODO: handle mq_timedsend
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_mq_timedreceive: {
 			// TODO: handle mq_timedreceive
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_mq_notify: {
 			// TODO: handle mq_notify
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg1, arg2);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg1, arg2);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_mq_getsetattr: {
 			// TODO: handle mq_getsetattr
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg1, arg2, arg3);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg1, arg2, arg3);
+			return vfs_unsupported_op();
 		}
 #ifdef __NR_inotify_init
 		case LINUX_SYS_inotify_init: {
@@ -604,23 +611,23 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			// TODO: handle inotify_add_watch
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
 			struct vfs_resolved_path path = vfs_resolve_path(AT_FDCWD, (const char *)arg2);
-			if (vfs_is_remote_file(&file) != vfs_is_remote_path(&path)) {
-				return invalid_local_remote_mixed_operation();
+			if (!vfs_file_ops_match_path(&file, &path)) {
+				return vfs_invalid_mixed_op();
 			}
 			if (path.info.handle != AT_FDCWD) {
-				return vfs_is_remote_path(&path) ? invalid_remote_operation() : invalid_local_operation();
+				return vfs_is_local_path(&path) ? invalid_local_operation() : vfs_unsupported_op();
 			}
-			if (vfs_is_remote_file(&file)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_inotify_add_watch, proxy_value(file.handle), proxy_string(path.info.path), proxy_value(arg3));
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, (intptr_t)path.info.path, arg3);
 			}
-			return FS_SYSCALL(syscall, file.handle, (intptr_t)path.info.path, arg3);
+			return PROXY_LINUX_CALL(LINUX_SYS_inotify_add_watch, proxy_value(file.handle), proxy_string(path.info.path), proxy_value(arg3));
 		}
 		case LINUX_SYS_inotify_rm_watch: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_inotify_rm_watch, file.handle, arg2);
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2);
+			return PROXY_LINUX_CALL(LINUX_SYS_inotify_rm_watch, file.handle, arg2);
 		}
 		case LINUX_SYS_splice: {
 			return vfs_call(splice, vfs_resolve_file(arg1), (off_t *)arg2, vfs_resolve_file(arg3), (off_t *)arg4, arg5, arg6);
@@ -633,10 +640,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_vmsplice: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
+			return vfs_unsupported_op();
 		}
 #ifdef __NR_utime
 		case LINUX_SYS_utime: {
@@ -668,8 +675,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				real_fd = -1;
 			} else {
 				struct vfs_resolved_file file = vfs_resolve_file(fd);
-				if (vfs_is_remote_file(&file)) {
-					return invalid_remote_operation();
+				if (!vfs_is_local_file(&file)) {
+					return vfs_unsupported_op();
 				}
 				real_fd = file.handle;
 			}
@@ -687,8 +694,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				real_fd = -1;
 			} else {
 				struct vfs_resolved_file file = vfs_resolve_file(arg1);
-				if (vfs_is_remote_file(&file)) {
-					return invalid_remote_operation();
+				if (!vfs_is_local_file(&file)) {
+					return vfs_unsupported_op();
 				}
 				real_fd = file.handle;
 			}
@@ -714,15 +721,15 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_timerfd_settime: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (!vfs_is_local_file(&file)) {
+				return vfs_unsupported_op();
 			}
 			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
 		}
 		case LINUX_SYS_timerfd_gettime: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (!vfs_is_local_file(&file)) {
+				return vfs_unsupported_op();
 			}
 			return FS_SYSCALL(syscall, file.handle, arg2);
 		}
@@ -738,7 +745,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_preadv:
 		case LINUX_SYS_preadv2: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
+			if (!vfs_is_local_file(&file)) {
 				const struct iovec *iov = (const struct iovec *)arg2;
 				int iovcnt = arg3;
 				// allocate buffer
@@ -794,66 +801,66 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_pwritev:
 		case LINUX_SYS_pwritev2: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				const struct iovec *iov = (const struct iovec *)arg2;
-				int iovcnt = arg3;
-				// allocate buffer
-				size_t total_bytes = 0;
-				for (int i = 0; i < iovcnt; i++) {
-					total_bytes += iov[i].iov_len;
-				}
-				size_t alloc_bytes = sizeof(*iov) * iovcnt + total_bytes;
-				attempt_proxy_alloc_state remote_buf;
-				attempt_proxy_alloc(alloc_bytes, thread, &remote_buf);
-				// fill buffers
-				intptr_t buf_cur = remote_buf.addr;
-				struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
-				struct attempt_cleanup_state state;
-				attempt_push_free(thread, &state, iov_remote);
-				intptr_t result = 0;
-				for (int i = 0; i < iovcnt; i++) {
-					iov_remote[i].iov_base = (void *)buf_cur;
-					result = proxy_poke(buf_cur, iov[i].iov_len, iov[i].iov_base);
-					if (result < 0) {
-						attempt_pop_free(&state);
-						goto pwrite_poke_failed;
-					}
-					buf_cur += iov[i].iov_len;
-					iov_remote[i].iov_len += iov[i].iov_len;
-				}
-				result = proxy_poke(buf_cur, sizeof(*iov) * iovcnt, &iov_remote[0]);
-				attempt_pop_free(&state);
-				if (result >= 0) {
-					// perform write remotely
-					result = PROXY_LINUX_CALL(syscall, proxy_value(file.handle), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
-				}
-			pwrite_poke_failed:
-				// free buffers
-				attempt_proxy_free(&remote_buf);
-				return result;
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5, arg6);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5, arg6);
+			const struct iovec *iov = (const struct iovec *)arg2;
+			int iovcnt = arg3;
+			// allocate buffer
+			size_t total_bytes = 0;
+			for (int i = 0; i < iovcnt; i++) {
+				total_bytes += iov[i].iov_len;
+			}
+			size_t alloc_bytes = sizeof(*iov) * iovcnt + total_bytes;
+			attempt_proxy_alloc_state remote_buf;
+			attempt_proxy_alloc(alloc_bytes, thread, &remote_buf);
+			// fill buffers
+			intptr_t buf_cur = remote_buf.addr;
+			struct iovec *iov_remote = malloc(sizeof(struct iovec) * iovcnt);
+			struct attempt_cleanup_state state;
+			attempt_push_free(thread, &state, iov_remote);
+			intptr_t result = 0;
+			for (int i = 0; i < iovcnt; i++) {
+				iov_remote[i].iov_base = (void *)buf_cur;
+				result = proxy_poke(buf_cur, iov[i].iov_len, iov[i].iov_base);
+				if (result < 0) {
+					attempt_pop_free(&state);
+					goto pwrite_poke_failed;
+				}
+				buf_cur += iov[i].iov_len;
+				iov_remote[i].iov_len += iov[i].iov_len;
+			}
+			result = proxy_poke(buf_cur, sizeof(*iov) * iovcnt, &iov_remote[0]);
+			attempt_pop_free(&state);
+			if (result >= 0) {
+				// perform write remotely
+				result = PROXY_LINUX_CALL(syscall, proxy_value(file.handle), proxy_value(remote_buf.addr), proxy_value(iovcnt), proxy_value(arg4), proxy_value(arg5), proxy_value(arg6));
+			}
+		pwrite_poke_failed:
+			// free buffers
+			attempt_proxy_free(&remote_buf);
+			return result;
 		}
 		case LINUX_SYS_recvmmsg: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				struct mmsghdr *msgvec = (struct mmsghdr *)arg2;
-				unsigned int vlen = arg3;
-				int flags = arg4;
-				// TODO: handle the timeout in arg5
-				for (unsigned int i = 0; i < vlen; i++) {
-					intptr_t result = vfs_call(recvmsg, file, &msgvec[i].msg_hdr, flags & ~MSG_WAITFORONE);
-					if (result <= 0) {
-						return i == 0 ? result : i;
-					}
-					msgvec[i].msg_len = (unsigned int)result;
-					if (flags & MSG_WAITFORONE) {
-						flags = (flags & ~MSG_WAITFORONE) | MSG_DONTWAIT;
-					}
-				}
-				return vlen;
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
+			struct mmsghdr *msgvec = (struct mmsghdr *)arg2;
+			unsigned int vlen = arg3;
+			int flags = arg4;
+			// TODO: handle the timeout in arg5
+			for (unsigned int i = 0; i < vlen; i++) {
+				intptr_t result = vfs_call(recvmsg, file, &msgvec[i].msg_hdr, flags & ~MSG_WAITFORONE);
+				if (result <= 0) {
+					return i == 0 ? result : i;
+				}
+				msgvec[i].msg_len = (unsigned int)result;
+				if (flags & MSG_WAITFORONE) {
+					flags = (flags & ~MSG_WAITFORONE) | MSG_DONTWAIT;
+				}
+			}
+			return vlen;
 		}
 		case LINUX_SYS_fanotify_init: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg1);
@@ -866,63 +873,63 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			const char *pathname = (const char *)arg5;
 			struct vfs_resolved_file file = vfs_resolve_file(fanotify_fd);
 			struct vfs_resolved_path path = vfs_resolve_path(dirfd, pathname);
-			if (vfs_is_remote_file(&file) != vfs_is_remote_path(&path)) {
-				return invalid_local_remote_mixed_operation();
+			if (!vfs_file_ops_match_path(&file, &path)) {
+				return vfs_invalid_mixed_op();
 			}
-			if (vfs_is_remote_file(&file)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fanotify_mark, proxy_value(file.handle), proxy_value(flags), proxy_value(mask), proxy_value(path.info.handle), proxy_string(path.info.path));
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, flags, mask, path.info.handle, (intptr_t)path.info.path);
 			}
-			return FS_SYSCALL(syscall, file.handle, flags, mask, path.info.handle, (intptr_t)path.info.path);
+			return PROXY_LINUX_CALL(LINUX_SYS_fanotify_mark, proxy_value(file.handle), proxy_value(flags), proxy_value(mask), proxy_value(path.info.handle), proxy_string(path.info.path));
 		}
 		case LINUX_SYS_name_to_handle_at: {
 			// TODO: handle name_to_handle_at
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_open_by_handle_at: {
 			// TODO: handle open_by_handle_at
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return install_local_fd(FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5), arg5);
 			}
-			return install_local_fd(FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5), arg5);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_syncfs: {
 			return vfs_call(syncfs, vfs_resolve_file(arg1));
 		}
 		case LINUX_SYS_sendmmsg: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				struct mmsghdr *msgvec = (struct mmsghdr *)arg2;
-				unsigned int vlen = arg3;
-				int flags = arg4;
-				for (unsigned int i = 0; i < vlen; i++) {
-					intptr_t result = vfs_call(sendmsg, file, &msgvec[i].msg_hdr, flags);
-					if (result <= 0) {
-						return i == 0 ? result : i;
-					}
-					msgvec[i].msg_len = (unsigned int)result;
-				}
-				return vlen;
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
+			struct mmsghdr *msgvec = (struct mmsghdr *)arg2;
+			unsigned int vlen = arg3;
+			int flags = arg4;
+			for (unsigned int i = 0; i < vlen; i++) {
+				intptr_t result = vfs_call(sendmsg, file, &msgvec[i].msg_hdr, flags);
+				if (result <= 0) {
+					return i == 0 ? result : i;
+				}
+				msgvec[i].msg_len = (unsigned int)result;
+			}
+			return vlen;
 		}
 		case LINUX_SYS_setns: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_finit_module: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_memfd_create: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), arg2);
@@ -1009,7 +1016,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			struct signal_state *signals = &thread->signals;
 			if (context) {
 				if (oset) {
-					memcpy(oset, &signals->blocked_required, sizeof(struct fs_sigset_t));
+					fs_memcpy(oset, &signals->blocked_required, sizeof(struct fs_sigset_t));
 				}
 				if (nset) {
 					switch (how) {
@@ -1033,7 +1040,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						}
 						case SIG_SETMASK: {
 							signals->blocked_required.buf[0] = nset->buf[0];
-							memcpy(&context->uc_sigmask, nset, sigsetsize);
+							fs_memcpy(&context->uc_sigmask, nset, sigsetsize);
 							struct fs_sigset_t *context_set = (struct fs_sigset_t *)&context->uc_sigmask;
 							context_set->buf[0] &= ~REQUIRED_SIGNALS;
 							// TODO: dispatch pending signals
@@ -1054,7 +1061,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						signals->blocked_required.buf[0] |= nset->buf[0];
 						if (nset->buf[0] & REQUIRED_SIGNALS) {
 							// A required signal was blocked—copy to a local buffer and clear
-							memcpy(&copy, nset, sigsetsize);
+							fs_memcpy(&copy, nset, sigsetsize);
 							copy.buf[0] &= ~REQUIRED_SIGNALS;
 							nset = &copy;
 						}
@@ -1063,7 +1070,7 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 						signals->blocked_required.buf[0] = nset->buf[0];
 						if (nset->buf[0] & REQUIRED_SIGNALS) {
 							// A required signal was blocked—copy to a local buffer and clear
-							memcpy(&copy, nset, sigsetsize);
+							fs_memcpy(&copy, nset, sigsetsize);
 							copy.buf[0] &= ~REQUIRED_SIGNALS;
 							nset = &copy;
 							// TODO: dispatch pending signals
@@ -1132,7 +1139,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				attempt_exit(thread);
 				call_on_alternate_stack(thread, unmap_and_exit_thread, (void *)arg1, (void *)arg2);
 			}
-			return FS_SYSCALL(LINUX_SYS_munmap, arg1, arg2);
+			intptr_t result = FS_SYSCALL(LINUX_SYS_munmap, arg1, arg2);
+			if (result >= 0) {
+				patch_memory_map_changed((void *)arg1, arg2);
+			}
+			return result;
 		}
 		case LINUX_SYS_exit:
 #ifdef ENABLE_TRACER
@@ -1166,58 +1177,58 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			return FS_SYSCALL(LINUX_SYS_exit_group, arg1);
 		case LINUX_SYS_chdir: {
 			struct vfs_resolved_path resolved = vfs_resolve_path(AT_FDCWD, (const char *)arg1);
-			if (vfs_is_remote_path(&resolved)) {
-				struct vfs_resolved_file file;
-				intptr_t result = vfs_install_file(vfs_call(openat, resolved, O_PATH | O_DIRECTORY, 0, &file), &file, 0);
-				if (result < 0) {
-					return result;
+			if (vfs_is_local_path(&resolved)) {
+				if (resolved.info.handle != AT_FDCWD) {
+					return invalid_local_operation();
 				}
-				struct attempt_cleanup_state cleanup;
-				vfs_attempt_push_close(thread, &cleanup, &file);
-				result = perform_dup3(result, CWD_FD, 0);
-				vfs_attempt_pop_close(&cleanup);
+				int result = chdir_become_local_path(resolved.info.path);
+#ifdef ENABLE_TRACER
+				if (result == 0) {
+					working_dir_changed(thread);
+				}
+#endif
 				return result;
 			}
-			if (resolved.info.handle != AT_FDCWD) {
-				return invalid_local_operation();
+			struct vfs_resolved_file file;
+			intptr_t result = vfs_install_file(vfs_call(openat, resolved, O_PATH | O_DIRECTORY, 0, &file), &file, 0);
+			if (result < 0) {
+				return result;
 			}
-			int result = chdir_become_local_path(resolved.info.path);
-#ifdef ENABLE_TRACER
-			if (result == 0) {
-				working_dir_changed(thread);
-			}
-#endif
+			struct attempt_cleanup_state cleanup;
+			vfs_attempt_push_close(thread, &cleanup, &file);
+			result = perform_dup3(result, CWD_FD, 0);
+			vfs_attempt_pop_close(&cleanup);
 			return result;
 		}
 		case LINUX_SYS_fchdir: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				struct fs_stat stat;
-				intptr_t result = vfs_call(fstat, file, &stat);
-				if (result < 0) {
-					return result;
-				}
-				if (!S_ISDIR(stat.st_mode)) {
-					return -ENOTDIR;
-				}
-				return perform_dup3(arg1, CWD_FD, 0);
-			}
-			int result = chdir_become_local_fd(file.handle);
+			if (vfs_is_local_file(&file)) {
+				int result = chdir_become_local_fd(file.handle);
 #ifdef ENABLE_TRACER
-			if (result == 0) {
-				working_dir_changed(thread);
-			}
+				if (result == 0) {
+					working_dir_changed(thread);
+				}
 #endif
-			return result;
+				return result;
+			}
+			struct fs_stat stat;
+			intptr_t result = vfs_call(fstat, file, &stat);
+			if (result < 0) {
+				return result;
+			}
+			if (!S_ISDIR(stat.st_mode)) {
+				return -ENOTDIR;
+			}
+			return perform_dup3(arg1, CWD_FD, 0);
 		}
 		case LINUX_SYS_getcwd: {
-			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				char *buf = (char *)arg1;
-				size_t size = (size_t)arg2;
-				return vfs_call(readlink_fd, file, buf, size);
+			struct vfs_resolved_file file = vfs_resolve_file(CWD_FD);
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, arg1, arg2);
 			}
-			return FS_SYSCALL(syscall, arg1, arg2);
+			char *buf = (char *)arg1;
+			size_t size = (size_t)arg2;
+			return vfs_call(readlink_fd, file, buf, size);
 		}
 		case LINUX_SYS_ptrace: {
 #ifdef ENABLE_TRACER
@@ -1568,7 +1579,11 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				send_mprotect_attempt_event(thread, (void *)arg1, arg2, arg3);
 			}
 #endif
-			return FS_SYSCALL(syscall, arg1, arg2, arg3);
+			intptr_t result = FS_SYSCALL(syscall, arg1, arg2, arg3);
+			if (result >= 0) {
+				patch_memory_map_changed((void *)arg1, arg2);
+			}
+			return result;
 		}
 #ifdef __NR_accept4
 		case LINUX_SYS_accept4: {
@@ -1594,8 +1609,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 			intptr_t arg2_fd;
 			if (arg5 & PERF_FLAG_PID_CGROUP) {
 				struct vfs_resolved_file file = vfs_resolve_file(arg1);
-				if (vfs_is_remote_file(&file)) {
-					invalid_remote_operation();
+				if (!vfs_is_local_file(&file)) {
+					vfs_unsupported_op();
 					return -EBADF;
 				}
 				arg2_fd = file.handle;
@@ -1607,8 +1622,8 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 				arg4_fd = -1;
 			} else {
 				struct vfs_resolved_file file = vfs_resolve_file(arg4);
-				if (vfs_is_remote_file(&file)) {
-					invalid_remote_operation();
+				if (!vfs_is_local_file(&file)) {
+					vfs_unsupported_op();
 					return -EBADF;
 				}
 				arg4_fd = -1;
@@ -1618,10 +1633,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		case LINUX_SYS_kexec_file_load: {
 			struct vfs_resolved_file kernel_file = vfs_resolve_file(arg1);
 			struct vfs_resolved_file initrd_file = vfs_resolve_file(arg2);
-			if (vfs_is_remote_file(&kernel_file) || vfs_is_remote_file(&initrd_file)) {
-				return -EINVAL;
+			if (vfs_is_local_file(&kernel_file) && vfs_is_local_file(&initrd_file)) {
+				return FS_SYSCALL(syscall, kernel_file.handle, initrd_file.handle, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, kernel_file.handle, initrd_file.handle, arg3, arg4, arg5);
+			return -EINVAL;
 		}
 		case LINUX_SYS_tkill: {
 			if (arg1 == fs_gettid()) {
@@ -1640,10 +1655,10 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_pidfd_send_signal: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4);
+			return vfs_unsupported_op();
 		}
 #ifdef __NR_pidfd_getfd
 		case LINUX_SYS_pidfd_getfd: {
@@ -1659,45 +1674,45 @@ intptr_t handle_syscall(struct thread_storage *thread, intptr_t syscall, intptr_
 		}
 		case LINUX_SYS_open_tree: {
 			struct vfs_resolved_path path = vfs_resolve_path(arg1, (const char *)arg2);
-			if (vfs_is_remote_path(&path)) {
-				return invalid_remote_operation();
+			if (vfs_is_local_path(&path)) {
+				return FS_SYSCALL(syscall, path.info.handle, (intptr_t)path.info.path, arg3);
 			}
-			return FS_SYSCALL(syscall, path.info.handle, (intptr_t)path.info.path, arg3);
+			return vfs_unsupported_op();
 		}
 		case LINUX_SYS_move_mount: {
 			struct vfs_resolved_path from = vfs_resolve_path(arg1, (const char *)arg2);
 			struct vfs_resolved_path to = vfs_resolve_path(arg3, (const char *)arg4);
-			if (vfs_is_remote_path(&from) || vfs_is_remote_path(&to)) {
-				if (vfs_is_remote_path(&from) != vfs_is_remote_path(&to)) {
-					return invalid_local_remote_mixed_operation();
-				}
-				return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from.info.handle), proxy_string(from.info.path), proxy_value(to.info.handle), proxy_string(to.info.path), proxy_value(arg5));
+			if (vfs_is_local_path(&from) && vfs_is_local_path(&to)) {
+				return FS_SYSCALL(syscall, from.info.handle, (intptr_t)from.info.path, to.info.handle, (intptr_t)to.info.path, arg5);
 			}
-			return FS_SYSCALL(syscall, from.info.handle, (intptr_t)from.info.path, to.info.handle, (intptr_t)to.info.path, arg5);
+			if (from.ops != to.ops) {
+				return vfs_invalid_mixed_op();
+			}
+			return PROXY_LINUX_CALL(LINUX_SYS_move_mount, proxy_value(from.info.handle), proxy_string(from.info.path), proxy_value(to.info.handle), proxy_string(to.info.path), proxy_value(arg5));
 		}
 		case LINUX_SYS_fsopen: {
 			return install_local_fd(FS_SYSCALL(syscall, arg1, arg2), (arg2 & FSOPEN_CLOEXEC) ? O_CLOEXEC : 0);
 		}
 		case LINUX_SYS_fsconfig: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fsconfig, proxy_value(file.handle), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3, arg4, arg5);
+			return PROXY_LINUX_CALL(LINUX_SYS_fsconfig, proxy_value(file.handle), proxy_value(arg2), proxy_string((const char *)arg3), proxy_string((const char *)arg4), proxy_value(arg5));
 		}
 		case LINUX_SYS_fsmount: {
 			struct vfs_resolved_file file = vfs_resolve_file(arg1);
-			if (vfs_is_remote_file(&file)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fsmount, proxy_value(file.handle), proxy_value(arg2), proxy_value(arg3));
+			if (vfs_is_local_file(&file)) {
+				return FS_SYSCALL(syscall, file.handle, arg2, arg3);
 			}
-			return FS_SYSCALL(syscall, file.handle, arg2, arg3);
+			return PROXY_LINUX_CALL(LINUX_SYS_fsmount, proxy_value(file.handle), proxy_value(arg2), proxy_value(arg3));
 		}
 		case LINUX_SYS_fspick: {
 			struct vfs_resolved_path path = vfs_resolve_path(arg1, (const char *)arg2);
-			if (vfs_is_remote_path(&path)) {
-				return PROXY_LINUX_CALL(LINUX_SYS_fspick, proxy_value(path.info.handle), proxy_string(path.info.path), proxy_value(arg3));
+			if (vfs_is_local_path(&path)) {
+				return FS_SYSCALL(syscall, path.info.handle, (intptr_t)path.info.path, arg3);
 			}
-			return FS_SYSCALL(syscall, path.info.handle, (intptr_t)path.info.path, arg3);
+			return PROXY_LINUX_CALL(LINUX_SYS_fspick, proxy_value(path.info.handle), proxy_string(path.info.path), proxy_value(arg3));
 		}
 		case 0x666: {
 			return (intptr_t)&fd_table;

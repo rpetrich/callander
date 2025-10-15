@@ -19,15 +19,15 @@ __attribute__((warn_unused_result)) bool lookup_real_path(int fd, const char *pa
 {
 	if (path != NULL) {
 		if (path[0] == '/') {
-			if (path[1] == 't' && path[2] == 'a' && path[3] == 'r' && path[4] == 'g' && path[5] == 'e' && path[6] == 't') {
-				if (path[7] == '/') {
+			if (fs_strncmp(path, "/target", sizeof("/target")-1) == 0) {
+				if (path[sizeof("/target")-1] == '/') {
 					*out_path = (path_info){
 						.handle = AT_FDCWD,
-						.path = &path[7],
+						.path = &path[sizeof("/target")-1],
 					};
 					return false;
 				}
-				if (path[7] == '\0') {
+				if (path[sizeof("/target")-1] == '\0') {
 					*out_path = (path_info){
 						.handle = AT_FDCWD,
 						.path = "/",

@@ -4,6 +4,7 @@
 #include "axon.h"
 #include "freestanding.h"
 #include "ins.h"
+#include "mapped.h"
 
 #include <stdbool.h>
 
@@ -59,8 +60,13 @@ uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address);
 
 void patch_init(bool enable_syscall_patching);
 
+void patch_memory_map_changed(void *start, size_t length);
+__attribute__((warn_unused_result)) int patch_cached_mapping_for_address(const void *address, struct mapping *out_mapping);
+
 #ifdef SYS_membarrier
+#ifdef __x86_64__
 extern bool membarrier_is_supported;
+#endif
 #endif
 
 #define TRAMPOLINE_REGION_SIZE PAGE_SIZE
@@ -74,7 +80,8 @@ static inline bool trampoline_region_has_space(uint8_t *next_trampoline, size_t 
 struct patch_template
 {
 	void *start;
-	void *address;
+	void *entry;
+	void *data;
 	void *end;
 };
 
@@ -88,16 +95,18 @@ struct patch_template
 
 #ifdef PATCH_EXPOSE_INTERNALS
 
-#define PATCH_TEMPLATE(name)            \
-	({                                  \
-		void name##_start();            \
-		void name##_address();          \
-		void name##_end();              \
-		(struct patch_template){        \
-			.start = &name##_start,     \
-			.address = &name##_address, \
-			.end = &name##_end,         \
-		};                              \
+#define PATCH_TEMPLATE(name)         \
+	({                               \
+		void name##_start();         \
+		void name##_entry();         \
+		void name##_data();          \
+		void name##_end();           \
+		(struct patch_template){     \
+			.start = &name##_start,  \
+			.entry = &name##_entry,  \
+			.data = &name##_data,    \
+			.end = &name##_end,      \
+		};                           \
 	})
 
 void patch_write_pc_relative_jump(ins_ptr buf, intptr_t relative_jump);

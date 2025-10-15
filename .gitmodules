@@ -1,3 +1,9 @@
 [submodule "src/binaryninja-api"]
 	path = src/binaryninja-api
 	url = https://github.com/Vector35/binaryninja-api
+[submodule "src/zlib"]
+	path = src/zlib
+	url = https://github.com/madler/zlib
+[submodule "src/libzip"]
+	path = src/libzip
+	url = https://github.com/rpetrich/libzip

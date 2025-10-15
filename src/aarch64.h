@@ -52,7 +52,7 @@ static inline enum aarch64_register_index register_index_from_operand(const stru
 	}
 }
 
-static bool apply_operand_shift(struct register_state *reg, const struct InstructionOperand *operand)
+static inline bool apply_operand_shift(struct register_state *reg, const struct InstructionOperand *operand)
 {
 	if (operand->shiftValue == 0) {
 		return false;

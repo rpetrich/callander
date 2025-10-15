@@ -25,7 +25,7 @@ __attribute__((warn_unused_result)) static bool axon_path_from_preload(const cha
 	do {
 		const char *next = fs_strpbrk(preload, ": ");
 		if ((next - preload) >= ((int)sizeof(SLASH_AXON) - 1) && fs_strncmp(next - (sizeof(SLASH_AXON) - 1), SLASH_AXON, sizeof(SLASH_AXON) - 1) == 0) {
-			memcpy(buf, preload, next - preload);
+			fs_memcpy(buf, preload, next - preload);
 			buf[next - preload] = '\0';
 			return true;
 		}

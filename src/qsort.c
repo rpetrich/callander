@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "qsort.h"
+#include "freestanding.h"
 #if 0
 void *bsearch(const void *key, const void *base, size_t nel, size_t width, int (*cmp)(const void *, const void *))
 {
@@ -80,9 +81,9 @@ __attribute__((always_inline)) static inline void cycle(size_t width, unsigned c
 	ar[n] = tmp;
 	while (width) {
 		l = 256 < width ? 256 : width;
-		memcpy(ar[n], ar[0], l);
+		fs_memcpy(ar[n], ar[0], l);
 		for (i = 0; i < n; i++) {
-			memcpy(ar[i], ar[i + 1], l);
+			fs_memcpy(ar[i], ar[i + 1], l);
 			ar[i] += l;
 		}
 		width -= l;

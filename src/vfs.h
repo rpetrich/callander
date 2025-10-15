@@ -5,6 +5,8 @@
 #include <poll.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <stdatomic.h>
+#include <zlib.h>
 
 #include "axon.h"
 #include "fd_table.h"
@@ -13,6 +15,7 @@
 #include "paths.h"
 #include "proxy.h"
 #include "sockets.h"
+#include "shared_mutex.h"
 
 struct vfs_resolved_file
 {
@@ -29,13 +32,40 @@ struct vfs_poll_resolved_file
 
 struct thread_storage;
 
-// intptr_t remote_socket(int domain, int type, int protocol);
+union vfs_file_state {
+	struct windows_state
+	{
+		intptr_t handle;
+		intptr_t dir_handle;
+	} windows;
+	struct zip_state
+	{
+		int64_t index;
+		uint64_t offset;
+		uint64_t size;
+		int64_t dent_offset;
+		atomic_int_fast64_t cursor;
+		bool is_dir;
+		bool is_compressed;
+		struct z_stream_s stream;
+		struct shared_mutex stream_lock;
+		void *materialized;
+	} zip;
+};
+
+struct fd_global_state {
+	struct {
+		int count;
+		bool claimed;
+		union vfs_file_state state;
+	} files[4096];
+};
 
 struct vfs_file_ops
 {
 	intptr_t (*socket)(struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file);
 
-	intptr_t (*close)(struct vfs_resolved_file);
+	intptr_t (*close)(struct vfs_resolved_file, union vfs_file_state *);
 	intptr_t (*read)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t bufsz);
 	intptr_t (*write)(struct thread_storage *, struct vfs_resolved_file, const char *buf, size_t bufsz);
 	intptr_t (*recvfrom)(struct thread_storage *, struct vfs_resolved_file, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
@@ -119,23 +149,65 @@ struct vfs_path_ops
 	intptr_t (*listxattr)(struct thread_storage *, struct vfs_resolved_path, void *out_value, size_t size, int flags);
 };
 
+static inline intptr_t vfs_allocate_file(const struct vfs_file_ops *ops, union vfs_file_state state, struct vfs_resolved_file *out_file)
+{
+	struct fd_global_state *globals = get_fd_global_state();
+	int handle = 0;
+	for (; handle < 4096; handle++) {
+		if (!globals->files[handle].claimed) {
+			bool expected = false;
+			if (atomic_compare_exchange_strong(&globals->files[handle].claimed, &expected, true)) {
+				atomic_store(&globals->files[handle].count, 1);
+				goto found_handle;
+			}
+		}
+	}
+	ops->close((struct vfs_resolved_file){
+		.ops = ops,
+		.handle = -ENFILE,
+	}, &state);
+	return -ENFILE;
+found_handle:
+	globals->files[handle].state = state;
+	*out_file = (struct vfs_resolved_file){
+		.ops = ops,
+		.handle = handle,
+	};
+	return 0;
+}
+
+static inline void vfs_increment_file(struct vfs_resolved_file file)
+{
+	struct fd_global_state *state = get_fd_global_state();
+	atomic_fetch_add(&state->files[file.handle].count, 1);
+}
+
+static inline void vfs_decrement_file(struct vfs_resolved_file file)
+{
+	struct fd_global_state *state = get_fd_global_state();
+	if (atomic_fetch_sub(&state->files[file.handle].count, 1) == 1) {
+		file.ops->close(file, &state->files[file.handle].state);
+		atomic_store(&state->files[file.handle].claimed, false);
+	}
+}
+
+__attribute__((always_inline))
+static inline void vfs_claim_fd_state_index(int state_index)
+{
+	if (state_index >= 0) {
+		struct fd_global_state *state = get_fd_global_state();
+		atomic_store(&state->files[state_index].claimed, true);
+		atomic_fetch_add_explicit(&state->files[state_index].count, 1, memory_order_relaxed);
+	}
+}
+
+
 extern const struct vfs_path_ops local_path_ops;
 
+__attribute__((always_inline))
 static inline const struct vfs_path_ops *vfs_path_ops_for_remote(void)
 {
-	extern const struct vfs_path_ops linux_path_ops;
-	extern const struct vfs_path_ops darwin_path_ops;
-	extern const struct vfs_path_ops windows_path_ops;
-	switch (proxy_get_target_platform()) {
-		case TARGET_PLATFORM_LINUX:
-			return &linux_path_ops;
-		case TARGET_PLATFORM_DARWIN:
-			return &darwin_path_ops;
-		case TARGET_PLATFORM_WINDOWS:
-			return &windows_path_ops;
-		default:
-			unknown_target();
-	}
+	return proxy_get_path_ops();
 }
 
 __attribute__((always_inline)) static inline const struct vfs_file_ops *vfs_file_ops_for_remote(void)
@@ -150,9 +222,9 @@ static inline struct vfs_resolved_file vfs_resolve_file(int fd)
 	return result;
 }
 
-static inline bool vfs_is_remote_file(const struct vfs_resolved_file *file)
+static inline bool vfs_is_local_file(const struct vfs_resolved_file *file)
 {
-	return file->ops != &local_path_ops.dirfd_ops;
+	return file->ops == &local_path_ops.dirfd_ops;
 }
 
 static inline struct vfs_resolved_path vfs_resolve_path(int fd, const char *path)
@@ -162,10 +234,18 @@ static inline struct vfs_resolved_path vfs_resolve_path(int fd, const char *path
 	return result;
 }
 
-static inline bool vfs_is_remote_path(const struct vfs_resolved_path *path)
+static inline bool vfs_is_local_path(const struct vfs_resolved_path *path)
 {
-	return path->ops != &local_path_ops;
+	return path->ops == &local_path_ops;
 }
+
+static inline bool vfs_file_ops_match_path(const struct vfs_resolved_file *file, const struct vfs_resolved_path *path)
+{
+	return file->ops == &path->ops->dirfd_ops;
+}
+
+intptr_t vfs_unsupported_op(void);
+intptr_t vfs_invalid_mixed_op(void);
 
 static inline struct vfs_resolved_file vfs_get_dir_file(struct vfs_resolved_path resolved)
 {
@@ -247,11 +327,16 @@ static inline intptr_t vfs_resolve_socket_and_addr(struct thread_storage *thread
 	}
 	result = is_remote ? become_remote_fd(fd, result) : become_local_fd(fd, result);
 	if (result < 0) {
-		file.ops->close(file);
+		file.ops->close(file, NULL);
 		return result;
 	}
 	*out_file = file;
 	return 0;
 }
+
+intptr_t fstat_from_statx(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat);
+intptr_t newfstatat_from_statx(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, struct fs_stat *out_stat, int flags);
+
+__attribute__((warn_unused_result)) bool lookup_potential_mount_path(const char *mountpoint, size_t mountpoint_len, int fd, const char *path, path_info *out_path);
 
 #endif

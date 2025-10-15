@@ -20,7 +20,7 @@ void debug_init(struct r_debug *main_debug, void (*update_callback)(void));
 
 // debug_register_relocated_self add the relocated copy of self to the link
 // map so that debuggers see both copies
-void debug_register_relocated_self(void *base_address);
+void debug_register_relocated_self(void *base_address, const char *name);
 
 // debug_register registers a binary with any attached debuggers
 void debug_register(const struct binary_info *info, const char *path);

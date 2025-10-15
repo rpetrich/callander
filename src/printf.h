@@ -44,7 +44,8 @@ extern "C" {
  * This function is declared here only. You have to write your custom implementation somewhere
  * \param character Character to output
  */
-void _putchar(char character);
+static inline void _putchar(char) {
+}
 
 /**
  * Tiny printf implementation

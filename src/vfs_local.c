@@ -2,6 +2,7 @@
 #include "freestanding.h"
 #include "linux.h"
 #include "vfs.h"
+#include "attempt.h"
 
 static intptr_t local_path_mkdirat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, mode_t mode)
 {
@@ -154,7 +155,7 @@ static intptr_t local_file_socket(__attribute__((unused)) struct thread_storage 
 	return result;
 }
 
-static intptr_t local_file_close(struct vfs_resolved_file file)
+static intptr_t local_file_close(struct vfs_resolved_file file, union vfs_file_state *)
 {
 	return fs_close(file.handle);
 }
@@ -291,12 +292,18 @@ static intptr_t local_file_fstatfs(__attribute__((unused)) struct thread_storage
 
 static intptr_t local_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
+	if (file.handle == AT_FDCWD) {
+		return fs_getcwd(buf, size);
+	}
 	return fs_readlink_fd(file.handle, buf, size);
 }
 
 static intptr_t local_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
 #ifndef __NR_getdents
+	(void)file;
+	(void)buf;
+	(void)size;
 	return -ENOSYS;
 #else
 	return FS_SYSCALL(LINUX_SYS_getdents, file.handle, (intptr_t)buf, size);

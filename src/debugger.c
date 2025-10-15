@@ -97,9 +97,9 @@ void debug_init(struct r_debug *main_debug, void (*update_callback)(void))
 	add_link_map(NULL, "", NULL);
 }
 
-void debug_register_relocated_self(void *base_address)
+void debug_register_relocated_self(void *base_address, const char *name)
 {
-	add_link_map(base_address, "axon", &_DYNAMIC);
+	add_link_map(base_address, name, &_DYNAMIC);
 }
 
 void debug_register(const struct binary_info *info, const char *path)

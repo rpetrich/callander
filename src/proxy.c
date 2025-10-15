@@ -2,11 +2,13 @@
 #include "proxy.h"
 
 #include "axon.h"
+#include "axon_shared.h"
 #include "darwin.h"
 #include "freestanding.h"
 #include "remote.h"
 #include "resolver.h"
 #include "shared_mutex.h"
+#include "vfs.h"
 
 #include <errno.h>
 #include <limits.h>
@@ -16,9 +18,8 @@
 
 #define REUSED_PAGE_COUNT 1024
 
-typedef struct
-{
-	struct shared_mutex write_lock __attribute__((aligned(64)));
+struct proxy_shared_page {
+	_Alignas(PAGE_SIZE) struct shared_mutex write_lock __attribute__((aligned(64)));
 	uint32_t current_id;
 	struct shared_mutex read_lock __attribute__((aligned(64)));
 	union {
@@ -33,25 +34,8 @@ typedef struct
 	uint16_t page_counts[REUSED_PAGE_COUNT];
 	struct resolver_config_cache resolver_config_cache;
 	hello_message hello;
-	struct fd_state fd_states[4096];
-} shared_page;
-
-static shared_page *shared;
-
-static void setup_shared(void)
-{
-	void *mapped = fs_mmap(NULL, (sizeof(shared_page) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1), PROT_READ | PROT_WRITE, MAP_SHARED, SHARED_PAGE_FD, 0);
-	if (fs_is_map_failed(mapped)) {
-		if ((intptr_t)mapped == -EBADF) {
-			DIE("not connected to a target");
-		}
-		DIE("mmap of shared page failed: ", fs_strerror((intptr_t)mapped));
-	}
-	shared_page *expected = NULL;
-	if (!atomic_compare_exchange_strong(&shared, &expected, (shared_page *)mapped)) {
-		fs_munmap(mapped, (sizeof(shared_page) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-	}
-}
+	struct fd_global_state fd_state;
+} shared;
 
 static void remote_exited(void)
 {
@@ -60,15 +44,15 @@ static void remote_exited(void)
 
 static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 {
-	if (!shared_mutex_lock_id(&shared->read_lock, id, cancellation != NULL)) {
+	if (!shared_mutex_lock_id(&shared.read_lock, id, cancellation != NULL)) {
 		return false;
 	}
 	for (;;) {
-		if (shared->response_cursor == sizeof(response_message)) {
-			uint32_t read_message_id = shared->response_buffer.message.id;
+		if (shared.response_cursor == sizeof(response_message)) {
+			uint32_t read_message_id = shared.response_buffer.message.id;
 			if (read_message_id == id) {
-				shared->response_cursor = 0;
-				shared->response_buffer.message.id = 0;
+				shared.response_cursor = 0;
+				shared.response_buffer.message.id = 0;
 				return true;
 			}
 #if 0
@@ -76,30 +60,30 @@ static bool lock_and_read_until_response(uint32_t id, const bool *cancellation)
 			ERROR("waiting for: ", id);
 			ERROR_FLUSH();
 #endif
-			shared_mutex_unlock_handoff(&shared->read_lock, read_message_id);
-			if (!shared_mutex_lock_id(&shared->read_lock, id, cancellation != NULL)) {
+			shared_mutex_unlock_handoff(&shared.read_lock, read_message_id);
+			if (!shared_mutex_lock_id(&shared.read_lock, id, cancellation != NULL)) {
 				return false;
 			}
 			continue;
 		}
 		if (cancellation && *cancellation) {
-			shared_mutex_unlock(&shared->read_lock);
+			shared_mutex_unlock(&shared.read_lock);
 			return false;
 		}
 		for (;;) {
 			// read some more bytes
-			int result = fs_read(PROXY_FD, &shared->response_buffer.data[shared->response_cursor], sizeof(response_message) - shared->response_cursor);
+			int result = fs_read(PROXY_FD, &shared.response_buffer.data[shared.response_cursor], sizeof(response_message) - shared.response_cursor);
 			if (result <= 0) {
 				if (result == -EINTR) {
 					continue;
 				}
-				shared_mutex_unlock(&shared->read_lock);
+				shared_mutex_unlock(&shared.read_lock);
 				if (result == 0) {
 					remote_exited();
 				}
-				DIE("error reading response: ", fs_strerror(result));
+				DIE("error reading response: ", as_errno(result));
 			}
-			shared->response_cursor += result;
+			shared.response_cursor += result;
 			break;
 		}
 	}
@@ -120,16 +104,13 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	}
 	intptr_t result = proxy_wait(send_id, args);
 	if ((syscall & PROXY_NO_WORKER) == 0) {
-		atomic_fetch_add_explicit(&shared->idle_worker_count, 1, memory_order_relaxed);
+		atomic_fetch_add_explicit(&shared.idle_worker_count, 1, memory_order_relaxed);
 	}
 	return result;
 }
 
 static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 {
-	if (shared == NULL) {
-		setup_shared();
-	}
 	// prepare request
 	request_message request;
 	struct iovec iov[PROXY_ARGUMENT_COUNT + 1];
@@ -137,7 +118,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	iov[0].iov_len = sizeof(request);
 	int arg_vec_count = proxy_fill_request_message(&request, &iov[1], syscall, args);
 #if 0
-	if ((shared->hello.target_platform == TARGET_PLATFORM_DARWIN) != ((syscall & DARWIN_SYSCALL_BASE) == DARWIN_SYSCALL_BASE)) {
+	if ((shared.hello.target_platform == TARGET_PLATFORM_DARWIN) != ((syscall & DARWIN_SYSCALL_BASE) == DARWIN_SYSCALL_BASE)) {
 		switch (syscall & ~PROXY_NO_WORKER) {
 			case TARGET_NR_PEEK:
 				break;
@@ -146,7 +127,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 			case TARGET_NR_CALL:
 				break;
 			default:
-				if (shared->hello.target_platform == TARGET_PLATFORM_DARWIN) {
+				if (shared.hello.target_platform == TARGET_PLATFORM_DARWIN) {
 					DIE("attempted to send linux syscall to darwin target: ", syscall & ~(PROXY_NO_RESPONSE | PROXY_NO_WORKER));
 				} else {
 					DIE("attempted to send darwin syscall to linux target: ", (uintptr_t)(syscall & ~(PROXY_NO_RESPONSE | PROXY_NO_WORKER)));
@@ -156,16 +137,16 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 	}
 #endif
 	if ((syscall & (PROXY_NO_RESPONSE | PROXY_NO_WORKER)) == 0) {
-		if (atomic_fetch_sub_explicit(&shared->idle_worker_count, 1, memory_order_relaxed) == 0) {
+		if (atomic_fetch_sub_explicit(&shared.idle_worker_count, 1, memory_order_relaxed) == 0) {
 			proxy_spawn_worker();
-			atomic_fetch_add_explicit(&shared->idle_worker_count, 1, memory_order_relaxed);
+			atomic_fetch_add_explicit(&shared.idle_worker_count, 1, memory_order_relaxed);
 		}
 	}
-	shared_mutex_lock(&shared->write_lock);
-	request.id = shared->current_id++;
+	shared_mutex_lock(&shared.write_lock);
+	request.id = shared.current_id++;
 	// write request
 	int result = fs_writev_all(PROXY_FD, iov, 1 + arg_vec_count);
-	shared_mutex_unlock(&shared->write_lock);
+	shared_mutex_unlock(&shared.write_lock);
 	if (result <= 0) {
 		if (result == 0) {
 			remote_exited();
@@ -173,7 +154,7 @@ static intptr_t proxy_send(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 		if (result == -EFAULT) {
 			return -EFAULT;
 		}
-		DIE("error sending: ", fs_strerror(result));
+		DIE("error sending: ", as_errno(result));
 	}
 	return request.id;
 }
@@ -207,27 +188,24 @@ static intptr_t proxy_wait(uint32_t send_id, proxy_arg args[PROXY_ARGUMENT_COUNT
 	if (vec_index) {
 		intptr_t result = fs_readv_all(PROXY_FD, iov, vec_index);
 		if (result <= 0) {
-			shared_mutex_unlock(&shared->read_lock);
+			shared_mutex_unlock(&shared.read_lock);
 			if (result == 0) {
 				remote_exited();
 			}
-			DIE("error receiving: ", fs_strerror(result));
+			DIE("error receiving: ", as_errno(result));
 		}
 	}
 	// return result to caller
-	intptr_t result = shared->response_buffer.message.result;
-	shared_mutex_unlock(&shared->read_lock);
+	intptr_t result = shared.response_buffer.message.result;
+	shared_mutex_unlock(&shared.read_lock);
 	return result;
 }
 
 uint32_t proxy_generate_stream_id(void)
 {
-	if (shared == NULL) {
-		setup_shared();
-	}
-	shared_mutex_lock(&shared->write_lock);
-	uint32_t result = shared->current_id++;
-	shared_mutex_unlock(&shared->write_lock);
+	shared_mutex_lock(&shared.write_lock);
+	uint32_t result = shared.current_id++;
+	shared_mutex_unlock(&shared.write_lock);
 	return result;
 }
 
@@ -239,9 +217,9 @@ intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *me
 	}
 	intptr_t result = fs_read_all(PROXY_FD, (char *)message, sizeof(*message));
 	if (result < 0) {
-		DIE("failed to read stream message: ", fs_strerror(result));
+		DIE("failed to read stream message: ", as_errno(result));
 	}
-	return shared->response_buffer.message.result;
+	return shared.response_buffer.message.result;
 }
 
 int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size)
@@ -257,27 +235,21 @@ int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size
 void proxy_read_stream_message_finish(uint32_t stream_id)
 {
 	(void)stream_id;
-	shared_mutex_unlock(&shared->read_lock);
+	shared_mutex_unlock(&shared.read_lock);
 }
 
 #ifdef PROXY_SUPPORT_ALL_PLATFORMS
 
 enum target_platform proxy_get_target_platform(void)
 {
-	if (shared == NULL) {
-		setup_shared();
-	}
-	return (enum target_platform)shared->hello.target_platform;
+	return (enum target_platform)proxy_get_hello_message()->target_platform;
 }
 
 #endif
 
 hello_message *proxy_get_hello_message(void)
 {
-	if (shared == NULL) {
-		setup_shared();
-	}
-	return &shared->hello;
+	return &shared.hello;
 }
 
 __attribute__((warn_unused_result)) intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
@@ -328,28 +300,28 @@ static inline int page_count(size_t size)
 
 static intptr_t page_alloc(int page_count)
 {
-	shared_mutex_lock(&shared->pages_lock);
-	for (size_t i = 0; i < shared->next_page; i++) {
-		if (shared->page_counts[i] >= page_count) {
-			intptr_t result = shared->pages[i];
-			if (shared->page_counts[i] > page_count) {
+	shared_mutex_lock(&shared.pages_lock);
+	for (size_t i = 0; i < shared.next_page; i++) {
+		if (shared.page_counts[i] >= page_count) {
+			intptr_t result = shared.pages[i];
+			if (shared.page_counts[i] > page_count) {
 				// split, use head
-				shared->pages[i] += page_count;
-				shared->page_counts[i] -= page_count;
+				shared.pages[i] += page_count;
+				shared.page_counts[i] -= page_count;
 			} else {
 				// use entire
-				int last = --shared->next_page;
-				shared->page_counts[i] = shared->page_counts[last];
-				shared->pages[i] = shared->pages[last];
+				int last = --shared.next_page;
+				shared.page_counts[i] = shared.page_counts[last];
+				shared.pages[i] = shared.pages[last];
 			}
-			shared_mutex_unlock(&shared->pages_lock);
+			shared_mutex_unlock(&shared.pages_lock);
 			return result;
 		}
 	}
-	shared_mutex_unlock(&shared->pages_lock);
+	shared_mutex_unlock(&shared.pages_lock);
 	intptr_t result = PROXY_CALL(__NR_mmap, proxy_value(0), proxy_value(page_count * PAGE_SIZE), proxy_value(PROT_READ | PROT_WRITE), proxy_value(MAP_PRIVATE | MAP_ANONYMOUS), proxy_value(-1), proxy_value(0));
 	if (fs_is_map_failed((void *)result)) {
-		DIE("failed to alloc: ", fs_strerror(result));
+		DIE("failed to alloc: ", as_errno(result));
 	}
 	return result;
 }
@@ -357,30 +329,30 @@ static intptr_t page_alloc(int page_count)
 static void page_free(intptr_t addr, int page_count)
 {
 	intptr_t next = addr + page_count * PAGE_SIZE;
-	shared_mutex_lock(&shared->pages_lock);
-	for (size_t i = 0; i < shared->next_page; i++) {
-		if (shared->pages[i] == next) {
-			shared->pages[i] = addr;
-			shared->page_counts[i] += page_count;
-			shared_mutex_unlock(&shared->pages_lock);
+	shared_mutex_lock(&shared.pages_lock);
+	for (size_t i = 0; i < shared.next_page; i++) {
+		if (shared.pages[i] == next) {
+			shared.pages[i] = addr;
+			shared.page_counts[i] += page_count;
+			shared_mutex_unlock(&shared.pages_lock);
 			return;
 		}
-		if (shared->pages[i] + shared->page_counts[i] * PAGE_SIZE == addr) {
-			shared->page_counts[i] += page_count;
-			shared_mutex_unlock(&shared->pages_lock);
+		if (shared.pages[i] + shared.page_counts[i] * PAGE_SIZE == addr) {
+			shared.page_counts[i] += page_count;
+			shared_mutex_unlock(&shared.pages_lock);
 			return;
 		}
 	}
-	if (shared->next_page == REUSED_PAGE_COUNT) {
-		shared_mutex_unlock(&shared->pages_lock);
+	if (shared.next_page == REUSED_PAGE_COUNT) {
+		shared_mutex_unlock(&shared.pages_lock);
 		// unmap the page
 		PROXY_CALL(__NR_munmap | PROXY_NO_RESPONSE, proxy_value(addr), proxy_value(page_count * PAGE_SIZE));
 		return;
 	}
-	int index = shared->next_page++;
-	shared->pages[index] = addr;
-	shared->page_counts[index] = page_count;
-	shared_mutex_unlock(&shared->pages_lock);
+	int index = shared.next_page++;
+	shared.pages[index] = addr;
+	shared.page_counts[index] = page_count;
+	shared_mutex_unlock(&shared.pages_lock);
 }
 
 intptr_t proxy_alloc(size_t size)
@@ -399,18 +371,47 @@ void proxy_free(intptr_t addr, size_t size)
 	page_free(addr, page_count(size));
 }
 
-void install_proxy(int fd)
+void install_proxy(const struct binary_info *self, const char **envp, bool intercept)
+{
+	(void)self;
+	// Load initial proxy fd
+	intptr_t fd = -1;
+	for (; *envp != NULL; ++envp) {
+		if (fs_strncmp(*envp, "PROXY_FD=", sizeof("PROXY_FD=") - 1) == 0) {
+			const char *proxy_fd_str = &(*envp)[sizeof("PROXY_FD=") - 1];
+			if (*fs_scans(proxy_fd_str, &fd) != '\0') {
+				DIE("unexpected PROXY_FD: ", proxy_fd_str);
+			}
+		}
+	}
+	install_proxy_fd(fd);
+
+	if (intercept) {
+		// Initialize the fd table
+		initialize_fd_table();
+
+		for (int i = 0; i < 3; i++) {
+			fd = install_remote_fd(0, 0);
+			if (fd < 0) {
+				DIE("error installing remote fd ", i, ": ", as_errno(fd));
+			}
+			shared.fd_state.files[i].count = 2;
+		}
+	}
+}
+
+void install_proxy_fd(int fd)
 {
 	// Setup the proxy
 	if (fd == -1) {
 		int sockfd = fs_socket(AF_INET, SOCK_STREAM, 0);
 		if (sockfd < 0) {
-			DIE("error creating socket: ", fs_strerror(sockfd));
+			DIE("error creating socket: ", as_errno(sockfd));
 		}
 		int reuse = 1;
 		int result = fs_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse));
 		if (result < 0) {
-			DIE("error setting reuseaddr: ", fs_strerror(result));
+			DIE("error setting reuseaddr: ", as_errno(result));
 		}
 
 		struct sockaddr_in addr;
@@ -419,89 +420,100 @@ void install_proxy(int fd)
 		addr.sin_port = fs_htons(8484);
 		result = fs_bind(sockfd, &addr, sizeof(addr));
 		if (result < 0) {
-			DIE("error binding: ", fs_strerror(result));
+			DIE("error binding: ", as_errno(result));
 		}
 
 		result = fs_listen(sockfd, 1);
 		if (result < 0) {
-			DIE("error listening: ", fs_strerror(result));
+			DIE("error listening: ", as_errno(result));
 		}
 
 		fd = fs_accept(sockfd, NULL, NULL);
 		if (fd < 0) {
-			DIE("error accepting: ", fs_strerror(fd));
+			DIE("error accepting: ", as_errno(fd));
 		}
 		fs_close(sockfd);
 	} else {
 		int result = fs_fcntl(fd, F_SETFL, O_RDWR);
 		if (result < 0) {
-			DIE("error setting flags: ", fs_strerror(result));
+			DIE("error setting flags: ", as_errno(result));
 		}
 	}
 
 	int flags = 1;
 	int result = fs_setsockopt(fd, SOL_TCP, TCP_NODELAY, (void *)&flags, sizeof(flags));
 	if (result < 0 && (result != -ENOTSOCK) && (result != -EOPNOTSUPP)) {
-		DIE("failed to disable nagle on socket: ", fs_strerror(result));
+		DIE("failed to disable nagle on socket: ", as_errno(result));
 	}
 
+	// dup to the reserved proxy fd slot
 	if (fd != PROXY_FD) {
 		result = fs_dup2(fd, PROXY_FD);
 		if (result < 0) {
-			DIE("error duping: ", fs_strerror(result));
+			DIE("error duping: ", as_errno(result));
 		}
 
 		fs_close(fd);
 	}
 
-	int memfd = fs_memfd_create("proxy", 0);
-	if (result < 0) {
-		DIE("unable to create memfd: ", fs_strerror(result));
-	}
-
-	result = fs_ftruncate(memfd, (sizeof(shared_page) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-	if (result == -1) {
-		DIE("unable to ftruncate: ", fs_strerror(result));
-	}
-
-	result = fs_dup2(memfd, SHARED_PAGE_FD);
-	if (result < 0) {
-		DIE("error duping: ", fs_strerror(result));
-	}
-
-	fs_close(memfd);
-
-	setup_shared();
-	result = fs_read_all(PROXY_FD, (char *)&shared->hello, sizeof(shared->hello));
-	if (result < (intptr_t)sizeof(shared->hello)) {
+	// read the hello message
+	hello_message hello;
+	result = fs_read_all(PROXY_FD, (char *)&hello, sizeof(hello));
+	if (result < (intptr_t)sizeof(hello)) {
 		if (result == 0) {
 			DIE("client disconnected");
 		}
-		DIE("unable to read startup message: ", fs_strerror(result));
+		DIE("unable to read startup message: ", as_errno(result));
 	}
+
+	// set up the shared page
+	create_shared(sizeof(shared));
+	map_shared(&shared, sizeof(shared));
+	shared.hello = hello;
 }
 
-struct fd_state *get_fd_states(void)
+void configure_proxy(void)
 {
-	if (shared == NULL) {
-		setup_shared();
+	map_shared(&shared, sizeof(shared));
+}
+
+const struct vfs_path_ops *proxy_get_path_ops(void)
+{
+	extern const struct vfs_path_ops linux_path_ops;
+#ifdef PROXY_SUPPORT_ALL_PLATFORMS
+	extern const struct vfs_path_ops darwin_path_ops;
+	extern const struct vfs_path_ops windows_path_ops;
+	switch (proxy_get_hello_message()->target_platform) {
+		case TARGET_PLATFORM_LINUX:
+			return &linux_path_ops;
+		case TARGET_PLATFORM_DARWIN:
+			return &darwin_path_ops;
+		case TARGET_PLATFORM_WINDOWS:
+			return &windows_path_ops;
+		default:
+			unknown_target();
 	}
-	return &shared->fd_states[0];
+#else
+	return &linux_path_ops
+#endif
+}
+
+struct fd_global_state *get_fd_global_state(void)
+{
+	return &shared.fd_state;
 }
 
 struct resolver_config_cache *get_resolver_config_cache(void)
 {
-	if (shared == NULL) {
-		setup_shared();
-	}
-	return &shared->resolver_config_cache;
+	return &shared.resolver_config_cache;
 }
 
 void proxy_spawn_worker(void)
 {
-	switch (proxy_get_target_platform()) {
+	const hello_message *hello =  proxy_get_hello_message();
+	switch (hello->target_platform) {
 		case TARGET_PLATFORM_LINUX: {
-			intptr_t worker_func_addr = (intptr_t)proxy_get_hello_message()->process_data;
+			intptr_t worker_func_addr = (intptr_t)hello->process_data;
 			if (worker_func_addr != 0) {
 				intptr_t stack_addr = PROXY_CALL(LINUX_SYS_mmap | PROXY_NO_WORKER,
 				                                 proxy_value(0),
@@ -511,7 +523,7 @@ void proxy_spawn_worker(void)
 				                                 proxy_value(-1),
 				                                 proxy_value(0));
 				if (fs_is_map_failed((void *)stack_addr)) {
-					DIE("unable to map a worker stack: ", fs_strerror(stack_addr));
+					DIE("unable to map a worker stack: ", as_errno(stack_addr));
 					return;
 				}
 				PROXY_CALL(LINUX_SYS_clone | TARGET_NO_RESPONSE | PROXY_NO_WORKER,
@@ -534,7 +546,7 @@ void proxy_spawn_worker(void)
 
 noreturn void unknown_target(void)
 {
-	switch (shared->hello.target_platform) {
+	switch (proxy_get_target_platform()) {
 		case TARGET_PLATFORM_LINUX:
 			DIE("invalid operation for linux target");
 			break;

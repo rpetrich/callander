@@ -84,7 +84,7 @@ __attribute__((warn_unused_result)) static inline const void *read_thread_regist
 
 static inline void set_thread_register(const void *value)
 {
-	__asm__("msr tpidr_el0,%0" ::"r"(value));
+	__asm__ __volatile__("msr tpidr_el0,%0" ::"r"(value));
 }
 
 #define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2)                                                                                                                                                                           \

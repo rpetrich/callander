@@ -465,6 +465,8 @@ __attribute__((nonnull(1, 2, 4))) static inline void clear_call_dirtied_register
 	if (binary_has_flags(binary, BINARY_IS_GOLANG)) {
 		preserved &= ~(mask_for_register(REGISTER_RBX) | mask_for_register(REGISTER_RSI));
 	}
+#else
+	(void)binary;
 #endif
 	modified &= ~preserved;
 	for_each_bit (modified, bit, i) {
@@ -1697,7 +1699,7 @@ __attribute__((nonnull(1, 2, 7))) static void find_and_add_callback(struct progr
 		};
 		self.entry_state = &self.current_state;
 		char *copy = malloc(end_offset);
-		memcpy(copy, data->entries, end_offset);
+		fs_memcpy(copy, data->entries, end_offset);
 		for (uint32_t offset = 0; offset < end_offset;) {
 			token.entry_offset = offset;
 			struct searched_instruction_data_entry *entry = (struct searched_instruction_data_entry *)&copy[offset];
@@ -2242,7 +2244,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 			if (dirfd == -ENOENT) {
 				return;
 			}
-			DIE("failed to open gconv library path: ", fs_strerror(dirfd));
+			DIE("failed to open gconv library path: ", as_errno(dirfd));
 		}
 	}
 	size_t gconv_path_len = fs_strlen(gconv_path);
@@ -2251,7 +2253,7 @@ static void handle_gconv_find_shlib(struct program_state *analysis, ins_ptr ins,
 		int count = fs_getdents(dirfd, (struct fs_dirent *)&buf[0], sizeof(buf));
 		if (count <= 0) {
 			if (count < 0) {
-				DIE("failed to read gconv library entries: ", fs_strerror(count));
+				DIE("failed to read gconv library entries: ", as_errno(count));
 			}
 			break;
 		}
@@ -2321,19 +2323,19 @@ __attribute__((nonnull(1, 2))) static void load_nss_libraries(struct program_sta
 	char path_buf[PATH_MAX];
 	int nsswitch_fd = fs_open(apply_loader_sysroot(&analysis->loader, "/etc/nsswitch.conf", path_buf), O_RDONLY | O_CLOEXEC, 0);
 	if (nsswitch_fd < 0) {
-		DIE("nsswitch used, but unable to open nsswitch configuration: ", fs_strerror(nsswitch_fd));
+		DIE("nsswitch used, but unable to open nsswitch configuration: ", as_errno(nsswitch_fd));
 	}
 	struct fs_stat stat;
 	int result = fs_fstat(nsswitch_fd, &stat);
 	if (result < 0) {
-		DIE("nsswitch used, but unable to stat nsswitch configuration: ", fs_strerror(result));
+		DIE("nsswitch used, but unable to stat nsswitch configuration: ", as_errno(result));
 	}
 	char *buf = malloc(stat.st_size + 1);
 	result = fs_read(nsswitch_fd, buf, stat.st_size);
 	fs_close(nsswitch_fd);
 	if (result != stat.st_size) {
 		if (result < 0) {
-			DIE("nsswitch used, but unable to read nsswitch configuration: ", fs_strerror(result));
+			DIE("nsswitch used, but unable to read nsswitch configuration: ", as_errno(result));
 		}
 		DIE("nsswitch used, but wrong number of bytes read for nsswitch configuration: ", result);
 	}
@@ -3186,7 +3188,7 @@ __attribute__((nonnull(1, 2))) char *copy_call_trace_description_with_additional
 			ssize_t new_length = length + 1 + additional_length;
 			description = realloc(description, new_length + 1);
 			description[length] = '-';
-			memcpy(&description[length + 1], additional_description, additional_length + 1);
+			fs_memcpy(&description[length + 1], additional_description, additional_length + 1);
 			length = new_length;
 		}
 #endif
@@ -3196,7 +3198,7 @@ __attribute__((nonnull(1, 2))) char *copy_call_trace_description_with_additional
 			description = realloc(description, new_length + 1);
 			description[length] = ' ';
 			description[length + 1] = '(';
-			memcpy(&description[length + 2], node->description, additional_length + 1);
+			fs_memcpy(&description[length + 2], node->description, additional_length + 1);
 			description[new_length - 1] = ')';
 			description[new_length] = '\0';
 			length = new_length;
@@ -3207,7 +3209,7 @@ __attribute__((nonnull(1, 2))) char *copy_call_trace_description_with_additional
 				size_t additional_length = fs_strlen(additional);
 				size_t new_length = length + additional_length;
 				description = realloc(description, new_length + 1);
-				memcpy(&description[length], additional, additional_length + 1);
+				fs_memcpy(&description[length], additional, additional_length + 1);
 				free(additional);
 				length = new_length;
 			}
@@ -3413,7 +3415,7 @@ static char *record_syscall_trace_callback(const struct loader_context *loader, 
 					buf[i++] = ' ';
 					name = name_for_register(r2);
 					len = fs_strlen(name);
-					memcpy(&buf[i], name, len);
+					fs_memcpy(&buf[i], name, len);
 					i += len;
 				}
 				buf[i++] = ')';
@@ -3885,8 +3887,8 @@ static inline int read_operand(struct loader_context *loader, const struct Instr
 				// and reference the data at the stack pointer
 				return REGISTER_STACK_0;
 			}
-			// fallthrough
 		}
+		// fallthrough
 		case MEM_POST_IDX: {
 			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				// adjust the stack
@@ -3989,8 +3991,8 @@ static inline int get_operand(struct loader_context *loader, const struct Instru
 				// and reference the data at the stack pointer
 				return REGISTER_STACK_0;
 			}
-			// fallthrough
 		}
+		// fallthrough
 		case MEM_POST_IDX: {
 			if (register_index_from_register(operand->reg[0]) == AARCH64_REGISTER_SP) {
 				// adjust the stack
@@ -5104,7 +5106,7 @@ static bool unary_op_rbit(UNARY_OP_ARGS)
 {
 	if (register_is_exactly_known(dest)) {
 		uintptr_t result = 0;
-		for (int i = 0; i < operand_size * 8; i++) {
+		for (int i = 0; i < (int)operand_size * 8; i++) {
 			if (dest->value & ((uint64_t)1 << i)) {
 				result |= (uint64_t)1 << (operand_size * 8 - i);
 			}
@@ -11784,7 +11786,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												set_register(&copy.registers[r], i);
 											}
 										}
-										uintptr_t value = (is_signed ? read_memory_signed((const void *)source_single_state.value, mem_size) : read_memory((const void *)source_single_state.value, mem_size));
+										uintptr_t value = is_signed ? (uintptr_t)read_memory_signed((const void *)source_single_state.value, mem_size) : read_memory((const void *)source_single_state.value, mem_size);
 										set_register(&copy.registers[dest], value);
 										if (is_signed) {
 											LOG("processing table value: ", (intptr_t)value);
@@ -11833,7 +11835,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 					struct loaded_binary *binary;
 					int prot = protection_for_address(&analysis->loader, (const void *)addr, &binary, NULL);
 					if (prot & PROT_READ) {
-						uintptr_t value = is_signed ? read_memory_signed((const void *)addr, mem_size) : read_memory((const void *)addr, mem_size);
+						uintptr_t value = is_signed ? (uintptr_t)read_memory_signed((const void *)addr, mem_size) : read_memory((const void *)addr, mem_size);
 						if ((prot & PROT_WRITE) == 0 || (value == SYS_fcntl && (binary->special_binary_flags & BINARY_IS_GOLANG))) { // workaround for golang's syscall.fcntl64Syscall
 							dump_registers(&analysis->loader, &self.current_state, dump_mask);
 							set_register(&self.current_state.registers[dest], value);
@@ -12940,6 +12942,8 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 			case ARM64_STLXP: {
 				LOG("stlxr, memory not supported yet");
 				clear_match(&analysis->loader, &self.current_state, REGISTER_SP, ins);
+				clear_register(&self.current_state.registers[REGISTER_MEM]);
+				clear_match(&analysis->loader, &self.current_state, REGISTER_MEM, ins);
 				// TODO
 				int dest = get_operand(&analysis->loader, &decoded.decomposed.operands[0], &self.current_state, ins, NULL);
 				if (dest == REGISTER_INVALID) {
@@ -13927,7 +13931,7 @@ int load_binary_into_analysis(struct program_state *analysis, const char *path, 
 				if (result == -ENOENT || result == -ENOEXEC) {
 					print_debug_symbol_requirement(new_binary);
 				} else {
-					ERROR("failed to load debug symbols for ", new_binary->path, " with error: ", fs_strerror(result));
+					ERROR("failed to load debug symbols for ", new_binary->path, " with error: ", as_errno(result));
 				}
 				free(new_binary);
 				return result;
@@ -13983,12 +13987,12 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 	const char *debuginfo_path;
 	int debuglink_fd = loader_find_executable_in_sysrooted_paths(loader, debuglink, debuglink_search_paths, false, path_buf, &debuginfo_path);
 	if (debuglink_fd < 0) {
-		LOG("failed to open debuglink: ", fs_strerror(debuglink_fd));
+		LOG("failed to open debuglink: ", as_errno(debuglink_fd));
 		return binary->debuglink_error = debuglink_fd;
 	}
 	int result = load_binary(debuglink_fd, &binary->debuglink_info, 0, true);
 	if (result != 0) {
-		LOG("failed to load debuglink: ", fs_strerror(result));
+		LOG("failed to load debuglink: ", as_errno(result));
 		goto return_and_exit;
 	}
 	if (force_loading) {
@@ -13999,13 +14003,13 @@ static int load_debuglink(const struct loader_context *loader, struct loaded_bin
 	struct section_info debuglink_sections;
 	result = load_section_info(debuglink_fd, &binary->debuglink_info, &debuglink_sections);
 	if (result != 0) {
-		LOG("failed to read sections from debuglink: ", fs_strerror(result));
+		LOG("failed to read sections from debuglink: ", as_errno(result));
 		goto return_and_exit;
 	}
 	// try to load the linker symbol table
 	result = load_section_symbols(debuglink_fd, &binary->debuglink_info, &debuglink_sections, false, &binary->debuglink_symbols);
 	if (result != 0) {
-		LOG("error loading debuglink section symbols: ", fs_strerror(result));
+		LOG("error loading debuglink section symbols: ", as_errno(result));
 		result = 0;
 	} else {
 		LOG("loaded debuglink successfully");
@@ -15095,7 +15099,7 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 		}
 		return binary;
 	} else if (fd < 0) {
-		DIE("failed to load shared object at ", path, " specified via --dlopen; error is ", fs_strerror(fd));
+		DIE("failed to load shared object at ", path, " specified via --dlopen; error is ", as_errno(fd));
 	}
 	size_t prefix_len = fs_strlen(path);
 	if (path[prefix_len - 1] == '/') {
@@ -15106,7 +15110,7 @@ struct loaded_binary *register_dlopen(struct program_state *analysis, const char
 		int count = fs_getdents(fd, (struct fs_dirent *)&buf[0], sizeof(buf));
 		if (count <= 0) {
 			if (count < 0) {
-				ERROR("failed to read directory at ", path, " specified via --dlopen; error is", fs_strerror(count));
+				ERROR("failed to read directory at ", path, " specified via --dlopen; error is", as_errno(count));
 			}
 			break;
 		}

@@ -13,7 +13,8 @@ extern uid_t startup_euid;
 extern gid_t startup_egid;
 
 // axon_stat is a cached copy of stat for the main axon
-extern struct fs_stat axon_stat;
+extern ino_t self_inode;
+extern dev_t self_dev;
 
 __attribute__((warn_unused_result)) bool is_axon(const struct fs_stat *stat);
 

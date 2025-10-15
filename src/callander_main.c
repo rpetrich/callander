@@ -49,7 +49,7 @@ static void write_profile(const struct loader_context *loader, const struct reco
 {
 	int fd = fs_open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 	if (fd < 0) {
-		DIE("error opening profile: ", fs_strerror(fd));
+		DIE("error opening profile: ", as_errno(fd));
 	}
 	// headers
 	intptr_t result = fs_write_all(fd, PROFILE_HEADER_LINE "\n\n", sizeof(PROFILE_HEADER_LINE "\n\n") - 1);
@@ -91,7 +91,7 @@ static void write_profile(const struct loader_context *loader, const struct reco
 	return;
 error_write:
 	fs_close(fd);
-	DIE("error writing profile: ", fs_strerror(result));
+	DIE("error writing profile: ", as_errno(result));
 }
 
 struct line_buf
@@ -428,7 +428,7 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 	struct loaded_binary *loaded;
 	int result = load_binary_into_analysis(analysis, executable_path, executable_path, fd, NULL, &loaded);
 	if (result != 0) {
-		DIE("failed to load main binary: ", fs_strerror(result));
+		DIE("failed to load main binary: ", as_errno(result));
 	}
 	if (UNLIKELY(loaded->mode & S_ISUID) && loaded->uid != analysis->loader.uid) {
 		DIE("executable is setuid and not currently running as uid: ", loaded->uid);
@@ -474,7 +474,7 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 			ERROR_FLUSH();
 			fs_exit(1);
 		}
-		DIE("failed to finish loading: ", fs_strerror(result));
+		DIE("failed to finish loading: ", as_errno(result));
 	}
 	analysis->main = (uintptr_t)loaded->info.entrypoint;
 
@@ -485,11 +485,11 @@ __attribute__((used)) __attribute__((visibility("hidden"))) void perform_analysi
 		struct loaded_binary *vdso;
 		result = load_binary_into_analysis(analysis, "[vdso]", "[vdso]", -1, (const void *)analysis->loader.vdso, &vdso);
 		if (result != 0) {
-			DIE("failed to load vDSO: ", fs_strerror(result));
+			DIE("failed to load vDSO: ", as_errno(result));
 		}
 		result = finish_loading_binary(analysis, vdso, EFFECT_AFTER_STARTUP | EFFECT_ENTER_CALLS, false);
 		if (result != 0) {
-			DIE("failed to finish loading vDSO: ", fs_strerror(result));
+			DIE("failed to finish loading vDSO: ", as_errno(result));
 		}
 		if (vdso->has_symbols) {
 			LOG("analyzing symbols for ", vdso->path);
@@ -541,7 +541,7 @@ static void kill_or_die(pid_t pid)
 {
 	intptr_t result = fs_kill(pid, 9);
 	if (result < 0) {
-		DIE("failed to kill: ", fs_strerror(result));
+		DIE("failed to kill: ", as_errno(result));
 	}
 }
 
@@ -678,7 +678,7 @@ static void wait_for_ptrace_event(enum __ptrace_request request, pid_t pid)
 	// identify that we're looking for syscall entries
 	intptr_t result = fs_ptrace(request, pid, 0, 0);
 	if (result < 0) {
-		DIE("failed to wait for syscall entry: ", fs_strerror(result));
+		DIE("failed to wait for syscall entry: ", as_errno(result));
 	}
 	// wait for syscall
 	int status;
@@ -723,17 +723,17 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	regs.USER_REG_ARG6 = arg6;
 	intptr_t result = ptrace_setregs(pid, &regs);
 	if (result < 0) {
-		DIE("failed to set registers: ", fs_strerror(result));
+		DIE("failed to set registers: ", as_errno(result));
 	}
 	long original_bytes;
 	result = fs_ptrace(PTRACE_PEEKTEXT, pid, (void *)valid_regs.USER_REG_PC, &original_bytes);
 	if (result < 0) {
-		DIE("failed to peek under program counter: ", fs_strerror(result));
+		DIE("failed to peek under program counter: ", as_errno(result));
 	}
 	long new_bytes = ins_syscall_poke_pattern(original_bytes);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.USER_REG_PC, (void *)new_bytes);
 	if (result < 0) {
-		DIE("failed to poke a syscall: ", fs_strerror(result));
+		DIE("failed to poke a syscall: ", as_errno(result));
 	}
 	// wait for syscall entry
 	wait_for_ptrace_event(PTRACE_SYSCALL, pid);
@@ -743,11 +743,11 @@ static intptr_t remote_perform_syscall(pid_t pid, struct user_regs_struct valid_
 	wait_for_ptrace_event(PTRACE_SINGLESTEP, pid);
 	result = fs_ptrace(PTRACE_POKETEXT, pid, (void *)valid_regs.USER_REG_PC, (void *)original_bytes);
 	if (result < 0) {
-		DIE("failed to poke the original data back: ", fs_strerror(result));
+		DIE("failed to poke the original data back: ", as_errno(result));
 	}
 	result = ptrace_getregs(pid, &regs);
 	if (result < 0) {
-		DIE("failed to read registers back: ", fs_strerror(result));
+		DIE("failed to read registers back: ", as_errno(result));
 	}
 	return regs.USER_REG_RESULT;
 }
@@ -792,15 +792,15 @@ static void remote_apply_seccomp_filter(int tracee, struct user_regs_struct regs
 	};
 	intptr_t result = fs_process_vm_write(tracee, &child_prog, sizeof(struct sock_fprog), remote_address);
 	if (result < 0) {
-		DIE("failed to send program header to child: ", fs_strerror(result));
+		DIE("failed to send program header to child: ", as_errno(result));
 	}
 	result = fs_process_vm_write(tracee, prog->filter, sizeof(struct sock_filter) * prog->len, remote_address + sizeof(struct sock_fprog));
 	if (result < 0) {
-		DIE("failed to send program filter to child: ", fs_strerror(result));
+		DIE("failed to send program filter to child: ", as_errno(result));
 	}
 	result = remote_perform_syscall(tracee, regs, __NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, remote_address, 0, 0, 0);
 	if (result < 0) {
-		DIE("failed to set seccomp policy in child: ", fs_strerror(result));
+		DIE("failed to set seccomp policy in child: ", as_errno(result));
 	}
 }
 
@@ -929,13 +929,13 @@ static void poke_breakpoint_region(const ElfW(Shdr) * section, intptr_t address,
 #else
 		result = fs_ptrace(PTRACE_PEEKTEXT, tracee, translated_address + i, &original_bytes);
 		if (result < 0) {
-			DIE("failed to peek: ", fs_strerror(result));
+			DIE("failed to peek: ", as_errno(result));
 		}
 #endif
 		long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, translated_address + i, (void *)new_bytes);
 		if (result < 0) {
-			DIE("failed to poke: ", fs_strerror(result));
+			DIE("failed to poke: ", as_errno(result));
 		}
 	}
 }
@@ -1250,7 +1250,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		size_t version_string_size;
 		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
 		if (result < 0) {
-			DIE("failed reading python version: ", fs_strerror(result));
+			DIE("failed reading python version: ", as_errno(result));
 		}
 		version_string[version_string_size - 1] = '\0';
 		const char *version_major;
@@ -1291,7 +1291,7 @@ static int apply_program_special_cases(struct program_state *analysis, const cha
 		size_t version_string_size;
 		int result = query_program_version(program_path, envp, &version_string, &version_string_size);
 		if (result < 0) {
-			DIE("failed reading ruby version: ", fs_strerror(result));
+			DIE("failed reading ruby version: ", as_errno(result));
 		}
 		version_string[version_string_size - 1] = '\0';
 		const char *version_major;
@@ -1368,7 +1368,7 @@ static void segfault_handler(__attribute__((unused)) int nr, __attribute__((unus
 	};
 	int sa_result = fs_sigaction(SIGSEGV, &sa, NULL);
 	if (sa_result < 0) {
-		DIE("failed to reset sigaction: ", fs_strerror(sa_result));
+		DIE("failed to reset sigaction: ", as_errno(sa_result));
 	}
 }
 
@@ -1634,7 +1634,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	char path_buf[PATH_MAX];
 	intptr_t result = fs_fd_getpath(fd, path_buf);
 	if (result < 0) {
-		DIE("failed to read path: ", fs_strerror(result));
+		DIE("failed to read path: ", as_errno(result));
 	}
 	LOG("will exec ", &path_buf[0]);
 
@@ -1650,7 +1650,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			if (header_size == 0) {
 				DIE("could not read executable header");
 			}
-			DIE("could not read executable header: ", fs_strerror(header_size));
+			DIE("could not read executable header: ", as_errno(header_size));
 		}
 		header[header_size] = '\0';
 		if (header[0] == '#' && header[1] == '!') {
@@ -1658,7 +1658,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				// TODO: Support JRuby in RubyPick
 				int new_fd = open_executable_in_paths("/usr/bin/ruby-mri", path, true, analysis.loader.uid, analysis.loader.gid);
 				if (new_fd < 0) {
-					DIE("could not load #! interpreter: ", fs_strerror(new_fd));
+					DIE("could not load #! interpreter: ", as_errno(new_fd));
 				}
 				fs_close(fd);
 				fd = new_fd;
@@ -1706,7 +1706,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				}
 				int new_fd = open_executable_in_paths(arg0, path, true, analysis.loader.uid, analysis.loader.gid);
 				if (new_fd < 0) {
-					DIE("could not load #! interpreter: ", fs_strerror(new_fd));
+					DIE("could not load #! interpreter: ", as_errno(new_fd));
 				}
 				fs_close(fd);
 				fd = new_fd;
@@ -1725,7 +1725,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	} while (0);
 	result = apply_program_special_cases(&analysis, loaded_executable_path != NULL ? loaded_executable_path : &path_buf[0], (char *const *)envp);
 	if (result < 0) {
-		DIE("failed to apply program special cases: ", fs_strerror(result));
+		DIE("failed to apply program special cases: ", as_errno(result));
 	}
 
 	char *new_ld_preload = NULL;
@@ -1735,18 +1735,18 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	if (!skip_running) {
 		new_ld_preload = fs_mmap(NULL, PAGE_SIZE * 128, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 		if (fs_is_map_failed(new_ld_preload)) {
-			DIE("failed to allocate a shared page for LD_PRELOAD: ", fs_strerror((intptr_t)new_ld_preload));
+			DIE("failed to allocate a shared page for LD_PRELOAD: ", as_errno((intptr_t)new_ld_preload));
 		}
 		int pipe_fds[2];
 		result = FS_SYSCALL(SYS_pipe2, (intptr_t)&pipe_fds, O_CLOEXEC);
 		if (result < 0) {
-			DIE("failed to create pipe: ", fs_strerror(result));
+			DIE("failed to create pipe: ", as_errno(result));
 		}
 		pid_t tracer = fs_getpid();
 		ERROR_FLUSH();
 		result = fs_fork();
 		if (result < 0) {
-			DIE("failed to fork: ", fs_strerror(result));
+			DIE("failed to fork: ", as_errno(result));
 		}
 		if (result == 0) {
 			char **new_envp = malloc((envp_count + 3) * sizeof(*envp));
@@ -1761,13 +1761,13 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 			// child does not need any new privs, so revoke them preemptively
 			result = fs_prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 			if (result != 0) {
-				DIE("failed to set no new privileges: ", fs_strerror(result));
+				DIE("failed to set no new privileges: ", as_errno(result));
 			}
 
 			// set the tracer so Yama doesn't block ptrace in the parent
 			result = fs_prctl(PR_SET_PTRACER, tracer, 0, 0, 0);
 			if (result < 0) {
-				LOG("failed to set tracer: ", fs_strerror(result));
+				LOG("failed to set tracer: ", as_errno(result));
 			}
 
 			// wait to be woken up on the pipe
@@ -1778,7 +1778,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				if (result == 0) {
 					return 0;
 				}
-				DIE("error reading from pipe: ", fs_strerror(result));
+				DIE("error reading from pipe: ", as_errno(result));
 			}
 			if (*new_ld_preload != '\0') {
 				*d++ = new_ld_preload;
@@ -1788,14 +1788,14 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 
 			result = fs_ptrace(PTRACE_TRACEME, 0, 0, 0);
 			if (result < 0) {
-				DIE("failed to be traced: ", fs_strerror(result));
+				DIE("failed to be traced: ", as_errno(result));
 			}
 
 			// ask to be traced
 			// exec the new program
 			result = fs_execve(loaded_executable_path ?: &path_buf[0], new_argv, (char *const *)new_envp);
 			if (result < 0) {
-				DIE("failed to exec: ", fs_strerror(result));
+				DIE("failed to exec: ", as_errno(result));
 			}
 			return 0;
 		}
@@ -1830,12 +1830,12 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	// allocate a signal stack
 	void *signal_stack = fs_mmap(NULL, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(signal_stack)) {
-		DIE("failed to allocate signal stack: ", fs_strerror((intptr_t)signal_stack));
+		DIE("failed to allocate signal stack: ", as_errno((intptr_t)signal_stack));
 	}
 	// apply the guard page
 	result = fs_mprotect(signal_stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard: ", fs_strerror(result));
+		DIE("failed to protect stack guard: ", as_errno(result));
 	}
 	// assign the signal stack
 	stack_t sigstack = {
@@ -1845,7 +1845,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	};
 	result = fs_sigaltstack(&sigstack, NULL);
 	if (result < 0) {
-		DIE("failed to assign signal stack: ", fs_strerror(result));
+		DIE("failed to assign signal stack: ", as_errno(result));
 	}
 	// look for segfaults
 	struct fs_sigaction action = {
@@ -1857,18 +1857,18 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	fs_sigdelset(&action.mask, SIGSEGV);
 	result = fs_sigaction(SIGSEGV, &action, NULL);
 	if (result < 0) {
-		DIE("failed to register for SIGSEGV: ", fs_strerror(result));
+		DIE("failed to register for SIGSEGV: ", as_errno(result));
 	}
 
 	// allocate a temporary stack
 	stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
-		DIE("failed to allocate stack: ", fs_strerror((intptr_t)stack));
+		DIE("failed to allocate stack: ", as_errno((intptr_t)stack));
 	}
 	// apply the guard page
 	result = fs_mprotect(stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard: ", fs_strerror(result));
+		DIE("failed to protect stack guard: ", as_errno(result));
 	}
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(perform_analysis, &analysis, loaded_executable_path ?: path_buf, fd, (char *)stack + ALT_STACK_SIZE + STACK_GUARD_SIZE);
 #if 0
@@ -1954,7 +1954,7 @@ skip_analysis:
 			if (result == 0) {
 				DIE("failed to write to pipe");
 			}
-			DIE("failed to write to pipe: ", fs_strerror(result));
+			DIE("failed to write to pipe: ", as_errno(result));
 		}
 
 		// cleanup the shared LD_PRELOAD mapping
@@ -1967,7 +1967,7 @@ skip_analysis:
 	result = fs_ptrace(PTRACE_SETOPTIONS, tracee, NULL, (void *)PTRACE_O_EXITKILL);
 	if (result < 0) {
 		kill_or_die(tracee);
-		DIE("failed to set PTRACE_O_EXITKILL: ", fs_strerror(result));
+		DIE("failed to set PTRACE_O_EXITKILL: ", as_errno(result));
 	}
 
 	// no longer need the wakeup fd
@@ -1976,7 +1976,7 @@ skip_analysis:
 	// find the mapped addresses so we can determine where main landed
 	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
-		DIE("failed to read child process map: ", fs_strerror(result));
+		DIE("failed to read child process map: ", as_errno(result));
 	}
 	if (analysis.loader.main->child_base == 0) {
 		DIE("failed to find main base address");
@@ -1987,22 +1987,22 @@ skip_analysis:
 	long original_bytes;
 	result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)child_main, &original_bytes);
 	if (result < 0) {
-		DIE("failed to peek: ", fs_strerror(result));
+		DIE("failed to peek: ", as_errno(result));
 	}
 	long new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)new_bytes);
 	if (result < 0) {
-		DIE("failed to poke: ", fs_strerror(result));
+		DIE("failed to poke: ", as_errno(result));
 	}
 	// resume the program
 	result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 	if (result < 0) {
-		DIE("failed to continue: ", fs_strerror(result));
+		DIE("failed to continue: ", as_errno(result));
 	}
 	// wait for child to hit our breakpoint, or otherwise exit
 	result = waitpid_uninterrupted(tracee, &status, 0);
 	if (result < 0) {
-		DIE("failed waiting for child to hit breakpoint: ", fs_strerror(result));
+		DIE("failed waiting for child to hit breakpoint: ", as_errno(result));
 	}
 	// ensure we're stopped at a signal
 	if (!WIFSTOPPED(status)) {
@@ -2019,12 +2019,12 @@ skip_analysis:
 	// send the original main bytes back, restoring the main function back to its original state
 	result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)child_main, (void *)original_bytes);
 	if (result < 0) {
-		DIE("failed to poke original breakpoint bytes back: ", fs_strerror(result));
+		DIE("failed to poke original breakpoint bytes back: ", as_errno(result));
 	}
 	// find where all the other library addresses are
 	result = populate_child_addresses(tracee, &analysis.loader, allow_unexpected);
 	if (result < 0) {
-		DIE("failed to read child process map: ", fs_strerror(result));
+		DIE("failed to read child process map: ", as_errno(result));
 	}
 	for (struct loaded_binary *binary = analysis.loader.binaries; binary != NULL; binary = binary->next) {
 		if (binary->child_base == 0) {
@@ -2074,7 +2074,7 @@ skip_analysis:
 	struct user_regs_struct regs;
 	result = ptrace_getregs(tracee, &regs);
 	if (result < 0) {
-		DIE("failed to read registers: ", fs_strerror(result));
+		DIE("failed to read registers: ", as_errno(result));
 	}
 	// rewind back to where the breakpoint was
 	if (regs.USER_REG_PC != (INS_BREAKS_AFTER_BREAKPOINT ? (child_main + INS_BREAKPOINT_LEN) : child_main)) {
@@ -2094,12 +2094,12 @@ skip_analysis:
 		uintptr_t addr = translate_analysis_address_to_child(&analysis.loader, symbol.value);
 		result = fs_ptrace(PTRACE_PEEKTEXT, tracee, (void *)addr, &original_bytes);
 		if (result < 0) {
-			DIE("failed to peek at blocked function: ", fs_strerror(result));
+			DIE("failed to peek at blocked function: ", as_errno(result));
 		}
 		new_bytes = ins_breakpoint_poke_pattern(original_bytes);
 		result = fs_ptrace(PTRACE_POKETEXT, tracee, (void *)addr, (void *)new_bytes);
 		if (result < 0) {
-			DIE("failed to poke at blocked function: ", fs_strerror(result));
+			DIE("failed to poke at blocked function: ", as_errno(result));
 		}
 	}
 	// map in anonymous pages to hold the program
@@ -2122,22 +2122,22 @@ skip_analysis:
 	// TODO: allowlist this
 	// result = remote_perform_syscall(tracee, regs, __NR_munmap, mmap_result, ceiled_allocation_size, 0, 0, 0, 0);
 	// if (fs_is_map_failed((void *)mmap_result)) {
-	// 	DIE("failed to munmap in child: ", fs_strerror(result));
+	// 	DIE("failed to munmap in child: ", as_errno(result));
 	// }
 	// restore the register state
 	result = ptrace_setregs(tracee, &regs);
 	if (result < 0) {
-		DIE("failed to restore registers: ", fs_strerror(result));
+		DIE("failed to restore registers: ", as_errno(result));
 	}
 	if (attach == ATTACH_GDB || attach == ATTACH_STRACE) {
 		result = fs_kill(tracee, SIGSTOP);
 		if (result < 0) {
-			DIE("failed to stop process: ", fs_strerror(result));
+			DIE("failed to stop process: ", as_errno(result));
 		}
 		// detach from the child, it can proceed as normal
 		result = fs_ptrace(PTRACE_DETACH, tracee, 0, 0);
 		if (result < 0) {
-			DIE("failed to detach: ", fs_strerror(result));
+			DIE("failed to detach: ", as_errno(result));
 		}
 		ERROR_FLUSH();
 		char pid_buf[64];
@@ -2177,7 +2177,7 @@ skip_analysis:
 		}
 		result = fs_execve(exec_path, (void *)args, (char *const *)envp);
 		if (result < 0) {
-			DIE("failed to exec attaching program: ", fs_strerror(result));
+			DIE("failed to exec attaching program: ", as_errno(result));
 		}
 	} else {
 		ERROR_FLUSH();
@@ -2185,13 +2185,13 @@ skip_analysis:
 			// continue executing in the child
 			result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 			if (result < 0) {
-				DIE("failed to continue: ", fs_strerror(result));
+				DIE("failed to continue: ", as_errno(result));
 			}
 		} else {
 			// detach from the child, it can proceed as normal
 			result = fs_ptrace(PTRACE_DETACH, tracee, 0, 0);
 			if (result < 0) {
-				DIE("failed to detach: ", fs_strerror(result));
+				DIE("failed to detach: ", as_errno(result));
 			}
 		}
 #ifdef STANDALONE
@@ -2202,7 +2202,7 @@ skip_analysis:
 	wait_for_child:
 		result = waitpid_uninterrupted(tracee, &status, 0);
 		if (result < 0) {
-			DIE("failed waiting for child: ", fs_strerror(result));
+			DIE("failed waiting for child: ", as_errno(result));
 		}
 		// pass through the exit status
 		if (attach) {
@@ -2210,14 +2210,14 @@ skip_analysis:
 				siginfo_t siginfo;
 				result = fs_ptrace(PTRACE_GETSIGINFO, tracee, 0, &siginfo);
 				if (result < 0) {
-					DIE("failed to get signal info: ", fs_strerror(result));
+					DIE("failed to get signal info: ", as_errno(result));
 				}
 				if (siginfo.si_signo == SIGSYS) {
 					uintptr_t call_addr = (uintptr_t)siginfo.si_call_addr - SYSCALL_INSTRUCTION_SIZE;
 					ins_ptr analysis_addr = NULL;
 					result = ptrace_getregs(tracee, &regs);
 					if (result < 0) {
-						DIE("failed to read registers back: ", fs_strerror(result));
+						DIE("failed to read registers back: ", as_errno(result));
 					}
 					uintptr_t nr = regs.USER_REG_SYSCALL;
 					uint8_t config = nr < SYSCALL_COUNT ? analysis.syscalls.config[nr] : 0;
@@ -2270,7 +2270,7 @@ skip_analysis:
 				} else if (siginfo.si_signo == SIGTRAP) {
 					result = ptrace_getregs(tracee, &regs);
 					if (result < 0) {
-						DIE("failed to read registers back: ", fs_strerror(result));
+						DIE("failed to read registers back: ", as_errno(result));
 					}
 					uintptr_t breakpoint_address = regs.USER_REG_PC;
 					if (INS_BREAKS_AFTER_BREAKPOINT) {
@@ -2311,7 +2311,7 @@ skip_analysis:
 				} else {
 					result = fs_ptrace(PTRACE_CONT, tracee, 0, 0);
 					if (result < 0) {
-						DIE("failed to continue child after receiving signal: ", fs_strerror(result));
+						DIE("failed to continue child after receiving signal: ", as_errno(result));
 					}
 					goto wait_for_child;
 				}

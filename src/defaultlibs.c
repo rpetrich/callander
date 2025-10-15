@@ -34,36 +34,10 @@ __attribute__((used, visibility("hidden"))) int memcmp(const void *s1, const voi
 
 __attribute__((used, visibility("hidden"))) void *memset(void *s, int c, size_t n)
 {
-	char *buf = s;
-#if 0
-	ssize_t i = 0;
-	if (LIKELY(c == 0)) {
-		ssize_t n_trunc = (ssize_t)(n & ~((sizeof(uint64_t) * 2) - 1));
-		for (; i < n_trunc; i += sizeof(uint64_t) * 2) {
-			*(uint64_t *)&buf[i] = 0;
-			*(uint64_t *)&buf[i+sizeof(uint64_t)] = 0;
-		}
+	if (LIKELY(c == '\0')) {
+		return fs_memset(s, '\0', n);
 	}
-	for (; i < (ssize_t)n; i++) {
-		buf[i] = c;
-	}
-#else
-	char *end = &((char *)s)[n];
-	if (LIKELY(c == 0)) {
-		char *end_trunc = &buf[(ssize_t)(n & ~((sizeof(uint64_t) * 2) - 1))];
-		while (buf != end_trunc) {
-			*(uint64_t *)buf = 0;
-			buf += sizeof(uint64_t);
-			*(uint64_t *)buf = 0;
-			buf += sizeof(uint64_t);
-		}
-	}
-	while (buf != end) {
-		*buf = c;
-		buf++;
-	}
-#endif
-	return s;
+	return fs_memset(s, c, n);
 }
 
 __attribute__((used, visibility("hidden"))) void *__memset_chk(void *dest, int c, size_t len, size_t destlen)
@@ -76,7 +50,8 @@ __attribute__((used, visibility("hidden"))) void *__memset_chk(void *dest, int c
 
 __attribute__((__nothrow__, used)) void *memcpy(void *__restrict destination, const void *__restrict source, size_t num)
 {
-	return fs_memcpy(destination, source, num);
+	fs_memcpy(destination, source, num);
+	return destination;
 }
 
 __attribute__((used, visibility("hidden"))) void *__memcpy_chk(void *__restrict destination, const void *__restrict source, size_t num, size_t destlen)
@@ -89,7 +64,8 @@ __attribute__((used, visibility("hidden"))) void *__memcpy_chk(void *__restrict 
 
 __attribute__((used, visibility("hidden"))) void *memmove(void *destination, const void *source, size_t num)
 {
-	return fs_memmove(destination, source, num);
+	fs_memmove(destination, source, num);
+	return destination;
 }
 
 __attribute__((used, visibility("hidden"))) size_t strlen(const char *str)
@@ -101,7 +77,20 @@ __attribute__((used, visibility("hidden"))) char *strdup(const char *str)
 {
 	size_t size = fs_strlen(str) + 1;
 	char *result = malloc(size);
-	return fs_memcpy(result, str, size);
+	return memcpy(result, str, size);
+}
+
+__attribute__((noinline)) __attribute__((visibility("default")))
+void before(size_t size)
+{
+	(void)size;
+	__asm__ __volatile__("" : : : "memory");
+}
+
+__attribute__((noinline)) __attribute__((visibility("default")))
+void after(void)
+{
+	__asm__ __volatile__("" : : : "memory");
 }
 
 __attribute__((used, visibility("hidden"))) char *strcpy(char *destination, const char *source)
@@ -136,6 +125,7 @@ __attribute__((used, visibility("hidden"))) void *memchr(const void *str, int c,
 	return (void *)fs_memchr(str, c, n);
 }
 
+[[gnu::cold]] [[gnu::noinline]]
 __attribute__((used, visibility("hidden"))) void abort(void)
 {
 	ERROR_FLUSH();
@@ -267,88 +257,6 @@ __attribute__((used, visibility("hidden"))) void *aligned_alloc(size_t alignment
 	return result;
 }
 
-#endif
-
-#ifdef ERRORS_ARE_BUFFERED
-
-static char error_buffer[4096 * 64];
-static atomic_size_t error_offset;
-
-void error_writev(const struct iovec *vec, int count)
-{
-	for (int i = 0; i < count; i++) {
-		error_write(vec[i].iov_base, vec[i].iov_len);
-	}
-}
-
-void error_write(const char *buf, size_t length)
-{
-	size_t existing_offset = atomic_load(&error_offset);
-	while (UNLIKELY(existing_offset + length > sizeof(error_buffer))) {
-		error_flush();
-		if (length > sizeof(error_buffer)) {
-			if (fs_write_all(2, buf, length) != (intptr_t)length) {
-				abort();
-				__builtin_unreachable();
-			}
-			return;
-		}
-		existing_offset = atomic_load(&error_offset);
-	}
-	fs_memcpy(&error_buffer[existing_offset], buf, length);
-	atomic_fetch_add(&error_offset, length);
-}
-
-void error_write_str(const char *str)
-{
-	for (;;) {
-		size_t existing_offset = atomic_load(&error_offset);
-		for (size_t i = existing_offset; i < sizeof(error_buffer); i++) {
-			if (*str == '\0') {
-				atomic_fetch_add(&error_offset, i - existing_offset);
-				return;
-			}
-			error_buffer[i] = *str++;
-		}
-		error_flush();
-	}
-}
-
-void error_write_char(char c)
-{
-	size_t i = atomic_load(&error_offset);
-	if (UNLIKELY(i == sizeof(error_buffer))) {
-		char copy = c;
-		error_write(&copy, 1);
-	} else {
-		error_buffer[i] = c;
-		atomic_fetch_add(&error_offset, 1);
-	}
-}
-
-void error_flush(void)
-{
-	size_t existing_offset = atomic_exchange(&error_offset, 0);
-	if (existing_offset != 0) {
-		if (existing_offset > sizeof(error_buffer)) {
-			existing_offset = sizeof(error_buffer);
-		}
-		intptr_t result = fs_write_all(2, error_buffer, existing_offset);
-		if (result != (intptr_t)existing_offset) {
-			if (result < 0) {
-				(void)fs_write(2, "failed to write errors: ", sizeof("failed to write errors: ") - 1);
-				const char *errorstr = fs_strerror(result);
-				fs_write(2, errorstr, fs_strlen(errorstr));
-				(void)fs_write(2, "\n", 1);
-			} else {
-				(void)fs_write(2, "failed to write errors\n", sizeof("failed to write errors\n") - 1);
-			}
-			abort();
-			__builtin_unreachable();
-		}
-	}
-}
-
 __attribute__((used)) __uint128_t __ashlti3(__uint128_t a, int b)
 {
 	const int bits_in_dword = (int)(sizeof(uint64_t) * 8);
@@ -395,6 +303,41 @@ __attribute__((used)) __uint128_t __lshrti3(__uint128_t a, int b)
 		result.s.low = (input.s.high << (bits_in_dword - b)) | (input.s.low >> b);
 	}
 	return result.all;
+}
+
+int strcmp(const char *a, const char *b)
+{
+	return fs_strcmp(a, b);
+}
+
+int strncmp(const char *a, const char *b, size_t n)
+{
+	return fs_strncmp(a, b, n);
+}
+
+char *strrchr(const char *str, int character)
+{
+	return (char *)fs_strrchr(str, character);
+}
+
+char *strerror(int error)
+{
+	return (char *)fs_strerror(-error);
+}
+
+char * __strncpy_chk(char * s1, const char * s2, size_t n, size_t s1len)
+{
+	if (s1len < n) {
+		abort();
+	}
+	size_t size = fs_strlen(s2);
+	if (size < n) {
+		fs_memcpy(s1, s2, size);
+		fs_memset(s1 + size, '\0', n - size);
+	} else {
+		fs_memcpy(s1, s2, n);
+	}
+	return s1;
 }
 
 #endif

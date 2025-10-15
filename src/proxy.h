@@ -5,6 +5,7 @@
 #include "target.h"
 
 #include <stdnoreturn.h>
+#include <stdatomic.h>
 
 #ifdef __MINGW32__
 struct iovec
@@ -25,7 +26,6 @@ struct iovec
 
 // PROXY_FD is the connection to the victim target
 #define PROXY_FD 0x3fc
-#define SHARED_PAGE_FD 0x3fb
 
 #define PROXY_BUFFER_SIZE (256 * 1024)
 static inline void trim_size(size_t *size)
@@ -190,19 +190,19 @@ intptr_t proxy_read_stream_message_start(uint32_t stream_id, request_message *me
 int proxy_read_stream_message_body(uint32_t stream_id, void *buffer, size_t size);
 void proxy_read_stream_message_finish(uint32_t stream_id);
 
-void install_proxy(int fd);
+struct binary_info;
+void install_proxy(const struct binary_info *self, const char **envp, bool intercept);
+void install_proxy_fd(int fd);
+void configure_proxy(void);
 void proxy_spawn_worker(void);
 
-struct fd_state
-{
-	int count;
-	struct windows_state
-	{
-		void *dir_handle;
-	} windows;
-};
+struct fd_global_state;
 
-struct fd_state *get_fd_states(void);
+struct fd_global_state *get_fd_global_state(void);
+
+struct vfs_path_ops;
+
+const struct vfs_path_ops *proxy_get_path_ops(void);
 
 struct resolver_config_cache;
 struct resolver_config_cache *get_resolver_config_cache(void);
@@ -216,8 +216,9 @@ typedef struct
 	size_t size;
 } attempt_proxy_alloc_state;
 
-static inline void attempt_proxy_cleanup(void *data)
+static inline void attempt_proxy_cleanup(void *data, struct thread_storage *thread)
 {
+	(void)thread;
 	const attempt_proxy_alloc_state *state = data;
 	proxy_free(state->addr, state->size);
 }

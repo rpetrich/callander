@@ -34,7 +34,7 @@ __attribute__((warn_unused_result)) static struct attempt *attempt_exit_current(
 		thread->attempt = attempt->previous;
 		struct attempt_cleanup_state *cleanup = attempt->cleanup;
 		while (cleanup != NULL) {
-			cleanup->body(cleanup->data);
+			cleanup->body(cleanup->data, thread);
 			cleanup = cleanup->next;
 		}
 	}
@@ -71,7 +71,7 @@ __attribute__((noinline)) void attempt_exit(struct thread_storage *thread)
 		struct attempt_cleanup_state *cleanup = attempt->cleanup;
 		attempt = attempt->previous;
 		while (cleanup != NULL) {
-			cleanup->body(cleanup->data);
+			cleanup->body(cleanup->data, thread);
 			cleanup = cleanup->next;
 		}
 	}
@@ -94,7 +94,9 @@ __attribute__((used, noinline)) static void attempt_internal(attempt_body body, 
 
 #ifndef __clang__
 #pragma GCC push_options
+#ifdef __x86_64__
 #pragma GCC optimize("-fomit-frame-pointer")
+#endif
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdangling-pointer"
 #endif
@@ -135,8 +137,8 @@ void attempt_pop_and_skip_cleanup(struct attempt_cleanup_state *state)
 	}
 }
 
-void attempt_pop_cleanup(struct attempt_cleanup_state *state)
+void attempt_pop_cleanup(struct thread_storage *thread, struct attempt_cleanup_state *state)
 {
 	attempt_pop_and_skip_cleanup(state);
-	state->body(state->data);
+	state->body(state->data, thread);
 }

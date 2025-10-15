@@ -22,7 +22,7 @@ __attribute__((noinline)) void attempt_exit(struct thread_storage *thread)
 		thread->attempt = NULL;
 		struct attempt_cleanup_state *cleanup = attempt->cleanup;
 		while (cleanup != NULL) {
-			cleanup->body(cleanup->data);
+			cleanup->body(cleanup->data, thread);
 			cleanup = cleanup->next;
 		}
 	}
@@ -49,8 +49,8 @@ void attempt_pop_and_skip_cleanup(struct attempt_cleanup_state *state)
 	}
 }
 
-void attempt_pop_cleanup(struct attempt_cleanup_state *state)
+void attempt_pop_cleanup(struct thread_storage *thread, struct attempt_cleanup_state *state)
 {
 	attempt_pop_and_skip_cleanup(state);
-	state->body(state->data);
+	state->body(state->data, thread);
 }

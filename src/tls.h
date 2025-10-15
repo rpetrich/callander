@@ -3,12 +3,11 @@
 
 #include <stdatomic.h>
 
-struct thread_storage;
-
-#include "attempt.h"
 #include "coverage.h"
 #include "handler.h"
 #include "stack.h"
+
+struct attempt;
 
 struct thread_storage
 {

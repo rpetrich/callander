@@ -10,6 +10,12 @@
 extern const struct vfs_file_ops windows_socket_ops;
 extern const struct vfs_path_ops windows_path_ops;
 
+static struct windows_state *state_for_fd(int fd)
+{
+	struct fd_global_state *state = get_fd_global_state();
+	return &state->files[fd].state.windows;
+}
+
 static size_t wide_strlen(const uint16_t *string)
 {
 	const uint16_t *current = string;
@@ -68,11 +74,11 @@ static intptr_t windows_path_openat(__attribute__((unused)) struct thread_storag
 	                                                   proxy_value(WINDOWS_OPEN_ALWAYS),
 	                                                   proxy_in(&params, sizeof(params))));
 	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &windows_path_ops.dirfd_ops,
-			.handle = result,
-		};
-		return 0;
+		return vfs_allocate_file(&windows_path_ops.dirfd_ops, (union vfs_file_state){
+			.windows = {
+				.handle = result,
+			},
+		}, out_file);
 	}
 	return result;
 }
@@ -184,7 +190,7 @@ static intptr_t windows_path_newfstatat(__attribute__((unused)) struct thread_st
 		return result;
 	}
 	result = vfs_call(fstat, file, out_stat);
-	file.ops->close(file);
+	vfs_decrement_file(file);
 	return result;
 }
 
@@ -266,7 +272,7 @@ static intptr_t windows_path_faccessat(__attribute__((unused)) struct thread_sto
 	if (result < 0) {
 		return result;
 	}
-	file.ops->close(file);
+	vfs_decrement_file(file);
 	return result;
 }
 
@@ -299,23 +305,22 @@ static intptr_t windows_file_socket(__attribute__((unused)) struct thread_storag
 {
 	intptr_t result = PROXY_WINSOCK_HANDLE_CALL(ws2_32.dll, socket, proxy_value(domain), proxy_value(type), proxy_value(protocol));
 	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &windows_socket_ops,
-			.handle = result,
-		};
-		return 0;
+		return vfs_allocate_file(&windows_socket_ops, (union vfs_file_state) {
+			.windows = {
+				.handle = result,
+			},
+		}, out_file);
 	}
 	return result;
 }
 
-static intptr_t windows_file_close(struct vfs_resolved_file file)
+static intptr_t windows_file_close(struct vfs_resolved_file file, union vfs_file_state *state)
 {
-	struct windows_state *state = &get_fd_states()[file.handle].windows;
-	if (state->dir_handle != NULL) {
-		PROXY_WIN32_BOOL_CALL(kernel32.dll, FindClose, proxy_value((intptr_t)state->dir_handle));
-		state->dir_handle = NULL;
+	if (state->windows.dir_handle != 0) {
+		PROXY_WIN32_BOOL_CALL(kernel32.dll, FindClose, proxy_value(state->windows.dir_handle));
+		state->windows.dir_handle = 0;
 	}
-	PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(file.handle));
+	PROXY_WIN32_BOOL_CALL(kernel32.dll, CloseHandle, proxy_value(state->windows.handle));
 	return 0;
 }
 
@@ -323,7 +328,7 @@ static intptr_t windows_file_read(__attribute__((unused)) struct thread_storage 
 {
 	trim_size(&bufsz);
 	WINDOWS_DWORD numberOfBytesRead;
-	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, ReadFile, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_out(&numberOfBytesRead, sizeof(numberOfBytesRead))));
+	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, ReadFile, proxy_value(state_for_fd(file.handle)->handle), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_out(&numberOfBytesRead, sizeof(numberOfBytesRead))));
 	return result == 0 ? numberOfBytesRead : result;
 }
 
@@ -331,7 +336,7 @@ static intptr_t windows_file_write(__attribute__((unused)) struct thread_storage
 {
 	trim_size(&bufsz);
 	WINDOWS_DWORD numberOfBytesWritten;
-	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, WriteFile, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_out(&numberOfBytesWritten, sizeof(numberOfBytesWritten))));
+	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, WriteFile, proxy_value(state_for_fd(file.handle)->handle), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_out(&numberOfBytesWritten, sizeof(numberOfBytesWritten))));
 	return result == 0 ? numberOfBytesWritten : result;
 }
 
@@ -362,7 +367,7 @@ static intptr_t windows_file_lseek(__attribute__((unused)) struct thread_storage
 			return -EINVAL;
 	}
 	uint64_t newFilePointer;
-	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, SetFilePointerEx, proxy_value(file.handle), proxy_value(offset), proxy_out(&newFilePointer, sizeof(newFilePointer)), proxy_value(moveMethod)));
+	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, SetFilePointerEx, proxy_value(state_for_fd(file.handle)->handle), proxy_value(offset), proxy_out(&newFilePointer, sizeof(newFilePointer)), proxy_value(moveMethod)));
 	return result < 0 ? result : (int64_t)newFilePointer;
 }
 
@@ -402,12 +407,12 @@ static intptr_t windows_file_flock(__attribute__((unused)) struct thread_storage
 
 static intptr_t windows_file_fsync(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
-	return translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, FlushFileBuffers, proxy_value(file.handle)));
+	return translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, FlushFileBuffers, proxy_value(state_for_fd(file.handle)->handle)));
 }
 
 static intptr_t windows_file_fdatasync(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
 {
-	return translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, FlushFileBuffers, proxy_value(file.handle)));
+	return translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, FlushFileBuffers, proxy_value(state_for_fd(file.handle)->handle)));
 }
 
 static intptr_t windows_file_syncfs(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file)
@@ -432,7 +437,7 @@ static intptr_t windows_file_ftruncate(__attribute__((unused)) struct thread_sto
 			return result;
 		}
 	}
-	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, SetEndOfFile, proxy_value(file.handle)));
+	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, SetEndOfFile, proxy_value(state_for_fd(file.handle)->handle)));
 	if (current_pos < length) {
 		vfs_call(lseek, file, current_pos, SEEK_SET);
 	}
@@ -482,7 +487,7 @@ static intptr_t windows_file_fchown(__attribute__((unused)) struct thread_storag
 static intptr_t windows_file_fstat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat)
 {
 	WINDOWS_BY_HANDLE_FILE_INFORMATION info;
-	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, GetFileInformationByHandle, proxy_value(file.handle), proxy_out(&info, sizeof(info))));
+	intptr_t result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, GetFileInformationByHandle, proxy_value(state_for_fd(file.handle)->handle), proxy_out(&info, sizeof(info))));
 	if (result >= 0) {
 		*out_stat = translate_windows_by_handle_file_information(info);
 	}
@@ -497,7 +502,7 @@ static intptr_t windows_file_fstatfs(__attribute__((unused)) struct thread_stora
 static intptr_t windows_file_readlink_fd(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
 	uint16_t path_buf[PATH_MAX - 1];
-	intptr_t result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, GetFinalPathNameByHandleW, proxy_value(file.handle), proxy_out(&path_buf, sizeof(path_buf)), proxy_value(PATH_MAX), proxy_value(0)));
+	intptr_t result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, GetFinalPathNameByHandleW, proxy_value(state_for_fd(file.handle)->handle), proxy_out(&path_buf, sizeof(path_buf)), proxy_value(PATH_MAX), proxy_value(0)));
 	if (result < 0) {
 		return result;
 	}
@@ -519,12 +524,12 @@ static intptr_t windows_file_getdents64(__attribute__((unused)) struct thread_st
 {
 	// TODO: check size
 	(void)size;
-	struct windows_state *state = &get_fd_states()[file.handle].windows;
+	struct windows_state *state = state_for_fd(file.handle);
 	WINDOWS_WIN32_FIND_DATAW find_data;
 	intptr_t result;
-	if (state->dir_handle == NULL) {
+	if (state->dir_handle == 0) {
 		uint16_t path_buf[PATH_MAX];
-		result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, GetFinalPathNameByHandleW, proxy_value(file.handle), proxy_out(path_buf, sizeof(path_buf)), proxy_value(PATH_MAX), proxy_value(0)));
+		result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, GetFinalPathNameByHandleW, proxy_value(state->handle), proxy_out(path_buf, sizeof(path_buf)), proxy_value(PATH_MAX), proxy_value(0)));
 		if (result < 0) {
 			return result;
 		}
@@ -535,7 +540,7 @@ static intptr_t windows_file_getdents64(__attribute__((unused)) struct thread_st
 		path_buf[result++] = '\0';
 		result = translate_windows_result(PROXY_WIN32_CALL(kernel32.dll, FindFirstFileW, proxy_in(path_buf, result * sizeof(uint16_t)), proxy_out(&find_data, sizeof(find_data))));
 		if (result > 0) {
-			state->dir_handle = (WINDOWS_HANDLE)result;
+			state->dir_handle = result;
 		}
 	} else {
 		result = translate_windows_result(PROXY_WIN32_BOOL_CALL(kernel32.dll, FindNextFileW, proxy_value((intptr_t)state->dir_handle), proxy_out(&find_data, sizeof(find_data))));
@@ -733,22 +738,22 @@ const struct vfs_path_ops windows_path_ops = {
 	.listxattr = windows_path_listxattr,
 };
 
-static intptr_t windows_socket_close(struct vfs_resolved_file file)
+static intptr_t windows_socket_close(struct vfs_resolved_file file, union vfs_file_state *state)
 {
-	PROXY_WINSOCK_CALL(ws2_32.dll, close, proxy_value(file.handle));
+	PROXY_WINSOCK_CALL(ws2_32.dll, close, proxy_value(state->windows.handle));
 	return 0;
 }
 
 static intptr_t windows_socket_read(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz)
 {
 	trim_size(&bufsz);
-	return translate_winsock_result(PROXY_WINSOCK_CALL(ws2_32.dll, recv, proxy_value(file.handle), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_value(0)));
+	return translate_winsock_result(PROXY_WINSOCK_CALL(ws2_32.dll, recv, proxy_value(state_for_fd(file.handle)->handle), proxy_out(buf, bufsz), proxy_value(bufsz), proxy_value(0)));
 }
 
 static intptr_t windows_socket_write(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, const char *buf, size_t bufsz)
 {
 	trim_size(&bufsz);
-	return translate_winsock_result(PROXY_WINSOCK_CALL(ws2_32.dll, send, proxy_value(file.handle), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_value(0)));
+	return translate_winsock_result(PROXY_WINSOCK_CALL(ws2_32.dll, send, proxy_value((intptr_t)state_for_fd(file.handle)->handle), proxy_in(buf, bufsz), proxy_value(bufsz), proxy_value(0)));
 }
 
 static intptr_t windows_socket_recvfrom(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t bufsz, int flags, struct sockaddr *src_addr, socklen_t *addrlen)

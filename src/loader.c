@@ -30,21 +30,25 @@ static int protection_for_pflags(int pflags)
 
 int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bool force_relocation)
 {
-	const ElfW(Ehdr) header;
-	int read_bytes = fs_pread_all(fd, (char *)&header, sizeof(header), 0);
+	union {
+		char buf[PAGE_SIZE];
+		const ElfW(Ehdr) header;
+		const ElfW(Phdr) phdr;
+	} un;
+	int read_bytes = fs_pread_all(fd, un.buf, sizeof un, 0);
 	if (read_bytes < 0) {
-		ERROR("unable to read ELF header: ", fs_strerror(read_bytes));
+		ERROR("unable to read ELF header: ", as_errno(read_bytes));
 		return -ENOEXEC;
 	}
 	if (read_bytes < (int)sizeof(ElfW(Ehdr))) {
 		ERROR("too few bytes for ELF header: ", read_bytes);
 		return -ENOEXEC;
 	}
-	if (header.e_ident[EI_MAG0] != ELFMAG0 || header.e_ident[EI_MAG1] != ELFMAG1 || header.e_ident[EI_MAG2] != ELFMAG2 || header.e_ident[EI_MAG3] != ELFMAG3) {
+	if (un.header.e_ident[EI_MAG0] != ELFMAG0 || un.header.e_ident[EI_MAG1] != ELFMAG1 || un.header.e_ident[EI_MAG2] != ELFMAG2 || un.header.e_ident[EI_MAG3] != ELFMAG3) {
 		ERROR("not an ELF binary");
 		return -ENOEXEC;
 	}
-	if (header.e_ident[EI_CLASS] != CURRENT_CLASS) {
+	if (un.header.e_ident[EI_CLASS] != CURRENT_CLASS) {
 #ifdef __LP64__
 		ERROR("ELF binary is not 64-bit");
 #else
@@ -52,58 +56,59 @@ int load_binary(int fd, struct binary_info *out_info, uintptr_t load_address, bo
 #endif
 		return -ENOEXEC;
 	}
-	if (header.e_ident[EI_DATA] != ELFDATA2LSB) {
+	if (un.header.e_ident[EI_DATA] != ELFDATA2LSB) {
 		ERROR("ELF binary is not little-endian");
 		return -ENOEXEC;
 	}
-	if (header.e_ident[EI_VERSION] != EV_CURRENT) {
+	if (un.header.e_ident[EI_VERSION] != EV_CURRENT) {
 		ERROR("ELF identifier version is not current");
 		return -ENOEXEC;
 	}
-	if (header.e_ident[EI_OSABI] != ELFOSABI_SYSV && header.e_ident[EI_OSABI] != ELFOSABI_LINUX) {
+	if (un.header.e_ident[EI_OSABI] != ELFOSABI_SYSV && un.header.e_ident[EI_OSABI] != ELFOSABI_LINUX) {
 		ERROR("ELF binary ABI is not SYSV or Linux");
 		return -ENOEXEC;
 	}
-	if (header.e_ident[EI_ABIVERSION] != 0) {
+	if (un.header.e_ident[EI_ABIVERSION] != 0) {
 		ERROR("ELF binary has an unknown ABI version");
 		return -ENOEXEC;
 	}
-	if (header.e_type != ET_EXEC && header.e_type != ET_DYN) {
-		ERROR("ELF binary has unexpected type: ", (int)header.e_type);
+	if (un.header.e_type != ET_EXEC && un.header.e_type != ET_DYN) {
+		ERROR("ELF binary has unexpected type: ", (int)un.header.e_type);
 		return -ENOEXEC;
 	}
-	if (header.e_machine != CURRENT_ELF_MACHINE) {
-		ERROR("ELF binary has unexpected machine type: ", (int)header.e_machine);
+	if (un.header.e_machine != CURRENT_ELF_MACHINE) {
+		ERROR("ELF binary has unexpected machine type: ", (int)un.header.e_machine);
 		return -ENOEXEC;
 	}
-	if (header.e_version != EV_CURRENT) {
-		ERROR("ELF binary version is not current: ", header.e_version);
+	if (un.header.e_version != EV_CURRENT) {
+		ERROR("ELF binary version is not current: ", un.header.e_version);
 		return -ENOEXEC;
 	}
 	struct fs_stat stat;
 	int result = fs_fstat(fd, &stat);
 	if (result < 0) {
-		ERROR("could not stat binary: ", fs_strerror(result));
+		ERROR("could not stat binary: ", as_errno(result));
 		return -ENOEXEC;
 	}
-	size_t phsize = header.e_phentsize * header.e_phnum;
-	void *phbuffer = malloc(phsize);
-	int l = fs_pread_all(fd, phbuffer, phsize, header.e_phoff);
-	if (l != (int)phsize) {
-		free(phbuffer);
-		if (l < 0) {
-			ERROR("unable to read phbuffer: ", fs_strerror(l));
-		} else {
-			ERROR("read of phbuffer was the wrong size: ", l);
-			ERROR("expected: ", (int)phsize);
+	size_t phsize = un.header.e_phentsize * un.header.e_phnum;
+	if (phsize > sizeof(un.buf) - sizeof(un.header)) {
+		return -ENOEXEC;
+	}
+	size_t offset = un.header.e_phoff;
+	if (offset + phsize > sizeof(un)) {
+		int l = fs_pread_all(fd, &un.buf[sizeof(un.header)], phsize, offset);
+		if (l != (int)phsize) {
+			if (l < 0) {
+				ERROR("unable to read phbuffer: ", as_errno(l));
+			} else {
+				ERROR("read of phbuffer was the wrong size: ", l);
+				ERROR("expected: ", (int)phsize);
+			}
+			return -ENOEXEC;
 		}
-		return -ENOEXEC;
+		offset = sizeof(un.header);
 	}
-	result = load_binary_with_layout(&header, phbuffer, fd, 0, stat.st_size, out_info, load_address, force_relocation);
-	if (result < 0) {
-		free(phbuffer);
-	}
-	return result;
+	return load_binary_with_layout(&un.header, (const ElfW(Phdr) *)&un.buf[offset], fd, 0, stat.st_size, out_info, load_address, force_relocation);
 }
 
 // load_binary_with_layout will load and map the binary in fd into the process' address space
@@ -111,7 +116,9 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 {
 	out_info->header_entry_size = header->e_phentsize;
 	out_info->header_entry_count = header->e_phnum;
-	out_info->phbuffer = (void *)program_header;
+	out_info->relro_vaddr = 0;
+	out_info->relro_memsz = 0;
+	out_info->relro_pflags = 0;
 	uintptr_t start = UINTPTR_MAX;
 	uintptr_t off_start = 0;
 	uintptr_t end = 0;
@@ -140,6 +147,12 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 			}
 			case PT_GNU_STACK: {
 				out_info->executable_stack = ph->p_flags & PF_X ? EXECUTABLE_STACK_REQUIRED : EXECUTABLE_STACK_PROHIBITED;
+				break;
+			}
+			case PT_GNU_RELRO: {
+				out_info->relro_vaddr = ph->p_vaddr;
+				out_info->relro_memsz = ph->p_memsz;
+				out_info->relro_pflags = ph->p_flags;
 				break;
 			}
 		}
@@ -191,7 +204,7 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 				void *section_mapping = fs_mmap(desired_section_mapping, map_len, temporary_prot, MAP_PRIVATE | MAP_FIXED, fd, file_offset + offset);
 #endif
 				if (fs_is_map_failed(section_mapping)) {
-					ERROR("failed mapping section: ", fs_strerror((intptr_t)section_mapping));
+					ERROR("failed mapping section: ", as_errno((intptr_t)section_mapping));
 					return -ENOEXEC;
 				}
 				if (section_mapping != desired_section_mapping) {
@@ -203,7 +216,7 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 				if (temporary_prot & PROT_EXEC) {
 					result = fs_mprotect(desired_section_mapping, map_len, temporary_prot);
 					if (result != 0) {
-						ERROR("failed adding PROT_EXEC: ", fs_strerror(result));
+						ERROR("failed adding PROT_EXEC: ", as_errno(result));
 						return -ENOEXEC;
 					}
 				}
@@ -213,18 +226,18 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 		if (ph->p_memsz > ph->p_filesz) {
 			size_t brk = (size_t)map_offset + ph->p_vaddr + ph->p_filesz;
 			size_t pgbrk = (brk + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
-			memset((void *)brk, 0, (pgbrk - brk) & (PAGE_SIZE - 1));
+			fs_bzero((void *)brk, (pgbrk - brk) & (PAGE_SIZE - 1));
 			if (this_max - this_min && protection != (protection | PROT_READ | PROT_WRITE)) {
 				intptr_t result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
 				if (result < 0) {
-					ERROR("failed remapping section with new protection: ", fs_strerror(result));
+					ERROR("failed remapping section with new protection: ", as_errno(result));
 					return -ENOEXEC;
 				}
 			}
 			if (pgbrk - (size_t)map_offset < this_max) {
 				void *tail_mapping = fs_mmap((void *)pgbrk, (size_t)map_offset + this_max - pgbrk, protection, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
 				if (fs_is_map_failed(tail_mapping)) {
-					ERROR("failed creating .bss-like PT_LOAD: ", fs_strerror((intptr_t)tail_mapping));
+					ERROR("failed creating .bss-like PT_LOAD: ", as_errno((intptr_t)tail_mapping));
 					return -ENOEXEC;
 				}
 			}
@@ -259,9 +272,6 @@ int load_binary_with_layout(const ElfW(Ehdr) * header, const ElfW(Phdr) * progra
 
 void unload_binary(struct binary_info *info)
 {
-	if (info->phbuffer) {
-		free(info->phbuffer);
-	}
 	fs_munmap(info->base, info->size);
 }
 
@@ -270,7 +280,9 @@ void load_existing(struct binary_info *out_info, uintptr_t load_address)
 	const ElfW(Ehdr) *header = (const ElfW(Ehdr) *)load_address;
 	out_info->header_entry_size = header->e_phentsize;
 	out_info->header_entry_count = header->e_phnum;
-	out_info->phbuffer = NULL;
+	out_info->relro_vaddr = 0;
+	out_info->relro_memsz = 0;
+	out_info->relro_pflags = 0;
 
 	uintptr_t start = UINTPTR_MAX;
 	uintptr_t off_start = 0;
@@ -301,6 +313,12 @@ void load_existing(struct binary_info *out_info, uintptr_t load_address)
 			}
 			case PT_GNU_STACK: {
 				out_info->executable_stack = ph->p_flags & PF_X ? EXECUTABLE_STACK_REQUIRED : EXECUTABLE_STACK_PROHIBITED;
+				break;
+			}
+			case PT_GNU_RELRO: {
+				out_info->relro_vaddr = ph->p_vaddr;
+				out_info->relro_memsz = ph->p_memsz;
+				out_info->relro_pflags = ph->p_flags;
 				break;
 			}
 		}
@@ -443,21 +461,15 @@ int load_interpreter_from_auxv(const ElfW(auxv_t) * aux, struct binary_info *out
 
 int apply_postrelocation_readonly(struct binary_info *info)
 {
-	if (info->phbuffer != NULL) {
+	if (info->relro_memsz != 0) {
+		uintptr_t this_min = info->relro_vaddr & PAGE_ALIGNMENT_MASK;
+		uintptr_t this_max = (info->relro_vaddr + info->relro_memsz + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
+		int protection = protection_for_pflags(info->relro_pflags);
 		uintptr_t map_offset = info->base - info->default_base;
-		for (size_t i = 0; i < info->header_entry_count; i++) {
-			const ElfW(Phdr) *ph = (const ElfW(Phdr) *)&info->phbuffer[info->header_entry_size * i];
-			if (ph->p_type != PT_GNU_RELRO) {
-				continue;
-			}
-			uintptr_t this_min = ph->p_vaddr & PAGE_ALIGNMENT_MASK;
-			uintptr_t this_max = (ph->p_vaddr + ph->p_memsz + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
-			int protection = protection_for_pflags(ph->p_flags);
-			int result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
-			if (result < 0) {
-				ERROR("failed remapping section with new protection: ", fs_strerror(result));
-				return result;
-			}
+		int result = fs_mprotect((void *)(map_offset + this_min), this_max - this_min, protection);
+		if (result < 0) {
+			ERROR("failed remapping section with new protection: ", as_errno(result));
+			return result;
 		}
 	}
 	return 0;

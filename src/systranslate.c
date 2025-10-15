@@ -45,7 +45,7 @@ int main(int argc, const char *argv[])
 			if (result == 0) {
 				break;
 			}
-			DIE("error reading: ", fs_strerror(result));
+			DIE("error reading: ", as_errno(result));
 		}
 		read_cursor += result;
 		buf[read_cursor] = '\0';

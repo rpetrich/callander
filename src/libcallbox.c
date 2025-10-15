@@ -13,49 +13,9 @@
 #include <linux/seccomp.h>
 #include <sched.h>
 #include <sys/prctl.h>
+#include <zlib.h>
 
 FS_DEFINE_SYSCALL
-
-typedef struct z_stream_s
-{
-	const unsigned char *next_in;     /* next input byte */
-	unsigned int avail_in;  /* number of bytes available at next_in */
-	unsigned long total_in;  /* total number of input bytes read so far */
-
-	unsigned char *next_out; /* next output byte will go here */
-	unsigned int avail_out; /* remaining free space at next_out */
-	unsigned long total_out; /* total number of bytes output so far */
-
-	const char *msg;  /* last error message, NULL if no error */
-	void *state; /* not visible by applications */
-
-	void *zalloc;  /* used to allocate the internal state */
-	void *zfree;   /* used to free the internal state */
-	void *opaque;  /* private data object passed to zalloc and zfree */
-
-	int data_type;  /* best guess about the data type: binary or text
-	                for deflate, or the decoding state for inflate */
-	unsigned long adler;      /* Adler-32 or CRC-32 value of the uncompressed data */
-	unsigned long reserved;   /* reserved for future use */
-} z_stream;
-
-typedef struct gz_header_s
-{
-	int text;       /* true if compressed data believed to be text */
-	unsigned long time;       /* modification time */
-	int xflags;     /* extra flags (not used when writing a gzip file) */
-	int os;         /* operating system */
-	unsigned char *extra;     /* pointer to extra field or Z_NULL if none */
-	unsigned int extra_len;  /* extra field length (valid if extra != Z_NULL) */
-	unsigned int extra_max;  /* space at extra (only when reading header) */
-	unsigned char *name;      /* pointer to zero-terminated file name or Z_NULL */
-	unsigned int name_max;   /* space at name (only when reading header) */
-	unsigned char *comment;   /* pointer to zero-terminated comment or Z_NULL */
-	unsigned int comm_max;   /* space at comment (only when reading header) */
-	int hcrc;       /* true if there was or will be a header crc */
-	int done;       /* true when done reading gzip header (not used
-	 when writing a gzip file) */
-} gz_header;
 
 static intptr_t worker_inflateInit_;
 static intptr_t inferior_inflateInit_(__attribute__((unused)) uintptr_t *args, __attribute__((unused)) intptr_t original)
@@ -76,7 +36,7 @@ static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attr
 	struct z_stream_s copy = *stream;
 	size_t avail_in = stream->avail_in;
 	size_t avail_out = stream->avail_out;
-	const unsigned char *orig_next_in = stream->next_in;
+	unsigned char *orig_next_in = stream->next_in;
 	unsigned char *orig_next_out = stream->next_out;
 	intptr_t next_in = proxy_alloc(avail_in);
 	intptr_t next_out = proxy_alloc(avail_out);
@@ -84,12 +44,12 @@ static intptr_t inferior_inflate(__attribute__((unused)) uintptr_t *args, __attr
 	copy.next_out = (void *)next_out;
 	intptr_t result = proxy_poke(next_in, avail_in, stream->next_in);
 	if (result < 0) {
-		DIE("failed to poke: ", fs_strerror(result));
+		DIE("failed to poke: ", as_errno(result));
 	}
 	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflate), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
 	result = proxy_peek(next_out, avail_out - copy.avail_out, orig_next_out);
 	if (result < 0) {
-		DIE("failed to peek: ", fs_strerror(result));
+		DIE("failed to peek: ", as_errno(result));
 	}
 	*stream = copy;
 	stream->next_in = &orig_next_in[(intptr_t)copy.next_in - (intptr_t)next_in];
@@ -130,12 +90,12 @@ static intptr_t inferior_inflateSync(__attribute__((unused)) uintptr_t *args, __
 	struct z_stream_s *stream = (void *)args[0];
 	struct z_stream_s copy = *stream;
 	size_t avail_in = stream->avail_in;
-	const unsigned char *orig_next_in = stream->next_in;
+	unsigned char *orig_next_in = stream->next_in;
 	intptr_t next_in = proxy_alloc(avail_in);
 	copy.next_in = (void *)next_in;
 	intptr_t result = proxy_poke(next_in, avail_in, stream->next_in);
 	if (result < 0) {
-		DIE("failed to poke: ", fs_strerror(result));
+		DIE("failed to poke: ", as_errno(result));
 	}
 	intptr_t inflate_return = PROXY_CALL(TARGET_NR_CALL, proxy_value(worker_inflateSync), proxy_inout(&copy, sizeof(struct z_stream_s)), proxy_value(args[1]));
 	*stream = copy;
@@ -284,7 +244,7 @@ static void inferior_debug_state_hit(__attribute__((unused)) uintptr_t *args)
 
 static target_state state;
 
-#define EXIT_FROM_ERRNO(message, errno) DIE(message, fs_strerror(errno))
+#define EXIT_FROM_ERRNO(message, errno) DIE(message, as_errno(errno))
 
 noreturn static void process_data(void)
 {
@@ -622,18 +582,18 @@ __attribute__((noinline)) static void apply_sandbox(const struct link_map *libz_
 	// revoke permissions
 	intptr_t result = fs_prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
 	if (result != 0) {
-		DIE("failed to set no new privileges: ", fs_strerror(result));
+		DIE("failed to set no new privileges: ", as_errno(result));
 	}
 
 	// allocate a temporary stack
 	void *stack = fs_mmap(NULL, ALT_STACK_SIZE + STACK_GUARD_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK, -1, 0);
 	if (fs_is_map_failed(stack)) {
-		DIE("failed to allocate stack: ", fs_strerror((intptr_t)stack));
+		DIE("failed to allocate stack: ", as_errno((intptr_t)stack));
 	}
 	// apply the guard page
 	result = fs_mprotect(stack, STACK_GUARD_SIZE, PROT_NONE);
 	if (result != 0) {
-		DIE("failed to protect stack guard: ", fs_strerror(result));
+		DIE("failed to protect stack guard: ", as_errno(result));
 	}
 	CALL_ON_ALTERNATE_STACK_WITH_ARG(callander_perform_analysis, &analysis, libz_entry, NULL, (char *)stack + ALT_STACK_SIZE + STACK_GUARD_SIZE);
 	// unmap the temporary stack
@@ -663,7 +623,7 @@ __attribute__((noinline)) static void apply_sandbox(const struct link_map *libz_
 	ERROR_FLUSH();
 	result = FS_SYSCALL(__NR_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, (intptr_t)&prog);
 	if (result < 0) {
-		DIE("failed to apply program: ", fs_strerror(result));
+		DIE("failed to apply program: ", as_errno(result));
 	}
 	free(prog.filter);
 }
@@ -674,7 +634,7 @@ static void spawn_worker(const struct link_map *libz_entry)
 	int sockets[2];
 	intptr_t result = fs_socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets);
 	if (result < 0) {
-		DIE("failed to create sockets: ", fs_strerror(result));
+		DIE("failed to create sockets: ", as_errno(result));
 	}
 	ERROR_FLUSH();
 #if 0
@@ -683,17 +643,17 @@ static void spawn_worker(const struct link_map *libz_entry)
 	pid_t child_pid = fs_fork();
 #endif
 	if (child_pid < 0) {
-		DIE("failed to fork child: ", fs_strerror(child_pid));
+		DIE("failed to fork child: ", as_errno(child_pid));
 	}
 	if (child_pid != 0) {
 		fs_close(sockets[1]);
-		install_proxy(sockets[0]);
+		install_proxy_fd(sockets[0]);
 		return;
 	}
 	fs_close(sockets[0]);
 	result = fs_prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0);
 	if (result < 0) {
-		DIE("failed to set death signal: ", fs_strerror(result));
+		DIE("failed to set death signal: ", as_errno(result));
 	}
 	hello_message hello;
 #ifdef __linux__
@@ -707,7 +667,7 @@ static void spawn_worker(const struct link_map *libz_entry)
 	hello.state = &state;
 	result = fs_write_all(sockets[1], (const char *)&hello, sizeof(hello));
 	if (result < (intptr_t)sizeof(hello)) {
-		DIE("failed to write startup message: ", fs_strerror(result));
+		DIE("failed to write startup message: ", as_errno(result));
 	}
 	apply_sandbox(libz_entry);
 	process_data();
@@ -718,14 +678,14 @@ static void *find_loaded_symbol(const struct link_map *entry, const char *symbol
 	struct full_binary_info binary;
 	intptr_t result = load_full_binary_info(AT_FDCWD, entry->l_name, &binary);
 	if (result < 0) {
-		DIE("error loading binary: ", fs_strerror(result));
+		DIE("error loading binary: ", as_errno(result));
 	}
 	struct binary_info loaded;
 	load_existing(&loaded, entry->l_addr);
 	struct symbol_info symbols;
 	result = load_dynamic_symbols(binary.fd, &binary.info, &symbols);
 	if (result < 0) {
-		DIE("error loading symbols: ", fs_strerror(result));
+		DIE("error loading symbols: ", as_errno(result));
 	}
 	void *symbol = find_symbol(&loaded, &symbols, symbol_name, NULL, NULL);
 	free_symbols(&symbols);
@@ -787,14 +747,14 @@ static void entrypoint_hit(__attribute__((unused)) uintptr_t *registers)
 		struct full_binary_info libz;
 		intptr_t result = load_full_binary_info(AT_FDCWD, libz_entry->l_name, &libz);
 		if (result < 0) {
-			DIE("error loading libz: ", fs_strerror(result));
+			DIE("error loading libz: ", as_errno(result));
 		}
 		struct binary_info loaded_libz;
 		load_existing(&loaded_libz, libz_entry->l_addr);
 		struct symbol_info libz_symbols;
 		result = load_dynamic_symbols(libz.fd, &libz.info, &libz_symbols);
 		if (result < 0) {
-			DIE("error loading libz symbols: ", fs_strerror(result));
+			DIE("error loading libz symbols: ", as_errno(result));
 		}
 		struct thread_storage *thread = get_thread_storage();
 		for (size_t i = 0; i < sizeof(zlib_symbols) / sizeof(zlib_symbols[0]); i++) {
@@ -825,7 +785,7 @@ __attribute__((constructor)) static void constructor(void)
 	struct full_binary_info main;
 	intptr_t result = load_full_binary_info(AT_FDCWD, "/proc/self/exe", &main);
 	if (result < 0) {
-		DIE("failed to load main binary: ", fs_strerror(result));
+		DIE("failed to load main binary: ", as_errno(result));
 	}
 
 	struct full_binary_info interpreter;
@@ -833,21 +793,21 @@ __attribute__((constructor)) static void constructor(void)
 	if (main.info.interpreter) {
 		result = load_full_binary_info(AT_FDCWD, main.info.interpreter, &interpreter);
 		if (result < 0) {
-			DIE("failed to load interpreter binary: ", fs_strerror(result));
+			DIE("failed to load interpreter binary: ", as_errno(result));
 		}
 	}
 
 	// struct symbol_info symbols;
 	// result = load_dynamic_symbols(fd, info, &symbols);
 	// if (result < 0) {
-	// 	DIE("failed to load dynamic symbols for self: ", fs_strerror(result));
+	// 	DIE("failed to load dynamic symbols for self: ", as_errno(result));
 	// }
 
 	// free_symbols(&symbols);
 
 	int fd = fs_open("/proc/self/maps", O_RDONLY | O_CLOEXEC, 0);
 	if (fd < 0) {
-		DIE("unable to open self maps: ", fs_strerror(fd));
+		DIE("unable to open self maps: ", as_errno(fd));
 	}
 
 	void *main_base = NULL;
@@ -864,7 +824,7 @@ __attribute__((constructor)) static void constructor(void)
 			if (result == 0) {
 				break;
 			}
-			DIE("error reading mapping: ", fs_strerror(fd));
+			DIE("error reading mapping: ", as_errno(fd));
 		}
 		if ((mapping.device != 0 || mapping.inode != 0) && (mapping.prot & PROT_EXEC) && mapping.path[0] != '\0') {
 			// ERROR("found library: ", mapping.path);
@@ -908,7 +868,7 @@ __attribute__((constructor)) static void constructor(void)
 	struct symbol_info symbols;
 	result = load_dynamic_symbols(debug_info->fd, loaded_debug, &symbols);
 	if (result < 0) {
-		DIE("failed to load symbols: ", fs_strerror(result));
+		DIE("failed to load symbols: ", as_errno(result));
 	}
 
 	global_r_debug = find_symbol(loaded_debug, &symbols, "_r_debug", NULL, NULL);

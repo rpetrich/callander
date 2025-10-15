@@ -85,15 +85,15 @@ intptr_t vfs_assemble_simple_path(struct thread_storage *thread, struct vfs_reso
 	return 0;
 }
 
-void vfs_close_cleanup_body(void *data)
+void vfs_close_cleanup_body(void *data, struct thread_storage *)
 {
 	const struct vfs_resolved_file *file = data;
-	file->ops->close(*file);
+	file->ops->close(*file, &get_fd_global_state()->files[file->handle].state);
 }
 
 void vfs_attempt_push_close(struct thread_storage *thread, struct attempt_cleanup_state *state, const struct vfs_resolved_file *file)
 {
-	state->body = (attempt_cleanup_body)(void *)&vfs_close_cleanup_body;
+	state->body = &vfs_close_cleanup_body;
 	state->data = (void *)file;
 	attempt_push_cleanup(thread, state);
 }
@@ -102,5 +102,110 @@ void vfs_attempt_pop_close(struct attempt_cleanup_state *state)
 {
 	attempt_pop_and_skip_cleanup(state);
 	const struct vfs_resolved_file *file = state->data;
-	file->ops->close(*file);
+	file->ops->close(*file, &get_fd_global_state()->files[file->handle].state);
+}
+
+__attribute__((noinline)) intptr_t vfs_unsupported_op(void)
+{
+	return -EINVAL;
+}
+
+__attribute__((noinline)) intptr_t vfs_invalid_mixed_op(void)
+{
+	return -EINVAL;
+}
+
+intptr_t fstat_from_statx(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct fs_stat *out_stat)
+{
+	struct linux_statx statxbuf = {0};
+	struct vfs_path_ops *ops = (struct vfs_path_ops *)file.ops;
+	intptr_t result = ops->statx(thread, (struct vfs_resolved_path){ .ops = ops, .info = { .handle = file.handle, .path = NULL } }, AT_EMPTY_PATH, STATX_BASIC_STATS, &statxbuf);
+	if (result < 0) {
+		return result;
+	}
+	*out_stat = (struct fs_stat) {
+		.st_dev = statxbuf.stx_dev_major,
+		.st_ino = (statxbuf.stx_mask & STATX_INO) ? statxbuf.stx_ino : 0,
+		.st_mode = (statxbuf.stx_mask & (STATX_MODE | STATX_TYPE)) ? statxbuf.stx_mode : 0,
+		.st_nlink = (statxbuf.stx_mask & STATX_NLINK) ? statxbuf.stx_nlink : 0,
+		.st_uid = (statxbuf.stx_mask & STATX_UID) ? statxbuf.stx_uid : 0,
+		.st_gid = (statxbuf.stx_mask & STATX_GID) ? statxbuf.stx_gid : 0,
+		.st_rdev = 0,
+		.st_size = (statxbuf.stx_mask & STATX_SIZE) ? statxbuf.stx_size : 0,
+		.st_blksize = statxbuf.stx_blksize,
+		.st_blocks = (statxbuf.stx_mask & STATX_BLOCKS) ? statxbuf.stx_blocks : 0,
+		.st_atime_sec = (statxbuf.stx_mask & STATX_ATIME) ? statxbuf.stx_atime.tv_sec : 0,
+		.st_atime_nsec = (statxbuf.stx_mask & STATX_ATIME) ? statxbuf.stx_atime.tv_nsec : 0,
+		.st_mtime_sec = (statxbuf.stx_mask & STATX_MTIME) ? statxbuf.stx_mtime.tv_sec : 0,
+		.st_mtime_nsec = (statxbuf.stx_mask & STATX_MTIME) ? statxbuf.stx_mtime.tv_nsec : 0,
+		.st_ctime_sec = (statxbuf.stx_mask & STATX_CTIME) ? statxbuf.stx_ctime.tv_sec : 0,
+		.st_ctime_nsec = (statxbuf.stx_mask & STATX_CTIME) ? statxbuf.stx_ctime.tv_nsec : 0,
+	};
+	return 0;
+}
+
+intptr_t newfstatat_from_statx(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, struct fs_stat *out_stat, int flags)
+{
+	struct linux_statx statxbuf = {0};
+	intptr_t result = resolved.ops->statx(thread, resolved, flags, STATX_BASIC_STATS, &statxbuf);
+	if (result < 0) {
+		return result;
+	}
+	*out_stat = (struct fs_stat) {
+		.st_dev = statxbuf.stx_dev_major,
+		.st_ino = (statxbuf.stx_mask & STATX_INO) ? statxbuf.stx_ino : 0,
+		.st_mode = (statxbuf.stx_mask & (STATX_MODE | STATX_TYPE)) ? statxbuf.stx_mode : 0,
+		.st_nlink = (statxbuf.stx_mask & STATX_NLINK) ? statxbuf.stx_nlink : 0,
+		.st_uid = (statxbuf.stx_mask & STATX_UID) ? statxbuf.stx_uid : 0,
+		.st_gid = (statxbuf.stx_mask & STATX_GID) ? statxbuf.stx_gid : 0,
+		.st_rdev = 0,
+		.st_size = (statxbuf.stx_mask & STATX_SIZE) ? statxbuf.stx_size : 0,
+		.st_blksize = statxbuf.stx_blksize,
+		.st_blocks = (statxbuf.stx_mask & STATX_BLOCKS) ? statxbuf.stx_blocks : 0,
+		.st_atime_sec = (statxbuf.stx_mask & STATX_ATIME) ? statxbuf.stx_atime.tv_sec : 0,
+		.st_atime_nsec = (statxbuf.stx_mask & STATX_ATIME) ? statxbuf.stx_atime.tv_nsec : 0,
+		.st_mtime_sec = (statxbuf.stx_mask & STATX_MTIME) ? statxbuf.stx_mtime.tv_sec : 0,
+		.st_mtime_nsec = (statxbuf.stx_mask & STATX_MTIME) ? statxbuf.stx_mtime.tv_nsec : 0,
+		.st_ctime_sec = (statxbuf.stx_mask & STATX_CTIME) ? statxbuf.stx_ctime.tv_sec : 0,
+		.st_ctime_nsec = (statxbuf.stx_mask & STATX_CTIME) ? statxbuf.stx_ctime.tv_nsec : 0,
+	};
+	return 0;
+}
+
+__attribute__((warn_unused_result)) bool lookup_potential_mount_path(const char *mountpoint, size_t mountpoint_len, int fd, const char *path, path_info *out_path)
+{
+	if (path != NULL) {
+		if (path[0] == '/') {
+			if (fs_strncmp(path, mountpoint, mountpoint_len) == 0) {
+				if (path[mountpoint_len] == '/') {
+					*out_path = (path_info){
+						.handle = AT_FDCWD,
+						.path = &path[mountpoint_len],
+					};
+					return true;
+				}
+				if (path[mountpoint_len] == '\0') {
+					*out_path = (path_info){
+						.handle = AT_FDCWD,
+						.path = "/",
+					};
+					return true;
+				}
+			}
+			out_path->handle = AT_FDCWD;
+			out_path->path = path;
+			return false;
+		}
+		out_path->path = path;
+		if (fd == AT_FDCWD) {
+			if (lookup_real_fd(CWD_FD, &out_path->handle)) {
+				return true;
+			}
+			out_path->handle = AT_FDCWD;
+			return false;
+		}
+		return lookup_real_fd(fd, &out_path->handle);
+	}
+	out_path->path = NULL;
+	return lookup_real_fd(fd, &out_path->handle);
 }

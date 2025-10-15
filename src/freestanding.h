@@ -981,16 +981,64 @@ static inline void fs_fd_clr(int fd, struct fs_fd_set *fds)
 #endif
 
 // fs_memset fills a buffer with a specified character value
-__attribute__((nonnull(1))) static inline void *fs_memset(void *buffer, int value, size_t num)
+__attribute__((nonnull(1))) static inline void *fs_memset(void *buffer, uint64_t value, size_t num)
 {
 	char *buf = buffer;
+	if (num >= sizeof(value)) {
+		// copy the value into each byte of chunk
+		// assign in chunks, unaligning and overlapping the last chunk
+		const char *buf_wide_end = buf + ((num - 1) & ~(sizeof(value)-1));
+		num -= sizeof(value);
+		while (__builtin_expect(!!(buf != buf_wide_end), 1)) {
+			*(__attribute__((aligned(1))) uint64_t *)buf = value;
+			buf += sizeof(value);
+		}
+		*(uint64_t *)(buffer + num) = value;
+		return buffer;
+	}
 	for (int i = 0; i < (int)num; i++) {
 		buf[i] = (char)value;
 	}
 	return buffer;
 }
 
-// fs_strcmp returns the length of a string as represented by its null terminator
+#define fs_memset(buffer, value, num) \
+	__builtin_choose_expr( \
+		__builtin_constant_p(num) && __builtin_constant_p(value), \
+		({ \
+			void *memset_buffer_void_ = 1 ? (buffer) : (void *)NULL; \
+			union { \
+				__attribute__((aligned(1))) \
+				uint64_t wide_buf[__builtin_choose_expr(__builtin_constant_p(num), num / sizeof(uint64_t), 0)]; \
+				char buf[__builtin_choose_expr(__builtin_constant_p(num), num, 0)]; \
+			} *memset_buffer_ = memset_buffer_void_; \
+			uint64_t memset_value_ = (unsigned char)(1 ? value : (int)0); \
+			uint64_t memset_value_wide_ = memset_value_ | (memset_value_ << 8) | (memset_value_ << 16) | (memset_value_ << 24) | (memset_value_ << 32) | (memset_value_ << 40) | (memset_value_ << 48) | (memset_value_ << 56); \
+			_Pragma("GCC unroll 32") \
+			for (ssize_t i = 0; i < (ssize_t)(sizeof(memset_buffer_->wide_buf) / sizeof(memset_buffer_->wide_buf[0])); i++) { \
+				memset_buffer_->wide_buf[i] = memset_value_wide_; \
+			} \
+			_Pragma("GCC unroll 7") \
+			for (ssize_t i = (ssize_t)sizeof(memset_buffer_->wide_buf); i < (ssize_t)sizeof(memset_buffer_->buf); i++) { \
+				memset_buffer_->buf[i] = memset_value_wide_; \
+			} \
+			(void *)memset_buffer_; \
+		}), \
+		({ \
+			void *memset_buffer_ = 1 ? (buffer) : (void *)NULL; \
+			uint64_t memset_value_ = (unsigned char)(1 ? (value) : (int)0); \
+			fs_memset( \
+				memset_buffer_, \
+				memset_value_ | (memset_value_ << 8) | (memset_value_ << 16) | (memset_value_ << 24) | (memset_value_ << 32) | (memset_value_ << 40) | (memset_value_ << 48) | (memset_value_ << 56), \
+				num \
+			); \
+		}) \
+	)
+
+
+#define fs_bzero(buffer, num) fs_memset(buffer, '\0', num)
+
+// fs_strlen returns the length of a string as represented by its null terminator
 __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline size_t fs_strlen(const char *string)
 {
 	const char *current = string;
@@ -1003,7 +1051,7 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline si
 // fs_strcmp compares two strings
 __attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) static inline int fs_strcmp(const char *l, const char *r)
 {
-	while (*l && (*l == *r)) {
+	while (__builtin_expect(!!(*l && (*l == *r)), 1)) {
 		++l;
 		++r;
 	}
@@ -1014,7 +1062,7 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) static inline
 // scanning until the null terminator
 __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline const char *fs_strchr(const char *str, int character)
 {
-	while ((*str != '\0') && (*str != (char)character)) {
+	while (__builtin_expect(!!((*str != '\0') && (*str != (char)character)), 1)) {
 		++str;
 	}
 	return str;
@@ -1025,7 +1073,7 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline co
 __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline const char *fs_strrchr(const char *str, int character)
 {
 	const char *last = NULL;
-	while (*str != '\0') {
+	while (__builtin_expect(!!(*str != '\0'), 1)) {
 		if (*str == (char)character) {
 			last = str;
 		}
@@ -1056,8 +1104,8 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline co
 // scanning up to n characters
 __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline const char *fs_memchr(const char *str, int character, size_t n)
 {
-	for (int i = 0; i < (int)n; i++) {
-		if (str[i] == character) {
+	for (ssize_t i = 0; i < (ssize_t)n; i++) {
+		if (__builtin_expect(!!(str[i] == character), 0)) {
 			return &str[i];
 		}
 	}
@@ -1068,12 +1116,14 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1))) static inline co
 __attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) static inline int fs_memcmp(const char *l, const char *r, size_t n)
 {
 	for (;;) {
-		if (n-- == 0) {
+		if (__builtin_expect(n-- == 0, 0)) {
 			return 0;
 		}
-		if (*l++ != *r++) {
-			return *(const unsigned char *)l - *(const unsigned char *)r;
+		if (__builtin_expect(*l != *r, 0)) {
+			return (unsigned char)*l - (unsigned char)*r;
 		}
+		l++;
+		r++;
 	}
 }
 
@@ -1097,7 +1147,7 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) static inline
 // characters; equivalent to strncmp
 __attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) static inline int fs_strncmp(const char *l, const char *r, size_t num)
 {
-	while (num && *l && (*l == *r)) {
+	while (__builtin_expect(!!(num && *l && (*l == *r)), 1)) {
 		++l;
 		++r;
 		--num;
@@ -1106,50 +1156,92 @@ __attribute__((warn_unused_result)) __attribute__((nonnull(1, 2))) static inline
 }
 
 // fs_memcpy copies one buffer onto another without regard for if they overlap; equivalent to memcpy
-__attribute__((nonnull(1, 2), always_inline)) static inline void *fs_memcpy(void *restrict destination, const void *restrict source, size_t num)
+__attribute__((nonnull(1, 2), always_inline)) static inline void fs_memcpy(void *restrict destination, const void *restrict source, size_t num)
 {
+	char *dst = destination;
+	const char *src = source;
 #if defined(__x86_64__)
-	void *dest = destination;
 	asm volatile("rep movsb" : "=D"(destination), "=S"(source), "=c"(num) : "D"(destination), "S"(source), "c"(num) : "memory");
-	return dest;
-#else
-	uint8_t *dst = destination;
-	const uint8_t *src = source;
-	for (size_t i = 0; i < num; i++) {
-		dst[i] = src[i];
-	}
-	return destination;
+	return;
 #endif
+	typedef struct {
+		__attribute__((aligned(1)))
+		uint64_t buf[4];
+	} memcpy_chunk;
+	if (__builtin_expect(num < sizeof(memcpy_chunk), 0)) {
+#define FS_TRY_MEMCPY_OVERLAPPED(type, num) \
+		if (__builtin_expect(num >= sizeof(type), 1) && __builtin_expect(num < (sizeof(type) * 2), 1)) { \
+			size_t offset = num - sizeof(type); \
+			*(__attribute__((aligned(1))) type *)destination = *(__attribute__((aligned(1)))const type *)source; \
+			*(__attribute__((aligned(1))) type *)(destination + offset) = *(__attribute__((aligned(1)))const type *)(source + offset); \
+			return; \
+		}
+		// binary search to make it more likely to find the correct pair
+		// of overlapping loads and stores
+		if (__builtin_expect(num < sizeof(uint64_t), 0)) {
+			FS_TRY_MEMCPY_OVERLAPPED(uint32_t, num);
+			FS_TRY_MEMCPY_OVERLAPPED(uint16_t, num);
+			FS_TRY_MEMCPY_OVERLAPPED(uint8_t, num);
+		} else {
+			FS_TRY_MEMCPY_OVERLAPPED(__uint128_t, num);
+			FS_TRY_MEMCPY_OVERLAPPED(uint64_t, num);
+		}
+#undef FS_TRY_MEMCPY_OVERLAPPED
+	} else {
+		// copy in 32 byte chunks, unaligning and overlapping the last chunk
+		const char *src_wide_end = source + ((num - 1) & ~(sizeof(memcpy_chunk)-1));
+		num -= sizeof(memcpy_chunk);
+		while (__builtin_expect(!!(src != src_wide_end), 1)) {
+			*(memcpy_chunk *)dst = *(const memcpy_chunk *)src;
+			dst += sizeof(memcpy_chunk);
+			src += sizeof(memcpy_chunk);
+		}
+		*(memcpy_chunk *)(destination + num) = *(const memcpy_chunk *)(source + num);
+	}
 }
 
+#define fs_memcpy(destination, source, num) \
+	__builtin_choose_expr( \
+		__builtin_constant_p(num), \
+		({ \
+			void *memcpy_destination_ = 1 ? (destination) : (void *)NULL; \
+			const void *memcpy_source_ = 1 ? (source) : (void *)NULL; \
+			struct memcpy_static_ { \
+				char buf[num]; \
+			}; \
+			*(struct memcpy_static_ *)memcpy_destination_ = *(const struct memcpy_static_ *)memcpy_source_; \
+		}), \
+		fs_memcpy(destination, source, num) \
+	)
+
 // fs_memmove moves one buffer onto another; equivalent to memmove
-__attribute__((nonnull(1, 2))) static inline void *fs_memmove(void *destination, const void *source, size_t num)
+__attribute__((nonnull(1, 2))) static inline void fs_memmove(void *destination, const void *source, size_t num)
 {
 	uint8_t *dst = destination;
 	const uint8_t *src = source;
 	if (destination == source || num == 0) {
-		return destination;
+		return;
 	}
-	if (destination > source && (source - destination < (intptr_t)num)) {
+	if (__builtin_expect(!!(destination > source && (source - destination < (intptr_t)num)), 0)) {
 		// copy in reverse to avoid overwriting destination
 		for (ssize_t i = (ssize_t)(num - 1); i >= 0; i--) {
 			dst[i] = src[i];
 		}
-		return destination;
+		return;
 	}
-	if (source > destination && (destination - source) < (intptr_t)num) {
+	if (__builtin_expect(!!(source > destination && (destination - source) < (intptr_t)num), 0)) {
 		// copy forwards to avoid overwriting destination
 		for (size_t i = 0; i < num; i++) {
 			dst[i] = src[i];
 		}
-		return destination;
+		return;
 	}
-	return fs_memcpy(destination, source, num);
+	fs_memcpy(destination, source, num);
 }
 
 __attribute__((nonnull(1, 2))) static inline char *fs_strcpy(char *restrict buf, const char *restrict str)
 {
-	while ((*buf = *str++)) {
+	while (__builtin_expect(!!(*buf = *str++), 1)) {
 		buf++;
 	}
 	return buf;

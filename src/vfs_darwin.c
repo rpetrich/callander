@@ -21,14 +21,15 @@ static intptr_t darwin_path_openat(__attribute__((unused)) struct thread_storage
 {
 	intptr_t result =
 		translate_darwin_result(PROXY_CALL(DARWIN_SYS_openat, proxy_value(translate_at_fd_to_darwin(resolved.info.handle)), proxy_string(resolved.info.path), proxy_value(translate_open_flags_to_darwin(flags)), proxy_value(mode)));
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &darwin_path_ops.dirfd_ops,
-			.handle = result,
-		};
-		return 0;
+	if (result < 0) {
+		return result;
 	}
-	return result;
+	vfs_claim_fd_state_index(result);
+	*out_file = (struct vfs_resolved_file){
+		.ops = &darwin_path_ops.dirfd_ops,
+		.handle = result,
+	};
+	return 0;
 }
 
 static intptr_t darwin_path_unlinkat(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_path resolved, int flags)
@@ -151,17 +152,18 @@ static intptr_t darwin_path_listxattr(__attribute__((unused)) struct thread_stor
 static intptr_t darwin_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
 	intptr_t result = translate_darwin_result(PROXY_CALL(DARWIN_SYS_socket, proxy_value(domain), proxy_value(type), proxy_value(protocol)));
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &darwin_path_ops.dirfd_ops,
-			.handle = result,
-		};
-		return 0;
+	if (result < 0) {
+		return result;
 	}
-	return result;
+	vfs_claim_fd_state_index(result);
+	*out_file = (struct vfs_resolved_file){
+		.ops = &darwin_path_ops.dirfd_ops,
+		.handle = result,
+	};
+	return 0;
 }
 
-static intptr_t darwin_file_close(struct vfs_resolved_file file)
+static intptr_t darwin_file_close(struct vfs_resolved_file file, union vfs_file_state *)
 {
 	PROXY_CALL(DARWIN_SYS_close | PROXY_NO_RESPONSE, proxy_value(file.handle));
 	return 0;

@@ -91,13 +91,13 @@ static void default_handler(__attribute__((unused)) int nr, __attribute__((unuse
 	};
 	int sa_result = fs_sigaction(nr, &sa, NULL);
 	if (sa_result < 0) {
-		DIE("failed to reset sigaction: ", fs_strerror(sa_result));
+		DIE("failed to reset sigaction: ", as_errno(sa_result));
 	}
 	// And resend the signal now that the handler has been unset
 	if (nr == SIGSYS) {
 		int kill_result = fs_tkill(fs_gettid(), nr);
 		if (kill_result < 0) {
-			DIE("failed to resend signal: ", fs_strerror(sa_result));
+			DIE("failed to resend signal: ", as_errno(sa_result));
 		}
 	}
 }
@@ -222,7 +222,7 @@ static void sigill_handler(int nr, siginfo_t *info, void *void_context)
 #endif
 
 // intercept_sigsys will interrupt the SIGSYS system call and call the appropriate handler
-int intercept_signals(void)
+int intercept_signals(bool adjust_mask)
 {
 	// Set a handler to handle SIGSYS signals
 	struct fs_sigaction sa = {
@@ -262,6 +262,9 @@ int intercept_signals(void)
 	}
 #endif
 
+	if (!adjust_mask) {
+		return 0;
+	}
 	// Unblock SIGSYS, SIGSEGV and SIGILL
 	struct fs_sigset_t set = {0};
 	fs_sigaddset(&set, SIGSYS);

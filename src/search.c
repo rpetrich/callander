@@ -53,7 +53,7 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 	// Fill tail
 	size_t end_pos = PATH_MAX - (name_len + 2);
 	buf[end_pos] = '/';
-	memcpy(&buf[end_pos + 1], name, name_len + 1);
+	fs_memcpy(&buf[end_pos + 1], name, name_len + 1);
 	const char *path = paths;
 	// Try each path
 	bool found = false;
@@ -66,7 +66,7 @@ int find_executable_in_paths(const char *name, const char *paths, bool require_e
 			}
 			if (path_len <= end_pos) {
 				char *full_path = &buf[end_pos - path_len];
-				memcpy(full_path, path, path_len);
+				fs_memcpy(full_path, path, path_len);
 				int result = fs_openat(AT_FDCWD, full_path, O_RDONLY | O_CLOEXEC, 0);
 				if (result >= 0) {
 					struct fs_stat stat;

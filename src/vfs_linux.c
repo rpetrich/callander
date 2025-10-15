@@ -18,6 +18,7 @@ static intptr_t linux_path_openat(__attribute__((unused)) struct thread_storage 
 {
 	intptr_t result = PROXY_CALL(LINUX_SYS_openat, proxy_value(resolved.info.handle), proxy_string(resolved.info.path), proxy_value(flags), proxy_value(mode));
 	if (result >= 0) {
+		vfs_claim_fd_state_index(result);
 		*out_file = (struct vfs_resolved_file){
 			.ops = &linux_path_ops.dirfd_ops,
 			.handle = result,
@@ -148,17 +149,18 @@ static intptr_t linux_path_listxattr(__attribute__((unused)) struct thread_stora
 static intptr_t linux_file_socket(__attribute__((unused)) struct thread_storage *, int domain, int type, int protocol, struct vfs_resolved_file *out_file)
 {
 	intptr_t result = PROXY_CALL(LINUX_SYS_socket | PROXY_NO_WORKER, proxy_value(domain), proxy_value(type), proxy_value(protocol));
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &linux_path_ops.dirfd_ops,
-			.handle = result,
-		};
-		return 0;
+	if (result < 0) {
+		return result;
 	}
-	return result;
+	vfs_claim_fd_state_index(result);
+	*out_file = (struct vfs_resolved_file){
+		.ops = &linux_path_ops.dirfd_ops,
+		.handle = result,
+	};
+	return 0;
 }
 
-static intptr_t linux_file_close(struct vfs_resolved_file file)
+static intptr_t linux_file_close(struct vfs_resolved_file file, union vfs_file_state *)
 {
 	PROXY_CALL(LINUX_SYS_close | PROXY_NO_RESPONSE, proxy_value(file.handle));
 	return 0;
@@ -406,6 +408,9 @@ static intptr_t linux_file_readlink_fd(__attribute__((unused)) struct thread_sto
 static intptr_t linux_file_getdents(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, char *buf, size_t size)
 {
 #ifndef __NR_getdents
+	(void)file;
+	(void)buf;
+	(void)size;
 	return -ENOSYS;
 #else
 	trim_size(&size);
@@ -457,14 +462,15 @@ static intptr_t linux_file_listen(__attribute__((unused)) struct thread_storage 
 static intptr_t linux_file_accept4(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, struct sockaddr *restrict addr, socklen_t *restrict addrlen, int flags, struct vfs_resolved_file *out_file)
 {
 	intptr_t result = PROXY_CALL(LINUX_SYS_accept4, proxy_value(file.handle), addrlen ? proxy_out(addr, *addrlen) : proxy_value(0), proxy_inout(addrlen, sizeof(*addrlen)), proxy_value(flags));
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &linux_path_ops.dirfd_ops,
-			.handle = result,
-		};
-		return 0;
+	if (result < 0) {
+		return result;
 	}
-	return result;
+	vfs_claim_fd_state_index(result);
+	*out_file = (struct vfs_resolved_file){
+		.ops = &linux_path_ops.dirfd_ops,
+		.handle = result,
+	};
+	return 0;
 }
 
 static intptr_t linux_file_getsockopt(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, int level, int optname, void *restrict optval, socklen_t *restrict optlen)
@@ -593,14 +599,15 @@ static intptr_t linux_file_ioctl(__attribute__((unused)) struct thread_storage *
 static intptr_t linux_file_ioctl_open_file(__attribute__((unused)) struct thread_storage *thread, struct vfs_resolved_file file, unsigned int cmd, unsigned long arg, struct vfs_resolved_file *out_file)
 {
 	intptr_t result = PROXY_CALL(LINUX_SYS_ioctl | PROXY_NO_WORKER, proxy_value(file.handle), proxy_value(cmd), proxy_value(arg));
-	if (result >= 0) {
-		*out_file = (struct vfs_resolved_file){
-			.ops = &linux_path_ops.dirfd_ops,
-			.handle = result,
-		};
-		return 0;
+	if (result < 0) {
+		return result;
 	}
-	return result;
+	vfs_claim_fd_state_index(result);
+	*out_file = (struct vfs_resolved_file){
+		.ops = &linux_path_ops.dirfd_ops,
+		.handle = result,
+	};
+	return 0;
 }
 
 static intptr_t linux_file_ppoll(__attribute__((unused)) struct thread_storage *thread, struct vfs_poll_resolved_file *files, nfds_t nfiles, struct timespec *timeout, __attribute__((unused)) const sigset_t *sigmask)

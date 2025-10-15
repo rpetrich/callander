@@ -19,11 +19,15 @@
 #define INS_JMP_32_IMM 0xe9
 
 __asm__(
-	".text\n"
+	".pushsection .rodata\n"
 	".global trampoline_call_handler_start\n"
 	".hidden trampoline_call_handler_start\n"
 	".type trampoline_call_handler_start,@function\n"
 	"trampoline_call_handler_start:\n"
+	".global trampoline_call_handler_entry\n"
+	".hidden trampoline_call_handler_entry\n"
+	".type trampoline_call_handler_entry,@function\n"
+	"trampoline_call_handler_entry:\n"
 	"	mov %rax, %r11\n"
 	"	lahf\n"
 	"   seto %al\n"
@@ -38,10 +42,10 @@ __asm__(
 	"	push %r11\n"
 	"	mov %rsp, %rdi\n"
 	"   movabs $0x6666666666666666, %rcx\n"
-	".global trampoline_call_handler_address\n"
-	".hidden trampoline_call_handler_address\n"
-	".type trampoline_call_handler_address,@function\n"
-	"trampoline_call_handler_address:"
+	".global trampoline_call_handler_data\n"
+	".hidden trampoline_call_handler_data\n"
+	".type trampoline_call_handler_data,@function\n"
+	"trampoline_call_handler_data:"
 	"	call *%rcx\n"
 	"	pop %rcx\n"
 	"	pop %rdi\n"
@@ -58,18 +62,19 @@ __asm__(
 	".global trampoline_call_handler_end\n"
 	".hidden trampoline_call_handler_end\n"
 	".type trampoline_call_handler_end,@function\n"
-	"trampoline_call_handler_end:");
-
-void trampoline_call_handler_start();
-void trampoline_call_handler_address();
-void trampoline_call_handler_end();
+	"trampoline_call_handler_end:\n"
+	".popsection");
 
 __asm__(
-	".text\n"
+	".pushsection .rodata\n"
 	".global breakpoint_call_handler_start\n"
 	".hidden breakpoint_call_handler_start\n"
 	".type breakpoint_call_handler_start,@function\n"
 	"breakpoint_call_handler_start:\n"
+	".global breakpoint_call_handler_entry\n"
+	".hidden breakpoint_call_handler_entry\n"
+	".type breakpoint_call_handler_entry,@function\n"
+	"breakpoint_call_handler_entry:\n"
 	"	lea -0x80(%rsp), %rsp\n"
 	"	push %rax\n"
 	"	lahf\n"
@@ -85,10 +90,10 @@ __asm__(
 	"	push %rdi\n"
 	"	mov %rsp, %rdi\n"
 	"   movabs $0x6666666666666666, %rcx\n"
-	".global breakpoint_call_handler_address\n"
-	".hidden breakpoint_call_handler_address\n"
-	".type breakpoint_call_handler_address,@function\n"
-	"breakpoint_call_handler_address:"
+	".global breakpoint_call_handler_data\n"
+	".hidden breakpoint_call_handler_data\n"
+	".type breakpoint_call_handler_data,@function\n"
+	"breakpoint_call_handler_data:"
 	"	call *%rcx\n"
 	"	pop %rdi\n"
 	"	pop %rsi\n"
@@ -106,18 +111,19 @@ __asm__(
 	".global breakpoint_call_handler_end\n"
 	".hidden breakpoint_call_handler_end\n"
 	".type breakpoint_call_handler_end,@function\n"
-	"breakpoint_call_handler_end:");
-
-void breakpoint_call_handler_start();
-void breakpoint_call_handler_address();
-void breakpoint_call_handler_end();
+	"breakpoint_call_handler_end:"
+	".popsection");
 
 __asm__(
-	".text\n"
+	".pushsection .rodata\n"
 	".global function_call_handler_start\n"
 	".hidden function_call_handler_start\n"
 	".type function_call_handler_start,@function\n"
 	"function_call_handler_start:\n"
+	".global function_call_handler_entry\n"
+	".hidden function_call_handler_entry\n"
+	".type function_call_handler_entry,@function\n"
+	"function_call_handler_entry:\n"
 	"	push %r9\n"
 	"	push %r8\n"
 	"	push %rcx\n"
@@ -127,10 +133,10 @@ __asm__(
 	"	mov %rsp, %rdi\n"
 	"	push %rax\n"
 	"   movabs $0x6666666666666666, %rcx\n"
-	".global function_call_handler_address\n"
-	".hidden function_call_handler_address\n"
-	".type function_call_handler_address,@function\n"
-	"function_call_handler_address:"
+	".global function_call_handler_data\n"
+	".hidden function_call_handler_data\n"
+	".type function_call_handler_data,@function\n"
+	"function_call_handler_data:"
 	"	lea function_call_handler_end(%rip), %rsi\n"
 	"	call *%rcx\n"
 	"	lea 0x38(%rsp), %rsp\n"
@@ -138,11 +144,8 @@ __asm__(
 	".global function_call_handler_end\n"
 	".hidden function_call_handler_end\n"
 	".type function_call_handler_end,@function\n"
-	"function_call_handler_end:");
-
-void function_call_handler_start();
-void function_call_handler_address();
-void function_call_handler_end();
+	"function_call_handler_end:"
+	".popsection");
 
 #define INS_OPERAND_SIZE_PREFIX 0x66
 #define INS_REX_W_PREFIX 0x48
@@ -370,7 +373,7 @@ not_found:
 	return false;
 }
 
-static void cleanup_searched_instructions(void *data)
+static void cleanup_searched_instructions(void *data, struct thread_storage *)
 {
 	struct searched_instructions *searched = data;
 	searched = searched->next;
@@ -393,7 +396,7 @@ static void init_searched_instructions(struct thread_storage *thread, struct sea
 static void free_searched_instructions(struct searched_instructions *searched, struct attempt_cleanup_state *cleanup)
 {
 	attempt_pop_and_skip_cleanup(cleanup);
-	cleanup_searched_instructions(searched);
+	cleanup_searched_instructions(searched, NULL);
 }
 
 // find_return_address_stack_offset returns the stack offset of the return address by inspecting stack manipulation
@@ -730,7 +733,7 @@ bool patch_find_basic_block(const uint8_t *entry, const uint8_t *instruction, st
 		.searched = &searched,
 	};
 	bool found_basic_block = find_basic_block(get_thread_storage(), basic_block_search, instruction, out_block) && out_block->start != NULL;
-	cleanup_searched_instructions(&searched);
+	cleanup_searched_instructions(&searched, NULL);
 	return found_basic_block;
 }
 
@@ -784,7 +787,7 @@ void patch_body(struct thread_storage *thread, struct patch_body_args *args)
 		struct symbol_info symbols;
 		int symbol_result = parse_dynamic_symbols(&library_info, (void *)library_base, &symbols);
 		if (symbol_result < 0) {
-			PATCH_LOG("error reading symbols: ", fs_strerror(symbol_result));
+			PATCH_LOG("error reading symbols: ", as_errno(symbol_result));
 			return;
 		}
 		entry = (uintptr_t)find_symbol_by_address(&library_info, &symbols, syscall_ins, NULL);
@@ -909,10 +912,10 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 	PATCH_LOG("patch start: ", (uintptr_t)patch_target.start);
 	PATCH_LOG("patch end: ", (uintptr_t)patch_target.end);
 	struct mapping target_mapping = {0};
-	int mapping_error = lookup_mapping_for_address(patch_target.start, &target_mapping);
-	if (mapping_error <= 0) {
-		if (mapping_error < 0) {
-			DIE("could not read memory mappings: ", fs_strerror(mapping_error));
+	int mapping_result = patch_cached_mapping_for_address(patch_target.start, &target_mapping);
+	if (mapping_result <= 0) {
+		if (mapping_result < 0) {
+			DIE("could not read memory mappings: ", as_errno(mapping_result));
 		}
 		DIE("could not find memory mapping");
 	}
@@ -938,7 +941,7 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 		void *new_mapping = fs_mmap((void *)start_page, TRAMPOLINE_REGION_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC, self_fd == -1 ? MAP_ANONYMOUS | MAP_PRIVATE : MAP_PRIVATE, self_fd, self_fd == -1 ? 0 : PAGE_SIZE);
 		if (UNLIKELY(fs_is_map_failed(new_mapping))) {
 			attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
-			PATCH_LOG("Failed to patch: mmap failed: ", fs_strerror((intptr_t)new_mapping));
+			PATCH_LOG("Failed to patch: mmap failed: ", as_errno((intptr_t)new_mapping));
 			return PATCH_STATUS_FAILED;
 		}
 		if (is_valid_pc_relative_offset((uintptr_t)new_mapping - (uintptr_t)patch_target.end)) {
@@ -956,7 +959,7 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 			}
 			void *remap_result = fs_mremap(new_mapping, TRAMPOLINE_REGION_SIZE, TRAMPOLINE_REGION_SIZE, MREMAP_FIXED | MREMAP_MAYMOVE, (void *)stub_address);
 			if (fs_is_map_failed(remap_result)) {
-				PATCH_LOG("Failed to patch: mremap failed: ", fs_strerror((intptr_t)remap_result));
+				PATCH_LOG("Failed to patch: mremap failed: ", as_errno((intptr_t)remap_result));
 				fs_munmap(new_mapping, TRAMPOLINE_REGION_SIZE);
 				attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);
 				ERROR_FLUSH();
@@ -983,15 +986,15 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 	}
 	trampoline += head_size;
 	// Copy the prefix part of the trampoline
-	size_t prefix_size = (uintptr_t)template.address - (uintptr_t)template.start - sizeof(uintptr_t);
+	size_t prefix_size = (uintptr_t)template.data - (uintptr_t)template.start - sizeof(uintptr_t);
 	memcpy(trampoline, template.start, prefix_size);
 	trampoline += prefix_size;
 	// Move address of receive_trampoline into rcx
 	*(uintptr_t *)trampoline = (uintptr_t)handler;
 	trampoline += sizeof(uintptr_t);
 	// Copy the suffix part of the trampoline
-	size_t suffix_size = (uintptr_t)template.end - (uintptr_t)template.address;
-	memcpy(trampoline, template.address, suffix_size);
+	size_t suffix_size = (uintptr_t)template.end - (uintptr_t)template.data;
+	memcpy(trampoline, template.data, suffix_size);
 	trampoline += suffix_size;
 	// Copy the patched instructions from the original basic block
 	uintptr_t tail_start = instruction;
@@ -1062,10 +1065,10 @@ __attribute__((always_inline)) static inline enum patch_status patch_common(stru
 	patch->is_ill_patch = patch_with_ill;
 	patches = patch;
 	// Restore original protection
-	if (mapping_error == 0) {
+	if (mapping_result == 1) {
 		int result = fs_mprotect((void *)start_page, protect_size, target_mapping.flags & (PROT_READ | PROT_WRITE | PROT_EXEC));
 		if (result < 0) {
-			PATCH_LOG("Failed to update protection: ", fs_strerror(result));
+			PATCH_LOG("Failed to update protection: ", as_errno(result));
 		}
 	}
 	attempt_unlock_and_pop_mutex(&lock_cleanup, &patches_lock);

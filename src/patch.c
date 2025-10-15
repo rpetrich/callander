@@ -35,10 +35,35 @@ uintptr_t find_unused_address(struct thread_storage *thread, uintptr_t address)
 #ifdef PATCH_SUPPORTED
 
 #ifdef SYS_membarrier
+#ifdef __x86_64__
 bool membarrier_is_supported;
+#endif
 #endif
 
 bool patch_syscalls;
+
+struct mapping cached_mapping;
+
+void patch_memory_map_changed(void *start, size_t length)
+{
+	if (start >= cached_mapping.start && start + length <= cached_mapping.end) {
+		cached_mapping.start = cached_mapping.end = NULL;
+	}
+}
+
+__attribute__((warn_unused_result)) int patch_cached_mapping_for_address(const void *address, struct mapping *out_mapping)
+{
+	*out_mapping = cached_mapping;
+	if (out_mapping->start <= address && address < out_mapping->end) {
+		return 1;
+	}
+	intptr_t result = lookup_mapping_for_address(address, out_mapping);
+	if (result == 1) {
+		cached_mapping = *out_mapping;
+	}
+	return result;
+}
+
 
 struct patch_state_shard
 {
@@ -103,9 +128,11 @@ void patch_init(bool enable_syscall_patching)
 {
 	patch_syscalls = enable_syscall_patching;
 #ifdef SYS_membarrier
-	if (fs_membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) == 0) {
+#ifdef __x86_64__
+	if (patch_syscalls && fs_membarrier(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED, 0) == 0) {
 		membarrier_is_supported = true;
 	}
+#endif
 #endif
 }
 

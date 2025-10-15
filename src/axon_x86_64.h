@@ -1,4 +1,6 @@
+#ifdef __linux__
 #include <asm/prctl.h>
+#endif
 #include <signal.h>
 #define CURRENT_AUDIT_ARCH AUDIT_ARCH_X86_64
 #define CURRENT_ELF_MACHINE EM_X86_64
@@ -68,10 +70,12 @@ __attribute__((warn_unused_result)) static inline const void *read_thread_regist
 	return result;
 }
 
+#ifdef __linux__
 static inline void set_thread_register(const void *value)
 {
 	FS_SYSCALL(__NR_arch_prctl, ARCH_SET_FS, (intptr_t)value);
 }
+#endif
 
 #define CALL_SPILLED_WITH_ARGS_AND_SP(func, arg1, arg2)                                                                                                                                                                 \
 	do {                                                                                                                                                                                                                \

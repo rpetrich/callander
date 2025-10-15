@@ -103,13 +103,13 @@ __attribute__((warn_unused_result)) intptr_t remote_mmap(intptr_t addr, size_t l
 	char path_buf[PATH_MAX];
 	int link_result = fs_readlink_fd(fd, path_buf, sizeof(path_buf));
 	if (link_result < 0) {
-		ERROR("readlink failed: ", fs_strerror(link_result));
+		ERROR("readlink failed: ", as_errno(link_result));
 		return link_result;
 	}
 	path_buf[link_result] = '\0';
 	int remote_fd = PROXY_CALL(__NR_open, proxy_string(path_buf), proxy_value(O_RDONLY), proxy_value(0));
 	if (remote_fd < 0) {
-		ERROR("reopen failed: ", fs_strerror(remote_fd));
+		ERROR("reopen failed: ", as_errno(remote_fd));
 		return remote_fd;
 	}
 	intptr_t result = PROXY_CALL(__NR_mmap | PROXY_NO_WORKER, proxy_value(addr), proxy_value(length), proxy_value(prot), proxy_value(flags), proxy_value(remote_fd), proxy_value(offset));
@@ -156,7 +156,7 @@ __attribute__((warn_unused_result)) intptr_t remote_mmap(intptr_t addr, size_t l
 	}
 	result = proxy_poke(addr, length > (size_t)(stat.st_size - offset) ? (size_t)(stat.st_size - offset) : length, buf);
 	if (result < 0) {
-		DIE("failed writing remote mmap contents: ", fs_strerror(result));
+		DIE("failed writing remote mmap contents: ", as_errno(result));
 	}
 	fs_munmap(buf, padded_length);
 #endif
@@ -183,7 +183,7 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 	const ElfW(Ehdr) header;
 	int read_bytes = fs_pread_all(fd, (char *)&header, sizeof(header), 0);
 	if (read_bytes < 0) {
-		ERROR("unable to read ELF header: ", fs_strerror(read_bytes));
+		ERROR("unable to read ELF header: ", as_errno(read_bytes));
 		return -ENOEXEC;
 	}
 	if (read_bytes < (int)sizeof(ElfW(Ehdr))) {
@@ -237,7 +237,7 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 	int l = fs_pread_all(fd, phbuffer, phsize, header.e_phoff);
 	if (l != (int)phsize) {
 		if (l < 0) {
-			ERROR("unable to read phbuffer: ", fs_strerror(l));
+			ERROR("unable to read phbuffer: ", as_errno(l));
 		} else {
 			ERROR("read of phbuffer was the wrong size: ", l);
 		}
@@ -283,7 +283,7 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 	uintptr_t desired_address = start - off_start;
 	intptr_t mapped_address = remote_mmap(desired_address, total_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (fs_is_map_failed((void *)mapped_address)) {
-		ERROR("could not map binary: ", fs_strerror((intptr_t)mapped_address));
+		ERROR("could not map binary: ", as_errno((intptr_t)mapped_address));
 		return -ENOEXEC;
 	}
 	if ((uintptr_t)mapped_address != desired_address && header.e_type != ET_DYN) {
@@ -312,7 +312,7 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 		if (this_max - this_min) {
 			intptr_t section_mapping = remote_mmap(map_offset + this_min, this_max - this_min, protection, MAP_PRIVATE | MAP_FIXED, fd, ph->p_offset & PAGE_ALIGNMENT_MASK);
 			if (fs_is_map_failed((void *)section_mapping)) {
-				ERROR("failed mapping section: ", fs_strerror((intptr_t)section_mapping));
+				ERROR("failed mapping section: ", as_errno((intptr_t)section_mapping));
 				return -ENOEXEC;
 			}
 		}
@@ -321,15 +321,15 @@ int remote_load_binary(int fd, struct binary_info *out_info)
 			size_t pgbrk = (brk + PAGE_SIZE - 1) & PAGE_ALIGNMENT_MASK;
 			size_t zero_count = (pgbrk - brk) & (PAGE_SIZE - 1);
 			char zeros[PAGE_SIZE];
-			memset(zeros, '\0', zero_count);
+			fs_memset(zeros, '\0', zero_count);
 			intptr_t result = proxy_poke(brk, zero_count, &zeros);
 			if (result < 0) {
-				DIE("failed to write zeros: ", fs_strerror(result));
+				DIE("failed to write zeros: ", as_errno(result));
 			}
 			if (pgbrk - (size_t)map_offset < this_max) {
 				intptr_t tail_mapping = remote_mmap(pgbrk, (size_t)map_offset + this_max - pgbrk, protection, MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0);
 				if (fs_is_map_failed((void *)tail_mapping)) {
-					ERROR("failed creating .bss-like PT_LOAD: ", fs_strerror((intptr_t)tail_mapping));
+					ERROR("failed creating .bss-like PT_LOAD: ", as_errno((intptr_t)tail_mapping));
 					return -ENOEXEC;
 				}
 			}
@@ -389,7 +389,7 @@ static void transfer_fd_table(uintptr_t fd_table_addr)
 			}
 			intptr_t result = proxy_poke(fd_table_addr + sizeof(int) * i, sizeof(int), &value);
 			if (result < 0) {
-				DIE("failed writing fd table: ", fs_strerror(result));
+				DIE("failed writing fd table: ", as_errno(result));
 			}
 		}
 	}
@@ -397,12 +397,12 @@ static void transfer_fd_table(uintptr_t fd_table_addr)
 	if (local_table[CWD_FD] & HAS_LOCAL_FD) {
 		int local_fd = fs_open(".", O_PATH | O_DIRECTORY, 0);
 		if (local_fd < 0) {
-			DIE("failed opening current working directory: ", fs_strerror(local_fd));
+			DIE("failed opening current working directory: ", as_errno(local_fd));
 		}
 		int value = (local_fd << USED_BITS) | HAS_REMOTE_FD;
 		intptr_t result = proxy_poke(fd_table_addr + sizeof(int) * CWD_FD, sizeof(int), &value);
 		if (result < 0) {
-			DIE("failed writing current working directory: ", fs_strerror(result));
+			DIE("failed writing current working directory: ", as_errno(result));
 		}
 	}
 }
@@ -689,7 +689,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 	new_proxy_state.target_state = proxy_get_hello_message()->state;
 	intptr_t result = proxy_poke(thandler->proxy_state_addr, sizeof(new_proxy_state), &new_proxy_state);
 	if (result < 0) {
-		ERROR("failed target proxy state: ", fs_strerror(result));
+		ERROR("failed target proxy state: ", as_errno(result));
 		return -ENOEXEC;
 	}
 	// initialize the remote file descriptor table
@@ -730,7 +730,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		}
 		intptr_t result = fs_prctl(PR_SET_NAME, (uintptr_t)remote->comm, 0, 0, 0);
 		if (result < 0) {
-			ERROR("failed to set comm: ", fs_strerror(result));
+			ERROR("failed to set comm: ", as_errno(result));
 			return result;
 		}
 	}
@@ -748,7 +748,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 	                                         proxy_value(remote->sp),
 	                                         proxy_value(thandler->receive_start_addr));
 	if (clone_result < 0) {
-		ERROR("failed to clone: ", fs_strerror(clone_result));
+		ERROR("failed to clone: ", as_errno(clone_result));
 		return clone_result;
 	}
 	if (debug) {
@@ -787,7 +787,7 @@ static int process_syscalls_until_exit(struct remote_exec_state *remote, struct 
 		PROXY_CALL(__NR_futex, proxy_value(data.tid_ptr), proxy_value(FUTEX_WAIT), proxy_value(clone_result));
 		result = proxy_peek(data.tid_ptr, sizeof(pid_t), &tid);
 		if (result < 0) {
-			DIE("failed to wait for thread to exit: ", fs_strerror(result));
+			DIE("failed to wait for thread to exit: ", as_errno(result));
 		}
 	} while (tid == clone_result);
 	return data.status_code;
@@ -809,7 +809,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 			if (result_id == -ECANCELED) {
 				return;
 			}
-			DIE("proxy_read_stream_message_start returned unexpected error: ", fs_strerror(result_id));
+			DIE("proxy_read_stream_message_start returned unexpected error: ", as_errno(result_id));
 			return;
 		}
 		switch (message.template.nr) {
@@ -847,7 +847,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 							if (result == -EINTR) {
 								continue;
 							}
-							DIE("Failed to read from socket: ", fs_strerror(result));
+							DIE("Failed to read from socket: ", as_errno(result));
 						}
 						bytes_read += result;
 					}
@@ -866,7 +866,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 				}
 				void *stack = fs_mmap(NULL, PROXY_WORKER_STACK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_STACK | MAP_GROWSDOWN, -1, 0);
 				if (fs_is_map_failed(stack)) {
-					ERROR("unable to map a worker stack: ", fs_strerror((intptr_t)stack));
+					ERROR("unable to map a worker stack: ", as_errno((intptr_t)stack));
 					ERROR_FLUSH();
 					break;
 				}
@@ -882,7 +882,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 				                  process_syscalls_thread);
 				if (result < 0) {
 					fs_munmap(stack, PROXY_WORKER_STACK_SIZE);
-					ERROR("unable to start a worker thread: ", fs_strerror(result));
+					ERROR("unable to start a worker thread: ", as_errno(result));
 					ERROR_FLUSH();
 					break;
 				}
@@ -1041,7 +1041,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 						if (result == -EINTR) {
 							continue;
 						}
-						DIE("Failed to read from socket: ", fs_strerror(result));
+						DIE("Failed to read from socket: ", as_errno(result));
 					}
 					bytes_read += result;
 				}
@@ -1061,7 +1061,7 @@ static void process_syscalls(char buf[512 * 1024], struct process_syscalls_data 
 		if ((message.template.nr & TARGET_NO_RESPONSE) == 0) {
 			if (debug) {
 				if (result < 0) {
-					ERROR("=: ", fs_strerror(result));
+					ERROR("=: ", as_errno(result));
 				} else {
 					ERROR("=: ", (uintptr_t)result);
 				}
@@ -1136,7 +1136,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	struct thandler_info thandler;
 	intptr_t result = init_thandler(&thandler);
 	if (result < 0) {
-		DIE("failed to load thandler: ", fs_strerror(result));
+		DIE("failed to load thandler: ", as_errno(result));
 	}
 	LOG("mapped thandler: ", &thandler.path[0]);
 	LOG("at: ", (uintptr_t)thandler.remote_info.base);
@@ -1159,7 +1159,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 	                        (struct remote_handlers){.receive_syscall_addr = thandler.receive_syscall_addr, .receive_clone_addr = thandler.receive_clone_addr},
 	                        &remote);
 	if (result < 0) {
-		DIE("remote exec failed: ", fs_strerror(result));
+		DIE("remote exec failed: ", as_errno(result));
 		fs_exit(-result);
 	}
 

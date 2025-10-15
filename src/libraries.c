@@ -101,7 +101,7 @@ static intptr_t new_getaddrinfo(__attribute__((unused)) uintptr_t *arguments, __
 	if (node_len > 7 && fs_strcmp(&node[node_len - 7], ".target") == 0) {
 		// Remap a target address
 		char buf[node_len - 6];
-		memcpy(buf, node, node_len - 6);
+		fs_memcpy(buf, node, node_len - 6);
 		buf[node_len - 7] = '\0';
 		return remote_getaddrinfo(buf, service, hints, res);
 	}
@@ -193,7 +193,7 @@ void update_libraries(struct link_map *map)
 			if (library == NULL) {
 				size_t name_len = fs_strlen(map->l_name);
 				library = malloc(sizeof(struct library_info) + name_len + 1);
-				memcpy(&library->name[0], map->l_name, name_len + 1);
+				fs_memcpy(&library->name[0], map->l_name, name_len + 1);
 				load_existing(&library->binary, addr);
 				int result = parse_dynamic_symbols(&library->binary, (void *)addr, &library->symbols);
 				library->symbols_valid = result == 0;

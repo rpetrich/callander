@@ -38,14 +38,3 @@ __attribute__((used)) __attribute__((visibility("default"))) void receive_syscal
 	data[0] = handle_syscall(thread, data[0], data[1], data[2], data[3], data[4], data[5], data[6], NULL);
 #endif
 }
-
-#ifdef PROXY_SUPPORT_ALL_PLATFORMS
-enum target_platform proxy_get_target_platform(void)
-{
-#ifdef __linux__
-	return TARGET_PLATFORM_LINUX;
-#else
-#error "thandler only supports linux"
-#endif
-}
-#endif

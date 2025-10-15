@@ -22,7 +22,8 @@
 
 uid_t startup_euid;
 gid_t startup_egid;
-struct fs_stat axon_stat;
+ino_t self_inode;
+dev_t self_dev;
 
 static int pid;
 
@@ -50,9 +51,18 @@ void set_tid_address(const void *tid_address)
 	(void)tid_address;
 }
 
-__attribute__((warn_unused_result)) bool is_axon(const struct fs_stat *stat)
+__attribute__((warn_unused_result)) bool is_self(const struct fs_stat *stat)
 {
-	return stat->st_dev == axon_stat.st_dev && stat->st_ino == axon_stat.st_ino;
+	if (self_dev == 0) {
+		struct fs_stat self_stat;
+		int result = fs_fstat(SELF_FD, &self_stat);
+		if (UNLIKELY(result != 0)) {
+			DIE("unable to stat axon binary: ", as_errno(result));
+		}
+		self_inode = self_stat.st_ino;
+		self_dev = self_stat.st_dev;
+	}
+	return stat->st_dev == self_dev && stat->st_ino == self_inode;
 }
 
 __attribute__((warn_unused_result)) static int exec_fd_script(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth, size_t header_size, char header[header_size]);
@@ -61,26 +71,6 @@ __attribute__((warn_unused_result)) static int exec_fd_elf(int fd, const char *c
 // exec_fd executes an open file via the axon bootstrap, handling native-arch ELF and #! programs only
 int exec_fd(int fd, const char *named_path, const char *const *argv, const char *const *envp, const char *comm, int depth)
 {
-	// back out the /bin/axon symlink
-	char path_buf[PATH_MAX];
-	int result = fs_fd_getpath(fd, path_buf);
-	if (result < 0) {
-		fs_close(fd);
-		return result;
-	}
-	if (fs_strcmp(path_buf, "/bin/axon") == 0) {
-		fs_close(fd);
-		if (named_path == NULL) {
-			return -ENOEXEC;
-		}
-		size_t len = fs_strlen(named_path);
-		fs_memcpy(path_buf, named_path, len);
-		fs_memcpy(&path_buf[len], ".axon", sizeof(".axon"));
-		fd = fs_open(path_buf, O_RDONLY, 0);
-		if (fd < 0) {
-			return fd;
-		}
-	}
 	// read the header like the linux kernel does
 	char header[BINPRM_BUF_SIZE + 1];
 	size_t header_size = fs_pread_all(fd, header, BINPRM_BUF_SIZE, 0);
@@ -110,22 +100,24 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 	// Add the AXON_ADDR and AXON_COMM environment variables
 	int envc = count_args((char *const *)envp);
 	struct thread_storage *thread = get_thread_storage();
-	const char **new_envp = malloc(sizeof(const char *) * (envc + 5));
+	const char **new_envp = malloc(sizeof(const char *) * (envc + 6));
 	struct attempt_cleanup_state new_envp_cleanup;
 	attempt_push_free(thread, &new_envp_cleanup, new_envp);
 	size_t exec_path_len = exec_path != NULL ? fs_strlen(exec_path) : 0;
 	char *exec_path_buf = malloc(sizeof(AXON_EXEC) + exec_path_len);
 	struct attempt_cleanup_state exec_path_buf_cleanup;
 	attempt_push_free(thread, &exec_path_buf_cleanup, exec_path_buf);
-	memcpy(exec_path_buf, AXON_EXEC, sizeof(AXON_EXEC));
+	fs_memcpy(exec_path_buf, AXON_EXEC, sizeof(AXON_EXEC));
 	if (exec_path_len != 0) {
-		memcpy(&exec_path_buf[sizeof(AXON_EXEC) - 1], exec_path, exec_path_len + 1);
+		fs_memcpy(&exec_path_buf[sizeof(AXON_EXEC) - 1], exec_path, exec_path_len + 1);
 	}
 	char addr_buf[64];
-	memcpy(addr_buf, AXON_ADDR, sizeof(AXON_ADDR) - 1);
+	fs_memcpy(addr_buf, AXON_ADDR, sizeof(AXON_ADDR) - 1);
 	fs_utoah((uintptr_t)&_DYNAMIC - _GLOBAL_OFFSET_TABLE_[0], &addr_buf[sizeof(AXON_ADDR) - 1]);
+	char table_fd_buf[64];
+	fs_memcpy(table_fd_buf, AXON_TABLE_FD, sizeof(AXON_TABLE_FD) - 1);
 	char comm_buf[sizeof(AXON_COMM) + 16];
-	memcpy(comm_buf, AXON_COMM, sizeof(AXON_COMM) - 1);
+	fs_memcpy(comm_buf, AXON_COMM, sizeof(AXON_COMM) - 1);
 	size_t comm_len;
 	if (comm == NULL) {
 		comm_len = 0;
@@ -142,23 +134,24 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 		if (comm_len > 16) {
 			comm_len = 16;
 		}
-		memcpy(&comm_buf[sizeof(AXON_COMM) - 1], comm, comm_len);
+		fs_memcpy(&comm_buf[sizeof(AXON_COMM) - 1], comm, comm_len);
 	}
 	comm_buf[sizeof(AXON_COMM) - 1 + comm_len] = '\0';
 #ifdef ENABLE_TRACER
 	char tele_buf[64];
-	memcpy(tele_buf, AXON_TRACES, sizeof(AXON_TRACES) - 1);
+	fs_memcpy(tele_buf, AXON_TRACES, sizeof(AXON_TRACES) - 1);
 	fs_utoah(enabled_traces, &tele_buf[sizeof(AXON_TRACES) - 1]);
 #endif
 	int j = 0;
 	new_envp[j++] = addr_buf;
 	new_envp[j++] = comm_buf;
+	new_envp[j++] = table_fd_buf;
 #ifdef ENABLE_TRACER
 	new_envp[j++] = tele_buf;
 #endif
 	new_envp[j++] = exec_path_buf;
 	for (int i = 0; i < envc; i++) {
-		if (fs_strncmp(envp[i], AXON_ADDR, sizeof(AXON_ADDR) - 1) == 0 || fs_strncmp(envp[i], AXON_COMM, sizeof(AXON_COMM) - 1) == 0 || fs_strncmp(envp[i], AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0) {
+		if (fs_strncmp(envp[i], AXON_ADDR, sizeof(AXON_ADDR) - 1) == 0 || fs_strncmp(envp[i], AXON_COMM, sizeof(AXON_COMM) - 1) == 0 || fs_strncmp(envp[i], AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0 || fs_strncmp(envp[i], AXON_TABLE_FD, sizeof(AXON_TABLE_FD) - 1) == 0) {
 			fs_close(fd);
 			attempt_pop_free(&exec_path_buf_cleanup);
 			attempt_pop_free(&new_envp_cleanup);
@@ -178,8 +171,10 @@ static int exec_fd_elf(int fd, const char *const *argv, const char *const *envp,
 	if (result < 0) {
 		goto cleanup;
 	}
-	serialize_fd_table_for_exec();
+	int memfd = serialize_fd_table_for_exec();
+	fs_utoah(memfd, &table_fd_buf[sizeof(AXON_TABLE_FD) - 1]);
 	result = fs_execveat(SELF_FD, empty_string, (char *const *)argv, (char *const *)new_envp, AT_EMPTY_PATH);
+	fs_close(memfd);
 cleanup:
 	attempt_pop_free(&exec_path_buf_cleanup);
 	attempt_pop_free(&new_envp_cleanup);
@@ -285,7 +280,7 @@ __attribute__((warn_unused_result)) int wrapped_execveat(struct thread_storage *
 		goto close_and_error;
 	}
 	// if executing axon, change to the main fd and check again
-	if (special_path_type(filename) == SPECIAL_PATH_TYPE_EXE && is_axon(&stat)) {
+	if (special_path_type(filename) == SPECIAL_PATH_TYPE_EXE && is_self(&stat)) {
 		result = fixup_exe_open(dfd, filename, O_RDONLY);
 		if (result < 0) {
 			goto close_and_error;

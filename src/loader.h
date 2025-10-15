@@ -62,7 +62,9 @@ struct binary_info
 	int strtab_section_index;
 	int executable_stack;
 	const char *interpreter;
-	char *phbuffer;
+	size_t relro_vaddr;
+	size_t relro_memsz;
+	int relro_pflags;
 };
 
 // load_binary will load and map the binary in fd into the process' address space

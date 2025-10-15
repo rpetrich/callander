@@ -365,7 +365,7 @@ void receive_syscall(__attribute__((unused)) intptr_t data[7])
 		}
 	}
 	if (data[0] < 0) {
-		PATCH_LOG("=: ", fs_strerror(data[0]));
+		PATCH_LOG("=: ", as_errno(data[0]));
 		data[0] = -translate_errno_to_linux(-data[0]);
 	}
 	if (data[0] > (intptr_t)PAGE_SIZE) {
@@ -507,7 +507,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	char sysroot_buf[PATH_MAX];
 	int result = fs_getcwd(sysroot_buf, sizeof(sysroot_buf));
 	if (result < 0) {
-		DIE("could not read cwd: ", fs_strerror(result));
+		DIE("could not read cwd: ", as_errno(result));
 	}
 	char path_buf[PATH_MAX];
 	executable_path = apply_sysroot(sysroot_buf, executable_path, path_buf);
@@ -541,7 +541,7 @@ int main(__attribute__((unused)) int argc_, char *argv[])
 	                        (struct remote_handlers){.receive_syscall_addr = (intptr_t)&receive_syscall, .receive_clone_addr = (intptr_t)&receive_syscall},
 	                        &remote);
 	if (result < 0) {
-		DIE("remote exec failed: ", fs_strerror(result));
+		DIE("remote exec failed: ", as_errno(result));
 	}
 
 	update_patches();
@@ -561,7 +561,7 @@ gid_t startup_egid;
 
 intptr_t proxy_peek(intptr_t addr, size_t size, void *out_buffer)
 {
-	memcpy(out_buffer, (const void *)addr, size);
+	fs_memcpy(out_buffer, (const void *)addr, size);
 	return 0;
 }
 

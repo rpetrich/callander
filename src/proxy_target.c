@@ -67,7 +67,7 @@ intptr_t proxy_call(int syscall, proxy_arg args[PROXY_ARGUMENT_COUNT])
 			fs_mutex_unlock(&proxy_state.target_state->write_mutex);
 			return result;
 		}
-		DIE("failed to proxy send: ", fs_strerror(result));
+		DIE("failed to proxy send: ", as_errno(result));
 	}
 	fs_mutex_unlock(&proxy_state.target_state->write_mutex);
 	// exit if no response is expected
@@ -109,7 +109,30 @@ void proxy_free(intptr_t addr, size_t size)
 	fs_mutex_unlock(&heap_lock);
 }
 
-struct fd_state *get_fd_states(void)
+#ifdef PROXY_SUPPORT_ALL_PLATFORMS
+enum target_platform proxy_get_target_platform(void)
 {
-	return &proxy_state.fd_states[0];
+#ifdef __linux__
+	return TARGET_PLATFORM_LINUX;
+#else
+#error "thandler only supports linux"
+#endif
+}
+#endif
+
+const struct vfs_path_ops *proxy_get_path_ops(void)
+{
+	extern const struct vfs_path_ops linux_path_ops;
+	return &linux_path_ops;
+}
+
+struct fd_global_state *get_fd_global_state(void)
+{
+	return &proxy_state.fd_state;
+}
+
+void patch_memory_map_changed(void *start, size_t length)
+{
+	(void)start;
+	(void)length;
 }

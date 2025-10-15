@@ -339,6 +339,9 @@ intptr_t remote_getdents(int fd, char *buf, size_t size)
 {
 	trim_size(&size);
 #ifndef __NR_getdents
+	(void)fd;
+	(void)buf;
+	(void)size;
 	return -ENOSYS;
 #else
 	return PROXY_LINUX_CALL(LINUX_SYS_getdents, proxy_value(fd), proxy_out(buf, size), proxy_value(size));

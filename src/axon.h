@@ -17,15 +17,21 @@
 #endif
 #endif
 
-#include "loader.h"
-
 #include <stdnoreturn.h>
+
+#ifdef __MINGW32__
+struct iovec {
+	void *iov_base;
+	size_t iov_len;
+};
+#endif
 
 #define AXON_BOOTSTRAP_ASM_NO_RELEASE \
 	AXON_RESTORE_ASM                  \
 	FS_DEFINE_SYSCALL                 \
 	AXON_ENTRYPOINT_TRAMPOLINE_ASM(impulse, release)
-#ifdef STANDALONE
+#if defined(STANDALONE) && defined(__linux__)
+#include "loader.h"
 #define AXON_BOOTSTRAP_ASM                                                                        \
 	AXON_BOOTSTRAP_ASM_NO_RELEASE                                                                 \
 	int main(int argc, char *argv[], char *envp[]);                                               \
@@ -82,6 +88,9 @@ extern noreturn void abort();
 // AXON_EXEC is an environment variable containing the program's intended
 // exec path value. This is used for tracing the intended program path
 #define AXON_EXEC "AXON_EXEC="
+// AXON_TABLE_FD is an environment variable containing the fd describing the
+// serialized file descriptor table state
+#define AXON_TABLE_FD "AXON_TABLE_FD="
 
 #ifdef ENABLE_TRACER
 // AXON_TRACES is an environment variable containing the traces to intercept
@@ -168,6 +177,16 @@ __attribute__((always_inline)) static inline struct char_range char_range(const 
 	};
 }
 
+struct error
+{
+	int value;
+};
+
+static inline struct error as_errno(int value)
+{
+	return (struct error){.value = value};
+}
+
 struct error_newline
 {
 };
@@ -225,9 +244,12 @@ __attribute__((always_inline)) static inline void error_discard_noop(const void 
 )];
 
 #define ERROR_GENERIC_(value, prefix) _Generic((value), \
+	_Bool: CONCAT(prefix, boolean), \
 	long int: CONCAT(prefix, int), \
+	long long int: CONCAT(prefix, int), \
 	int: CONCAT(prefix, int), \
 	long unsigned: CONCAT(prefix, uint), \
+	long long unsigned int: CONCAT(prefix, int), \
 	unsigned: CONCAT(prefix, uint), \
     __uint128_t: CONCAT(prefix, uint128), \
 	struct iovec: CONCAT(prefix, iovec), \
@@ -235,6 +257,7 @@ __attribute__((always_inline)) static inline void error_discard_noop(const void 
 	struct temp_str: CONCAT(prefix, temp_str), \
 	const char *: CONCAT(prefix, string), \
 	char *: CONCAT(prefix, string), \
+	struct error: CONCAT(prefix, error_number), \
 	struct error_newline: CONCAT(prefix, error_newline) \
 )
 
@@ -300,13 +323,21 @@ __attribute__((always_inline)) static inline void error_discard_noop(const void 
 #define ERROR(str, ...) ERROR_NOPREFIX(PRODUCT_NAME ": " str, ##__VA_ARGS__)
 
 __attribute__((always_inline))
+static inline struct iovec error_format_boolean(_Bool value, char *) {
+	if (value) {
+		return (struct iovec){ .iov_base = "true", .iov_len = sizeof("true")-1 };
+	}
+	return (struct iovec){ .iov_base = "false", .iov_len = sizeof("false")-1 };
+}
+
+__attribute__((always_inline))
 static inline struct iovec error_format_int(intptr_t value, char *buf) {
 	size_t len = fs_itoa(value, buf);
 	return (struct iovec){ .iov_base = buf, .iov_len = len };
 }
 
 __attribute__((always_inline))
-static inline struct iovec error_format_uint(intptr_t value, char *buf) {
+static inline struct iovec error_format_uint(uintptr_t value, char *buf) {
 	size_t len = fs_utoah(value, buf);
 	return (struct iovec){ .iov_base = buf, .iov_len = len };
 }
@@ -346,6 +377,11 @@ static inline struct iovec error_format_string(const char *value, char *) {
 }
 
 __attribute__((always_inline))
+static inline struct iovec error_format_error_number(struct error err, char *buf) {
+	return error_format_string(fs_strerror(err.value), buf);
+}
+
+__attribute__((always_inline))
 static inline struct iovec error_format_error_newline(struct error_newline, char *) {
 	return (struct iovec){ .iov_base = "\n", .iov_len = 1 };
 }
@@ -360,6 +396,7 @@ static inline struct iovec error_format_error_newline(struct error_newline, char
 		ERROR_DISCARD_(value, n) \
 	}
 
+ERROR_FORMAT_AND_WRITE_DEF(boolean, _Bool, __attribute__((noinline)) static)
 ERROR_FORMAT_AND_WRITE_DEF(int, intptr_t, __attribute__((noinline)) static)
 ERROR_FORMAT_AND_WRITE_DEF(uint, uintptr_t, __attribute__((noinline)) static)
 ERROR_FORMAT_AND_WRITE_DEF(uint128, __uint128_t, __attribute__((noinline)) static)
@@ -367,6 +404,7 @@ ERROR_FORMAT_AND_WRITE_DEF(iovec, struct iovec, __attribute__((always_inline)) s
 ERROR_FORMAT_AND_WRITE_DEF(char_range, struct char_range, __attribute__((noinline)) static)
 // ERROR_FORMAT_AND_WRITE_DEF(temp_str, struct temp_str, __attribute__((noinline)) static)
 // ERROR_FORMAT_AND_WRITE_DEF(string, const char *, __attribute__((noinline)) static)
+ERROR_FORMAT_AND_WRITE_DEF(error_number, struct error, __attribute__((noinline)) static)
 // ERROR_FORMAT_AND_WRITE_DEF(error_newline, struct error_newline, __attribute__((noinline)) static)
 
 __attribute__((unused)) __attribute__((always_inline)) static inline
@@ -391,6 +429,7 @@ void error_format_and_write_error_newline(struct error_newline) {
 		ERROR_RAW(prefix, value, (struct error_newline){}); \
 	}
 
+ERROR_MESSAGE_WRITE_DEF(boolean, _Bool)
 ERROR_MESSAGE_WRITE_DEF(int, intptr_t)
 ERROR_MESSAGE_WRITE_DEF(uint, uintptr_t)
 ERROR_MESSAGE_WRITE_DEF(uint128, __uint128_t)
@@ -398,6 +437,7 @@ ERROR_MESSAGE_WRITE_DEF(iovec, struct iovec)
 ERROR_MESSAGE_WRITE_DEF(char_range, struct char_range)
 ERROR_MESSAGE_WRITE_DEF(temp_str, struct temp_str)
 ERROR_MESSAGE_WRITE_DEF(string, const char *)
+ERROR_MESSAGE_WRITE_DEF(error_number, struct error)
 ERROR_MESSAGE_WRITE_DEF(error_newline, struct error_newline)
 
 #endif

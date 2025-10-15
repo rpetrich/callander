@@ -65,7 +65,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 						case AF_INET: {
 							struct sockaddr_in *addr = (struct sockaddr_in *)results->ai_addr;
 							uint8_t addr_bytes[4];
-							memcpy(&addr_bytes, &addr->sin_addr.s_addr, 4);
+							fs_memcpy(&addr_bytes, &addr->sin_addr.s_addr, 4);
 							ERROR("result: ", (int)addr_bytes[0], ".", (int)addr_bytes[1], ".", (int)addr_bytes[2], ".", (int)addr_bytes[3]);
 							break;
 						}
@@ -96,7 +96,7 @@ __attribute__((noinline, visibility("hidden"))) int main(__attribute__((unused))
 				ERROR("no results");
 				break;
 			case EAI_SYSTEM:
-				ERROR("system failure during lookup: ", fs_strerror(local_errno));
+				ERROR("system failure during lookup: ", as_errno(local_errno));
 				break;
 			default:
 				ERROR("unknown error: ", (uintptr_t)result);

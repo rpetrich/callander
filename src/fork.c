@@ -58,7 +58,7 @@ pid_t wrapped_vfork(struct thread_storage *thread)
 #endif
 	if (result >= 0) {
 		invalidate_self_pid();
-		resurrect_fd_table();
+		// resurrect_fd_table();
 	}
 	return result;
 }
@@ -88,7 +88,7 @@ pid_t wrapped_clone(struct thread_storage *thread, unsigned long flags, void *st
 #endif
 	if (result == 0) {
 		invalidate_self_pid();
-		resurrect_fd_table();
+		// resurrect_fd_table();
 	}
 	return result;
 }

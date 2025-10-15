@@ -1,12 +1,12 @@
 #define _GNU_SOURCE
 #include "axon.h"
 
+#include "axon_shared.h"
 #include "debugger.h"
 #include "exec.h"
 #include "fd_table.h"
 #include "freestanding.h"
 #include "handler.h"
-#include "install.h"
 #include "intercept.h"
 #include "loader.h"
 #include "patch.h"
@@ -35,7 +35,8 @@ typedef struct
 	uintptr_t interpreter_base;
 	uintptr_t base_address;
 	uintptr_t old_base_address;
-	size_t self_size;
+	struct binary_info original_self;
+	struct binary_info remapped_self;
 	size_t *sp;
 #ifdef ENABLE_TRACER
 	uint32_t traces;
@@ -44,6 +45,7 @@ typedef struct
 	const char *exec_path;
 	struct r_debug *debug;
 	void (*debug_update)(void);
+	uintptr_t table_fd;
 	bool patch_syscalls : 1;
 	bool intercept : 1;
 } bind_data;
@@ -61,7 +63,6 @@ __attribute__((used)) noreturn void release(size_t *sp)
 		.interpreter_base = 0,
 		.base_address = 0,
 		.old_base_address = 0,
-		.self_size = 0,
 		.sp = sp,
 		.comm = NULL,
 		.exec_path = NULL,
@@ -75,7 +76,6 @@ __attribute__((used)) noreturn void release(size_t *sp)
 	// Skip over arguments
 	char **argv = (void *)(sp + 1);
 	char *arg0 = *argv;
-	char *arg1 = argv[1];
 	while (*argv != NULL) {
 		++argv;
 	}
@@ -91,11 +91,16 @@ __attribute__((used)) noreturn void release(size_t *sp)
 				}
 				// Redact the AXON_ADDR environment variable, so that it's not
 				// possible to predict the whitelisted syscall's address
-				memset(address_str + 2, '0', fs_strlen(address_str + 2));
+				fs_memset(address_str + 2, '0', fs_strlen(address_str + 2));
 			} else if (fs_strncmp(*envp, AXON_COMM, sizeof(AXON_COMM) - 1) == 0) {
 				data.comm = &(*envp)[sizeof(AXON_COMM) - 1];
 			} else if (fs_strncmp(*envp, AXON_EXEC, sizeof(AXON_EXEC) - 1) == 0) {
 				data.exec_path = &(*envp)[sizeof(AXON_EXEC) - 1];
+			} else if (fs_strncmp(*envp, AXON_TABLE_FD, sizeof(AXON_TABLE_FD) - 1) == 0) {
+				char *table_fd_str = &(*envp)[sizeof(AXON_TABLE_FD) - 1];
+				if (UNLIKELY(fs_scanu(table_fd_str, &data.table_fd) == NULL)) {
+					DIE("failed to parse AXON_TABLE_FD");
+				}
 #ifdef ENABLE_TRACER
 			} else if (fs_strncmp(*envp, AXON_TRACER, sizeof(AXON_TRACER) - 1) == 0) {
 				const char *tracer_str = &(*envp)[sizeof(AXON_TRACER) - 1];
@@ -106,10 +111,10 @@ __attribute__((used)) noreturn void release(size_t *sp)
 				data.traces = (uint32_t)traces;
 				*envp_copy++ = *envp;
 #endif
-			} else if (fs_strncmp(*envp, "AXON_PATCH_SYSCALLS=false", sizeof("AXON_PATCH_SYSCALLS=false")) == 0) {
+			} else if (fs_strcmp(*envp, "AXON_PATCH_SYSCALLS=false") == 0) {
 				data.patch_syscalls = false;
 				*envp_copy++ = *envp;
-			} else if (fs_strncmp(*envp, "AXON_INTERCEPT=false", sizeof("AXON_INTERCEPT=false") - 1) == 0) {
+			} else if (fs_strcmp(*envp, "AXON_INTERCEPT=false") == 0) {
 				data.intercept = false;
 			}
 		} else {
@@ -140,19 +145,14 @@ __attribute__((used)) noreturn void release(size_t *sp)
 
 	// relocate self asap
 	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
-	struct binary_info self_info;
-	load_existing(&self_info, old_base_address);
-	self_info.dynamic = _DYNAMIC;
-	relocate_binary(&self_info);
+	load_existing(&data.original_self, old_base_address);
+	data.original_self.dynamic = _DYNAMIC;
+	relocate_binary(&data.original_self);
 
 	// Open the self fd in the special SELF_FD slot
 	if (data.comm == NULL) {
 		if (UNLIKELY(*sp <= 1 && data.interpreter_base == 0)) {
 			DIE("a tiny intrusive tracer");
-		}
-		if (arg1 && fs_strcmp(arg1, "--install") == 0) {
-			install();
-			fs_exit(0);
 		}
 #ifdef ENABLE_TRACER
 		install_tracer(&data.traces, argv + 1);
@@ -204,19 +204,19 @@ __attribute__((used)) noreturn void release(size_t *sp)
 	set_thread_register(thread_data);
 #endif
 
-	data.self_size = self_info.size;
 	data.debug = &_r_debug;
 	data.debug_update = &_dl_debug_state;
 
 	// Remap self so that we can build our own ASLR
 	if (data.base_address != old_base_address) {
-		int result = load_binary(SELF_FD, &self_info, data.base_address, false);
+		// int result = load_binary(SELF_FD, &data.remapped_self, data.base_address, false);
+		int result = load_binary_with_layout(data.original_self.base, data.original_self.program_header, SELF_FD, 0, data.original_self.size, &data.remapped_self, data.base_address, false);
 		if (UNLIKELY(result != 0)) {
 			DIE("unable to reload axon binary");
 		}
-		relocate_binary(&self_info);
+		relocate_binary(&data.remapped_self);
 	}
-	__typeof__(&bind_axon) adjusted_bind = (void *)((uintptr_t)&bind_axon - old_base_address + self_info.base);
+	__typeof__(&bind_axon) adjusted_bind = (void *)((uintptr_t)&bind_axon - old_base_address + data.remapped_self.base);
 	adjusted_bind(data);
 	__builtin_unreachable();
 }
@@ -233,19 +233,16 @@ __attribute__((used)) noreturn void release(size_t *sp)
 // hasn't been set yet it's responsible for attaching it
 __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 {
-	struct binary_info self_info;
-	load_existing(&self_info, data.base_address);
-
 	debug_init(data.debug, data.debug_update);
 
 	uintptr_t old_base_address = data.interpreter_base != 0 ? data.interpreter_base : data.old_base_address;
 	if (old_base_address != data.base_address) {
-		debug_register_relocated_self((void *)data.base_address);
+		debug_register_relocated_self((void *)data.base_address, "zaxon");
 	}
 	// If gcov is enabled, run static initializers
 #ifdef COVERAGE
 	struct symbol_info symbols;
-	if (parse_dynamic_symbols(&self_info, (void *)data.base_address, &symbols) != 0) {
+	if (parse_dynamic_symbols(&data.remapped_self, (void *)data.base_address, &symbols) != 0) {
 		DIE("failed to parse main binary");
 	}
 	for (size_t i = 0; i < symbols.init_function_count; i++) {
@@ -260,10 +257,6 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 #ifdef ENABLE_TRACER
 	enabled_traces = data.traces;
 #endif
-	int stat_result = fs_fstat(SELF_FD, &axon_stat);
-	if (UNLIKELY(stat_result != 0)) {
-		DIE("unable to stat axon binary: ", fs_strerror(stat_result));
-	}
 
 #ifdef STACK_PROTECTOR
 	// arch_prctl needs to be supported earlier, so assume multi-threaded all
@@ -272,9 +265,9 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 #endif
 
 	// Set signal handlers
-	int result = intercept_signals();
+	int result = intercept_signals(data.comm == NULL);
 	if (UNLIKELY(result < 0)) {
-		DIE("failed to intercept signals: ", fs_strerror(result));
+		DIE("failed to intercept signals: ", as_errno(result));
 	}
 
 	// Unmap the old binary
@@ -296,17 +289,11 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 	// Search useful environment variables
 	const char *path = "/bin:/usr/bin";
 	const char **current_envp = envp;
-	intptr_t proxy_fd = -1;
 	while (*current_envp != NULL) {
 		if (fs_strncmp(*current_envp, "PATH=", 5) == 0) {
 			const char *new_path = &(*current_envp)[5];
 			if (*new_path != '\0') {
 				path = new_path;
-			}
-		} else if (fs_strncmp(*current_envp, "PROXY_FD=", sizeof("PROXY_FD=") - 1) == 0) {
-			const char *proxy_fd_str = &(*current_envp)[sizeof("PROXY_FD=") - 1];
-			if (*fs_scans(proxy_fd_str, &proxy_fd) != '\0') {
-				DIE("unexpected PROXY_FD: ", proxy_fd_str);
 			}
 		}
 		++current_envp;
@@ -353,25 +340,21 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		if (data.intercept) {
 			result = apply_seccomp();
 			if (UNLIKELY(result != 0)) {
-				DIE("failed to apply seccomp filter: ", fs_strerror(result));
+				DIE("failed to apply seccomp filter: ", as_errno(result));
 			}
 #ifdef ENABLE_TRACER
 			// Send initial working directory
 			if (enabled_traces & TRACE_TYPE_UPDATE_WORKING_DIR) {
 				int result = fs_getcwd(filename, PATH_MAX);
 				if (UNLIKELY(result < 0)) {
-					DIE("unable to read working directory: ", fs_strerror(result));
+					DIE("unable to read working directory: ", as_errno(result));
 				}
 				send_update_working_dir_event(get_thread_storage(), filename, result - 1);
 			}
 #endif
 		}
 		// Install the proxy page
-		install_proxy(proxy_fd);
-		if (data.intercept) {
-			// Initialize the fd table
-			initialize_fd_table();
-		}
+		install_proxy(&data.remapped_self, envp, data.intercept);
 		// Find the executable to exec
 		int fd = open_executable_in_paths(argv[data.interpreter_base == 0], path, true, startup_euid, startup_egid);
 		if (UNLIKELY(fd < 0)) {
@@ -383,26 +366,28 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 			char buf[PATH_MAX];
 			intptr_t count = fs_fd_getpath(fd, buf);
 			if (count < 0) {
-				DIE("unable to read exec path: ", fs_strerror(count));
+				DIE("unable to read exec path: ", as_errno(count));
 			}
 			result = fs_execve(buf, (char *const *)(argv + (data.interpreter_base == 0)), (char *const *)envp);
 		}
 		if (UNLIKELY(result < 0)) {
-			DIE("unable to exec: ", fs_strerror(result));
+			DIE("unable to exec: ", as_errno(result));
 		}
 	}
+
+	configure_proxy();
 
 	// Set comm so that pgrep, for example, will work
 	int prctl_result = fs_prctl(PR_SET_NAME, (uintptr_t)data.comm, 0, 0, 0);
 	if (prctl_result < 0) {
-		DIE("failed to set name: ", fs_strerror(prctl_result));
+		DIE("failed to set name: ", as_errno(prctl_result));
 	}
 
 	// Map the main binary
 	struct binary_info info = {0};
 	result = load_binary(MAIN_FD, &info, 0, false);
 	if (UNLIKELY(result != 0)) {
-		DIE("unable to load main binary: ", fs_strerror(result));
+		DIE("unable to load main binary: ", as_errno(result));
 	}
 
 	// Try to set /proc/self/exe so that execs out of proc will work without
@@ -441,7 +426,11 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 	debug_register(&info, argv[0]);
 
 	// Setup fd remapping
-	resurrect_fd_table();
+	resurrect_fd_table(data.table_fd);
+	result = fs_close(data.table_fd);
+	if (result < 0) {
+		DIE("error closing: ", as_errno(result));
+	}
 
 	// Send exec trace
 #ifdef ENABLE_TRACER
@@ -449,7 +438,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 		struct fs_stat main_stat;
 		int result = fs_fstat(MAIN_FD, &main_stat);
 		if (result < 0) {
-			DIE("unable to fstat main binary: ", fs_strerror(result));
+			DIE("unable to fstat main binary: ", as_errno(result));
 		}
 		struct fs_stat path_stat;
 		result = fs_stat(data.exec_path, &path_stat);
@@ -460,7 +449,7 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 			// otherwise readlink on the main binary
 			result = fs_fd_getpath(MAIN_FD, filename);
 			if (result < 0) {
-				DIE("unable to read path of main binary: ", fs_strerror(result));
+				DIE("unable to read path of main binary: ", as_errno(result));
 			}
 			send_exec_event(get_thread_storage(), filename, result, argv, 0);
 		}
@@ -482,18 +471,9 @@ __attribute__((noinline)) noreturn static void bind_axon(bind_data data)
 	// Map the interpreter if need be
 	struct binary_info interpreter_info = {0};
 	if (info.interpreter) {
-		// search for our ELF interpreter override, but fallback to normal
-		// interpreter
-		char buf[PATH_MAX];
-		size_t interp_len = fs_strlen(info.interpreter);
-		fs_memcpy(buf, info.interpreter, interp_len);
-		fs_memcpy(&buf[interp_len], ".axon", sizeof(".axon"));
-		int interpreter_fd = fs_openat(AT_FDCWD, buf, O_RDONLY | O_CLOEXEC, 0);
-		if (interpreter_fd < 0) {
-			interpreter_fd = fs_openat(AT_FDCWD, info.interpreter, O_RDONLY | O_CLOEXEC, 0);
-		}
+		int interpreter_fd = fs_openat(AT_FDCWD, info.interpreter, O_RDONLY | O_CLOEXEC, 0);
 		if (UNLIKELY(interpreter_fd < 0)) {
-			DIE("unable to open ELF interpreter: ", fs_strerror(interpreter_fd));
+			DIE("unable to open ELF interpreter: ", as_errno(interpreter_fd));
 		}
 		struct fs_stat stat;
 		int err = verify_allowed_to_exec(interpreter_fd, &stat, startup_euid, startup_egid);

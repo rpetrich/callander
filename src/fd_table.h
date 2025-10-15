@@ -4,9 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define TABLE_FD 0x3fa
-#define DEAD_FD 0x3f8
-#define CWD_FD 0x3f7
+#define DEAD_FD 0x3fa
+#define CWD_FD 0x3f8
 
 #define HAS_REMOTE_FD 1
 #define HAS_LOCAL_FD 2
@@ -16,10 +15,10 @@
 #define MAX_TABLE_SIZE 1024
 
 void initialize_fd_table(void);
-void serialize_fd_table_for_exec(void);
+int serialize_fd_table_for_exec(void);
 void serialize_fd_table_for_fork(void);
 void finish_fd_table_fork(void);
-void resurrect_fd_table(void);
+void resurrect_fd_table(int fd);
 void clear_fd_table_for_exit(int status);
 
 // install_local_fd takes ownership of local_fd
