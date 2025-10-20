@@ -170,6 +170,10 @@ __attribute__((always_inline)) static inline bool aarch64_is_return_instruction(
 		case ARM64_RET:
 		case ARM64_RETAA:
 		case ARM64_RETAB:
+		case ARM64_RETAASPPC:
+		case ARM64_RETAASPPCR:
+		case ARM64_RETABSPPC:
+		case ARM64_RETABSPPCR:
 			return true;
 		default:
 			return false;
