@@ -131,7 +131,7 @@ __attribute__((nonnull(1))) static bool memory_ref_references_register(const str
 #endif
 }
 
-__attribute__((nonnull(1))) static bool memory_ref_cannot_reference_stack_slot(const struct ins_memory_reference *rm)
+__attribute__((nonnull(1))) static bool memory_ref_could_reference_stack_slot(const struct ins_memory_reference *rm)
 {
 #if defined(__x86_64__)
 	switch (rm->rm) {
@@ -174,8 +174,7 @@ const int sysv_argument_abi_register_indexes[] = {
 	REGISTER_RCX,
 	REGISTER_R8,
 	REGISTER_R9,
-#else
-#if defined(__aarch64__)
+#elif defined(__aarch64__)
 	REGISTER_X0,
 	REGISTER_X1,
 	REGISTER_X2,
@@ -186,7 +185,6 @@ const int sysv_argument_abi_register_indexes[] = {
 	REGISTER_X7,
 #else
 #error "Unknown architecture"
-#endif
 #endif
 };
 
@@ -201,8 +199,7 @@ static const int golang_internal_argument_abi_register_indexes[] = {
 	REGISTER_R9,
 	REGISTER_R10,
 	REGISTER_R11,
-#else
-#if defined(__aarch64__)
+#elif defined(__aarch64__)
 	REGISTER_X0,
 	REGISTER_X1,
 	REGISTER_X2,
@@ -213,7 +210,6 @@ static const int golang_internal_argument_abi_register_indexes[] = {
 	REGISTER_X7,
 #else
 #error "Unknown architecture"
-#endif
 #endif
 };
 
@@ -226,7 +222,7 @@ static const int golang_abi0_argument_abi_register_indexes[] = {
 	REGISTER_STACK_40,
 };
 
-const int syscall_argument_abi_register_indexes[6] = {
+const int syscall_argument_abi_register_indexes[] = {
 	REGISTER_SYSCALL_ARG0,
 	REGISTER_SYSCALL_ARG1,
 	REGISTER_SYSCALL_ARG2,
@@ -350,7 +346,7 @@ __attribute__((nonnull(1))) static char *copy_memory_ref_description(const struc
 __attribute__((nonnull(1, 2, 4))) static inline void clear_match(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
 	register_mask mask = regs->matches[register_index];
-	if (UNLIKELY(register_index == REGISTER_SP || (register_index == REGISTER_MEM && regs->stack_address_taken && !memory_ref_cannot_reference_stack_slot(&regs->mem_ref)))) {
+	if (UNLIKELY(register_index == REGISTER_SP || (register_index == REGISTER_MEM && regs->stack_address_taken && memory_ref_could_reference_stack_slot(&regs->mem_ref)))) {
 		for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
 			if (SHOULD_LOG) {
 				if (register_is_partially_known(&regs->registers[i])) {
@@ -576,8 +572,7 @@ __attribute__((nonnull(1, 2, 3))) static inline struct registers copy_call_argum
 	clear_match(loader, &result, REGISTER_R13, ins);
 	clear_match(loader, &result, REGISTER_R14, ins);
 	clear_match(loader, &result, REGISTER_R15, ins);
-#else
-#if defined(__aarch64__)
+#elif defined(__aarch64__)
 	// TODO: copy call registers
 	for (int i = REGISTER_X9; i < REGISTER_SP; i++) {
 		clear_register(&result.registers[i]);
@@ -594,7 +589,6 @@ __attribute__((nonnull(1, 2, 3))) static inline struct registers copy_call_argum
 	// clear_match(loader, &result, REGISTER_SP, ins);
 #else
 #error "Unknown architecture"
-#endif
 #endif
 	// Clear match state for REGISTER_MEM without invalidating stack
 	register_mask mask = result.matches[REGISTER_MEM];
@@ -6610,7 +6604,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				goto update_and_return;
 			}
 		}
-#ifdef __x86_64__
+#if defined(__x86_64__)
 #define CHECK_FAULT(fault, sources)                                                                                  \
 	do {                                                                                                             \
 		if (UNLIKELY(fault)) {                                                                                       \
@@ -9879,8 +9873,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 				break;
 			}
 		}
-#else
-#ifdef __aarch64__
+#elif defined(__aarch64__)
 		switch (decoded.decomposed.operation) {
 			case ARM64_ERROR:
 				DIE("error decoding instruction: ", temp_str(copy_address_description(&analysis->loader, ins)));
@@ -13983,7 +13976,6 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 		(void)trace_flags;
 		goto skip_stack_clear;
 #endif
-#endif
 		if (UNLIKELY(pending_stack_clear)) {
 			LOG("clearing stack after call");
 			{
@@ -14170,7 +14162,7 @@ static int apply_relocation_table(const struct loader_context *context, struct l
 				// TODO: figure out how to trace these
 				*(ins_uint64 *)relo_target = value;
 				break;
-#ifdef __x86_64__
+#if defined(__x86_64__)
 			case R_X86_64_GOTPCREL:
 				LOG("gotpcrel relocation for, not supported: ", textual_name);
 				break;
@@ -14705,7 +14697,6 @@ __attribute__((warn_unused_result)) static int relocate_loaded_library(struct pr
 		return 0;
 	}
 	new_binary->has_applied_relocation = true;
-#if 1
 	const ElfW(Dyn) *dynamic = new_binary->info.dynamic;
 	size_t dynamic_size = new_binary->info.dynamic_size;
 	if (new_binary->has_symbols) {
@@ -14747,29 +14738,6 @@ __attribute__((warn_unused_result)) static int relocate_loaded_library(struct pr
 			return result;
 		}
 	}
-#else
-	if (new_binary->has_sections) {
-		size_t relaent = sizeof(ElfW(Rela));
-		const ElfW(Dyn) *dynamic = new_binary->info.dynamic;
-		size_t dynamic_size = new_binary->info.dynamic_size;
-		for (size_t i = 0; i < dynamic_size; i++) {
-			switch (dynamic[i].d_tag) {
-				case DT_RELAENT:
-					relaent = dynamic[i].d_un.d_val;
-					break;
-			}
-		}
-		for (size_t i = 0; i < new_binary->info.section_entry_count; i++) {
-			const ElfW(Shdr) *section = (const ElfW(Shdr) *)((char *)new_binary->sections.sections + i * new_binary->info.section_entry_size);
-			if (section->sh_type == SHT_RELA) {
-				int result = apply_relocation_table(&analysis->loader, new_binary, section->sh_addr, relaent, section->sh_size);
-				if (result < 0) {
-					return result;
-				}
-			}
-		}
-	}
-#endif
 	return 0;
 }
 
