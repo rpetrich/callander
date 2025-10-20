@@ -120,13 +120,14 @@ ifeq ($(TARGETMACHINE),aarch64)
 			arch-arm64/disassembler/decode1.c arch-arm64/disassembler/decode2.c \
 			arch-arm64/disassembler/decode_scratchpad.c arch-arm64/disassembler/encodings_dec.c \
 			arch-arm64/disassembler/pcode.c arch-arm64/disassembler/decode_fields32.c \
-			arch-arm64/disassembler/sysregs.c arch-arm64/disassembler/operations.c \
-			arch-arm64/disassembler/format.c arch-arm64/disassembler/regs.c \
-			printf.c printf_inject.c
+			arch-arm64/disassembler/sysregs_fmt_gen.c arch-arm64/disassembler/sysregs_gen.c \
+			arch-arm64/disassembler/operations.c arch-arm64/disassembler/format.c \
+			arch-arm64/disassembler/regs.c \
+			printf.c printf_inject.c callander_aarch64.c
 	PATCH_SOURCES := patch.c patch_aarch64.c
 endif
 ifeq ($(TARGETMACHINE),x86_64)
-	ARCH_SOURCES += x86.c x86_64_length_disassembler.c
+	ARCH_SOURCES += x86.c x86_64_length_disassembler.c callander_x86_64.c
 	PATCH_SOURCES := patch.c patch_x86_64.c
 endif
 

@@ -376,6 +376,7 @@ struct analysis_frame
 	struct registers current_state;
 	ins_ptr entry;
 	const struct registers *entry_state;
+	register_mask pending_stack_clear;
 	struct effect_token token;
 };
 

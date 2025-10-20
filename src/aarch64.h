@@ -333,15 +333,4 @@ static inline enum aarch64_conditional_type aarch64_get_conditional_type(const s
 	}
 }
 
-#define UNSUPPORTED_INSTRUCTION()                                                                        \
-	do {                                                                                                 \
-		char *buf = malloc(4096);                                                                        \
-		if (aarch64_disassemble(&decoded.decomposed, buf, 4096) != DISASM_SUCCESS) {                     \
-			self.description = operation_to_str(decoded.decomposed.operation);                           \
-		} else {                                                                                         \
-			self.description = buf;                                                                      \
-		}                                                                                                \
-		DIE("unsupported instruction: ", temp_str(copy_call_trace_description(&analysis->loader, &self))); \
-	} while (0)
-
 #endif
