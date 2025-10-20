@@ -504,7 +504,7 @@ __attribute__((always_inline)) static inline register_mask mask_for_register(enu
 #define ALL_REGISTERS ((~(register_mask)0) >> (sizeof(register_mask) * 8 - REGISTER_COUNT))
 #define STACK_REGISTERS ((~(register_mask)0 << (BASE_REGISTER_COUNT + 1)) & ALL_REGISTERS)
 
-struct __attribute__((packed)) decoded_rm
+struct __attribute__((packed)) ins_memory_reference
 {
 #if defined(__x86_64__)
 	uintptr_t addr;
@@ -529,7 +529,7 @@ struct register_comparison
 {
 	struct register_state value;
 	uintptr_t mask;
-	struct decoded_rm mem_rm;
+	struct ins_memory_reference mem_ref;
 	register_mask sources;
 	uint8_t target_register : 6;
 	comparison_validity validity : 2;

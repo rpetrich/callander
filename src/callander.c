@@ -90,7 +90,7 @@ struct register_state_and_source
 	register_mask source;
 };
 
-static const struct decoded_rm invalid_decoded_rm = {
+static const struct ins_memory_reference invalid_mem_ref = {
 #if defined(__x86_64__)
 	.rm = REGISTER_R12,
 	.base = 0,
@@ -100,7 +100,7 @@ static const struct decoded_rm invalid_decoded_rm = {
 #endif
 };
 
-__attribute__((nonnull(1))) static bool decoded_rm_references_register(const struct decoded_rm *rm, int register_index)
+__attribute__((nonnull(1))) static bool memory_ref_references_register(const struct ins_memory_reference *rm, int register_index)
 {
 #if defined(__x86_64__)
 	switch (rm->rm) {
@@ -131,7 +131,7 @@ __attribute__((nonnull(1))) static bool decoded_rm_references_register(const str
 #endif
 }
 
-__attribute__((nonnull(1))) static bool decoded_rm_cannot_reference_stack_slot(const struct decoded_rm *rm)
+__attribute__((nonnull(1))) static bool memory_ref_cannot_reference_stack_slot(const struct ins_memory_reference *rm)
 {
 #if defined(__x86_64__)
 	switch (rm->rm) {
@@ -292,7 +292,7 @@ const struct registers empty_registers = {
 #if STORE_LAST_MODIFIED
 	.last_modify_ins = {0},
 #endif
-	.mem_rm = invalid_decoded_rm,
+	.mem_ref = invalid_mem_ref,
 	.compare_state = {0},
 	.stack_address_taken = NULL,
 };
@@ -307,7 +307,7 @@ static inline bool registers_are_subset_of_registers(const struct register_state
 	return true;
 }
 
-__attribute__((nonnull(1, 2))) static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm *r);
+__attribute__((nonnull(1, 2))) static bool memory_ref_equal(const struct ins_memory_reference *l, const struct ins_memory_reference *r);
 
 __attribute__((nonnull(1, 3))) static void register_changed(struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
@@ -319,17 +319,17 @@ __attribute__((nonnull(1, 3))) static void register_changed(struct registers *re
 	if (UNLIKELY(regs->compare_state.validity != COMPARISON_IS_INVALID)) {
 		int compare_register = regs->compare_state.target_register;
 		if (UNLIKELY(compare_register == register_index)) {
-			if (compare_register != REGISTER_MEM || decoded_rm_equal(&regs->mem_rm, &regs->compare_state.mem_rm)) {
+			if (compare_register != REGISTER_MEM || memory_ref_equal(&regs->mem_ref, &regs->compare_state.mem_ref)) {
 				LOG("clearing comparison since ", name_for_register(register_index), " changed");
 				regs->compare_state.validity = COMPARISON_IS_INVALID;
 			}
-		} else if (decoded_rm_references_register(&regs->compare_state.mem_rm, register_index)) {
+		} else if (memory_ref_references_register(&regs->compare_state.mem_ref, register_index)) {
 			LOG("clearing comparison since ", name_for_register(register_index), " register changed");
 			regs->compare_state.validity = COMPARISON_IS_INVALID;
 		}
 	}
 	if (LIKELY(register_index != REGISTER_MEM)) {
-		if (UNLIKELY(decoded_rm_references_register(&regs->mem_rm, register_index))) {
+		if (UNLIKELY(memory_ref_references_register(&regs->mem_ref, register_index))) {
 			if (SHOULD_LOG) {
 				if (register_is_partially_known(&regs->registers[REGISTER_MEM])) {
 					ERROR_NOPREFIX("clearing mem since register changed", name_for_register(register_index));
@@ -345,12 +345,12 @@ __attribute__((nonnull(1, 3))) static void register_changed(struct registers *re
 	}
 }
 
-__attribute__((nonnull(1))) static char *copy_decoded_rm_description(const struct loader_context *loader, struct decoded_rm rm);
+__attribute__((nonnull(1))) static char *copy_memory_ref_description(const struct loader_context *loader, struct ins_memory_reference rm);
 
 __attribute__((nonnull(1, 2, 4))) static inline void clear_match(const struct loader_context *loader, struct registers *regs, int register_index, __attribute__((unused)) ins_ptr ins)
 {
 	register_mask mask = regs->matches[register_index];
-	if (UNLIKELY(register_index == REGISTER_SP || (register_index == REGISTER_MEM && regs->stack_address_taken && !decoded_rm_cannot_reference_stack_slot(&regs->mem_rm)))) {
+	if (UNLIKELY(register_index == REGISTER_SP || (register_index == REGISTER_MEM && regs->stack_address_taken && !memory_ref_cannot_reference_stack_slot(&regs->mem_ref)))) {
 		for (int i = REGISTER_STACK_0; i < REGISTER_COUNT; i++) {
 			if (SHOULD_LOG) {
 				if (register_is_partially_known(&regs->registers[i])) {
@@ -358,7 +358,7 @@ __attribute__((nonnull(1, 2, 4))) static inline void clear_match(const struct lo
 						ERROR_NOPREFIX("clearing stack slot since stack pointer changed", name_for_register(i));
 					} else {
 						ERROR_NOPREFIX("clearing stack slot since memory was written", name_for_register(i));
-						ERROR_NOPREFIX("memory r/m is", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)));
+						ERROR_NOPREFIX("memory ref is", temp_str(copy_memory_ref_description(loader, regs->mem_ref)));
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
 						ERROR_NOPREFIX("stack address was taken previously at", temp_str(copy_address_description(loader, regs->stack_address_taken)));
 #else
@@ -477,7 +477,7 @@ __attribute__((nonnull(1, 2, 4))) static inline void clear_call_dirtied_register
 	regs->requires_known_target &= ~modified;
 	clear_match(loader, regs, REGISTER_MEM, ins);
 	regs->compare_state.validity = COMPARISON_IS_INVALID;
-	regs->mem_rm = invalid_decoded_rm;
+	regs->mem_ref = invalid_mem_ref;
 }
 
 __attribute__((nonnull(1))) static inline void push_stack(const struct loader_context *loader, struct registers *regs, int push_count, ins_ptr ins)
@@ -617,7 +617,7 @@ __attribute__((nonnull(1, 2, 3))) static inline struct registers copy_call_argum
 #if STORE_LAST_MODIFIED
 	result.last_modify_ins[REGISTER_MEM] = ins;
 #endif
-	result.mem_rm = invalid_decoded_rm;
+	result.mem_ref = invalid_mem_ref;
 	result.stack_address_taken = NULL;
 	result.compare_state.validity = COMPARISON_IS_INVALID;
 	return result;
@@ -652,7 +652,7 @@ __attribute__((nonnull(1, 2))) static inline void dump_nonempty_registers(const 
 	}
 }
 
-__attribute__((nonnull(1, 2))) static bool decoded_rm_equal(const struct decoded_rm *l, const struct decoded_rm *r)
+__attribute__((nonnull(1, 2))) static bool memory_ref_equal(const struct ins_memory_reference *l, const struct ins_memory_reference *r)
 {
 #if defined(__x86_64__)
 	return l->rm == r->rm && l->base == r->base && l->index == r->index && l->scale == r->scale && l->addr == r->addr;
@@ -664,7 +664,7 @@ __attribute__((nonnull(1, 2))) static bool decoded_rm_equal(const struct decoded
 #endif
 }
 
-__attribute__((unused)) __attribute__((nonnull(1))) static char *copy_decoded_rm_description(const struct loader_context *loader, struct decoded_rm rm)
+__attribute__((unused)) __attribute__((nonnull(1))) static char *copy_memory_ref_description(const struct loader_context *loader, struct ins_memory_reference rm)
 {
 #if defined(__x86_64__)
 	char *result;
@@ -1186,7 +1186,7 @@ __attribute__((nonnull(1, 2, 3, 5, 6, 7))) __attribute__((noinline)) static size
 			}
 			out_registers->modified = registers->modified;
 			out_registers->requires_known_target = registers->requires_known_target;
-			out_registers->mem_rm = registers->mem_rm;
+			out_registers->mem_ref = registers->mem_ref;
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
 			*out_wrote_registers = true;
@@ -1250,7 +1250,7 @@ __attribute__((nonnull(1, 2, 3, 5, 6, 7))) __attribute__((noinline)) static size
 			}
 			out_registers->modified = registers->modified;
 			out_registers->requires_known_target = registers->requires_known_target;
-			out_registers->mem_rm = registers->mem_rm;
+			out_registers->mem_ref = registers->mem_ref;
 			out_registers->stack_address_taken = registers->stack_address_taken;
 			out_registers->compare_state = registers->compare_state;
 			register_mask widened = 0;
@@ -1562,7 +1562,7 @@ static inline struct previous_register_masks add_relevant_registers(struct searc
 		}
 		copy.modified = registers->modified;
 		copy.requires_known_target = registers->requires_known_target;
-		copy.mem_rm = registers->mem_rm;
+		copy.mem_ref = registers->mem_ref;
 		copy.compare_state = registers->compare_state;
 		copy.stack_address_taken = registers->stack_address_taken;
 		queue_instruction(&search->queue, addr, required_effects, &copy, addr, "varying ancestors");
@@ -3579,11 +3579,11 @@ static inline struct register_state_and_source address_for_indirect(struct x86_i
 	return result;
 }
 
-struct decoded_rm decode_rm(const uint8_t **ins_modrm, struct x86_ins_prefixes prefixes, uint8_t imm_size, bool uses_frame_pointer)
+struct ins_memory_reference decode_rm(const uint8_t **ins_modrm, struct x86_ins_prefixes prefixes, uint8_t imm_size, bool uses_frame_pointer)
 {
 	x86_mod_rm_t modrm = x86_read_modrm(*ins_modrm);
 	*ins_modrm += sizeof(x86_mod_rm_t);
-	struct decoded_rm result = (struct decoded_rm){0};
+	struct ins_memory_reference result = (struct ins_memory_reference){0};
 	if (prefixes.has_segment_override) {
 		result.rm = REGISTER_STACK_4;
 		result.base = 0;
@@ -4053,7 +4053,7 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 		result.sources = regs->sources[result.reg];
 		goto return_result;
 	}
-	struct decoded_rm decoded = decode_rm(ins_modrm, prefixes, imm_size, (flags & READ_RM_USES_FRAME_POINTER) == READ_RM_USES_FRAME_POINTER);
+	struct ins_memory_reference decoded = decode_rm(ins_modrm, prefixes, imm_size, (flags & READ_RM_USES_FRAME_POINTER) == READ_RM_USES_FRAME_POINTER);
 	if (decoded.rm == REGISTER_STACK_0 && decoded.base == REGISTER_SP && decoded.index == REGISTER_SP) {
 		switch (decoded.addr) {
 #define PER_STACK_REGISTER_IMPL(offset)                                   \
@@ -4066,7 +4066,7 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 		}
 		LOG("stack offset of ", (intptr_t)decoded.addr);
 	}
-	if (decoded_rm_equal(&decoded, &regs->mem_rm)) {
+	if (memory_ref_equal(&decoded, &regs->mem_ref)) {
 		result.reg = REGISTER_MEM;
 		goto return_for_reg;
 	}
@@ -4122,8 +4122,8 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 					LOG("loaded memory constant: ", temp_str(copy_register_state_description(loader, (struct register_state){.value = value, .max = value})), " from ", temp_str(copy_address_description(loader, (const void *)addr)));
 					return result;
 				}
-				LOG("replacing old mem r/m ", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)), " with ", temp_str(copy_decoded_rm_description(loader, decoded)));
-				regs->mem_rm = decoded;
+				LOG("replacing old mem r/m ", temp_str(copy_memory_ref_description(loader, regs->mem_ref)), " with ", temp_str(copy_memory_ref_description(loader, decoded)));
+				regs->mem_ref = decoded;
 				result.reg = REGISTER_MEM;
 				set_register(&regs->registers[REGISTER_MEM], value);
 				regs->sources[REGISTER_MEM] = sources;
@@ -4139,8 +4139,8 @@ static inline struct rm_result read_rm_ref(const struct loader_context *loader, 
 		result.sources = 0;
 		goto return_invalid;
 	}
-	LOG("replacing old mem r/m of ", temp_str(copy_decoded_rm_description(loader, regs->mem_rm)), " with ", temp_str(copy_decoded_rm_description(loader, decoded)));
-	regs->mem_rm = decoded;
+	LOG("replacing old mem r/m of ", temp_str(copy_memory_ref_description(loader, regs->mem_ref)), " with ", temp_str(copy_memory_ref_description(loader, decoded)));
+	regs->mem_ref = decoded;
 	clear_match(loader, regs, REGISTER_MEM, *ins_modrm);
 	result.reg = REGISTER_MEM;
 	clear_register(&regs->registers[REGISTER_MEM]);
@@ -5156,7 +5156,7 @@ static void set_compare_from_operation(struct registers *regs, int reg, uintptr_
 		.target_register = reg,
 		.value = 0,
 		.mask = mask,
-		.mem_rm = regs->mem_rm,
+		.mem_ref = regs->mem_ref,
 		.sources = 0,
 		.validity = reg == REGISTER_INVALID ? COMPARISON_IS_INVALID : COMPARISON_SUPPORTS_EQUALITY,
 	};
@@ -5367,9 +5367,9 @@ __attribute__((always_inline)) static inline function_effects analyze_conditiona
 	register_mask additional_sources = 0;
 	if ((compare_state.validity != COMPARISON_IS_INVALID) && register_is_exactly_known(&compare_state.value)) {
 		// include matching registers
-		if (compare_state.target_register == REGISTER_MEM && !decoded_rm_equal(&compare_state.mem_rm, &self->current_state.mem_rm)) {
-			LOG("replacing mem r/m for conditional of ", temp_str(copy_decoded_rm_description(&analysis->loader, self->current_state.mem_rm)), " with ", temp_str(copy_decoded_rm_description(&analysis->loader, compare_state.mem_rm)));
-			self->current_state.mem_rm = compare_state.mem_rm;
+		if (compare_state.target_register == REGISTER_MEM && !memory_ref_equal(&compare_state.mem_ref, &self->current_state.mem_ref)) {
+			LOG("replacing mem r/m for conditional of ", temp_str(copy_memory_ref_description(&analysis->loader, self->current_state.mem_ref)), " with ", temp_str(copy_memory_ref_description(&analysis->loader, compare_state.mem_ref)));
+			self->current_state.mem_ref = compare_state.mem_ref;
 			self->current_state.registers[REGISTER_MEM].value = 0;
 			self->current_state.registers[REGISTER_MEM].max = compare_state.mask;
 			clear_match(&analysis->loader, &self->current_state, REGISTER_MEM, self->address);
@@ -7336,11 +7336,11 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 							clear_register(&rm.state);
 						}
 						if (rm.reg == REGISTER_MEM) {
-							LOG("decoded mem r/m: ", temp_str(copy_decoded_rm_description(&analysis->loader, self.current_state.mem_rm)));
-							if (self.current_state.mem_rm.rm == REGISTER_STACK_0 && self.current_state.mem_rm.index != REGISTER_SP) {
-								int base = self.current_state.mem_rm.base;
-								int index = self.current_state.mem_rm.index;
-								uintptr_t base_addr = self.current_state.registers[base].value + self.current_state.mem_rm.addr;
+							LOG("decoded mem r/m: ", temp_str(copy_memory_ref_description(&analysis->loader, self.current_state.mem_ref)));
+							if (self.current_state.mem_ref.rm == REGISTER_STACK_0 && self.current_state.mem_ref.index != REGISTER_SP) {
+								int base = self.current_state.mem_ref.base;
+								int index = self.current_state.mem_ref.index;
+								uintptr_t base_addr = self.current_state.registers[base].value + self.current_state.mem_ref.addr;
 								uintptr_t value = self.current_state.registers[index].value;
 								uintptr_t max = self.current_state.registers[index].max;
 								struct loaded_binary *mov_binary;
@@ -7882,7 +7882,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = rm.reg,
 										 .value = comparator,
 										 .mask = mask,
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = self.current_state.sources[reg],
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -7903,7 +7903,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = rm.reg,
 										 .value = comparator,
 										 .mask = mask,
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = self.current_state.sources[reg],
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -7930,7 +7930,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = reg,
 										 .value = rm.state,
 										 .mask = 0xff,
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = rm.sources,
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -7950,7 +7950,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = reg,
 										 .value = rm.state,
 										 .mask = mask,
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = rm.sources,
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -7965,7 +7965,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = REGISTER_RAX,
 										 .value = comparator,
 										 .mask = 0xff,
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = 0,
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -7986,7 +7986,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = REGISTER_RAX,
 										 .value = comparator,
 										 .mask = mask,
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = 0,
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -8397,7 +8397,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 													 .target_register = rm_res.reg,
 													 .value = comparator,
 													 .mask = 0xff,
-													 .mem_rm = self.current_state.mem_rm,
+													 .mem_ref = self.current_state.mem_ref,
 													 .sources = 0,
 													 .validity = COMPARISON_SUPPORTS_ANY,
 												 });
@@ -8462,7 +8462,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												 .target_register = rm_res.reg,
 												 .value = comparator,
 												 .mask = mask,
-												 .mem_rm = self.current_state.mem_rm,
+												 .mem_ref = self.current_state.mem_ref,
 												 .sources = 0,
 												 .validity = COMPARISON_SUPPORTS_ANY,
 											 });
@@ -8583,7 +8583,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												 .target_register = rm_res.reg,
 												 .value = comparator,
 												 .mask = mask,
-												 .mem_rm = self.current_state.mem_rm,
+												 .mem_ref = self.current_state.mem_ref,
 												 .sources = 0,
 												 .validity = COMPARISON_SUPPORTS_ANY,
 											 });
@@ -8611,7 +8611,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 												 .target_register = reg,
 												 .value = comparator,
 												 .mask = 0xff,
-												 .mem_rm = self.current_state.mem_rm,
+												 .mem_ref = self.current_state.mem_ref,
 												 .sources = 0,
 												 .validity = COMPARISON_SUPPORTS_EQUALITY,
 											 });
@@ -8634,7 +8634,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											 .target_register = reg,
 											 .value = comparator,
 											 .mask = mask_for_size_prefixes(decoded.prefixes),
-											 .mem_rm = self.current_state.mem_rm,
+											 .mem_ref = self.current_state.mem_ref,
 											 .sources = 0,
 											 .validity = COMPARISON_SUPPORTS_EQUALITY,
 										 });
@@ -10647,7 +10647,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 													 .target_register = left,
 													 .value = right_state,
 													 .mask = mask_for_operand_size(size),
-													 .mem_rm = self.current_state.mem_rm,
+													 .mem_ref = self.current_state.mem_ref,
 													 .sources = (right == REGISTER_INVALID ? 0 : self.current_state.sources[right]) | self.current_state.compare_state.sources,
 													 .validity = COMPARISON_SUPPORTS_ANY,
 												 });
@@ -10880,7 +10880,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 										 .target_register = left,
 										 .value = right_state,
 										 .mask = mask_for_operand_size(size),
-										 .mem_rm = self.current_state.mem_rm,
+										 .mem_ref = self.current_state.mem_ref,
 										 .sources = right == REGISTER_INVALID ? 0 : self.current_state.sources[right],
 										 .validity = COMPARISON_SUPPORTS_ANY,
 									 });
@@ -10912,7 +10912,7 @@ function_effects analyze_instructions(struct program_state *analysis, function_e
 											 .target_register = left,
 											 .value = right_state,
 											 .mask = mask_for_operand_size(size),
-											 .mem_rm = self.current_state.mem_rm,
+											 .mem_ref = self.current_state.mem_ref,
 											 .sources = right == REGISTER_INVALID ? 0 : self.current_state.sources[right],
 											 .validity = COMPARISON_SUPPORTS_ANY,
 										 });

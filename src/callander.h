@@ -357,7 +357,7 @@ struct registers
 #if STORE_LAST_MODIFIED
 	ins_ptr last_modify_ins[REGISTER_COUNT];
 #endif
-	struct decoded_rm mem_rm;
+	struct ins_memory_reference mem_ref;
 	struct register_comparison compare_state;
 #if RECORD_WHERE_STACK_ADDRESS_TAKEN
 	ins_ptr stack_address_taken;
