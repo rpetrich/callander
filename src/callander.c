@@ -1675,9 +1675,7 @@ static inline void dump_x86_ins_prefixes(__attribute__((unused)) struct x86_ins_
 	LOG("decoded ", prefixes.has_w ? "w:true" : "w:false", prefixes.has_r ? " r:true" : " r:false", prefixes.has_x ? " x:true" : " x:false", prefixes.has_b ? " b:true" : " b:false");
 	// LOG("notrack:", prefixes.has_notrack ? "true" : "false");
 }
-#endif
 
-#ifdef __x86_64__
 __attribute__((always_inline)) __attribute__((nonnull(2))) static inline bool register_is_legacy_8bit_high(struct x86_ins_prefixes prefixes, int *register_index)
 {
 	if (UNLIKELY(*register_index >= REGISTER_SP && *register_index < REGISTER_R8 && !prefixes.has_any_rex)) {
@@ -2676,14 +2674,8 @@ __attribute__((nonnull(1, 2, 3, 4))) static void intercept_jump_slot(struct prog
 			}
 			uintptr_t rela_base = (uintptr_t)apply_base_address(&binary->info, section->sh_addr);
 			size_t pltrelsz = section->sh_size;
-#ifdef __x86_64__
-			Elf32_Word required_type = R_X86_64_JUMP_SLOT;
-			Elf32_Word alternate_type = R_X86_64_GLOB_DAT;
-#endif
-#ifdef __aarch64__
-			Elf32_Word required_type = R_AARCH64_JUMP_SLOT;
-			Elf32_Word alternate_type = R_AARCH64_GLOB_DAT;
-#endif
+			Elf32_Word required_type = INS_R_JUMP_SLOT;
+			Elf32_Word alternate_type = INS_R_GLOB_DAT;
 			for (uintptr_t rel_off = 0; rel_off < pltrelsz; rel_off += relaent) {
 				const ElfW(Rela) *rel = (const ElfW(Rela) *)(rela_base + rel_off);
 				uintptr_t info = rel->r_info;
